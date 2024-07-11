@@ -3,7 +3,12 @@ import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
 import { openFileInEditorTab, sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, type ExpectedV2Events, test as baseTest } from './helpers'
+import {
+    type DotcomUrlOverride,
+    type ExpectedV2Events,
+    test as baseTest,
+    executeCommandInPalette,
+} from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
@@ -25,7 +30,6 @@ test.extend<ExpectedV2Events>({
         'cody.fixup.user:rejected',
         'cody.fixup.codeLens:undo',
         'cody.fixup.reverted:clicked',
-        'cody.sidebar.edit:clicked',
     ],
 })('edit (fixup) task', async ({ page, sidebar, nap }) => {
     // Sign into Cody
@@ -78,8 +82,7 @@ test.extend<ExpectedV2Events>({
 
     // create another edit from the sidebar Edit button
     await page.getByText('appleName').click()
-    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
-    await page.getByText('Edit Code').click()
+    await executeCommandInPalette(page, 'Cody Commands: Edit code')
     await expect(page.getByText(inputTitle)).toBeVisible()
     await inputBox.focus()
     await inputBox.fill(instruction)

@@ -5,7 +5,7 @@ import {
     type PromptString,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
+import type { ChatSession } from '../../chat/chat-view/ChatController'
 import type { WebviewSubmitMessage } from '../../chat/protocol'
 import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
 import { showCodyIgnoreNotification } from '../../cody-ignore/notification'

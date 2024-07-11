@@ -3,7 +3,7 @@ import * as mockServer from '../fixtures/mock-server'
 
 import {
     expectContextCellCounts,
-    getChatPanel,
+    getChatEditorPanel,
     getContextCell,
     openContextCell,
     sidebarExplorer,
@@ -13,6 +13,7 @@ import {
     type DotcomUrlOverride,
     type ExpectedV2Events,
     test as baseTest,
+    executeCommandInPalette,
     openCustomCommandMenu,
     withPlatformSlashes,
 } from './helpers'
@@ -34,7 +35,6 @@ test.extend<ExpectedV2Events>({
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
-        'cody.sidebar.custom:clicked',
         'cody.menu.command.custom:clicked',
         'cody.menu.custom.build:clicked',
         'cody.command.custom.build:executed',
@@ -46,12 +46,6 @@ test.extend<ExpectedV2Events>({
 })('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
-    // Minimize other sidebar items to make room for the command view,
-    // else the test will fail because the Custom Command button is not visible
-    await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
-    await page.getByLabel('Settings & Support Section').click()
-    await page.getByLabel('Chats Section').click()
-
     // Open the File Explorer view from the sidebar
     await sidebarExplorer(page).click()
     // Open the index.html file from the tree view
@@ -62,7 +56,7 @@ test.extend<ExpectedV2Events>({
     // Bring the cody sidebar to the foreground
     await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
     // Click the Custom Commands button in the Sidebar to open the Custom Commands menu
-    await page.getByText('Custom Commands', { exact: true }).click()
+    await openCustomCommandMenu(page)
 
     const commandName = 'ATestCommand'
     const prompt = 'The test command has been created'
@@ -105,13 +99,8 @@ test.extend<ExpectedV2Events>({
     await expect(page.getByText('Workspace Settings.vscode/cody.json')).toBeVisible()
     await page.getByText('Workspace Settings.vscode/cody.json').click()
 
-    // The new command shows up in the sidebar and works on clicks
-    await expect(page.getByText('New Custom Cody Command: Save To…')).not.toBeVisible()
-    await page.getByText('Custom Commands', { exact: true }).hover()
-    const treeItem = page.getByRole('treeitem', { name: 'ATestCommand' }).getByLabel('ATestCommand')
-    await treeItem.scrollIntoViewIfNeeded()
-    await expect(treeItem).toBeVisible()
-    await treeItem.click()
+    await executeCommandInPalette(page, 'Custom Commands')
+    await page.getByText('ATestCommand').click()
 
     // Confirm the command prompt is displayed in the chat panel on execution
     const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
@@ -120,27 +109,9 @@ test.extend<ExpectedV2Events>({
     await page.getByRole('tab', { name: 'index.html' }).hover()
     await page.getByLabel('index.html', { exact: true }).getByLabel(/Close/).click()
 
-    // Check if cody.json in the workspace has the new command added
-    await sidebarExplorer(page).click()
-    await page.getByLabel('.vscode', { exact: true }).hover()
-    await page.getByLabel('.vscode', { exact: true }).click()
-    await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').hover()
-    await page.getByRole('treeitem', { name: 'cody.json' }).locator('a').dblclick()
-    await page.getByRole('tab', { name: 'cody.json' }).hover()
-    // Click on minimap to scroll to the buttom
-    await page.locator('canvas').nth(2).click()
-    await page.getByText(commandName).hover()
-    await expect(page.getByText(commandName)).toBeVisible()
-
-    // Show the new command in the menu and execute it
-    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
+    // The new command should show up
     await openCustomCommandMenu(page)
-    await page.getByText('Cody: Custom Commands (Beta)').hover()
-    await expect(page.getByText('Cody: Custom Commands (Beta)')).toBeVisible()
-    await page.getByPlaceholder('Search command to run...').click()
-    await page.getByPlaceholder('Search command to run...').fill(commandName)
-    // The new command should show up in sidebar and on the menu
-    expect((await page.getByText(commandName).all()).length).toBeGreaterThan(1)
+    expect(await page.getByText(commandName)).toBeVisible({ timeout: 1000 })
 })
 
 // NOTE: If no custom commands are showing up in the command menu, it might
@@ -154,7 +125,6 @@ test.extend<ExpectedV2Events>({
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
-        'cody.sidebar.custom:clicked',
         'cody.menu.command.custom:clicked',
         'cody.command.custom:executed',
         'cody.chat-question:submitted',
@@ -165,12 +135,6 @@ test.extend<ExpectedV2Events>({
 })('execute custom commands with context defined in cody.json', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
-    // Minimize other sidebar items to make room for the command view,
-    // else the test will fail because the Custom Command button is not visible
-    await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
-    await page.getByLabel('Settings & Support Section').click()
-    await page.getByLabel('Chats Section').click()
-
     // Open the File Explorer view from the sidebar
     await sidebarExplorer(page).click()
     await page.getByRole('treeitem', { name: 'index.html' }).locator('a').dblclick()
@@ -179,17 +143,16 @@ test.extend<ExpectedV2Events>({
 
     // Open the chat sidebar to click on the Custom Command option
     // Search for the command defined in cody.json and execute it
-    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
     await openCustomCommandMenu(page)
 
     /* Test: context.currentDir with currentDir command */
-    await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
-    await page.getByPlaceholder('Search command to run...').fill('currentDir')
-    await page.keyboard.press('Enter')
+    await executeCommandInPalette(page, 'Custom Commands')
+    await page.getByText('currentDir').click()
 
     const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
 
     await expect(chatPanel.getByText('Add four context files from the current directory.')).toBeVisible()
+
     // Show the current file numbers used as context
     const contextCell = getContextCell(chatPanel)
     await expectContextCellCounts(contextCell, { files: 6 })
@@ -205,7 +168,8 @@ test.extend<ExpectedV2Events>({
     /* Test: context.filePath with filePath command */
     // Locate the filePath command in the tree view and execute it from there to verify
     // custom commands are working in the sidebar
-    await page.getByRole('treeitem', { name: 'filePath' }).locator('a').click()
+    await executeCommandInPalette(page, 'Custom Commands')
+    await page.getByText('filePath').click()
     await expect(chatPanel.getByText('Add lib/batches/env/var.go as context.')).toBeVisible()
     // Should show 2 files with current file added as context
     await expectContextCellCounts(contextCell, { files: 2 })
@@ -213,10 +177,8 @@ test.extend<ExpectedV2Events>({
     /* Test: context.directory with directory command */
 
     await openCustomCommandMenu(page)
-    await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
-    await page.getByPlaceholder('Search command to run...').click()
-    await page.getByPlaceholder('Search command to run...').fill('directory')
-    await page.keyboard.press('Enter')
+    await executeCommandInPalette(page, 'Custom Commands')
+    await page.getByText('directoryPath').click()
     await expect(chatPanel.getByText('Directory has one context file.')).toBeVisible()
     await expectContextCellCounts(contextCell, { files: 2 })
     await openContextCell(contextCell)
@@ -232,11 +194,10 @@ test.extend<ExpectedV2Events>({
     /* Test: context.openTabs with openTabs command */
 
     await openCustomCommandMenu(page)
-    await expect(page.getByPlaceholder('Search command to run...')).toBeVisible()
-    await page.getByPlaceholder('Search command to run...').click()
-    await page.getByPlaceholder('Search command to run...').fill('openTabs')
-    await page.keyboard.press('Enter')
+    await executeCommandInPalette(page, 'Custom Commands')
+    await page.getByText('openTabs').click()
     await expect(chatPanel.getByText('Open tabs as context.')).toBeVisible()
+
     // The files from the open tabs should be added as context
     await expectContextCellCounts(contextCell, { files: 2 })
     await openContextCell(contextCell)
@@ -256,18 +217,11 @@ test.extend<ExpectedV2Events>({
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
-        'cody.sidebar.custom:clicked',
         'cody.menu.command.custom:clicked',
         'cody.menu.command.config:clicked',
     ],
 })('open and delete cody.json from the custom command menu', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
-
-    // Minimize other sidebar items to make room for the command view,
-    // else the test will fail because the Custom Command button is not visible
-    await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
-    await page.getByLabel('Settings & Support Section').click()
-    await page.getByLabel('Chats Section').click()
 
     // Open the File Explorer view from the sidebar
     await sidebarExplorer(page).click()
@@ -341,7 +295,7 @@ testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => 
     await expect(menuInputBox).not.toBeVisible()
 
     // Check the context list to confirm the terminal output is added as file
-    const panel = getChatPanel(page)
+    const panel = getChatEditorPanel(page)
     const contextCell = getContextCell(panel)
     await expectContextCellCounts(contextCell, { files: 2 })
     await openContextCell(contextCell)

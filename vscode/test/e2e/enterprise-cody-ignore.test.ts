@@ -78,14 +78,6 @@ test
         await expect(page.getByText('Cody is disabled in this file')).toBeVisible()
         await page.keyboard.press('Escape')
 
-        // Opening the sidebar should show a notice
-        await page.getByRole('tab', { name: 'Cody' }).click()
-        await expect(
-            page.getByText(
-                'Commands are disabled for this file by an admin setting. Other Cody features are also disabled'
-            )
-        ).toBeVisible()
-
         // Manually invoking autocomplete should show an error
         await page.getByText('function foo() {').click()
         await executeCommandInPalette(page, 'Cody: Trigger Autocomplete at Cursor')
@@ -105,12 +97,8 @@ test
             ['Find Code Smells', 'Command failed to run'],
         ]
         for (const [command, title] of commands) {
-            // Trigger an edit action should show a notification
-            await page.getByText('function foo() {').click()
-            await page.keyboard.down('Shift')
-            await page.keyboard.press('ArrowDown')
-            await page.getByRole('button', { name: 'Cody Commands' }).click()
-            await page.getByRole('option', { name: command }).click()
+            await executeCommandInPalette(page, `Cody Command: ${command}`)
+
             await expectNotificationToBeVisible(
                 page,
                 `${title}: file is ignored (due to cody.contextFilters Enterprise configuration setting)`

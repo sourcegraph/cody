@@ -20,7 +20,7 @@ export const CodyCommandMenuItems: MenuCommandAccessor[] = [
         description: 'New Chat',
         prompt: 'Start a new chat',
         icon: 'comment',
-        command: { command: 'cody.chat.panel.new' },
+        command: { command: 'cody.chat.newEditorPanel' },
         keybinding: `${osIcon}L`,
         mode: 'ask',
     },

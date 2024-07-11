@@ -19,7 +19,6 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { CommandResult } from './CommandResult'
 import type { MessageProviderOptions } from './chat/MessageProvider'
-import { chatHistory } from './chat/chat-view/ChatHistoryManager'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import {
     ACCOUNT_LIMITS_INFO_URL,
@@ -39,7 +38,6 @@ import {
     executeTestChatCommand,
     executeTestEditCommand,
 } from './commands/execute'
-import { executeExplainHistoryCommand } from './commands/execute/explain-history'
 import { CodySourceControl } from './commands/scm/source-control'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
@@ -71,7 +69,7 @@ import { CharactersLogger } from './services/CharactersLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
-import { VSCodeSecretStorage, getAccessToken, secretStorage } from './services/SecretStorageProvider'
+import { VSCodeSecretStorage, secretStorage } from './services/SecretStorageProvider'
 import { registerSidebarCommands } from './services/SidebarCommands'
 import { createStatusBar } from './services/StatusBar'
 import { upstreamHealthProvider } from './services/UpstreamHealthProvider'
@@ -259,88 +257,60 @@ const register = async (
     const sourceControl = new CodySourceControl(chatClient)
     const statusBar = createStatusBar()
 
-    // Adds a change listener to the auth provider that syncs the auth status
-    authProvider.addChangeListener(async (authStatus: AuthStatus) => {
-        // Propagate access token through config
+    // Functions that need to be called on auth status changes
+    async function handleAuthStatusChange(authStatus: AuthStatus) {
+        // NOTE: MUST update the config and graphQL client first.
         const newConfig = await getFullConfig()
+        // Propagate access token through config
         configWatcher.set(newConfig)
         // Sync auth status to graphqlClient
         graphqlClient.onConfigurationChange(newConfig)
 
-        // Refresh server-sent client configuration, as it controls which features the user has
-        // access to.
-        ClientConfigSingleton.getInstance().syncAuthStatus(authStatus)
-        // Reset the available models based on the auth change.
-        await syncModels(authStatus)
+        // Refresh server configuration that controls features enablement and models.
+        await ClientConfigSingleton.getInstance().syncAuthStatus(authStatus)
 
-        // Chat Manager uses Simple Context Provider
+        // Reset models list based on the updated auth status and server configuration.
+        await syncModels(authStatus)
         await chatManager.syncAuthStatus(authStatus)
         editorManager.syncAuthStatus(authStatus)
 
-        const parallelPromises: Promise<void>[] = []
-        // feature flag provider
-        parallelPromises.push(featureFlagProvider.syncAuthStatus())
-        // Symf
-        if (symfRunner && authStatus.isLoggedIn) {
-            parallelPromises.push(
-                getAccessToken()
-                    .then(token => symfRunner.setSourcegraphAuth(authStatus.endpoint, token))
-                    .catch(() => {})
-            )
-        } else {
-            symfRunner?.setSourcegraphAuth(null, null)
-        }
-        parallelPromises.push(setupAutocomplete())
-        await Promise.all(parallelPromises)
+        const parallelTasks: Promise<void>[] = [
+            featureFlagProvider.syncAuthStatus(),
+            setupAutocomplete(),
+        ]
+        await Promise.all(parallelTasks)
 
-        statusBar.syncAuthStatus(authStatus)
-        sourceControl.syncAuthStatus(authStatus)
+        symfRunner?.setSourcegraphAuth(authStatus.endpoint, newConfig.accessToken)
 
-        // Set the default prompt mixin on auth status change.
-        await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
-
-        // Re-register expose openctx client
-        await exposeOpenCtxClient(
+        void exposeOpenCtxClient(
             context,
-            initialConfig,
+            newConfig,
             authStatus.isDotCom,
             platform.createOpenCtxController
         )
 
-        // When logged out, user's endpoint will be set to null
-        const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
-        const isAuthError = authStatus?.showNetworkError || authStatus?.showInvalidAccessTokenError
-        const eventValue = isLoggedOut
-            ? 'disconnected'
-            : authStatus.isLoggedIn && !isAuthError
-              ? 'connected'
-              : 'failed'
-        telemetryRecorder.recordEvent('cody.auth', eventValue)
-    })
+        statusBar.syncAuthStatus(authStatus)
+        sourceControl.syncAuthStatus(authStatus)
+        await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
 
-    if (initialConfig.experimentalSupercompletions) {
-        disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
+        const eventValue =
+            !authStatus.isLoggedIn && !authStatus.endpoint
+                ? 'disconnected'
+                : authStatus.isLoggedIn &&
+                    !(authStatus.showNetworkError || authStatus.showInvalidAccessTokenError)
+                  ? 'connected'
+                  : 'failed'
+        telemetryRecorder.recordEvent('cody.auth', eventValue)
     }
 
-    configWatcher.onChange(async () => {
-        setupAutocomplete()
-    }, disposables)
+    // Add change listener to auth provider
+    authProvider.addChangeListener(handleAuthStatusChange)
 
-    // Sync initial auth status
-    const initAuthStatus = authProvider.getAuthStatus()
-    // Sync auth status to graphqlClient
-    graphqlClient.onConfigurationChange(await getFullConfig())
-    await ClientConfigSingleton.getInstance().syncAuthStatus(initAuthStatus)
-    await syncModels(initAuthStatus)
-    await chatManager.syncAuthStatus(initAuthStatus)
-    editorManager.syncAuthStatus(initAuthStatus)
+    // Setup config watcher
+    configWatcher.onChange(setupAutocomplete, disposables)
     await configWatcher.initAndOnChange(() => ModelsService.onConfigChange(), disposables)
-    statusBar.syncAuthStatus(initAuthStatus)
-    sourceControl.syncAuthStatus(initAuthStatus)
-    await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
 
-    const commandsManager = platform.createCommandsProvider?.()
-    setCommandController(commandsManager)
+    setCommandController(platform.createCommandsProvider?.())
     repoNameResolver.init(authProvider)
 
     // Execute Cody Commands and Cody Custom Commands
@@ -372,6 +342,12 @@ const register = async (
         // Process command with the commands controller
         return await executeCodyCommand(id, newCodyCommandArgs(args))
     }
+
+    // Initialize supercompletion provider if experimental feature is enabled
+    if (initialConfig.experimentalSupercompletions) {
+        disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
+    }
+
     // Register Cody Commands
     disposables.push(
         vscode.commands.registerCommand('cody.action.command', (id, a) => executeCommand(id, a)),
@@ -404,14 +380,6 @@ const register = async (
                     )
                 }
             })
-        )
-    }
-
-    if (commandsManager !== undefined) {
-        disposables.push(
-            vscode.commands.registerCommand('cody.command.explain-history', a =>
-                executeExplainHistoryCommand(commandsManager, a)
-            )
         )
     }
 
@@ -744,11 +712,6 @@ function registerChat(
         contextRanking || null,
         symfRunner || null,
         guardrails
-    )
-    disposables.push(
-        chatHistory.onHistoryChanged(() => {
-            chatManager.chatPanelsManager.treeViewProvider.refresh()
-        })
     )
 
     const ghostHintDecorator = new GhostHintDecorator(authProvider)

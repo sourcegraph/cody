@@ -12,7 +12,7 @@ import {
 import { PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { logDebug } from '../../log'
 import { PromptBuilder } from '../../prompt-builder'
-import type { SimpleChatModel } from './SimpleChatModel'
+import type { ChatModel } from './ChatModel'
 
 interface PromptInfo {
     prompt: Message[]
@@ -42,7 +42,7 @@ export class DefaultPrompter {
     //
     // Returns the reverse prompt and the new context that was used in the prompt for the current message.
     // If user-context added at the last message is ignored, returns the items in the newContextIgnored array.
-    public async makePrompt(chat: SimpleChatModel, codyApiVersion: number): Promise<PromptInfo> {
+    public async makePrompt(chat: ChatModel, codyApiVersion: number): Promise<PromptInfo> {
         return wrapInActiveSpan('chat.prompter', async () => {
             const promptBuilder = new PromptBuilder(chat.contextWindow)
             const preInstruction: PromptString | undefined = PromptString.fromConfig(
