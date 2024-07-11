@@ -8,7 +8,6 @@ import {
     type ChatClient,
     CodyIDE,
     DEFAULT_EVENT_SOURCE,
-    type FeatureFlagProvider,
     type Guardrails,
     ModelUsage,
     ModelsService,
@@ -22,7 +21,6 @@ import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import type { MessageProviderOptions } from '../MessageProvider'
-import type { ExtensionMessage } from '../protocol'
 
 import type { URI } from 'vscode-uri'
 import type { startTokenReceiver } from '../../auth/token-receiver'
@@ -42,18 +40,9 @@ import { chatHistory } from './ChatHistoryManager'
 
 export const CodyChatEditorViewType = 'cody.editorPanel'
 
-export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
-    postMessage(message: ExtensionMessage): Thenable<boolean>
-}
-
-export interface PanelOptions extends MessageProviderOptions {
+export interface Options extends MessageProviderOptions {
     extensionUri: vscode.Uri
     startTokenReceiver?: typeof startTokenReceiver
-}
-
-interface EditorOptions extends MessageProviderOptions {
-    extensionUri: vscode.Uri
-    featureFlagProvider: FeatureFlagProvider
 }
 
 export class ChatsController implements vscode.Disposable {
@@ -63,8 +52,6 @@ export class ChatsController implements vscode.Disposable {
     private editors: ChatController[] = []
     private activeEditor: ChatController | undefined = undefined
 
-    private options: EditorOptions & PanelOptions
-
     public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
 
     // We keep track of the currently authenticated account and dispose open chats when it changes
@@ -73,7 +60,7 @@ export class ChatsController implements vscode.Disposable {
     protected disposables: vscode.Disposable[] = []
 
     constructor(
-        { extensionUri, ...options }: PanelOptions,
+        private options: Options,
         private chatClient: ChatClient,
         private readonly enterpriseContext: EnterpriseContextFactory,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
@@ -82,12 +69,6 @@ export class ChatsController implements vscode.Disposable {
         private readonly guardrails: Guardrails
     ) {
         logDebug('ChatsController:constructor', 'init')
-        this.options = {
-            extensionUri,
-            featureFlagProvider,
-            ...options,
-        }
-
         this.panel = this.createProvider()
     }
 

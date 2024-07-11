@@ -17,7 +17,6 @@ import {
     type DefaultChatCommands,
     type EventSource,
     FeatureFlag,
-    type FeatureFlagProvider,
     type Guardrails,
     type MentionQuery,
     type Message,
@@ -31,6 +30,7 @@ import {
     TokenCounter,
     Typewriter,
     allMentionProvidersMetadata,
+    featureFlagProvider,
     hydrateAfterPostMessage,
     isAbortErrorOrSocketHangUp,
     isDefined,
@@ -118,7 +118,6 @@ interface ChatControllerOptions {
     symf: SymfRunner | null
     enterpriseContext: EnterpriseContextFactory | null
     editor: VSCodeEditor
-    featureFlagProvider: FeatureFlagProvider
     models: Model[]
     guardrails: Guardrails
     startTokenReceiver?: typeof startTokenReceiver
@@ -170,7 +169,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly remoteSearch: RemoteSearch | null
     private readonly repoPicker: RemoteRepoPicker | null
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
-    private readonly featureFlagProvider: FeatureFlagProvider
 
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
     private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
@@ -193,7 +191,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         guardrails,
         enterpriseContext,
         startTokenReceiver,
-        featureFlagProvider,
     }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
@@ -204,7 +201,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.repoPicker = enterpriseContext?.repoPicker || null
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
-        this.featureFlagProvider = featureFlagProvider
 
         this.chatModel = new ChatModel(getDefaultModelID(authProvider, models))
 
@@ -511,7 +507,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const [config, experimentalUnitTest] = await Promise.all([
             getFullConfig(),
-            this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalUnitTest),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalUnitTest),
         ])
 
         return {
