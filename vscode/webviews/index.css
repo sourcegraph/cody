@@ -29,6 +29,8 @@ html,
 body {
     margin: 0;
     padding: 0;
+    overflow-x: hidden;
+    background-color: var(--vscode-sideBar-background);
 }
 
 a {

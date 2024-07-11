@@ -26,7 +26,6 @@
     display: block;
     position: relative;
     outline: 0;
-    caret-color: var(--vscode-input-foreground);
 }
 
 /* Placeholder */
