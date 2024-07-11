@@ -5,6 +5,11 @@ import addFormats from 'ajv-formats'
 import axios from 'axios'
 
 async function main() {
+    if (process.env.OFFLINE) {
+        console.warn('Skipping validation of package.json because OFFLINE=true')
+        return
+    }
+
     const packageJson = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8'))
     const schemaJson = JSON.parse(
         fs.readFileSync(path.join(process.cwd(), 'package.schema.json'), 'utf-8')
