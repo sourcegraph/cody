@@ -638,7 +638,7 @@ const register = async (
             async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, chatID: string) {
                 if (chatID && webviewPanel.title) {
                     logDebug('main:deserializeWebviewPanel', 'reviving last unclosed chat panel')
-                    await chatsController.revive(webviewPanel, chatID)
+                    await chatsController.restoreToPanel(webviewPanel, chatID)
                 }
             },
         })

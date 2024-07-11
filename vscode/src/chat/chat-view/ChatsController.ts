@@ -74,15 +74,14 @@ export class ChatsController implements vscode.Disposable {
         this.panel = this.newChatController()
     }
 
-    public async revive(panel: vscode.WebviewPanel, chatID: string): Promise<void> {
+    public async restoreToPanel(panel: vscode.WebviewPanel, chatID: string): Promise<void> {
         try {
-            await this.newEditor(chatID, panel.title, panel)
+            await this.getOrCreateEditor(chatID, panel.title, panel)
         } catch (error) {
-            console.error('revive failed', error)
             logDebug('ChatsController:revive', 'failed', { verbose: error })
 
             // When failed, create a new panel with restored session and dispose the old panel
-            await this.restorePanel(chatID, panel.title)
+            await this.restoreToEditor(chatID, panel.title)
             panel.dispose()
         }
     }
@@ -99,11 +98,11 @@ export class ChatsController implements vscode.Disposable {
         )
 
         const debouncedRestorePanel = debounce(
-            async (chatID: string, chatQuestion?: string) => this.restorePanel(chatID, chatQuestion),
+            async (chatID: string, chatQuestion?: string) => this.restoreToEditor(chatID, chatQuestion),
             250,
             { leading: true, trailing: true }
         )
-        const debouncedCreateNewWebviewPanel = debounce(() => this.newEditor(), 250, {
+        const debouncedCreateNewWebviewPanel = debounce(() => this.getOrCreateEditor(), 250, {
             leading: true,
             trailing: true,
         })
@@ -195,7 +194,7 @@ export class ChatsController implements vscode.Disposable {
         source = DEFAULT_EVENT_SOURCE,
         command,
     }: ExecuteChatArguments): Promise<ChatSession | undefined> {
-        const provider = await this.newEditor()
+        const provider = await this.getOrCreateEditor()
         const abortSignal = provider.startNewSubmitOrEditOperation()
         const editorState = lexicalEditorStateFromPromptString(text)
         await provider.handleUserMessageSubmission(
@@ -276,7 +275,7 @@ export class ChatsController implements vscode.Disposable {
         // NOTE: Never reuse webviews when running inside the agent.
         if (this.activeEditor) {
             if (getConfiguration().isRunningInsideAgent) {
-                return await this.newEditor()
+                return await this.getOrCreateEditor()
             }
             return this.activeEditor
         }
@@ -284,13 +283,14 @@ export class ChatsController implements vscode.Disposable {
     }
 
     /**
-     * Creates a new webview panel for chat.
+     * Creates a new chat view in an editor panel.
      */
-    private async newEditor(
+    private async getOrCreateEditor(
         chatID?: string,
         chatQuestion?: string,
         panel?: vscode.WebviewPanel
     ): Promise<ChatController> {
+        // Look for an existing editor with the same chatID
         if (chatID && this.editors.map(p => p.sessionID).includes(chatID)) {
             const provider = this.editors.find(p => p.sessionID === chatID)
             if (provider?.webviewPanelOrView) {
@@ -311,6 +311,7 @@ export class ChatsController implements vscode.Disposable {
         } else {
             await provider.newSession()
         }
+
         // Revives a chat panel provider for a given webview panel and session ID.
         // Restores any existing session data. Registers handlers for view state changes and dispose events.
         if (panel) {
@@ -401,7 +402,7 @@ export class ChatsController implements vscode.Disposable {
 
     private async moveChatToEditor(): Promise<void> {
         const sessionID = this.panel.sessionID
-        await Promise.all([this.newEditor(sessionID), this.panel.clearAndRestartSession()])
+        await Promise.all([this.getOrCreateEditor(sessionID), this.panel.clearAndRestartSession()])
     }
 
     private async moveChatFromEditor(): Promise<void> {
@@ -416,7 +417,7 @@ export class ChatsController implements vscode.Disposable {
         await vscode.commands.executeCommand('cody.chat.focus')
     }
 
-    private async restorePanel(
+    private async restoreToEditor(
         chatID: string,
         chatQuestion?: string
     ): Promise<ChatController | undefined> {
@@ -431,10 +432,10 @@ export class ChatsController implements vscode.Disposable {
                 this.activeEditor = provider
                 return provider
             }
-            this.activeEditor = await this.newEditor(chatID, chatQuestion)
+            this.activeEditor = await this.getOrCreateEditor(chatID, chatQuestion)
             return this.activeEditor
         } catch (error) {
-            console.error(error, 'errored restoring panel')
+            logDebug('ChatsController:restoreToEditor', 'failed', error)
             return undefined
         }
     }
