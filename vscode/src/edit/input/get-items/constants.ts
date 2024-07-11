@@ -15,3 +15,8 @@ export const EXPANDED_RANGE_ITEM: vscode.QuickPickItem = {
     label: '$(file-code) Nearest Code Block',
     alwaysShow: true,
 }
+
+export const FULL_RANGE_ITEM: vscode.QuickPickItem = {
+    label: '$(file) Full File',
+    alwaysShow: true,
+}
