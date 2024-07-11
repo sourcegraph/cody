@@ -13,7 +13,6 @@ import {
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import type { View } from '../../../webviews/NavBar'
-import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
@@ -290,29 +289,4 @@ export class ChatManager implements vscode.Disposable {
         this.disposeChatPanelsManager()
         vscode.Disposable.from(...this.disposables).dispose()
     }
-}
-
-/**
- * Set HTML for webview (panel) & webview view (sidebar)
- */
-export async function addWebviewViewHTML(
-    extensionUri: vscode.Uri,
-    view: vscode.WebviewView | vscode.WebviewPanel
-): Promise<void> {
-    if (isRunningInsideAgent()) {
-        return
-    }
-    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
-    // Create Webview using vscode/index.html
-    const root = vscode.Uri.joinPath(webviewPath, 'index.html')
-    const bytes = await vscode.workspace.fs.readFile(root)
-    const decoded = new TextDecoder('utf-8').decode(bytes)
-    const resources = view.webview.asWebviewUri(webviewPath)
-
-    // This replace variables from the vscode/dist/index.html with webview info
-    // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
-    // 2. Update URIs for content security policy to only allow specific scripts to be run
-    view.webview.html = decoded
-        .replaceAll('./', `${resources.toString()}/`)
-        .replaceAll('{cspSource}', view.webview.cspSource)
 }

@@ -69,6 +69,7 @@ import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
+import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
@@ -100,7 +101,7 @@ import type {
 } from '../protocol'
 import { countGeneratedCode } from '../utils'
 import { chatHistory } from './ChatHistoryManager'
-import { CodyChatPanelViewType, addWebviewViewHTML } from './ChatManager'
+import { CodyChatPanelViewType } from './ChatManager'
 import { ChatModel, prepareChatMessage } from './ChatModel'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
@@ -1678,4 +1679,29 @@ function getDefaultModelID(authProvider: AuthProvider, models: Model[]): string 
     } catch {
         return '(pending)'
     }
+}
+
+/**
+ * Set HTML for webview (panel) & webview view (sidebar)
+ */
+export async function addWebviewViewHTML(
+    extensionUri: vscode.Uri,
+    view: vscode.WebviewView | vscode.WebviewPanel
+): Promise<void> {
+    if (isRunningInsideAgent()) {
+        return
+    }
+    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
+    // Create Webview using vscode/index.html
+    const root = vscode.Uri.joinPath(webviewPath, 'index.html')
+    const bytes = await vscode.workspace.fs.readFile(root)
+    const decoded = new TextDecoder('utf-8').decode(bytes)
+    const resources = view.webview.asWebviewUri(webviewPath)
+
+    // This replace variables from the vscode/dist/index.html with webview info
+    // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
+    // 2. Update URIs for content security policy to only allow specific scripts to be run
+    view.webview.html = decoded
+        .replaceAll('./', `${resources.toString()}/`)
+        .replaceAll('{cspSource}', view.webview.cspSource)
 }
