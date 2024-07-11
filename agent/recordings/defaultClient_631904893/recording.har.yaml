@@ -83,11 +83,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: daebfb1879982064bf5daa06c721d4f4
+    - _id: e452543c68f249687ad877433e31e091
       _order: 0
       cache: {}
       request:
-        bodySize: 312
+        bodySize: 313
         cookies: []
         headers:
           - _fromType: array
@@ -111,7 +111,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "312"
+            value: "313"
           - name: host
             value: sourcegraph.com
         headersSize: 378
@@ -125,9 +125,9 @@ log:
             messages:
               - speaker: human
                 text: |-
-                  <filename>src/sum.ts<fim_prefix>//
+                  <filename>src/sum.ts<fim_prefix>// 
                   export function sum(a: number, b: number): number {
-                     <fim_suffix>
+                      <fim_suffix>
                   }
                   <fim_middle>
             model: fireworks/starcoder
@@ -145,13 +145,13 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/code?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 236
+        bodySize: 235
         content:
           mimeType: text/event-stream
-          size: 236
+          size: 235
           text: |+
             event: completion
-            data: {"completion":" return a + b","stopReason":"stop"}
+            data: {"completion":"return a + b;","stopReason":"stop"}
 
             event: done
             data: {}
@@ -159,7 +159,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 09 Jul 2024 02:11:00 GMT
+            value: Thu, 11 Jul 2024 11:16:23 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -188,7 +188,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-09T02:10:59.297Z
+      startedDateTime: 2024-07-11T11:16:22.536Z
       time: 0
       timings:
         blocked: -1
@@ -198,11 +198,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: da9e3df7674c3d6ef1bb4b9755eaf3e3
+    - _id: 7de6102430cc7ad98c64d13bc2480f30
       _order: 0
       cache: {}
       request:
-        bodySize: 445
+        bodySize: 446
         cookies: []
         headers:
           - _fromType: array
@@ -226,7 +226,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "445"
+            value: "446"
           - name: host
             value: sourcegraph.com
         headersSize: 378
@@ -243,18 +243,18 @@ log:
                   <filename>src/bubbleSort.ts<fim_prefix>// Here is a reference
                   snippet of code from src/sum.ts:
 
-                  //
+                  // 
 
                   // export function sum(a: number, b: number): number {
 
-                  //
+                  //     
 
                   // }
 
-                  //
+                  // 
 
                   export function bubbleSort(nums: number[]) {
-                     <fim_suffix>
+                      <fim_suffix>
                   }
 
                   <fim_middle>
@@ -273,14 +273,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/code?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 3157
+        bodySize: 3368
         content:
           mimeType: text/event-stream
-          size: 3157
+          size: 3368
           text: >+
             event: completion
 
-            data: {"completion":" for (let i = 0; i \u003c nums.length; i++) {\n        for (let j = i + 1; j \u003c nums.length; j++) {\n            if (nums[i] \u003e nums[j]) {\n                [nums[i], nums[j]] = [nums[j], nums[i]]\n            }\n        }\n    }\n    return nums","stopReason":"stop"}
+            data: {"completion":"for (let i = 0; i \u003c nums.length; i++) {\n        for (let j = 0; j \u003c nums.length - 1; j++) {\n            if (nums[j] \u003e nums[j + 1]) {\n                [nums[j], nums[j + 1]] = [nums[j + 1], nums[j]]\n            }\n        }\n    }","stopReason":"stop"}
 
 
             event: done
@@ -290,7 +290,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 09 Jul 2024 02:11:01 GMT
+            value: Thu, 11 Jul 2024 11:16:24 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -319,7 +319,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-09T02:11:00.089Z
+      startedDateTime: 2024-07-11T11:16:23.537Z
       time: 0
       timings:
         blocked: -1

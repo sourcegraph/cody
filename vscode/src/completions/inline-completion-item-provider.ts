@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import {
     ClientConfigSingleton,
-    DocumentContext,
+    type DocumentContext,
     FeatureFlag,
     RateLimitError,
     contextFiltersProvider,
