@@ -1,4 +1,3 @@
-import { debounce } from 'lodash'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
@@ -117,26 +116,18 @@ export class ChatsController implements vscode.Disposable {
             })
         )
 
-        const debouncedRestoreToEditor = debounce(
-            async (chatID: string, chatQuestion?: string) => {
-                try {
-                    logDebug('ChatsController', 'debouncedRestorePanel')
-                    await this.getOrCreateEditorChatController(chatID, chatQuestion)
-                } catch (error) {
-                    logDebug('ChatsController', 'debouncedRestorePanel', 'failed', error)
-                }
-            },
-            250,
-            { leading: true, trailing: true }
-        )
-        const debouncedCreateNewWebviewPanel = debounce(
-            () => this.getOrCreateEditorChatController(),
-            250,
-            {
-                leading: true,
-                trailing: true,
+        const restoreToEditor = async (
+            chatID: string,
+            chatQuestion?: string
+        ): Promise<ChatSession | undefined> => {
+            try {
+                logDebug('ChatsController', 'debouncedRestorePanel')
+                return await this.getOrCreateEditorChatController(chatID, chatQuestion)
+            } catch (error) {
+                logDebug('ChatsController', 'debouncedRestorePanel', 'failed', error)
+                return undefined
             }
-        )
+        }
 
         this.disposables.push(
             vscode.commands.registerCommand(
@@ -160,11 +151,13 @@ export class ChatsController implements vscode.Disposable {
                 await this.panel.clearAndRestartSession()
                 await vscode.commands.executeCommand('cody.chat.focus')
             }),
-            vscode.commands.registerCommand('cody.chat.newEditorPanel', debouncedCreateNewWebviewPanel),
+            vscode.commands.registerCommand('cody.chat.newEditorPanel', () =>
+                this.getOrCreateEditorChatController()
+            ),
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', () => this.clearHistory()),
             vscode.commands.registerCommand('cody.chat.history.delete', item => this.clearHistory(item)),
-            vscode.commands.registerCommand('cody.chat.panel.restore', debouncedRestoreToEditor),
+            vscode.commands.registerCommand('cody.chat.panel.restore', restoreToEditor),
             vscode.commands.registerCommand(CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID, (...args) =>
                 this.passthroughVsCodeOpen(...args)
             ),
