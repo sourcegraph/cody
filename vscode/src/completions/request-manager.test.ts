@@ -232,7 +232,7 @@ describe('RequestManager', () => {
                 const prefix2 = 'function foo() {\n  const x = 1\n  const y = 2\n  console.'
                 const { completions, source } = checkCache(prefix2)!
 
-                expect(source).toBe(InlineCompletionsResultSource.Cache)
+                expect(source).toBe(InlineCompletionsResultSource.FuzzyCache)
                 expect(completions[0].insertText).toBe('log(x + y)')
             })
 
@@ -247,7 +247,7 @@ describe('RequestManager', () => {
                     'function bar() {\n  const a = 1;\n  const b = 2;\n  const c = 4;\n  console.'
                 const { completions, source } = await checkCache(prefix2)!
 
-                expect(source).toBe(InlineCompletionsResultSource.Cache)
+                expect(source).toBe(InlineCompletionsResultSource.FuzzyCache)
                 expect(completions[0].insertText).toBe('log(x + y + z)')
             })
 
@@ -260,7 +260,7 @@ describe('RequestManager', () => {
                 const prefix2 = 'function foo() {\n  const x = 1\n\n  const y = 2\n\n\n  console.'
                 const { completions, source } = checkCache(prefix2)!
 
-                expect(source).toBe(InlineCompletionsResultSource.Cache)
+                expect(source).toBe(InlineCompletionsResultSource.FuzzyCache)
                 expect(completions[0].insertText).toBe('log(x + y)')
             })
         })
