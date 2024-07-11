@@ -2,8 +2,6 @@ import { PromptString, type TerminalOutputArguments, logDebug, ps } from '@sourc
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import type { ChatCommandResult } from '../../CommandResult'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../../services/telemetry'
 import { executeChat } from './ask'
 
 import * as uuid from 'uuid'
@@ -24,12 +22,6 @@ export async function executeExplainOutput(
         const requestID = uuid.v4()
         const addEnhancedContext = false
         const source = 'terminal'
-        telemetryService.log('CodyVSCodeExtension:command:terminal:executed', {
-            useCodebaseContex: false,
-            requestID,
-            source,
-            traceId: span.spanContext().traceId,
-        })
         telemetryRecorder.recordEvent('cody.command.terminal', 'executed', {
             metadata: {
                 useCodebaseContex: 0,

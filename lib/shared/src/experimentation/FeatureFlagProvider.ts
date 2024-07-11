@@ -21,6 +21,7 @@ export enum FeatureFlag {
     // Enable various feature flags to experiment with FIM trained fine-tuned models via Fireworks
     CodyAutocompleteFIMModelExperimentBaseFeatureFlag = 'cody-autocomplete-fim-model-experiment-flag',
     CodyAutocompleteFIMModelExperimentControl = 'cody-autocomplete-fim-model-experiment-control',
+    CodyAutocompleteFIMModelExperimentCurrentBest = 'cody-autocomplete-fim-model-experiment-current-best',
     CodyAutocompleteFIMModelExperimentVariant1 = 'cody-autocomplete-fim-model-experiment-variant-1',
     CodyAutocompleteFIMModelExperimentVariant2 = 'cody-autocomplete-fim-model-experiment-variant-2',
     CodyAutocompleteFIMModelExperimentVariant3 = 'cody-autocomplete-fim-model-experiment-variant-3',
@@ -70,6 +71,18 @@ export enum FeatureFlag {
 
     /** Whether to use generated metadata to power embeddings. */
     CodyEmbeddingsGenerateMetadata = 'cody-embeddings-generate-metadata',
+
+    /** Enable experimental generate unit test prompt template */
+    CodyExperimentalUnitTest = 'cody-experimental-unit-test',
+
+    /** Enhanced context experiment */
+    CodyEnhancedContextExperiment = 'cody-enhanced-context-experiment',
+
+    /** Use symf to provide enhanced context. */
+    CodyEnhancedContextUseSymf = 'cody-enhanced-context-use-symf',
+
+    /** Use embeddings to provide enhanced context. */
+    CodyEnhancedContexUseEmbeddings = 'cody-enhanced-context-use-embeddings',
 
     /** Whether to use server-side Context API. */
     CodyServerSideContextAPI = 'cody-server-side-context-api-enabled',
@@ -247,7 +260,10 @@ export class FeatureFlagProvider {
             }
             subs.lastSnapshot = currentSnapshot
         }
-        logDebug('featureflag', 'refreshed')
+        // Disable on CI to unclutter the output.
+        if (!process.env.VITEST) {
+            logDebug('featureflag', 'refreshed')
+        }
         for (const callback of callbacksToTrigger) {
             callback()
         }

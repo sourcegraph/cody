@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     type ChatClient,
-    ConfigFeaturesSingleton,
+    ClientConfigSingleton,
     type ConfigurationWithAccessToken,
     type DefaultCodyCommands,
     type Guardrails,
@@ -19,7 +19,6 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { CommandResult } from './CommandResult'
 import type { MessageProviderOptions } from './chat/MessageProvider'
-import { chatHistory } from './chat/chat-view/ChatHistoryManager'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import { ContextAPIClient } from './chat/context/contextAPIClient'
 import {
@@ -40,7 +39,6 @@ import {
     executeTestChatCommand,
     executeTestEditCommand,
 } from './commands/execute'
-import { executeExplainHistoryCommand } from './commands/execute/explain-history'
 import { CodySourceControl } from './commands/scm/source-control'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
@@ -72,13 +70,12 @@ import { CharactersLogger } from './services/CharactersLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
-import { VSCodeSecretStorage, getAccessToken, secretStorage } from './services/SecretStorageProvider'
+import { VSCodeSecretStorage, secretStorage } from './services/SecretStorageProvider'
 import { registerSidebarCommands } from './services/SidebarCommands'
 import { createStatusBar } from './services/StatusBar'
 import { upstreamHealthProvider } from './services/UpstreamHealthProvider'
 import { autocompleteStageCounterLogger } from './services/autocomplete-stage-counter-logger'
 import { setUpCodyIgnore } from './services/cody-ignore'
-import { createOrUpdateEventLogger, logPrefix, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
@@ -174,7 +171,14 @@ const register = async (
 
     await authProvider.init()
 
-    await exposeOpenCtxClient(context, initialConfig)
+    if (authProvider.getAuthStatus().authenticated) {
+        await exposeOpenCtxClient(
+            context,
+            initialConfig,
+            authProvider.getAuthStatus().isDotCom,
+            platform.createOpenCtxController
+        )
+    }
 
     await configWatcher.initAndOnChange(async config => {
         graphqlClient.onConfigurationChange(config)
@@ -257,79 +261,60 @@ const register = async (
     const sourceControl = new CodySourceControl(chatClient)
     const statusBar = createStatusBar()
 
-    // Adds a change listener to the auth provider that syncs the auth status
-    authProvider.addChangeListener(async (authStatus: AuthStatus) => {
-        // Reset the available models based on the auth change.
-        await syncModels(authStatus)
-
-        // Chat Manager uses Simple Context Provider
-        await chatManager.syncAuthStatus(authStatus)
-        editorManager.syncAuthStatus(authStatus)
-
-        const parallelPromises: Promise<void>[] = []
-        // feature flag provider
-        parallelPromises.push(featureFlagProvider.syncAuthStatus())
-        // Symf
-        if (symfRunner && authStatus.isLoggedIn) {
-            parallelPromises.push(
-                getAccessToken()
-                    .then(token => symfRunner.setSourcegraphAuth(authStatus.endpoint, token))
-                    .catch(() => {})
-            )
-        } else {
-            symfRunner?.setSourcegraphAuth(null, null)
-        }
-        parallelPromises.push(setupAutocomplete())
-        await Promise.all(parallelPromises)
-
-        statusBar.syncAuthStatus(authStatus)
-        sourceControl.syncAuthStatus(authStatus)
-
-        // Set the default prompt mixin on auth status change.
-        await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
-
-        // Propagate access token through config
+    // Functions that need to be called on auth status changes
+    async function handleAuthStatusChange(authStatus: AuthStatus) {
+        // NOTE: MUST update the config and graphQL client first.
         const newConfig = await getFullConfig()
+        // Propagate access token through config
         configWatcher.set(newConfig)
-        // Re-sync whether guardrails is turned on
-        ConfigFeaturesSingleton.getInstance().refreshConfigFeatures()
         // Sync auth status to graphqlClient
         graphqlClient.onConfigurationChange(newConfig)
 
-        // When logged out, user's endpoint will be set to null
-        const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
-        const isAuthError = authStatus?.showNetworkError || authStatus?.showInvalidAccessTokenError
-        const eventValue = isLoggedOut
-            ? 'disconnected'
-            : authStatus.isLoggedIn && !isAuthError
-              ? 'connected'
-              : 'failed'
-        telemetryService.log(`${logPrefix(newConfig.agentIDE)}:Auth:${eventValue}`, undefined, {
-            agent: true,
-        })
-        telemetryRecorder.recordEvent('cody.auth', eventValue)
-    })
+        // Refresh server configuration that controls features enablement and models.
+        await ClientConfigSingleton.getInstance().syncAuthStatus(authStatus)
 
-    if (initialConfig.experimentalSupercompletions) {
-        disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
+        // Reset models list based on the updated auth status and server configuration.
+        await syncModels(authStatus)
+        await chatManager.syncAuthStatus(authStatus)
+        editorManager.syncAuthStatus(authStatus)
+
+        const parallelTasks: Promise<void>[] = [
+            featureFlagProvider.syncAuthStatus(),
+            setupAutocomplete(),
+        ]
+        await Promise.all(parallelTasks)
+
+        symfRunner?.setSourcegraphAuth(authStatus.endpoint, newConfig.accessToken)
+
+        void exposeOpenCtxClient(
+            context,
+            newConfig,
+            authStatus.isDotCom,
+            platform.createOpenCtxController
+        )
+
+        statusBar.syncAuthStatus(authStatus)
+        sourceControl.syncAuthStatus(authStatus)
+        await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
+
+        const eventValue =
+            !authStatus.isLoggedIn && !authStatus.endpoint
+                ? 'disconnected'
+                : authStatus.isLoggedIn &&
+                    !(authStatus.showNetworkError || authStatus.showInvalidAccessTokenError)
+                  ? 'connected'
+                  : 'failed'
+        telemetryRecorder.recordEvent('cody.auth', eventValue)
     }
 
-    configWatcher.onChange(async () => {
-        setupAutocomplete()
-    }, disposables)
+    // Add change listener to auth provider
+    authProvider.addChangeListener(handleAuthStatusChange)
 
-    // Sync initial auth status
-    const initAuthStatus = authProvider.getAuthStatus()
-    await syncModels(initAuthStatus)
-    await chatManager.syncAuthStatus(initAuthStatus)
-    editorManager.syncAuthStatus(initAuthStatus)
+    // Setup config watcher
+    configWatcher.onChange(setupAutocomplete, disposables)
     await configWatcher.initAndOnChange(() => ModelsService.onConfigChange(), disposables)
-    statusBar.syncAuthStatus(initAuthStatus)
-    sourceControl.syncAuthStatus(initAuthStatus)
-    await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
 
-    const commandsManager = platform.createCommandsProvider?.()
-    setCommandController(commandsManager)
+    setCommandController(platform.createCommandsProvider?.())
     repoNameResolver.init(authProvider)
 
     // Execute Cody Commands and Cody Custom Commands
@@ -350,8 +335,8 @@ const register = async (
         id: DefaultCodyCommands | PromptString,
         args?: Partial<CodyCommandArgs>
     ): Promise<CommandResult | undefined> => {
-        const { commands } = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        if (!commands) {
+        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
+        if (!clientConfig?.customCommandsEnabled) {
             void vscode.window.showErrorMessage(
                 'This feature has been disabled by your Sourcegraph site admin.'
             )
@@ -361,6 +346,12 @@ const register = async (
         // Process command with the commands controller
         return await executeCodyCommand(id, newCodyCommandArgs(args))
     }
+
+    // Initialize supercompletion provider if experimental feature is enabled
+    if (initialConfig.experimentalSupercompletions) {
+        disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
+    }
+
     // Register Cody Commands
     disposables.push(
         vscode.commands.registerCommand('cody.action.command', (id, a) => executeCommand(id, a)),
@@ -393,14 +384,6 @@ const register = async (
                     )
                 }
             })
-        )
-    }
-
-    if (commandsManager !== undefined) {
-        disposables.push(
-            vscode.commands.registerCommand('cody.command.explain-history', a =>
-                executeExplainHistoryCommand(commandsManager, a)
-            )
         )
     }
 
@@ -511,11 +494,6 @@ const register = async (
             vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
         ),
         vscode.commands.registerCommand('cody.welcome', async () => {
-            telemetryService.log(
-                'CodyVSCodeExtension:walkthrough:clicked',
-                { page: 'welcome' },
-                { hasV2Event: true }
-            )
             telemetryRecorder.recordEvent('cody.walkthrough', 'clicked')
             // Hack: We have to run this twice to force VS Code to register the walkthrough
             // Open issue: https://github.com/microsoft/vscode/issues/186165
@@ -742,11 +720,6 @@ function registerChat(
         guardrails,
         contextAPIClient || null
     )
-    disposables.push(
-        chatHistory.onHistoryChanged(() => {
-            chatManager.chatPanelsManager.treeViewProvider.refresh()
-        })
-    )
 
     const ghostHintDecorator = new GhostHintDecorator(authProvider)
     const editorManager = new EditManager({
@@ -767,14 +740,12 @@ function registerChat(
 }
 
 /**
- * Create or update events infrastructure, both legacy (telemetryService) and
- * new (telemetryRecorder)
+ * Create or update events infrastructure, using the new telemetryRecorder.
  */
 async function configureEventsInfra(
     config: ConfigurationWithAccessToken,
     isExtensionModeDevOrTest: boolean,
     authProvider: AuthProvider
 ): Promise<void> {
-    await createOrUpdateEventLogger(config, isExtensionModeDevOrTest, authProvider)
     await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest, authProvider)
 }

@@ -11,13 +11,9 @@ import {
     DISCORD_URL,
 } from '../chat/protocol'
 import { getReleaseNotesURLByIDE } from '../release'
-import { telemetryService } from '../services/telemetry'
 import { version } from '../version'
 
 export function logSidebarClick(feature: string) {
-    telemetryService.log(`CodyVSCodeExtension:sidebar:${feature}:clicked`, undefined, {
-        hasV2Event: true,
-    })
     telemetryRecorder.recordEvent(`cody.sidebar.${feature}`, 'clicked')
 }
 

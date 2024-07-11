@@ -1,42 +1,13 @@
-import { URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 
 import { pathFunctionsForURI } from './path'
 
 export const SUPPORTED_URI_SCHEMAS = new Set([
     'file',
     'untitled',
-    'remote-file',
     'vscode-notebook',
     'vscode-notebook-cell',
 ])
-
-/**
- * Custom/synthetic URI for remote files, primary used for
- * resolving remote files for any web clients
- */
-export function createRemoteFileURI(repository: string, path: string): URI {
-    return URI.from({
-        scheme: 'remote-file',
-        authority: repository,
-        path: path.startsWith('/') ? path : `/${path}`,
-    })
-}
-
-export function isRemoteFileURI(uri: URI) {
-    return uri.scheme === 'remote-file'
-}
-
-interface ParsedRemoteFileData {
-    repository: string
-    path: string
-}
-
-export function parseRemoteFileURI(uri: URI): ParsedRemoteFileData {
-    return {
-        path: uri.path,
-        repository: uri.authority,
-    }
-}
 
 /**
  * dirname, but operates on a {@link URI}.

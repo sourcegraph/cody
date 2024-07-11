@@ -8,7 +8,7 @@ import {
     getSimplePreamble,
     psDedent,
 } from '@sourcegraph/cody-shared'
-import type { SimpleChatModel } from '../chat/chat-view/SimpleChatModel'
+import type { ChatModel } from '../chat/chat-view/ChatModel'
 import { logDebug, logError } from '../log'
 import { PromptBuilder } from '../prompt-builder'
 
@@ -24,7 +24,7 @@ export async function rewriteChatQuery({
     query: PromptString
     contextItems: ContextItemWithContent[]
     chatClient: ChatClient
-    chatModel: SimpleChatModel
+    chatModel: ChatModel
 }): Promise<PromptString> {
     try {
         const contextWindow = ModelsService.getContextWindowByID(chatModel.modelID)

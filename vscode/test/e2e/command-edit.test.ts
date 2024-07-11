@@ -3,22 +3,19 @@ import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
 import { openFileInEditorTab, sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, type ExpectedEvents, test as baseTest } from './helpers'
+import {
+    type DotcomUrlOverride,
+    type ExpectedV2Events,
+    test as baseTest,
+    executeCommandInPalette,
+} from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyVSCodeExtension:command:edit:executed',
-        'CodyVSCodeExtension:fixupResponse:hasCode',
-        'CodyVSCodeExtension:fixup:codeLens:clicked', // each code lens clicked
-        'CodyVSCodeExtension:fixup:applied', // after clicking 'Accept'
-        'CodyVSCodeExtension:fixup:reverted', // after clicking 'Undo'
-    ],
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
@@ -33,9 +30,8 @@ test.extend<ExpectedEvents>({
         'cody.fixup.user:rejected',
         'cody.fixup.codeLens:undo',
         'cody.fixup.reverted:clicked',
-        'cody.sidebar.edit:clicked',
     ],
-})('edit (fixup) task', async ({ page, sidebar, expectedEvents, nap }) => {
+})('edit (fixup) task', async ({ page, sidebar, nap }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -86,8 +82,7 @@ test.extend<ExpectedEvents>({
 
     // create another edit from the sidebar Edit button
     await page.getByText('appleName').click()
-    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
-    await page.getByText('Edit Code').click()
+    await executeCommandInPalette(page, 'Cody Commands: Edit code')
     await expect(page.getByText(inputTitle)).toBeVisible()
     await inputBox.focus()
     await inputBox.fill(instruction)
@@ -150,12 +145,12 @@ test('edit (fixup) input - model selection', async ({ page, nap, sidebar }) => {
 
     // Check the correct model item is auto-selected
     await nap()
-    const modelItem = page.getByText('Claude 3 Sonnet')
+    const modelItem = page.getByText('Claude 3.5 Sonnet')
     await nap()
     expect(modelItem).toBeVisible()
 
     // Open the model input and check it has the correct item selected
     await modelItem.click()
-    const selectedModelItem = page.getByLabel('check   anthropic-logo  Claude 3 Sonnet, by Anthropic')
+    const selectedModelItem = page.getByLabel('check   anthropic-logo  Claude 3.5 Sonnet, by Anthropic')
     expect(selectedModelItem).toBeVisible()
 })

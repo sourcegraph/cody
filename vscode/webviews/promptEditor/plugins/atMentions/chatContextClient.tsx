@@ -41,10 +41,14 @@ const ChatContextClientContext: React.Context<ChatContextClient> = createContext
             // Clean up after a while to avoid resource exhaustion in case there is a bug
             // somewhere.
             const MAX_WAIT_SECONDS = 15
-            const rejectTimeout = setTimeout(() => {
-                reject(new Error(`no ${RESPONSE_MESSAGE_TYPE} response after ${MAX_WAIT_SECONDS}s`))
-                dispose()
-            }, MAX_WAIT_SECONDS * 1000)
+            const rejectTimeout = !query.includeRemoteRepositories
+                ? setTimeout(() => {
+                      reject(
+                          new Error(`no ${RESPONSE_MESSAGE_TYPE} response after ${MAX_WAIT_SECONDS}s`)
+                      )
+                      dispose()
+                  }, MAX_WAIT_SECONDS * 1000)
+                : ''
 
             // Wait for the response. We assume the first message of the right type is the response to
             // our call.

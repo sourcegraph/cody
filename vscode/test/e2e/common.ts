@@ -15,14 +15,13 @@ export const sidebarSignin = async (
     await focusSidebar(page)
     await sidebar.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).click()
     await page.getByRole('option', { name: 'Sign In with URL and Access Token' }).click()
+    // Ensure the correct input box has showed up before we start filling in the forms.
+    await expect(page.getByText('Enter the URL of the')).toBeVisible()
     await page.getByRole('combobox', { name: 'input' }).fill(SERVER_URL)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
+    await expect(page.getByText('Paste your access token')).toBeVisible()
     await page.getByRole('combobox', { name: 'input' }).fill(VALID_TOKEN)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
-
-    // TODO(beyang): re-enable when sidebar chat is enabled
-    // // Close sidebar chat
-    // await page.getByLabel('Chat Section').click()
 
     // Turn off notification
     if (!enableNotifications) {
@@ -40,8 +39,8 @@ export async function closeSidebar(page: Page): Promise<void> {
 
 async function isSidebarVisible(page: Page): Promise<boolean> {
     const sidebarsVisible = await Promise.all([
-        page.getByRole('heading', { name: 'Cody: Chat' }).isVisible(),
-        page.getByRole('heading', { name: 'Cody' }).isVisible(),
+        page.getByRole('heading', { name: 'Cody: Chat' }).isVisible({ timeout: 1 }),
+        page.getByRole('heading', { name: 'Cody' }).isVisible({ timeout: 1 }),
     ])
     return sidebarsVisible[0] || sidebarsVisible[1]
 }
@@ -55,7 +54,7 @@ export async function focusSidebar(page: Page): Promise<void> {
 
 export async function expectAuthenticated(page: Page) {
     await focusSidebar(page)
-    await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
+    await expect(page.getByLabel('Settings & Support Section')).toBeVisible()
 }
 
 // Selector for the Explorer button in the sidebar that would match on Mac and Linux
@@ -70,9 +69,16 @@ async function disableNotifications(page: Page): Promise<void> {
 }
 
 /**
+ * Returns the sidebar chat panel frame locator.
+ */
+export function getChatSidebarPanel(page: Page): FrameLocator {
+    return page.frameLocator('iframe.webview:first-child:last-child').frameLocator('iframe')
+}
+
+/**
  * Gets the chat panel frame locator.
  */
-export function getChatPanel(page: Page): FrameLocator {
+export function getChatEditorPanel(page: Page): FrameLocator {
     return page.frameLocator('.simple-find-part-wrapper + iframe.webview').last().frameLocator('iframe')
 }
 
@@ -83,14 +89,10 @@ export function getChatPanel(page: Page): FrameLocator {
 export async function createEmptyChatPanel(
     page: Page
 ): Promise<[FrameLocator, Locator, Locator, Locator]> {
-    await focusSidebar(page)
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+    await executeCommandInPalette(page, 'Cody: New Chat in Editor')
 
     // .simple-find-part-wrapper helps select for the webview in the panel rather than the sidebar
-    const chatFrame = page
-        .frameLocator('.simple-find-part-wrapper + iframe.webview')
-        .last()
-        .frameLocator('iframe')
+    const chatFrame = getChatEditorPanel(page)
 
     const chatInputs = chatFrame.getByRole('textbox', { name: 'Chat message' })
 

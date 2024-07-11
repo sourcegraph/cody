@@ -18,8 +18,6 @@ import type { LocalEmbeddingsController } from '../../local-context/local-embedd
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { localStorage } from '../../services/LocalStorageProvider'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../../services/telemetry'
 
 import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
 import type { URI } from 'vscode-uri'
@@ -27,8 +25,8 @@ import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import type { ContextAPIClient } from '../context/contextAPIClient'
+import type { ChatSession } from './ChatController'
 import { ChatPanelsManager, type SidebarViewOptions } from './ChatPanelsManager'
-import type { ChatSession } from './SimpleChatPanelProvider'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
 
@@ -75,22 +73,30 @@ export class ChatManager implements vscode.Disposable {
         // Register Commands
         this.disposables.push(
             vscode.commands.registerCommand('cody.action.chat', args => this.executeChat(args)),
-            vscode.commands.registerCommand(
-                'cody.chat.panel.moveFromSidebarToEditor',
-                async () => await this.chatPanelsManager.moveSidebarChatToEditor()
+            vscode.commands.registerCommand('cody.chat.focusView', () =>
+                vscode.commands.executeCommand('cody.chat.focus')
+            ),
+            vscode.commands.registerCommand('cody.chat.signIn', () =>
+                vscode.commands.executeCommand('cody.chat.focus')
             ),
             vscode.commands.registerCommand(
-                'cody.chat.panel.moveFromEditorToSidebar',
-                async () => await this.chatPanelsManager.moveEditorChatToSidebar()
+                'cody.chat.moveToEditor',
+                async () => await this.chatPanelsManager.moveChatToEditor()
             ),
             vscode.commands.registerCommand(
-                'cody.chat.panel.sidebar.new',
-                async () => await this.chatPanelsManager.resetSidebar()
+                'cody.chat.moveFromEditor',
+                async () => await this.chatPanelsManager.moveChatFromEditor()
+            ),
+            vscode.commands.registerCommand('cody.chat.newPanel', async () => {
+                await this.chatPanelsManager.resetSidebar()
+                await vscode.commands.executeCommand('cody.chat.focus')
+            }),
+            vscode.commands.registerCommand('cody.chat.newEditorPanel', () =>
+                this.createNewWebviewPanel()
             ),
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', () => this.clearHistory()),
             vscode.commands.registerCommand('cody.chat.history.delete', item => this.clearHistory(item)),
-            vscode.commands.registerCommand('cody.chat.panel.new', () => this.createNewWebviewPanel()),
             vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) =>
                 this.restorePanel(id, chat)
             ),
@@ -156,9 +162,6 @@ export class ChatManager implements vscode.Disposable {
     }
 
     private async sendEditorContextToChat(uri?: URI): Promise<void> {
-        telemetryService.log('CodyVSCodeExtension:addChatContext:clicked', undefined, {
-            hasV2Event: true,
-        })
         telemetryRecorder.recordEvent('cody.addChatContext', 'clicked')
 
         const provider = await this.chatPanelsManager.getActiveChatPanel()
@@ -193,9 +196,6 @@ export class ChatManager implements vscode.Disposable {
      * Export chat history to file system
      */
     private async exportHistory(): Promise<void> {
-        telemetryService.log('CodyVSCodeExtension:exportChatHistoryButton:clicked', undefined, {
-            hasV2Event: true,
-        })
         telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
         const historyJson = localStorage.getChatHistory(this.options.authProvider.getAuthStatus())?.chat
         const exportPath = await vscode.window.showSaveDialog({

@@ -1,7 +1,6 @@
 {
-  "private": true,
   "name": "cody-web-experimental",
-  "version": "0.0.1",
+  "version": "0.2.4",
   "description": "Cody standalone web app",
   "license": "Apache-2.0",
   "repository": {
@@ -20,25 +19,27 @@
     "build-ts": "tsc --build"
   },
   "devDependencies": {
+    "@sourcegraph/cody": "workspace:*",
+    "@sourcegraph/cody-shared": "workspace:*",
+    "@vitejs/plugin-react-swc": "^3.6.0",
+    "@vitest/web-worker": "^1.4.0",
     "@vscode/codicons": "^0.0.35",
     "buffer": "^6.0.3",
     "events": "^3.3.0",
     "idb": "^8.0.0",
+    "lodash": "4.17.21",
     "path-browserify": "^1.0.1",
-    "stream-browserify": "^3.0.0",
-    "util": "^0.12.5",
-    "vscode-uri": "^3.0.7",
-    "@vitest/web-worker": "^1.4.0",
-    "@vitejs/plugin-react-swc": "^3.6.0",
     "postcss": "^8.4.38",
     "postcss-mixins": "^10.0.1",
     "postcss-nested": "^6.0.1",
+    "stream-browserify": "^3.0.0",
     "tailwind-merge": "^2.3.0",
-    "lodash": "4.17.21",
     "tailwindcss": "^3.4.3",
+    "vite-plugin-svgr": "^4.2.0",
     "cody-ai": "workspace:*",
     "@types/lodash": "4.14.195",
-    "@sourcegraph/cody": "workspace:*",
-    "@sourcegraph/cody-shared": "workspace:*"
+    "util": "^0.12.5",
+    "vscode-uri": "^3.0.7",
+    "@openctx/vscode-lib": "^0.0.13"
   }
 }

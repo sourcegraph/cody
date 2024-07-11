@@ -14,17 +14,14 @@ import {
     type SymbolKind,
     TokenCounter,
     contextFiltersProvider,
-    createRemoteFileURI,
     displayPath,
     graphqlClient,
     isCodyIgnoredFile,
     isDefined,
     isErrorLike,
-    isRemoteFileURI,
     isWindows,
     logError,
     openCtx,
-    parseRemoteFileURI,
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
@@ -83,7 +80,9 @@ export async function getFileContextFiles(
             type: 'file',
             size: item.file.byteSize,
             source: ContextItemSource.User,
-            uri: createRemoteFileURI(item.repository.name, item.file.path),
+            remoteRepositoryName: item.repository.name,
+            isIgnored: contextFiltersProvider.isRepoNameIgnored(item.repository.name),
+            uri: URI.file(item.repository.name + item.file.path),
         }))
     }
 
@@ -174,7 +173,9 @@ export async function getSymbolContextFiles(
         return symbolsOrError.flatMap<ContextItemSymbol>(item =>
             item.symbols.map(symbol => ({
                 type: 'symbol',
-                uri: createRemoteFileURI(item.repository.name, symbol.location.resource.path),
+                remoteRepositoryName: item.repository.name,
+                uri: URI.file(item.repository.name + symbol.location.resource.path),
+                isIgnored: contextFiltersProvider.isRepoNameIgnored(item.repository.name),
                 source: ContextItemSource.User,
                 symbolName: symbol.name,
                 // TODO [VK] Support other symbols kind
@@ -417,8 +418,10 @@ async function resolveFileOrSymbolContextItem(
     contextItem: ContextItemFile | ContextItemSymbol,
     editor: Editor
 ): Promise<ContextItemWithContent> {
-    if (isRemoteFileURI(contextItem.uri)) {
-        const { repository, path } = parseRemoteFileURI(contextItem.uri)
+    if (contextItem.remoteRepositoryName) {
+        // Get only actual file path without repository name
+        const repository = contextItem.remoteRepositoryName
+        const path = contextItem.uri.path.slice(repository.length + 1, contextItem.uri.path.length)
 
         // TODO [VK]: Support ranges for symbol context items
         const resultOrError = await graphqlClient.getFileContent(repository, path)
@@ -426,12 +429,11 @@ async function resolveFileOrSymbolContextItem(
         if (!isErrorLike(resultOrError)) {
             return {
                 ...contextItem,
-                uri: URI.from({
-                    scheme: '',
-                    authority: '',
-                    path: `${repository}${path}`,
-                }),
+                title: path,
+                uri: URI.parse(`${graphqlClient.endpoint}${repository}/-/blob/${path}`),
                 content: resultOrError,
+                repoName: repository,
+                source: ContextItemSource.Unified,
                 size: contextItem.size ?? TokenCounter.countTokens(resultOrError),
             }
         }

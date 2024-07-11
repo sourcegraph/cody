@@ -1,6 +1,7 @@
 import linearIssues from '@openctx/provider-linear-issues'
+import type { OpenContextProvider } from './types'
 
-const LinearIssuesProvider = {
+const LinearIssuesProvider: OpenContextProvider = {
     providerUri: 'internal-linear-issues',
     ...linearIssues,
 }

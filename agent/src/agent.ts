@@ -2,12 +2,7 @@ import { spawn } from 'node:child_process'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
-import {
-    type CodyCommand,
-    getDotComDefaultModels,
-    isWindows,
-    telemetryRecorder,
-} from '@sourcegraph/cody-shared'
+import { type CodyCommand, isWindows, telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 
@@ -32,7 +27,7 @@ import {
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
-import { SimpleChatModel } from '../../vscode/src/chat/chat-view/SimpleChatModel'
+import { ChatModel } from '../../vscode/src/chat/chat-view/ChatModel'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
@@ -1060,7 +1055,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return this.createChatPanel(
                 Promise.resolve({
                     type: 'chat',
-                    session: await vscode.commands.executeCommand('cody.chat.panel.new'),
+                    session: await vscode.commands.executeCommand('cody.chat.newEditorPanel'),
                 })
             )
         })
@@ -1069,7 +1064,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const panelId = await this.createChatPanel(
                 Promise.resolve({
                     type: 'chat',
-                    session: await vscode.commands.executeCommand('cody.chat.panel.new'),
+                    session: await vscode.commands.executeCommand('cody.chat.newEditorPanel'),
                 })
             )
 
@@ -1079,27 +1074,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            let theModel = modelID
+            const theModel = modelID
                 ? modelID
                 : ModelsService.getModels(
                       ModelUsage.Chat,
                       authStatus.isDotCom && !authStatus.userCanUpgrade
-                  ).at(0)?.model
-            if (!theModel) {
-                theModel = getDotComDefaultModels()[0].model
-            }
-
-            const chatModel = new SimpleChatModel(modelID!, [], chatID)
-            for (const message of messages) {
-                const deserializedMessage = PromptString.unsafe_deserializeChatMessage(message)
-                if (deserializedMessage.error) {
-                    chatModel.addErrorAsBotMessage(deserializedMessage.error)
-                } else if (deserializedMessage.speaker === 'assistant') {
-                    chatModel.addBotMessage(deserializedMessage)
-                } else if (deserializedMessage.speaker === 'human') {
-                    chatModel.addHumanMessage(deserializedMessage)
-                }
-            }
+                  ).at(0)?.model ?? ''
+            const chatMessages = messages?.map(m => PromptString.unsafe_deserializeChatMessage(m)) ?? []
+            const chatModel = new ChatModel(theModel, chatMessages, chatID)
             await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
             return this.createChatPanel(
                 Promise.resolve({

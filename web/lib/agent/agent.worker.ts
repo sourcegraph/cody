@@ -1,3 +1,4 @@
+import { createController } from '@openctx/vscode-lib'
 import { Agent } from '@sourcegraph/cody/src/agent'
 import {
     BrowserMessageReader,
@@ -17,6 +18,12 @@ const agent = new Agent({
         // since it relies on DOM API which is not available in web-worker
         createSentryService: undefined,
         createStorage: () => IndexDBStorage.create(),
+
+        // Import createController from openctx lib synchronously because
+        // dynamic import don't work in web worker when we use it in direct
+        // consumer like Sourcegraph repo. Pass it as platform context
+        // because sync import breaks agent logic for other clients
+        createOpenCtxController: createController,
     }),
 })
 

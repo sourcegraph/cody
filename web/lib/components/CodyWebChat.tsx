@@ -4,17 +4,18 @@ import { URI } from 'vscode-uri'
 import {
     type ChatMessage,
     type ClientStateForWebview,
+    CodyIDE,
     type ContextItem,
     type ContextItemRepository,
     ContextItemSource,
     type Model,
     PromptString,
-    createRemoteFileURI,
     isErrorLike,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
 
 import { Chat, type UserAccountInfo } from 'cody-ai/webviews/Chat'
+import { ChatEnvironmentContext } from 'cody-ai/webviews/chat/ChatEnvironmentContext'
 import {
     type ChatModelContext,
     ChatModelContextProvider,
@@ -31,7 +32,6 @@ import {
 import {
     TelemetryRecorderContext,
     createWebviewTelemetryRecorder,
-    createWebviewTelemetryService,
 } from 'cody-ai/webviews/utils/telemetry'
 
 import { useWebAgentClient } from './CodyWebChatProvider'
@@ -101,6 +101,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                         isCodyProUser: !message.authStatus.userCanUpgrade,
                         isDotComUser: message.authStatus.isDotCom,
                         user: message.authStatus,
+                        ide: CodyIDE.Web,
                     })
                     break
                 case 'clientAction':
@@ -131,8 +132,6 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
         }
     }, [initialization, vscodeAPI, activeChatID, activeWebviewPanelID, client])
 
-    // Deprecated V1 telemetry
-    const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
@@ -180,7 +179,8 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
             mentions.push({
                 type: 'file',
                 isIgnored: false,
-                uri: createRemoteFileURI(repositories[0].name, fileURL),
+                remoteRepositoryName: repositories[0].name,
+                uri: URI.file(repositories[0].name + fileURL),
                 source: ContextItemSource.Initial,
             })
         }
@@ -189,6 +189,8 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
             initialContext: mentions,
         }
     }, [initialContext])
+
+    const envVars = useMemo(() => ({ clientType: CodyIDE.Web }), [])
 
     return (
         <div className={className} data-cody-web-chat={true} ref={setRootElement}>
@@ -200,30 +202,31 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                 isErrorLike(client) ? (
                     <p>Error: {client.message}</p>
                 ) : (
-                    <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
-                        <TelemetryRecorderContext.Provider value={telemetryRecorder}>
-                            <ChatModelContextProvider value={chatModelContext}>
-                                <ClientStateContextProvider value={clientState}>
-                                    <WithContextProviders>
-                                        <Chat
-                                            chatID={activeChatID}
-                                            chatEnabled={true}
-                                            showWelcomeMessage={false}
-                                            showIDESnippetActions={false}
-                                            userInfo={userAccountInfo}
-                                            messageInProgress={messageInProgress}
-                                            transcript={transcript}
-                                            vscodeAPI={vscodeAPI}
-                                            telemetryService={telemetryService}
-                                            isTranscriptError={isTranscriptError}
-                                            scrollableParent={rootElement}
-                                            className={styles.chat}
-                                        />
-                                    </WithContextProviders>
-                                </ClientStateContextProvider>
-                            </ChatModelContextProvider>
-                        </TelemetryRecorderContext.Provider>
-                    </ChatMentionContext.Provider>
+                    <ChatEnvironmentContext.Provider value={envVars}>
+                        <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
+                            <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                                <ChatModelContextProvider value={chatModelContext}>
+                                    <ClientStateContextProvider value={clientState}>
+                                        <WithContextProviders>
+                                            <Chat
+                                                chatID={activeChatID}
+                                                chatEnabled={true}
+                                                showWelcomeMessage={false}
+                                                showIDESnippetActions={false}
+                                                userInfo={userAccountInfo}
+                                                messageInProgress={messageInProgress}
+                                                transcript={transcript}
+                                                vscodeAPI={vscodeAPI}
+                                                isTranscriptError={isTranscriptError}
+                                                scrollableParent={rootElement}
+                                                className={styles.chat}
+                                            />
+                                        </WithContextProviders>
+                                    </ClientStateContextProvider>
+                                </ChatModelContextProvider>
+                            </TelemetryRecorderContext.Provider>
+                        </ChatMentionContext.Provider>
+                    </ChatEnvironmentContext.Provider>
                 )
             ) : (
                 <div className={styles.loading}>Loading Cody Agent...</div>
