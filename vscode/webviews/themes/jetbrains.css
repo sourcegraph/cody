@@ -261,7 +261,7 @@ html[data-ide='JetBrains'] {
     --vscode-input-background: var(--jetbrains-TextField-background);
     --vscode-input-border: var(--jetbrains-TextArea-inactiveForeground);
     --vscode-input-foreground: var(--jetbrains-TextField-foreground);
-    --vscode-input-placeholderForeground: var(--jetbrains-TextField-inactiveForeground);
+    --vscode-input-placeholderForeground: var(--jetbrains-TextField-foreground);
 
     /*tags inside chat input box*/
     --vscode-inputOption-activeBackground: var(--jetbrains-ToolWindow-HeaderTab-underlineColor);

@@ -36,7 +36,7 @@ html[data-ide=JetBrains] .context-item-mention-node {
 .context-item-mention-node.context-item-mention-chip-node--focused {
     --mention-color-opacity: 100%;
 
-    outline: solid 1px var(--vscode-inputOption-activeBorder);
+    outline: solid 1px var(--vscode-focusBorder);
 }
 
 .context-item-mention-node.is-too-large-or-ignored {
