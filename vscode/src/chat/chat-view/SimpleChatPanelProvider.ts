@@ -89,6 +89,7 @@ import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
 import { startClientStateBroadcaster } from '../clientStateBroadcaster'
 import { getChatContextItemsForMention } from '../context/chatContext'
+import type { ContextAPIClient } from '../context/contextAPIClient'
 import type {
     ChatSubmitType,
     ConfigurationSubsetForWebview,
@@ -119,6 +120,7 @@ interface SimpleChatPanelProviderOptions {
     models: Model[]
     guardrails: Guardrails
     startTokenReceiver?: typeof startTokenReceiver
+    contextAPIClient: ContextAPIClient | null
 }
 
 export interface ChatSession {
@@ -169,6 +171,7 @@ export class SimpleChatPanelProvider
     private readonly remoteSearch: RemoteSearch | null
     private readonly repoPicker: RemoteRepoPicker | null
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
+    private readonly contextAPIClient: ContextAPIClient | null
 
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
     private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
@@ -191,6 +194,7 @@ export class SimpleChatPanelProvider
         guardrails,
         enterpriseContext,
         startTokenReceiver,
+        contextAPIClient,
     }: SimpleChatPanelProviderOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
@@ -206,6 +210,7 @@ export class SimpleChatPanelProvider
 
         this.guardrails = guardrails
         this.startTokenReceiver = startTokenReceiver
+        this.contextAPIClient = contextAPIClient || null
 
         if (TestSupport.instance) {
             TestSupport.instance.chatPanelProvider.set(this)
@@ -742,7 +747,7 @@ export class SimpleChatPanelProvider
                                     })
                                   : inputText
 
-                              return getEnhancedContext({
+                              const context = await getEnhancedContext({
                                   strategy: config.useContext,
                                   editor: this.editor,
                                   input: { text: rewrite, mentions },
@@ -754,6 +759,8 @@ export class SimpleChatPanelProvider
                                   },
                                   contextRanking: this.contextRanking,
                               })
+                              await this.contextAPIClient?.rankContext(requestID, context)
+                              return context
                           }
                         : undefined,
                     command !== undefined
@@ -788,9 +795,31 @@ export class SimpleChatPanelProvider
                         },
                     })
                 }
+                tracer.startActiveSpan('chat.submit.chatIntent', async span => {
+                    const isDotCom = this.authProvider.getAuthStatus().isDotCom
+                    const isPublic = (await this.codebaseStatusProvider.currentCodebase())?.isPublic
+                    if (!isDotCom && !isPublic) {
+                        return
+                    }
+                    const result = await this.contextAPIClient?.detectChatIntent(
+                        requestID,
+                        inputText.toString()
+                    )
+                    if (isError(result)) {
+                        logDebug('SimpleChatPanelProvider: failed to detect chat intent', result.message)
+                        return
+                    }
+                    logDebug('SimpleChatPanelProvider', 'detected chat intent', result?.intent)
+                    return result?.intent
+                })
 
                 try {
-                    const prompt = await this.buildPrompt(prompter, abortSignal, sendTelemetry)
+                    const prompt = await this.buildPrompt(
+                        prompter,
+                        abortSignal,
+                        requestID,
+                        sendTelemetry
+                    )
                     abortSignal.throwIfAborted()
                     this.streamAssistantResponse(requestID, prompt, span, firstTokenSpan, abortSignal)
                 } catch (error) {
@@ -1164,6 +1193,7 @@ export class SimpleChatPanelProvider
     private async buildPrompt(
         prompter: DefaultPrompter,
         abortSignal: AbortSignal,
+        requestID: string,
         sendTelemetry?: (contextSummary: any, privateContextStats?: any) => void
     ): Promise<Message[]> {
         const { prompt, context } = await prompter.makePrompt(
@@ -1203,6 +1233,7 @@ export class SimpleChatPanelProvider
                 included: getContextStats(context.used.filter(f => f.source === 'user')),
                 excluded: getContextStats(context.ignored.filter(f => f.source === 'user')),
             }
+            this.contextAPIClient?.recordContext(requestID, context.used, context.ignored)
             sendTelemetry(contextSummary, privateContextStats)
         }
 

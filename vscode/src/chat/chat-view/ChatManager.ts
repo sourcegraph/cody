@@ -26,6 +26,7 @@ import type { URI } from 'vscode-uri'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
+import type { ContextAPIClient } from '../context/contextAPIClient'
 import { ChatPanelsManager, type SidebarViewOptions } from './ChatPanelsManager'
 import type { ChatSession } from './SimpleChatPanelProvider'
 
@@ -50,7 +51,8 @@ export class ChatManager implements vscode.Disposable {
         private localEmbeddings: LocalEmbeddingsController | null,
         private contextRanking: ContextRankingController | null,
         private symf: SymfRunner | null,
-        private guardrails: Guardrails
+        private guardrails: Guardrails,
+        private contextAPIClient: ContextAPIClient | null
     ) {
         logDebug(
             'ChatManager:constructor',
@@ -66,7 +68,8 @@ export class ChatManager implements vscode.Disposable {
             this.contextRanking,
             this.symf,
             this.enterpriseContext,
-            this.guardrails
+            this.guardrails,
+            this.contextAPIClient
         )
 
         // Register Commands

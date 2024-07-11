@@ -70,6 +70,9 @@ export enum FeatureFlag {
 
     /** Whether to use generated metadata to power embeddings. */
     CodyEmbeddingsGenerateMetadata = 'cody-embeddings-generate-metadata',
+
+    /** Whether to use server-side Context API. */
+    CodyServerSideContextAPI = 'cody-server-side-context-api-enabled',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

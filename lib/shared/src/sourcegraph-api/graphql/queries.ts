@@ -194,6 +194,31 @@ query Repositories($names: [String!]!, $first: Int!) {
   }
 `
 
+export const CHAT_INTENT_QUERY = `
+query ChatIntent($query: String!, $interactionId: String) {
+    chatIntent(query: $query, interactionId: $interactionId) {
+        intent
+        score
+    }
+}`
+
+export const RECORD_CONTEXT_QUERY = `
+query RecordContext($interactionId: String!, $usedContextItems: [InputContextItem!]!, $discardedContextItems: [InputContextItem!]!) {
+    recordContext(interactionId: $interactionId, usedContextItems: $usedContextItems, discardedContextItems: $discardedContextItems) {
+        alwaysNil
+    }
+}`
+
+export const RANK_CONTEXT_QUERY = `
+query RankContext($interactionId: String!, $contextItems: [InputContextItem!]!) {
+    rankContext(interactionId: $interactionId, contextItems: $contextItems) {
+        contextItems {
+            score
+            content
+        }
+    }
+}`
+
 export const CONTEXT_SEARCH_QUERY = `
 query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
 	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {

@@ -21,6 +21,7 @@ import type { CommandResult } from './CommandResult'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { chatHistory } from './chat/chat-view/ChatHistoryManager'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
+import { ContextAPIClient } from './chat/context/contextAPIClient'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -233,6 +234,8 @@ const register = async (
         await localEmbeddings?.setAccessToken(config.serverEndpoint, config.accessToken)
     }, disposables)
 
+    const contextAPIClient = new ContextAPIClient(graphqlClient, featureFlagProvider)
+
     const { chatManager, editorManager } = registerChat(
         {
             context,
@@ -245,6 +248,7 @@ const register = async (
             localEmbeddings,
             contextRanking,
             symfRunner,
+            contextAPIClient,
         },
         disposables
     )
@@ -695,6 +699,7 @@ interface RegisterChatOptions {
     localEmbeddings?: LocalEmbeddingsController
     contextRanking?: ContextRankingController
     symfRunner?: SymfRunner
+    contextAPIClient?: ContextAPIClient
 }
 
 function registerChat(
@@ -709,6 +714,7 @@ function registerChat(
         localEmbeddings,
         contextRanking,
         symfRunner,
+        contextAPIClient,
     }: RegisterChatOptions,
     disposables: vscode.Disposable[]
 ): {
@@ -733,7 +739,8 @@ function registerChat(
         localEmbeddings || null,
         contextRanking || null,
         symfRunner || null,
-        guardrails
+        guardrails,
+        contextAPIClient || null
     )
     disposables.push(
         chatHistory.onHistoryChanged(() => {

@@ -22,6 +22,7 @@ import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
+import type { ContextAPIClient } from '../context/contextAPIClient'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType } from './ChatManager'
 import {
@@ -79,7 +80,8 @@ export class ChatPanelsManager implements vscode.Disposable {
         private readonly contextRanking: ContextRankingController | null,
         private readonly symf: SymfRunner | null,
         private readonly enterpriseContext: EnterpriseContextFactory,
-        private readonly guardrails: Guardrails
+        private readonly guardrails: Guardrails,
+        private readonly contextAPIClient: ContextAPIClient | null
     ) {
         logDebug('ChatPanelsManager:constructor', 'init')
         this.options = {
@@ -246,6 +248,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             models,
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,
+            contextAPIClient: this.contextAPIClient,
         })
     }
 
