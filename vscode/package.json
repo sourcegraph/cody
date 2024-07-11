@@ -107,7 +107,7 @@
   },
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
-  "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.chatPanel"],
+  "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.editorPanel"],
   "contributes": {
     "walkthroughs": [
       {
@@ -872,37 +872,37 @@
       "editor/title": [
         {
           "command": "cody.menu.commands",
-          "when": "cody.activated && !editorReadonly && (resourceScheme == file || activeWebviewPanelId == cody.chatPanel)",
+          "when": "cody.activated && !editorReadonly && (resourceScheme == file || activeWebviewPanelId == cody.editorPanel)",
           "group": "navigation",
           "visibility": "visible"
         },
         {
           "command": "cody.chat.moveFromEditor",
-          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated",
           "group": "navigation@1",
           "visibility": "visible"
         },
         {
           "command": "cody.chat.newEditorPanel",
-          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated",
           "group": "navigation@2",
           "visibility": "visible"
         },
         {
           "command": "cody.chat.history.panel",
-          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated",
           "group": "navigation@3",
           "visibility": "visible"
         },
         {
           "command": "cody.chat.view.popOut",
-          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated && !isAuxiliaryEditorPart",
+          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated && !isAuxiliaryEditorPart",
           "group": "navigation@4",
           "visibility": "visible"
         },
         {
           "command": "cody.settings.extension.chat",
-          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated",
           "group": "navigation@5",
           "visibility": "visible"
         }

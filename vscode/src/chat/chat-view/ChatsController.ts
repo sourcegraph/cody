@@ -7,7 +7,6 @@ import {
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
     type ChatClient,
     CodyIDE,
-    type ConfigurationWithAccessToken,
     DEFAULT_EVENT_SOURCE,
     type FeatureFlagProvider,
     type Guardrails,
@@ -41,12 +40,7 @@ import {
 } from './ChatController'
 import { chatHistory } from './ChatHistoryManager'
 
-export const CodyChatPanelViewType = 'cody.chatPanel'
-
-export type ChatPanelConfig = Pick<
-    ConfigurationWithAccessToken,
-    'internalUnstable' | 'useContext' | 'experimentalChatContextRanker'
->
+export const CodyChatEditorViewType = 'cody.editorPanel'
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
@@ -281,7 +275,6 @@ export class ChatsController implements vscode.Disposable {
             username: authStatus.username,
         }
 
-        await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, authStatus.isLoggedIn)
         this.supportTreeViewProvider.syncAuthStatus(authStatus)
 
         this.panel.syncAuthStatus()

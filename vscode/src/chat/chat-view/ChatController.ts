@@ -102,7 +102,7 @@ import type {
 import { countGeneratedCode } from '../utils'
 import { chatHistory } from './ChatHistoryManager'
 import { ChatModel, prepareChatMessage } from './ChatModel'
-import { CodyChatPanelViewType } from './ChatsController'
+import { CodyChatEditorViewType } from './ChatsController'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, openFile } from './chat-helpers'
@@ -1478,7 +1478,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return this.webviewPanelOrView
         }
 
-        const viewType = CodyChatPanelViewType
+        const viewType = CodyChatEditorViewType
         const panelTitle =
             chatHistory.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID)
                 ?.chatTitle || getChatPanelTitle(lastQuestion)
@@ -1564,9 +1564,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             )
         )
 
-        // Used for keeping sidebar chat view closed when webview panel is enabled
-        await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
-
         const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
 
         void this.postMessage({
@@ -1588,9 +1585,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (view !== 'chat') {
             // Only chat view is supported in the webview panel.
             // When a different view is requested,
-            // Set context to notifiy the webview panel to close.
+            // Set context to notify the webview panel to close.
             // This should close the webview panel and open the login view in the sidebar.
-            await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
             await vscode.commands.executeCommand('setContext', 'cody.activated', false)
             return
         }

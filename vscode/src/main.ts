@@ -19,7 +19,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { CommandResult } from './CommandResult'
 import type { MessageProviderOptions } from './chat/MessageProvider'
-import { ChatsController, CodyChatPanelViewType } from './chat/chat-view/ChatsController'
+import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -634,7 +634,7 @@ const register = async (
 
     // Register a serializer for reviving the chat panel on reload
     if (vscode.window.registerWebviewPanelSerializer) {
-        vscode.window.registerWebviewPanelSerializer(CodyChatPanelViewType, {
+        vscode.window.registerWebviewPanelSerializer(CodyChatEditorViewType, {
             async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, chatID: string) {
                 if (chatID && webviewPanel.title) {
                     logDebug('main:deserializeWebviewPanel', 'reviving last unclosed chat panel')
