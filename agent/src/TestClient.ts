@@ -340,9 +340,9 @@ export class TestClient extends MessageHandler {
             return result
         })
         this.registerRequest('textDocument/openUntitledDocument', params => {
-            this.workspace.loadDocument(ProtocolTextDocumentWithUri.fromDocument(params))
+            const doc = this.workspace.loadDocument(ProtocolTextDocumentWithUri.fromDocument(params))
             this.notify('textDocument/didOpen', params)
-            return Promise.resolve(true)
+            return Promise.resolve(doc.protocolDocument.underlying)
         })
         this.registerRequest('textDocument/edit', async params => {
             this.textDocumentEditParams.push(params)
