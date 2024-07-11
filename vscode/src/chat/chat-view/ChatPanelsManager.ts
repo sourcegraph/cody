@@ -116,7 +116,10 @@ export class ChatPanelsManager implements vscode.Disposable {
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, authStatus.isLoggedIn)
         this.supportTreeViewProvider.syncAuthStatus(authStatus)
 
-        this.sidebarProvider.syncAuthStatus()
+        // Notify all existing panel providers about the auth status change.
+        for (const provider of this.panelProviders) {
+            provider.syncAuthStatus()
+        }
     }
 
     public async getNewChatPanel(): Promise<ChatController> {
@@ -194,8 +197,6 @@ export class ChatPanelsManager implements vscode.Disposable {
         })
 
         this.activePanelProvider = provider
-        this.panelProviders.push(provider)
-
         return provider
     }
 
@@ -216,7 +217,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             vscode.workspace.getConfiguration().get<string>('cody.advanced.agent.ide') === CodyIDE.Web
         const allowRemoteContext = isCodyWeb || !isConsumer
 
-        return new ChatController({
+        const controller = new ChatController({
             ...this.options,
             chatClient: this.chatClient,
             localEmbeddings: isConsumer ? this.localEmbeddings : null,
@@ -227,6 +228,8 @@ export class ChatPanelsManager implements vscode.Disposable {
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,
         })
+        this.panelProviders.push(controller)
+        return controller
     }
 
     public async clearHistory(chatID?: string): Promise<void> {
