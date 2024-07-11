@@ -926,7 +926,7 @@ export class SourcegraphGraphQLAPIClient {
                 contextItems: context,
             }
         )
-        return extractDataOrError(response, data => data.rankContext)
+        return extractDataOrError(response, data => data)
     }
 
     public async contextSearch(

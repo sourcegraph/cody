@@ -46,7 +46,7 @@ export class ContextAPIClient {
             logError('rankContext', 'ranking result', res)
             return res
         }
-        return { used: res.used, unused: res.discarded }
+        return { used: res.rankContext.used, unused: res.rankContext.discarded }
     }
 
     public async recordContext(interactionID: string, used: ContextItem[], unused: ContextItem[]) {

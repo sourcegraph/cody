@@ -31,8 +31,6 @@ import {
     webviewViewOrPanelViewColumn,
 } from './ChatController'
 import { chatHistory } from './ChatHistoryManager'
-import { chatHistory } from './ChatHistoryManager'
-import { CodyChatPanelViewType } from './ChatManager'
 import { CodyChatPanelViewType } from './ChatManager'
 
 export type ChatPanelConfig = Pick<
