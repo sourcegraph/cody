@@ -375,8 +375,7 @@ html[data-ide='JetBrains'] {
     --vscode-profileBadge-background: var(--jetbrains-ProgressBar-background);
     --vscode-profileBadge-foreground: var(--jetbrains-ProgressBar-foreground);
     --vscode-progressBar-background: var(--jetbrains-ProgressBar-background);
-    --vscode-quickInput-background: var(--jetbrains-QuickInput-background);
-    --vscode-quickInput-foreground: var(--jetbrains-QuickInput-foreground);
+    --vscode-quickInput-background: red !important;
     --vscode-quickInputTitle-background: var(--jetbrains-QuickInput-background);
     --vscode-remoteHub-decorations-addedForegroundColor: var(--jetbrains-ActionButton-hoverBackground);
     --vscode-remoteHub-decorations-conflictForegroundColor: var(--jetbrains-ValidationTooltip-warningBorderColor);
@@ -575,6 +574,7 @@ html[data-ide='JetBrains'] {
     --button-icon-background: var(--jetbrains-Button-iconBackground);
     --foreground: var(--jetbrains-Button-foreground);
 
+
     /* Mimic rules injected by VSCode */
     scrollbar-color: var(--vscode-scrollbarSlider-background) var(--vscode-editor-background);
 }
@@ -589,7 +589,7 @@ html[data-ide='JetBrains'] body {
     font-weight: var(--vscode-font-weight);
     font-size: var(--vscode-font-size);
     margin: 0;
-    padding: 0 20px;
+    padding: 0;
 }
 
 html[data-ide='JetBrains'] :matches(img, video) {

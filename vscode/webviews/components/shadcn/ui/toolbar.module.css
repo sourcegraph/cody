@@ -2,18 +2,22 @@
     --toolbar-button-font-size: 11px;
 }
 
+.button,
+.button + aside {
+    /* Also style our popovers. */
+    font-size: var(--toolbar-button-font-size);
+    line-height: var(--toolbar-button-font-size);
+}
+
 .button {
-    &, & + aside {
-        /* Also style our popovers. */
-        font-size: var(--toolbar-button-font-size);
-        line-height: var(--toolbar-button-font-size);
-    }
-
     user-select: none;
-    &:enabled {
-        cursor: pointer;
-    }
+}
 
+.button:enabled {
+    cursor: pointer;
+}
+
+.button {
     border-radius: 3px;
     --padding-y: 2px;
     --padding-x: 3px;
@@ -25,13 +29,13 @@
     gap: var(--gap);
 
     flex-shrink: 0;
+}
 
-    > svg {
-        flex-shrink: 0;
-        width: var(--icon-size);
-        height: var(--icon-size);
-        stroke-width: 1.5px;
-    }
+.button > svg {
+    flex-shrink: 0;
+    width: var(--icon-size);
+    height: var(--icon-size);
+    stroke-width: 1.5px;
 }
 
 .button--icon-end-chevron > svg:last-child {
@@ -40,30 +44,32 @@
 
 .button--primary {
     color: var(--vscode-button-foreground);
+
     background-color: var(--vscode-button-background);
+}
 
-    &.button--no-icon-start {
-        padding-left: calc(2*var(--padding-x));
-    }
+.button--primary.button--no-icon-start {
+    padding-left: calc(2 * var(--padding-x));
+}
 
-    &.button--no-icon-end {
-        padding-right: calc(2*var(--padding-x));
-    }
+.button--primary.button--no-icon-end {
+    padding-right: calc(2 * var(--padding-x));
 }
 
 .button--secondary {
     opacity: 0.6;
     color: var(--vscode-input-foreground);
     background-color: unset;
+}
 
-    &:enabled:is(:hover, :focus-within) {
-        opacity: 1;
-    }
+.button--secondary:enabled:is(:hover, :focus-within) {
+    opacity: 1;
 }
 
 .button:disabled {
     opacity: 0.5;
-    &.button--secondary {
-        opacity: 0.7;
-    }
+}
+
+.button:disabled.button--secondary {
+    opacity: 0.7;
 }
