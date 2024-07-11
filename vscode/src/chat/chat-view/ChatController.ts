@@ -1465,7 +1465,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      */
     public async createWebviewViewOrPanel(
         activePanelViewColumn?: vscode.ViewColumn,
-        _chatId?: string,
         lastQuestion?: string
     ): Promise<vscode.WebviewView | vscode.WebviewPanel> {
         // Checks if the webview view or panel already exists and is visible.
