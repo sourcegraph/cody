@@ -1,0 +1,511 @@
+import { debounce } from 'lodash'
+import * as uuid from 'uuid'
+import * as vscode from 'vscode'
+
+import {
+    type AuthStatus,
+    CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
+    type ChatClient,
+    CodyIDE,
+    type ConfigurationWithAccessToken,
+    DEFAULT_EVENT_SOURCE,
+    type FeatureFlagProvider,
+    type Guardrails,
+    ModelUsage,
+    ModelsService,
+    STATE_VERSION_CURRENT,
+    featureFlagProvider,
+    lexicalEditorStateFromPromptString,
+    telemetryRecorder,
+} from '@sourcegraph/cody-shared'
+import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
+import type { SymfRunner } from '../../local-context/symf'
+import { logDebug, logError } from '../../log'
+import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
+import type { MessageProviderOptions } from '../MessageProvider'
+import type { ExtensionMessage } from '../protocol'
+
+import type { URI } from 'vscode-uri'
+import type { startTokenReceiver } from '../../auth/token-receiver'
+import type { ExecuteChatArguments } from '../../commands/execute/ask'
+import { getConfiguration } from '../../configuration'
+import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
+import type { ContextRankingController } from '../../local-context/context-ranking'
+import {
+    ChatController,
+    type ChatSession,
+    disposeWebviewViewOrPanel,
+    revealWebviewViewOrPanel,
+    webviewViewOrPanelOnDidChangeViewState,
+    webviewViewOrPanelViewColumn,
+} from './ChatController'
+import { chatHistory } from './ChatHistoryManager'
+
+export const CodyChatPanelViewType = 'cody.chatPanel'
+
+export type ChatPanelConfig = Pick<
+    ConfigurationWithAccessToken,
+    'internalUnstable' | 'useContext' | 'experimentalChatContextRanker'
+>
+
+export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
+    postMessage(message: ExtensionMessage): Thenable<boolean>
+}
+
+export interface PanelOptions extends MessageProviderOptions {
+    extensionUri: vscode.Uri
+    startTokenReceiver?: typeof startTokenReceiver
+}
+
+interface EditorOptions extends MessageProviderOptions {
+    extensionUri: vscode.Uri
+    featureFlagProvider: FeatureFlagProvider
+}
+
+export class ChatsController implements vscode.Disposable {
+    private panel: ChatController
+
+    // Chat views in editor panels
+    private editors: ChatController[] = []
+    private activeEditor: ChatController | undefined = undefined
+
+    private options: EditorOptions & PanelOptions
+
+    public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
+
+    // We keep track of the currently authenticated account and dispose open chats when it changes
+    private currentAuthAccount: undefined | { endpoint: string; primaryEmail: string; username: string }
+
+    protected disposables: vscode.Disposable[] = []
+
+    constructor(
+        { extensionUri, ...options }: PanelOptions,
+        private chatClient: ChatClient,
+        private readonly enterpriseContext: EnterpriseContextFactory,
+        private readonly localEmbeddings: LocalEmbeddingsController | null,
+        private readonly contextRanking: ContextRankingController | null,
+        private readonly symf: SymfRunner | null,
+        private readonly guardrails: Guardrails
+    ) {
+        logDebug('ChatsController:constructor', 'init')
+        this.options = {
+            extensionUri,
+            featureFlagProvider,
+            ...options,
+        }
+
+        this.panel = this.createProvider()
+    }
+
+    public registerViewsAndCommands() {
+        this.disposables.push(
+            vscode.window.registerTreeDataProvider(
+                'cody.support.tree.view',
+                this.supportTreeViewProvider
+            ),
+            vscode.window.registerWebviewViewProvider('cody.chat', this.panel, {
+                webviewOptions: { retainContextWhenHidden: true },
+            })
+        )
+
+        const debouncedRestorePanel = debounce(
+            async (chatID: string, chatQuestion?: string) => this.restorePanel(chatID, chatQuestion),
+            250,
+            { leading: true, trailing: true }
+        )
+        const debouncedCreateNewWebviewPanel = debounce(() => this.createWebviewPanel(), 250, {
+            leading: true,
+            trailing: true,
+        })
+
+        this.disposables.push(
+            vscode.commands.registerCommand('cody.action.chat', args => this.executeChat(args)),
+            vscode.commands.registerCommand('cody.chat.focusView', () =>
+                vscode.commands.executeCommand('cody.chat.focus')
+            ),
+            vscode.commands.registerCommand('cody.chat.signIn', () =>
+                vscode.commands.executeCommand('cody.chat.focus')
+            ),
+            vscode.commands.registerCommand(
+                'cody.chat.moveToEditor',
+                async () => await this.moveChatToEditor()
+            ),
+            vscode.commands.registerCommand(
+                'cody.chat.moveFromEditor',
+                async () => await this.moveChatFromEditor()
+            ),
+            vscode.commands.registerCommand('cody.chat.newPanel', async () => {
+                await this.resetSidebar()
+                await vscode.commands.executeCommand('cody.chat.focus')
+            }),
+            vscode.commands.registerCommand(
+                'cody.chat.newEditorPanel',
+                () => debouncedCreateNewWebviewPanel
+            ),
+            vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
+            vscode.commands.registerCommand('cody.chat.history.clear', () => this.clearHistory()),
+            vscode.commands.registerCommand('cody.chat.history.delete', item => this.clearHistory(item)),
+            vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) =>
+                debouncedRestorePanel(id, chat)
+            ),
+            vscode.commands.registerCommand(CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID, (...args) =>
+                this.passthroughVsCodeOpen(...args)
+            ),
+
+            // Mention selection/file commands
+            vscode.commands.registerCommand('cody.mention.selection', uri =>
+                this.sendEditorContextToChat(uri)
+            ),
+            vscode.commands.registerCommand('cody.mention.file', uri =>
+                this.sendEditorContextToChat(uri)
+            )
+        )
+    }
+
+    private async sendEditorContextToChat(uri?: URI): Promise<void> {
+        telemetryRecorder.recordEvent('cody.addChatContext', 'clicked')
+
+        const provider = await this.getActiveChatPanel()
+        await provider.handleGetUserEditorContext(uri)
+    }
+
+    public async revive(panel: vscode.WebviewPanel, chatID: string): Promise<void> {
+        try {
+            await this.createWebviewPanel(chatID, panel.title, panel)
+        } catch (error) {
+            console.error('revive failed', error)
+            logDebug('ChatsController:revive', 'failed', { verbose: error })
+
+            // When failed, create a new panel with restored session and dispose the old panel
+            await this.restorePanel(chatID, panel.title)
+            panel.dispose()
+        }
+    }
+
+    /**
+     * See docstring for {@link CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}.
+     */
+    private async passthroughVsCodeOpen(...args: unknown[]): Promise<void> {
+        if (args[1] && (args[1] as any).viewColumn === vscode.ViewColumn.Beside) {
+            // Make vscode.ViewColumn.Beside work as expected from a webview: open it to the side,
+            // instead of always opening a new editor to the right.
+            //
+            // If the active editor is undefined, that means the chat panel is the active editor, so
+            // we will open the file in the first visible editor instead.
+            const textEditor = vscode.window.activeTextEditor || vscode.window.visibleTextEditors[0]
+            ;(args[1] as any).viewColumn = textEditor ? textEditor.viewColumn : vscode.ViewColumn.Beside
+        }
+        if (args[1] && Array.isArray((args[1] as any).selection)) {
+            // Fix a weird issue where the selection was getting encoded as a JSON array, not an
+            // object.
+            ;(args[1] as any).selection = new vscode.Selection(
+                (args[1] as any).selection[0],
+                (args[1] as any).selection[1]
+            )
+        }
+        await vscode.commands.executeCommand('vscode.open', ...args)
+    }
+
+    /**
+     * Execute a chat request in a new chat panel
+     */
+    public async executeChat({
+        text,
+        submitType,
+        contextFiles,
+        addEnhancedContext,
+        source = DEFAULT_EVENT_SOURCE,
+        command,
+    }: ExecuteChatArguments): Promise<ChatSession | undefined> {
+        const provider = await this.getNewChatPanel()
+        const abortSignal = provider.startNewSubmitOrEditOperation()
+        const editorState = lexicalEditorStateFromPromptString(text)
+        await provider.handleUserMessageSubmission(
+            uuid.v4(),
+            text,
+            submitType,
+            contextFiles ?? [],
+            {
+                lexicalEditorState: editorState,
+                v: STATE_VERSION_CURRENT,
+                minReaderV: STATE_VERSION_CURRENT,
+            },
+            addEnhancedContext ?? true,
+            abortSignal,
+            source,
+            command
+        )
+        return provider
+    }
+
+    /**
+     * Export chat history to file system
+     */
+    private async exportHistory(): Promise<void> {
+        telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
+        const historyJson = localStorage.getChatHistory(this.options.authProvider.getAuthStatus())?.chat
+        const exportPath = await vscode.window.showSaveDialog({
+            filters: { 'Chat History': ['json'] },
+        })
+        if (!exportPath || !historyJson) {
+            return
+        }
+        try {
+            const logContent = new TextEncoder().encode(JSON.stringify(historyJson))
+            await vscode.workspace.fs.writeFile(exportPath, logContent)
+            // Display message and ask if user wants to open file
+            void vscode.window
+                .showInformationMessage('Chat history exported successfully.', 'Open')
+                .then(choice => {
+                    if (choice === 'Open') {
+                        void vscode.commands.executeCommand('vscode.open', exportPath)
+                    }
+                })
+        } catch (error) {
+            logError('ChatsController:exportHistory', 'Failed to export chat history', error)
+        }
+    }
+
+    public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
+        const hasLoggedOut = !authStatus.isLoggedIn
+        const hasSwitchedAccount =
+            this.currentAuthAccount && this.currentAuthAccount.endpoint !== authStatus.endpoint
+        if (hasLoggedOut || hasSwitchedAccount) {
+            this.disposePanels()
+        }
+
+        const endpoint = authStatus.endpoint ?? ''
+        this.currentAuthAccount = {
+            endpoint,
+            primaryEmail: authStatus.primaryEmail,
+            username: authStatus.username,
+        }
+
+        await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, authStatus.isLoggedIn)
+        this.supportTreeViewProvider.syncAuthStatus(authStatus)
+
+        this.panel.syncAuthStatus()
+    }
+
+    public async getNewChatPanel(): Promise<ChatController> {
+        const provider = await this.createWebviewPanel()
+        return provider
+    }
+
+    /**
+     * Gets the currently active chat panel provider.
+     *
+     * If editor panels exist, prefer those. Otherwise, return the sidebar provider.
+     *
+     * @returns {Promise<ChatController>} The active chat panel provider.
+     */
+    public async getActiveChatPanel(): Promise<ChatController> {
+        // Check if any existing panel is available
+        // NOTE: Never reuse webviews when running inside the agent.
+        if (this.activeEditor) {
+            if (getConfiguration().isRunningInsideAgent) {
+                return await this.createWebviewPanel()
+            }
+            return this.activeEditor
+        }
+        return this.panel
+    }
+
+    /**
+     * Creates a new webview panel for chat.
+     */
+    public async createWebviewPanel(
+        chatID?: string,
+        chatQuestion?: string,
+        panel?: vscode.WebviewPanel
+    ): Promise<ChatController> {
+        if (chatID && this.editors.map(p => p.sessionID).includes(chatID)) {
+            const provider = this.editors.find(p => p.sessionID === chatID)
+            if (provider?.webviewPanelOrView) {
+                revealWebviewViewOrPanel(provider.webviewPanelOrView)
+                this.activeEditor = provider
+                return provider
+            }
+        }
+
+        // Get the view column of the current active chat panel so that we can open a new one on top of it
+        const activePanelViewColumn = this.activeEditor?.webviewPanelOrView
+            ? webviewViewOrPanelViewColumn(this.activeEditor?.webviewPanelOrView)
+            : undefined
+
+        const provider = this.createProvider()
+        if (chatID) {
+            await provider.restoreSession(chatID)
+        } else {
+            await provider.newSession()
+        }
+        // Revives a chat panel provider for a given webview panel and session ID.
+        // Restores any existing session data. Registers handlers for view state changes and dispose events.
+        if (panel) {
+            this.activeEditor = provider
+            await provider.revive(panel)
+        } else {
+            await provider.createWebviewViewOrPanel(activePanelViewColumn, chatID, chatQuestion)
+        }
+        const sessionID = chatID || provider.sessionID
+
+        if (provider.webviewPanelOrView) {
+            webviewViewOrPanelOnDidChangeViewState(provider.webviewPanelOrView)(e => {
+                if (e.webviewPanel.visible && e.webviewPanel.active) {
+                    this.activeEditor = provider
+                }
+            })
+        }
+
+        provider.webviewPanelOrView?.onDidDispose(() => {
+            this.disposeProvider(sessionID)
+        })
+
+        this.activeEditor = provider
+        this.editors.push(provider)
+        return provider
+    }
+
+    /**
+     * Creates a provider for a chat view.
+     */
+    private createProvider(): ChatController {
+        const authStatus = this.options.authProvider.getAuthStatus()
+        const isConsumer = authStatus.isDotCom
+        const isCodyProUser = !authStatus.userCanUpgrade
+        const models = ModelsService.getModels(ModelUsage.Chat, isCodyProUser)
+
+        // Enterprise context is used for remote repositories context fetching
+        // in vs cody extension it should be always off if extension is connected
+        // to dot com instance, but in Cody Web it should be on by default for
+        // all instances (including dot com)
+        const isCodyWeb =
+            vscode.workspace.getConfiguration().get<string>('cody.advanced.agent.ide') === CodyIDE.Web
+        const allowRemoteContext = isCodyWeb || !isConsumer
+
+        return new ChatController({
+            ...this.options,
+            chatClient: this.chatClient,
+            localEmbeddings: isConsumer ? this.localEmbeddings : null,
+            contextRanking: isConsumer ? this.contextRanking : null,
+            symf: isConsumer ? this.symf : null,
+            enterpriseContext: allowRemoteContext ? this.enterpriseContext : null,
+            models,
+            guardrails: this.guardrails,
+            startTokenReceiver: this.options.startTokenReceiver,
+        })
+    }
+
+    private async clearHistory(treeItem?: vscode.TreeItem): Promise<void> {
+        const authProvider = this.options.authProvider
+        const authStatus = authProvider.getAuthStatus()
+        const chatID = treeItem?.id
+
+        // delete single chat
+        if (chatID) {
+            await chatHistory.deleteChat(authStatus, chatID)
+            this.disposeProvider(chatID)
+            return
+        }
+
+        // delete all chats
+        if (!treeItem) {
+            logDebug('ChatsController:clearHistory', 'userConfirmation')
+            // Show warning to users and get confirmation if they want to clear all history
+            const userConfirmation = await vscode.window.showWarningMessage(
+                'Are you sure you want to delete all of your chats?',
+                { modal: true },
+                'Delete All Chats'
+            )
+
+            if (!userConfirmation) {
+                return
+            }
+
+            await chatHistory.clear(authStatus)
+            this.disposePanels()
+        }
+    }
+
+    public async resetSidebar(): Promise<void> {
+        this.panel.clearAndRestartSession()
+    }
+
+    public async moveChatToEditor(): Promise<void> {
+        const sessionID = this.panel.sessionID
+        await Promise.all([this.createWebviewPanel(sessionID), this.resetSidebar()])
+    }
+
+    public async moveChatFromEditor(): Promise<void> {
+        const sessionID = this.activeEditor?.sessionID
+        if (!sessionID) {
+            return
+        }
+        await Promise.all([
+            this.panel.restoreSession(sessionID),
+            vscode.commands.executeCommand('workbench.action.closeActiveEditor'),
+        ])
+        await vscode.commands.executeCommand('cody.chat.focus')
+    }
+
+    private async restorePanel(
+        chatID: string,
+        chatQuestion?: string
+    ): Promise<ChatController | undefined> {
+        try {
+            logDebug('ChatsController', 'restorePanel')
+            // Panel already exists, just reveal it
+            const provider = this.editors.find(p => p.sessionID === chatID)
+            if (provider?.sessionID === chatID) {
+                if (provider.webviewPanelOrView) {
+                    revealWebviewViewOrPanel(provider.webviewPanelOrView)
+                }
+                this.activeEditor = provider
+                return provider
+            }
+            this.activeEditor = await this.createWebviewPanel(chatID, chatQuestion)
+            return this.activeEditor
+        } catch (error) {
+            console.error(error, 'errored restoring panel')
+            return undefined
+        }
+    }
+
+    private disposeProvider(chatID: string): void {
+        if (chatID === this.activeEditor?.sessionID) {
+            this.activeEditor = undefined
+        }
+
+        const providerIndex = this.editors.findIndex(p => p.sessionID === chatID)
+        if (providerIndex !== -1) {
+            const removedProvider = this.editors.splice(providerIndex, 1)[0]
+            if (removedProvider.webviewPanelOrView) {
+                disposeWebviewViewOrPanel(removedProvider.webviewPanelOrView)
+            }
+            removedProvider.dispose()
+        }
+    }
+
+    // Dispose all open panels
+    private disposePanels(): void {
+        // dispose activePanelProvider if exists
+        const activePanelID = this.activeEditor?.sessionID
+        if (activePanelID) {
+            this.disposeProvider(activePanelID)
+        }
+        // loop through the panel provider map
+        const oldPanelProviders = this.editors
+        this.editors = []
+        for (const provider of oldPanelProviders) {
+            if (provider.webviewPanelOrView) {
+                disposeWebviewViewOrPanel(provider.webviewPanelOrView)
+            }
+            provider.dispose()
+        }
+    }
+
+    public dispose(): void {
+        this.disposePanels()
+        vscode.Disposable.from(...this.disposables).dispose()
+    }
+}

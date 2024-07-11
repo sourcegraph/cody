@@ -19,7 +19,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { CommandResult } from './CommandResult'
 import type { MessageProviderOptions } from './chat/MessageProvider'
-import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
+import { ChatsController, CodyChatPanelViewType } from './chat/chat-view/ChatsController'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -237,7 +237,7 @@ const register = async (
         await localEmbeddings?.setAccessToken(config.serverEndpoint, config.accessToken)
     }, disposables)
 
-    const { chatManager, editorManager } = registerChat(
+    const { chatsController, editorManager } = registerChat(
         {
             context,
             platform,
@@ -252,7 +252,7 @@ const register = async (
         },
         disposables
     )
-    disposables.push(chatManager)
+    disposables.push(chatsController)
 
     const sourceControl = new CodySourceControl(chatClient)
     const statusBar = createStatusBar()
@@ -271,7 +271,7 @@ const register = async (
 
         // Reset models list based on the updated auth status and server configuration.
         await syncModels(authStatus)
-        await chatManager.syncAuthStatus(authStatus)
+        await chatsController.syncAuthStatus(authStatus)
         editorManager.syncAuthStatus(authStatus)
 
         const parallelTasks: Promise<void>[] = [
@@ -638,7 +638,7 @@ const register = async (
             async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, chatID: string) {
                 if (chatID && webviewPanel.title) {
                     logDebug('main:deserializeWebviewPanel', 'reviving last unclosed chat panel')
-                    await chatManager.revive(webviewPanel, chatID)
+                    await chatsController.revive(webviewPanel, chatID)
                 }
             },
         })
@@ -690,7 +690,7 @@ function registerChat(
     }: RegisterChatOptions,
     disposables: vscode.Disposable[]
 ): {
-    chatManager: ChatManager
+    chatsController: ChatsController
     editorManager: EditManager
 } {
     // Shared configuration that is required for chat views to send and receive messages
@@ -700,7 +700,7 @@ function registerChat(
         editor,
         authProvider,
     }
-    const chatManager = new ChatManager(
+    const chatsController = new ChatsController(
         {
             ...messageProviderOptions,
             extensionUri: context.extensionUri,
@@ -713,6 +713,7 @@ function registerChat(
         symfRunner || null,
         guardrails
     )
+    chatsController.registerViewsAndCommands()
 
     const ghostHintDecorator = new GhostHintDecorator(authProvider)
     const editorManager = new EditManager({
@@ -729,7 +730,7 @@ function registerChat(
         localEmbeddings.start()
     }
 
-    return { chatManager, editorManager }
+    return { chatsController, editorManager }
 }
 
 /**

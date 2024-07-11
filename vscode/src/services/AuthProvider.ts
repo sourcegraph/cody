@@ -19,7 +19,7 @@ import {
 
 import { AccountMenuOptions, openAccountMenu } from '../auth/account-menu'
 import { closeAuthProgressIndicator } from '../auth/auth-progress-indicator'
-import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
+import { CodyChatPanelViewType } from '../chat/chat-view/ChatsController'
 import { ACCOUNT_USAGE_URL, isLoggedIn as isAuthenticated, isSourcegraphToken } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
