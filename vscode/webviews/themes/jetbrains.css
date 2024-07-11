@@ -375,7 +375,7 @@ html[data-ide='JetBrains'] {
     --vscode-profileBadge-background: var(--jetbrains-ProgressBar-background);
     --vscode-profileBadge-foreground: var(--jetbrains-ProgressBar-foreground);
     --vscode-progressBar-background: var(--jetbrains-ProgressBar-background);
-    --vscode-quickInput-background: red !important;
+    --vscode-quickInput-background: var(--jetbrains-Tooltip-background);
     --vscode-quickInputTitle-background: var(--jetbrains-QuickInput-background);
     --vscode-remoteHub-decorations-addedForegroundColor: var(--jetbrains-ActionButton-hoverBackground);
     --vscode-remoteHub-decorations-conflictForegroundColor: var(--jetbrains-ValidationTooltip-warningBorderColor);
@@ -574,6 +574,8 @@ html[data-ide='JetBrains'] {
     --button-icon-background: var(--jetbrains-Button-iconBackground);
     --foreground: var(--jetbrains-Button-foreground);
 
+    /* todo: get this from the vscode implementation instead of hardcoded on this theme file*/
+    --vscode-font-size: 13px;
 
     /* Mimic rules injected by VSCode */
     scrollbar-color: var(--vscode-scrollbarSlider-background) var(--vscode-editor-background);
@@ -583,7 +585,7 @@ html[data-ide='JetBrains'] {
 
 html[data-ide='JetBrains'] body {
     overscroll-behavior-x: none;
-    background-color: transparent;
+    background-color: var(--jetbrains-Desktop-background);
     color: var(--vscode-editor-foreground);
     font-family: var(--vscode-font-family);
     font-weight: var(--vscode-font-weight);
