@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import {
     ClientConfigSingleton,
-    type DocumentContext,
+    DocumentContext,
     FeatureFlag,
     RateLimitError,
     contextFiltersProvider,
@@ -389,6 +389,16 @@ export class InlineCompletionItemProvider
                     return null
                 }
 
+                const autocompleteItems = analyticsItemToAutocompleteItem(
+                    result.logId,
+                    document,
+                    docContext,
+                    position,
+                    result.items,
+                    context,
+                    span
+                )
+
                 const latestCursorPosition = vscode.window.activeTextEditor?.selection.active
                 if (
                     latestCursorPosition !== undefined &&
@@ -398,7 +408,11 @@ export class InlineCompletionItemProvider
                     // This is likely due to another completion request starting, and this request staying in-flight.
                     // We must update the `position`, `context` and associated values
                     position = latestCursorPosition
-                    context = undefined
+                    // If the cursor position is the same as the position of the completion request, we should use
+                    // the provided context. This allows us to re-use useful information such as `selectedCompletionInfo`
+                    context = latestCursorPosition.isEqual(this.latestCompletionRequest.position)
+                        ? this.latestCompletionRequest.context
+                        : undefined
                     docContext = this.getDocContext(
                         document,
                         position,
@@ -437,7 +451,7 @@ export class InlineCompletionItemProvider
                     )
                 }
 
-                const visibleItems = result.items.filter(item =>
+                const visibleItems = autocompleteItems.filter(item =>
                     isCompletionVisible(
                         item,
                         document,
@@ -474,26 +488,16 @@ export class InlineCompletionItemProvider
                     }
                 }
 
-                const autocompleteItems = analyticsItemToAutocompleteItem(
-                    result.logId,
-                    document,
-                    docContext,
-                    position,
-                    visibleItems,
-                    context,
-                    span
-                )
-
                 // Store the log ID for each completion item so that we can later map to the selected
                 // item from the ID alone
-                for (const item of autocompleteItems) {
+                for (const item of visibleItems) {
                     suggestedAutocompleteItemsCache.add(item)
                 }
 
                 // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
                 const autocompleteResult: AutocompleteResult = {
                     logId: result.logId,
-                    items: updateInsertRangeForVSCode(autocompleteItems),
+                    items: updateInsertRangeForVSCode(visibleItems),
                     completionEvent: CompletionLogger.getCompletionEvent(result.logId),
                 }
 
@@ -501,7 +505,7 @@ export class InlineCompletionItemProvider
                     // Since VS Code has no callback as to when a completion is shown, we assume
                     // that if we pass the above visibility tests, the completion is going to be
                     // rendered in the UI
-                    this.unstable_handleDidShowCompletionItem(autocompleteItems[0])
+                    this.unstable_handleDidShowCompletionItem(visibleItems[0])
                 }
 
                 recordExposedExperimentsToSpan(span)

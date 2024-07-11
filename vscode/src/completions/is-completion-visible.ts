@@ -1,7 +1,7 @@
 import type * as vscode from 'vscode'
 
 import type { DocumentContext } from '@sourcegraph/cody-shared'
-import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import type { AutocompleteItem } from './suggested-autocomplete-items-cache'
 
 interface CompletionPositions {
     invokedPosition: vscode.Position
@@ -9,7 +9,7 @@ interface CompletionPositions {
 }
 
 export function isCompletionVisible(
-    completion: InlineCompletionItemWithAnalytics,
+    completion: AutocompleteItem,
     document: vscode.TextDocument,
     positions: CompletionPositions,
     docContext: DocumentContext,
@@ -53,7 +53,7 @@ export function isCompletionVisible(
 //
 // VS Code won't show a completion if it won't.
 function completionMatchesPopupItem(
-    completion: InlineCompletionItemWithAnalytics,
+    completion: AutocompleteItem,
     document: vscode.TextDocument,
     context?: vscode.InlineCompletionContext
 ): boolean {
@@ -74,7 +74,7 @@ function completionMatchesPopupItem(
 }
 
 function completionMatchesSuffix(
-    completion: Pick<InlineCompletionItemWithAnalytics, 'insertText'>,
+    completion: Pick<AutocompleteItem, 'insertText'>,
     currentLineSuffix: string
 ): boolean {
     if (typeof completion.insertText !== 'string') {
@@ -100,7 +100,7 @@ function completionMatchesSuffix(
  * using the users' current position.
  */
 function completionMatchesPrefix(
-    completion: Pick<InlineCompletionItemWithAnalytics, 'insertText'>,
+    completion: Pick<AutocompleteItem, 'insertText'>,
     document: vscode.TextDocument,
     positions: CompletionPositions
 ): boolean {
