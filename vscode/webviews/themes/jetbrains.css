@@ -255,7 +255,7 @@ html[data-ide='JetBrains'] {
     --vscode-extensionIcon-preReleaseForeground: var(--jetbrains-ExtensionIcon-preReleaseForeground);
     --vscode-extensionIcon-starForeground: var(--jetbrains-ExtensionIcon-starForeground);
     --vscode-extensionIcon-verifiedForeground: var(--jetbrains-ExtensionIcon-verifiedForeground);
-    --vscode-focusBorder: var(--jetbrains-FocusBorder);
+    --vscode-focusBorder: var(--jetbrains-Link-hoverForeground);
     --vscode-foreground: var(--jetbrains-Foreground);
     --vscode-icon-foreground: var(--jetbrains-Icon-foreground);
     --vscode-input-background: var(--jetbrains-TextField-background);
