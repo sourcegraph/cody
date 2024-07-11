@@ -370,7 +370,7 @@ describe('InlineCompletionItemProvider', () => {
             expect(spy).not.toHaveBeenCalled()
         })
 
-        it('does not log a completion if the prefix no longer matches after subsequent invocations', async () => {
+        it('does not log a completion if the prefix no longer matches due to a cursor change', async () => {
             const spy = vi.spyOn(CompletionLogger, 'suggested')
 
             const { document, position: firstPosition } = documentAndPosition(
