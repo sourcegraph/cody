@@ -11,7 +11,7 @@ html[data-ide='JetBrains'] {
     --vscode-activityBarTop-dropBorder: var(--jetbrains-MenuBar-borderColor);
     --vscode-activityBarTop-foreground: var(--jetbrains-MenuBar-foreground);
     --vscode-activityBarTop-inactiveForeground: var(--jetbrains-MenuBar-selectionForeground);
-    --vscode-badge-background: var(--jetbrains-ToolWindow-HeaderTab-underlineColor);
+    --vscode-badge-background: var(--jetbrains-Tree-selectionBackground);
     --vscode-badge-foreground: var(--jetbrains-UIDesigner-Label-foreground);
     --vscode-banner-iconForeground: var(--jetbrains-Button-foreground);
     --vscode-breadcrumb-activeSelectionForeground: var(--jetbrains-Lesson-badge-newLessonForeground);
