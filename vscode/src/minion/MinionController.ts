@@ -6,7 +6,7 @@ import type {
     MinionWebviewMessage,
 } from '../../webviews/minion/webview_protocol'
 import { InitDoer } from '../chat/chat-view/InitDoer'
-import type { SymfRunner } from '../local-context/symf'
+import type { SymfWrapper } from '../local-context/symf'
 import type { AuthProvider } from '../services/AuthProvider'
 import { MinionStorage } from './MinionStorage'
 import { PlanController } from './PlanController'
@@ -172,7 +172,7 @@ export class MinionController extends ReactPanelController<
 
     constructor(
         private authProvider: AuthProvider,
-        private symf: SymfRunner | undefined,
+        private symf: SymfWrapper,
         private anthropic: Anthropic,
         assetRoot: vscode.Uri,
         onDidDisposePanel?: () => void

@@ -78,7 +78,7 @@ import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { rewriteChatQuery } from '../../local-context/rewrite-chat-query'
-import type { SymfRunner } from '../../local-context/symf'
+import type { SymfWrapper } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
@@ -128,7 +128,7 @@ interface ChatControllerOptions {
     chatClient: ChatClient
 
     localEmbeddings: LocalEmbeddingsController | null
-    symf: SymfRunner | null
+    symf: SymfWrapper
     enterpriseContext: EnterpriseContextFactory | null
 
     contextFetcher: ContextFetcher
@@ -178,7 +178,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly codebaseStatusProvider: CodebaseStatusProvider
 
     private readonly localEmbeddings: LocalEmbeddingsController | null
-    private readonly symf: SymfRunner | null
+    private readonly symf: SymfWrapper
     private readonly remoteSearch: RemoteSearch | null
 
     private readonly contextFetcher: ContextFetcher
@@ -1032,7 +1032,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async handleSymfIndex(): Promise<void> {
         const codebase = await this.codebaseStatusProvider.currentCodebase()
         if (codebase && isFileURI(codebase.localFolder)) {
-            await this.symf?.ensureIndex(codebase.localFolder, {
+            await this.symf.runner?.ensureIndex(codebase.localFolder, {
                 retryIfLastAttemptFailed: true,
                 ignoreExisting: false,
             })

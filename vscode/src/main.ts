@@ -56,7 +56,7 @@ import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
 import type { LocalEmbeddingsController } from './local-context/local-embeddings'
-import type { SymfRunner } from './local-context/symf'
+import type { SymfWrapper } from './local-context/symf'
 import { logDebug, logError } from './log'
 import { MinionOrchestrator } from './minion/MinionOrchestrator'
 import { PoorMansBash } from './minion/environment'
@@ -190,16 +190,15 @@ const register = async (
         guardrails,
         localEmbeddings,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
-        symfRunner,
+        symf,
         contextAPIClient,
     } = await configureExternalServices(context, configWatcher, platform, authProvider)
     configWatcher.onChange(async config => {
         externalServicesOnDidConfigurationChange(config)
         localEmbeddings?.setAccessToken(config.serverEndpoint, config.accessToken)
     }, disposables)
-    if (symfRunner) {
-        disposables.push(symfRunner)
-    }
+
+    disposables.push(symf)
 
     // Initialize enterprise context
     const enterpriseContextFactory = new EnterpriseContextFactory(completionsClient)
@@ -209,7 +208,7 @@ const register = async (
     }, disposables)
 
     const editor = new VSCodeEditor()
-    const contextFetcher = new ContextFetcher(editor, symfRunner, completionsClient)
+    const contextFetcher = new ContextFetcher(editor, symf, completionsClient)
 
     const { chatsController } = registerChat(
         {
@@ -221,7 +220,7 @@ const register = async (
             authProvider,
             enterpriseContextFactory,
             localEmbeddings,
-            symfRunner,
+            symf,
             contextAPIClient,
             contextFetcher,
         },
@@ -284,7 +283,7 @@ const register = async (
         autocompleteSetup,
         openCtxSetup,
         tutorialSetup,
-        registerMinion(context, configWatcher, authProvider, symfRunner, disposables),
+        registerMinion(context, configWatcher, authProvider, symf, disposables),
     ])
     disposables.push(extensionClientDispose)
 
@@ -722,7 +721,7 @@ interface RegisterChatOptions {
     authProvider: AuthProvider
     enterpriseContextFactory: EnterpriseContextFactory
     localEmbeddings?: LocalEmbeddingsController
-    symfRunner?: SymfRunner
+    symf: SymfWrapper
     contextAPIClient?: ContextAPIClient
     contextFetcher: ContextFetcher
 }
@@ -737,7 +736,7 @@ function registerChat(
         authProvider,
         enterpriseContextFactory,
         localEmbeddings,
-        symfRunner,
+        symf,
         contextAPIClient,
         contextFetcher,
     }: RegisterChatOptions,
@@ -762,7 +761,7 @@ function registerChat(
         authProvider,
         enterpriseContextFactory,
         localEmbeddings || null,
-        symfRunner || null,
+        symf || null,
         contextFetcher,
         guardrails,
         contextAPIClient || null

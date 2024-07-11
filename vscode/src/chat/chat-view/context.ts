@@ -25,7 +25,7 @@ import type { RemoteSearch } from '../../context/remote-search'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
-import type { SymfRunner } from '../../local-context/symf'
+import type { SymfRunner, SymfWrapper } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { repoNameResolver } from '../../repository/repo-name-resolver'
 
@@ -134,7 +134,7 @@ export async function resolveContext({
     input: HumanInput
     providers: {
         localEmbeddings: LocalEmbeddingsController | null
-        symf: SymfRunner | null
+        symf: SymfWrapper
         remoteSearch: RemoteSearch | null
     }
     signal?: AbortSignal

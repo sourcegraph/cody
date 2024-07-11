@@ -2,7 +2,7 @@ import * as fspromises from 'node:fs/promises'
 import { PromptString, type RangeData, type Result } from '@sourcegraph/cody-shared'
 import { isNumber, isString } from 'lodash'
 import * as vscode from 'vscode'
-import type { SymfRunner } from '../local-context/symf'
+import type { SymfWrapper } from '../local-context/symf'
 import { logDebug } from '../log'
 
 export interface TextSnippet {
@@ -105,7 +105,7 @@ export class LocalVSCodeEnvironment implements Environment {
     private terminalInstance: PoorMansBash
     constructor(
         public readonly rootURIs: vscode.Uri[],
-        private symf: SymfRunner | undefined
+        private symf: SymfWrapper
     ) {
         this.terminalInstance = new PoorMansBash()
     }
@@ -116,12 +116,12 @@ export class LocalVSCodeEnvironment implements Environment {
     }
 
     async search(query: string): Promise<TextSnippet[]> {
-        if (!this.symf) {
+        if (!this.symf.runner) {
             throw new Error("Search requires symf, which wasn't available")
         }
 
         const queryPromptString = PromptString.unsafe_fromUserQuery(query)
-        const resultsAcrossRoots = await this.symf.getResults(queryPromptString, this.rootURIs)
+        const resultsAcrossRoots = await this.symf.runner.getResults(queryPromptString, this.rootURIs)
         const results: Result[] = (await Promise.all(resultsAcrossRoots)).flatMap(r => r)
         return (
             await Promise.all(

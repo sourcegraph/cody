@@ -130,3 +130,7 @@ export function isFreeUser(authStatus: AuthStatus): boolean {
 export function isEnterpriseUser(authStatus: AuthStatus): boolean {
     return !authStatus.isDotCom
 }
+
+export function isAuthenticated(authStatus: AuthStatus): boolean {
+    return authStatus.authenticated
+}

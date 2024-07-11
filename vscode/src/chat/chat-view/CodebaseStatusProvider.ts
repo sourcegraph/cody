@@ -14,7 +14,7 @@ import {
 import { getConfiguration } from '../../configuration'
 import type { CodebaseRepoIdMapper } from '../../context/enterprise-context-factory'
 import { getEditor } from '../../editor/active-editor'
-import type { SymfRunner } from '../../local-context/symf'
+import type { SymfWrapper } from '../../local-context/symf'
 import { RepoMetadatafromGitApi } from '../../repository/repo-metadata-from-git-api'
 import { repoNameResolver } from '../../repository/repo-name-resolver'
 
@@ -43,7 +43,7 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
 
     constructor(
         private readonly editor: Editor,
-        private readonly symf: SymfRunner | null,
+        private readonly symf: SymfWrapper,
         private readonly codebaseRepoIdMapper: CodebaseRepoIdMapper | null
     ) {
         this.disposables.push(
@@ -58,12 +58,12 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
             this.eventEmitter
         )
 
-        if (this.symf) {
+        if (this.symf.runner) {
             this.disposables.push(
-                this.symf.onIndexStart(() => {
+                this.symf.runner.onIndexStart(() => {
                     void this.updateStatus()
                 }),
-                this.symf.onIndexEnd(() => {
+                this.symf.runner.onIndexEnd(() => {
                     void this.updateStatus()
                 })
             )
@@ -176,12 +176,12 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
     }
 
     private async _updateSymfStatus_NoFire(): Promise<boolean> {
-        if (!this.symf) {
+        if (!this.symf.runner) {
             return false
         }
         const newSymfStatus =
             this._currentCodebase?.localFolder && isFileURI(this._currentCodebase.localFolder)
-                ? await this.symf.getIndexStatus(this._currentCodebase.localFolder)
+                ? await this.symf.runner.getIndexStatus(this._currentCodebase.localFolder)
                 : undefined
         const didSymfStatusChange = this.symfIndexStatus !== newSymfStatus
         this.symfIndexStatus = newSymfStatus

@@ -18,7 +18,7 @@ import { createClient as createCodeCompletionsClient } from './completions/clien
 import type { ConfigWatcher } from './configwatcher'
 import type { PlatformContext } from './extension.common'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
-import type { SymfRunner } from './local-context/symf'
+import { SymfWrapper } from './local-context/symf'
 import { logDebug, logger } from './log'
 import type { AuthProvider } from './services/AuthProvider'
 
@@ -28,11 +28,10 @@ interface ExternalServices {
     codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
     localEmbeddings: LocalEmbeddingsController | undefined
-    symfRunner: SymfRunner | undefined
+    symf: SymfWrapper
     contextAPIClient: ContextAPIClient | undefined
-
     /** Update configuration for all of the services in this interface. */
-    onConfigurationChange: (newConfig: ExternalServicesConfiguration) => void
+    onConfigurationChange: (newConfig: ExternalServicesConfiguration) => Promise<void>
 }
 
 type ExternalServicesConfiguration = Pick<
@@ -67,7 +66,7 @@ export async function configureExternalServices(
     const completionsClient = platform.createCompletionsClient(initialConfig, logger)
     const codeCompletionsClient = createCodeCompletionsClient(initialConfig, logger)
 
-    const symfRunner = platform.createSymfRunner?.(context, completionsClient)
+    const symf = new SymfWrapper(() => platform.createSymfRunner?.(context, completionsClient))
 
     if (initialConfig.codebase && isError(await graphqlClient.getRepoId(initialConfig.codebase))) {
         logDebug(
@@ -90,7 +89,7 @@ export async function configureExternalServices(
         codeCompletionsClient,
         guardrails,
         localEmbeddings,
-        symfRunner,
+        symf,
         contextAPIClient,
         onConfigurationChange: newConfig => {
             sentryService?.onConfigurationChange(newConfig)
@@ -99,6 +98,7 @@ export async function configureExternalServices(
             codeCompletionsClient.onConfigurationChange(newConfig)
             guardrails.onConfigurationChange(newConfig)
             void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
+            symf.onConfigurationChange(newConfig)
         },
     }
 }
