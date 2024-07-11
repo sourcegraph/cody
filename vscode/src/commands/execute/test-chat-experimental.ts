@@ -5,15 +5,28 @@ import {
     lexicalEditorStateFromPromptString,
     ps,
 } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
 import { selectedCodePromptWithExtraFiles } from '.'
 import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
 import { getEditor } from '../../editor/active-editor'
 import { getContextFileFromCursor } from '../context/selection'
 
 export async function experimentalUnitTestMessageSubmission(): Promise<ChatMessage | undefined> {
+    try {
+        return await chatMessageTemplate()
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to generate test prompt: ${error}`)
+        return
+    }
+}
+
+async function chatMessageTemplate(): Promise<ChatMessage | undefined> {
     const editor = getEditor()?.active
     const document = editor?.document
-    if (!document || (await isUriIgnoredByContextFilterWithNotification(document.uri, 'test'))) {
+    if (!document) {
+        throw new Error('No active document')
+    }
+    if (await isUriIgnoredByContextFilterWithNotification(document.uri, 'test')) {
         return
     }
     const contextFile = await getContextFileFromCursor()
@@ -23,7 +36,7 @@ export async function experimentalUnitTestMessageSubmission(): Promise<ChatMessa
 
     const { content } = PromptString.fromContextItem(contextFile)
     if (!content) {
-        return
+        throw new Error('active editor content is empty when used as context item')
     }
     const prompt = ps`Your task is to generate a suit of multiple unit tests for the functions defined inside the ${selectedCodePromptWithExtraFiles(
         contextFile,
