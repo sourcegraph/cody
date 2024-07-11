@@ -11,8 +11,8 @@ html[data-ide='JetBrains'] {
     --vscode-activityBarTop-dropBorder: var(--jetbrains-MenuBar-borderColor);
     --vscode-activityBarTop-foreground: var(--jetbrains-MenuBar-foreground);
     --vscode-activityBarTop-inactiveForeground: var(--jetbrains-MenuBar-selectionForeground);
-    --vscode-badge-background: var(--jetbrains-Tag-background);
-    --vscode-badge-foreground: var(--jetbrains-Label-foreground);
+    --vscode-badge-background: var(--jetbrains-ToolWindow-HeaderTab-underlineColor);
+    --vscode-badge-foreground: var(--jetbrains-UIDesigner-Label-foreground);
     --vscode-banner-iconForeground: var(--jetbrains-Button-foreground);
     --vscode-breadcrumb-activeSelectionForeground: var(--jetbrains-Lesson-badge-newLessonForeground);
     --vscode-breadcrumb-background: var(--jetbrains-EditorPane-background);
@@ -262,9 +262,12 @@ html[data-ide='JetBrains'] {
     --vscode-input-border: var(--jetbrains-TextArea-inactiveForeground);
     --vscode-input-foreground: var(--jetbrains-TextField-foreground);
     --vscode-input-placeholderForeground: var(--jetbrains-TextField-inactiveForeground);
-    --vscode-inputOption-activeBackground: var(--jetbrains-TextField-highlight);
+
+    /*tags inside chat input box*/
+    --vscode-inputOption-activeBackground: var(--jetbrains-ToolWindow-HeaderTab-underlineColor);
+    --vscode-inputOption-activeForeground: var(--jetbrains-UIDesigner-Label-foreground);
+
     --vscode-inputOption-activeBorder: var(--jetbrains-TextField-borderColor);
-    --vscode-inputOption-activeForeground: var(--jetbrains-TextField-caretForeground);
     --vscode-inputValidation-errorBackground: var(--jetbrains-InputValidation-errorBackground);
     --vscode-inputValidation-errorBorder: var(--jetbrains-InputValidation-errorBorder);
     --vscode-inputValidation-infoBackground: var(--jetbrains-InputValidation-infoBackground);
