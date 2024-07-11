@@ -101,14 +101,14 @@ import type {
 import { countGeneratedCode } from '../utils'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType, addWebviewViewHTML } from './ChatManager'
+import { ChatModel, prepareChatMessage } from './ChatModel'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
-import { SimpleChatModel, prepareChatMessage } from './SimpleChatModel'
 import { getChatPanelTitle, openFile } from './chat-helpers'
 import { getContextStrategy, getEnhancedContext } from './context'
 import { DefaultPrompter } from './prompt'
 
-interface SimpleChatPanelProviderOptions {
+interface ChatControllerOptions {
     extensionUri: vscode.Uri
     authProvider: AuthProvider
     chatClient: ChatClient
@@ -128,7 +128,7 @@ export interface ChatSession {
     sessionID: string
 }
 /**
- * SimpleChatPanelProvider is the view controller class for the chat panel.
+ * ChatController is the view controller class for the chat panel.
  * It handles all events sent from the view, keeps track of the underlying chat model,
  * and interacts with the rest of the extension.
  *
@@ -154,10 +154,8 @@ export interface ChatSession {
  *    with other components outside the model and view is needed,
  *    use a broadcast/subscription design.
  */
-export class SimpleChatPanelProvider
-    implements vscode.Disposable, vscode.WebviewViewProvider, ChatSession
-{
-    private chatModel: SimpleChatModel
+export class ChatController implements vscode.Disposable, vscode.WebviewViewProvider, ChatSession {
+    private chatModel: ChatModel
 
     private readonly authProvider: AuthProvider
     private readonly chatClient: ChatClient
@@ -195,7 +193,7 @@ export class SimpleChatPanelProvider
         enterpriseContext,
         startTokenReceiver,
         featureFlagProvider,
-    }: SimpleChatPanelProviderOptions) {
+    }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
         this.chatClient = chatClient
@@ -207,7 +205,7 @@ export class SimpleChatPanelProvider
         this.editor = editor
         this.featureFlagProvider = featureFlagProvider
 
-        this.chatModel = new SimpleChatModel(getDefaultModelID(authProvider, models))
+        this.chatModel = new ChatModel(getDefaultModelID(authProvider, models))
 
         this.guardrails = guardrails
         this.startTokenReceiver = startTokenReceiver
@@ -555,7 +553,7 @@ export class SimpleChatPanelProvider
             authStatus,
             workspaceFolderUris,
         })
-        logDebug('SimpleChatPanelProvider', 'updateViewConfig', {
+        logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
         })
     }
@@ -1089,7 +1087,7 @@ export class SimpleChatPanelProvider
      * Display error message in webview as part of the chat transcript, or as a system banner alongside the chat.
      */
     private postError(error: Error, type?: MessageErrorType): void {
-        logDebug('SimpleChatPanelProvider: postError', error.message)
+        logDebug('ChatController: postError', error.message)
         // Add error to transcript
         if (type === 'transcript') {
             this.chatModel.addErrorAsBotMessage(error)
@@ -1130,7 +1128,7 @@ export class SimpleChatPanelProvider
         })
         // Only log non-empty status to reduce noises.
         if (status.length > 0) {
-            logDebug('SimpleChatPanelProvider', 'postContextStatus', JSON.stringify(status))
+            logDebug('ChatController', 'postContextStatus', JSON.stringify(status))
         }
     }
 
@@ -1230,7 +1228,7 @@ export class SimpleChatPanelProvider
         firstTokenSpan: Span,
         abortSignal: AbortSignal
     ): void {
-        logDebug('SimpleChatPanelProvider', 'streamAssistantResponse', {
+        logDebug('ChatController', 'streamAssistantResponse', {
             verbose: { requestID, prompt },
         })
         let firstTokenMeasured = false
@@ -1384,7 +1382,7 @@ export class SimpleChatPanelProvider
     // #region session management
     // =======================================================================
 
-    // A unique identifier for this SimpleChatPanelProvider instance used to identify
+    // A unique identifier for this ChatController instance used to identify
     // it when a handle to this specific panel provider is needed.
     public get sessionID(): string {
         return this.chatModel.sessionID
@@ -1441,7 +1439,7 @@ export class SimpleChatPanelProvider
         this.cancelSubmitOrEditOperation()
         await this.saveSession()
 
-        this.chatModel = new SimpleChatModel(this.chatModel.modelID)
+        this.chatModel = new ChatModel(this.chatModel.modelID)
         this.postViewTranscript()
     }
 
@@ -1496,7 +1494,7 @@ export class SimpleChatPanelProvider
      * Revives the chat panel when the extension is reactivated.
      */
     public async revive(webviewPanel: vscode.WebviewPanel): Promise<void> {
-        logDebug('SimpleChatPanelProvider:revive', 'registering webview panel')
+        logDebug('ChatController:revive', 'registering webview panel')
         await this.registerWebviewPanel(webviewPanel)
     }
 
@@ -1611,8 +1609,8 @@ export class SimpleChatPanelProvider
 function newChatModelFromSerializedChatTranscript(
     json: SerializedChatTranscript,
     modelID: string
-): SimpleChatModel {
-    return new SimpleChatModel(
+): ChatModel {
+    return new ChatModel(
         migrateAndNotifyForOutdatedModels(json.chatModel || modelID)!,
         json.interactions.flatMap((interaction: SerializedChatInteraction): ChatMessage[] =>
             [

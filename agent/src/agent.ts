@@ -27,7 +27,7 @@ import {
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
-import { SimpleChatModel } from '../../vscode/src/chat/chat-view/SimpleChatModel'
+import { ChatModel } from '../../vscode/src/chat/chat-view/ChatModel'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
@@ -1081,7 +1081,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                       authStatus.isDotCom && !authStatus.userCanUpgrade
                   ).at(0)?.model ?? ''
             const chatMessages = messages?.map(m => PromptString.unsafe_deserializeChatMessage(m)) ?? []
-            const chatModel = new SimpleChatModel(theModel, chatMessages, chatID)
+            const chatModel = new ChatModel(theModel, chatMessages, chatID)
             await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
             return this.createChatPanel(
                 Promise.resolve({

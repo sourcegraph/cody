@@ -2,7 +2,7 @@ import * as assert from 'node:assert'
 
 import * as vscode from 'vscode'
 
-import type { SimpleChatPanelProvider } from '../../../src/chat/chat-view/SimpleChatPanelProvider'
+import type { ChatController } from '../../../src/chat/chat-view/ChatController'
 
 import {
     afterIntegrationTest,
@@ -13,7 +13,7 @@ import {
     waitUntil,
 } from '../helpers'
 
-async function getChatViewProvider(): Promise<SimpleChatPanelProvider> {
+async function getChatViewProvider(): Promise<ChatController> {
     const chatViewProvider = await getExtensionAPI().exports.testing?.chatPanelProvider.get()
     assert.ok(chatViewProvider)
     return chatViewProvider

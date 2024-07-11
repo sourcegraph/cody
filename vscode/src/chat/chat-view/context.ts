@@ -75,7 +75,7 @@ export async function getEnhancedContext({
     return wrapInActiveSpan('chat.enhancedContext', async () => {
         // use user attention context only if config is set to none
         if (strategy === 'none') {
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > none')
+            logDebug('ChatController', 'getEnhancedContext > none')
             return getVisibleEditorContext(editor)
         }
 
@@ -290,10 +290,7 @@ async function searchSymf(
                     try {
                         text = await editor.getTextEditorContentForFile(result.file, range)
                     } catch (error) {
-                        logError(
-                            'SimpleChatPanelProvider.searchSymf',
-                            `Error getting file contents: ${error}`
-                        )
+                        logError('ChatController.searchSymf', `Error getting file contents: ${error}`)
                         return []
                     }
                     return {
@@ -322,7 +319,7 @@ async function searchEmbeddingsLocal(
             return []
         }
 
-        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching local embeddings')
+        logDebug('ChatController', 'getEnhancedContext > searching local embeddings')
         const contextItems: ContextItem[] = []
         const embeddingsResults = await localEmbeddings.getContext(text, numResults)
         span.setAttribute('numResults', embeddingsResults.length)
@@ -501,12 +498,12 @@ function extractQuestion(input: string): string | undefined {
 
 async function retrieveContextGracefully<T>(promise: Promise<T[]>, strategy: string): Promise<T[]> {
     try {
-        logDebug('SimpleChatPanelProvider', `getEnhancedContext > ${strategy} (start)`)
+        logDebug('ChatController', `getEnhancedContext > ${strategy} (start)`)
         return await promise
     } catch (error) {
-        logError('SimpleChatPanelProvider', `getEnhancedContext > ${strategy}' (error)`, error)
+        logError('ChatController', `getEnhancedContext > ${strategy}' (error)`, error)
         return []
     } finally {
-        logDebug('SimpleChatPanelProvider', `getEnhancedContext > ${strategy} (end)`)
+        logDebug('ChatController', `getEnhancedContext > ${strategy} (end)`)
     }
 }
