@@ -160,16 +160,11 @@ export class ChatsController implements vscode.Disposable {
                 await this.panel.clearAndRestartSession()
                 await vscode.commands.executeCommand('cody.chat.focus')
             }),
-            vscode.commands.registerCommand(
-                'cody.chat.newEditorPanel',
-                () => debouncedCreateNewWebviewPanel
-            ),
+            vscode.commands.registerCommand('cody.chat.newEditorPanel', debouncedCreateNewWebviewPanel),
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', () => this.clearHistory()),
             vscode.commands.registerCommand('cody.chat.history.delete', item => this.clearHistory(item)),
-            vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) =>
-                debouncedRestoreToEditor(id, chat)
-            ),
+            vscode.commands.registerCommand('cody.chat.panel.restore', debouncedRestoreToEditor),
             vscode.commands.registerCommand(CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID, (...args) =>
                 this.passthroughVsCodeOpen(...args)
             ),
@@ -321,7 +316,7 @@ export class ChatsController implements vscode.Disposable {
         // delete single chat
         if (chatID) {
             await chatHistory.deleteChat(authStatus, chatID)
-            this.disposeChat(chatID)
+            this.disposeChat(chatID, true)
             return
         }
 
@@ -404,7 +399,7 @@ export class ChatsController implements vscode.Disposable {
                 }
             })
             chatController.webviewPanelOrView.onDidDispose(() => {
-                this.disposeChat(chatController.sessionID)
+                this.disposeChat(chatController.sessionID, false)
             })
         }
 
@@ -441,7 +436,7 @@ export class ChatsController implements vscode.Disposable {
         })
     }
 
-    private disposeChat(chatID: string): void {
+    private disposeChat(chatID: string, includePanel: boolean): void {
         if (chatID === this.activeEditor?.sessionID) {
             this.activeEditor = undefined
         }
@@ -455,7 +450,7 @@ export class ChatsController implements vscode.Disposable {
             removedProvider.dispose()
         }
 
-        if (chatID === this.panel.sessionID) {
+        if (includePanel && chatID === this.panel.sessionID) {
             this.panel.clearAndRestartSession()
         }
     }
