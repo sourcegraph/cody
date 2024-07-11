@@ -4,7 +4,7 @@ import { chatHistory } from '../chat/chat-view/ChatHistoryManager'
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 
 import { type AuthStatus, type ChatMessage, PromptString } from '@sourcegraph/cody-shared'
-import { prepareChatMessage } from '../chat/chat-view/SimpleChatModel'
+import { prepareChatMessage } from '../chat/chat-view/ChatModel'
 import { getRelativeChatPeriod } from '../common/time-date'
 import type { CodySidebarTreeItem } from './tree-views/treeViewItems'
 

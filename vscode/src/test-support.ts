@@ -1,5 +1,5 @@
 import { type ChatMessage, type IgnoreHelper, ps } from '@sourcegraph/cody-shared'
-import type { SimpleChatPanelProvider } from './chat/chat-view/SimpleChatPanelProvider'
+import type { ChatController } from './chat/chat-view/ChatController'
 
 // A one-slot channel which lets readers block on a value being
 // available from a writer. Tests use this to wait for the
@@ -34,7 +34,7 @@ class Rendezvous<T> {
 // integration test.
 export class TestSupport {
     public static instance: TestSupport | undefined
-    public chatPanelProvider = new Rendezvous<SimpleChatPanelProvider>()
+    public chatPanelProvider = new Rendezvous<ChatController>()
     public ignoreHelper = new Rendezvous<IgnoreHelper>()
 
     public ps = ps

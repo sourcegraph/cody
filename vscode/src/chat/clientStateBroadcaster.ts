@@ -11,7 +11,7 @@ import * as vscode from 'vscode'
 import { getSelectionOrFileContext } from '../commands/context/selection'
 import { createRemoteRepositoryMention } from '../context/openctx/remoteRepositorySearch'
 import type { RemoteSearch } from '../context/remote-search'
-import type { SimpleChatModel } from './chat-view/SimpleChatModel'
+import type { ChatModel } from './chat-view/ChatModel'
 import { contextItemMentionFromOpenCtxItem } from './context/chatContext'
 import type { ExtensionMessage } from './protocol'
 
@@ -27,7 +27,7 @@ export function startClientStateBroadcaster({
 }: {
     remoteSearch: RemoteSearch | null
     postMessage: PostMessage
-    chatModel: SimpleChatModel
+    chatModel: ChatModel
 }): vscode.Disposable {
     const postMessage = idempotentPostMessage(rawPostMessage)
 
