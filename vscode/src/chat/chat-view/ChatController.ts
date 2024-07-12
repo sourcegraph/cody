@@ -535,12 +535,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         void this.sendConfig()
 
         // Get the latest model list available to the current user to update the ChatModel.
-        const authStatus = this.authProvider.getAuthStatus()
-        const models = ModelsService.getModels(
-            ModelUsage.Chat,
-            authStatus.isDotCom && !authStatus.userCanUpgrade
-        )
-        this.handleSetChatModel(getDefaultModelID(this.authProvider, models))
+        this.handleSetChatModel(getDefaultModelID(this.authProvider.getAuthStatus()))
     }
 
     // When the webview sends the 'ready' message, respond by posting the view config
