@@ -921,6 +921,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     },
     autocompleteFirstCompletionTimeout: 3500,
     autocompleteExperimentalSmartThrottle: false,
+    autocompleteExperimentalSmartThrottleExtended: false,
     testingModelConfig: undefined,
     experimentalChatContextRanker: false,
 } satisfies Configuration

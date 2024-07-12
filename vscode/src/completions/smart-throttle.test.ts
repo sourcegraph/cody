@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { TriggerKind } from './get-inline-completions'
 import type { RequestParams } from './request-manager'
-import { SmartThrottleService, THROTTLE_TIMEOUT } from './smart-throttle'
+import { DEFAULT_THROTTLE_TIMEOUT, SmartThrottleService } from './smart-throttle'
 import { documentAndPosition } from './test-helpers'
 
 describe('SmartThrottleService', () => {
@@ -63,7 +63,7 @@ describe('SmartThrottleService', () => {
         expect(thirdThrottledRequest?.abortSignal?.aborted).toBe(false)
 
         // The third request will be promoted if enough time passes since the last promotion
-        vi.advanceTimersByTime(THROTTLE_TIMEOUT + 10)
+        vi.advanceTimersByTime(DEFAULT_THROTTLE_TIMEOUT + 10)
 
         const fourthThrottledRequest = await service.throttle(createRequest('foo█'), TriggerKind.Manual)
 

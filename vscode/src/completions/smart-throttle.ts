@@ -6,8 +6,8 @@ import { forkSignal, sleep } from './utils'
 
 // The throttle timeout is relatively high so that we do not keep a lot of concurrent requests. 250
 // is chosen as it will keep about 2 requests concurrent with our current median latency of about
-// 500ms.
-export const THROTTLE_TIMEOUT = 250
+// 500ms
+export const DEFAULT_THROTTLE_TIMEOUT = 250
 
 // A smart throttle service for autocomplete requests. The idea is to move beyond a simple debounce
 // based timeout and start a bunch of requests immediately. Additionally, we also want to be more
@@ -29,6 +29,12 @@ export class SmartThrottleService implements vscode.Disposable {
     // The timestamp when the latest tail request was prompted to a throttled-request. When it
     // exceeds the throttle timeout, a tail request will be promoted again.
     private lastThrottlePromotion = 0
+
+    private THROTTLE_TIMEOUT: number
+
+    constructor(timeout = DEFAULT_THROTTLE_TIMEOUT) {
+        this.THROTTLE_TIMEOUT = timeout
+    }
 
     async throttle(request: RequestParams, triggerKind: TriggerKind): Promise<RequestParams | null> {
         return wrapInActiveSpan('autocomplete.smartThrottle', async () => {
@@ -53,7 +59,7 @@ export class SmartThrottleService implements vscode.Disposable {
             // Case 2: The last throttled promotion is more than the throttle timeout ago. In this case,
             //         promote the last tail request to a throttled request and continue with the third
             //         case.
-            if (now - this.lastThrottlePromotion > THROTTLE_TIMEOUT && this.tailRequest) {
+            if (now - this.lastThrottlePromotion > this.THROTTLE_TIMEOUT && this.tailRequest) {
                 // Setting tailRequest to null will make sure the throttled request can no longer be
                 // cancelled by this logic.
                 this.tailRequest = null
