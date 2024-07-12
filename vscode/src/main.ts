@@ -145,14 +145,22 @@ const register = async (
 
     // Initialize singletons
     await configWatcher.onChange(
-        async config => {
-            await localStorage.setConfig(config)
-            await configureEventsInfra(config, isExtensionModeDevOrTest, await authProviderPromise)
+        config => {
+            const promises: Promise<void>[] = []
+
+            promises.push(localStorage.setConfig(config))
+            promises.push(
+                authProviderPromise.then(authProvider =>
+                    configureEventsInfra(config, isExtensionModeDevOrTest, authProvider)
+                )
+            )
             graphqlClient.setConfig(config)
-            await featureFlagProvider.refresh()
-            await contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
+            promises.push(featureFlagProvider.refresh())
+            promises.push(contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri))
             ModelsService.onConfigChange()
             upstreamHealthProvider.onConfigurationChange(config)
+
+            return Promise.all(promises).then()
         },
         disposables,
         { runImmediately: true }
