@@ -76,7 +76,7 @@ export class EditManager implements vscode.Disposable {
         this.disposables.push(this.controller, editCommand, startCommand)
     }
 
-    public syncAuthStatus(authStatus: AuthStatus): void {
+    public setAuthStatus(authStatus: AuthStatus): void {
         this.models = getEditModelsForUser(authStatus)
     }
 

@@ -873,7 +873,7 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
         return this.enabledFlags.has(flag)
     }
 
-    public syncAuthStatus(): Promise<void> {
+    public refresh(): Promise<void> {
         return Promise.resolve()
     }
 }

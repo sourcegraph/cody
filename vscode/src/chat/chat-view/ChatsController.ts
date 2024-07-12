@@ -73,7 +73,7 @@ export class ChatsController implements vscode.Disposable {
         this.panel = this.createChatController()
     }
 
-    public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
+    public async setAuthStatus(authStatus: AuthStatus): Promise<void> {
         const hasLoggedOut = !authStatus.isLoggedIn
         const hasSwitchedAccount =
             this.currentAuthAccount && this.currentAuthAccount.endpoint !== authStatus.endpoint

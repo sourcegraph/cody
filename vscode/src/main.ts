@@ -183,7 +183,7 @@ const register = async (
 
     await configWatcher.initAndOnChange(async config => {
         graphqlClient.setConfig(config)
-        await featureFlagProvider.syncAuthStatus()
+        await featureFlagProvider.refresh()
     }, disposables)
 
     // Initialize external services
@@ -199,7 +199,7 @@ const register = async (
     } = await configureExternalServices(context, initialConfig, platform, authProvider)
     configWatcher.onChange(async config => {
         externalServicesOnDidConfigurationChange(config)
-        symfRunner?.setSourcegraphAuth(config.serverEndpoint, config.accessToken)
+        symfRunner?.setAuthStatus(config.serverEndpoint, config.accessToken)
     }, disposables)
 
     if (symfRunner) {
@@ -266,20 +266,17 @@ const register = async (
             graphqlClient.setConfig(newConfig)
 
             // Refresh server configuration that controls features enablement and models.
-            await ClientConfigSingleton.getInstance().syncAuthStatus(authStatus)
+            await ClientConfigSingleton.getInstance().setAuthStatus(authStatus)
 
             // Reset models list based on the updated auth status and server configuration.
             await syncModels(authStatus)
-            await chatsController.syncAuthStatus(authStatus)
-            editorManager.syncAuthStatus(authStatus)
+            await chatsController.setAuthStatus(authStatus)
+            editorManager.setAuthStatus(authStatus)
 
-            const parallelTasks: Promise<void>[] = [
-                featureFlagProvider.syncAuthStatus(),
-                setupAutocomplete(),
-            ]
+            const parallelTasks: Promise<void>[] = [featureFlagProvider.refresh(), setupAutocomplete()]
             await Promise.all(parallelTasks)
 
-            symfRunner?.setSourcegraphAuth(authStatus.endpoint, newConfig.accessToken)
+            symfRunner?.setAuthStatus(authStatus.endpoint, newConfig.accessToken)
 
             void exposeOpenCtxClient(
                 context,
@@ -288,8 +285,8 @@ const register = async (
                 platform.createOpenCtxController
             )
 
-            statusBar.syncAuthStatus(authStatus)
-            sourceControl.syncAuthStatus(authStatus)
+            statusBar.setAuthStatus(authStatus)
+            sourceControl.setAuthStatus(authStatus)
             await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
 
             const eventValue =

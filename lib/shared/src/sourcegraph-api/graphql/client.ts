@@ -1342,7 +1342,7 @@ export class ClientConfigSingleton {
         return ClientConfigSingleton.instance
     }
 
-    public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
+    public async setAuthStatus(authStatus: AuthStatus): Promise<void> {
         this.isSignedIn = authStatus.authenticated && authStatus.isLoggedIn
         if (this.isSignedIn) {
             await this.refreshConfig()

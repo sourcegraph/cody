@@ -96,7 +96,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return this.status.onDidEnd(cb)
     }
 
-    public setSourcegraphAuth(endpoint: string | null, authToken: string | null): void {
+    public setAuthStatus(endpoint: string | null, authToken: string | null): void {
         this.sourcegraphServerEndpoint = endpoint
         this.authToken = authToken
     }

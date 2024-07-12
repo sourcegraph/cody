@@ -195,7 +195,7 @@ describe('Cody Pro expiration notifications', () => {
         // For testing, our poll period is set to 10ms, so enable the flag and then wait
         // to allow that to trigger
         enabledFeatureFlags.add(FeatureFlag.UseSscForCodySubscription)
-        featureFlagProvider.syncAuthStatus() // Force clear cache of feature flags
+        featureFlagProvider.refresh() // Force clear cache of feature flags
         await new Promise(resolve => setTimeout(resolve, 20))
 
         // Should have been called by the timer.
