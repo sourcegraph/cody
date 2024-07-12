@@ -268,12 +268,12 @@ html[data-ide='JetBrains'] {
     --vscode-inputOption-activeForeground: var(--jetbrains-UIDesigner-Label-foreground);
 
     --vscode-inputOption-activeBorder: var(--jetbrains-TextField-borderColor);
-    --vscode-inputValidation-errorBackground: var(--jetbrains-InputValidation-errorBackground);
-    --vscode-inputValidation-errorBorder: var(--jetbrains-InputValidation-errorBorder);
-    --vscode-inputValidation-infoBackground: var(--jetbrains-InputValidation-infoBackground);
-    --vscode-inputValidation-infoBorder: var(--jetbrains-InputValidation-infoBorder);
-    --vscode-inputValidation-warningBackground: var(--jetbrains-InputValidation-warningBackground);
-    --vscode-inputValidation-warningBorder: var(--jetbrains-InputValidation-warningBorder);
+    --vscode-inputValidation-errorBackground: var(--jetbrains-Notification-ToolWindow-errorBackground);
+    --vscode-inputValidation-errorBorder: var(--jetbrains-Notification-ToolWindow-errorBorderColor);
+    --vscode-inputValidation-infoBackground: var(--jetbrains-Notification-ToolWindow-informativeBackground);
+    --vscode-inputValidation-infoBorder: var(--jetbrains-Notification-ToolWindow-informativeBorderColor);
+    --vscode-inputValidation-warningBackground: var(--jetbrains-Notification-ToolWindow-warningBackground);
+    --vscode-inputValidation-warningBorder: var(--jetbrains-Notification-ToolWindow-warningBorderColor);
     --vscode-interactive-activeCodeBorder: var(--jetbrains-Interactive-activeCodeBorder);
     --vscode-interactive-inactiveCodeBorder: var(--jetbrains-Interactive-inactiveCodeBorder);
     --vscode-keybindingLabel-background: var(--jetbrains-KeybindingLabel-background);
