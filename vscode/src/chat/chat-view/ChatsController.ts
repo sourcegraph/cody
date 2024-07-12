@@ -74,7 +74,9 @@ export class ChatsController implements vscode.Disposable {
         logDebug('ChatsController:constructor', 'init')
         this.panel = this.createChatController()
         this.disposables.push(
-            this.authProvider.initAndOnChange(authStatus => this.setAuthStatus(authStatus))
+            this.authProvider.onChange(authStatus => this.setAuthStatus(authStatus), {
+                runImmediately: true,
+            })
         )
     }
 

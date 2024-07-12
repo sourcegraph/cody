@@ -133,7 +133,6 @@ const register = async (
     disposable: vscode.Disposable
 }> => {
     const disposables: vscode.Disposable[] = []
-    const initialConfig = configWatcher.get()
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
@@ -145,17 +144,25 @@ const register = async (
     disposables.push(manageDisplayPathEnvInfoForExtension())
 
     // Init local storage
-    await configWatcher.initAndOnChange(async config => {
-        await localStorage.setConfig(config)
-    }, disposables)
+    await configWatcher.onChange(
+        async config => {
+            await localStorage.setConfig(config)
+        },
+        disposables,
+        { runImmediately: true }
+    )
 
     // Ensure Git API is available
     disposables.push(await initVSCodeGitApi())
 
     // Telemetry
-    await configWatcher.initAndOnChange(async config => {
-        await configureEventsInfra(config, isExtensionModeDevOrTest, await authProviderPromise)
-    }, disposables)
+    await configWatcher.onChange(
+        async config => {
+            await configureEventsInfra(config, isExtensionModeDevOrTest, await authProviderPromise)
+        },
+        disposables,
+        { runImmediately: true }
+    )
 
     registerParserListeners(disposables)
 
@@ -171,6 +178,7 @@ const register = async (
         })
     )
 
+    const initialConfig = configWatcher.get()
     const authProvider = await authProviderPromise
     if (authProvider.getAuthStatus().authenticated) {
         await exposeOpenCtxClient(
@@ -181,10 +189,14 @@ const register = async (
         )
     }
 
-    await configWatcher.initAndOnChange(async config => {
-        graphqlClient.setConfig(config)
-        await featureFlagProvider.refresh()
-    }, disposables)
+    await configWatcher.onChange(
+        async config => {
+            graphqlClient.setConfig(config)
+            await featureFlagProvider.refresh()
+        },
+        disposables,
+        { runImmediately: true }
+    )
 
     // Initialize external services
     const {
@@ -259,52 +271,62 @@ const register = async (
 
     // Listen for auth changes
     disposables.push(
-        authProvider.initAndOnChange(async (authStatus: AuthStatus) => {
-            // NOTE: MUST update the config and graphQL client first.
-            // graphqlClient.setConfig(newConfig)
+        authProvider.onChange(
+            async (authStatus: AuthStatus) => {
+                // NOTE: MUST update the config and graphQL client first.
+                // graphqlClient.setConfig(newConfig)
 
-            const newConfig = await getFullConfig()
+                const newConfig = await getFullConfig()
 
-            // Refresh server configuration that controls features enablement and models.
-            await ClientConfigSingleton.getInstance().setAuthStatus(authStatus)
+                // Refresh server configuration that controls features enablement and models.
+                await ClientConfigSingleton.getInstance().setAuthStatus(authStatus)
 
-            // // Reset models list based on the updated auth status and server configuration.
-            // await syncModels(authStatus)
+                // // Reset models list based on the updated auth status and server configuration.
+                // await syncModels(authStatus)
 
-            editorManager.setAuthStatus(authStatus)
+                editorManager.setAuthStatus(authStatus)
 
-            const parallelTasks: Promise<void>[] = [featureFlagProvider.refresh(), setupAutocomplete()]
-            await Promise.all(parallelTasks)
+                const parallelTasks: Promise<void>[] = [
+                    featureFlagProvider.refresh(),
+                    setupAutocomplete(),
+                ]
+                await Promise.all(parallelTasks)
 
-            void exposeOpenCtxClient(
-                context,
-                newConfig,
-                authStatus.isDotCom,
-                platform.createOpenCtxController
-            )
+                void exposeOpenCtxClient(
+                    context,
+                    newConfig,
+                    authStatus.isDotCom,
+                    platform.createOpenCtxController
+                )
 
-            statusBar.setAuthStatus(authStatus)
-            sourceControl.setAuthStatus(authStatus)
-            await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
+                statusBar.setAuthStatus(authStatus)
+                sourceControl.setAuthStatus(authStatus)
+                await PromptMixin.updateContextPreamble(
+                    isExtensionModeDevOrTest || isRunningInsideAgent()
+                )
 
-            let eventValue: 'disconnected' | 'connected' | 'failed'
-            if (!authStatus.isLoggedIn && !authStatus.endpoint) {
-                eventValue = 'disconnected'
-            } else if (
-                authStatus.isLoggedIn &&
-                !(authStatus.showNetworkError || authStatus.showInvalidAccessTokenError)
-            ) {
-                eventValue = 'connected'
-            } else {
-                eventValue = 'failed'
-            }
-            telemetryRecorder.recordEvent('cody.auth', eventValue)
-        })
+                let eventValue: 'disconnected' | 'connected' | 'failed'
+                if (!authStatus.isLoggedIn && !authStatus.endpoint) {
+                    eventValue = 'disconnected'
+                } else if (
+                    authStatus.isLoggedIn &&
+                    !(authStatus.showNetworkError || authStatus.showInvalidAccessTokenError)
+                ) {
+                    eventValue = 'connected'
+                } else {
+                    eventValue = 'failed'
+                }
+                telemetryRecorder.recordEvent('cody.auth', eventValue)
+            },
+            { runImmediately: true }
+        )
     )
 
     // Setup config watcher
-    configWatcher.onChange(setupAutocomplete, disposables)
-    await configWatcher.initAndOnChange(() => ModelsService.onConfigChange(), disposables)
+    void configWatcher.onChange(setupAutocomplete, disposables)
+    await configWatcher.onChange(() => ModelsService.onConfigChange(), disposables, {
+        runImmediately: true,
+    })
 
     setCommandController(platform.createCommandsProvider?.())
     repoNameResolver.init(authProvider)
@@ -536,9 +558,13 @@ const register = async (
         new CharactersLogger(),
         upstreamHealthProvider
     )
-    await configWatcher.initAndOnChange(async config => {
-        upstreamHealthProvider.onConfigurationChange(config)
-    }, disposables)
+    await configWatcher.onChange(
+        async config => {
+            upstreamHealthProvider.onConfigurationChange(config)
+        },
+        disposables,
+        { runImmediately: true }
+    )
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
 

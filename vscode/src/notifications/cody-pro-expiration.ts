@@ -83,8 +83,9 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
             // right flags.
             //
             // See https://sourcegraph.slack.com/archives/C05AGQYD528/p1706872864488829
-            this.authProviderSubscription = this.authProvider.initAndOnChange(() =>
-                setTimeout(() => this.triggerExpirationCheck(), this.autoUpdateDelay)
+            this.authProviderSubscription = this.authProvider.onChange(
+                () => setTimeout(() => this.triggerExpirationCheck(), this.autoUpdateDelay),
+                { runImmediately: true }
             )
         }
 

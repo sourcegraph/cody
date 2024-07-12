@@ -33,6 +33,10 @@ import { secretStorage } from './SecretStorageProvider'
 
 const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
 
+interface OnChangeOptions {
+    runImmediately: boolean
+}
+
 type AuthConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
 export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
     private endpointHistory: string[] = []
@@ -91,9 +95,9 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         }).catch(error => logError('AuthProvider:init:failed', lastEndpoint, { verbose: error }))
     }
 
-    public initAndOnChange(
+    public onChange(
         listener: (authStatus: AuthStatus) => void,
-        runImmediately = true
+        { runImmediately }: OnChangeOptions = { runImmediately: false }
     ): vscode.Disposable {
         if (runImmediately) {
             listener(this.status)

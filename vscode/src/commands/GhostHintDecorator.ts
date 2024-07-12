@@ -197,7 +197,9 @@ export class GhostHintDecorator implements vscode.Disposable {
 
         // Listen to authentication changes
         this.disposables.push(
-            authProvider.initAndOnChange(authStatus => this.updateEnablement(authStatus))
+            authProvider.onChange(authStatus => this.updateEnablement(authStatus), {
+                runImmediately: true,
+            })
         )
 
         // Listen to configuration changes (e.g. if the setting is disabled)
