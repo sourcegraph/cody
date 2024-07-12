@@ -50,6 +50,7 @@ export interface RequestParams {
 export interface RequestManagerResult {
     completions: InlineCompletionItemWithAnalytics[]
     source: InlineCompletionsResultSource
+    isFuzzyMatch: boolean
 }
 
 interface RequestsManagerParams {
@@ -148,6 +149,7 @@ export class RequestManager {
                         request.resolve({
                             completions: processedCompletions,
                             source: InlineCompletionsResultSource.Network,
+                            isFuzzyMatch: false,
                         })
 
                         request.lastCompletions = processedCompletions
@@ -235,6 +237,7 @@ export class RequestManager {
                 request.resolve({
                     completions: synthesizedItems,
                     source: InlineCompletionsResultSource.CacheAfterRequestStart,
+                    isFuzzyMatch: false,
                 })
                 request.abortController.abort()
                 this.inflightRequests.delete(request)
@@ -375,13 +378,13 @@ class RequestCache {
         return Math.min(this.levenshteinBaseThreshold + lengthFactor, this.levenshteinMaxThreshold)
     }
 
-    public get(requestParams: RequestParams): RequestCacheItem | undefined {
+    public get(requestParams: RequestParams): RequestManagerResult | undefined {
         const cacheKey = this.toCacheKey(requestParams)
         const cacheKeyString = this.serializeCacheKey(cacheKey)
 
         const exactMatch = this.cache.get(cacheKeyString)
         if (exactMatch) {
-            return exactMatch.value
+            return { ...exactMatch.value, isFuzzyMatch: false }
         }
 
         // If no exact match found, look for a close match using levenshtein distance.
@@ -404,7 +407,7 @@ class RequestCache {
                 if (allLinesMatch) {
                     return {
                         ...entry.value,
-                        source: InlineCompletionsResultSource.FuzzyCache,
+                        isFuzzyMatch: true,
                     }
                 }
             }
