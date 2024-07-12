@@ -1,12 +1,13 @@
+import { escapeRegExp } from 'lodash'
 import type { Response as NodeResponse } from 'node-fetch'
+import semver from 'semver'
+import type * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
-import { fetch } from '../../fetch'
 
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
-import { escapeRegExp } from 'lodash'
-import semver from 'semver'
 import type { ConfigurationWithAccessToken } from '../../configuration'
+import { fetch } from '../../fetch'
 import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
@@ -1225,24 +1226,27 @@ export const graphqlClient = new SourcegraphGraphQLAPIClient()
  * ConfigFeaturesSingleton is a class that manages the retrieval
  * and caching of configuration features from GraphQL endpoints.
  */
-export class ConfigFeaturesSingleton {
+export class ConfigFeaturesSingleton implements vscode.Disposable {
     private static instance: ConfigFeaturesSingleton
-    private configFeatures: Promise<CodyConfigFeatures>
+    private configFeatures: CodyConfigFeatures
+    private fetchIntervalId: NodeJS.Timeout | undefined | number
 
     // Constructor is private to prevent creating new instances outside of the class
     private constructor() {
         // Initialize with default values
-        this.configFeatures = Promise.resolve({
+        this.configFeatures = {
             chat: true,
             autoComplete: true,
             commands: true,
             attribution: false,
-        })
+        }
+
         // Initiate the first fetch and set up a recurring fetch every 30 seconds
         this.refreshConfigFeatures()
+
         // Fetch config features periodically every 30 seconds only if isDotCom is false
         if (!graphqlClient.isDotCom()) {
-            setInterval(() => this.refreshConfigFeatures(), 30000)
+            this.fetchIntervalId = setInterval(() => this.refreshConfigFeatures(), 30000)
         }
     }
 
@@ -1255,19 +1259,22 @@ export class ConfigFeaturesSingleton {
     }
 
     // Refreshes the config features by fetching them from the server and caching the result
-    public refreshConfigFeatures(): void {
-        const previousConfigFeatures = this.configFeatures
-        this.configFeatures = this.fetchConfigFeatures().catch((error: Error) => {
-            // Ignore fetcherrors as older SG instances will always face this because their GQL is outdated
-            if (!(error.message.includes('FetchError') || hasOutdatedAPIErrorMessages(error))) {
+    public async refreshConfigFeatures(): Promise<void> {
+        try {
+            this.configFeatures = await this.fetchConfigFeatures()
+        } catch (error) {
+            // Ignore fetch errors as older SG instances will always face this because their GQL is outdated
+            if (
+                error instanceof Error &&
+                !(error.message.includes('FetchError') || hasOutdatedAPIErrorMessages(error))
+            ) {
                 logError('ConfigFeaturesSingleton', 'refreshConfigFeatures', error.message)
             }
-            // In case of an error, return previously fetched value
-            return previousConfigFeatures
-        })
+            // In case of an error, do not reassign the current value.
+        }
     }
 
-    public getConfigFeatures(): Promise<CodyConfigFeatures> {
+    public getConfigFeatures(): CodyConfigFeatures {
         return this.configFeatures
     }
 
@@ -1281,6 +1288,12 @@ export class ConfigFeaturesSingleton {
         }
         // If the fetch is successful, store the fetched configuration features
         return features
+    }
+
+    public dispose(): void {
+        if (this.fetchIntervalId) {
+            clearTimeout(this.fetchIntervalId)
+        }
     }
 }
 

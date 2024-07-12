@@ -228,7 +228,7 @@ export class InlineCompletionItemProvider
             }
             this.lastCompletionRequest = completionRequest
 
-            const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+            const configFeatures = ConfigFeaturesSingleton.getInstance().getConfigFeatures()
 
             if (!configFeatures.autoComplete) {
                 // If ConfigFeatures exists and autocomplete is disabled then raise

@@ -91,7 +91,7 @@ export class EditManager implements vscode.Disposable {
             source = DEFAULT_EVENT_SOURCE,
             telemetryMetadata,
         } = args
-        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        const configFeatures = ConfigFeaturesSingleton.getInstance().getConfigFeatures()
         if (!configFeatures.commands) {
             void vscode.window.showErrorMessage(
                 'This feature has been disabled by your Sourcegraph site admin.'

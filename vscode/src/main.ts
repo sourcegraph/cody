@@ -255,6 +255,7 @@ const register = async (
         disposables
     )
     disposables.push(chatManager)
+    disposables.push(ConfigFeaturesSingleton.getInstance())
 
     const sourceControl = new CodySourceControl(chatClient)
     const statusBar = createStatusBar()
@@ -357,7 +358,7 @@ const register = async (
         id: DefaultCodyCommands | PromptString,
         args?: Partial<CodyCommandArgs>
     ): Promise<CommandResult | undefined> => {
-        const { commands } = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        const { commands } = ConfigFeaturesSingleton.getInstance().getConfigFeatures()
         if (!commands) {
             void vscode.window.showErrorMessage(
                 'This feature has been disabled by your Sourcegraph site admin.'
