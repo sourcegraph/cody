@@ -266,7 +266,8 @@
         "command": "cody.command.explain-output",
         "title": "Ask Cody to Explain",
         "category": "Cody Command",
-        "icon": "$(cody-logo)"
+        "icon": "$(cody-logo)",
+        "enablement": "cody.activated && terminalTabsSingularSelection"
       },
       {
         "command": "cody.command.edit-code",
@@ -770,6 +771,10 @@
           "command": "cody.chat.view.popOut",
           "when": "false",
           "_comment": "Hidden because it is only a wrapper around the workspace pop out command and would place any editor tab (not just Cody chat) in a new window."
+        },
+        {
+          "command": "cody.command.explain-output",
+          "when": "false"
         }
       ],
       "editor/context": [
