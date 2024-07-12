@@ -515,18 +515,10 @@ export class FixupController
 
     private logTaskCompletion(task: FixupTask, document: vscode.TextDocument, editOk: boolean): void {
         const legacyMetadata = {
-            intent:
-                EditIntentTelemetryMetadataMapping[
-                    task.intent as keyof typeof EditIntentTelemetryMetadataMapping
-                ] || task.intent,
-            mode:
-                EditModeTelemetryMetadataMapping[
-                    task.mode as keyof typeof EditModeTelemetryMetadataMapping
-                ] || task.mode,
+            intent: EditIntentTelemetryMetadataMapping[task.intent] || task.intent,
+            mode: EditModeTelemetryMetadataMapping[task.mode] || task.mode,
             source:
-                EventSourceTelemetryMetadataMapping[
-                    task.source as keyof typeof EventSourceTelemetryMetadataMapping
-                ] || task.source,
+                EventSourceTelemetryMetadataMapping[task.source || DEFAULT_EVENT_SOURCE] || task.source,
             model: task.model,
             ...this.countEditInsertions(task),
             ...task.telemetryMetadata,

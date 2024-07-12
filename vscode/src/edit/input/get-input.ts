@@ -82,7 +82,7 @@ export const getInput = async (
 
     telemetryRecorder.recordEvent('cody.menu.edit', 'clicked', {
         metadata: {
-            source: EventSourceTelemetryMetadataMapping[source as keyof typeof EventSourceTelemetryMetadataMapping],
+            source: EventSourceTelemetryMetadataMapping[source],
         },
         privateMetadata: { source },
     })
