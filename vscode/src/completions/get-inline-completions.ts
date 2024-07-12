@@ -321,10 +321,17 @@ async function doGetInlineCompletions(
         isCacheEnabled: triggerKind !== TriggerKind.Manual,
     })
     if (cachedResult) {
-        const { completions, source } = cachedResult
+        const { completions, source, isFuzzyMatch } = cachedResult
 
         CompletionLogger.start(logId)
-        CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser)
+        CompletionLogger.loaded({
+            logId,
+            requestParams,
+            completions,
+            source,
+            isFuzzyMatch,
+            isDotComUser,
+        })
 
         return {
             logId,
@@ -440,7 +447,15 @@ async function doGetInlineCompletions(
         gitUrl: gitIdentifiersForFile?.gitUrl,
         commit: gitIdentifiersForFile?.commit,
     }
-    CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser, inlineContextParams)
+    CompletionLogger.loaded({
+        logId,
+        requestParams,
+        completions,
+        source,
+        isDotComUser,
+        inlineContextParams,
+        isFuzzyMatch: false,
+    })
 
     return {
         logId,
