@@ -7,7 +7,7 @@ export const LOG_INTERVAL = 30 * 60 * 1000 // 30 minutes
 /**
  * Keys represent autocomplete pipeline stages in chronological order.
  */
-const INITIAL_STATE = {
+export const AUTOCOMPLETE_STAGE_COUNTER_INITIAL_STATE = {
     preLastCandidate: 0,
     preCache: 0,
     preSmartThrottle: 0,
@@ -18,10 +18,12 @@ const INITIAL_STATE = {
     preVisibilityCheck: 0,
 }
 
+export type AutocompletePipelineCountedStage = keyof typeof AUTOCOMPLETE_STAGE_COUNTER_INITIAL_STATE
+
 export class AutocompleteStageCounter implements vscode.Disposable {
     private nextTimeoutId: NodeJS.Timeout | null = null
     private providerModel: string | null = null
-    private currentState = { ...INITIAL_STATE }
+    private currentState = { ...AUTOCOMPLETE_STAGE_COUNTER_INITIAL_STATE }
 
     constructor() {
         this.nextTimeoutId = setTimeout(() => this.flush(), LOG_INTERVAL)
@@ -39,7 +41,7 @@ export class AutocompleteStageCounter implements vscode.Disposable {
     public flush(): void {
         this.nextTimeoutId = null
         const stateToLog = this.currentState
-        this.currentState = { ...INITIAL_STATE }
+        this.currentState = { ...AUTOCOMPLETE_STAGE_COUNTER_INITIAL_STATE }
 
         // Do not log empty counter events.
         if (Object.values(stateToLog).some(count => count > 0)) {
@@ -55,7 +57,7 @@ export class AutocompleteStageCounter implements vscode.Disposable {
     /**
      * Records the occurrence of a specific stage in the autocompletion generation pipeline.
      */
-    public record(state: keyof typeof this.currentState): void {
+    public record(state: AutocompletePipelineCountedStage): void {
         if (!this.providerModel) {
             // Do nothing if provider model is not set.
             return
