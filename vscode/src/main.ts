@@ -143,10 +143,16 @@ const register = async (
     // from the subsequent initialization.
     disposables.push(manageDisplayPathEnvInfoForExtension())
 
-    // Init local storage
+    // Initialize singletons
     await configWatcher.onChange(
         async config => {
             await localStorage.setConfig(config)
+            await configureEventsInfra(config, isExtensionModeDevOrTest, await authProviderPromise)
+            graphqlClient.setConfig(config)
+            await featureFlagProvider.refresh()
+            await contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
+            ModelsService.onConfigChange()
+            upstreamHealthProvider.onConfigurationChange(config)
         },
         disposables,
         { runImmediately: true }
@@ -154,15 +160,6 @@ const register = async (
 
     // Ensure Git API is available
     disposables.push(await initVSCodeGitApi())
-
-    // Telemetry
-    await configWatcher.onChange(
-        async config => {
-            await configureEventsInfra(config, isExtensionModeDevOrTest, await authProviderPromise)
-        },
-        disposables,
-        { runImmediately: true }
-    )
 
     registerParserListeners(disposables)
 
@@ -189,15 +186,6 @@ const register = async (
         )
     }
 
-    await configWatcher.onChange(
-        async config => {
-            graphqlClient.setConfig(config)
-            await featureFlagProvider.refresh()
-        },
-        disposables,
-        { runImmediately: true }
-    )
-
     // Initialize external services
     const {
         chatClient,
@@ -211,6 +199,7 @@ const register = async (
     } = await configureExternalServices(context, configWatcher, platform, authProvider)
     configWatcher.onChange(async config => {
         externalServicesOnDidConfigurationChange(config)
+        localEmbeddings?.setAccessToken(config.serverEndpoint, config.accessToken)
     }, disposables)
 
     if (symfRunner) {
@@ -241,13 +230,6 @@ const register = async (
 
     // Initialize context provider
     const editor = new VSCodeEditor()
-    disposables.push(contextFiltersProvider)
-    await contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
-
-    configWatcher.onChange(async config => {
-        await contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
-        await localEmbeddings?.setAccessToken(config.serverEndpoint, config.accessToken)
-    }, disposables)
 
     const { chatsController, editorManager } = registerChat(
         {
@@ -321,12 +303,6 @@ const register = async (
             { runImmediately: true }
         )
     )
-
-    // Setup config watcher
-    void configWatcher.onChange(setupAutocomplete, disposables)
-    await configWatcher.onChange(() => ModelsService.onConfigChange(), disposables, {
-        runImmediately: true,
-    })
 
     setCommandController(platform.createCommandsProvider?.())
     repoNameResolver.init(authProvider)
@@ -558,15 +534,9 @@ const register = async (
         new CharactersLogger(),
         upstreamHealthProvider
     )
-    await configWatcher.onChange(
-        async config => {
-            upstreamHealthProvider.onConfigurationChange(config)
-        },
-        disposables,
-        { runImmediately: true }
-    )
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
+    void configWatcher.onChange(setupAutocomplete, disposables)
 
     let autocompleteDisposables: vscode.Disposable[] = []
     function disposeAutocomplete(): void {
