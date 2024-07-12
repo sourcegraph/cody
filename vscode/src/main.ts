@@ -19,7 +19,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { CommandResult } from './CommandResult'
 import type { MessageProviderOptions } from './chat/MessageProvider'
-import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
+import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -238,7 +238,7 @@ const register = async (
         await localEmbeddings?.setAccessToken(config.serverEndpoint, config.accessToken)
     }, disposables)
 
-    const { chatManager } = registerChat(
+    const { chatsController } = registerChat(
         {
             context,
             platform,
@@ -253,7 +253,7 @@ const register = async (
         },
         disposables
     )
-    disposables.push(chatManager)
+    disposables.push(chatsController)
 
     const sourceControl = new CodySourceControl(chatClient)
     const statusBar = createStatusBar()
@@ -276,7 +276,7 @@ const register = async (
 
         // Reset models list based on the updated auth status and server configuration.
         await syncModels(authStatus)
-        await chatManager.syncAuthStatus(authStatus)
+        await chatsController.syncAuthStatus(authStatus)
 
         const parallelTasks: Promise<void>[] = [
             featureFlagProvider.syncAuthStatus(),
@@ -639,11 +639,11 @@ const register = async (
 
     // Register a serializer for reviving the chat panel on reload
     if (vscode.window.registerWebviewPanelSerializer) {
-        vscode.window.registerWebviewPanelSerializer(CodyChatPanelViewType, {
+        vscode.window.registerWebviewPanelSerializer(CodyChatEditorViewType, {
             async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, chatID: string) {
                 if (chatID && webviewPanel.title) {
                     logDebug('main:deserializeWebviewPanel', 'reviving last unclosed chat panel')
-                    await chatManager.revive(webviewPanel, chatID)
+                    await chatsController.restoreToPanel(webviewPanel, chatID)
                 }
             },
         })
@@ -695,7 +695,7 @@ function registerChat(
     }: RegisterChatOptions,
     disposables: vscode.Disposable[]
 ): {
-    chatManager: ChatManager
+    chatsController: ChatsController
     editorManager: EditManager
 } {
     // Shared configuration that is required for chat views to send and receive messages
@@ -705,7 +705,7 @@ function registerChat(
         editor,
         authProvider,
     }
-    const chatManager = new ChatManager(
+    const chatsController = new ChatsController(
         {
             ...messageProviderOptions,
             extensionUri: context.extensionUri,
@@ -718,6 +718,7 @@ function registerChat(
         symfRunner || null,
         guardrails
     )
+    chatsController.registerViewsAndCommands()
 
     const ghostHintDecorator = new GhostHintDecorator(authProvider)
     const editorManager = new EditManager({
@@ -734,7 +735,7 @@ function registerChat(
         localEmbeddings.start()
     }
 
-    return { chatManager, editorManager }
+    return { chatsController, editorManager }
 }
 
 /**

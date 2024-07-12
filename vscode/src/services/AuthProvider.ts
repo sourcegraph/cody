@@ -19,7 +19,6 @@ import {
 
 import { AccountMenuOptions, openAccountMenu } from '../auth/account-menu'
 import { closeAuthProgressIndicator } from '../auth/auth-progress-indicator'
-import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
 import { ACCOUNT_USAGE_URL, isLoggedIn as isAuthenticated, isSourcegraphToken } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
@@ -201,7 +200,6 @@ export class AuthProvider implements AuthStatusProvider {
         await localStorage.deleteEndpoint()
         await this.auth({ endpoint, token: null })
         this.authStatus.endpoint = ''
-        await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
         await vscode.commands.executeCommand('setContext', 'cody.activated', false)
     }
 

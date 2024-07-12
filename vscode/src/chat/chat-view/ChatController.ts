@@ -18,7 +18,6 @@ import {
     type DefaultChatCommands,
     type EventSource,
     FeatureFlag,
-    type FeatureFlagProvider,
     type Guardrails,
     type MentionQuery,
     type Message,
@@ -32,6 +31,7 @@ import {
     TokenCounter,
     Typewriter,
     allMentionProvidersMetadata,
+    featureFlagProvider,
     hydrateAfterPostMessage,
     isAbortErrorOrSocketHangUp,
     isDefined,
@@ -70,6 +70,7 @@ import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
+import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
@@ -100,8 +101,8 @@ import type {
 } from '../protocol'
 import { countGeneratedCode } from '../utils'
 import { chatHistory } from './ChatHistoryManager'
-import { CodyChatPanelViewType, addWebviewViewHTML } from './ChatManager'
 import { ChatModel, prepareChatMessage } from './ChatModel'
+import { CodyChatEditorViewType } from './ChatsController'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, openFile } from './chat-helpers'
@@ -117,7 +118,6 @@ interface ChatControllerOptions {
     symf: SymfRunner | null
     enterpriseContext: EnterpriseContextFactory | null
     editor: VSCodeEditor
-    featureFlagProvider: FeatureFlagProvider
     models: Model[]
     guardrails: Guardrails
     startTokenReceiver?: typeof startTokenReceiver
@@ -169,7 +169,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly remoteSearch: RemoteSearch | null
     private readonly repoPicker: RemoteRepoPicker | null
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
-    private readonly featureFlagProvider: FeatureFlagProvider
 
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
     private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
@@ -192,7 +191,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         guardrails,
         enterpriseContext,
         startTokenReceiver,
-        featureFlagProvider,
     }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
@@ -203,7 +201,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.repoPicker = enterpriseContext?.repoPicker || null
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
-        this.featureFlagProvider = featureFlagProvider
 
         this.chatModel = new ChatModel(getDefaultModelID(authProvider.getAuthStatus()))
 
@@ -513,7 +510,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const [config, experimentalUnitTest] = await Promise.all([
             getFullConfig(),
-            this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalUnitTest),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalUnitTest),
         ])
 
         return {
@@ -1085,8 +1082,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             chatID: this.chatModel.sessionID,
         })
 
-        // Update webview panel title
-        this.postChatTitle()
+        this.syncPanelTitle()
+    }
+
+    private syncPanelTitle() {
+        // Update webview panel title if we're in an editor panel
+        if (this._webviewPanelOrView && 'reveal' in this._webviewPanelOrView) {
+            this._webviewPanelOrView.title = this.chatModel.getChatTitle()
+        }
     }
 
     /**
@@ -1142,12 +1145,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      */
     private postMessage(message: ExtensionMessage): Thenable<boolean | undefined> {
         return this.initDoer.do(() => this.webviewPanelOrView?.webview.postMessage(message))
-    }
-
-    private postChatTitle(): void {
-        if (this.webviewPanelOrView) {
-            this.webviewPanelOrView.title = this.chatModel.getChatTitle()
-        }
     }
 
     // #endregion
@@ -1461,7 +1458,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      */
     public async createWebviewViewOrPanel(
         activePanelViewColumn?: vscode.ViewColumn,
-        _chatId?: string,
         lastQuestion?: string
     ): Promise<vscode.WebviewView | vscode.WebviewPanel> {
         // Checks if the webview view or panel already exists and is visible.
@@ -1470,7 +1466,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return this.webviewPanelOrView
         }
 
-        const viewType = CodyChatPanelViewType
+        const viewType = CodyChatEditorViewType
         const panelTitle =
             chatHistory.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID)
                 ?.chatTitle || getChatPanelTitle(lastQuestion)
@@ -1529,6 +1525,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
         this._webviewPanelOrView = viewOrPanel
 
+        this.syncPanelTitle()
+
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         viewOrPanel.webview.options = {
             enableScripts: true,
@@ -1556,9 +1554,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             )
         )
 
-        // Used for keeping sidebar chat view closed when webview panel is enabled
-        await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
-
         const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
 
         void this.postMessage({
@@ -1580,9 +1575,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (view !== 'chat') {
             // Only chat view is supported in the webview panel.
             // When a different view is requested,
-            // Set context to notifiy the webview panel to close.
+            // Set context to notify the webview panel to close.
             // This should close the webview panel and open the login view in the sidebar.
-            await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
             await vscode.commands.executeCommand('setContext', 'cody.activated', false)
             return
         }
@@ -1672,4 +1666,29 @@ function getDefaultModelID(status: AuthStatus): string {
     } catch {
         return pending
     }
+}
+
+/**
+ * Set HTML for webview (panel) & webview view (sidebar)
+ */
+export async function addWebviewViewHTML(
+    extensionUri: vscode.Uri,
+    view: vscode.WebviewView | vscode.WebviewPanel
+): Promise<void> {
+    if (isRunningInsideAgent()) {
+        return
+    }
+    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
+    // Create Webview using vscode/index.html
+    const root = vscode.Uri.joinPath(webviewPath, 'index.html')
+    const bytes = await vscode.workspace.fs.readFile(root)
+    const decoded = new TextDecoder('utf-8').decode(bytes)
+    const resources = view.webview.asWebviewUri(webviewPath)
+
+    // This replace variables from the vscode/dist/index.html with webview info
+    // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
+    // 2. Update URIs for content security policy to only allow specific scripts to be run
+    view.webview.html = decoded
+        .replaceAll('./', `${resources.toString()}/`)
+        .replaceAll('{cspSource}', view.webview.cspSource)
 }

@@ -789,6 +789,7 @@ export const vsCodeMocks = {
         activeTextEditor: {
             document: { uri: { scheme: 'not-cody' } },
             options: { tabSize: 4 },
+            selection: {},
         },
         onDidChangeActiveTextEditor() {},
         createTextEditorDecorationType: () => ({
@@ -921,6 +922,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     },
     autocompleteFirstCompletionTimeout: 3500,
     autocompleteExperimentalSmartThrottle: false,
+    autocompleteExperimentalSmartThrottleExtended: false,
     testingModelConfig: undefined,
     experimentalChatContextRanker: false,
 } satisfies Configuration

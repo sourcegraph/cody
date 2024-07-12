@@ -102,6 +102,8 @@ describe('getConfiguration', () => {
                         return 1500
                     case 'cody.autocomplete.experimental.smartThrottle':
                         return false
+                    case 'cody.autocomplete.experimental.smartThrottleExtended':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -153,6 +155,7 @@ describe('getConfiguration', () => {
             },
             autocompleteFirstCompletionTimeout: 1500,
             autocompleteExperimentalSmartThrottle: false,
+            autocompleteExperimentalSmartThrottleExtended: false,
             testingModelConfig: undefined,
             experimentalChatContextRanker: false,
         } satisfies Configuration)
