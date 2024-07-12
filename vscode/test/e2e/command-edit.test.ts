@@ -25,7 +25,6 @@ test.extend<ExpectedV2Events>({
         'cody.fixup.user:rejected',
         'cody.fixup.codeLens:undo',
         'cody.fixup.reverted:clicked',
-        'cody.sidebar.edit:clicked',
     ],
 })('edit (fixup) task', async ({ page, sidebar, nap }) => {
     // Sign into Cody
@@ -76,10 +75,9 @@ test.extend<ExpectedV2Events>({
     await expect(page.getByText('appleName')).toBeVisible()
     await expect(page.getByText('bananaName')).not.toBeVisible()
 
-    // create another edit from the sidebar Edit button
+    // create another edit using shortcut
     await page.getByText('appleName').click()
-    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
-    await page.getByText('Edit Code').click()
+    await page.keyboard.press('Alt+K')
     await expect(page.getByText(inputTitle)).toBeVisible()
     await inputBox.focus()
     await inputBox.fill(instruction)

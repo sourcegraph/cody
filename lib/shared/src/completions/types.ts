@@ -38,6 +38,10 @@ export interface DocumentContext extends DocumentDependentContext, LinesContext 
     maxSuffixLength: number
 }
 
+export interface GitContext {
+    repoName: string
+}
+
 export interface DocumentDependentContext {
     prefix: string
     suffix: string

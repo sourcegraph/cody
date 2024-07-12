@@ -8,7 +8,7 @@ import {
 import { type Message, ps } from '@sourcegraph/cody-shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
-import { SimpleChatModel } from './SimpleChatModel'
+import { ChatModel } from './ChatModel'
 import { DefaultPrompter } from './prompt'
 
 describe('DefaultPrompter', () => {
@@ -27,7 +27,7 @@ describe('DefaultPrompter', () => {
                 contextWindow: { input: 100000, output: 100 },
             }),
         ])
-        const chat = new SimpleChatModel('a-model-id')
+        const chat = new ChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
         const { prompt, context } = await new DefaultPrompter([]).makePrompt(chat, 0)
@@ -66,7 +66,7 @@ describe('DefaultPrompter', () => {
                 contextWindow: { input: 100000, output: 100 },
             }),
         ])
-        const chat = new SimpleChatModel('a-model-id')
+        const chat = new ChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
         const { prompt, context } = await new DefaultPrompter([]).makePrompt(chat, 0)
@@ -97,7 +97,7 @@ describe('DefaultPrompter', () => {
                 contextWindow: { input: 100000, output: 100 },
             }),
         ])
-        const chat = new SimpleChatModel('a-model-id')
+        const chat = new ChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello, world!` })
 
         // First chat message

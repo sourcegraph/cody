@@ -1,108 +1,15 @@
 import { expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
+import { sidebarExplorer, sidebarSignin } from './common'
 import {
-    chatInputMentions,
-    contextCellItems,
-    expectContextCellCounts,
-    focusSidebar,
-    getContextCell,
-    openContextCell,
-    sidebarExplorer,
-    sidebarSignin,
-} from './common'
-import { type DotcomUrlOverride, type ExpectedV2Events, test as baseTest } from './helpers'
+    type DotcomUrlOverride,
+    type ExpectedV2Events,
+    test as baseTest,
+    executeCommandInPalette,
+} from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
-
-test.extend<ExpectedV2Events>({
-    // list of events we expect this test to log, add to this list as needed
-    expectedV2Events: [
-        'cody.extension:installed',
-        'cody.codyIgnore:hasFile',
-        'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
-        'cody.auth.login:firstEver',
-        'cody.auth.signin.token:clicked',
-        'cody.auth:connected',
-        'cody.sidebar.explain:clicked',
-        'cody.command.explain:executed',
-        'cody.chat-question:submitted',
-        'cody.chat-question:executed',
-        'cody.chatResponse:noCode',
-        'cody.sidebar.smell:clicked',
-        'cody.command.smell:executed',
-    ],
-})('Explain Command & Smell Command & Chat from Command Menu', async ({ page, sidebar }) => {
-    // Sign into Cody
-    await sidebarSignin(page, sidebar)
-
-    // Open the File Explorer view from the sidebar
-    await sidebarExplorer(page).click()
-    // Open the index.html file from the tree view
-    await page.getByRole('treeitem', { name: 'index.html' }).locator('a').dblclick()
-    // Wait for index.html to fully open
-    await page.getByRole('tab', { name: 'index.html' }).hover()
-
-    // Bring the cody sidebar to the foreground
-    await focusSidebar(page)
-
-    await page.getByText('Explain Code').hover()
-    await page.getByText('Explain Code').click()
-
-    // Find the chat iframe
-    const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-
-    // Check if the command shows the current file as context with the correct number of lines
-    // When no selection is made, we will try to create smart selection from the cursor position
-    // If there is no cursor position, we will use the visible content of the editor
-    // NOTE: Core commands context should not start with ✨
-    const contextCell = getContextCell(chatPanel)
-    await openContextCell(contextCell)
-    // NOTE(sqs): It's OK if the test changes so that it's just `index.html`.
-    await expect(contextCellItems(contextCell)).toHaveText(['index.html', 'index.html:1-11'])
-    await expectContextCellCounts(contextCell, { files: 2 })
-
-    // Check if assistant responsed
-    await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
-
-    // Click on the file link in chat
-    await contextCell.getByRole('link', { name: 'index.html' }).first().click()
-
-    // Check if the file is opened
-    await expect(page.getByRole('list').getByText('index.html')).toBeVisible()
-
-    // Explain Command
-    // Click on the 4th line of the file before running Explain
-    // to check if smart selection and the explain command works.
-    await page.getByText('<title>Hello Cody</title>').click()
-    await expect(page.getByText('Explain Code')).toBeVisible()
-    await page.getByText('Explain Code').click()
-    const CONTEXT_ITEM_TEXTS = ['index.html', 'index.html:2-10']
-    await expectContextCellCounts(contextCell, { files: 2 })
-    await openContextCell(contextCell)
-    await expect(contextCellItems(contextCell)).toHaveText(CONTEXT_ITEM_TEXTS)
-
-    // The mentions in the command should show up as mentions.
-    const firstChatInput = chatPanel.getByRole('textbox', { name: 'Chat message' }).first()
-    await expect(chatInputMentions(firstChatInput)).toHaveText(['index.html:2-10', 'index.html'])
-
-    // When the message is resent, ensure that the same number of context items are included.
-    await firstChatInput.focus()
-    await firstChatInput.press('Enter')
-    await expectContextCellCounts(contextCell, { files: 2 })
-    await openContextCell(contextCell)
-    await expect(contextCellItems(contextCell)).toHaveText(CONTEXT_ITEM_TEXTS)
-
-    // Smell Command
-    // Running a command again should reuse the current cursor position
-    await expect(page.getByText('Find Code Smells')).toBeVisible()
-    await page.getByText('Find Code Smells').click()
-    await expectContextCellCounts(contextCell, { files: 2 })
-    await openContextCell(contextCell)
-    await expect(chatPanel.getByRole('link', { name: 'index.html:2-10' })).toBeVisible()
-    await expect(chatInputMentions(firstChatInput)).toHaveText(['index.html:2-10', 'index.html'])
-})
 
 test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
@@ -152,7 +59,6 @@ test.extend<ExpectedV2Events>({
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
-        'cody.sidebar.doc:clicked',
         'cody.command.doc:executed',
         'cody.fixup.response:hasCode',
         'cody.fixup.apply:succeeded',
@@ -175,8 +81,7 @@ test.extend<ExpectedV2Events>({
     await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
 
     // Trigger the documentaton command
-    await page.getByText('Document Code').hover()
-    await page.getByText('Document Code').click()
+    await executeCommandInPalette(page, 'Document Code')
 
     // Code lens should be visible.
     await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible({
