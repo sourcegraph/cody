@@ -1085,8 +1085,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             chatID: this.chatModel.sessionID,
         })
 
-        // Update webview panel title
-        this.postChatTitle()
+        this.syncPanelTitle()
+    }
+
+    private syncPanelTitle() {
+        // Update webview panel title if we're in an editor panel
+        if (this._webviewPanelOrView && 'reveal' in this._webviewPanelOrView) {
+            this._webviewPanelOrView.title = this.chatModel.getChatTitle()
+        }
     }
 
     /**
@@ -1146,12 +1152,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      */
     private postMessage(message: ExtensionMessage): Thenable<boolean | undefined> {
         return this.initDoer.do(() => this.webviewPanelOrView?.webview.postMessage(message))
-    }
-
-    private postChatTitle(): void {
-        if (this.webviewPanelOrView) {
-            this.webviewPanelOrView.title = this.chatModel.getChatTitle()
-        }
     }
 
     // #endregion
@@ -1531,6 +1531,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             throw new Error('webview already created')
         }
         this._webviewPanelOrView = viewOrPanel
+
+        this.syncPanelTitle()
 
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         viewOrPanel.webview.options = {
