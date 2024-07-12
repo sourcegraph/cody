@@ -30,9 +30,13 @@ export class SmartThrottleService implements vscode.Disposable {
     // exceeds the throttle timeout, a tail request will be promoted again.
     private lastThrottlePromotion = 0
 
-    async throttle(request: RequestParams, triggerKind: TriggerKind): Promise<RequestParams | null> {
+    async throttle(
+        request: RequestParams,
+        triggerKind: TriggerKind,
+        stale: () => void
+    ): Promise<RequestParams | null> {
         return wrapInActiveSpan('autocomplete.smartThrottle', async () => {
-            const throttledRequest = new ThrottledRequest(request)
+            const throttledRequest = new ThrottledRequest(request, stale)
             const now = Date.now()
 
             // Case 1: If this is a start-of-line request, cancel any previous start-of-line requests
@@ -54,9 +58,14 @@ export class SmartThrottleService implements vscode.Disposable {
             //         promote the last tail request to a throttled request and continue with the third
             //         case.
             if (now - this.lastThrottlePromotion > THROTTLE_TIMEOUT && this.tailRequest) {
+                // Mark the tailRequest as stale, this means we will not mark it as a completion to be suggested
+                // Instead we the incoming request will benefit from the cached response, if still relevant.
+                this.tailRequest.stale()
+
                 // Setting tailRequest to null will make sure the throttled request can no longer be
                 // cancelled by this logic.
                 this.tailRequest = null
+
                 this.lastThrottlePromotion = now
             }
 
@@ -93,7 +102,10 @@ export class SmartThrottleService implements vscode.Disposable {
 
 class ThrottledRequest {
     public abortController: AbortController
-    constructor(public requestParams: RequestParams) {
+    constructor(
+        public requestParams: RequestParams,
+        public stale: () => void
+    ) {
         this.abortController = requestParams.abortSignal
             ? forkSignal(requestParams.abortSignal)
             : new AbortController()
