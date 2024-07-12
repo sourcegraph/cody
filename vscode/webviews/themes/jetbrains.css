@@ -286,6 +286,8 @@ html[data-ide='JetBrains'] {
     --vscode-list-focusOutline: var(--jetbrains-List-focusOutline);
     --vscode-list-highlightForeground: var(--jetbrains-List-highlightForeground);
     --vscode-list-hoverBackground: var(--jetbrains-List-hoverBackground);
+    --vscode-list-activeSelectionForeground: var(--jetbrains-List-foreground);
+    --vscode-list-activeSelectionBackground: var(--jetbrains-List-selectionBackground);
     --vscode-list-invalidItemForeground: var(--jetbrains-List-invalidItemForeground);
     --vscode-listFilterWidget-background: var(--jetbrains-ListFilterWidget-background);
     --vscode-listFilterWidget-noMatchesOutline: var(--jetbrains-ListFilterWidget-noMatchesOutline);
