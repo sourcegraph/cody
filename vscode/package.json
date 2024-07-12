@@ -1212,6 +1212,11 @@
           "default": false,
           "markdownDescription": "Changes the debounce time for autocomplete requests based on the amount of time since the last request."
         },
+        "cody.autocomplete.experimental.smartThrottleExtended": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Changes the (extended) debounce time for autocomplete requests based on the amount of time since the last request."
+        },
         "openctx.enable": {
           "type": "boolean",
           "markdownDescription": "Enable OpenCtx providers for Cody.",

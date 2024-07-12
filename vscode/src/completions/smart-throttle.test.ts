@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { TriggerKind } from './get-inline-completions'
 import type { RequestParams } from './request-manager'
-import { SmartThrottleService, THROTTLE_TIMEOUT } from './smart-throttle'
+import { DEFAULT_THROTTLE_TIMEOUT, SmartThrottleService } from './smart-throttle'
 import { documentAndPosition } from './test-helpers'
 
 const stale = () => {
@@ -115,7 +115,7 @@ describe('SmartThrottleService', () => {
 
         // The third request will be promoted if enough time passes since the last promotion
         // It will also be marked as stale.
-        vi.advanceTimersByTime(THROTTLE_TIMEOUT + 10)
+        vi.advanceTimersByTime(DEFAULT_THROTTLE_TIMEOUT + 10)
 
         const fourthStaleMock = stale()
         const fourthThrottledRequest = await service.throttle(
