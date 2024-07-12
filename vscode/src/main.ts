@@ -108,14 +108,16 @@ export async function start(
 
     const disposables: vscode.Disposable[] = []
 
-    const configWatcher = await BaseConfigWatcher.create(getFullConfig, disposables)
+    const initialConfig = await getFullConfig()
+    const authProvider = AuthProvider.createAndInit(initialConfig)
+    const configWatcher = await BaseConfigWatcher.create(authProvider, disposables)
 
     configWatcher.onChange(async config => {
         platform.onConfigurationChange?.(config)
         registerModelsFromVSCodeConfiguration()
     }, disposables)
 
-    const { disposable } = await register(context, configWatcher, platform)
+    const { disposable } = await register(context, authProvider, configWatcher, platform)
     disposables.push(disposable)
 
     return vscode.Disposable.from(...disposables)
@@ -124,6 +126,7 @@ export async function start(
 // Registers commands and webview given the config.
 const register = async (
     context: vscode.ExtensionContext,
+    authProviderPromise: Promise<AuthProvider>,
     configWatcher: ConfigWatcher<ConfigurationWithAccessToken>,
     platform: PlatformContext
 ): Promise<{
@@ -136,7 +139,6 @@ const register = async (
         context.extensionMode === vscode.ExtensionMode.Test
 
     setClientNameVersion(platform.extensionClient.clientName, platform.extensionClient.clientVersion)
-    const authProviderPromise = AuthProvider.create(initialConfig)
 
     // Initialize `displayPath` first because it might be used to display paths in error messages
     // from the subsequent initialization.
@@ -260,8 +262,7 @@ const register = async (
     async function handleAuthStatusChange(authStatus: AuthStatus) {
         // NOTE: MUST update the config and graphQL client first.
         const newConfig = await getFullConfig()
-        // Propagate access token through config
-        configWatcher.set(newConfig)
+
         // Sync auth status to graphqlClient
         graphqlClient.onConfigurationChange(newConfig)
 

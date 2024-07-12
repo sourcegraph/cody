@@ -1,14 +1,13 @@
 import type { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { getFullConfig } from './configuration'
+import type { AuthProvider } from './services/AuthProvider'
 
 /**
  * A wrapper around a configuration source that lets the client retrieve the current config and watch for changes.
  */
 export interface ConfigWatcher<C> extends vscode.Disposable {
     get(): C
-
-    // NOTE(beyang): should remove this
-    set(c: C): void
 
     /*
      * Register a callback that is called only when Cody's configuration is changed.
@@ -31,19 +30,26 @@ export class BaseConfigWatcher implements ConfigWatcher<ConfigurationWithAccessT
     private configChangeEvent: vscode.EventEmitter<ConfigurationWithAccessToken>
 
     public static async create(
-        getConfig: () => Promise<ConfigurationWithAccessToken>,
+        authProvider: Promise<AuthProvider>,
         disposables: vscode.Disposable[]
     ): Promise<ConfigWatcher<ConfigurationWithAccessToken>> {
-        const w = new BaseConfigWatcher(await getConfig())
+        const w = new BaseConfigWatcher(await getFullConfig())
+        disposables.push(w)
         disposables.push(
             vscode.workspace.onDidChangeConfiguration(async event => {
                 if (!event.affectsConfiguration('cody')) {
                     return
                 }
-                w.set(await getConfig())
+                w.set(await getFullConfig())
             })
         )
-        disposables.push(w)
+        authProvider.then(p => {
+            disposables.push(
+                p.initAndOnChange(async () => {
+                    w.set(await getFullConfig())
+                }, false)
+            )
+        })
 
         return w
     }
@@ -61,22 +67,11 @@ export class BaseConfigWatcher implements ConfigWatcher<ConfigurationWithAccessT
         this.disposables = []
     }
 
-    public set(config: ConfigurationWithAccessToken): void {
-        const oldConfig = JSON.stringify(this.currentConfig)
-        const newConfig = JSON.stringify(config)
-        if (oldConfig === newConfig) {
-            return
-        }
-
-        this.currentConfig = config
-        this.configChangeEvent.fire(config)
-    }
-
-    get(): ConfigurationWithAccessToken {
+    public get(): ConfigurationWithAccessToken {
         return this.currentConfig
     }
 
-    async initAndOnChange(
+    public async initAndOnChange(
         callback: (config: ConfigurationWithAccessToken) => Promise<void>,
         disposables: vscode.Disposable[]
     ): Promise<void> {
@@ -89,5 +84,16 @@ export class BaseConfigWatcher implements ConfigWatcher<ConfigurationWithAccessT
         disposables: vscode.Disposable[]
     ): void {
         disposables.push(this.configChangeEvent.event(callback))
+    }
+
+    private set(config: ConfigurationWithAccessToken): void {
+        const oldConfig = JSON.stringify(this.currentConfig)
+        const newConfig = JSON.stringify(config)
+        if (oldConfig === newConfig) {
+            return
+        }
+
+        this.currentConfig = config
+        this.configChangeEvent.fire(config)
     }
 }

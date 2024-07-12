@@ -45,7 +45,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         return AuthProvider._instance
     }
 
-    public static async create(config: AuthConfig) {
+    public static async createAndInit(config: AuthConfig) {
         if (!AuthProvider._instance) {
             AuthProvider._instance = new AuthProvider(config)
             await AuthProvider._instance.init()
@@ -89,8 +89,13 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         }).catch(error => logError('AuthProvider:init:failed', lastEndpoint, { verbose: error }))
     }
 
-    public initAndOnChange(listener: (authStatus: AuthStatus) => void): vscode.Disposable {
-        listener(this.status)
+    public initAndOnChange(
+        listener: (authStatus: AuthStatus) => void,
+        runImmediately = true
+    ): vscode.Disposable {
+        if (runImmediately) {
+            listener(this.status)
+        }
         return this.didChangeEvent.event(listener)
     }
 
