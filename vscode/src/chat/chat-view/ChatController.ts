@@ -312,10 +312,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.handleAbort()
                 break
             case 'chatModel':
-                this.handleSetChatModel(message.model)
                 // Because this was a user action to change the model we will set that
                 // as a global default for chat
                 await ModelsService.setDefaultModel(ModelUsage.Chat, message.model)
+                this.handleSetChatModel(message.model)
                 break
             case 'get-chat-models':
                 this.postChatModels()
