@@ -413,6 +413,18 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
             }),
         ]).finally(() => {
             this.didChangeEvent.fire(this.getAuthStatus())
+            let eventValue: 'disconnected' | 'connected' | 'failed'
+            if (!authStatus.isLoggedIn && !authStatus.endpoint) {
+                eventValue = 'disconnected'
+            } else if (
+                authStatus.isLoggedIn &&
+                !(authStatus.showNetworkError || authStatus.showInvalidAccessTokenError)
+            ) {
+                eventValue = 'connected'
+            } else {
+                eventValue = 'failed'
+            }
+            telemetryRecorder.recordEvent('cody.auth', eventValue)
         })
     }
 

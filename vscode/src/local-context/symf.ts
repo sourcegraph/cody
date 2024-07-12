@@ -87,6 +87,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     }
 
     public dispose(): void {
+        this.status.dispose()
         for (const disposable of this.disposables) {
             disposable.dispose()
         }

@@ -108,8 +108,7 @@ export async function start(
 
     const disposables: vscode.Disposable[] = []
 
-    const initialConfig = await getFullConfig()
-    const authProvider = AuthProvider.createAndInit(initialConfig)
+    const authProvider = AuthProvider.createAndInit(await getFullConfig())
     const configWatcher = await BaseConfigWatcher.create(authProvider, disposables)
 
     configWatcher.onChange(async config => {
@@ -117,7 +116,7 @@ export async function start(
         registerModelsFromVSCodeConfiguration()
     }, disposables)
 
-    const { disposable } = await register(context, authProvider, configWatcher, platform)
+    const { disposable } = await register(context, await authProvider, configWatcher, platform)
     disposables.push(disposable)
 
     return vscode.Disposable.from(...disposables)
@@ -126,7 +125,7 @@ export async function start(
 // Registers commands and webview given the config.
 const register = async (
     context: vscode.ExtensionContext,
-    authProviderPromise: Promise<AuthProvider>,
+    authProvider: AuthProvider,
     configWatcher: ConfigWatcher<ConfigurationWithAccessToken>,
     platform: PlatformContext
 ): Promise<{
@@ -149,11 +148,7 @@ const register = async (
             const promises: Promise<void>[] = []
 
             promises.push(localStorage.setConfig(config))
-            promises.push(
-                authProviderPromise.then(authProvider =>
-                    configureEventsInfra(config, isExtensionModeDevOrTest, authProvider)
-                )
-            )
+            promises.push(configureEventsInfra(config, isExtensionModeDevOrTest, authProvider))
             graphqlClient.setConfig(config)
             promises.push(featureFlagProvider.refresh())
             promises.push(contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri))
@@ -165,34 +160,27 @@ const register = async (
         disposables,
         { runImmediately: true }
     )
+    disposables.push(
+        authProvider.onChange(
+            async (authStatus: AuthStatus) => {
+                // Refresh server configuration that controls features enablement and models.
+                await ClientConfigSingleton.getInstance().setAuthStatus(authStatus)
+                // await Promise.all([featureFlagProvider.refresh(), setupAutocomplete()])
+                await PromptMixin.updateContextPreamble(
+                    isExtensionModeDevOrTest || isRunningInsideAgent()
+                )
+            },
+            { runImmediately: true }
+        )
+    )
 
     // Ensure Git API is available
     disposables.push(await initVSCodeGitApi())
 
     registerParserListeners(disposables)
+    registerChatListeners(disposables)
 
-    // Enable tracking for pasting chat responses into editor text
-    disposables.push(
-        vscode.workspace.onDidChangeTextDocument(async e => {
-            const changedText = e.contentChanges[0]?.text
-            // Skip if the document is not a file or if the copied text is from insert
-            if (!changedText || e.document.uri.scheme !== 'file') {
-                return
-            }
-            await onTextDocumentChange(changedText)
-        })
-    )
-
-    const initialConfig = configWatcher.get()
-    const authProvider = await authProviderPromise
-    if (authProvider.getAuthStatus().authenticated) {
-        await exposeOpenCtxClient(
-            context,
-            initialConfig,
-            authProvider.getAuthStatus().isDotCom,
-            platform.createOpenCtxController
-        )
-    }
+    await registerOpenCtxClient(context, platform, configWatcher, authProvider, disposables)
 
     // Initialize external services
     const {
@@ -209,24 +197,8 @@ const register = async (
         externalServicesOnDidConfigurationChange(config)
         localEmbeddings?.setAccessToken(config.serverEndpoint, config.accessToken)
     }, disposables)
-
     if (symfRunner) {
         disposables.push(symfRunner)
-    }
-
-    // Initialize Minion
-    if (initialConfig.experimentalMinionAnthropicKey) {
-        const minionOrchestrator = new MinionOrchestrator(context.extensionUri, authProvider, symfRunner)
-        disposables.push(minionOrchestrator)
-        disposables.push(
-            vscode.commands.registerCommand('cody.minion.panel.new', () =>
-                minionOrchestrator.createNewMinionPanel()
-            ),
-            vscode.commands.registerCommand('cody.minion.new-terminal', async () => {
-                const t = new PoorMansBash()
-                await t.run('hello world')
-            })
-        )
     }
 
     // Initialize enterprise context
@@ -236,10 +208,10 @@ const register = async (
         enterpriseContextFactory.clientConfigurationDidChange()
     }, disposables)
 
-    // Initialize context provider
-    const editor = new VSCodeEditor()
+    await registerMinion(context, configWatcher, authProvider, symfRunner, disposables)
 
-    const { chatsController, editorManager } = registerChat(
+    const editor = new VSCodeEditor()
+    const { chatsController } = registerChat(
         {
             context,
             platform,
@@ -258,57 +230,15 @@ const register = async (
 
     const sourceControl = new CodySourceControl(chatClient)
     const statusBar = createStatusBar()
-
-    // Listen for auth changes
     disposables.push(
         authProvider.onChange(
-            async (authStatus: AuthStatus) => {
-                // NOTE: MUST update the config and graphQL client first.
-                // graphqlClient.setConfig(newConfig)
-
-                const newConfig = await getFullConfig()
-
-                // Refresh server configuration that controls features enablement and models.
-                await ClientConfigSingleton.getInstance().setAuthStatus(authStatus)
-
-                // // Reset models list based on the updated auth status and server configuration.
-                // await syncModels(authStatus)
-
-                editorManager.setAuthStatus(authStatus)
-
-                const parallelTasks: Promise<void>[] = [
-                    featureFlagProvider.refresh(),
-                    setupAutocomplete(),
-                ]
-                await Promise.all(parallelTasks)
-
-                void exposeOpenCtxClient(
-                    context,
-                    newConfig,
-                    authStatus.isDotCom,
-                    platform.createOpenCtxController
-                )
-
-                statusBar.setAuthStatus(authStatus)
+            authStatus => {
                 sourceControl.setAuthStatus(authStatus)
-                await PromptMixin.updateContextPreamble(
-                    isExtensionModeDevOrTest || isRunningInsideAgent()
-                )
-
-                let eventValue: 'disconnected' | 'connected' | 'failed'
-                if (!authStatus.isLoggedIn && !authStatus.endpoint) {
-                    eventValue = 'disconnected'
-                } else if (
-                    authStatus.isLoggedIn &&
-                    !(authStatus.showNetworkError || authStatus.showInvalidAccessTokenError)
-                ) {
-                    eventValue = 'connected'
-                } else {
-                    eventValue = 'failed'
-                }
-                telemetryRecorder.recordEvent('cody.auth', eventValue)
+                statusBar.setAuthStatus(authStatus)
             },
-            { runImmediately: true }
+            {
+                runImmediately: true,
+            }
         )
     )
 
@@ -346,6 +276,7 @@ const register = async (
     }
 
     // Initialize supercompletion provider if experimental feature is enabled
+    const initialConfig = await getFullConfig()
     if (initialConfig.experimentalSupercompletions) {
         disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
     }
@@ -661,6 +592,67 @@ function registerParserListeners(disposables: vscode.Disposable[]) {
     disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
 }
 
+function registerChatListeners(disposables: vscode.Disposable[]) {
+    // Enable tracking for pasting chat responses into editor text
+    disposables.push(
+        vscode.workspace.onDidChangeTextDocument(async e => {
+            const changedText = e.contentChanges[0]?.text
+            // Skip if the document is not a file or if the copied text is from insert
+            if (!changedText || e.document.uri.scheme !== 'file') {
+                return
+            }
+            await onTextDocumentChange(changedText)
+        })
+    )
+}
+
+async function registerOpenCtxClient(
+    context: vscode.ExtensionContext,
+    platform: PlatformContext,
+    config: ConfigWatcher<ConfigurationWithAccessToken>,
+    authProvider: AuthProvider,
+    disposables: vscode.Disposable[]
+): Promise<void> {
+    if (authProvider.getAuthStatus().authenticated) {
+        await exposeOpenCtxClient(
+            context,
+            config.get(),
+            authProvider.getAuthStatus().isDotCom,
+            platform.createOpenCtxController
+        )
+    }
+    config.onChange(async newConfig => {
+        await exposeOpenCtxClient(
+            context,
+            newConfig,
+            authProvider.getAuthStatus().isDotCom,
+            platform.createOpenCtxController
+        )
+    }, disposables)
+}
+
+async function registerMinion(
+    context: vscode.ExtensionContext,
+    config: ConfigWatcher<ConfigurationWithAccessToken>,
+    authProvider: AuthProvider,
+    symfRunner: SymfRunner | undefined,
+    disposables: vscode.Disposable[]
+): Promise<void> {
+    if (config.get().experimentalMinionAnthropicKey) {
+        const minionOrchestrator = new MinionOrchestrator(context.extensionUri, authProvider, symfRunner)
+        disposables.push(minionOrchestrator)
+        disposables.push(
+            vscode.commands.registerCommand('cody.minion.panel.new', () =>
+                minionOrchestrator.createNewMinionPanel()
+            ),
+            vscode.commands.registerCommand('cody.minion.new-terminal', async () => {
+                const t = new PoorMansBash()
+                await t.run('hello world')
+            })
+        )
+    }
+}
+
 interface RegisterChatOptions {
     context: vscode.ExtensionContext
     platform: PlatformContext
@@ -690,7 +682,6 @@ function registerChat(
     disposables: vscode.Disposable[]
 ): {
     chatsController: ChatsController
-    editorManager: EditManager
 } {
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
@@ -724,13 +715,21 @@ function registerChat(
         extensionClient: platform.extensionClient,
     })
     disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider())
+    disposables.push(
+        authProvider.onChange(
+            authStatus => {
+                editorManager.setAuthStatus(authStatus)
+            },
+            { runImmediately: true }
+        )
+    )
 
     if (localEmbeddings) {
         // kick-off embeddings initialization
         localEmbeddings.start()
     }
 
-    return { chatsController, editorManager }
+    return { chatsController }
 }
 
 /**

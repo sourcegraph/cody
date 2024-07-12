@@ -34,7 +34,7 @@ export class BaseConfigWatcher implements ConfigWatcher<ConfigurationWithAccessT
     private configChangeEvent: vscode.EventEmitter<ConfigurationWithAccessToken>
 
     public static async create(
-        authProvider: Promise<AuthProvider>,
+        authProviderPromise: Promise<AuthProvider>,
         disposables: vscode.Disposable[]
     ): Promise<ConfigWatcher<ConfigurationWithAccessToken>> {
         const w = new BaseConfigWatcher(await getFullConfig())
@@ -47,9 +47,9 @@ export class BaseConfigWatcher implements ConfigWatcher<ConfigurationWithAccessT
                 w.set(await getFullConfig())
             })
         )
-        authProvider.then(p => {
+        authProviderPromise.then(authProvider => {
             disposables.push(
-                p.onChange(async () => {
+                authProvider.onChange(async () => {
                     w.set(await getFullConfig())
                 })
             )
