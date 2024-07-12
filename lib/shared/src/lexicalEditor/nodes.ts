@@ -32,12 +32,26 @@ export type SerializedContextItem = {
     | Omit<ContextItemOpenCtx, 'uri' | 'content' | 'source'>
 )
 
+export type SerializedTemplateInput = {
+    state: 'unset' | 'focused' | 'set'
+    placeholder: string
+    value: string
+}
+
 export type SerializedContextItemMentionNode = Spread<
     {
         type: typeof CONTEXT_ITEM_MENTION_NODE_TYPE
         contextItem: SerializedContextItem
         isFromInitialContext: boolean
         text: string
+    },
+    SerializedLexicalNode
+>
+
+export type SerializedTemplateInputNode = Spread<
+    {
+        type: typeof TEMPLATE_INPUT_NODE_TYPE
+        templateInput: SerializedTemplateInput,
     },
     SerializedLexicalNode
 >
@@ -67,6 +81,12 @@ export function isSerializedContextItemMentionNode(
     return Boolean(node && node.type === CONTEXT_ITEM_MENTION_NODE_TYPE)
 }
 
+export function isSerializedTemplateInputNode(
+    node: SerializedLexicalNode | null | undefined
+): node is SerializedTemplateInputNode {
+    return Boolean(node && node.type === TEMPLATE_INPUT_NODE_TYPE)
+}
+
 export function contextItemMentionNodeDisplayText(contextItem: SerializedContextItem): string {
     // A displayed range of `foo.txt:2-4` means "include all of lines 2, 3, and 4", which means the
     // range needs to go to the start (0th character) of line 5. Also, `RangeData` is 0-indexed but
@@ -93,6 +113,10 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
     }
     // @ts-ignore
     throw new Error(`unrecognized context item type ${contextItem.type}`)
+}
+
+export function templateInputNodeDisplayText(templateInput: SerializedTemplateInputNode): string {
+    return templateInput.value || templateInput.placeholder
 }
 
 function trimCommonRepoNamePrefixes(repoName: string): string {

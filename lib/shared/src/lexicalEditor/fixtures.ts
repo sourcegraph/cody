@@ -1,6 +1,6 @@
 import type { SerializedLexicalNode, SerializedTextNode } from 'lexical'
 import { STATE_VERSION_CURRENT, type SerializedPromptEditorState } from './editorState'
-import type { SerializedContextItem, SerializedContextItemMentionNode } from './nodes'
+import type { SerializedContextItem, SerializedContextItemMentionNode, SerializedTemplateInputNode } from './nodes'
 
 export const FILE_MENTION_EDITOR_STATE_FIXTURE: SerializedPromptEditorState = {
     v: STATE_VERSION_CURRENT,
@@ -19,6 +19,15 @@ export const FILE_MENTION_EDITOR_STATE_FIXTURE: SerializedPromptEditorState = {
                             type: 'text',
                             version: 1,
                         },
+                        {
+                            type: 'templateInput',
+                            version: 1,
+                            templateInput: {
+                                state: 'unset',
+                                placeholder: 'PlACEHOLDER',
+                                value: '',
+                            },
+                        } satisfies SerializedTemplateInputNode,
                         {
                             type: 'contextItemMention',
                             version: 1,

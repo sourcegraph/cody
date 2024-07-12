@@ -1,4 +1,4 @@
-import { TEMPLATE_INPUT_NODE_TYPE } from '@sourcegraph/cody-shared'
+import { type SerializedTemplateInput, TEMPLATE_INPUT_NODE_TYPE } from '@sourcegraph/cody-shared'
 import {
     $applyNodeReplacement,
     DecoratorNode,
@@ -12,23 +12,20 @@ import styles from './TemplateInputNode.module.css'
 export type TemplateInputState = 'unset' | 'focused' | 'set'
 
 export class TemplateInputNode extends DecoratorNode<JSX.Element> {
-    public value: string
-
     static getType(): typeof TEMPLATE_INPUT_NODE_TYPE {
         return TEMPLATE_INPUT_NODE_TYPE
     }
 
     static clone(node: TemplateInputNode): TemplateInputNode {
-        return new TemplateInputNode(node.templateText, node.state, node.key)
+        return new TemplateInputNode(node.templateInput, node.key)
     }
 
     constructor(
-        public templateText: string,
-        public state: TemplateInputState = 'unset',
+        public templateInput: SerializedTemplateInput,
         private key?: NodeKey
     ) {
         super(key)
-        this.value = ''
+        this.templateInput = templateInput
     }
 
     createDOM(): HTMLElement {
@@ -40,7 +37,9 @@ export class TemplateInputNode extends DecoratorNode<JSX.Element> {
     }
 
     getTextContent(): string {
-        return this.state === 'unset' ? this.templateText : this.value
+        return this.templateInput.state === 'unset'
+            ? this.templateInput.placeholder
+            : this.templateInput.value
     }
 
     decorate(_editor: LexicalEditor, _config: EditorConfig): JSX.Element {
@@ -48,23 +47,29 @@ export class TemplateInputNode extends DecoratorNode<JSX.Element> {
             <TemplateInputComponent
                 nodeKey={this.getKey()}
                 node={this}
-                className={`${styles.templateInputNode} ${styles[this.state]}`}
+                className={`${styles.templateInputNode} ${styles[this.templateInput.state]}`}
                 focusedClassName={styles.focused}
             />
         )
     }
 
     setState(state: TemplateInputState): void {
-        this.state = state
+        this.templateInput.state = state
     }
 
     setValue(value: string): void {
-        this.value = value
+        this.templateInput.value = value
     }
 }
 
-export function $createTemplateInputNode(templateText: string): TemplateInputNode {
-    return $applyNodeReplacement(new TemplateInputNode(templateText))
+export function $createTemplateInputNode(placeholder: string): TemplateInputNode {
+    return $applyNodeReplacement(
+        new TemplateInputNode({
+            state: 'unset',
+            value: '',
+            placeholder,
+        })
+    )
 }
 
 export function $isTemplateInputNode(node: unknown): node is TemplateInputNode {

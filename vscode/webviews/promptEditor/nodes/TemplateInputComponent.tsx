@@ -125,8 +125,8 @@ export const TemplateInputComponent: React.FC<{
         <Tooltip>
             <TooltipTrigger asChild>
                 <span ref={ref} className={composedClassNames}>
-                    {node.state === 'unset' ? (
-                        <span>{node.templateText}</span>
+                    {node.templateInput.state === 'unset' ? (
+                        <span>{node.templateInput.placeholder}</span>
                     ) : (
                         <input
                             ref={inputRef}
@@ -139,7 +139,9 @@ export const TemplateInputComponent: React.FC<{
                     )}
                 </span>
             </TooltipTrigger>
-            {node.state === 'unset' && <TooltipContent>{node.templateText}</TooltipContent>}
+            {node.templateInput.state === 'unset' && (
+                <TooltipContent>{node.templateInput.placeholder}</TooltipContent>
+            )}
         </Tooltip>
     )
 }
