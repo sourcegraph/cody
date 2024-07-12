@@ -789,6 +789,7 @@ export const vsCodeMocks = {
         activeTextEditor: {
             document: { uri: { scheme: 'not-cody' } },
             options: { tabSize: 4 },
+            selection: {},
         },
         onDidChangeActiveTextEditor() {},
         createTextEditorDecorationType: () => ({

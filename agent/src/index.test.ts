@@ -144,7 +144,7 @@ describe('Agent', () => {
             await client.openFile(sumUri)
             const completions = await client.request('autocomplete/execute', {
                 uri: sumUri.toString(),
-                position: { line: 1, character: 3 },
+                position: { line: 1, character: 4 },
                 triggerKind: 'Invoke',
             })
             const texts = completions.items.map(item => item.insertText)
@@ -152,7 +152,7 @@ describe('Agent', () => {
             expect(texts).toMatchInlineSnapshot(
                 `
               [
-                "   return a + b",
+                "    return a + b;",
               ]
             `
             )
@@ -165,7 +165,7 @@ describe('Agent', () => {
             await client.openFile(bubbleUri)
             const completions = await client.request('autocomplete/execute', {
                 uri: bubbleUri.toString(),
-                position: { line: 1, character: 3 },
+                position: { line: 1, character: 4 },
                 triggerKind: 'Invoke',
             })
             const texts = completions.items.map(item => item.insertText)
@@ -173,14 +173,13 @@ describe('Agent', () => {
             expect(texts).toMatchInlineSnapshot(
                 `
               [
-                "   for (let i = 0; i < nums.length; i++) {
-                      for (let j = i + 1; j < nums.length; j++) {
-                          if (nums[i] > nums[j]) {
-                              [nums[i], nums[j]] = [nums[j], nums[i]]
+                "    for (let i = 0; i < nums.length; i++) {
+                      for (let j = 0; j < nums.length - 1; j++) {
+                          if (nums[j] > nums[j + 1]) {
+                              [nums[j], nums[j + 1]] = [nums[j + 1], nums[j]]
                           }
                       }
-                  }
-                  return nums",
+                  }",
               ]
             `
             )
