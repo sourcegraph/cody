@@ -370,6 +370,23 @@ describe('InlineCompletionItemProvider', () => {
             expect(spy).not.toHaveBeenCalled()
         })
 
+        it('does not log a completion if it is marked as stale', async () => {
+            const spy = vi.spyOn(CompletionLogger, 'suggested')
+
+            const { document, position } = documentAndPosition('const foo = █', 'typescript')
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId: '1' as CompletionLogID,
+                items: [{ insertText: 'bar', range: new vsCodeMocks.Range(position, position) }],
+                source: InlineCompletionsResultSource.Network,
+                stale: true,
+            })
+
+            const provider = new MockableInlineCompletionItemProvider(fn)
+            await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
+
+            expect(spy).not.toHaveBeenCalled()
+        })
+
         it('does not log a completion if the prefix no longer matches due to a cursor change', async () => {
             const spy = vi.spyOn(CompletionLogger, 'suggested')
 
@@ -412,69 +429,6 @@ describe('InlineCompletionItemProvider', () => {
             // The completion is no longer visible due to the prefix changing before the request resolved.
             expect(spy).toHaveBeenCalledTimes(0)
             cursorSelectionMock.mockReset()
-        })
-
-        it('logs a single completion when multiple in-flight requests resolve to the same completion', async () => {
-            vi.useFakeTimers()
-
-            const spy = vi.spyOn(CompletionLogger, 'suggested')
-
-            const { document, position: firstPosition } = documentAndPosition(
-                'const foo = █b',
-                'typescript'
-            )
-            const secondPosition = firstPosition.with(firstPosition.line, firstPosition.character + 1)
-
-            const mockGetInlineCompletions = vi
-                .fn()
-                // First response
-                .mockImplementationOnce(
-                    () =>
-                        new Promise(resolve => {
-                            setTimeout(() => {
-                                resolve({
-                                    logId: '1' as CompletionLogID,
-                                    items: [
-                                        {
-                                            insertText: 'bar', // Completion: "const foo = bar"
-                                            range: new vsCodeMocks.Range(firstPosition, firstPosition),
-                                        },
-                                    ],
-                                    source: InlineCompletionsResultSource.Network,
-                                })
-                            }, 100)
-                        })
-                )
-                // Second response
-                .mockImplementationOnce(
-                    () =>
-                        new Promise(resolve => {
-                            setTimeout(() => {
-                                resolve({
-                                    logId: '2' as CompletionLogID,
-                                    items: [
-                                        {
-                                            insertText: 'ar', // Completion: "const foo = bar"
-                                            range: new vsCodeMocks.Range(secondPosition, secondPosition),
-                                        },
-                                    ],
-                                    source: InlineCompletionsResultSource.Network,
-                                })
-                            }, 100)
-                        })
-                )
-
-            const provider = new MockableInlineCompletionItemProvider(mockGetInlineCompletions)
-
-            // Call provideInlineCompletionItems twice, these will run in parallel, and we should expect
-            // that the second request is deemed to be a duplicate of the first.
-            provider.provideInlineCompletionItems(document, firstPosition, DUMMY_CONTEXT)
-            provider.provideInlineCompletionItems(document, secondPosition, DUMMY_CONTEXT)
-
-            await vi.runAllTimersAsync()
-
-            expect(spy).toHaveBeenCalledTimes(1)
-            expect(spy).toHaveBeenCalledWith('1', expect.anything())
         })
     })
 

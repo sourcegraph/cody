@@ -389,6 +389,13 @@ export class InlineCompletionItemProvider
                     return null
                 }
 
+                if (result.stale) {
+                    // Although we have a result, we have marked it as stale which means that we're prioritising
+                    // a different result. We want to avoid cases where we run `provideInlineCompletionItems` multiple times
+                    // for a single position, so we do nothing here.
+                    return null
+                }
+
                 const autocompleteItems = analyticsItemToAutocompleteItem(
                     result.logId,
                     document,
@@ -474,21 +481,6 @@ export class InlineCompletionItemProvider
                     return null
                 }
 
-                // It is possible that we have multiple in-flight requests that will produce the same completion.
-                // We do not want this to lead to multiple "suggested" events being logged.
-                // We validate that the incoming completion does not match the last candidate.
-                const isFreshCompletion =
-                    this.lastCandidate === undefined
-                        ? true
-                        : result.source !== InlineCompletionsResultSource.LastCandidate &&
-                          !canReuseLastCandidateInDocumentContext({
-                              document,
-                              position,
-                              selectedCompletionInfo: context?.selectedCompletionInfo,
-                              lastCandidate: this.lastCandidate,
-                              docContext,
-                          })
-
                 // Since we now know that the completion is going to be visible in the UI, we save the
                 // completion as the last candidate (that is shown as ghost text in the editor) so that
                 // we can reuse it if the user types in such a way that it is still valid (such as by
@@ -516,7 +508,8 @@ export class InlineCompletionItemProvider
                     completionEvent: CompletionLogger.getCompletionEvent(result.logId),
                 }
 
-                if (isFreshCompletion && !this.config.isRunningInsideAgent) {
+                console.log('UMPOX: SUGGESTING ITEM', visibleItems[0].insertText)
+                if (!this.config.isRunningInsideAgent) {
                     // Since VS Code has no callback as to when a completion is shown, we assume
                     // that if we pass the above visibility tests, the completion is going to be
                     // rendered in the UI

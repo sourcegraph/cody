@@ -105,6 +105,12 @@ export interface InlineCompletionsResult {
 
     /** The completions. */
     items: InlineCompletionItemWithAnalytics[]
+
+    /**
+     * If the request has become stale.
+     * This will be the case if it is left in-flight but superseded by a newer request.
+     */
+    stale?: boolean
 }
 
 /**
@@ -330,6 +336,15 @@ async function doGetInlineCompletions(
         }
     }
 
+    /**
+     * A request becomes stale if it is left in-flight but superseded by another request.
+     * This only applies to the smart throttle.
+     */
+    let stale = false
+    const markRequestAsStale = () => {
+        stale = true
+    }
+
     if (smartThrottleService) {
         // For the smart throttle to work correctly and preserve tail requests, we need full control
         // over the cancellation logic for each request.
@@ -337,7 +352,11 @@ async function doGetInlineCompletions(
         cancellationListener?.dispose()
 
         autocompleteStageCounterLogger.record('preSmartThrottle')
-        const throttledRequest = await smartThrottleService.throttle(requestParams, triggerKind)
+        const throttledRequest = await smartThrottleService.throttle(
+            requestParams,
+            triggerKind,
+            markRequestAsStale
+        )
         if (throttledRequest === null) {
             return null
         }
@@ -435,6 +454,7 @@ async function doGetInlineCompletions(
         logId,
         items: completions,
         source,
+        stale,
     }
 }
 
