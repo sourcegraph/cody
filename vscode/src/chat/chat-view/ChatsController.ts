@@ -12,7 +12,6 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
-import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import type { MessageProviderOptions } from '../MessageProvider'
 
@@ -21,6 +20,7 @@ import type { startTokenReceiver } from '../../auth/token-receiver'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import { getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
+import type { SymfWrapper } from '../../local-context/symf'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { type ChatLocation, localStorage } from '../../services/LocalStorageProvider'
 import type { ContextAPIClient } from '../context/contextAPIClient'
@@ -62,7 +62,7 @@ export class ChatsController implements vscode.Disposable {
 
         private readonly enterpriseContext: EnterpriseContextFactory,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
-        private readonly symf: SymfRunner | null,
+        private readonly symf: SymfWrapper,
 
         private readonly contextFetcher: ContextFetcher,
 
@@ -468,7 +468,7 @@ export class ChatsController implements vscode.Disposable {
             ...this.options,
             chatClient: this.chatClient,
             localEmbeddings: isConsumer ? this.localEmbeddings : null,
-            symf: isConsumer ? this.symf : null,
+            symf: this.symf,
             enterpriseContext: allowRemoteContext ? this.enterpriseContext : null,
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,

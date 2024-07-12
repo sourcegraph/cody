@@ -39,15 +39,14 @@ export class CodyEngineService {
     }
 
     private async spawnAndBindService(): Promise<MessageHandler> {
-        const service = await new Promise<MessageHandler>((resolve, reject) => {
-            spawnBfg(this.context, reject).then(
-                bfg => resolve(bfg),
-                error => {
+        const service = await new Promise<MessageHandler>((resolve, reject) =>
+            spawnBfg(this.context, reject)
+                .then(resolve)
+                .catch(error => {
                     captureException(error)
                     reject(error)
-                }
-            )
-        })
+                })
+        )
         logDebug('CodyEngineService', 'spawnAndBindService', 'service started, initializing')
         return service
     }

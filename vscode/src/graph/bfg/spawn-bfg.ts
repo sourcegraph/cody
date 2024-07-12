@@ -31,9 +31,9 @@ export async function spawnBfg(
     child.stderr.on('data', chunk => {
         logDebug('CodyEngine', 'spawnBfg:stderr', { verbose: chunk.toString() })
     })
-    child.on('disconnect', () => reject())
-    child.on('close', () => reject())
-    child.on('error', error => reject(error))
+    child.on('disconnect', reject)
+    child.on('close', reject)
+    child.on('error', reject)
     child.on('exit', code => {
         bfg.exit()
         reject(code)

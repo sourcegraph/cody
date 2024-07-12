@@ -216,7 +216,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.localEmbeddings = localEmbeddings
         this.symf = symf
         this.repoPicker = enterpriseContext?.repoPicker || null
-        this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
+        this.remoteSearch = enterpriseContext?.createRemoteSearch()
         this.editor = editor
 
         this.contextFetcher = contextFetcher

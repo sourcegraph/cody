@@ -133,9 +133,9 @@ export async function resolveContext({
     editor: VSCodeEditor
     input: HumanInput
     providers: {
-        localEmbeddings: LocalEmbeddingsController | null
         symf: SymfWrapper
-        remoteSearch: RemoteSearch | null
+        localEmbeddings?: LocalEmbeddingsController
+        remoteSearch?: RemoteSearch
     }
     signal?: AbortSignal
 }): Promise<ContextItem[]> {
@@ -272,10 +272,10 @@ async function searchRemote(
  * Uses symf to conduct a local search within the current workspace folder
  */
 async function searchSymf(
-    symf: SymfRunner | null,
     editor: VSCodeEditor,
     workspaceRoot: vscode.Uri,
     userText: PromptString,
+    symf?: SymfRunner,
     blockOnIndex = false
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.symf', async () => {

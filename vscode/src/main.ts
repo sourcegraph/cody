@@ -778,11 +778,6 @@ function registerChat(
     })
     disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider())
 
-    if (localEmbeddings) {
-        // kick-off embeddings initialization
-        localEmbeddings.start()
-    }
-
     // Register a serializer for reviving the chat panel on reload
     if (vscode.window.registerWebviewPanelSerializer) {
         vscode.window.registerWebviewPanelSerializer(CodyChatEditorViewType, {
