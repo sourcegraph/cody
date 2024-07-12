@@ -89,7 +89,7 @@ class CompletionProviderConfig {
         // - CodyAutocompleteLatencyExperimentBasedFeatureFlag 75%
         // - CodyAutocompleteHotStreak 33%
         // - CodyAutocompleteSmartThrottle 66%
-        // - CodyAutocompleteSmartThrottleExtended 100%
+        // - CodyAutocompleteSmartThrottleExtended 50%
         if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteLatencyExperimentBasedFeatureFlag)) {
             if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteHotStreak)) {
                 return 'hot-streak'
