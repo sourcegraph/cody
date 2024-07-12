@@ -5,16 +5,19 @@ import {
     type ContextItem,
     type ContextItemRepository,
     ContextItemSource,
+    FeatureFlag,
     MAX_BYTES_PER_FILE,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
     type PromptString,
     type Result,
+    featureFlagProvider,
     isFileURI,
     truncateTextNearestLine,
     uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { compact, flatten, zip } from 'lodash'
 import type { RemoteSearch } from '../../context/remote-search'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ContextRankingController } from '../../local-context/context-ranking'
@@ -72,7 +75,7 @@ export async function getEnhancedContext({
     return wrapInActiveSpan('chat.enhancedContext', async () => {
         // use user attention context only if config is set to none
         if (strategy === 'none') {
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > none')
+            logDebug('ChatController', 'getEnhancedContext > none')
             return getVisibleEditorContext(editor)
         }
 
@@ -99,12 +102,15 @@ export async function getEnhancedContext({
                 ? retrieveContextGracefully(searchSymf(providers.symf, editor, input.text), 'symf')
                 : []
 
-        // Combine all context sources
-        const searchContext = [
-            ...(await embeddingsContextItemsPromise),
-            ...(await remoteSearchContextItemsPromise),
-            ...(await localSearchContextItemsPromise),
+        // Retrieve items from all context sources
+        const searchContextBySource = [
+            await embeddingsContextItemsPromise,
+            await remoteSearchContextItemsPromise,
+            await localSearchContextItemsPromise,
         ]
+
+        // Interleave items from context sources, excluding undefined items inserted by lodash's zip
+        const searchContext = compact(flatten(zip(...searchContextBySource)))
 
         const priorityContext = await getPriorityContext(input.text, editor, searchContext)
         return priorityContext.concat(searchContext)
@@ -183,6 +189,36 @@ async function getEnhancedContextFromRanker({
     })
 }
 
+export async function getContextStrategy(
+    defaultStrategy: ConfigurationUseContext
+): Promise<ConfigurationUseContext> {
+    // Only run experiment if we're in VS Code
+    if (vscode.workspace.getConfiguration().get<boolean>('cody.advanced.agent.running', false)) {
+        return defaultStrategy
+    }
+
+    const [isEnhancedContextExperiment, useEmbeddings, useSymf] = await Promise.all([
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEnhancedContextExperiment),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEnhancedContexUseEmbeddings),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEnhancedContextUseSymf),
+    ])
+
+    if (!isEnhancedContextExperiment) {
+        return defaultStrategy
+    }
+
+    if (useEmbeddings && useSymf) {
+        return 'blended'
+    }
+    if (useEmbeddings) {
+        return 'embeddings'
+    }
+    if (useSymf) {
+        return 'keyword'
+    }
+    return 'none'
+}
+
 async function searchRemote(
     remoteSearch: RemoteSearch | null,
     input: HumanInput,
@@ -254,10 +290,7 @@ async function searchSymf(
                     try {
                         text = await editor.getTextEditorContentForFile(result.file, range)
                     } catch (error) {
-                        logError(
-                            'SimpleChatPanelProvider.searchSymf',
-                            `Error getting file contents: ${error}`
-                        )
+                        logError('ChatController.searchSymf', `Error getting file contents: ${error}`)
                         return []
                     }
                     return {
@@ -286,7 +319,7 @@ async function searchEmbeddingsLocal(
             return []
         }
 
-        logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching local embeddings')
+        logDebug('ChatController', 'getEnhancedContext > searching local embeddings')
         const contextItems: ContextItem[] = []
         const embeddingsResults = await localEmbeddings.getContext(text, numResults)
         span.setAttribute('numResults', embeddingsResults.length)
@@ -465,12 +498,12 @@ function extractQuestion(input: string): string | undefined {
 
 async function retrieveContextGracefully<T>(promise: Promise<T[]>, strategy: string): Promise<T[]> {
     try {
-        logDebug('SimpleChatPanelProvider', `getEnhancedContext > ${strategy} (start)`)
+        logDebug('ChatController', `getEnhancedContext > ${strategy} (start)`)
         return await promise
     } catch (error) {
-        logError('SimpleChatPanelProvider', `getEnhancedContext > ${strategy}' (error)`, error)
+        logError('ChatController', `getEnhancedContext > ${strategy}' (error)`, error)
         return []
     } finally {
-        logDebug('SimpleChatPanelProvider', `getEnhancedContext > ${strategy} (end)`)
+        logDebug('ChatController', `getEnhancedContext > ${strategy} (end)`)
     }
 }

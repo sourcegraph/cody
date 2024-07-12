@@ -20,7 +20,7 @@ export const CodyCommandMenuItems: MenuCommandAccessor[] = [
         description: 'New Chat',
         prompt: 'Start a new chat',
         icon: 'comment',
-        command: { command: 'cody.chat.panel.new' },
+        command: { command: 'cody.chat.newEditorPanel' },
         keybinding: `${osIcon}L`,
         mode: 'ask',
     },
@@ -64,6 +64,13 @@ export const CodyCommandMenuItems: MenuCommandAccessor[] = [
         command: { command: 'cody.command.smell-code' },
         keybinding: '',
         mode: 'ask',
+    },
+    {
+        key: 'auto',
+        description: 'Auto Edit (Experimental)',
+        icon: 'surround-with',
+        command: { command: 'cody.command.auto-edit' },
+        keybinding: '${osIcon}Tab',
     },
     {
         key: 'commit',

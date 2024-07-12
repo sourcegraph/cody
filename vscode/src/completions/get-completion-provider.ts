@@ -1,4 +1,4 @@
-import type { DocumentContext } from '@sourcegraph/cody-shared'
+import type { DocumentContext, GitContext } from '@sourcegraph/cody-shared'
 
 import { completionProviderConfig } from './completion-provider-config'
 import { type InlineCompletionsParams, TriggerKind } from './get-inline-completions'
@@ -12,6 +12,7 @@ interface GetCompletionProvidersParams
     > {
     docContext: DocumentContext
     completionLogId: CompletionLogID
+    gitContext?: GitContext
 }
 
 export function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
@@ -23,6 +24,7 @@ export function getCompletionProvider(params: GetCompletionProvidersParams): Pro
         docContext,
         firstCompletionTimeout,
         completionLogId,
+        gitContext,
     } = params
 
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
@@ -34,6 +36,7 @@ export function getCompletionProvider(params: GetCompletionProvidersParams): Pro
         // For now the value is static and based on the average multiline completion latency.
         firstCompletionTimeout,
         completionLogId,
+        gitContext,
     }
 
     // Show more if manually triggered (but only showing 1 is faster, so we use it

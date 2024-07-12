@@ -369,19 +369,24 @@ export function getNextNonEmptyLine(suffix: string): string {
     )
 }
 
-export function getPrevNonEmptyLine(prefix: string): string {
+export function getPrevNonEmptyLineIndex(prefix: string): number | null {
     const prevLf = prefix.lastIndexOf('\n')
     const prevCrLf = prefix.lastIndexOf('\r\n')
     // There is no prev line
     if (prevLf === -1 && prevCrLf === -1) {
+        return null
+    }
+
+    return prevCrLf >= 0 ? prevCrLf : prevLf
+}
+
+export function getPrevNonEmptyLine(prefix: string): string {
+    const prevNonEmptyLineIndex = getPrevNonEmptyLineIndex(prefix)
+    if (prevNonEmptyLineIndex === null) {
         return ''
     }
-    return (
-        findLast(
-            lines(prefix.slice(0, prevCrLf >= 0 ? prevCrLf : prevLf)),
-            line => line.trim().length > 0
-        ) ?? ''
-    )
+
+    return findLast(lines(prefix.slice(0, prevNonEmptyLineIndex)), line => line.trim().length > 0) ?? ''
 }
 
 export function lines(text: string): string[] {

@@ -6,6 +6,7 @@ import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
 import { escapeRegExp } from 'lodash'
 import semver from 'semver'
+import type { AuthStatus } from '../../auth/types'
 import type { ConfigurationWithAccessToken } from '../../configuration'
 import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
@@ -1318,23 +1319,20 @@ export const graphqlClient = new SourcegraphGraphQLAPIClient()
 export class ClientConfigSingleton {
     private static instance: ClientConfigSingleton
     private cachedClientConfig?: CodyClientConfig
-    private cachedAt?: number
-    private featuresLegacy: Promise<CodyConfigFeatures>
+    private cachedAt = 0
+    private isSignedIn = false
+
+    // Default values for the legacy GraphQL features API, used when a Sourcegraph instance
+    // does not support even the legacy GraphQL API.
+    private featuresLegacy: CodyConfigFeatures = {
+        chat: true,
+        autoComplete: true,
+        commands: true,
+        attribution: false,
+    }
 
     // Constructor is private to prevent creating new instances outside of the class
-    private constructor() {
-        // Fetch the latest client config initially because we know we'll need it.
-        this.refreshConfig()
-
-        // Default values for the legacy GraphQL features API, used when a Sourcegraph instance
-        // does not support even the legacy GraphQL API.
-        this.featuresLegacy = Promise.resolve({
-            chat: true,
-            autoComplete: true,
-            commands: true,
-            attribution: false,
-        })
-    }
+    private constructor() {}
 
     // Static method to get the singleton instance
     public static getInstance(): ClientConfigSingleton {
@@ -1344,33 +1342,57 @@ export class ClientConfigSingleton {
         return ClientConfigSingleton.instance
     }
 
-    public async getConfig(): Promise<CodyClientConfig> {
-        if (!this.cachedClientConfig) {
-            // Must wait for client config first.
+    public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
+        this.isSignedIn = authStatus.authenticated && authStatus.isLoggedIn
+        if (this.isSignedIn) {
             await this.refreshConfig()
+        } else {
+            this.cachedClientConfig = undefined
+            this.cachedAt = 0
+        }
+    }
 
-            // If the cached config is null, then we must have failed to fetch it and there is
-            // nothing we can do.
-            if (!this.cachedClientConfig || !this.cachedAt) {
-                throw new Error(
-                    'error while refreshing client config, please try again later or check the logs'
-                )
-            }
+    public async getConfig(): Promise<CodyClientConfig | undefined> {
+        switch (this.shouldFetch()) {
+            case 'sync':
+                return this.refreshConfig()
+            // biome-ignore lint/suspicious/noFallthroughSwitchClause: This is intentional
+            case 'async':
+                this.refreshConfig()
+            case false:
+                return this.cachedClientConfig
+        }
+    }
+
+    // Refetch the config if the user is signed in and it's not cached or it's older than 60 seconds
+    // If the cached config is >60s old, then we will refresh it async now. In the meantime, we will
+    // continue using the old version.
+    //
+    // Note that this means the time allowance between 'site admin disabled <chat,autocomplete,commands,etc.>
+    // functionality but users can still make use of it' is double this (120s.)
+    private shouldFetch(): 'sync' | 'async' | false {
+        // If the user is not logged in, we will not fetch as it will fail
+        if (!this.isSignedIn) {
+            return false
         }
 
-        // If the cached config is >60s old, then we will refresh it async now. In the meantime, we will
-        // continue using the old version.
-        //
-        // Note that this means the time allowance between 'site admin disabled <chat,autocomplete,commands,etc.>
-        // functionality but users can still make use of it' is double this (120s.)
-        if (Date.now() - this.cachedAt! > 60000) {
-            this.refreshConfig()
+        // If they are logged in but not cached, fetch the config synchronously
+        if (!this.cachedClientConfig) {
+            return 'sync'
         }
-        return this.cachedClientConfig!
+
+        // If the config is cached and greater than 60 seconds old, we can use the cached version
+        // but should asyncronously fetch the new config
+        if (Date.now() - this.cachedAt > 60000) {
+            return 'async'
+        }
+
+        // Otherwise, we have a cache hit!
+        return false
     }
 
     // Refreshes the config features by fetching them from the server and caching the result
-    public async refreshConfig(): Promise<CodyClientConfig> {
+    private async refreshConfig(): Promise<CodyClientConfig> {
         logDebug('ClientConfigSingleton', 'refreshing configuration')
 
         // Determine based on the site version if /.api/client-config is available.
@@ -1437,12 +1459,10 @@ export class ClientConfigSingleton {
     }
 
     private async fetchClientConfigLegacy(): Promise<CodyClientConfig> {
-        const previousFeaturesLegacy = await this.featuresLegacy
-
         // Note: all of these promises are written carefully to not throw errors internally, but
         // rather to return sane defaults, and so we do not catch() here.
         const smartContextWindow = await graphqlClient.getCodyLLMConfigurationSmartContext()
-        const features = await this.fetchConfigFeaturesLegacy(previousFeaturesLegacy)
+        const features = await this.fetchConfigFeaturesLegacy(this.featuresLegacy)
 
         return graphqlClient.isCodyEnabled().then(isCodyEnabled => ({
             codyEnabled: isCodyEnabled.enabled,

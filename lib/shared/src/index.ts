@@ -115,9 +115,6 @@ export {
     uriExtname,
     uriParseNameAndExtension,
     SUPPORTED_URI_SCHEMAS,
-    createRemoteFileURI,
-    isRemoteFileURI,
-    parseRemoteFileURI,
     type FileURI,
 } from './common/uri'
 export { NoopEditor } from './editor'

@@ -25,7 +25,6 @@ test.extend<ExpectedV2Events>({
         'cody.fixup.user:rejected',
         'cody.fixup.codeLens:undo',
         'cody.fixup.reverted:clicked',
-        'cody.sidebar.edit:clicked',
     ],
 })('edit (fixup) task', async ({ page, sidebar, nap }) => {
     // Sign into Cody
@@ -76,10 +75,9 @@ test.extend<ExpectedV2Events>({
     await expect(page.getByText('appleName')).toBeVisible()
     await expect(page.getByText('bananaName')).not.toBeVisible()
 
-    // create another edit from the sidebar Edit button
+    // create another edit using shortcut
     await page.getByText('appleName').click()
-    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
-    await page.getByText('Edit Code').click()
+    await page.keyboard.press('Alt+K')
     await expect(page.getByText(inputTitle)).toBeVisible()
     await inputBox.focus()
     await inputBox.fill(instruction)
@@ -142,12 +140,12 @@ test('edit (fixup) input - model selection', async ({ page, nap, sidebar }) => {
 
     // Check the correct model item is auto-selected
     await nap()
-    const modelItem = page.getByText('Claude 3 Sonnet')
+    const modelItem = page.getByText('Claude 3.5 Sonnet')
     await nap()
     expect(modelItem).toBeVisible()
 
     // Open the model input and check it has the correct item selected
     await modelItem.click()
-    const selectedModelItem = page.getByLabel('check   anthropic-logo  Claude 3 Sonnet, by Anthropic')
+    const selectedModelItem = page.getByLabel('check   anthropic-logo  Claude 3.5 Sonnet, by Anthropic')
     expect(selectedModelItem).toBeVisible()
 })

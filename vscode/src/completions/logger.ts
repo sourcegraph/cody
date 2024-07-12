@@ -146,6 +146,11 @@ interface SharedEventPayload extends InteractionIDPayload {
      */
     source?: InlineCompletionsResultSource
 
+    /**
+     * True if a completion was fuzzy-matched by the request manager cache.
+     */
+    isFuzzyMatch?: boolean
+
     /** Eventual artificial delay that was used to throttle unwanted completions. */
     artificialDelay?: number
 
@@ -542,15 +547,29 @@ export function networkRequestStarted(
     }
 }
 
-export function loaded(
-    id: CompletionLogID,
-    params: RequestParams,
-    items: InlineCompletionItemWithAnalytics[],
-    source: InlineCompletionsResultSource,
-    isDotComUser: boolean,
-    inlineContextParams: InlineContextItemsParams | undefined = undefined
-): void {
-    const event = activeSuggestionRequests.get(id)
+interface LoadedParams {
+    logId: CompletionLogID
+    requestParams: RequestParams
+    completions: InlineCompletionItemWithAnalytics[]
+    source: InlineCompletionsResultSource
+    isDotComUser: boolean
+    isFuzzyMatch: boolean
+    inlineContextParams?: InlineContextItemsParams
+}
+
+export function loaded(params: LoadedParams): void {
+    const {
+        logId,
+        requestParams,
+        completions,
+        source,
+        isDotComUser,
+        isFuzzyMatch,
+        inlineContextParams = undefined,
+    } = params
+
+    const event = activeSuggestionRequests.get(logId)
+
     if (!event) {
         return
     }
@@ -559,27 +578,28 @@ export function loaded(
 
     // Check if we already have a completion id for the loaded completion item
     const recentCompletionKey =
-        items.length > 0 ? getRecentCompletionsKey(params, items[0].insertText) : ''
+        completions.length > 0 ? getRecentCompletionsKey(requestParams, completions[0].insertText) : ''
 
     const completionAnalyticsId =
         recentCompletions.get(recentCompletionKey) ?? (uuid.v4() as CompletionAnalyticsID)
 
     recentCompletions.set(recentCompletionKey, completionAnalyticsId)
     event.params.id = completionAnalyticsId
+    event.params.isFuzzyMatch = isFuzzyMatch
 
     if (!event.loadedAt) {
         event.loadedAt = performance.now()
     }
     if (event.items.length === 0) {
-        event.items = items.map(item => completionItemToItemInfo(item, isDotComUser))
+        event.items = completions.map(item => completionItemToItemInfo(item, isDotComUser))
     }
 
-    if (!event.params.resolvedModel && items[0]?.resolvedModel) {
-        event.params.resolvedModel = items[0]?.resolvedModel
+    if (!event.params.resolvedModel && completions[0]?.resolvedModel) {
+        event.params.resolvedModel = completions[0]?.resolvedModel
     }
 
-    if (!event.params.responseHeaders && items[0]?.responseHeaders) {
-        event.params.responseHeaders = items[0]?.responseHeaders
+    if (!event.params.responseHeaders && completions[0]?.responseHeaders) {
+        event.params.responseHeaders = completions[0]?.responseHeaders
     }
 
     // 🚨 SECURITY: included only for DotCom users & Public github Repos.
@@ -603,10 +623,10 @@ export function loaded(
             gitUrl: inlineContextParams.gitUrl,
             commit: inlineContextParams.commit,
             filePath: inlineContextParams.filePath,
-            prefix: params.docContext.prefix,
-            suffix: params.docContext.suffix,
-            triggerLine: params.position.line,
-            triggerCharacter: params.position.character,
+            prefix: requestParams.docContext.prefix,
+            suffix: requestParams.docContext.suffix,
+            triggerLine: requestParams.position.line,
+            triggerCharacter: requestParams.position.character,
             context: inlineContextParams.context.map(snippet => ({
                 content: snippet.content,
                 startLine: snippet.startLine,

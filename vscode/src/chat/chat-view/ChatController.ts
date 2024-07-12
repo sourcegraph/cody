@@ -16,6 +16,7 @@ import {
     DOTCOM_URL,
     type DefaultChatCommands,
     type EventSource,
+    FeatureFlag,
     type FeatureFlagProvider,
     type Guardrails,
     type MentionQuery,
@@ -27,6 +28,7 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     type SerializedPromptEditorState,
+    TokenCounter,
     Typewriter,
     allMentionProvidersMetadata,
     hydrateAfterPostMessage,
@@ -59,6 +61,7 @@ import {
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
+import { experimentalUnitTestMessageSubmission } from '../../commands/execute/test-chat-experimental'
 import { getConfiguration, getFullConfig } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
@@ -98,14 +101,14 @@ import type {
 import { countGeneratedCode } from '../utils'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType, addWebviewViewHTML } from './ChatManager'
+import { ChatModel, prepareChatMessage } from './ChatModel'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
-import { SimpleChatModel, prepareChatMessage } from './SimpleChatModel'
 import { getChatPanelTitle, openFile } from './chat-helpers'
-import { getEnhancedContext } from './context'
+import { getContextStrategy, getEnhancedContext } from './context'
 import { DefaultPrompter } from './prompt'
 
-interface SimpleChatPanelProviderOptions {
+interface ChatControllerOptions {
     extensionUri: vscode.Uri
     authProvider: AuthProvider
     chatClient: ChatClient
@@ -125,7 +128,7 @@ export interface ChatSession {
     sessionID: string
 }
 /**
- * SimpleChatPanelProvider is the view controller class for the chat panel.
+ * ChatController is the view controller class for the chat panel.
  * It handles all events sent from the view, keeps track of the underlying chat model,
  * and interacts with the rest of the extension.
  *
@@ -151,10 +154,8 @@ export interface ChatSession {
  *    with other components outside the model and view is needed,
  *    use a broadcast/subscription design.
  */
-export class SimpleChatPanelProvider
-    implements vscode.Disposable, vscode.WebviewViewProvider, ChatSession
-{
-    private chatModel: SimpleChatModel
+export class ChatController implements vscode.Disposable, vscode.WebviewViewProvider, ChatSession {
+    private chatModel: ChatModel
 
     private readonly authProvider: AuthProvider
     private readonly chatClient: ChatClient
@@ -168,6 +169,7 @@ export class SimpleChatPanelProvider
     private readonly remoteSearch: RemoteSearch | null
     private readonly repoPicker: RemoteRepoPicker | null
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
+    private readonly featureFlagProvider: FeatureFlagProvider
 
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
     private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
@@ -190,7 +192,8 @@ export class SimpleChatPanelProvider
         guardrails,
         enterpriseContext,
         startTokenReceiver,
-    }: SimpleChatPanelProviderOptions) {
+        featureFlagProvider,
+    }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
         this.chatClient = chatClient
@@ -200,8 +203,9 @@ export class SimpleChatPanelProvider
         this.repoPicker = enterpriseContext?.repoPicker || null
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
+        this.featureFlagProvider = featureFlagProvider
 
-        this.chatModel = new SimpleChatModel(getDefaultModelID(authProvider, models))
+        this.chatModel = new ChatModel(getDefaultModelID(authProvider, models))
 
         this.guardrails = guardrails
         this.startTokenReceiver = startTokenReceiver
@@ -494,13 +498,21 @@ export class SimpleChatPanelProvider
                 })
                 break
             }
+            case 'experimental-unit-test-prompt': {
+                await this.experimentalSetUnitTestPrompt()
+                break
+            }
             default:
                 this.postError(new Error(`Invalid request type from Webview Panel: ${message.command}`))
         }
     }
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
-        const config = await getFullConfig()
+        const [config, experimentalUnitTest] = await Promise.all([
+            getFullConfig(),
+            this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalUnitTest),
+        ])
+
         return {
             agentIDE: config.isRunningInsideAgent ? config.agentIDE : CodyIDE.VSCode,
             agentExtensionVersion: config.isRunningInsideAgent
@@ -509,6 +521,7 @@ export class SimpleChatPanelProvider
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: config.serverEndpoint,
             experimentalNoodle: config.experimentalNoodle,
+            experimentalUnitTest,
         }
     }
 
@@ -520,6 +533,14 @@ export class SimpleChatPanelProvider
         // Run this async because this method may be called during initialization
         // and awaiting on this.postMessage may result in a deadlock
         void this.sendConfig()
+
+        // Get the latest model list available to the current user to update the ChatModel.
+        const authStatus = this.authProvider.getAuthStatus()
+        const models = ModelsService.getModels(
+            ModelUsage.Chat,
+            authStatus.isDotCom && !authStatus.userCanUpgrade
+        )
+        this.handleSetChatModel(getDefaultModelID(this.authProvider, models))
     }
 
     // When the webview sends the 'ready' message, respond by posting the view config
@@ -540,7 +561,7 @@ export class SimpleChatPanelProvider
             authStatus,
             workspaceFolderUris,
         })
-        logDebug('SimpleChatPanelProvider', 'updateViewConfig', {
+        logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
         })
     }
@@ -573,6 +594,18 @@ export class SimpleChatPanelProvider
             return JSON.stringify(gitMetadata)
         }
         return ''
+    }
+
+    public async experimentalSetUnitTestPrompt() {
+        const message = await experimentalUnitTestMessageSubmission()
+        if (!message?.editorState) {
+            return
+        }
+
+        this.postMessage({
+            type: 'updateEditorState',
+            editorState: message.editorState as SerializedPromptEditorState,
+        })
     }
 
     /**
@@ -700,7 +733,8 @@ export class SimpleChatPanelProvider
                 const hasCorpusMentions = corpusMentions.length > 0
 
                 const config = getConfiguration()
-                span.setAttribute('strategy', config.useContext)
+                const contextStrategy = await getContextStrategy(config.useContext)
+                span.setAttribute('strategy', contextStrategy)
                 const prompter = new DefaultPrompter(
                     userContextItems,
                     addEnhancedContext || hasCorpusMentions
@@ -721,7 +755,7 @@ export class SimpleChatPanelProvider
                                   : inputText
 
                               return getEnhancedContext({
-                                  strategy: config.useContext,
+                                  strategy: contextStrategy,
                                   editor: this.editor,
                                   input: { text: rewrite, mentions },
                                   addEnhancedContext,
@@ -736,7 +770,7 @@ export class SimpleChatPanelProvider
                         : undefined,
                     command !== undefined
                 )
-                const sendTelemetry = (contextSummary: any, privateContextStats?: any): void => {
+                const sendTelemetry = (contextSummary: any, privateContextSummary?: any): void => {
                     const properties = {
                         ...sharedProperties,
                         traceId: span.spanContext().traceId,
@@ -753,7 +787,7 @@ export class SimpleChatPanelProvider
                         },
                         privateMetadata: {
                             properties,
-                            privateContextStats,
+                            privateContextSummary: privateContextSummary,
                             // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                             // V2 telemetry exports privateMetadata only for DotCom users
                             // the condition below is an additional safeguard measure
@@ -850,6 +884,7 @@ export class SimpleChatPanelProvider
     private async handleSetChatModel(modelID: string): Promise<void> {
         this.chatModel.updateModel(modelID)
         await chatModel.set(modelID)
+        this.postChatModels()
     }
 
     private async handleGetAllMentionProvidersMetadata(): Promise<void> {
@@ -1061,7 +1096,7 @@ export class SimpleChatPanelProvider
      * Display error message in webview as part of the chat transcript, or as a system banner alongside the chat.
      */
     private postError(error: Error, type?: MessageErrorType): void {
-        logDebug('SimpleChatPanelProvider: postError', error.message)
+        logDebug('ChatController: postError', error.message)
         // Add error to transcript
         if (type === 'transcript') {
             this.chatModel.addErrorAsBotMessage(error)
@@ -1102,7 +1137,7 @@ export class SimpleChatPanelProvider
         })
         // Only log non-empty status to reduce noises.
         if (status.length > 0) {
-            logDebug('SimpleChatPanelProvider', 'postContextStatus', JSON.stringify(status))
+            logDebug('ChatController', 'postContextStatus', JSON.stringify(status))
         }
     }
 
@@ -1133,7 +1168,7 @@ export class SimpleChatPanelProvider
     private async buildPrompt(
         prompter: DefaultPrompter,
         abortSignal: AbortSignal,
-        sendTelemetry?: (contextSummary: any, privateContextStats?: any) => void
+        sendTelemetry?: (contextSummary: any, privateContextSummary?: any) => void
     ): Promise<Message[]> {
         const { prompt, context } = await prompter.makePrompt(
             this.chatModel,
@@ -1160,22 +1195,39 @@ export class SimpleChatPanelProvider
                 }
             }
 
-            // Log the size of all user context items (e.g., @-mentions)
-            // Includes the count of files and the size of each file
-            const getContextStats = (files: ContextItem[]) =>
-                files.length && {
-                    countFiles: files.length,
-                    fileSizes: files.map(f => f.size).filter(isDefined),
-                }
-            // NOTE: The private context stats are only logged for DotCom users
-            const privateContextStats = {
-                included: getContextStats(context.used.filter(f => f.source === 'user')),
-                excluded: getContextStats(context.ignored.filter(f => f.source === 'user')),
-            }
-            sendTelemetry(contextSummary, privateContextStats)
+            const privateContextSummary = await this.buildPrivateContextSummary(context)
+            sendTelemetry(contextSummary, privateContextSummary)
         }
 
         return prompt
+    }
+
+    private async buildPrivateContextSummary(context: {
+        used: ContextItem[]
+        ignored: ContextItem[]
+    }): Promise<object> {
+        // 🚨 SECURITY: included only for dotcom users & public repos
+        const isDotCom = this.authProvider.getAuthStatus().isDotCom
+        const isPublic = (await this.codebaseStatusProvider.currentCodebase())?.isPublic
+
+        if (!(isDotCom && isPublic)) {
+            return {}
+        }
+
+        const getContextSummary = (items: ContextItem[]) => ({
+            count: items.length,
+            items: items.map(i => ({
+                source: i.source,
+                size: i.size || TokenCounter.countTokens(i.content || ''),
+                content: i.content,
+            })),
+        })
+
+        return {
+            included: getContextSummary(context.used),
+            excluded: getContextSummary(context.ignored),
+            gitMetadata: await this.getRepoMetadataIfPublic(),
+        }
     }
 
     private streamAssistantResponse(
@@ -1185,7 +1237,7 @@ export class SimpleChatPanelProvider
         firstTokenSpan: Span,
         abortSignal: AbortSignal
     ): void {
-        logDebug('SimpleChatPanelProvider', 'streamAssistantResponse', {
+        logDebug('ChatController', 'streamAssistantResponse', {
             verbose: { requestID, prompt },
         })
         let firstTokenMeasured = false
@@ -1339,7 +1391,7 @@ export class SimpleChatPanelProvider
     // #region session management
     // =======================================================================
 
-    // A unique identifier for this SimpleChatPanelProvider instance used to identify
+    // A unique identifier for this ChatController instance used to identify
     // it when a handle to this specific panel provider is needed.
     public get sessionID(): string {
         return this.chatModel.sessionID
@@ -1393,14 +1445,10 @@ export class SimpleChatPanelProvider
     }
 
     public async clearAndRestartSession(): Promise<void> {
-        if (this.chatModel.isEmpty()) {
-            return
-        }
-
         this.cancelSubmitOrEditOperation()
         await this.saveSession()
 
-        this.chatModel = new SimpleChatModel(this.chatModel.modelID)
+        this.chatModel = new ChatModel(this.chatModel.modelID)
         this.postViewTranscript()
     }
 
@@ -1455,7 +1503,7 @@ export class SimpleChatPanelProvider
      * Revives the chat panel when the extension is reactivated.
      */
     public async revive(webviewPanel: vscode.WebviewPanel): Promise<void> {
-        logDebug('SimpleChatPanelProvider:revive', 'registering webview panel')
+        logDebug('ChatController:revive', 'registering webview panel')
         await this.registerWebviewPanel(webviewPanel)
     }
 
@@ -1518,18 +1566,17 @@ export class SimpleChatPanelProvider
         // Used for keeping sidebar chat view closed when webview panel is enabled
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
 
-        const clientConfig = await ClientConfigSingleton.getInstance()
-            .getConfig()
-            // In the event of an error, ClientConfigSingleton already logged it internally but it
-            // means we were unable to fetch the client configuration - most likely because we are
-            // not authenticated yet. We need to be able to display the chat panel (which is where
-            // all login functionality is) in this case, so we fallback to some default values:
-            .catch(e => ({ chatEnabled: true, attributionEnabled: false }))
+        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
+
         void this.postMessage({
             type: 'setConfigFeatures',
             configFeatures: {
-                chat: clientConfig.chatEnabled,
-                attribution: clientConfig.attributionEnabled,
+                // If clientConfig is undefined means we were unable to fetch the client configuration -
+                // most likely because we are not authenticated yet. We need to be able to display the
+                // chat panel (which is where all login functionality is) in this case, so we fallback
+                // to some default values:
+                chat: clientConfig?.chatEnabled ?? true,
+                attribution: clientConfig?.attributionEnabled ?? false,
             },
         })
 
@@ -1571,8 +1618,8 @@ export class SimpleChatPanelProvider
 function newChatModelFromSerializedChatTranscript(
     json: SerializedChatTranscript,
     modelID: string
-): SimpleChatModel {
-    return new SimpleChatModel(
+): ChatModel {
+    return new ChatModel(
         migrateAndNotifyForOutdatedModels(json.chatModel || modelID)!,
         json.interactions.flatMap((interaction: SerializedChatInteraction): ChatMessage[] =>
             [

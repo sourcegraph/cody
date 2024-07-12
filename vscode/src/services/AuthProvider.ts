@@ -81,6 +81,7 @@ export class AuthProvider implements AuthStatusProvider {
     }
 
     public addChangeListener(listener: Listener): Unsubscribe {
+        listener(this.authStatus)
         this.listeners.add(listener)
         return () => this.listeners.delete(listener)
     }
