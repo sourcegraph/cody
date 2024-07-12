@@ -571,11 +571,13 @@ html[data-ide='JetBrains'] {
     --vscode-welcomePage-progress-foreground: var(--jetbrains-WelcomePage-progress-foreground);
     --vscode-welcomePage-tileBackground: var(--jetbrains-WelcomePage-tileBackground);
     --vscode-welcomePage-tileBorder: var(--jetbrains-WelcomePage-tileBorder);
-    --vscode-widget-border: var(--jetbrains-Widget-border);
+    --vscode-widget-border: var(--jetbrains-Popup-borderColor);
     --vscode-window-activeBorder: var(--jetbrains-Window-activeBorder);
     --vscode-window-inactiveBorder: var(--jetbrains-Window-inactiveBorder);
     --button-icon-background: var(--jetbrains-Button-iconBackground);
     --foreground: var(--jetbrains-Button-foreground);
+
+    --vscode-widget-shadow: rgba(0, 0, 0, 0.36);
 
     /* todo: get this from the vscode implementation instead of hardcoded on this theme file*/
     --vscode-font-size: 13px;
@@ -596,6 +598,19 @@ html[data-ide='JetBrains'] body {
     margin: 0;
     padding: 0;
 }
+
+html[data-ide='JetBrains']::-webkit-scrollbar {
+    width: 14px;
+    height: 8px;
+    background-color: transparent;
+}
+
+html[data-ide='JetBrains']::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 100px;
+    border: 3px solid var(--jetbrains-Desktop-background);
+}
+
 
 html[data-ide='JetBrains'] :matches(img, video) {
     max-width: 100%;
