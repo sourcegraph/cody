@@ -55,12 +55,6 @@ export enum FeatureFlag {
     // (Enabling users to use Cody Pro for free for 3-months starting in late Q4'2023.)
     CodyProTrialEnded = 'cody-pro-trial-ended',
 
-    // Show document hints above a symbol if the users' cursor is there. "Opt+D to Document"
-    CodyDocumentHints = 'cody-document-hints',
-
-    /** Support @-mentioning URLs in chat to add context from web pages. */
-    URLContext = 'cody-url-context',
-
     /** Interactive tutorial, primarily for onboarding */
     CodyInteractiveTutorial = 'cody-interactive-tutorial',
 
