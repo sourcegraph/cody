@@ -347,7 +347,7 @@ async function doGetInlineCompletions(
      * A request becomes stale if it is left in-flight but superseded by another request.
      * This only applies to the smart throttle.
      */
-    let stale = false
+    let stale: boolean | undefined
     const markRequestAsStale = () => {
         stale = true
     }

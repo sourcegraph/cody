@@ -508,7 +508,6 @@ export class InlineCompletionItemProvider
                     completionEvent: CompletionLogger.getCompletionEvent(result.logId),
                 }
 
-                console.log('UMPOX: SUGGESTING ITEM', visibleItems[0].insertText)
                 if (!this.config.isRunningInsideAgent) {
                     // Since VS Code has no callback as to when a completion is shown, we assume
                     // that if we pass the above visibility tests, the completion is going to be
