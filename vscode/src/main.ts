@@ -4,6 +4,7 @@ import {
     type AuthStatus,
     type ChatClient,
     ClientConfigSingleton,
+    type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
     type DefaultCodyCommands,
     type Guardrails,
@@ -72,7 +73,7 @@ import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
 import { VSCodeSecretStorage, secretStorage } from './services/SecretStorageProvider'
 import { registerSidebarCommands } from './services/SidebarCommands'
-import { createStatusBar } from './services/StatusBar'
+import { type CodyStatusBar, createStatusBar } from './services/StatusBar'
 import { upstreamHealthProvider } from './services/UpstreamHealthProvider'
 import { autocompleteStageCounterLogger } from './services/autocomplete-stage-counter-logger'
 import { setUpCodyIgnore } from './services/cody-ignore'
@@ -143,6 +144,8 @@ const register = async (
     disposables.push(manageDisplayPathEnvInfoForExtension())
 
     // Initialize singletons
+    setCommandController(platform.createCommandsProvider?.())
+    repoNameResolver.init(authProvider)
     await configWatcher.onChange(
         config => {
             const promises: Promise<void>[] = []
@@ -231,6 +234,8 @@ const register = async (
     const sourceControl = new CodySourceControl(chatClient)
     const statusBar = createStatusBar()
     disposables.push(
+        statusBar,
+        sourceControl,
         authProvider.onChange(
             authStatus => {
                 sourceControl.setAuthStatus(authStatus)
@@ -242,9 +247,185 @@ const register = async (
         )
     )
 
-    setCommandController(platform.createCommandsProvider?.())
-    repoNameResolver.init(authProvider)
+    const autoCompleteInitialization = registerAutocomplete(
+        configWatcher,
+        platform,
+        authProvider,
+        statusBar,
+        codeCompletionsClient,
+        disposables
+    )
 
+    await registerCodyCommands(statusBar, sourceControl, chatClient, disposables)
+
+    if (isExtensionModeDevOrTest) {
+        await registerTestCommands(context, authProvider, disposables)
+    }
+
+    registerAuthCommands(authProvider, disposables)
+    registerChatCommands(authProvider, disposables)
+    disposables.push(...registerSidebarCommands())
+    disposables.push(...setUpCodyIgnore(configWatcher.get()))
+    registerOtherCommands(disposables)
+
+    disposables.push(
+        // Register URI Handler (e.g. vscode://sourcegraph.cody-ai)
+        vscode.window.registerUriHandler({
+            handleUri: async (uri: vscode.Uri) => {
+                if (uri.path === '/app-done') {
+                    // This is an old re-entrypoint from App that is a no-op now.
+                } else {
+                    authProvider.tokenCallbackHandler(uri, configWatcher.get().customHeaders)
+                }
+            },
+        }),
+
+        // Check if user has just moved back from a browser window to upgrade cody pro
+        vscode.window.onDidChangeWindowState(async ws => {
+            const authStatus = authProvider.getAuthStatus()
+            if (ws.focused && authStatus.isDotCom && authStatus.isLoggedIn) {
+                const res = await graphqlClient.getCurrentUserCodyProEnabled()
+                if (res instanceof Error) {
+                    console.error(res)
+                    return
+                }
+                // Re-auth if user's cody pro status has changed
+                const isCurrentCodyProUser = !authStatus.userCanUpgrade
+                if (res.codyProEnabled !== isCurrentCodyProUser) {
+                    authProvider.reloadAuthStatus()
+                }
+            }
+        }),
+        new CodyProExpirationNotifications(
+            graphqlClient,
+            authProvider,
+            featureFlagProvider,
+            vscode.window.showInformationMessage,
+            vscode.env.openExternal
+        ),
+        new CharactersLogger(),
+        upstreamHealthProvider
+    )
+
+    await tryRegisterTutorial(context, disposables)
+
+    // INC-267 do NOT await on this promise. This promise triggers
+    // `vscode.window.showInformationMessage()`, which only resolves after the
+    // user has clicked on "Setup". Awaiting on this promise will make the Cody
+    // extension timeout during activation.
+    void showSetupNotification(configWatcher.get())
+
+    // Register a serializer for reviving the chat panel on reload
+    if (vscode.window.registerWebviewPanelSerializer) {
+        vscode.window.registerWebviewPanelSerializer(CodyChatEditorViewType, {
+            async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, chatID: string) {
+                if (chatID && webviewPanel.title) {
+                    logDebug('main:deserializeWebviewPanel', 'reviving last unclosed chat panel')
+                    await chatsController.restoreToPanel(webviewPanel, chatID)
+                }
+            },
+        })
+    }
+
+    const [_, extensionClientDispose] = await Promise.all([
+        autoCompleteInitialization,
+        platform.extensionClient.provide({ enterpriseContextFactory }),
+    ])
+    disposables.push(extensionClientDispose)
+
+    return {
+        disposable: vscode.Disposable.from(...disposables),
+    }
+}
+
+// Registers listeners to trigger parsing of visible documents
+function registerParserListeners(disposables: vscode.Disposable[]) {
+    void parseAllVisibleDocuments()
+    disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
+    disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
+}
+
+function registerChatListeners(disposables: vscode.Disposable[]) {
+    // Enable tracking for pasting chat responses into editor text
+    disposables.push(
+        vscode.workspace.onDidChangeTextDocument(async e => {
+            const changedText = e.contentChanges[0]?.text
+            // Skip if the document is not a file or if the copied text is from insert
+            if (!changedText || e.document.uri.scheme !== 'file') {
+                return
+            }
+            await onTextDocumentChange(changedText)
+        })
+    )
+}
+
+async function registerOtherCommands(disposables: vscode.Disposable[]) {
+    disposables.push(
+        // Account links
+        vscode.commands.registerCommand(
+            'cody.show-rate-limit-modal',
+            async (userMessage: string, retryMessage: string, upgradeAvailable: boolean) => {
+                if (upgradeAvailable) {
+                    const option = await vscode.window.showInformationMessage(
+                        'Upgrade to Cody Pro',
+                        {
+                            modal: true,
+                            detail: `${userMessage}\n\nUpgrade to Cody Pro for unlimited autocomplete suggestions, chat messages and commands.\n\n${retryMessage}`,
+                        },
+                        'Upgrade',
+                        'See Plans'
+                    )
+                    // Both options go to the same URL
+                    if (option) {
+                        void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_UPGRADE_URL.toString()))
+                    }
+                } else {
+                    const option = await vscode.window.showInformationMessage(
+                        'Rate Limit Exceeded',
+                        {
+                            modal: true,
+                            detail: `${userMessage}\n\n${retryMessage}`,
+                        },
+                        'Learn More'
+                    )
+                    if (option) {
+                        void vscode.env.openExternal(
+                            vscode.Uri.parse(ACCOUNT_LIMITS_INFO_URL.toString())
+                        )
+                    }
+                }
+            }
+        ),
+        // Walkthrough / Support
+        vscode.commands.registerCommand('cody.feedback', () =>
+            vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
+        ),
+        vscode.commands.registerCommand('cody.welcome', async () => {
+            telemetryRecorder.recordEvent('cody.walkthrough', 'clicked')
+            // Hack: We have to run this twice to force VS Code to register the walkthrough
+            // Open issue: https://github.com/microsoft/vscode/issues/186165
+            await vscode.commands.executeCommand('workbench.action.openWalkthrough')
+            return vscode.commands.executeCommand(
+                'workbench.action.openWalkthrough',
+                'sourcegraph.cody-ai#welcome',
+                false
+            )
+        }),
+
+        // StatusBar Commands
+        vscode.commands.registerCommand('cody.statusBar.ollamaDocs', () => {
+            vscode.commands.executeCommand('vscode.open', CODY_OLLAMA_DOCS_URL.href)
+            telemetryRecorder.recordEvent('cody.statusBar.ollamaDocs', 'opened')
+        })
+    )
+}
+
+async function registerCodyCommands(
+    statusBar: CodyStatusBar,
+    sourceControl: CodySourceControl,
+    chatClient: ChatClient,
+    disposables: vscode.Disposable[]
+): Promise<void> {
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (
         commandKey: DefaultCodyCommands | string,
@@ -294,37 +475,35 @@ const register = async (
         vscode.commands.registerCommand('cody.command.auto-edit', a => executeAutoEditCommand(a)),
         sourceControl // Generate Commit Message command
     )
+}
 
-    // Internal-only test commands
-    if (isExtensionModeDevOrTest) {
-        await vscode.commands.executeCommand('setContext', 'cody.devOrTest', true)
-        disposables.push(
-            vscode.commands.registerCommand('cody.test.set-context-filters', async () => {
-                // Prompt the user for the policy
-                const raw = await vscode.window.showInputBox({ title: 'Context Filters Overwrite' })
-                if (!raw) {
-                    return
-                }
-                try {
-                    const policy = JSON.parse(raw)
-                    contextFiltersProvider.setTestingContextFilters(policy)
-                } catch (error) {
-                    vscode.window.showErrorMessage(
-                        'Failed to parse context filters policy. Please check your JSON syntax.'
-                    )
-                }
-            })
-        )
-    }
-
+function registerChatCommands(authProvider: AuthProvider, disposables: vscode.Disposable[]): void {
     disposables.push(
-        // Tests
-        // Access token - this is only used in configuration tests
-        vscode.commands.registerCommand('cody.test.token', async (endpoint, token) =>
-            authProvider.auth({ endpoint, token })
+        // Chat
+        vscode.commands.registerCommand('cody.settings.extension', () =>
+            vscode.commands.executeCommand('workbench.action.openSettings', {
+                query: '@ext:sourcegraph.cody-ai',
+            })
         ),
+        vscode.commands.registerCommand('cody.chat.view.popOut', async () => {
+            vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow')
+        }),
+        vscode.commands.registerCommand('cody.chat.history.panel', async () => {
+            await displayHistoryQuickPick(authProvider.getAuthStatus())
+        }),
+        vscode.commands.registerCommand('cody.settings.extension.chat', () =>
+            vscode.commands.executeCommand('workbench.action.openSettings', {
+                query: '@ext:sourcegraph.cody-ai chat',
+            })
+        ),
+        vscode.commands.registerCommand('cody.copy.version', () =>
+            vscode.env.clipboard.writeText(version)
+        )
+    )
+}
 
-        // Auth
+function registerAuthCommands(authProvider: AuthProvider, disposables: vscode.Disposable[]): void {
+    disposables.push(
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.account', () => authProvider.accountMenu()),
@@ -347,133 +526,73 @@ const register = async (
                     })
                 ).authStatus
             }
-        ),
-        // Chat
-        vscode.commands.registerCommand('cody.settings.extension', () =>
-            vscode.commands.executeCommand('workbench.action.openSettings', {
-                query: '@ext:sourcegraph.cody-ai',
-            })
-        ),
-        vscode.commands.registerCommand('cody.chat.view.popOut', async () => {
-            vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow')
-        }),
-        vscode.commands.registerCommand('cody.chat.history.panel', async () => {
-            await displayHistoryQuickPick(authProvider.getAuthStatus())
-        }),
-        vscode.commands.registerCommand('cody.settings.extension.chat', () =>
-            vscode.commands.executeCommand('workbench.action.openSettings', {
-                query: '@ext:sourcegraph.cody-ai chat',
-            })
-        ),
-        vscode.commands.registerCommand('cody.copy.version', () =>
-            vscode.env.clipboard.writeText(version)
-        ),
+        )
+    )
+}
 
-        // Account links
-        ...registerSidebarCommands(),
-
-        // Account links
-        vscode.commands.registerCommand(
-            'cody.show-rate-limit-modal',
-            async (userMessage: string, retryMessage: string, upgradeAvailable: boolean) => {
-                if (upgradeAvailable) {
-                    const option = await vscode.window.showInformationMessage(
-                        'Upgrade to Cody Pro',
-                        {
-                            modal: true,
-                            detail: `${userMessage}\n\nUpgrade to Cody Pro for unlimited autocomplete suggestions, chat messages and commands.\n\n${retryMessage}`,
-                        },
-                        'Upgrade',
-                        'See Plans'
-                    )
-                    // Both options go to the same URL
-                    if (option) {
-                        void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_UPGRADE_URL.toString()))
-                    }
-                } else {
-                    const option = await vscode.window.showInformationMessage(
-                        'Rate Limit Exceeded',
-                        {
-                            modal: true,
-                            detail: `${userMessage}\n\n${retryMessage}`,
-                        },
-                        'Learn More'
-                    )
-                    if (option) {
-                        void vscode.env.openExternal(
-                            vscode.Uri.parse(ACCOUNT_LIMITS_INFO_URL.toString())
-                        )
-                    }
-                }
+/**
+ * Register commands used in internal tests
+ */
+async function registerTestCommands(
+    context: vscode.ExtensionContext,
+    authProvider: AuthProvider,
+    disposables: vscode.Disposable[]
+): Promise<void> {
+    await vscode.commands.executeCommand('setContext', 'cody.devOrTest', true)
+    disposables.push(
+        vscode.commands.registerCommand('cody.test.set-context-filters', async () => {
+            // Prompt the user for the policy
+            const raw = await vscode.window.showInputBox({ title: 'Context Filters Overwrite' })
+            if (!raw) {
+                return
             }
-        ),
-
-        // Register URI Handler (e.g. vscode://sourcegraph.cody-ai)
-        vscode.window.registerUriHandler({
-            handleUri: async (uri: vscode.Uri) => {
-                if (uri.path === '/app-done') {
-                    // This is an old re-entrypoint from App that is a no-op now.
-                } else {
-                    authProvider.tokenCallbackHandler(uri, initialConfig.customHeaders)
-                }
-            },
-        }),
-        statusBar,
-        // Walkthrough / Support
-        vscode.commands.registerCommand('cody.feedback', () =>
-            vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
-        ),
-        vscode.commands.registerCommand('cody.welcome', async () => {
-            telemetryRecorder.recordEvent('cody.walkthrough', 'clicked')
-            // Hack: We have to run this twice to force VS Code to register the walkthrough
-            // Open issue: https://github.com/microsoft/vscode/issues/186165
-            await vscode.commands.executeCommand('workbench.action.openWalkthrough')
-            return vscode.commands.executeCommand(
-                'workbench.action.openWalkthrough',
-                'sourcegraph.cody-ai#welcome',
-                false
-            )
-        }),
-
-        // StatusBar Commands
-        vscode.commands.registerCommand('cody.statusBar.ollamaDocs', () => {
-            vscode.commands.executeCommand('vscode.open', CODY_OLLAMA_DOCS_URL.href)
-            telemetryRecorder.recordEvent('cody.statusBar.ollamaDocs', 'opened')
-        }),
-
-        // Check if user has just moved back from a browser window to upgrade cody pro
-        vscode.window.onDidChangeWindowState(async ws => {
-            const authStatus = authProvider.getAuthStatus()
-            if (ws.focused && authStatus.isDotCom && authStatus.isLoggedIn) {
-                const res = await graphqlClient.getCurrentUserCodyProEnabled()
-                if (res instanceof Error) {
-                    console.error(res)
-                    return
-                }
-                // Re-auth if user's cody pro status has changed
-                const isCurrentCodyProUser = !authStatus.userCanUpgrade
-                if (res.codyProEnabled !== isCurrentCodyProUser) {
-                    authProvider.reloadAuthStatus()
-                }
+            try {
+                const policy = JSON.parse(raw)
+                contextFiltersProvider.setTestingContextFilters(policy)
+            } catch (error) {
+                vscode.window.showErrorMessage(
+                    'Failed to parse context filters policy. Please check your JSON syntax.'
+                )
             }
         }),
-        new CodyProExpirationNotifications(
-            graphqlClient,
-            authProvider,
-            featureFlagProvider,
-            vscode.window.showInformationMessage,
-            vscode.env.openExternal
+        // Access token - this is only used in configuration tests
+        vscode.commands.registerCommand('cody.test.token', async (endpoint, token) =>
+            authProvider.auth({ endpoint, token })
         ),
-        ...setUpCodyIgnore(initialConfig),
         // For debugging
         vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
         vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
         vscode.commands.registerCommand('cody.debug.enable.all', () => enableVerboseDebugMode()),
-        vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter()),
-        new CharactersLogger(),
-        upstreamHealthProvider
+        vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter())
     )
+}
 
+async function tryRegisterTutorial(
+    context: vscode.ExtensionContext,
+    disposables: vscode.Disposable[]
+): Promise<void> {
+    if (!isRunningInsideAgent()) {
+        // TODO: The interactive tutorial is currently VS Code specific, both in terms of features and keyboard shortcuts.
+        // Consider opening this up to support dynamic content via Cody Agent.
+        // This would allow us the present the same tutorial but with client-specific steps.
+        // Alternatively, clients may not wish to use this tutorial and instead opt for something more suitable for their environment.
+        const { registerInteractiveTutorial } = await import('./tutorial')
+        registerInteractiveTutorial(context).then(disposable => disposables.push(...disposable))
+    }
+}
+
+/**
+ * Registers autocomplete functionality. This can be long-running, so it's recommended
+ * the returned promise is awaited in parallel with other tasks.
+ */
+function registerAutocomplete(
+    configWatcher: ConfigWatcher<ConfigurationWithAccessToken>,
+    platform: PlatformContext,
+    authProvider: AuthProvider,
+    statusBar: CodyStatusBar,
+    codeCompletionsClient: CodeCompletionsClient,
+    disposables: vscode.Disposable[]
+): Promise<void> {
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
     void configWatcher.onChange(setupAutocomplete, disposables)
 
@@ -545,65 +664,7 @@ const register = async (
         return setupAutocompleteQueue
     }
 
-    const autocompleteSetup = setupAutocomplete().catch(() => {})
-
-    if (!isRunningInsideAgent()) {
-        // TODO: The interactive tutorial is currently VS Code specific, both in terms of features and keyboard shortcuts.
-        // Consider opening this up to support dynamic content via Cody Agent.
-        // This would allow us the present the same tutorial but with client-specific steps.
-        // Alternatively, clients may not wish to use this tutorial and instead opt for something more suitable for their environment.
-        const { registerInteractiveTutorial } = await import('./tutorial')
-        registerInteractiveTutorial(context).then(disposable => disposables.push(...disposable))
-    }
-
-    // INC-267 do NOT await on this promise. This promise triggers
-    // `vscode.window.showInformationMessage()`, which only resolves after the
-    // user has clicked on "Setup". Awaiting on this promise will make the Cody
-    // extension timeout during activation.
-    void showSetupNotification(initialConfig)
-
-    // Register a serializer for reviving the chat panel on reload
-    if (vscode.window.registerWebviewPanelSerializer) {
-        vscode.window.registerWebviewPanelSerializer(CodyChatEditorViewType, {
-            async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, chatID: string) {
-                if (chatID && webviewPanel.title) {
-                    logDebug('main:deserializeWebviewPanel', 'reviving last unclosed chat panel')
-                    await chatsController.restoreToPanel(webviewPanel, chatID)
-                }
-            },
-        })
-    }
-
-    const [_, extensionClientDispose] = await Promise.all([
-        autocompleteSetup,
-        platform.extensionClient.provide({ enterpriseContextFactory }),
-    ])
-    disposables.push(extensionClientDispose)
-
-    return {
-        disposable: vscode.Disposable.from(...disposables),
-    }
-}
-
-// Registers listeners to trigger parsing of visible documents
-function registerParserListeners(disposables: vscode.Disposable[]) {
-    void parseAllVisibleDocuments()
-    disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
-    disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
-}
-
-function registerChatListeners(disposables: vscode.Disposable[]) {
-    // Enable tracking for pasting chat responses into editor text
-    disposables.push(
-        vscode.workspace.onDidChangeTextDocument(async e => {
-            const changedText = e.contentChanges[0]?.text
-            // Skip if the document is not a file or if the copied text is from insert
-            if (!changedText || e.document.uri.scheme !== 'file') {
-                return
-            }
-            await onTextDocumentChange(changedText)
-        })
-    )
+    return setupAutocomplete().catch(() => {})
 }
 
 async function registerOpenCtxClient(
