@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
-import { sidebarExplorer, sidebarSignin } from './common'
+import { focusSidebar, sidebarExplorer, sidebarSignin } from './common'
 import {
     type DotcomUrlOverride,
     type ExpectedV2Events,
@@ -78,7 +78,7 @@ test.extend<ExpectedV2Events>({
     await page.getByText("fizzbuzz.push('Buzz')").click()
 
     // Bring the cody sidebar to the foreground
-    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
+    await focusSidebar(page)
 
     // Trigger the documentaton command
     await executeCommandInPalette(page, 'Document Code')
