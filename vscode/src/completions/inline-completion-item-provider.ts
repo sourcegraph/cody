@@ -204,17 +204,20 @@ export class InlineCompletionItemProvider
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
     ): Promise<AutocompleteResult | null> {
-        const isManualCompletion = Boolean(
-            this.lastManualCompletionTimestamp && this.lastManualCompletionTimestamp > Date.now() - 500
-        )
-
-        // Do not create item for files that are on the cody ignore list
-        if (isCodyIgnoredFile(document.uri)) {
-            logIgnored(document.uri, 'cody-ignore', isManualCompletion)
-            return null
-        }
-
         return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async span => {
+            const stageRecorder = new CompletionLogger.AutocompleteStageRecorder()
+
+            const isManualCompletion = Boolean(
+                this.lastManualCompletionTimestamp &&
+                    this.lastManualCompletionTimestamp > Date.now() - 500
+            )
+
+            // Do not create item for files that are on the cody ignore list
+            if (isCodyIgnoredFile(document.uri)) {
+                logIgnored(document.uri, 'cody-ignore', isManualCompletion)
+                return null
+            }
+
             if (await contextFiltersProvider.isUriIgnored(document.uri)) {
                 logIgnored(document.uri, 'context-filter', isManualCompletion)
                 return null
@@ -229,6 +232,7 @@ export class InlineCompletionItemProvider
             }
             this.latestCompletionRequest = completionRequest
 
+            stageRecorder.record('preClientConfigCheck')
             const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
 
             if (clientConfig && !clientConfig.autoCompleteEnabled) {
@@ -276,6 +280,7 @@ export class InlineCompletionItemProvider
                 cancellationListener = token.onCancellationRequested(() => abortController.abort())
             }
 
+            stageRecorder.record('preContentPopupCheck')
             // When the user has the completions popup open and an item is selected that does not match
             // the text that is already in the editor, VS Code will never render the completion.
             if (!currentEditorContentMatchesPopupItem(document, invokedContext)) {
@@ -302,6 +307,7 @@ export class InlineCompletionItemProvider
                     : TriggerKind.Hover
             this.lastManualCompletionTimestamp = null
 
+            stageRecorder.record('preDocContext')
             let docContext = this.getDocContext(
                 document,
                 invokedPosition,
@@ -309,6 +315,7 @@ export class InlineCompletionItemProvider
                 takeSuggestWidgetSelectionIntoAccount
             )
 
+            stageRecorder.record('preCompletionIntent')
             const completionIntent = getCompletionIntent({
                 document,
                 position: invokedPosition,
@@ -334,6 +341,7 @@ export class InlineCompletionItemProvider
 
             const isLocalProvider = isLocalCompletionsProvider(this.config.providerConfig.identifier)
             const debounceInterval = isLocalProvider ? 125 : 75
+            stageRecorder.record('preGetInlineCompletions')
 
             try {
                 // We cannot rely on `position` and `context` being accurate after this request is
@@ -369,12 +377,13 @@ export class InlineCompletionItemProvider
                     completionIntent,
                     lastAcceptedCompletionItem: this.lastAcceptedCompletionItem,
                     isDotComUser: this.config.isDotComUser,
+                    stageRecorder,
                 })
 
                 // Do not increment the `preFinalCancellationCheck` counter if the result is empty.
                 // We don't have an opportunity to show a completion if it's empty.
                 if (result) {
-                    autocompleteStageCounterLogger.record('preFinalCancellationCheck')
+                    stageRecorder.record('preFinalCancellationCheck')
                 }
 
                 // Avoid any further work if the completion is invalidated already.
@@ -470,7 +479,7 @@ export class InlineCompletionItemProvider
                     )
                 )
 
-                autocompleteStageCounterLogger.record('preVisibilityCheck')
+                stageRecorder.record('preVisibilityCheck')
 
                 // A completion that won't be visible in VS Code will not be returned and not be logged.
                 if (visibleItems.length === 0) {
