@@ -316,6 +316,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             case 'chatModel':
                 this.handleSetChatModel(message.model)
+                // Because this was a user action to change the model we will set that
+                // as a global default for chat
+                await ModelsService.setDefaultModel(ModelUsage.Chat, message.model)
                 break
             case 'get-chat-models':
                 this.postChatModels()
@@ -876,8 +879,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
     }
 
-    private async handleSetChatModel(modelID: string): Promise<void> {
-        await this.chatModel.setDefaultModel(modelID)
+    private handleSetChatModel(modelID: string) {
+        this.chatModel.updateModel(modelID)
         this.postChatModels()
     }
 

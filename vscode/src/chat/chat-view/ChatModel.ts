@@ -5,7 +5,6 @@ import {
     type ContextItem,
     type Message,
     type ModelContextWindow,
-    ModelUsage,
     ModelsService,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
@@ -30,10 +29,9 @@ export class ChatModel {
         this.contextWindow = ModelsService.getContextWindowByID(this.modelID)
     }
 
-    public async setDefaultModel(newModelID: string): Promise<void> {
+    public updateModel(newModelID: string) {
         this.modelID = newModelID
         this.contextWindow = ModelsService.getContextWindowByID(this.modelID)
-        await ModelsService.setDefaultModel(ModelUsage.Chat, newModelID)
     }
 
     public isEmpty(): boolean {

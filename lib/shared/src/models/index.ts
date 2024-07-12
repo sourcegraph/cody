@@ -1,5 +1,6 @@
 import { type AuthStatus, isCodyProUser, isEnterpriseUser, isFreeUser } from '../auth/types'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
+import { logDebug } from '../logger'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import { ModelTag } from './tags'
 import { type ChatModel, type EditModel, type ModelContextWindow, ModelUsage } from './types'
@@ -247,6 +248,7 @@ export class ModelsService {
      * NOTE: private instances can only support 1 provider ATM.
      */
     public static setModels(models: Model[]): void {
+        logDebug('ModelsService', `Setting primary model: ${JSON.stringify(models.map(m => m.model))}`)
         ModelsService.primaryModels = models
     }
 
@@ -312,6 +314,7 @@ export class ModelsService {
         if (!resolved.usage.includes(type)) {
             throw new Error(`Model "${resolved.model}" is not compatible with usage type "${type}".`)
         }
+        logDebug('ModelsService', `Setting default ${type} model to ${resolved.model}`)
         ModelsService.defaultModels.set(type, resolved)
         // If we have persistent storage set, write it there
         await ModelsService.storage?.set(ModelsService.storageKeys[type], resolved.model)
