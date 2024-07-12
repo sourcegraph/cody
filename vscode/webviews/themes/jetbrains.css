@@ -96,7 +96,7 @@ html[data-ide='JetBrains'] {
     --vscode-diffEditor-unchangedRegionShadow: var(--jetbrains-ScrollBar-thumbDarkShadow);
     --vscode-disabledForeground: var(--jetbrains-CheckBoxMenuItem-disabledForeground);
     --vscode-dropdown-background: var(--jetbrains-ComboBox-background);
-    --vscode-dropdown-border: var(--jetbrains-MenuBar-borderColor);
+    --vscode-dropdown-border: var(--jetbrains-ToolTip-infoForeground);
     --vscode-dropdown-foreground: var(--jetbrains-ComboBox-foreground);
     --vscode-dropdown-listBackground: var(--jetbrains-ComboBox-buttonBackground);
     --vscode-editor-background: var(--jetbrains-EditorPane-background);
@@ -277,16 +277,18 @@ html[data-ide='JetBrains'] {
     --vscode-keybindingLabel-border: var(--jetbrains-KeybindingLabel-border);
     --vscode-keybindingLabel-bottomBorder: var(--jetbrains-KeybindingLabel-bottomBorder);
     --vscode-keybindingLabel-foreground: var(--jetbrains-KeybindingLabel-foreground);
-    --vscode-list-deemphasizedForeground: var(--jetbrains-List-deemphasizedForeground);
-    --vscode-list-filterMatchBorder: var(--jetbrains-List-filterMatchBorder);
-    --vscode-list-focusHighlightForeground: var(--jetbrains-List-focusHighlightForeground);
-    --vscode-list-focusOutline: var(--jetbrains-List-focusOutline);
-    --vscode-list-highlightForeground: var(--jetbrains-List-highlightForeground);
-    --vscode-list-hoverBackground: var(--jetbrains-List-hoverBackground);
-    --vscode-list-invalidItemForeground: var(--jetbrains-List-invalidItemForeground);
-    --vscode-listFilterWidget-background: var(--jetbrains-ListFilterWidget-background);
-    --vscode-listFilterWidget-noMatchesOutline: var(--jetbrains-ListFilterWidget-noMatchesOutline);
-    --vscode-listFilterWidget-outline: var(--jetbrains-ListFilterWidget-outline);
+    --vscode-list-deemphasizedForeground: var(--jetbrains-MenuItem-disabledForeground);
+    --vscode-list-filterMatchBorder: var(--jetbrains-MenuItem-acceleratorForeground);
+    --vscode-list-focusHighlightForeground: var(--jetbrains-MenuItem-selectionForeground);
+    --vscode-list-focusOutline: var(--jetbrains-MenuBar-shadow);
+    --vscode-list-highlightForeground: var(--jetbrains-MenuItem-selectionForeground);
+    --vscode-list-hoverBackground: var(--jetbrains-List-selectionBackground);
+    --vscode-list-invalidItemForeground: var(--jetbrains-MenuItem-disabledForeground);
+    --vscode-list-activeSelectionBackground: var(--jetbrains-List-selectionBackground);
+    --vscode-list-activeSelectionForeground: var(--jetbrains-Menu-selectionForeground);
+    --vscode-listFilterWidget-background: var(--jetbrains-List-selectionBackground);
+    --vscode-listFilterWidget-noMatchesOutline: var(--jetbrains-List-selectionInactiveBackground);
+    --vscode-listFilterWidget-outline: var(--jetbrains-List-selectionInactiveBackground);
     --vscode-menu-background: var(--jetbrains-PopupMenu-background);
     --vscode-menu-border: var(--jetbrains-PopupMenu-selectionBackground);
     --vscode-menu-foreground: var(--jetbrains-PopupMenu-foreground);
@@ -375,9 +377,9 @@ html[data-ide='JetBrains'] {
     --vscode-profileBadge-background: var(--jetbrains-ProgressBar-background);
     --vscode-profileBadge-foreground: var(--jetbrains-ProgressBar-foreground);
     --vscode-progressBar-background: var(--jetbrains-ProgressBar-background);
-    --vscode-quickInput-background: var(--jetbrains-QuickInput-background);
-    --vscode-quickInput-foreground: var(--jetbrains-QuickInput-foreground);
-    --vscode-quickInputTitle-background: var(--jetbrains-QuickInput-background);
+    --vscode-quickInput-background: var(--jetbrains-ToolTip-background);
+    --vscode-quickInput-foreground: var(--jetbrains-ToolTip-foreground);
+    --vscode-quickInputTitle-background: var(--jetbrains-Tooltip-Learning-foreground);
     --vscode-remoteHub-decorations-addedForegroundColor: var(--jetbrains-ActionButton-hoverBackground);
     --vscode-remoteHub-decorations-conflictForegroundColor: var(--jetbrains-ValidationTooltip-warningBorderColor);
     --vscode-remoteHub-decorations-deletedForegroundColor: var(--jetbrains-ActionButton-pressedBackground);
@@ -416,13 +418,13 @@ html[data-ide='JetBrains'] {
     --vscode-settings-textInputBackground: var(--jetbrains-ComboBox-background);
     --vscode-settings-textInputBorder: var(--jetbrains-Settings-textInputBorder);
     --vscode-settings-textInputForeground: var(--jetbrains-ComboBox-foreground);
-    --vscode-sideBar-background: var(--jetbrains-ScrollPane-background);
-    --vscode-sideBar-border: var(--jetbrains-ScrollPane-background);
-    --vscode-sideBarActivityBarTop-border: var(--jetbrains-Menu-borderColor);
-    --vscode-sideBarSectionHeader-border: var(--jetbrains-TabbedPane-darkShadow);
-    --vscode-sideBarStickyScroll-background: var(--jetbrains-List-selectionInactiveForeground);
-    --vscode-sideBarTitle-background: var(--jetbrains-TextField-selectionBackground);
-    --vscode-sideBarTitle-foreground: var(--jetbrains-Label-foreground);
+    --vscode-sideBar-background: var(--jetbrains-MenuBar-background);
+    --vscode-sideBar-border: var(--jetbrains-MenuBar-borderColor);
+    --vscode-sideBarActivityBarTop-border: var(--jetbrains-MenuBar-borderColor);
+    --vscode-sideBarSectionHeader-border: var(--jetbrains-MenuBar-shadow);
+    --vscode-sideBarStickyScroll-background: var(--jetbrains-MenuBar-background);
+    --vscode-sideBarTitle-background: var(--jetbrains-MenuBar-background);
+    --vscode-sideBarTitle-foreground: var(--jetbrains-MenuBar-foreground);
     --vscode-sideBySideEditor-horizontalBorder: var(--jetbrains-TabbedPane-darkShadow);
     --vscode-sideBySideEditor-verticalBorder: var(--jetbrains-TabbedPane-darkShadow);
     --vscode-simpleFindWidget-sashBorder: var(--jetbrains-Scrollbar-thumbShadow);
@@ -569,27 +571,29 @@ html[data-ide='JetBrains'] {
     --vscode-welcomePage-progress-foreground: var(--jetbrains-WelcomePage-progress-foreground);
     --vscode-welcomePage-tileBackground: var(--jetbrains-WelcomePage-tileBackground);
     --vscode-welcomePage-tileBorder: var(--jetbrains-WelcomePage-tileBorder);
-    --vscode-widget-border: var(--jetbrains-Widget-border);
+    --vscode-widget-border: var(--vscode-input-border);
     --vscode-window-activeBorder: var(--jetbrains-Window-activeBorder);
     --vscode-window-inactiveBorder: var(--jetbrains-Window-inactiveBorder);
     --button-icon-background: var(--jetbrains-Button-iconBackground);
     --foreground: var(--jetbrains-Button-foreground);
 
     /* Mimic rules injected by VSCode */
-    scrollbar-color: var(--vscode-scrollbarSlider-background) var(--vscode-editor-background);
+    --vscode-font-family: var(--font-family)
+    --vscode-font-weight: var(--font-weight)
+    --vscode-font-size: var(--font-size)
 }
 
 /* Mimic rules injected by VSCode */
 
 html[data-ide='JetBrains'] body {
     overscroll-behavior-x: none;
-    background-color: transparent;
+    background-color: var(--vscode-sideBar-background);
     color: var(--vscode-editor-foreground);
     font-family: var(--vscode-font-family);
     font-weight: var(--vscode-font-weight);
     font-size: var(--vscode-font-size);
-    margin: 0;
-    padding: 0 20px;
+    margin: 0 auto;
+    padding: 0;
 }
 
 html[data-ide='JetBrains'] :matches(img, video) {
