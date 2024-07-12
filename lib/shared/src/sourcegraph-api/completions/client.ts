@@ -1,6 +1,7 @@
 import type { Span } from '@opentelemetry/api'
 import type { ConfigurationWithAccessToken } from '../../configuration'
 
+import { useCustomChatClient } from '../../llm-providers'
 import { recordErrorToSpan } from '../../tracing'
 import type {
     CompletionCallbacks,
@@ -23,6 +24,11 @@ export interface CompletionLogger {
               ) => void
               onEvents: (events: Event[]) => void
           }
+}
+
+export interface CompletionRequestParameters {
+    apiVersion: number
+    customHeaders?: Record<string, string>
 }
 
 export type CompletionsClientConfig = Pick<
@@ -84,14 +90,14 @@ export abstract class SourcegraphCompletionsClient {
 
     protected abstract _streamWithCallbacks(
         params: CompletionParameters,
-        apiVersion: number,
+        requestParams: CompletionRequestParameters,
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): Promise<void>
 
     public async *stream(
         params: CompletionParameters,
-        apiVersion: number,
+        requestParams: CompletionRequestParameters,
         signal?: AbortSignal
     ): AsyncGenerator<CompletionGeneratorValue> {
         // Provide default stop sequence for starchat models.
@@ -127,7 +133,19 @@ export abstract class SourcegraphCompletionsClient {
                 send({ type: 'error', error, statusCode })
             },
         }
-        await this._streamWithCallbacks(params, apiVersion, callbacks, signal)
+
+        // Custom chat clients for Non-Sourcegraph-supported providers.
+        const isNonSourcegraphProvider = await useCustomChatClient({
+            completionsEndpoint: this.completionsEndpoint,
+            params,
+            cb: callbacks,
+            logger: this.logger,
+            signal,
+        })
+
+        if (!isNonSourcegraphProvider) {
+            await this._streamWithCallbacks(params, requestParams, callbacks, signal)
+        }
 
         for (let i = 0; ; i++) {
             const val = await values[i]

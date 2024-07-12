@@ -1,8 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { graphqlClient } from '@sourcegraph/cody-shared'
+import { defaultAuthStatus, graphqlClient } from '@sourcegraph/cody-shared'
 
-import { defaultAuthStatus } from '../chat/protocol'
 import type { AuthProvider } from '../services/AuthProvider'
 
 import * as gitExtensionAPI from './git-extension-api'

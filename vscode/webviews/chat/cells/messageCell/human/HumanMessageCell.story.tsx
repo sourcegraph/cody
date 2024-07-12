@@ -1,19 +1,20 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
-import { HumanMessageCell } from './HumanMessageCell'
-
+import { PromptString, ps } from '@sourcegraph/cody-shared'
+import { URI } from 'vscode-uri'
+import { ClientStateContextProvider } from '../../../../client/clientState'
 import { VSCodeCell } from '../../../../storybook/VSCodeStoryDecorator'
 import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO } from '../../../fixtures'
+import { HumanMessageCell } from './HumanMessageCell'
 
 const meta: Meta<typeof HumanMessageCell> = {
     title: 'ui/HumanMessageCell',
     component: HumanMessageCell,
 
     args: {
-        message: null,
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
+        chatEnabled: true,
         onSubmit: () => {},
-        __storybook__focus: false,
     },
 
     decorators: [VSCodeCell],
@@ -21,29 +22,89 @@ const meta: Meta<typeof HumanMessageCell> = {
 
 export default meta
 
-export const FirstMessageEmpty: StoryObj<typeof meta> = {
+export const NonEmptyFirstMessage: StoryObj<typeof meta> = {
     args: {
+        message: FIXTURE_TRANSCRIPT.explainCode2[0],
+        __storybook__focus: true,
+    },
+}
+
+export const SentComplete: StoryObj<typeof meta> = {
+    args: {
+        message: FIXTURE_TRANSCRIPT.explainCode2[0],
+        isSent: true,
+    },
+}
+
+export const Scrolling: StoryObj<typeof meta> = {
+    args: {
+        message: {
+            speaker: 'human',
+            text: PromptString.unsafe_fromUserQuery(
+                new Array(100)
+                    .fill(0)
+                    .map(
+                        (_, index) =>
+                            `Line ${index} ${
+                                index % 5 === 0
+                                    ? 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+                                    : ''
+                            }`
+                    )
+                    .join('\n')
+            ),
+        },
+    },
+}
+
+export const WithInitialContext: StoryObj<typeof meta> = {
+    render: props => (
+        <ClientStateContextProvider
+            value={{
+                initialContext: [
+                    {
+                        type: 'repository',
+                        uri: URI.parse('https://example.com/foo/myrepo'),
+                        title: 'foo/myrepo',
+                        repoName: 'foo/myrepo',
+                        repoID: 'abcd',
+                        content: null,
+                    },
+                    { type: 'file', uri: URI.file('/foo.js') },
+                ],
+            }}
+        >
+            <HumanMessageCell {...props} />
+        </ClientStateContextProvider>
+    ),
+    args: {
+        message: { speaker: 'human', text: ps`` },
         isFirstMessage: true,
     },
 }
 
-export const FirstMessageWithText: StoryObj<typeof meta> = {
+export const WithInitialContextFileTooLarge: StoryObj<typeof meta> = {
+    render: props => (
+        <ClientStateContextProvider
+            value={{
+                initialContext: [
+                    {
+                        type: 'repository',
+                        uri: URI.parse('https://example.com/foo/myrepo'),
+                        title: 'foo/myrepo',
+                        repoName: 'foo/myrepo',
+                        repoID: 'abcd',
+                        content: null,
+                    },
+                    { type: 'file', isTooLarge: true, uri: URI.file('/large_file.js') },
+                ],
+            }}
+        >
+            <HumanMessageCell {...props} />
+        </ClientStateContextProvider>
+    ),
     args: {
-        message: FIXTURE_TRANSCRIPT.explainCode2[0],
+        message: { speaker: 'human', text: ps`` },
         isFirstMessage: true,
-    },
-}
-
-export const FollowupEmpty: StoryObj<typeof meta> = {
-    args: {
-        message: null,
-        isFirstMessage: false,
-    },
-}
-
-export const FollowupWithText: StoryObj<typeof meta> = {
-    args: {
-        message: FIXTURE_TRANSCRIPT.explainCode2[0],
-        isFirstMessage: false,
     },
 }

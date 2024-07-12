@@ -1,6 +1,12 @@
-import type { AuthStatus } from '@sourcegraph/cody-shared'
 import semver from 'semver'
-import { defaultAuthStatus, unauthenticatedStatus } from './protocol'
+
+import {
+    type AuthStatus,
+    defaultAuthStatus,
+    offlineModeAuthStatus,
+    unauthenticatedStatus,
+} from '@sourcegraph/cody-shared'
+import type { CurrentUserInfo } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 /**
  * Checks a user's authentication status.
@@ -15,6 +21,7 @@ import { defaultAuthStatus, unauthenticatedStatus } from './protocol'
  * @param username The user's username.
  * @param displayName The user's display name, or '' if not set.
  * @param primaryEmail The user's primary email, or '' if not set.
+ * @param organizations The user's organizations array.
  * @returns The user's authentication status. It's for frontend to display when instance is on unsupported version if siteHasCodyEnabled is false
  */
 export function newAuthStatus(
@@ -29,8 +36,13 @@ export function newAuthStatus(
     username: string,
     displayName?: string,
     primaryEmail?: string,
-    configOverwrites?: AuthStatus['configOverwrites']
+    configOverwrites?: AuthStatus['configOverwrites'],
+    userOrganizations?: CurrentUserInfo['organizations'],
+    isOfflineMode?: boolean
 ): AuthStatus {
+    if (isOfflineMode) {
+        return { ...offlineModeAuthStatus, endpoint, username }
+    }
     if (!user) {
         return { ...unauthenticatedStatus, endpoint }
     }
@@ -55,6 +67,9 @@ export function newAuthStatus(
     authStatus.isLoggedIn = isLoggedIn && isAllowed
     authStatus.isDotCom = isDotCom
     authStatus.codyApiVersion = inferCodyApiVersion(version, isDotCom)
+    authStatus.isFireworksTracingEnabled =
+        isDotCom && Boolean(userOrganizations?.nodes.find(org => org.name === 'sourcegraph'))
+
     return authStatus
 }
 

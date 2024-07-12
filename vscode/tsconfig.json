@@ -6,10 +6,12 @@
     "outDir": "dist/tsc",
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "types": ["@testing-library/jest-dom"],
+    "types": [
+      "@testing-library/jest-dom"
+    ],
     "paths": {
-      "@/*": ["./webviews/*"]
-    }
+      "@/*": ["./webviews/*"],
+    },
   },
   "include": [
     "src",
@@ -18,17 +20,19 @@
     "playwright.config.ts",
     "test/e2e",
     "test/e2e/utils/commands.json",
+    "e2e",
     "webviews",
     "webviews/*.d.ts",
     "package.json",
+
   ],
   "exclude": [
+    "typehacks",
     "scripts",
     "dist",
     "test/integration",
     "**/test-data",
-    "vite.config.ts",
-    "webviews/vite.config.ts"
+    "webviews/vite.config.mts",
   ],
   "references": [
     {

@@ -4,6 +4,7 @@ import type {
     CompletionResponse,
     SerializedCompletionParameters,
 } from '../sourcegraph-api/completions/types'
+import type { BrowserOrNodeResponse } from '../sourcegraph-api/graphql/client'
 
 /**
  * Marks the yielded value as an incomplete response.
@@ -26,10 +27,39 @@ export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & { timeo
 export type SerializedCodeCompletionsParams = Omit<SerializedCompletionParameters, 'fast'> & {
     timeoutMs: number
 }
-export type CompletionResponseGenerator = AsyncGenerator<CompletionResponse>
 
-export interface CodeCompletionsClient<T = CodeCompletionsParams> {
+export type CompletionResponseWithMetaData = {
+    /**
+     * The code completions backend API response.
+     */
+    completionResponse?: CompletionResponse
+    metadata?: {
+        /**
+         * Yield response from HTTP clients to a logic shared across providers to
+         * extract metadata required for analytics in one place.
+         */
+        response?: BrowserOrNodeResponse
+    }
+}
+
+export type CompletionResponseGenerator = AsyncGenerator<
+    CompletionResponseWithMetaData,
+    CompletionResponseWithMetaData
+>
+
+export interface CodeCompletionProviderOptions {
+    customHeaders?: Record<string, string>
+}
+
+export interface CodeCompletionsClient<
+    T = CodeCompletionsParams,
+    ProviderSpecificOptions = CodeCompletionProviderOptions,
+> {
     logger: CompletionLogger | undefined
-    complete(params: T, abortController: AbortController): CompletionResponseGenerator
+    complete(
+        params: T,
+        abortController: AbortController,
+        providerOptions?: ProviderSpecificOptions
+    ): CompletionResponseGenerator
     onConfigurationChange(newConfig: CompletionsClientConfig): void
 }

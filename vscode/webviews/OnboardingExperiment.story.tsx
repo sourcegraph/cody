@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
-import { NOOP_TELEMETRY_SERVICE, noOpTelemetryRecorder } from '@sourcegraph/cody-shared'
-
 import { LoginSimplified } from './OnboardingExperiment'
 import { VSCodeSidebar } from './storybook/VSCodeStoryDecorator'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
@@ -23,24 +21,12 @@ const vscodeAPI: VSCodeWrapper = {
 
 export const Login: StoryObj<typeof LoginSimplified> = {
     render: () => (
-        <LoginSimplified
-            simplifiedLoginRedirect={() => {}}
-            telemetryService={NOOP_TELEMETRY_SERVICE}
-            telemetryRecorder={noOpTelemetryRecorder}
-            uiKindIsWeb={false}
-            vscodeAPI={vscodeAPI}
-        />
+        <LoginSimplified simplifiedLoginRedirect={() => {}} uiKindIsWeb={false} vscodeAPI={vscodeAPI} />
     ),
 }
 
 export const LoginWeb: StoryObj<typeof LoginSimplified> = {
     render: () => (
-        <LoginSimplified
-            simplifiedLoginRedirect={() => {}}
-            telemetryService={NOOP_TELEMETRY_SERVICE}
-            telemetryRecorder={noOpTelemetryRecorder}
-            uiKindIsWeb={true}
-            vscodeAPI={vscodeAPI}
-        />
+        <LoginSimplified simplifiedLoginRedirect={() => {}} uiKindIsWeb={true} vscodeAPI={vscodeAPI} />
     ),
 }

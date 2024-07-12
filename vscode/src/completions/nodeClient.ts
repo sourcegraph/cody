@@ -6,22 +6,21 @@
 import http from 'node:http'
 import https from 'node:https'
 
-import { agent } from '@sourcegraph/cody-shared'
 import {
     type CompletionCallbacks,
     type CompletionParameters,
+    type CompletionRequestParameters,
+    NetworkError,
     RateLimitError,
-    type SerializedCompletionParameters,
     SourcegraphCompletionsClient,
     addClientInfoParams,
-    contextFiltersProvider,
+    agent,
     customUserAgent,
+    getActiveTraceAndSpanId,
+    getSerializedParams,
     getTraceparentHeaders,
-    googleChatClient,
-    groqChatClient,
     isError,
     logError,
-    ollamaChatClient,
     onAbort,
     parseEvents,
     recordErrorToSpan,
@@ -34,10 +33,12 @@ const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
     protected _streamWithCallbacks(
         params: CompletionParameters,
-        apiVersion: number,
+        requestParams: CompletionRequestParameters,
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): Promise<void> {
+        const { apiVersion } = requestParams
+
         const url = new URL(this.completionsEndpoint)
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)
@@ -61,30 +62,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 }
             }
 
-            // TODO - Centralize this logic in a single place
-            const [provider] = params.model?.split('/') ?? []
-            if (provider === 'ollama') {
-                await ollamaChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
-                return
-            }
-            if (provider === 'google') {
-                await googleChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
-                return
-            }
-            if (provider === 'groq') {
-                await groqChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
-                return
-            }
-
-            const serializedParams: SerializedCompletionParameters = {
-                ...params,
-                messages: await Promise.all(
-                    params.messages.map(async m => ({
-                        ...m,
-                        text: await m.text?.toFilteredString(contextFiltersProvider),
-                    }))
-                ),
-            }
+            const serializedParams = await getSerializedParams(params)
 
             const log = this.logger?.startCompletion(params, url.toString())
 
@@ -122,6 +100,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                             : null),
                         ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
                         ...this.config.customHeaders,
+                        ...requestParams.customHeaders,
                         ...getTraceparentHeaders(),
                         Connection: 'keep-alive',
                     },
@@ -136,7 +115,8 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         status: res.statusCode,
                     })
 
-                    if (res.statusCode === undefined) {
+                    const statusCode = res.statusCode
+                    if (statusCode === undefined) {
                         throw new Error('no status code present')
                     }
 
@@ -147,7 +127,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     function handleError(e: Error): void {
                         log?.onError(e.message, e)
 
-                        if (res.statusCode === 429) {
+                        if (statusCode === 429) {
                             // Check for explicit false, because if the header is not set, there
                             // is no upgrade available.
                             const upgradeIsAvailable =
@@ -166,15 +146,15 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                                 limit ? Number.parseInt(limit, 10) : undefined,
                                 retryAfter
                             )
-                            onErrorOnce(error, res.statusCode)
+                            onErrorOnce(error, statusCode)
                         } else {
-                            onErrorOnce(e, res.statusCode)
+                            onErrorOnce(e, statusCode)
                         }
                     }
 
                     // For failed requests, we just want to read the entire body and
                     // ultimately return it to the error callback.
-                    if (res.statusCode >= 400) {
+                    if (statusCode >= 400) {
                         // Bytes which have not been decoded as UTF-8 text
                         let bufferBin = Buffer.of()
                         // Text which has not been decoded as a server-sent event (SSE)
@@ -191,7 +171,19 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         })
 
                         res.on('error', e => handleError(e))
-                        res.on('end', () => handleError(new Error(errorMessage)))
+                        res.on('end', () =>
+                            handleError(
+                                new NetworkError(
+                                    {
+                                        url: url.toString(),
+                                        status: statusCode,
+                                        statusText: res.statusMessage ?? '',
+                                    },
+                                    errorMessage,
+                                    getActiveTraceAndSpanId()?.traceId
+                                )
+                            )
+                        )
                         return
                     }
 

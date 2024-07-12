@@ -31,17 +31,26 @@ export const getCommandContextFiles = async (config: CodyCommandContext): Promis
         }
 
         if (config.selection !== false) {
-            contextFiles.push(...(await getContextFileFromCursor()))
+            const item = await getContextFileFromCursor()
+            if (item) {
+                contextFiles.push(item)
+            }
         }
 
         if (config.currentFile) {
-            contextFiles.push(...(await getContextFileFromCurrentFile()))
+            const item = await getContextFileFromCurrentFile()
+            if (item) {
+                contextFiles.push(item)
+            }
         }
 
         if (config.filePath && workspaceRoot?.path) {
             // Create an workspace uri with the given relative file path
             const file = Utils.joinPath(workspaceRoot, config.filePath)
-            contextFiles.push(...(await getContextFileFromUri(file)))
+            const item = await getContextFileFromUri(file)
+            if (item) {
+                contextFiles.push(item)
+            }
         }
 
         if (config.directoryPath && workspaceRoot?.path) {

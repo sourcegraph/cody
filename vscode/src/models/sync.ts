@@ -2,29 +2,59 @@ import {
     ANSWER_TOKENS,
     type AuthStatus,
     CHAT_INPUT_TOKEN_BUDGET,
-    ModelProvider,
+    ClientConfigSingleton,
+    Model,
+    ModelUIGroup,
     ModelUsage,
+    ModelsService,
+    RestClient,
     getDotComDefaultModels,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { logDebug } from '../log'
+import { secretStorage } from '../services/SecretStorageProvider'
 import { getEnterpriseContextWindow } from './utils'
 
 /**
- * Sets the model providers based on the authentication status.
+ * Resets the available model based on the authentication status.
  *
- * If a chat model is configured to overwrite, it will add a model provider for that model.
+ * If a chat model is configured to overwrite, it will add a provider for that model.
  * The token limit for the provider will use the configured limit,
  * or fallback to the limit from the authentication status if not configured.
  */
-export function syncModelProviders(authStatus: AuthStatus): void {
-    if (!authStatus.authenticated) {
+export async function syncModels(authStatus: AuthStatus): Promise<void> {
+    // Offline mode only support Ollama models, which would be synced seperately.
+    if (authStatus.isOfflineMode) {
+        ModelsService.setModels([])
         return
     }
 
-    // For dotcom, we use the default models.
+    // If you are not authenticated, you cannot use Cody. Sorry.
+    if (!authStatus.authenticated) {
+        ModelsService.setModels([])
+        return
+    }
+
+    // Fetch the LLM models and configuration server-side. See:
+    // https://linear.app/sourcegraph/project/server-side-cody-model-selection-cca47c48da6d
+    const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
+    if (clientConfig?.modelsAPIEnabled) {
+        logDebug('ModelsService', 'new models API enabled')
+        const serverSideModels = await fetchServerSideModels(authStatus.endpoint || '')
+        ModelsService.setModels(serverSideModels)
+        // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't entirely make sense in
+        // a world where LLM models are managed server-side. However, this is how Cody can be extended
+        // to use locally running LLMs such as Ollama. (Though some more testing is needed.)
+        // See: https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
+        registerModelsFromVSCodeConfiguration()
+        return
+    }
+
+    // If you are connecting to Sourcegraph.com, we use the Cody Pro set of models.
+    // (Only some of them may not be available if you are on the Cody Free plan.)
     if (authStatus.isDotCom) {
-        ModelProvider.setProviders(getDotComDefaultModels())
-        getChatModelsFromConfiguration()
+        ModelsService.setModels(getDotComDefaultModels())
+        registerModelsFromVSCodeConfiguration()
         return
     }
 
@@ -38,17 +68,24 @@ export function syncModelProviders(authStatus: AuthStatus): void {
     // NOTE: If authStatus?.configOverwrites?.chatModel is empty,
     // automatically fallback to use the default model configured on the instance.
     if (authStatus?.configOverwrites?.chatModel) {
-        ModelProvider.setProviders([
-            new ModelProvider(
+        ModelsService.setModels([
+            new Model(
                 authStatus.configOverwrites.chatModel,
                 // TODO (umpox) Add configOverwrites.editModel for separate edit support
                 [ModelUsage.Chat, ModelUsage.Edit],
                 getEnterpriseContextWindow(
                     authStatus?.configOverwrites?.chatModel,
                     authStatus?.configOverwrites
-                )
+                ),
+                undefined,
+                ModelUIGroup.Enterprise
             ),
         ])
+    } else {
+        // If the enterprise instance didn't have any configuration data for Cody,
+        // clear the models available in the ModelsService. Otherwise there will be
+        // stale, defunct models available.
+        ModelsService.setModels([])
     }
 }
 
@@ -62,32 +99,53 @@ interface ChatModelProviderConfig {
 }
 
 /**
+ * Adds any Models defined by the Visual Studio "cody.dev.models" configuration into the
+ * ModelsService. This provides a way to interact with models not hard-coded by default.
+ *
  * NOTE: DotCom Connections only as model options are not available for Enterprise
+ * BUG: This does NOT make any model changes based on the "cody.dev.useServerDefinedModels".
  *
- * Gets an array of `ModelProvider` instances based on the configuration for dev chat models.
- * If the `cody.dev.models` setting is not configured or is empty, the function returns an empty array.
- *
- * @returns An array of `ModelProvider` instances for the configured chat models.
+ * @returns An array of `Model` instances for the configured chat models.
  */
-export function getChatModelsFromConfiguration(): ModelProvider[] {
+export function registerModelsFromVSCodeConfiguration() {
     const codyConfig = vscode.workspace.getConfiguration('cody')
     const modelsConfig = codyConfig?.get<ChatModelProviderConfig[]>('dev.models')
     if (!modelsConfig?.length) {
-        return []
+        return
     }
 
-    const providers: ModelProvider[] = []
+    const models: Model[] = []
     for (const m of modelsConfig) {
-        const provider = new ModelProvider(
+        const provider = new Model(
             `${m.provider}/${m.model}`,
             [ModelUsage.Chat, ModelUsage.Edit],
             { input: m.inputTokens ?? CHAT_INPUT_TOKEN_BUDGET, output: m.outputTokens ?? ANSWER_TOKENS },
             { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint }
         )
-        provider.codyProOnly = true
-        providers.push(provider)
+        models.push(provider)
     }
 
-    ModelProvider.addProviders(providers)
-    return providers
+    ModelsService.addModels(models)
+}
+
+// fetchServerSideModels contacts the Sourcegraph endpoint, and fetches the LLM models it
+// currently supports. Requires that the current user is authenticated, with their credentials
+// stored.
+//
+// Throws an exception on any errors.
+async function fetchServerSideModels(endpoint: string): Promise<Model[]> {
+    if (!endpoint) {
+        throw new Error('authStatus has no endpoint available. Unable to fetch models.')
+    }
+
+    // Get the user's access token, assumed to be already saved in the secret store.
+    const userAccessToken = await secretStorage.getToken(endpoint)
+    if (!userAccessToken) {
+        throw new Error('no userAccessToken available. Unable to fetch models.')
+    }
+
+    // Fetch the data via REST API.
+    // NOTE: We may end up exposing this data via GraphQL, it's still TBD.
+    const client = new RestClient(endpoint, userAccessToken)
+    return await client.getAvailableModels()
 }

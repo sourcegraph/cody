@@ -152,6 +152,73 @@ const CommandShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanE
 }
 CommandShortcut.displayName = 'CommandShortcut'
 
+export const CommandLink: React.FunctionComponent<
+    React.AnchorHTMLAttributes<HTMLAnchorElement> & { onSelect?: () => void }
+> = ({ href, className, children, onSelect, ...props }) => {
+    const linkRef = React.useRef<HTMLAnchorElement>(null)
+
+    // We use a workaround to make links work in VS Code via keyboard and click (see the
+    // `dispatchEvent` call and related comment below). However, to avoid a click opening the link
+    // twice, we need to check if we're already opening a link due to a click and prevent the
+    // `dispatchEvent` code path from being called. When cmdk supports links
+    // (https://github.com/pacocoursey/cmdk/issues/258), this workaround will no longer be needed.
+    const isHandlingClick = React.useRef(false)
+
+    return (
+        <CommandItem
+            onSelect={() => {
+                onSelect?.()
+
+                if (isHandlingClick.current) {
+                    linkRef.current?.blur() // close after click
+                    return
+                }
+
+                // TODO: When cmdk supports links, use that instead. This workaround is only needed
+                // because the link's native onClick is not being fired because cmdk traps it. See
+                // https://github.com/pacocoursey/cmdk/issues/258.
+                //
+                // This workaround successfully opens an external link in VS Code webviews (which
+                // block `window.open` and plain click MouseEvents) and in browsers.
+                try {
+                    linkRef.current?.focus()
+                    linkRef.current?.dispatchEvent(
+                        new MouseEvent('click', {
+                            button: 0,
+                            ctrlKey: true,
+                            metaKey: true,
+                        })
+                    )
+                    linkRef.current?.blur()
+                } catch (error) {
+                    console.error(error)
+                } finally {
+                    isHandlingClick.current = false
+                }
+            }}
+            asChild
+        >
+            <a
+                {...props}
+                href={href}
+                className={cn(
+                    '!tw-text-foreground aria-selected:!tw-text-accent-foreground hover:!tw-text-accent-foreground',
+                    className
+                )}
+                onClick={e => {
+                    isHandlingClick.current = true
+                    setTimeout(() => {
+                        isHandlingClick.current = false
+                    })
+                }}
+                ref={linkRef}
+            >
+                {children}
+            </a>
+        </CommandItem>
+    )
+}
+
 export {
     Command,
     CommandDialog,

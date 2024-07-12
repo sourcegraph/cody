@@ -13,6 +13,7 @@ import { LexicalTypeaheadMenuPlugin, type MenuOption } from '@lexical/react/Lexi
 import {
     $createTextNode,
     $getSelection,
+    $isTextNode,
     BLUR_COMMAND,
     COMMAND_PRIORITY_NORMAL,
     KEY_ESCAPE_COMMAND,
@@ -25,6 +26,7 @@ import {
     type ContextItem,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
     scanForMentionTriggerInUserTextInput,
+    toSerializedPromptEditorValue,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { useCurrentChatModel } from '../../../chat/models/chatModelContext'
@@ -33,7 +35,6 @@ import {
     useMentionMenuData,
     useMentionMenuParams,
 } from '../../../mentions/mentionMenu/useMentionMenuData'
-import { toSerializedPromptEditorValue } from '../../PromptEditor'
 import {
     $createContextItemMentionNode,
     $createContextItemTextNode,
@@ -64,6 +65,21 @@ const FLOATING_OPTIONS: UseFloatingOptions = {
     transform: false,
 }
 
+/**
+ * We allow whitespace for @-mentions in the Lexical editor because
+ * it has an explicit switch between modes and can render @-mentions
+ * as special nodes that can be detected in later edits.
+ *
+ * The Edit quick-pick menu uses a raw text input and lacks this functionality,
+ * so we rely on spaces to detect @-mentions and switch between @-item selection
+ * and regular text input.
+ */
+function scanForMentionTriggerInLexicalInput(text: string) {
+    return scanForMentionTriggerInUserTextInput({ textBeforeCursor: text, includeWhitespace: true })
+}
+
+export type setEditorQuery = (getNewQuery: (currentText: string) => [string, number?]) => void
+
 export default function MentionsPlugin(): JSX.Element | null {
     const [editor] = useLexicalComposerContext()
 
@@ -88,18 +104,31 @@ export default function MentionsPlugin(): JSX.Element | null {
         limit: SUGGESTION_LIST_LENGTH_LIMIT,
     })
 
-    const setEditorQuery = useCallback(
-        (query: string): void => {
+    const setEditorQuery = useCallback<setEditorQuery>(
+        getNewQuery => {
             if (editor) {
                 editor.update(() => {
-                    const selection = $getSelection()
-                    if (selection) {
-                        const lastNode = selection.getNodes().at(-1)
-                        if (lastNode) {
-                            const textNode = $createTextNode(`@${query}`)
-                            lastNode.replace(textNode)
-                            textNode.selectEnd()
-                        }
+                    const node = $getSelection()?.getNodes().at(-1)
+                    if (!node || !$isTextNode(node)) {
+                        return
+                    }
+
+                    const currentText = node.getTextContent()
+                    const [newText, index] = getNewQuery(currentText)
+                    if (currentText === newText) {
+                        return
+                    }
+
+                    node.setTextContent(newText)
+
+                    if (index !== undefined) {
+                        node.select(index, index)
+                    } else {
+                        // If our old text was "prefix @bar baz" and the new text is
+                        // "prefix @ baz" then our cursor should be just after @
+                        // (which is at the common prefix position)
+                        const offset = sharedPrefixLength(currentText, newText)
+                        node.select(offset, offset)
                     }
                 })
             }
@@ -204,7 +233,7 @@ export default function MentionsPlugin(): JSX.Element | null {
             onQueryChange={updateQuery}
             onSelectOption={onSelectOption}
             onClose={onClose}
-            triggerFn={scanForMentionTriggerInUserTextInput}
+            triggerFn={scanForMentionTriggerInLexicalInput}
             options={DUMMY_OPTIONS}
             anchorClassName={styles.resetAnchor}
             commandPriority={
@@ -212,19 +241,11 @@ export default function MentionsPlugin(): JSX.Element | null {
             }
             onOpen={menuResolution => {
                 refs.setPositionReference({
-                    getBoundingClientRect: (): DOMRect => {
-                        const range = document.createRange()
-                        const sel = document.getSelection()
-                        if (sel?.anchorNode) {
-                            range.setStart(sel.anchorNode, menuResolution.match?.leadOffset ?? 0)
-                            range.setEnd(sel.anchorNode, sel.anchorOffset)
-                            return range.getBoundingClientRect()
-                        }
-                        throw new Error('no selection anchor')
-                    },
+                    getBoundingClientRect: menuResolution.getRect,
                 })
             }}
-            menuRenderFn={(anchorElementRef, { selectOptionAndCleanUp }) => {
+            menuRenderFn={(anchorElementRef, itemProps) => {
+                const { selectOptionAndCleanUp } = itemProps
                 anchorElementRef2.current = anchorElementRef.current ?? undefined
                 return (
                     anchorElementRef.current && (
@@ -233,11 +254,15 @@ export default function MentionsPlugin(): JSX.Element | null {
                                 ref={ref => {
                                     refs.setFloating(ref)
                                 }}
-                                style={{
-                                    position: strategy,
-                                    top: y,
-                                    left: x,
-                                }}
+                                style={
+                                    x === 0 && y === 0
+                                        ? { display: 'none' }
+                                        : {
+                                              position: strategy,
+                                              top: y,
+                                              left: x,
+                                          }
+                                }
                                 className={clsx(styles.popover)}
                             >
                                 <MentionMenu
@@ -254,6 +279,14 @@ export default function MentionsPlugin(): JSX.Element | null {
             }}
         />
     )
+}
+
+function sharedPrefixLength(s1: string, s2: string): number {
+    let i = 0
+    while (i < s1.length && i < s2.length && s1[i] === s2[i]) {
+        i += 1
+    }
+    return i
 }
 
 /**

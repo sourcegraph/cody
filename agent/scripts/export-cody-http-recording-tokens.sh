@@ -5,7 +5,7 @@
 #   cd CODY_DIRECTORY
 #   source agent/scripts/export-cody-http-recording-tokens.sh
 #   pnpm update-agent-recordings
-#   pnpm update-symf-recordings
+#   pnpm update-rewrite-recordings
 #
 # Tips to update these secrets:
 #  - Use 1Password to find account passwords

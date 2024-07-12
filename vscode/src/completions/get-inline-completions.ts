@@ -12,17 +12,14 @@ import { logError } from '../log'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { isValidTestFile } from '../commands/utils/test-commands'
-import { completionProviderConfig } from './completion-provider-config'
+import { gitMetadataForCurrentEditor } from '../repository/git-metadata-for-editor'
+import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
 import type { ContextMixer } from './context/context-mixer'
+import { getCompletionProvider } from './get-completion-provider'
 import { insertIntoDocContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
 import type { CompletionLogID } from './logger'
-import type {
-    CompletionProviderTracer,
-    Provider,
-    ProviderConfig,
-    ProviderOptions,
-} from './providers/provider'
+import type { CompletionProviderTracer, ProviderConfig } from './providers/provider'
 import type { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import type { SmartThrottleService } from './smart-throttle'
@@ -48,6 +45,7 @@ export interface InlineCompletionsParams {
     requestManager: RequestManager
     contextMixer: ContextMixer
     smartThrottleService: SmartThrottleService | null
+    stageRecorder: CompletionLogger.AutocompleteStageRecorder
 
     // UI state
     isDotComUser: boolean
@@ -57,8 +55,10 @@ export interface InlineCompletionsParams {
 
     // Execution
     abortSignal?: AbortSignal
+    cancellationListener?: vscode.Disposable
     tracer?: (data: Partial<ProvideInlineCompletionsItemTraceData>) => void
     artificialDelay?: number
+    firstCompletionTimeout: number
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
@@ -105,6 +105,12 @@ export interface InlineCompletionsResult {
 
     /** The completions. */
     items: InlineCompletionItemWithAnalytics[]
+
+    /**
+     * If the request has become stale.
+     * This will be the case if it is left in-flight but superseded by a newer request.
+     */
+    stale?: boolean
 }
 
 /**
@@ -191,22 +197,33 @@ async function doGetInlineCompletions(
         docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix },
         providerConfig,
         contextMixer,
-        requestManager,
         smartThrottleService,
+        requestManager,
         lastCandidate,
         debounceInterval,
         setIsLoading,
         abortSignal,
+        cancellationListener,
         tracer,
         handleDidAcceptCompletionItem,
         handleDidPartiallyAcceptCompletionItem,
         artificialDelay,
+        firstCompletionTimeout,
         completionIntent,
         lastAcceptedCompletionItem,
         isDotComUser,
+        stageRecorder,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
+
+    const gitIdentifiersForFile =
+        isDotComUser === true ? gitMetadataForCurrentEditor.getGitIdentifiersForFile() : undefined
+    if (gitIdentifiersForFile?.gitUrl) {
+        const repoMetadataInstance = RepoMetadatafromGitApi.getInstance()
+        // Calling this so that it precomputes the `gitRepoUrl` and store in its cache for query later.
+        repoMetadataInstance.getRepoMetadataUsingGitUrl(gitIdentifiersForFile.gitUrl)
+    }
 
     // If we have a suffix in the same line as the cursor and the suffix contains any word
     // characters, do not attempt to make a completion. This means we only make completions if
@@ -256,6 +273,8 @@ async function doGetInlineCompletions(
         }
     }
 
+    stageRecorder.record('preLastCandidate')
+
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
     // ghost text in the editor), and reuse it if it is still valid.
     const resultToReuse =
@@ -278,7 +297,7 @@ async function doGetInlineCompletions(
     // Only log a completion as started if it's either served from cache _or_ the debounce interval
     // has passed to ensure we don't log too many start events where we end up not doing any work at
     // all.
-    CompletionLogger.flushActiveSuggestionRequests()
+    CompletionLogger.flushActiveSuggestionRequests(isDotComUser)
     const multiline = Boolean(multilineTrigger)
     const logId = CompletionLogger.create({
         multiline,
@@ -290,7 +309,9 @@ async function doGetInlineCompletions(
         completionIntent,
         artificialDelay,
         traceId: getActiveTraceAndSpanId()?.traceId,
+        stageTimings: stageRecorder.stageTimings,
     })
+    stageRecorder.setLogId(logId)
 
     let requestParams: RequestParams = {
         document,
@@ -300,14 +321,23 @@ async function doGetInlineCompletions(
         abortSignal,
     }
 
+    stageRecorder.record('preCache')
     const cachedResult = requestManager.checkCache({
         requestParams,
         isCacheEnabled: triggerKind !== TriggerKind.Manual,
     })
     if (cachedResult) {
-        const { completions, source } = cachedResult
+        const { completions, source, isFuzzyMatch } = cachedResult
 
-        CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser)
+        CompletionLogger.start(logId)
+        CompletionLogger.loaded({
+            logId,
+            requestParams,
+            completions,
+            source,
+            isFuzzyMatch,
+            isDotComUser,
+        })
 
         return {
             logId,
@@ -316,9 +346,27 @@ async function doGetInlineCompletions(
         }
     }
 
-    if (smartThrottleService) {
-        const throttledRequest = await smartThrottleService.throttle(requestParams, triggerKind)
+    /**
+     * A request becomes stale if it is left in-flight but superseded by another request.
+     * This only applies to the smart throttle.
+     */
+    let stale: boolean | undefined
+    const markRequestAsStale = () => {
+        stale = true
+    }
 
+    if (smartThrottleService) {
+        // For the smart throttle to work correctly and preserve tail requests, we need full control
+        // over the cancellation logic for each request.
+        // Therefore we must stop listening for cancellation events originating from VS Code.
+        cancellationListener?.dispose()
+
+        stageRecorder.record('preSmartThrottle')
+        const throttledRequest = await smartThrottleService.throttle(
+            requestParams,
+            triggerKind,
+            markRequestAsStale
+        )
         if (throttledRequest === null) {
             return null
         }
@@ -326,6 +374,7 @@ async function doGetInlineCompletions(
         requestParams = throttledRequest
     }
 
+    stageRecorder.record('preDebounce')
     const debounceTime = smartThrottleService
         ? 0
         : triggerKind !== TriggerKind.Automatic
@@ -347,6 +396,7 @@ async function doGetInlineCompletions(
 
     setIsLoading?.(true)
     CompletionLogger.start(logId)
+    stageRecorder.record('preContextRetrieval')
 
     // Fetch context and apply remaining debounce time
     const [contextResult] = await Promise.all([
@@ -371,12 +421,22 @@ async function doGetInlineCompletions(
 
     tracer?.({ context: contextResult })
 
+    let gitContext = undefined
+    if (gitIdentifiersForFile?.gitUrl) {
+        gitContext = {
+            repoName: gitIdentifiersForFile.gitUrl,
+        }
+    }
+
     const completionProvider = getCompletionProvider({
         document,
         position,
         triggerKind,
         providerConfig,
         docContext,
+        firstCompletionTimeout,
+        completionLogId: logId,
+        gitContext,
     })
 
     tracer?.({
@@ -389,6 +449,7 @@ async function doGetInlineCompletions(
     })
 
     CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
+    stageRecorder.record('preNetworkRequest')
 
     // Get the processed completions from providers
     const { completions, source } = await requestManager.request({
@@ -399,50 +460,28 @@ async function doGetInlineCompletions(
         tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,
     })
 
-    CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser)
+    const inlineContextParams = {
+        context: contextResult?.context,
+        filePath: gitIdentifiersForFile?.filePath,
+        gitUrl: gitIdentifiersForFile?.gitUrl,
+        commit: gitIdentifiersForFile?.commit,
+    }
+    CompletionLogger.loaded({
+        logId,
+        requestParams,
+        completions,
+        source,
+        isDotComUser,
+        inlineContextParams,
+        isFuzzyMatch: false,
+    })
 
     return {
         logId,
         items: completions,
         source,
+        stale,
     }
-}
-
-interface GetCompletionProvidersParams
-    extends Pick<InlineCompletionsParams, 'document' | 'position' | 'triggerKind' | 'providerConfig'> {
-    docContext: DocumentContext
-}
-
-function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
-    const { document, position, triggerKind, providerConfig, docContext } = params
-
-    const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
-        triggerKind,
-        docContext,
-        document,
-        position,
-        hotStreak: completionProviderConfig.hotStreak,
-        // For now the value is static and based on the average multiline completion latency.
-        firstCompletionTimeout: 1500,
-    }
-
-    // Show more if manually triggered (but only showing 1 is faster, so we use it
-    // in the automatic trigger case).
-    const n = triggerKind === TriggerKind.Automatic ? 1 : 3
-
-    if (docContext.multilineTrigger) {
-        return providerConfig.create({
-            ...sharedProviderOptions,
-            n,
-            multiline: true,
-        })
-    }
-
-    return providerConfig.create({
-        ...sharedProviderOptions,
-        n,
-        multiline: false,
-    })
 }
 
 function createCompletionProviderTracer(

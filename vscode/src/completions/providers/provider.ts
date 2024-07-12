@@ -4,12 +4,14 @@ import {
     type AutocompleteContextSnippet,
     type CompletionParameters,
     type DocumentContext,
+    type GitContext,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
+import type { TriggerKind } from '../get-inline-completions'
+import type * as CompletionLogger from '../logger'
 import type { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 
-import type { TriggerKind } from '../get-inline-completions'
 import type { FetchCompletionResult } from './fetch-and-process-completions'
 
 export interface ProviderConfig {
@@ -76,9 +78,15 @@ export interface ProviderOptions {
      *  Timeout in milliseconds for the first completion to be yielded from the completions generator.
      */
     firstCompletionTimeout: number
+    completionLogId: CompletionLogger.CompletionLogID
 
     // feature flags
     hotStreak?: boolean
+
+    /**
+     * Git related context information. Currently only supports a repo name, which is used by various FIM models in prompt.
+     */
+    gitContext?: GitContext
 }
 
 export abstract class Provider {

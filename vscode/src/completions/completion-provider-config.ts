@@ -13,10 +13,11 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompleteContextBfgMixed,
         FeatureFlag.CodyAutocompleteHotStreak,
         FeatureFlag.CodyAutocompleteUserLatency,
-        FeatureFlag.CodyAutocompleteEagerCancellation,
         FeatureFlag.CodyAutocompleteTracing,
+        FeatureFlag.CodyAutocompleteContextExtendLanguagePool,
         FeatureFlag.CodyAutocompleteSmartThrottle,
-        FeatureFlag.CodyAutocompleteReducedDebounce,
+        FeatureFlag.CodyAutocompleteSmartThrottleExtended,
+        FeatureFlag.CodyAutocompleteLatencyExperimentBasedFeatureFlag,
     ] as const
 
     private get config() {
@@ -50,13 +51,6 @@ class CompletionProviderConfig {
         return Boolean(this.featureFlagProvider.getFromCache(flag as FeatureFlag))
     }
 
-    public get hotStreak(): boolean {
-        return (
-            this.config.autocompleteExperimentalHotStreak ||
-            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteHotStreak)
-        )
-    }
-
     public get contextStrategy(): ContextStrategy {
         switch (this.config.autocompleteExperimentalGraphContext as string) {
             case 'lsp-light':
@@ -69,8 +63,6 @@ class CompletionProviderConfig {
                 return 'bfg'
             case 'bfg-mixed':
                 return 'bfg-mixed'
-            case 'local-mixed':
-                return 'local-mixed'
             case 'jaccard-similarity':
                 return 'jaccard-similarity'
             case 'new-jaccard-similarity':
@@ -82,14 +74,56 @@ class CompletionProviderConfig {
         }
     }
 
+    private getLatencyExperimentGroup():
+        | 'hot-streak'
+        | 'smart-throttle'
+        | 'smart-throttle-extended'
+        | 'control' {
+        // The desired distribution:
+        // - Hot-streak 25%
+        // - Smart-throttle 25%
+        // - Smart-throttle-extended 25%
+        // - Control group 25%
+        //
+        // The rollout values to set:
+        // - CodyAutocompleteLatencyExperimentBasedFeatureFlag 75%
+        // - CodyAutocompleteHotStreak 33%
+        // - CodyAutocompleteSmartThrottle 66%
+        // - CodyAutocompleteSmartThrottleExtended 50%
+        if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteLatencyExperimentBasedFeatureFlag)) {
+            if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteHotStreak)) {
+                return 'hot-streak'
+            }
+
+            if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottle)) {
+                if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottleExtended)) {
+                    return 'smart-throttle-extended'
+                }
+                return 'smart-throttle'
+            }
+        }
+
+        return 'control'
+    }
+
+    public get hotStreak(): boolean {
+        return (
+            this.config.autocompleteExperimentalHotStreak ||
+            this.getLatencyExperimentGroup() === 'hot-streak'
+        )
+    }
+
     public get smartThrottle(): boolean {
         return (
-            // smart throttle is required for the bfg-mixed context strategy
-            // because it allows us to update the completion based on the identifiers
-            // user typed in the current line.
-            this.contextStrategy === 'bfg-mixed' ||
             this.config.autocompleteExperimentalSmartThrottle ||
-            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottle)
+            this.getLatencyExperimentGroup() === 'smart-throttle'
+        )
+    }
+
+    public get smartThrottleExtended(): boolean {
+        return (
+            this.config.autocompleteExperimentalSmartThrottleExtended ||
+            this.getLatencyExperimentGroup() === 'smart-throttle-extended'
         )
     }
 }

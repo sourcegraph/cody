@@ -8,6 +8,7 @@ import {
     type FunctionComponent,
     type KeyboardEventHandler,
     type PropsWithChildren,
+    type ReactNode,
     forwardRef,
     useCallback,
     useEffect,
@@ -22,27 +23,24 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip'
 // NOTE(sqs): These components are not from shadcn, but they follow that convention. Some of the
 // styling is still in CSS, not Tailwind.
 
-const buttonVariants = cva(
-    'tw-border-none tw-flex tw-items-center focus-visible:tw-outline-none disabled:!tw-opacity-100',
-    {
-        variants: {
-            variant: {
-                primary: '',
-                secondary: '',
-            },
+const buttonVariants = cva('tw-border-none tw-flex tw-items-center focus-visible:tw-outline-none', {
+    variants: {
+        variant: {
+            primary: '',
+            secondary: '',
         },
-        defaultVariants: {
-            variant: 'secondary',
-        },
-    }
-)
+    },
+    defaultVariants: {
+        variant: 'secondary',
+    },
+})
 
 type IconComponent = ComponentType<{ width?: number | string; height?: number | string }>
 
-export interface ToolbarButtonProps
+interface ToolbarButtonProps
     extends ButtonHTMLAttributes<HTMLButtonElement>,
         VariantProps<typeof buttonVariants> {
-    tooltip?: string
+    tooltip?: ReactNode
     iconStart?: IconComponent
     iconEnd?: IconComponent | 'chevron'
 
@@ -85,7 +83,7 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
         return tooltip ? (
             <Tooltip>
                 <TooltipTrigger asChild={true}>{button}</TooltipTrigger>
-                <TooltipContent>{tooltip}</TooltipContent>
+                <TooltipContent side="bottom">{tooltip}</TooltipContent>
             </Tooltip>
         ) : (
             button

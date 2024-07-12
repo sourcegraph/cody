@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { defaultAuthStatus, unauthenticatedStatus } from './protocol'
+import { defaultAuthStatus, unauthenticatedStatus } from '@sourcegraph/cody-shared'
 import { newAuthStatus } from './utils'
 
 describe('validateAuthStatus', () => {

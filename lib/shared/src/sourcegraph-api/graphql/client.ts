@@ -4,7 +4,9 @@ import { fetch } from '../../fetch'
 
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
+import { escapeRegExp } from 'lodash'
 import semver from 'semver'
+import type { AuthStatus } from '../../auth/types'
 import type { ConfigurationWithAccessToken } from '../../configuration'
 import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
@@ -26,7 +28,12 @@ import {
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
+    FILE_CONTENTS_QUERY,
+    FILE_MATCH_SEARCH_QUERY,
+    FUZZY_FILES_QUERY,
+    FUZZY_SYMBOLS_QUERY,
     GET_FEATURE_FLAGS_QUERY,
+    GET_REMOTE_FILE_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
     PACKAGE_LIST_QUERY,
@@ -34,6 +41,7 @@ import {
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
     REPOSITORY_LIST_QUERY,
+    REPOSITORY_SEARCH_QUERY,
     REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
 } from './queries'
@@ -45,8 +53,6 @@ export function isNodeResponse(response: BrowserOrNodeResponse): response is Nod
     return Boolean(response.body && !('getReader' in response.body))
 }
 
-const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
-
 interface APIResponse<T> {
     data?: T
     errors?: { message: string; path?: string[] }[]
@@ -54,6 +60,65 @@ interface APIResponse<T> {
 
 interface SiteVersionResponse {
     site: { productVersion: string } | null
+}
+
+export type FuzzyFindFilesResponse = {
+    __typename?: 'Query'
+    search: {
+        results: {
+            results: Array<FuzzyFindFile>
+        }
+    } | null
+}
+
+export type FuzzyFindSymbolsResponse = {
+    __typename?: 'Query'
+    search: {
+        results: {
+            results: FuzzyFindSymbol[]
+        }
+    }
+}
+
+type FuzzyFindFile = {
+    file: {
+        path: string
+        url: string
+        name: string
+        byteSize: number
+        isDirectory: boolean
+    }
+    repository: { id: string; name: string }
+}
+
+type FuzzyFindSymbol = {
+    symbols: {
+        name: string
+        location: {
+            range: {
+                start: { line: number }
+                end: { line: number }
+            }
+            resource: {
+                path: string
+            }
+        }
+    }[]
+    repository: { id: string; name: string }
+}
+
+interface RemoteFileContentReponse {
+    __typename?: 'Query'
+    repository: {
+        id: string
+        commit: {
+            id: string
+            oid: string
+            blob: {
+                content: string
+            }
+        }
+    }
 }
 
 interface SiteIdentificationResponse {
@@ -84,8 +149,42 @@ interface CurrentUserInfoResponse {
         avatarURL: string
         codyProEnabled: boolean
         primaryEmail?: { email: string } | null
+        organizations: {
+            nodes: { name: string; id: string }[]
+        }
     } | null
 }
+
+// The client configuration describing all of the features that are currently available.
+//
+// This is fetched from the Sourcegraph instance and is specific to the current user.
+//
+// For the canonical type definition, see https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/clientconfig/types.go
+interface CodyClientConfig {
+    // Whether the site admin allows this user to make use of Cody at all.
+    codyEnabled: boolean
+
+    // Whether the site admin allows this user to make use of the Cody chat feature.
+    chatEnabled: boolean
+
+    // Whether the site admin allows this user to make use of the Cody autocomplete feature.
+    autoCompleteEnabled: boolean
+
+    // Whether the site admin allows the user to make use of the **custom** Cody commands feature.
+    customCommandsEnabled: boolean
+
+    // Whether the site admin allows this user to make use of the Cody attribution feature.
+    attributionEnabled: boolean
+
+    // Whether the 'smart context window' feature should be enabled, and whether the Sourcegraph
+    // instance supports various new GraphQL APIs needed to make it work.
+    smartContextWindowEnabled: boolean
+
+    // Whether the new Sourcegraph backend LLM models API endpoint should be used to query which
+    // models are available.
+    modelsAPIEnabled: boolean
+}
+
 interface CodyConfigFeatures {
     chat: boolean
     autoComplete: boolean
@@ -98,7 +197,7 @@ interface CodyConfigFeaturesResponse {
 }
 
 interface CodyEnterpriseConfigSmartContextResponse {
-    site: { codyLLMConfiguration: { smartContext: string } | null } | null
+    site: { codyLLMConfiguration: { smartContextWindow: string } | null } | null
 }
 
 interface CurrentUserCodyProEnabledResponse {
@@ -131,7 +230,7 @@ interface CodyLLMSiteConfigurationProviderResponse {
     } | null
 }
 
-export interface PackageListResponse {
+interface PackageListResponse {
     packageRepoReferences: {
         nodes: {
             id: string
@@ -152,6 +251,46 @@ export interface RepoListResponse {
             endCursor: string | null
         }
     }
+}
+
+export interface RepoSearchResponse {
+    repositories: {
+        nodes: { name: string; id: string; url: string }[]
+        pageInfo: {
+            endCursor: string | null
+        }
+    }
+}
+interface FileMatchSearchResponse {
+    search: {
+        results: {
+            results: {
+                __typename: string
+                repository: {
+                    name: string
+                }
+                file: {
+                    url: string
+                    path: string
+                    commit: {
+                        oid: string
+                    }
+                }
+            }[]
+        }
+    }
+}
+
+interface FileContentsResponse {
+    repository: {
+        commit: {
+            file: {
+                path: string
+                url: string
+                content: string
+            } | null
+        } | null
+    } | null
 }
 
 interface RepositoryIdResponse {
@@ -215,7 +354,7 @@ export interface ContextSearchResult {
     content: string
 }
 
-export interface ContextFiltersResponse {
+interface ContextFiltersResponse {
     site: {
         codyContextFilters: {
             raw: ContextFilters | null
@@ -264,7 +403,7 @@ export interface CodyLLMSiteConfiguration {
     completionModel?: string
     completionModelMaxTokens?: number
     provider?: string
-    smartContext?: boolean
+    smartContextWindow?: boolean
 }
 
 export interface CurrentUserCodySubscription {
@@ -275,13 +414,16 @@ export interface CurrentUserCodySubscription {
     currentPeriodEndAt: Date
 }
 
-interface CurrentUserInfo {
+export interface CurrentUserInfo {
     id: string
     hasVerifiedEmail: boolean
     username: string
     displayName?: string
     avatarURL: string
     primaryEmail?: { email: string } | null
+    organizations: {
+        nodes: { name: string; id: string }[]
+    }
 }
 
 interface EvaluatedFeatureFlag {
@@ -362,12 +504,23 @@ export class SourcegraphGraphQLAPIClient {
         return this._config
     }
 
+    private isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+
     constructor(config: GraphQLAPIClientConfig | null = null) {
         this._config = config
     }
 
     public onConfigurationChange(newConfig: GraphQLAPIClientConfig): void {
         this._config = newConfig
+    }
+
+    /**
+     * Tells if the underlying configuration contains an access token, i.e. if requests made right
+     * now would likely be authenticated. This can be used to avoid making requests that would
+     * otherwise just fail due to requiring auth.
+     */
+    public hasAccessToken(): boolean {
+        return !!this._config?.accessToken
     }
 
     /**
@@ -395,6 +548,56 @@ export class SourcegraphGraphQLAPIClient {
             extractDataOrError(
                 response,
                 data => data.site?.productVersion ?? new Error('site version not found')
+            )
+        )
+    }
+
+    public async getRemoteFiles(
+        repositories: string[],
+        query: string
+    ): Promise<FuzzyFindFile[] | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FuzzyFindFilesResponse>>(FUZZY_FILES_QUERY, {
+            query: `type:path count:30 ${
+                repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
+            } ${query}`,
+        }).then(response =>
+            extractDataOrError(
+                response,
+                data => data.search?.results.results ?? new Error('no files found')
+            )
+        )
+    }
+
+    public async getRemoteSymbols(
+        repositories: string[],
+        query: string
+    ): Promise<FuzzyFindSymbol[] | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FuzzyFindSymbolsResponse>>(FUZZY_SYMBOLS_QUERY, {
+            query: `type:symbol count:30 ${
+                repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
+            } ${query}`,
+        }).then(response =>
+            extractDataOrError(
+                response,
+                data => data.search?.results.results ?? new Error('no symbols found')
+            )
+        )
+    }
+
+    public async getFileContent(
+        repository: string,
+        filePath: string,
+        range?: { startLine?: number; endLine?: number }
+    ): Promise<string | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RemoteFileContentReponse>>(GET_REMOTE_FILE_QUERY, {
+            repositoryName: repository,
+            filePath,
+            startLine: range?.startLine,
+            endLine: range?.endLine,
+        }).then(response =>
+            extractDataOrError(
+                response,
+                data => data.repository.commit.blob.content ?? new Error('no file found')
             )
         )
     }
@@ -497,7 +700,7 @@ export class SourcegraphGraphQLAPIClient {
 
     public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {
         // fetch Cody LLM provider separately for backward compatability
-        const [configResponse, providerResponse, smartContext] = await Promise.all([
+        const [configResponse, providerResponse, smartContextWindow] = await Promise.all([
             this.fetchSourcegraphAPI<APIResponse<CodyLLMSiteConfigurationResponse>>(
                 CURRENT_SITE_CODY_LLM_CONFIGURATION
             ),
@@ -524,10 +727,10 @@ export class SourcegraphGraphQLAPIClient {
             provider = llmProvider
         }
 
-        return { ...config, provider, smartContext }
+        return { ...config, provider, smartContextWindow }
     }
 
-    private async getCodyLLMConfigurationSmartContext(): Promise<boolean> {
+    async getCodyLLMConfigurationSmartContext(): Promise<boolean> {
         return (
             this.fetchSourcegraphAPI<APIResponse<CodyEnterpriseConfigSmartContextResponse>>(
                 CURRENT_SITE_CODY_LLM_CONFIGURATION_SMART_CONTEXT,
@@ -536,7 +739,7 @@ export class SourcegraphGraphQLAPIClient {
                 .then(response => {
                     const smartContextResponse = extractDataOrError(
                         response,
-                        data => data?.site?.codyLLMConfiguration?.smartContext ?? ''
+                        data => data?.site?.codyLLMConfiguration?.smartContextWindow ?? ''
                     )
 
                     if (isError(smartContextResponse)) {
@@ -577,6 +780,43 @@ export class SourcegraphGraphQLAPIClient {
         }).then(response => extractDataOrError(response, data => data))
     }
 
+    /**
+     * Searches for repositories from the Sourcegraph instance.
+     * @param first the number of repositories to retrieve.
+     * @param after the last repository retrieved, if any, to continue enumerating the list.
+     * @param query the query to search the repositories.
+     * @returns the list of repositories. If `endCursor` is null, this is the end of the list.
+     */
+    public async searchRepos(
+        first: number,
+        after?: string,
+        query?: string
+    ): Promise<RepoSearchResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RepoSearchResponse>>(REPOSITORY_SEARCH_QUERY, {
+            first,
+            after: after || null,
+            query,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
+    public async searchFileMatches(query?: string): Promise<FileMatchSearchResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FileMatchSearchResponse>>(FILE_MATCH_SEARCH_QUERY, {
+            query,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
+    public async getFileContents(
+        repoName: string,
+        filePath: string,
+        rev?: string
+    ): Promise<FileContentsResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FileContentsResponse>>(FILE_CONTENTS_QUERY, {
+            repoName,
+            filePath,
+            rev,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
     public async getRepoId(repoName: string): Promise<string | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepositoryIdResponse>>(REPOSITORY_ID_QUERY, {
             name: repoName,
@@ -608,11 +848,11 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async contextSearch(
-        repos: Set<string>,
+        repoIDs: string[],
         query: string
     ): Promise<ContextSearchResult[] | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<ContextSearchResponse>>(CONTEXT_SEARCH_QUERY, {
-            repos: [...repos],
+            repos: repoIDs,
             query,
             codeResultsCount: 15,
             textResultsCount: 5,
@@ -749,6 +989,9 @@ export class SourcegraphGraphQLAPIClient {
         if (process.env.CODY_TESTING === 'true') {
             return this.sendEventLogRequestToTestingAPI(event)
         }
+        if (this.isAgentTesting) {
+            return {}
+        }
         if (this.config?.telemetryLevel === 'off') {
             return {}
         }
@@ -823,7 +1066,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     private anonymizeTelemetryEventInput(event: TelemetryEventInput): void {
-        if (isAgentTesting) {
+        if (this.isAgentTesting) {
             event.timestamp = undefined
             event.parameters.interactionID = undefined
             event.parameters.billingMetadata = undefined
@@ -834,7 +1077,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     private anonymizeEvent(event: event): void {
-        if (isAgentTesting) {
+        if (this.isAgentTesting) {
             event.publicArgument = undefined
             event.argument = undefined
             event.userCookieID = 'ANONYMOUS_USER_COOKIE_ID'
@@ -1011,6 +1254,56 @@ export class SourcegraphGraphQLAPIClient {
             .then(response => response.json() as T)
             .catch(error => new Error(`error fetching Testing Sourcegraph API: ${error} (${url})`))
     }
+
+    // Performs an authenticated request to our non-GraphQL HTTP / REST API.
+    public fetchHTTP<T>(
+        queryName: string,
+        method: string,
+        urlPath: string,
+        body?: string,
+        timeout = 6000 // Default timeout of 6000ms (6 seconds)
+    ): Promise<T | Error> {
+        const headers = new Headers(this.config.customHeaders as HeadersInit)
+        headers.set('Content-Type', 'application/json; charset=utf-8')
+        if (this.config.accessToken) {
+            headers.set('Authorization', `token ${this.config.accessToken}`)
+        }
+        if (this.anonymousUserID && !process.env.CODY_WEB_DONT_SET_SOME_HEADERS) {
+            headers.set('X-Sourcegraph-Actor-Anonymous-UID', this.anonymousUserID)
+        }
+
+        addTraceparent(headers)
+        addCustomUserAgent(headers)
+
+        const url = new URL(urlPath, this.config.serverEndpoint).href
+
+        // Create an AbortController instance
+        const controller = new AbortController()
+        const signal = controller.signal
+
+        // Set a timeout to trigger the abort
+        const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+        return wrapInActiveSpan(`httpapi.fetch${queryName ? `.${queryName}` : ''}`, () =>
+            fetch(url, {
+                method: method,
+                body: body,
+                headers,
+                signal, // Pass the signal to the fetch request
+            })
+                .then(response => {
+                    clearTimeout(timeoutId) // Clear the timeout if the request completes in time
+                    return verifyResponseCode(response)
+                })
+                .then(response => response.json() as T)
+                .catch(error => {
+                    if (error.name === 'AbortError') {
+                        return new Error(`EHOSTUNREACH: Request timed out after ${timeout}ms (${url})`)
+                    }
+                    return new Error(`accessing Sourcegraph HTTP API: ${error} (${url})`)
+                })
+        )
+    }
 }
 
 /**
@@ -1020,69 +1313,188 @@ export class SourcegraphGraphQLAPIClient {
 export const graphqlClient = new SourcegraphGraphQLAPIClient()
 
 /**
- * ConfigFeaturesSingleton is a class that manages the retrieval
+ * ClientConfigSingleton is a class that manages the retrieval
  * and caching of configuration features from GraphQL endpoints.
  */
-export class ConfigFeaturesSingleton {
-    private static instance: ConfigFeaturesSingleton
-    private configFeatures: Promise<CodyConfigFeatures>
+export class ClientConfigSingleton {
+    private static instance: ClientConfigSingleton
+    private cachedClientConfig?: CodyClientConfig
+    private cachedAt = 0
+    private isSignedIn = false
+
+    // Default values for the legacy GraphQL features API, used when a Sourcegraph instance
+    // does not support even the legacy GraphQL API.
+    private featuresLegacy: CodyConfigFeatures = {
+        chat: true,
+        autoComplete: true,
+        commands: true,
+        attribution: false,
+    }
 
     // Constructor is private to prevent creating new instances outside of the class
-    private constructor() {
-        // Initialize with default values
-        this.configFeatures = Promise.resolve({
-            chat: true,
-            autoComplete: true,
-            commands: true,
-            attribution: false,
-        })
-        // Initiate the first fetch and set up a recurring fetch every 30 seconds
-        this.refreshConfigFeatures()
-        // Fetch config features periodically every 30 seconds only if isDotCom is false
-        if (!graphqlClient.isDotCom()) {
-            setInterval(() => this.refreshConfigFeatures(), 30000)
+    private constructor() {}
+
+    // Static method to get the singleton instance
+    public static getInstance(): ClientConfigSingleton {
+        if (!ClientConfigSingleton.instance) {
+            ClientConfigSingleton.instance = new ClientConfigSingleton()
+        }
+        return ClientConfigSingleton.instance
+    }
+
+    public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
+        this.isSignedIn = authStatus.authenticated && authStatus.isLoggedIn
+        if (this.isSignedIn) {
+            await this.refreshConfig()
+        } else {
+            this.cachedClientConfig = undefined
+            this.cachedAt = 0
         }
     }
 
-    // Static method to get the singleton instance
-    public static getInstance(): ConfigFeaturesSingleton {
-        if (!ConfigFeaturesSingleton.instance) {
-            ConfigFeaturesSingleton.instance = new ConfigFeaturesSingleton()
+    public async getConfig(): Promise<CodyClientConfig | undefined> {
+        switch (this.shouldFetch()) {
+            case 'sync':
+                return this.refreshConfig()
+            // biome-ignore lint/suspicious/noFallthroughSwitchClause: This is intentional
+            case 'async':
+                this.refreshConfig()
+            case false:
+                return this.cachedClientConfig
         }
-        return ConfigFeaturesSingleton.instance
+    }
+
+    // Refetch the config if the user is signed in and it's not cached or it's older than 60 seconds
+    // If the cached config is >60s old, then we will refresh it async now. In the meantime, we will
+    // continue using the old version.
+    //
+    // Note that this means the time allowance between 'site admin disabled <chat,autocomplete,commands,etc.>
+    // functionality but users can still make use of it' is double this (120s.)
+    private shouldFetch(): 'sync' | 'async' | false {
+        // If the user is not logged in, we will not fetch as it will fail
+        if (!this.isSignedIn) {
+            return false
+        }
+
+        // If they are logged in but not cached, fetch the config synchronously
+        if (!this.cachedClientConfig) {
+            return 'sync'
+        }
+
+        // If the config is cached and greater than 60 seconds old, we can use the cached version
+        // but should asyncronously fetch the new config
+        if (Date.now() - this.cachedAt > 60000) {
+            return 'async'
+        }
+
+        // Otherwise, we have a cache hit!
+        return false
     }
 
     // Refreshes the config features by fetching them from the server and caching the result
-    private refreshConfigFeatures(): void {
-        const previousConfigFeatures = this.configFeatures
-        this.configFeatures = this.fetchConfigFeatures().catch((error: Error) => {
-            // Ignore fetcherrors as older SG instances will always face this because their GQL is outdated
-            if (!(error.message.includes('FetchError') || hasOutdatedAPIErrorMessages(error))) {
-                logError('ConfigFeaturesSingleton', 'refreshConfigFeatures', error.message)
-            }
-            // In case of an error, return previously fetched value
-            return previousConfigFeatures
-        })
+    private async refreshConfig(): Promise<CodyClientConfig> {
+        logDebug('ClientConfigSingleton', 'refreshing configuration')
+
+        // Determine based on the site version if /.api/client-config is available.
+        return graphqlClient
+            .getSiteVersion()
+            .then(siteVersion => {
+                if (isError(siteVersion)) {
+                    logError(
+                        'ClientConfigSingleton',
+                        'Failed to determine site version, GraphQL error',
+                        siteVersion
+                    )
+                    return false // assume /.api/client-config is not supported
+                }
+
+                // Insiders and dev builds support the new /.api/client-config endpoint
+                const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
+                if (insiderBuild) {
+                    return true
+                }
+
+                // Sourcegraph instances before 5.5.0 do not support the new /.api/client-config endpoint.
+                if (semver.lt(siteVersion, '5.5.0')) {
+                    return false
+                }
+                return true
+            })
+            .then(supportsClientConfig => {
+                // If /.api/client-config is not available, fallback to the myriad of GraphQL
+                // requests that we previously used to determine the client configuration
+                if (!supportsClientConfig) {
+                    return this.fetchClientConfigLegacy()
+                }
+
+                // Otherwise we use our centralized client config endpoint.
+                if (!graphqlClient.hasAccessToken())
+                    throw new Error(
+                        'unable to fetch /.api/client-config, client is not authenticated yet'
+                    )
+                return graphqlClient
+                    .fetchHTTP<CodyClientConfig>('client-config', 'GET', '/.api/client-config')
+                    .then(clientConfig => {
+                        if (isError(clientConfig)) {
+                            logError('ClientConfigSingleton', 'refresh client config', clientConfig)
+                            throw clientConfig
+                        }
+                        return clientConfig
+                    })
+                    .catch(e => {
+                        logError('ClientConfigSingleton', 'refresh client config', e)
+                        throw e
+                    })
+            })
+            .then(clientConfig => {
+                logDebug('ClientConfigSingleton', 'refreshed', JSON.stringify(clientConfig))
+                this.cachedClientConfig = clientConfig
+                this.cachedAt = Date.now()
+                return clientConfig
+            })
+            .catch(e => {
+                logError('ClientConfigSingleton', 'failed to refresh client config', e)
+                throw e
+            })
     }
 
-    public getConfigFeatures(): Promise<CodyConfigFeatures> {
-        return this.configFeatures
+    private async fetchClientConfigLegacy(): Promise<CodyClientConfig> {
+        // Note: all of these promises are written carefully to not throw errors internally, but
+        // rather to return sane defaults, and so we do not catch() here.
+        const smartContextWindow = await graphqlClient.getCodyLLMConfigurationSmartContext()
+        const features = await this.fetchConfigFeaturesLegacy(this.featuresLegacy)
+
+        return graphqlClient.isCodyEnabled().then(isCodyEnabled => ({
+            codyEnabled: isCodyEnabled.enabled,
+            chatEnabled: features.chat,
+            autoCompleteEnabled: features.autoComplete,
+            customCommandsEnabled: features.commands,
+            attributionEnabled: features.attribution,
+            smartContextWindowEnabled: smartContextWindow,
+
+            // Things that did not exist before logically default to disabled.
+            modelsAPIEnabled: false,
+        }))
     }
 
-    // Fetches the config features from the server and handles errors
-    private async fetchConfigFeatures(): Promise<CodyConfigFeatures> {
-        // Execute the GraphQL query to fetch the configuration features
+    // Fetches the config features from the server and handles errors, using the old/legacy GraphQL API.
+    private async fetchConfigFeaturesLegacy(
+        defaultErrorValue: CodyConfigFeatures
+    ): Promise<CodyConfigFeatures> {
         const features = await graphqlClient.getCodyConfigFeatures()
         if (features instanceof Error) {
-            // If there's an error, throw it to be caught in refreshConfigFeatures
-            throw features
+            // An error here most likely indicates the Sourcegraph instance is so old that it doesn't
+            // even support this legacy GraphQL API.
+            logError('ClientConfigSingleton', 'refreshConfig', features)
+            return defaultErrorValue
         }
-        // If the fetch is successful, store the fetched configuration features
         return features
     }
 }
 
-async function verifyResponseCode(response: BrowserOrNodeResponse): Promise<BrowserOrNodeResponse> {
+export async function verifyResponseCode(
+    response: BrowserOrNodeResponse
+): Promise<BrowserOrNodeResponse> {
     if (!response.ok) {
         const body = await response.text()
         throw new Error(`HTTP status code ${response.status}${body ? `: ${body}` : ''}`)

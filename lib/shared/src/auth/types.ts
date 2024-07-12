@@ -9,6 +9,11 @@ export interface AuthStatus {
     endpoint: string | null
     isDotCom: boolean
     isLoggedIn: boolean
+    /**
+     * Used to enable Fireworks tracing for Sourcegraph teammates on DotCom.
+     * https://readme.fireworks.ai/docs/enabling-tracing
+     */
+    isFireworksTracingEnabled: boolean
     showInvalidAccessTokenError: boolean
     authenticated: boolean
     hasVerifiedEmail: boolean
@@ -29,4 +34,87 @@ export interface AuthStatus {
      * buttons in the UI.
      */
     userCanUpgrade: boolean
+
+    isOfflineMode?: boolean
 }
+
+export interface AuthStatusProvider {
+    getAuthStatus(): AuthStatus
+}
+
+export const defaultAuthStatus = {
+    endpoint: '',
+    isDotCom: true,
+    isLoggedIn: false,
+    isFireworksTracingEnabled: false,
+    showInvalidAccessTokenError: false,
+    authenticated: false,
+    hasVerifiedEmail: false,
+    requiresVerifiedEmail: false,
+    siteHasCodyEnabled: false,
+    siteVersion: '',
+    userCanUpgrade: false,
+    username: '',
+    primaryEmail: '',
+    displayName: '',
+    avatarURL: '',
+    codyApiVersion: 0,
+} satisfies AuthStatus
+
+export const unauthenticatedStatus = {
+    endpoint: '',
+    isDotCom: true,
+    isLoggedIn: false,
+    isFireworksTracingEnabled: false,
+    showInvalidAccessTokenError: true,
+    authenticated: false,
+    hasVerifiedEmail: false,
+    requiresVerifiedEmail: false,
+    siteHasCodyEnabled: false,
+    siteVersion: '',
+    userCanUpgrade: false,
+    username: '',
+    primaryEmail: '',
+    displayName: '',
+    avatarURL: '',
+    codyApiVersion: 0,
+} satisfies AuthStatus
+
+export const networkErrorAuthStatus = {
+    isDotCom: false,
+    showInvalidAccessTokenError: false,
+    authenticated: false,
+    isLoggedIn: false,
+    isFireworksTracingEnabled: false,
+    hasVerifiedEmail: false,
+    showNetworkError: true,
+    requiresVerifiedEmail: false,
+    siteHasCodyEnabled: false,
+    siteVersion: '',
+    userCanUpgrade: false,
+    username: '',
+    primaryEmail: '',
+    displayName: '',
+    avatarURL: '',
+    codyApiVersion: 0,
+} satisfies Omit<AuthStatus, 'endpoint'>
+
+export const offlineModeAuthStatus = {
+    endpoint: '',
+    isDotCom: true,
+    isLoggedIn: true,
+    isOfflineMode: true,
+    isFireworksTracingEnabled: false,
+    showInvalidAccessTokenError: false,
+    authenticated: true,
+    hasVerifiedEmail: true,
+    requiresVerifiedEmail: true,
+    siteHasCodyEnabled: true,
+    siteVersion: '',
+    userCanUpgrade: false,
+    username: 'offline',
+    primaryEmail: '',
+    displayName: '',
+    avatarURL: '',
+    codyApiVersion: 0,
+} satisfies AuthStatus

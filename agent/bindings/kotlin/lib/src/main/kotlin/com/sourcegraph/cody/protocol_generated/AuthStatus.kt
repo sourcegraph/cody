@@ -1,11 +1,12 @@
 @file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
-package com.sourcegraph.cody.protocol_generated
+package com.sourcegraph.cody.protocol_generated;
 
 data class AuthStatus(
   val username: String,
   val endpoint: String? = null,
   val isDotCom: Boolean,
   val isLoggedIn: Boolean,
+  val isFireworksTracingEnabled: Boolean,
   val showInvalidAccessTokenError: Boolean,
   val authenticated: Boolean,
   val hasVerifiedEmail: Boolean,
@@ -19,5 +20,6 @@ data class AuthStatus(
   val displayName: String? = null,
   val avatarURL: String,
   val userCanUpgrade: Boolean,
+  val isOfflineMode: Boolean? = null,
 )
 

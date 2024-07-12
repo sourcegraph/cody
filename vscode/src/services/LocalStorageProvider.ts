@@ -4,6 +4,7 @@ import type { Memento } from 'vscode'
 import {
     type AuthStatus,
     type ChatHistory,
+    type ConfigurationWithAccessToken,
     type SerializedChatInteraction,
     type SerializedChatMessage,
     type UserLocalHistory,
@@ -24,8 +25,11 @@ interface PersistedUserLocalHistory {
 class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     protected readonly KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
+    protected readonly KEY_CONFIG = 'cody-config'
+    protected readonly KEY_LOCAL_MINION_HISTORY = 'cody-local-minionHistory-v0'
     public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
+    public readonly LAST_USED_USERNAME = 'SOURCEGRAPH_CODY_USERNAME'
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
     protected readonly CODY_ENROLLMENT_HISTORY = 'SOURCEGRAPH_CODY_ENROLLMENTS'
 
@@ -97,6 +101,12 @@ class LocalStorage {
         await this.storage.update(this.CODY_ENDPOINT_HISTORY, [...historySet])
     }
 
+    public getLastStoredUser(): { endpoint: string; username: string } | null {
+        const username = this.storage.get<string | null>(this.LAST_USED_USERNAME, null)
+        const endpoint = this.getEndpoint()
+        return username && endpoint ? { endpoint, username } : null
+    }
+
     public getChatHistory(authStatus: AuthStatus): UserLocalHistory {
         const history = this.storage.get<AccountKeyedChatHistory | null>(this.KEY_LOCAL_HISTORY, null)
         const accountKey = getKeyForAuthStatus(authStatus)
@@ -129,6 +139,11 @@ class LocalStorage {
             }
 
             await this.storage.update(this.KEY_LOCAL_HISTORY, fullHistory)
+
+            // Store the current username as the last used username
+            if (authStatus.username) {
+                this.storage.update(this.LAST_USED_USERNAME, authStatus.username)
+            }
         } catch (error) {
             console.error(error)
         }
@@ -144,6 +159,16 @@ class LocalStorage {
                 console.error(error)
             }
         }
+    }
+
+    public async setMinionHistory(authStatus: AuthStatus, serializedHistory: string): Promise<void> {
+        // TODO(beyang): SECURITY - use authStatus
+        await this.storage.update(this.KEY_LOCAL_MINION_HISTORY, serializedHistory)
+    }
+
+    public getMinionHistory(authStatus: AuthStatus): string | null {
+        // TODO(beyang): SECURITY - use authStatus
+        return this.storage.get<string | null>(this.KEY_LOCAL_MINION_HISTORY, null)
     }
 
     public async removeChatHistory(authStatus: AuthStatus): Promise<void> {
@@ -193,11 +218,19 @@ class LocalStorage {
         return { anonymousUserID: id, created }
     }
 
-    public get(key: string): string | null {
+    public async setConfig(config: ConfigurationWithAccessToken): Promise<void> {
+        return this.set(this.KEY_CONFIG, config)
+    }
+
+    public getConfig(): ConfigurationWithAccessToken | null {
+        return this.get(this.KEY_CONFIG)
+    }
+
+    public get<T>(key: string): T | null {
         return this.storage.get(key, null)
     }
 
-    public async set(key: string, value: string): Promise<void> {
+    public async set<T>(key: string, value: T): Promise<void> {
         try {
             await this.storage.update(key, value)
         } catch (error) {

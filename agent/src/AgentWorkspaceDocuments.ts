@@ -49,9 +49,9 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         return this.loadAndUpdateDocument(ProtocolTextDocumentWithUri.from(uri))
     }
     public loadAndUpdateDocument(document: ProtocolTextDocumentWithUri): AgentTextDocument {
-        return this.loadAndUpdate(document).document
+        return this.loadDocumentWithChanges(document).document
     }
-    public loadAndUpdate(document: ProtocolTextDocumentWithUri): {
+    public loadDocumentWithChanges(document: ProtocolTextDocumentWithUri): {
         document: AgentTextDocument
         editor: AgentTextEditor
         contentChanges: vscode.TextDocumentContentChangeEvent[]
@@ -65,6 +65,20 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         }
         const { document: fromCache } = cached
 
+        // The client may send null values that we convert to undefined here.
+        if (document.content === null) {
+            document.underlying.content = undefined
+        }
+        if (document.contentChanges === null) {
+            document.underlying.contentChanges = undefined
+        }
+        if (document.selection === null) {
+            document.underlying.selection = undefined
+        }
+        if (document.visibleRange === null) {
+            document.underlying.visibleRange = undefined
+        }
+
         // We have seen this document before, which means we mutate the existing
         // document to reflect the latest chagnes. For each URI, we keep a
         // singleton document so that `AgentTextDocument.getText()` always
@@ -75,7 +89,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
             const changes = applyContentChanges(fromCache, document.contentChanges)
             contentChanges.push(...changes.contentChanges)
             document.underlying.content = changes.newText
-        } else if (typeof document.content === 'string') {
+        } else if (document.content !== undefined) {
             // Full document sync.
             for (const change of calculateContentChanges(fromCache, document.content)) {
                 contentChanges.push(change)
@@ -93,20 +107,6 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         if (!document.visibleRange) {
             // No changes to the visible range, populate from cache
             document.underlying.visibleRange = fromCache.protocolDocument.visibleRange
-        }
-
-        // The client may send null values that we convert to undefined here.
-        if (document.content === null) {
-            document.underlying.content = undefined
-        }
-        if (document.contentChanges === null) {
-            document.underlying.contentChanges = undefined
-        }
-        if (document.selection === null) {
-            document.underlying.selection = undefined
-        }
-        if (document.visibleRange === null) {
-            document.underlying.visibleRange = undefined
         }
 
         fromCache.update(document)
@@ -141,12 +141,8 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     public loadDocument(document: ProtocolTextDocumentWithUri): AgentTextDocument {
         return this.loadDocumentWithChanges(document).document
     }
-    public loadDocumentWithChanges(document: ProtocolTextDocumentWithUri): {
-        document: AgentTextDocument
-        contentChanges: vscode.TextDocumentContentChangeEvent[]
-    } {
-        const { document: agentDocument, contentChanges } = this.loadAndUpdate(document)
 
+    public fireVisibleTextEditorsDidChange(): Promise<void> {
         const tabs: vscode.Tab[] = []
         for (const uri of this.allUris()) {
             const document = this.getDocumentFromUriString(uri)
@@ -174,9 +170,11 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
             vscode_shim.workspaceTextDocuments.push(document)
             vscode_shim.visibleTextEditors.push(this.newTextEditor(document))
         }
-        vscode_shim.onDidChangeVisibleTextEditors.fire(vscode_shim.visibleTextEditors)
 
-        return { document: agentDocument, contentChanges }
+        const pendingPromise = vscode_shim.onDidChangeVisibleTextEditors.cody_fireAsync(
+            vscode_shim.visibleTextEditors
+        )
+        return pendingPromise
     }
 
     public deleteDocument(uri: vscode.Uri): void {

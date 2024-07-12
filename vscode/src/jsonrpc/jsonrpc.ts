@@ -1,8 +1,10 @@
 import { appendFileSync, existsSync, mkdirSync, rmSync } from 'node:fs'
 import { dirname } from 'node:path'
 
+import { isRateLimitError } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { type MessageConnection, Trace } from 'vscode-jsonrpc'
+import { type CancellationToken, type MessageConnection, ResponseError, Trace } from 'vscode-jsonrpc'
+import { CodyJsonRpcErrorCode } from './CodyJsonRpcErrorCode'
 import type * as agent from './agent-protocol'
 import type * as bfg from './bfg-protocol'
 import type * as contextRanking from './context-ranking-protocol'
@@ -40,6 +42,7 @@ type NotificationCallback<M extends NotificationMethodName> = (
     params: ParamsOf<M>
 ) => void | Promise<void>
 
+export type RpcMessageHandler = Pick<MessageHandler, 'request' | 'notify' | 'conn'>
 export class MessageHandler {
     // Tracked for `clientForThisInstance` only.
     private readonly requestHandlers = new Map<RequestMethodName, RequestCallback<any>>()
@@ -66,12 +69,36 @@ export class MessageHandler {
         }
     }
 
+    private customizeResponseError(error: Error, token: CancellationToken): ResponseError<any> {
+        const message = error instanceof Error ? error.message : `${error}`
+        const stack = error instanceof Error ? `\n${error.stack}` : ''
+        const code = token.isCancellationRequested
+            ? CodyJsonRpcErrorCode.RequestCanceled
+            : isRateLimitError(error)
+              ? CodyJsonRpcErrorCode.RateLimitError
+              : CodyJsonRpcErrorCode.InternalError
+        return new ResponseError(
+            code,
+            // Include the stack in the message because
+            // some JSON-RPC bindings like lsp4j don't
+            // expose access to the `data` property,
+            // only `message`. The stack is super
+            // helpful to track down unexpected
+            // exceptions.
+            `${message}\n${stack}`,
+            JSON.stringify({ error, stack })
+        )
+    }
+
     public registerRequest<M extends RequestMethodName>(method: M, callback: RequestCallback<M>): void {
         this.requestHandlers.set(method, callback)
         this.disposables.push(
             this.conn.onRequest(
                 method,
-                async (params, cancelToken) => await callback(params, cancelToken)
+                async (params, cancelToken: CancellationToken) =>
+                    await callback(params, cancelToken).catch<ResponseError<any>>(error =>
+                        this.customizeResponseError(error, cancelToken)
+                    )
             )
         )
     }
@@ -104,8 +131,9 @@ export class MessageHandler {
      * @returns A JSON-RPC client to interact directly with this agent instance. Useful when we want
      * to use the agent in-process without stdout/stdin transport mechanism.
      */
-    public clientForThisInstance(): Pick<MessageHandler, 'request' | 'notify'> {
+    public clientForThisInstance(): RpcMessageHandler {
         return {
+            conn: this.conn,
             request: async <M extends RequestMethodName>(
                 method: M,
                 params: ParamsOf<M>,
@@ -121,6 +149,7 @@ export class MessageHandler {
                 const handler = this.notificationHandlers.get(method)
                 if (handler) {
                     handler(params)
+                    return
                 }
                 throw new Error(`No such notification handler: ${method}`)
             },

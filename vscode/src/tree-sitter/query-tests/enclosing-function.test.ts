@@ -38,4 +38,15 @@ describe('getEnclosingFunction', () => {
             sourcesPath: 'test-data/enclosing-function.go',
         })
     })
+
+    it('java', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.java)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queries.getEnclosingFunction,
+            sourcesPath: 'test-data/enclosing-function.java',
+        })
+    })
 })

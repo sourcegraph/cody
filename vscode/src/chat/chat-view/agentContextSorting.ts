@@ -1,6 +1,7 @@
 import { type ContextItem, ContextItemSource } from '@sourcegraph/cody-shared'
 
 const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+const sortLocale = new Intl.Locale('en-US')
 
 /**
  * Sorts the provided `ContextItem` array in a deterministic order for stable tests.
@@ -21,15 +22,15 @@ export function sortContextItems(files: ContextItem[]): void {
     // could sort by some numerical score from symf based on how relevant
     // the matches are for the query.
     files.sort((a, b) => {
-        const byPath = a.uri.path.localeCompare(b.uri.path)
+        const byPath = a.uri.path.localeCompare(b.uri.path, sortLocale)
         if (byPath !== 0) {
             return byPath
         }
-        const bySource = (a.source ?? '').localeCompare(b.source ?? '')
+        const bySource = (a.source ?? '').localeCompare(b.source ?? '', sortLocale)
         if (bySource !== 0) {
             return bySource
         }
-        return (a.content ?? '').localeCompare(b.content ?? '')
+        return (a.content ?? '').localeCompare(b.content ?? '', sortLocale)
     })
 
     // Move the selection context to the first position so that it'd be the last context item to be read by the LLM
@@ -39,22 +40,4 @@ export function sortContextItems(files: ContextItem[]): void {
         const selection = files.splice(selectionIndex, 1)[0]
         files.unshift(selection)
     }
-}
-
-export function sortContextFiles(files: ContextItem[]): void {
-    if (!isAgentTesting) {
-        return
-    }
-
-    files.sort((a, b) => {
-        const byPath = a.uri.path.localeCompare(b.uri.path)
-        if (byPath !== 0) {
-            return byPath
-        }
-        const bySource = (a.source ?? '').localeCompare(b.source ?? '')
-        if (bySource !== 0) {
-            return bySource
-        }
-        return (a.content ?? '').localeCompare(b.content ?? '')
-    })
 }

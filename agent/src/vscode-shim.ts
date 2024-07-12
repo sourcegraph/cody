@@ -1,17 +1,19 @@
 import { execSync } from 'node:child_process'
 import path from 'node:path'
 
+import { extensionForLanguage, logDebug, logError, setClientNameVersion } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
-
-import { extensionForLanguage, logDebug, logError, setClientNameVersion } from '@sourcegraph/cody-shared'
 
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
 // It's only OK to `import type` from vscode. We can't depend on any vscode APIs
 // to implement this this file because this file is responsible for implementing
-// VS Code APIs resulting in cyclic dependencies.  If we make a mistake and
-// transitively import vscode then you are most likely to hit an error like this:
+// VS Code APIs resulting in cyclic dependencies.
+
+// This will automatically be checked when running build:agent but if we did
+// make a mistake and transitively import vscode you most likely hit an error
+// like this:
 //
 //     /pkg/prelude/bootstrap.js:1926
 //     return wrapper.apply(this.exports, args);
@@ -44,23 +46,28 @@ import {
 
 import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
+import { AgentDiagnostics } from './AgentDiagnostics'
 import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'
 import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import type { Agent } from './agent'
-import { matchesGlobPatterns } from './cli/evaluate-autocomplete/matchesGlobPatterns'
+import { matchesGlobPatterns } from './cli/command-bench/matchesGlobPatterns'
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 
 // Not using CODY_TESTING because it changes the URL endpoint we send requests
 // to and we want to send requests to sourcegraph.com because we record the HTTP
 // traffic.
-const isTesting = process.env.CODY_SHIM_TESTING === 'true'
+export const isTesting = process.env.CODY_SHIM_TESTING === 'true'
+
+// The testing code paths sometimes need to distinguish the different types of testing.
+export const isIntegrationTesting = process.env.CODY_CLIENT_INTEGRATION_TESTING === 'true'
 
 export { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
 
 export {
     CancellationTokenSource,
     CodeAction,
+    CodeActionTriggerKind,
     CodeActionKind,
     CodeLens,
     CommentMode,
@@ -75,9 +82,11 @@ export {
     FileType,
     InlineCompletionItem,
     InlineCompletionTriggerKind,
+    DiagnosticRelatedInformation,
     Location,
     MarkdownString,
     OverviewRulerLane,
+    DecorationRangeBehavior,
     Position,
     ProgressLocation,
     QuickInputButtons,
@@ -350,7 +359,7 @@ const _workspace: typeof vscode.workspace = {
         }
         return relativePath
     },
-    // TODO: used for Cody Ignore, WorkspaceRepoMapper and custom commands
+    // TODO: used for Cody Context Filters, WorkspaceRepoMapper and custom commands
     // https://github.com/sourcegraph/cody/issues/4136
     createFileSystemWatcher: () => emptyFileWatcher,
     getConfiguration: (section, scope): vscode.WorkspaceConfiguration => {
@@ -970,6 +979,11 @@ const _env: Partial<typeof vscode.env> = {
 }
 export const env = _env as typeof vscode.env
 
+const newCodeActionProvider = new EventEmitter<vscode.CodeActionProvider>()
+const removeCodeActionProvider = new EventEmitter<vscode.CodeActionProvider>()
+export const onDidRegisterNewCodeActionProvider = newCodeActionProvider.event
+export const onDidUnregisterNewCodeActionProvider = removeCodeActionProvider.event
+
 const newCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 const removeCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 export const onDidRegisterNewCodeLensProvider = newCodeLensProvider.event
@@ -986,14 +1000,20 @@ export function completionProvider(): Promise<InlineCompletionItemProvider> {
     return firstCompletionProvider
 }
 
+const diagnosticsChange = new EventEmitter<vscode.DiagnosticChangeEvent>()
+const onDidChangeDiagnostics = diagnosticsChange.event
 const foldingRangeProviders = new Set<vscode.FoldingRangeProvider>()
+export const diagnostics = new AgentDiagnostics()
 const _languages: Partial<typeof vscode.languages> = {
     getLanguages: () => Promise.resolve([]),
     registerFoldingRangeProvider: (_scope, provider) => {
         foldingRangeProviders.add(provider)
         return { dispose: () => foldingRangeProviders.delete(provider) }
     },
-    registerCodeActionsProvider: () => emptyDisposable,
+    registerCodeActionsProvider: (_selector, provider) => {
+        newCodeActionProvider.fire(provider)
+        return { dispose: () => removeCodeActionProvider.fire(provider) }
+    },
     registerCodeLensProvider: (_selector, provider) => {
         newCodeLensProvider.fire(provider)
         return { dispose: () => removeCodeLensProvider.fire(provider) }
@@ -1003,9 +1023,10 @@ const _languages: Partial<typeof vscode.languages> = {
         resolveFirstCompletionProvider(provider as any)
         return emptyDisposable
     },
+    onDidChangeDiagnostics,
     getDiagnostics: ((resource: vscode.Uri) => {
         if (resource) {
-            return [] as vscode.Diagnostic[] // return diagnostics for the specific resource
+            return diagnostics.forUri(resource)
         }
         return [[resource, []]] // return diagnostics for all resources
     }) as {

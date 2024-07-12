@@ -36,6 +36,12 @@ query CurrentUser {
         primaryEmail {
             email
         }
+        organizations {
+            nodes {
+                id
+                name
+            }
+        }
     }
 }`
 
@@ -101,7 +107,7 @@ export const CURRENT_SITE_CODY_LLM_CONFIGURATION_SMART_CONTEXT = `
 query CurrentSiteCodyLlmConfiguration {
     site {
         codyLLMConfiguration {
-            smartContext
+            smartContextWindow
         }
     }
 }`
@@ -119,6 +125,56 @@ query Repositories($first: Int!, $after: String) {
     }
 }
 `
+
+export const REPOSITORY_SEARCH_QUERY = `
+query RepositoriesSearch($first: Int!, $after: String, $query: String) {
+    repositories(first: $first, after: $after, query: $query) {
+        nodes {
+            id
+            name
+            url
+        }
+        pageInfo {
+            endCursor
+        }
+    }
+}
+`
+export const FILE_CONTENTS_QUERY = `
+query FileContentsQuery($repoName: String!, $filePath: String!, $rev: String!) {
+    repository(name: $repoName){
+        commit(rev: $rev) {
+            file(path: $filePath) {
+                path
+                url
+                content
+            }
+        }
+    }
+}`
+
+export const FILE_MATCH_SEARCH_QUERY = `
+query FileMatchSearchQuery($query: String!) {
+  search(query: $query, version: V3, patternType: literal) {
+    results {
+      results {
+        __typename
+        ... on FileMatch {
+          repository {
+            name
+          }
+          file {
+            url
+            path
+            commit {
+                oid
+            }
+          }
+        }
+      }
+    }
+  }
+}`
 
 export const REPOSITORY_ID_QUERY = `
 query Repository($name: String!) {
@@ -276,4 +332,74 @@ export const PACKAGE_LIST_QUERY = `
             }
         }
     }
+`
+
+export const FUZZY_FILES_QUERY = `
+query FuzzyFiles($query: String!) {
+    search(patternType: regexp, query: $query) {
+        results {
+            results {
+                ... on FileMatch {
+                    __typename
+                    file {
+                        url
+                        path
+                        name
+                        byteSize
+                        isDirectory
+                    }
+                    repository {
+                        id
+                        name
+                    }
+                }
+            }
+        }
+    }
+}
+`
+
+export const FUZZY_SYMBOLS_QUERY = `
+query FuzzySymbols($query: String!) {
+    search(patternType: regexp, query: $query) {
+        results {
+            results {
+                ... on FileMatch {
+                    __typename
+                    symbols {
+                        name
+                        location {
+                            range {
+                                start { line }
+                                end { line }
+                            }
+                             resource {
+                                path
+                             }
+                        }
+                    }
+                    repository {
+                        id
+                        name
+                    }
+                }
+            }
+        }
+    }
+}
+`
+
+export const GET_REMOTE_FILE_QUERY = `
+query GetRemoteFileQuery($repositoryName: String!, $filePath: String!, $startLine: Int, $endLine: Int) {
+  repository(name: $repositoryName) {
+    id
+    commit(rev: "HEAD") {
+      id
+      oid
+      blob(path: $filePath) {
+         content(startLine:$startLine endLine:$endLine)
+      }
+    }
+  }
+}
 `

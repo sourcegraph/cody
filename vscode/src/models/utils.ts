@@ -21,7 +21,7 @@ export function getEnterpriseContextWindow(
     chatModel: string,
     configOverwrites: CodyLLMSiteConfiguration
 ): ModelContextWindow {
-    const { chatModelMaxTokens, smartContext } = configOverwrites
+    const { chatModelMaxTokens, smartContextWindow } = configOverwrites
     // Starts with the default context window.
     let contextWindow: ModelContextWindow = {
         input: chatModelMaxTokens ?? CHAT_INPUT_TOKEN_BUDGET,
@@ -29,7 +29,7 @@ export function getEnterpriseContextWindow(
     }
 
     // Use extended context window for models that support smart context when enabled.
-    if (smartContext && isModelWithExtendedContextWindowSupport(chatModel)) {
+    if (smartContextWindow && isModelWithExtendedContextWindowSupport(chatModel)) {
         contextWindow = {
             input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
             output: CHAT_OUTPUT_TOKEN_BUDGET,
@@ -72,9 +72,16 @@ function applyLocalTokenLimitOverwrite(
  * @param chatModel - The name of the chat model.
  * @returns True if the chat model supports extended context windows, false otherwise.
  */
+const modelWithExpandedWindowSubStrings = [
+    'claude-3-opus',
+    'claude-3-sonnet',
+    'claude-3-5-sonnet',
+    'gemini-1.5',
+    'gpt-4o',
+    'gpt-4-turbo',
+]
 function isModelWithExtendedContextWindowSupport(chatModel: string): boolean {
-    const supportedModelSubStrings = ['claude-3-opus', 'claude-3-sonnet', 'gpt-4o', 'gpt-4-turbo']
-    return supportedModelSubStrings.some(keyword => chatModel.includes(keyword))
+    return modelWithExpandedWindowSubStrings.some(keyword => chatModel.toLowerCase().includes(keyword))
 }
 
 // TODO: Currently all enterprise models have a max output limit of
@@ -83,25 +90,13 @@ function isModelWithExtendedContextWindowSupport(chatModel: string): boolean {
 // still supporting models with a lower output limit.
 //
 // To avoid Enterprise instances being stuck with low token counts, we
-// will detect our recommended Cody Gateway models and Bedrock models
-// and use a higher limit.
+// will detect our recommended Cody Gateway models to use a higher limit.
 //
 // See: https://github.com/sourcegrcaph/cody/issues/3648#issuecomment-2056954101
 // See: https://github.com/sourcegraph/cody/pull/4203
 function getEnterpriseOutputLimit(model?: string) {
-    switch (model) {
-        // Cody Gateway models
-        case 'anthropic/claude-3-sonnet-20240229':
-        case 'anthropic/claude-3-opus-20240229':
-        case 'openai/gpt-4o':
-        case 'openai/gpt-4-turbo':
-
-        // Bedrock models:
-        case 'anthropic.claude-3-sonnet-20240229-v1:0':
-        case 'anthropic.claude-3-opus-20240229-v1:0 ':
-            return CHAT_OUTPUT_TOKEN_BUDGET
-
-        default:
-            return ANSWER_TOKENS
+    if (model && isModelWithExtendedContextWindowSupport(model)) {
+        return CHAT_OUTPUT_TOKEN_BUDGET
     }
+    return ANSWER_TOKENS
 }

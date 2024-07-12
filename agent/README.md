@@ -41,8 +41,6 @@ The following commands assume you are in the `agent` directory:
 | `pnpm build`                                                             | Build `dist/index.js` Node.js script for running the agent                                                                                   |
 | `node dist/index.js`                                                     | Run the agent after `pnpm build`. You normally do this from a client integration.                                                            |
 | `node --inspect dist/index.js`                                           | Run the agent with debugging enabled (see `chrome://inspect/`, [more details](https://nodejs.org/en/docs/guides/debugging-getting-started/)) |
-| `pnpm build-agent-binaries`                                              | Build standalone binaries for macOS, Linux, and Windows to `dist/` directory.                                                                |
-| `AGENT_EXECUTABLE_TARGET_DIRECTORY=/somewhere pnpm build-agent-binaries` | Build standalone binaries for macOS, Linux, and Windows to `/somewhere` directory                                                            |
 | `pnpm run test`                                                          | Run all agent-related tests                                                                                                                  |
 | (optional) `src login`                                                   | Make sure you are logged into your Sourcegraph instance, which is required to run the e2e test in `index.test.ts`                            |
 | `pnpm run test src/index.test.ts`                                        | Run e2e test, requires `src login` to work.                                                                                                  |
@@ -58,6 +56,8 @@ The following commands assume you are in the root directory of this repository:
 | `CODY_KEEP_UNUSED_RECORDINGS=true CODY_RECORD_IF_MISSING=true npx vitest agent/src/index.test.ts -t 'squirrel test'` | Run only a single test without making changes to the code                                                                                                     |
 | `./agent/scripts/reset-recordings-to-main.sh` | Overwrites the local HTTP recordings with the recordings from origin/main. Useful when preparing a PR for review. |
 | `./agent/scripts/resolve-recordings-git-conflict.sh` | Resolves git conflicts in HTTP recording files by picking the recordings on the other branch. Requires you to re-record changes in your branch. |
+| `pnpm agent cody-bench --help` | See available flags in `cody-bench` tool. |
+| `pnpm agent:skip-root-build cody-bench --evaluation-config ~/dev/sourcegraph/cody-bench-data/fix-bench.json --test-count 1 --include-fixture gpt-4o` | Run cody-bench against evaluation config. Only do a single test with the gpt-4o fixture. More details in the [sourcegraph/cody-bench-data](https://github.com/sourcegraph/cody-bench-data) repo. |
 
 ## Debugging the agent
 
@@ -161,3 +161,8 @@ update-agent-recordings` to clean unused recordings.
   connection configuration.
 - Run the command `git diff -- ':!*.har.yaml'` to review local changes without the noisy
   diff in `agent/recordings`.
+- If you get an ESBuild error about "You can mark the path "#async_hooks" as
+  external to exclude it from the bundle, which will remove this error." then the
+  fix is to remove dependencies on `vitest` from the agent bundle. Vitest depends
+  on the `p-limit` npm package, which uses `#async_hooks` that we currently don't
+  handle in the ESBuild config.

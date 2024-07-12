@@ -5,13 +5,13 @@ import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 import { MessageHandler } from '../../jsonrpc/jsonrpc'
 import { logDebug } from '../../log'
-import { downloadBfg } from './download-bfg'
+import { getBfgPath } from './download-bfg'
 
 export async function spawnBfg(
     context: vscode.ExtensionContext,
     reject: (reason?: any) => void
 ): Promise<MessageHandler> {
-    const codyrpc = await downloadBfg(context)
+    const codyrpc = await getBfgPath(context)
     if (!codyrpc) {
         throw new Error(
             'Failed to download BFG binary. To fix this problem, set the "cody.experimental.cody-engine.path" configuration to the path of your BFG binary'
@@ -21,6 +21,7 @@ export async function spawnBfg(
     const child = child_process.spawn(codyrpc, {
         stdio: 'pipe',
         env: {
+            ...process.env,
             VERBOSE_DEBUG: `${isVerboseDebug}`,
             RUST_BACKTRACE: isVerboseDebug ? '1' : '0',
             // See bfg issue 138

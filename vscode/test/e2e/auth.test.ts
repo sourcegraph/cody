@@ -1,32 +1,13 @@
 import { expect } from '@playwright/test'
 import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 
-import { type ExpectedEvents, signOut, test } from './helpers'
+import { focusSidebar } from './common'
+import { type ExpectedV2Events, signOut, test } from './helpers'
 
-test.extend<ExpectedEvents>({
-    // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:Auth:failed',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:failed',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:logout:clicked',
-        'CodyVSCodeExtension:Auth:failed',
-        'CodyVSCodeExtension:Auth:disconnected',
-        'CodyVSCodeExtension:statusBarIcon:clicked',
-    ],
+test.extend<ExpectedV2Events>({
     // list of V2 telemetry events we expect this test to log, add to this list as needed
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth:failed',
         'cody.auth.login:clicked',
@@ -58,6 +39,7 @@ test.extend<ExpectedEvents>({
 
     // Sign out.
     await signOut(page)
+    await focusSidebar(page)
 
     const sidebarFrame = page.frameLocator('iframe.webview').frameLocator('iframe').first()
     await expect(

@@ -3,30 +3,14 @@ import { expect } from '@playwright/test'
 import { CommandMenuOption as menu } from '../../src/commands/menus/items/options'
 import * as mockServer from '../fixtures/mock-server'
 import { sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, type ExpectedEvents, test as baseTest } from './helpers'
+import { type DotcomUrlOverride, type ExpectedV2Events, test as baseTest } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
-test.extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:codyIgnore:hasFile',
-        'CodyVSCodeExtension:Auth:failed',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:menu:command:default:clicked',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-    ],
+test.extend<ExpectedV2Events>({
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
@@ -61,7 +45,6 @@ test.extend<ExpectedEvents>({
     // Verify all the alwaysShow items are visible
     await expect(page.getByLabel(`comment New Chat, ${menu.chat.description}`)).toBeVisible()
     await expect(page.getByLabel(`wand Edit Code, ${menu.edit.description}`)).toBeVisible()
-    await expect(page.getByLabel(`search Search Code (Beta), ${menu.search.description}`)).toBeVisible()
 
     // this will fail if more than 1 New Chat item in the menu is found
     await page.getByLabel('Start a new chat').locator('a').click()

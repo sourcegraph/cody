@@ -1,10 +1,10 @@
 import { type ContextItem, logError, ps } from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { Range } from 'vscode'
+import type { EditCommandResult } from '../../CommandResult'
 import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getEditor } from '../../editor/active-editor'
-import type { EditCommandResult } from '../../main'
 import { getContextFilesForAddingUnitTestCases } from '../context/unit-test-case'
 import type { CodyCommandArgs } from '../types'
 

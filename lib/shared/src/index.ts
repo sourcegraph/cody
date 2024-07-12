@@ -1,9 +1,11 @@
 // Add anything else here that needs to be used outside of this library.
 
-export { ModelProvider } from './models'
+export { Model, ModelsService } from './models'
 export {
-    type ChatModel,
     type EditModel,
+    type EditProvider,
+    type ChatModel,
+    type ChatProvider,
     ModelUsage,
     type ModelContextWindow,
 } from './models/types'
@@ -65,11 +67,10 @@ export {
     type ContextItemWithContent,
     type ContextItemSymbol,
     type ContextFileType,
-    type ContextItemPackage,
-    type ContextItemGithubIssue,
-    type ContextItemGithubPullRequest,
     type ContextMessage,
     type SymbolKind,
+    type ContextItemTree,
+    type ContextItemRepository,
 } from './codebase-context/messages'
 export type {
     CodyCommand,
@@ -90,6 +91,7 @@ export {
     toRangeData,
     displayLineRange,
     displayRange,
+    expandToLineRange,
 } from './common/range'
 export * from './common/abortController'
 export {
@@ -98,7 +100,6 @@ export {
     markdownCodeBlockLanguageIDForFilename,
     extensionForLanguage,
 } from './common/languages'
-export { escapeHTML } from './common/markdown'
 export {
     posixFilePaths,
     pathFunctionsForURI,
@@ -113,6 +114,7 @@ export {
     uriDirname,
     uriExtname,
     uriParseNameAndExtension,
+    SUPPORTED_URI_SCHEMAS,
     type FileURI,
 } from './common/uri'
 export { NoopEditor } from './editor'
@@ -148,15 +150,12 @@ export {
     type CodeCompletionsParams,
     type SerializedCodeCompletionsParams,
     type CompletionResponseGenerator,
+    type CompletionResponseWithMetaData,
 } from './inferenceClient/misc'
 export type {
-    ContextResult,
-    FilenameContextFetcher,
     IndexedKeywordContextFetcher,
     LocalEmbeddingsFetcher,
     Result,
-    SearchPanelFile,
-    SearchPanelSnippet,
 } from './local-context'
 export { logDebug, logError, setLogger } from './logger'
 export {
@@ -192,6 +191,7 @@ export { SourcegraphCompletionsClient } from './sourcegraph-api/completions/clie
 export type {
     CompletionLogger,
     CompletionsClientConfig,
+    CompletionRequestParameters,
 } from './sourcegraph-api/completions/client'
 export * from './sourcegraph-api/completions/types'
 export {
@@ -206,6 +206,7 @@ export {
     TimeoutError,
     TracedError,
     isAbortError,
+    isAbortErrorOrSocketHangUp,
     isAuthError,
     isNetworkError,
     isRateLimitError,
@@ -215,7 +216,7 @@ export {
     graphqlClient,
 } from './sourcegraph-api/graphql'
 export {
-    ConfigFeaturesSingleton,
+    ClientConfigSingleton,
     addCustomUserAgent,
     customUserAgent,
     isNodeResponse,
@@ -228,6 +229,7 @@ export {
     type ContextFilters,
     type CodyContextFilterItem,
     type RepoListResponse,
+    type RepoSearchResponse,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
@@ -235,11 +237,8 @@ export type {
     EmbeddingsSearchResult,
     event,
 } from './sourcegraph-api/graphql/client'
+export { RestClient } from './sourcegraph-api/rest/client'
 export { GraphQLTelemetryExporter } from './sourcegraph-api/telemetry/GraphQLTelemetryExporter'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-export { NOOP_TELEMETRY_SERVICE } from './telemetry'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-export type { TelemetryEventProperties, TelemetryService } from './telemetry'
 export { type BillingCategory, type BillingProduct } from './telemetry-v2'
 export {
     MockServerTelemetryRecorderProvider,
@@ -249,14 +248,13 @@ export {
 } from './telemetry-v2/TelemetryRecorderProvider'
 export type { TelemetryRecorder } from './telemetry-v2/TelemetryRecorderProvider'
 export * from './telemetry-v2/singleton'
-export { EventLogger } from './telemetry/EventLogger'
-export type { ExtensionDetails } from './telemetry/EventLogger'
 export { testFileUri } from './test/path-helpers'
 export * from './tracing'
 export {
     convertGitCloneURLToCodebaseName,
-    isError,
     createSubscriber,
+    isError,
+    nextTick,
 } from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'
@@ -268,10 +266,10 @@ export {
     scanForMentionTriggerInUserTextInput,
 } from './mentions/query'
 export {
-    type ContextMentionProvider,
     type ContextItemProps,
     allMentionProvidersMetadata,
-    openCtxMentionProviders,
+    webMentionProvidersMetadata,
+    openCtxProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type ContextMentionProviderMetadata,
@@ -291,12 +289,16 @@ export * from './sourcegraph-api/utils'
 export * from './token'
 export * from './token/constants'
 export * from './configuration'
-export * from './mentions/providers/packageMentions'
-export * from './mentions/providers/sourcegraphSearch'
-export { GITHUB_CONTEXT_MENTION_PROVIDER } from './mentions/providers/githubMentions'
-export { URL_CONTEXT_MENTION_PROVIDER } from './mentions/providers/urlMentions'
-export * from './githubClient'
 export {
     setOpenCtxClient,
     openCtx,
 } from './context/openctx/api'
+export { type ClientStateForWebview } from './clientState'
+export * from './lexicalEditor/editorState'
+export * from './lexicalEditor/nodes'
+export {
+    FILE_MENTION_EDITOR_STATE_FIXTURE,
+    OLD_TEXT_FILE_MENTION_EDITOR_STATE_FIXTURE,
+    UNKNOWN_NODES_EDITOR_STATE_FIXTURE,
+} from './lexicalEditor/fixtures'
+export { getSerializedParams } from './sourcegraph-api/completions/utils'

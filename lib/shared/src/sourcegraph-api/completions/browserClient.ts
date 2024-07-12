@@ -3,32 +3,24 @@ import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { dependentAbortController } from '../../common/abortController'
 import { addCustomUserAgent } from '../graphql/client'
 
-import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { addClientInfoParams } from '../client-name-version'
-import { SourcegraphCompletionsClient } from './client'
-import type {
-    CompletionCallbacks,
-    CompletionParameters,
-    Event,
-    SerializedCompletionParameters,
-} from './types'
+import { type CompletionRequestParameters, SourcegraphCompletionsClient } from './client'
+import type { CompletionCallbacks, CompletionParameters, Event } from './types'
+import { getSerializedParams } from './utils'
+
+declare const WorkerGlobalScope: never
+const isRunningInWebWorker =
+    typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope
 
 export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsClient {
     protected async _streamWithCallbacks(
         params: CompletionParameters,
-        apiVersion: number,
+        requestParams: CompletionRequestParameters,
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): Promise<void> {
-        const serializedParams: SerializedCompletionParameters = {
-            ...params,
-            messages: await Promise.all(
-                params.messages.map(async m => ({
-                    ...m,
-                    text: await m.text?.toFilteredString(contextFiltersProvider),
-                }))
-            ),
-        }
+        const { apiVersion } = requestParams
+        const serializedParams = await getSerializedParams(params)
 
         const url = new URL(this.completionsEndpoint)
         if (apiVersion >= 1) {
@@ -37,7 +29,10 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         addClientInfoParams(url.searchParams)
 
         const abort = dependentAbortController(signal)
-        const headersInstance = new Headers(this.config.customHeaders as HeadersInit)
+        const headersInstance = new Headers({
+            ...this.config.customHeaders,
+            ...requestParams.customHeaders,
+        } as HeadersInit)
         addCustomUserAgent(headersInstance)
         headersInstance.set('Content-Type', 'application/json; charset=utf-8')
         if (this.config.accessToken) {
@@ -104,10 +99,6 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
     }
 }
 
-declare const WorkerGlobalScope: never
-const isRunningInWebWorker =
-    typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope
-
 if (isRunningInWebWorker) {
     // NOTE: If we need to add more hacks, or if this is janky, we should consider just setting
     // `globalThis.window = globalThis` (see
@@ -121,6 +112,10 @@ if (isRunningInWebWorker) {
         // HACK: web-tree-sitter tries to read window.document.currentScript, which fails if this is
         // running in a Web Worker.
         currentScript: null,
+
+        // HACK: Vite HMR client tries to call querySelectorAll, which is not
+        // available in a web worker, without this cody demo fails in dev mode.
+        querySelectorAll: () => [],
     }
     ;(self as any).window = {
         // HACK: @microsoft/fetch-event-source tries to call window.clearTimeout, which fails if this is
@@ -129,4 +124,8 @@ if (isRunningInWebWorker) {
 
         document: self.document,
     }
+    // HACK: @openctx/vscode-lib uses global object to share vscode API, it breaks cody web since
+    // global doesn't exist in web worker context, for more details see openctx issue here
+    // https://github.com/sourcegraph/openctx/issues/169
+    ;(self as any).global = {}
 }

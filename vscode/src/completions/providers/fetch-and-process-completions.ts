@@ -10,9 +10,11 @@ import { getFirstLine } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import {
     type InlineCompletionItemWithAnalytics,
+    type ProcessItemParams,
     processCompletion,
 } from '../text-processing/process-inline-completions'
 
+import { trace } from '@opentelemetry/api'
 import { getDynamicMultilineDocContext } from './dynamic-multiline'
 import { type HotStreakExtractor, createHotStreakExtractor } from './hot-streak'
 import type { ProviderOptions } from './provider'
@@ -31,7 +33,7 @@ export type FetchCompletionResult =
       }
     | undefined
 
-type FetchCompletionsGenerator = AsyncGenerator<FetchCompletionResult>
+type FetchCompletionsGenerator = AsyncGenerator<FetchCompletionResult, FetchCompletionResult>
 
 /**
  * Uses the first line of the completion to figure out if it start the new multiline syntax node.
@@ -88,7 +90,13 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
 
     const generatorStartTime = performance.now()
 
-    for await (const { completion, stopReason } of completionResponseGenerator) {
+    for await (const { completionResponse, metadata } of completionResponseGenerator) {
+        if (!completionResponse) {
+            return undefined
+        }
+
+        const { completion, stopReason } = completionResponse
+
         const isFirstCompletionTimeoutElapsed =
             performance.now() - generatorStartTime >= firstCompletionTimeout
         const isFullResponse = stopReason !== CompletionStopReason.StreamingChunk
@@ -114,6 +122,11 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
             continue
         }
 
+        const postProcessParams: ProcessItemParams = {
+            ...providerOptions,
+            metadata,
+        }
+
         /**
          * This completion was triggered with the multiline trigger at the end of current line.
          * Process it as the usual multiline completion: continue streaming until it's truncated.
@@ -126,7 +139,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
             })
 
             if (completion) {
-                const completedCompletion = processCompletion(completion, providerOptions)
+                const completedCompletion = processCompletion(completion, postProcessParams)
                 yield* stopStreamingAndUsePartialResponse({
                     completedCompletion,
                     isFullResponse,
@@ -170,6 +183,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
                     document: providerOptions.document,
                     position: dynamicMultilineDocContext.position,
                     docContext: dynamicMultilineDocContext,
+                    metadata,
                 })
 
                 yield* stopStreamingAndUsePartialResponse({
@@ -203,7 +217,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
                         ...completion,
                         insertText: firstLine,
                     },
-                    providerOptions
+                    postProcessParams
                 )
 
                 yield* stopStreamingAndUsePartialResponse({
@@ -214,4 +228,13 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
             }
         }
     }
+
+    trace.getActiveSpan()?.addEvent('completion_stream_end')
+
+    // An extra abort call to ensure the API request is canceled when we reach this point.
+    if (!abortController.signal.aborted) {
+        abortController.abort()
+    }
+
+    return undefined
 }

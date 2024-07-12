@@ -11,9 +11,9 @@ interface ComputeFeaturesParams {
 
 export interface RankContextItem {
     documentId: number
-    filePath?: string
+    filePath?: string | undefined | null
     content: string
-    source?: string
+    source?: string | undefined | null
 }
 
 interface RankItemsParams {
@@ -31,14 +31,14 @@ export interface RankerPrediction {
     score: number
 }
 
-export interface EmbeddingModelQueryParams {
+interface EmbeddingModelQueryParams {
     repoPath: string
     query: string
     modelName: string
     numResults: number
 }
 
-export interface PrecomputeEmbeddingsParams {
+interface PrecomputeEmbeddingsParams {
     query: string
 }
 

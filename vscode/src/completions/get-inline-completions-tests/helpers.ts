@@ -7,14 +7,17 @@ import {
     type CodeCompletionsClient,
     type CompletionParameters,
     type CompletionResponse,
-    type CompletionResponseGenerator,
     CompletionStopReason,
     type Configuration,
     type ConfigurationWithAccessToken,
+    defaultAuthStatus,
     testFileUri,
 } from '@sourcegraph/cody-shared'
 
-import { defaultAuthStatus } from '../../chat/protocol'
+import type {
+    CodeCompletionsParams,
+    CompletionResponseWithMetaData,
+} from '@sourcegraph/cody-shared/src/inferenceClient/misc'
 import { DEFAULT_VSCODE_SETTINGS, emptyMockFeatureFlagProvider } from '../../testutils/mocks'
 import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
@@ -30,6 +33,7 @@ import {
     TriggerKind,
     getInlineCompletions as _getInlineCompletions,
 } from '../get-inline-completions'
+import { AutocompleteStageRecorder } from '../logger'
 import {
     MULTI_LINE_STOP_SEQUENCES,
     SINGLE_LINE_STOP_SEQUENCES,
@@ -62,10 +66,10 @@ const getVSCodeConfigurationWithAccessToken = (
 type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext'>> & {
     languageId?: string
     takeSuggestWidgetSelectionIntoAccount?: boolean
-    onNetworkRequest?: (params: CompletionParameters) => void
+    onNetworkRequest?: (params: CodeCompletionsParams, abortController: AbortController) => void
     completionResponseGenerator?: (
         params: CompletionParameters
-    ) => CompletionResponseGenerator | Generator<CompletionResponse>
+    ) => Generator<CompletionResponse> | AsyncGenerator<CompletionResponse>
     providerOptions?: Partial<ProviderOptions>
     configuration?: Partial<Configuration>
 }
@@ -87,7 +91,7 @@ interface ParamsResult extends InlineCompletionsParams {
  */
 export function params(
     code: string,
-    responses: CompletionResponse[] | 'never-resolve',
+    responses: CompletionResponse[] | CompletionResponseWithMetaData[] | 'never-resolve',
     params: Params = {}
 ): ParamsResult {
     const {
@@ -110,12 +114,17 @@ export function params(
     })
 
     const client: CodeCompletionsClient = {
-        async *complete(completeParams) {
-            onNetworkRequest?.(completeParams)
+        async *complete(completeParams, abortController) {
+            onNetworkRequest?.(completeParams, abortController)
 
             if (completionResponseGenerator) {
                 for await (const response of completionResponseGenerator(completeParams)) {
-                    yield { ...response, stopReason: CompletionStopReason.StreamingChunk }
+                    yield {
+                        completionResponse: {
+                            ...response,
+                            stopReason: CompletionStopReason.StreamingChunk,
+                        },
+                    }
                 }
 
                 // Signal to tests that all streaming chunks are processed.
@@ -126,7 +135,18 @@ export function params(
                 return new Promise(() => {})
             }
 
-            return responses[requestCounter++] || { completion: '', stopReason: 'unknown' }
+            const response = responses[requestCounter++]
+
+            if (response && 'completionResponse' in response) {
+                return response
+            }
+
+            return {
+                completionResponse: (response as CompletionResponse) || {
+                    completion: '',
+                    stopReason: 'unknown',
+                },
+            }
         },
         onConfigurationChange() {},
         logger: undefined,
@@ -159,8 +179,8 @@ export function params(
     const docContext = getCurrentDocContext({
         document,
         position,
-        maxPrefixLength: 1000,
-        maxSuffixLength: 1000,
+        maxPrefixLength: providerConfig.contextSizeHints.prefixChars,
+        maxSuffixLength: providerConfig.contextSizeHints.suffixChars,
         context: takeSuggestWidgetSelectionIntoAccount
             ? {
                   triggerKind: 0,
@@ -180,6 +200,9 @@ export function params(
         triggerKind,
         selectedCompletionInfo,
         providerConfig,
+        firstCompletionTimeout:
+            configuration?.autocompleteFirstCompletionTimeout ??
+            DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
         requestManager: new RequestManager(),
         contextMixer: new ContextMixer(new DefaultContextStrategyFactory('none')),
         smartThrottleService: null,
@@ -190,6 +213,7 @@ export function params(
         }),
         isDotComUser,
         configuration,
+        stageRecorder: new AutocompleteStageRecorder(),
         ...restParams,
 
         // Test-specific helpers

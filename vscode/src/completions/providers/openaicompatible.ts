@@ -38,7 +38,7 @@ import {
     standardContextSizeHints,
 } from './provider'
 
-export interface OpenAICompatibleOptions {
+interface OpenAICompatibleOptions {
     model: OpenAICompatibleModel
     maxContextTokens?: number
     client: CodeCompletionsClient
@@ -322,7 +322,7 @@ export function createProviderConfig({
 }: Omit<OpenAICompatibleOptions, 'model' | 'maxContextTokens'> & {
     model: string | null
 }): ProviderConfig {
-    const resolvedModel =
+    const clientModel =
         model === null || model === ''
             ? 'starcoder-hybrid'
             : model === 'starcoder-hybrid'
@@ -331,11 +331,11 @@ export function createProviderConfig({
                 ? (model as keyof typeof MODEL_MAP)
                 : null
 
-    if (resolvedModel === null) {
+    if (clientModel === null) {
         throw new Error(`Unknown model: \`${model}\``)
     }
 
-    const maxContextTokens = getMaxContextTokens(resolvedModel)
+    const maxContextTokens = getMaxContextTokens(clientModel)
 
     return {
         create(options: ProviderOptions) {
@@ -345,7 +345,7 @@ export function createProviderConfig({
                     id: PROVIDER_IDENTIFIER,
                 },
                 {
-                    model: resolvedModel,
+                    model: clientModel,
                     maxContextTokens,
                     timeouts,
                     ...otherOptions,
@@ -354,7 +354,7 @@ export function createProviderConfig({
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         identifier: PROVIDER_IDENTIFIER,
-        model: resolvedModel,
+        model: clientModel,
     }
 }
 

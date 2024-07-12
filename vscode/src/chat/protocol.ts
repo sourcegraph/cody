@@ -2,16 +2,16 @@ import type { URI } from 'vscode-uri'
 
 import type {
     AuthStatus,
+    ClientStateForWebview,
+    CodyIDE,
     ConfigurationWithAccessToken,
     ContextItem,
     ContextMentionProviderMetadata,
     EnhancedContextContextT,
     MentionQuery,
-    ModelProvider,
+    Model,
     RangeData,
-    SearchPanelFile,
     SerializedChatMessage,
-    TelemetryEventProperties,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
 
@@ -19,6 +19,7 @@ import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/s
 
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
+import type { Uri } from 'vscode'
 import type { View } from '../../webviews/NavBar'
 import type { Repo } from '../context/repo-fetcher'
 
@@ -39,6 +40,21 @@ export type WebviewRecordEventParameters = TelemetryEventParameters<
 >
 
 /**
+ * @deprecated v1 telemetry event properties format - use 'recordEvent' instead
+ */
+interface TelemetryEventProperties {
+    [key: string]:
+        | string
+        | number
+        | boolean
+        | null
+        | undefined
+        | string[]
+        | TelemetryEventProperties[]
+        | TelemetryEventProperties
+}
+
+/**
  * A message sent from the webview to the extension host.
  */
 export type WebviewMessage =
@@ -50,7 +66,7 @@ export type WebviewMessage =
            */
           command: 'event'
           eventName: string
-          properties: TelemetryEventProperties | undefined
+          properties?: TelemetryEventProperties | undefined | null
       }
     | {
           /**
@@ -73,6 +89,7 @@ export type WebviewMessage =
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }
+    | { command: 'openURI'; uri: Uri }
     | {
           command: 'show-page'
           page: string
@@ -82,18 +99,18 @@ export type WebviewMessage =
     | {
           command: 'openFile'
           uri: URI
-          range?: RangeData
+          range?: RangeData | undefined | null
       }
     | {
           command: 'openLocalFileWithRange'
           filePath: string
           // Note: we're not using vscode.Range objects or nesting here, as the protocol
           // tends to munge the type in a weird way (nested fields become array indices).
-          range?: RangeData
+          range?: RangeData | undefined | null
       }
     | ({ command: 'edit' } & WebviewEditMessage)
     | { command: 'context/get-remote-search-repos' }
-    | { command: 'context/choose-remote-search-repo'; explicitRepos?: Repo[] }
+    | { command: 'context/choose-remote-search-repo'; explicitRepos?: Repo[] | undefined | null }
     | { command: 'context/remove-remote-search-repo'; repoId: string }
     | { command: 'embeddings/index' }
     | { command: 'symf/index' }
@@ -106,10 +123,10 @@ export type WebviewMessage =
       }
     | {
           command: 'auth'
-          authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding'
-          endpoint?: string
-          value?: string
-          authMethod?: AuthMethod
+          authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding' | 'offline'
+          endpoint?: string | undefined | null
+          value?: string | undefined | null
+          authMethod?: AuthMethod | undefined | null
       }
     | { command: 'abort' }
     | {
@@ -125,12 +142,6 @@ export type WebviewMessage =
           command: 'queryContextItems'
           query: MentionQuery
       }
-    | { command: 'search'; query: string }
-    | {
-          command: 'show-search-result'
-          uri: URI
-          range: RangeData
-      }
     | {
           command: 'reset'
       }
@@ -144,6 +155,9 @@ export type WebviewMessage =
     | {
           command: 'getAllMentionProvidersMetadata'
       }
+    | {
+          command: 'experimental-unit-test-prompt'
+      }
 
 /**
  * A message sent from the extension host to the webview.
@@ -155,37 +169,24 @@ export type ExtensionMessage =
           authStatus: AuthStatus
           workspaceFolderUris: string[]
       }
-    | {
-          type: 'search:config'
-          workspaceFolderUris: string[]
-      }
-    | { type: 'history'; localHistory: UserLocalHistory | null }
+    | { type: 'ui/theme'; agentIDE: CodyIDE; cssVariables: CodyIDECssVariables }
+    | { type: 'history'; localHistory?: UserLocalHistory | undefined | null }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; view: View }
     | { type: 'errors'; errors: string }
-    | { type: 'notice'; notice: { key: string } }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     /**
      * Context files returned from a @-mention search
      */
     | {
           type: 'userContextFiles'
-          userContextFiles: ContextItem[] | null
+          userContextFiles?: ContextItem[] | undefined | null
       }
-    /**
-     * Send Context Files to chat view as input context (@-mentions)
-     */
-    | { type: 'chat-input-context'; items: ContextItem[] }
-    | { type: 'chatModels'; models: ModelProvider[] }
-    | {
-          type: 'update-search-results'
-          results: SearchPanelFile[]
-          query: string
-      }
-    | { type: 'index-updated'; scopeDir: string }
+    | { type: 'clientState'; value: ClientStateForWebview }
+    | { type: 'clientAction'; addContextItemsToLastHumanInput: ContextItem[] }
+    | { type: 'chatModels'; models: Model[] }
     | { type: 'enhanced-context'; enhancedContextStatus: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
-    | { type: 'setChatEnabledConfigFeature'; data: boolean }
     | { type: 'context/remote-repos'; repos: Repo[] }
     | {
           type: 'setConfigFeatures'
@@ -198,14 +199,22 @@ export type ExtensionMessage =
           type: 'allMentionProvidersMetadata'
           providers: ContextMentionProviderMetadata[]
       }
+    | {
+          type: 'updateEditorState'
+          /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
+          editorState?: unknown | undefined | null
+      }
 
 interface ExtensionAttributionMessage {
     snippet: string
-    attribution?: {
-        repositoryNames: string[]
-        limitHit: boolean
-    }
-    error?: string
+    attribution?:
+        | {
+              repositoryNames: string[]
+              limitHit: boolean
+          }
+        | undefined
+        | null
+    error?: string | undefined | null
 }
 
 export type ChatSubmitType = 'user' | 'user-newchat'
@@ -215,20 +224,20 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
     submitType: ChatSubmitType
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
-    editorState?: unknown
+    editorState?: unknown | undefined | null
 }
 
 interface WebviewEditMessage extends WebviewContextMessage {
     text: string
-    index?: number
+    index?: number | undefined | null
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
-    editorState?: unknown
+    editorState?: unknown | undefined | null
 }
 
 interface WebviewContextMessage {
-    addEnhancedContext?: boolean
-    contextFiles?: ContextItem[]
+    addEnhancedContext?: boolean | undefined | null
+    contextFiles?: ContextItem[] | undefined | null
 }
 
 export interface ExtensionTranscriptMessage {
@@ -243,13 +252,16 @@ export interface ExtensionTranscriptMessage {
 export interface ConfigurationSubsetForWebview
     extends Pick<
         ConfigurationWithAccessToken,
-        'experimentalGuardrails' | 'experimentalNoodle' | 'experimentalURLContext' | 'serverEndpoint'
-    > {}
+        'experimentalNoodle' | 'serverEndpoint' | 'agentIDE' | 'agentExtensionVersion'
+    > {
+    experimentalUnitTest: boolean
+}
 
 /**
  * URLs for the Sourcegraph instance and app.
  */
 export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
+export const SG_BLOG_URL = new URL('https://sourcegraph.com/blog/')
 
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
@@ -264,60 +276,6 @@ export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
 export const ACCOUNT_LIMITS_INFO_URL = new URL(
     'https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits'
 )
-
-export const defaultAuthStatus = {
-    endpoint: '',
-    isDotCom: true,
-    isLoggedIn: false,
-    showInvalidAccessTokenError: false,
-    authenticated: false,
-    hasVerifiedEmail: false,
-    requiresVerifiedEmail: false,
-    siteHasCodyEnabled: false,
-    siteVersion: '',
-    userCanUpgrade: false,
-    username: '',
-    primaryEmail: '',
-    displayName: '',
-    avatarURL: '',
-    codyApiVersion: 0,
-} satisfies AuthStatus
-
-export const unauthenticatedStatus = {
-    endpoint: '',
-    isDotCom: true,
-    isLoggedIn: false,
-    showInvalidAccessTokenError: true,
-    authenticated: false,
-    hasVerifiedEmail: false,
-    requiresVerifiedEmail: false,
-    siteHasCodyEnabled: false,
-    siteVersion: '',
-    userCanUpgrade: false,
-    username: '',
-    primaryEmail: '',
-    displayName: '',
-    avatarURL: '',
-    codyApiVersion: 0,
-} satisfies AuthStatus
-
-export const networkErrorAuthStatus = {
-    isDotCom: false,
-    showInvalidAccessTokenError: false,
-    authenticated: false,
-    isLoggedIn: false,
-    hasVerifiedEmail: false,
-    showNetworkError: true,
-    requiresVerifiedEmail: false,
-    siteHasCodyEnabled: false,
-    siteVersion: '',
-    userCanUpgrade: false,
-    username: '',
-    primaryEmail: '',
-    displayName: '',
-    avatarURL: '',
-    codyApiVersion: 0,
-} satisfies Omit<AuthStatus, 'endpoint'>
 
 /** The local environment of the editor. */
 export interface LocalEnv {
@@ -350,4 +308,8 @@ const sourcegraphTokenRegex =
  */
 export function isSourcegraphToken(text: string): boolean {
     return sourcegraphTokenRegex.test(text)
+}
+
+interface CodyIDECssVariables {
+    [key: string]: string
 }

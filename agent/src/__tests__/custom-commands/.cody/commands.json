@@ -1,0 +1,43 @@
+{
+  "commands": {
+    "translate": {
+      "prompt": "Translate the selected code into:",
+      "context": {
+        "selection": true
+      }
+    },
+    "hello": {
+      "prompt": "Add a '// hello' comment for the selected code, without including the selected code.",
+      "context": {
+        "selection": true
+      },
+      "mode": "insert"
+    },
+    "newField": {
+      "prompt": "Add a new field to the class that console log the name of the animal.",
+      "context": {
+        "currentFile": true,
+        "selection": false
+      },
+      "mode": "edit"
+    },
+    "none": {
+      "prompt": "Did I share any code with you? If yes, reply single word 'yes'. If none, reply 'no'.",
+      "context": {
+        "none": true
+      }
+    },
+    "countDirFiles": {
+      "prompt": "How many file context have I shared with you? Reply single number. Skip preamble.",
+      "context": {
+        "currentDir": true
+      }
+    },
+    "countTabs": {
+      "prompt": "Give me the names of the files I have shared with you so far. Format the response as a bulleted list. Only include the raw filename, no extra formatting like quotes.",
+      "context": {
+        "openTabs": true
+      }
+    }
+  }
+}

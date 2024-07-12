@@ -19,17 +19,17 @@ export async function getAccessToken(): Promise<string | null> {
     }
 }
 
-export async function clearAccessToken(): Promise<void> {
-    await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-}
-
-interface SecretStorage {
+interface SecretStorage extends vscode.SecretStorage {
     get(key: string): Promise<string | undefined>
     store(key: string, value: string): Promise<void>
-    storeToken(endpoint: string, value: string): Promise<void>
-    deleteToken(endpoint: string): Promise<void>
     delete(key: string): Promise<void>
-    onDidChange(callback: (key: string) => Promise<void>): vscode.Disposable
+    onDidChange(callback: (event: { key: string }) => Promise<void>): vscode.Disposable
+
+    // Shorthand for persisting the user's Cody Access token based on
+    // the Sourcegraph instance endpoint it is associated with.
+    storeToken(endpoint: string, value: string): Promise<void>
+    getToken(endpoint: string): Promise<string | undefined>
+    deleteToken(endpoint: string): Promise<void>
 }
 
 export class VSCodeSecretStorage implements SecretStorage {
@@ -95,6 +95,10 @@ export class VSCodeSecretStorage implements SecretStorage {
         }
     }
 
+    public async getToken(endpoint: string): Promise<string | undefined> {
+        return this.get(endpoint)
+    }
+
     public async storeToken(endpoint: string, value: string): Promise<void> {
         if (!value || !endpoint) {
             return
@@ -112,11 +116,11 @@ export class VSCodeSecretStorage implements SecretStorage {
         await this.secretStorage.delete(key)
     }
 
-    public onDidChange(callback: (key: string) => Promise<void>): vscode.Disposable {
+    public onDidChange(callback: ({ key }: { key: string }) => Promise<void>): vscode.Disposable {
         return this.secretStorage.onDidChange(event => {
             // Run callback on token changes for current endpoint only
             if (event.key === CODY_ACCESS_TOKEN_SECRET) {
-                return callback(event.key)
+                return callback({ key: event.key })
             }
             return
         })
@@ -125,7 +129,7 @@ export class VSCodeSecretStorage implements SecretStorage {
 
 class InMemorySecretStorage implements SecretStorage {
     private storage: Map<string, string> = new Map<string, string>()
-    private callbacks: ((key: string) => Promise<void>)[] = []
+    private callbacks: ((event: { key: string }) => Promise<void>)[] = []
 
     constructor(initialState?: string | undefined, initialToken?: string | undefined) {
         if (initialState) {
@@ -160,10 +164,14 @@ class InMemorySecretStorage implements SecretStorage {
         this.storage.set(key, value)
 
         for (const cb of this.callbacks) {
-            void cb(key)
+            void cb({ key })
         }
 
         return Promise.resolve()
+    }
+
+    public async getToken(endpoint: string): Promise<string | undefined> {
+        return this.get(endpoint)
     }
 
     public async storeToken(endpoint: string, value: string): Promise<void> {
@@ -180,13 +188,13 @@ class InMemorySecretStorage implements SecretStorage {
         this.storage.delete(key)
 
         for (const cb of this.callbacks) {
-            void cb(key)
+            void cb({ key })
         }
 
         return Promise.resolve()
     }
 
-    public onDidChange(callback: (key: string) => Promise<void>): vscode.Disposable {
+    public onDidChange(callback: ({ key }: { key: string }) => Promise<void>): vscode.Disposable {
         this.callbacks.push(callback)
 
         return new vscode.Disposable(() => {

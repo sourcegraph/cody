@@ -21,6 +21,11 @@ vscode-button::part(control) {
     text-decoration: none;
 }
 
+.container--webview {
+    max-height: max(500px, calc(100vh - 6rem));
+    overflow: auto;
+}
+
 .container--webview, .container--cell {
     max-width: 80%;
     margin: 2rem auto;
@@ -33,11 +38,6 @@ vscode-button::part(control) {
     margin: 2rem auto;
     background-color: var(--vscode-sideBar-background);
     border: solid 1px var(--vscode-sideBar-border);
-}
-
-.container--cell {
-    /* Cells have their own border-bottom. */
-    border-bottom: 0 !important;
 }
 
 .container-viewport {

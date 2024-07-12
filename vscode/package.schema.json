@@ -1,0 +1,111 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Schema for package.json in the Cody VSCode Extension.",
+  "description": "This prevents invalid Cody specific configuration in the package.json. TODO: This could be extended with all vscode schema types. If only they provided one for us :-)",
+  "type": "object",
+  "allOf": [{ "$ref": "https://json.schemastore.org/package" }],
+  "properties": {
+    "contributes": {
+      "type": "object",
+      "properties": {
+        "walkthroughs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "colors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "viewsContainers": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "views": {
+          "type": "object",
+          "properties": {
+            "cody": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^cody\\..*"
+                  }
+                },
+                "required": ["id"],
+                "additionalProperties": true
+              },
+              "uniqueItems": true
+            }
+          },
+          "required": ["cody"],
+          "additionalProperties": true
+        },
+        "viewsWelcome": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "command": {
+                "type": "string",
+                "pattern": "^cody\\..*"
+              }
+            },
+            "required": ["command"],
+            "additionalProperties": true
+          },
+          "uniqueItems": true
+        },
+        "keybindings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "submenus": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^cody\\..*"
+              }
+            },
+            "required": ["id"],
+            "additionalProperties": true
+          },
+          "uniqueItems": true
+        },
+        "menus": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "configuration": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "icons": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

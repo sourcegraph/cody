@@ -12,7 +12,12 @@ export function renderUnifiedDiff(
         // TODO: may want to limit the context size. We currently show all lines
         // including the ones that have no diff.
         for (const part of parts) {
-            lines.push(prefix + part)
+            // Replace trailing white characters with '␣' to make it easier to
+            // debug whitespace diffs.
+            const withHighlightedTrailingWhitespace = part.replace(/(\s+)$/, match =>
+                '␣'.repeat(match.length)
+            )
+            lines.push(prefix + withHighlightedTrailingWhitespace)
         }
     }
     return lines.join('\n')

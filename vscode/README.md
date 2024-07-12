@@ -1,4 +1,4 @@
-# AI that knows your entire codebase
+# AI that uses your codebase as context
 
 [Cody](https://about.sourcegraph.com/cody?utm_source=marketplace.visualstudio.com&utm_medium=referral) is an AI coding assistant that helps you understand, write, and fix code faster. It uses advanced search to pull context from both local and remote codebases so that you can use context about APIs, symbols, and usage patterns from across your entire codebase at any scale, all from within VS Code. Plus, Cody Pro users can choose from the latest large language models—like GPT-4o and Claude 3 Opus—to customize Cody to their needs.
 
@@ -39,15 +39,9 @@ You can also build your own [Custom Commands (Beta)](https://sourcegraph.com/doc
 
 ## Choose Your LLM
 
-Cody Pro users can now select the LLM they want to use for chat and experiment to choose the best model for the job. Choose from Claude 3 Opus, Claude 3 Sonnet, Claude 3 Haiku, ChatGPT 3.5 Turbo, ChatGPT 4 Turbo, Claude Instant, and Mixtral.
+Cody Pro users can now select the LLM they want to use for chat and experiment to choose the best model for the job. Choose from Claude 3 Opus, Claude 3.5 Sonnet, Claude 3 Sonnet, Claude 3 Haiku, ChatGPT 4o, ChatGPT 4 Turbo, ChatGPT 3.5 Turbo, Google Gemini 1.5 Pro, Gemini 1.5 Flash, and Mixtral.
 
 Administrators for Sourcegraph Enterprise instances can choose betweeen Claude and ChatGPT models to set for their teams as well.
-
-## Cody Natural Language Search (Beta)
-
-Cody builds a Search index of your local files to make it easier to find what you’re looking for. Use a natural language query like “password hashing” or "connection retries" to quickly find and open the files that match your search.
-
-<img src="https://storage.googleapis.com/sourcegraph-assets/blog/vs-code-onboarding-walkthrough-dec-2023-natural-language.gif" width="480" alt="Natural Language Search">
 
 ## Usage
 

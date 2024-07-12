@@ -69,7 +69,3 @@ export function documentAndPosition(
     const position = doc.positionAt(cursorIndex)
     return { document: doc, position }
 }
-
-export function nextTick(): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, 0))
-}

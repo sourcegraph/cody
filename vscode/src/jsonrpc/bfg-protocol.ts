@@ -17,11 +17,14 @@ export type Requests = {
     'bfg/initialize': [{ clientName: string }, { serverVersion: string }]
     'bfg/contextAtPosition': [
         { uri: string; content: string; position: Position; maxSnippets: number; maxDepth: number },
-        { symbols?: BFGSymbolContextSnippet[]; files?: BFGFileContextSnippet[] },
+        {
+            symbols?: BFGSymbolContextSnippet[] | undefined | null
+            files?: BFGFileContextSnippet[] | undefined | null
+        },
     ]
     'bfg/contextForIdentifiers': [
         { uri: string; identifiers: string[]; maxSnippets: number; maxDepth: number },
-        { symbols?: BFGSymbolContextSnippet[] },
+        { symbols?: BFGSymbolContextSnippet[] | undefined | null },
     ]
     // biome-ignore lint/suspicious/noConfusingVoidType: this models a function returning void
     'bfg/gitRevision/didChange': [{ gitDirectoryUri: string }, void]

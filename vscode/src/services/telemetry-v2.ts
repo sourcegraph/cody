@@ -1,4 +1,9 @@
+import * as vscode from 'vscode'
+
 import {
+    type AuthStatusProvider,
+    CodyIDE,
+    type Configuration,
     type ConfigurationWithAccessToken,
     type LogEventMode,
     MockServerTelemetryRecorderProvider,
@@ -11,11 +16,34 @@ import {
 import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry'
 
 import { logDebug } from '../log'
+import { getOSArch } from '../os'
+import { version } from '../version'
 
-import type { AuthProvider } from './AuthProvider'
 import { localStorage } from './LocalStorageProvider'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { getExtensionDetails } from './telemetry'
+
+const { platform, arch } = getOSArch()
+
+export interface ExtensionDetails {
+    ide: CodyIDE
+    ideVersion?: string
+    ideExtensionType: 'Cody' | 'CodeSearch'
+    platform: string
+    arch?: string
+
+    /** Version number for the extension. */
+    version: string
+}
+
+export const getExtensionDetails = (
+    config: Pick<Configuration, 'agentIDE' | 'agentIDEVersion' | 'agentExtensionVersion'>
+): ExtensionDetails => ({
+    ide: config.agentIDE ?? CodyIDE.VSCode,
+    ideVersion: config.agentIDEVersion ?? vscode.version,
+    ideExtensionType: 'Cody',
+    platform: platform ?? 'browser',
+    arch: arch,
+    version: config.agentExtensionVersion ?? version,
+})
 
 /**
  * For legacy events export, where we are connected to a pre-5.2.0 instance,
@@ -44,7 +72,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
      * true, exports are logged to extension output instead.
      */
     isExtensionModeDevOrTest: boolean,
-    authProvider: AuthProvider
+    authStatusProvider: AuthStatusProvider
 ): Promise<void> {
     const extensionDetails = getExtensionDetails(config)
 
@@ -72,7 +100,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
             new MockServerTelemetryRecorderProvider(
                 extensionDetails,
                 config,
-                () => authProvider.getAuthStatus(),
+                authStatusProvider,
                 anonymousUserID
             )
         )
@@ -84,7 +112,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
             new TelemetryRecorderProvider(
                 extensionDetails,
                 config,
-                () => authProvider.getAuthStatus(),
+                authStatusProvider,
                 anonymousUserID,
                 legacyBackcompatLogEventMode
             )

@@ -23,11 +23,20 @@ export function extractTestType(text: string): string {
  * Also returns false for any files in node_modules directory.
  */
 export function isValidTestFile(uri: URI): boolean {
-    const fileNameWithoutExt = uriBasename(uri, uriExtname(uri))
+    const ext = uriExtname(uri)
+    const fileNameWithoutExt = uriBasename(uri, ext)
 
+    // For some languages we check for a prefix
+    const prefixTest = /\.(?:py|rb)$/
+    if (prefixTest.test(ext)) {
+        if (fileNameWithoutExt.startsWith('test_')) {
+            return true
+        }
+    }
+
+    // All other cases we check the suffix
     const suffixTest = /([._-](test|spec))|Test|Spec$/
-
-    return fileNameWithoutExt.startsWith('test_') || suffixTest.test(fileNameWithoutExt)
+    return suffixTest.test(fileNameWithoutExt)
 }
 
 /**
@@ -39,20 +48,41 @@ export function isValidTestFile(uri: URI): boolean {
  * @returns True if the test file matches the file
  */
 export function isTestFileForOriginal(file: URI, testFile: URI): boolean {
-    // Assume not a test file for the current file if they are in different directories
-    // and the testFile's file path do not include test(s)
-    if (Utils.dirname(file)?.path !== Utils.dirname(testFile)?.path) {
-        if (!/test/i.test(Utils.dirname(testFile)?.path)) {
-            return false
-        }
+    // We assume that a file can never be its own testFile for the original file.
+    // Instead make sure to test if the file IS a validTestFile.
+    if (file.path === testFile.path) {
+        return false
     }
 
-    const regex = /[^a-zA-Z0-9]/g
-    const fileName = Utils.basename(file).toLowerCase().replace(regex, '')
-    const testFileName = Utils.basename(testFile).toLowerCase().replace(regex, '')
+    const fileDir = Utils.dirname(file)?.path
+    const testDir = Utils.dirname(testFile)?.path
 
-    const strippedFile = fileName.replace('spec', '').replace('test', '')
-    const strippedTestFile = testFileName.replace('spec', '').replace('test', '')
+    // Assume not a test file for the current file if they are in different directories
+    // and the testFile's file path does not include a test dir
+    const pathRegex = /(?:^|\/)_{0,2}tests?_{0,2}(?:\/|$)/i
+    if (fileDir !== testDir && !pathRegex.test(testDir)) {
+        return false
+    }
 
-    return strippedFile === strippedTestFile
+    // The file extension should match as it's rare to write a test in another language.
+    if (uriExtname(file) !== uriExtname(testFile)) {
+        return false
+    }
+
+    // Finally we check if the filename without typical test keywords matches. This is pretty naiive
+    // but seems to cover quite a few test cases.
+    const sanitizeFileName = (name: string) =>
+        name
+            .replace(/[^a-zA-Z0-9]/g, '')
+            .toLowerCase()
+            .replace(/spec|tests?/g, '')
+
+    const fileName = Utils.basename(file)
+    const testFileName = Utils.basename(testFile)
+
+    if (fileName.toLowerCase() === testFileName.toLowerCase() && fileName !== testFileName) {
+        return false
+    }
+
+    return sanitizeFileName(fileName) === sanitizeFileName(testFileName)
 }

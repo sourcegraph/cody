@@ -1,0 +1,28 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Generate Unit Test > editCommands/test 1`] = `
+"import { trickyLogic } from './trickyLogic'
+
+describe('trickyLogic', () => {
+  test('returns 1 when a is 0', () => {
+    expect(trickyLogic(0, 5)).toBe(1)
+  })
+
+  test('returns 1 when b is 2', () => {
+    expect(trickyLogic(10, 2)).toBe(1)
+  })
+
+  test('returns a - b when a is not 0 and b is not 2', () => {
+    expect(trickyLogic(5, 3)).toBe(2)
+    expect(trickyLogic(10, 7)).toBe(3)
+    expect(trickyLogic(3, 5)).toBe(-2)
+  })
+
+  test('handles negative values', () => {
+    expect(trickyLogic(-5, 3)).toBe(-8)
+    expect(trickyLogic(5, -3)).toBe(8)
+    expect(trickyLogic(-5, -3)).toBe(-2)
+  })
+})
+"
+`;

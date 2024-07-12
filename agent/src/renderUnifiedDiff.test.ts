@@ -71,4 +71,18 @@ describe('renderUnifiedDiff', () => {
             i"
         `)
     })
+
+    it('trailing whitespace', () => {
+        expect(
+            diff(['a ', 'b  ', 'c   '].join('\n'), ['a ', 'b ', 'c '].join('\n'))
+        ).toMatchInlineSnapshot(`
+          "--- a
+          +++ b
+            a␣
+          - b␣␣
+          - c␣␣␣
+          + b␣
+          + c␣"
+        `)
+    })
 })

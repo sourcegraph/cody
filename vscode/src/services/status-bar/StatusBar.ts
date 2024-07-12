@@ -13,8 +13,6 @@ import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import type { CodyIgnoreType } from '../../cody-ignore/notification'
 import { getGhostHintEnablement } from '../../commands/GhostHintDecorator'
 import { FeedbackOptionItems, SupportOptionItems } from '../FeedbackOptions'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../telemetry'
 import { enableVerboseDebugMode } from '../utils/export-logs'
 
 interface StatusBarError {
@@ -57,11 +55,13 @@ interface StatusBarItem extends vscode.QuickPickItem {
     onSelect: () => Promise<void>
 }
 
+const STATUS_BAR_INTERACTION_COMMAND = 'cody.status-bar.interacted'
+
 export function createStatusBar(): CodyStatusBar {
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
     statusBarItem.text = DEFAULT_TEXT
     statusBarItem.tooltip = DEFAULT_TOOLTIP
-    statusBarItem.command = 'cody.status-bar.interacted'
+    statusBarItem.command = STATUS_BAR_INTERACTION_COMMAND
     statusBarItem.show()
 
     let isCodyIgnoredType: null | CodyIgnoreType = null
@@ -95,19 +95,14 @@ export function createStatusBar(): CodyStatusBar {
     }
 
     let authStatus: AuthStatus | undefined
-    const command = vscode.commands.registerCommand(statusBarItem.command, async () => {
-        telemetryService.log(
-            'CodyVSCodeExtension:statusBarIcon:clicked',
-            { loggedIn: Boolean(authStatus?.isLoggedIn) },
-            { hasV2Event: true }
-        )
+    const command = vscode.commands.registerCommand(STATUS_BAR_INTERACTION_COMMAND, async () => {
         telemetryRecorder.recordEvent('cody.statusbarIcon', 'clicked', {
             privateMetadata: { loggedIn: Boolean(authStatus?.isLoggedIn) },
         })
 
         if (!authStatus?.isLoggedIn) {
             // Bring up the sidebar view
-            void vscode.commands.executeCommand('cody.focus')
+            void vscode.commands.executeCommand('cody.chat.focus')
             return
         }
 
@@ -229,29 +224,6 @@ export function createStatusBar(): CodyStatusBar {
                     return enablement.Document || enablement.EditOrChat || enablement.Generate
                 }
             ),
-            await createFeatureToggle(
-                'Search Context',
-                'Beta',
-                'Enable using the natural language search index as an Enhanced Context chat source',
-                'cody.experimental.symfContext',
-                c => c.experimentalSymfContext,
-                false
-            ),
-            await createFeatureToggle(
-                'Ollama for Chat',
-                'Experimental',
-                'Use local Ollama models for chat and commands when available',
-                'cody.experimental.ollamaChat',
-                c => c.experimentalOllamaChat,
-                false,
-                [
-                    {
-                        iconPath: new vscode.ThemeIcon('book'),
-                        tooltip: 'Learn more about using local models',
-                        onClick: () => vscode.commands.executeCommand('cody.statusBar.ollamaDocs'),
-                    } as vscode.QuickInputButton,
-                ]
-            ),
             { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
             {
                 label: '$(gear) Cody Extension Settings',
@@ -319,17 +291,21 @@ export function createStatusBar(): CodyStatusBar {
         // yellow status bar icon when extension first loads but login hasn't
         // initialized yet
         if (authStatus) {
+            if (authStatus.isOfflineMode) {
+                statusBarItem.text = '$(cody-logo-heavy) Offline'
+                statusBarItem.tooltip = 'Cody is in offline mode'
+                statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
+                return
+            }
             if (authStatus.showNetworkError) {
                 statusBarItem.text = '$(cody-logo-heavy) Connection Issues'
                 statusBarItem.tooltip = 'Resolve network issues for Cody to work again'
-                // statusBarItem.color = new vscode.ThemeColor('statusBarItem.errorForeground')
                 statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground')
                 return
             }
             if (!authStatus.isLoggedIn) {
                 statusBarItem.text = '$(cody-logo-heavy) Sign In'
                 statusBarItem.tooltip = 'Sign in to get started with Cody'
-                // statusBarItem.color = new vscode.ThemeColor('statusBarItem.warningForeground')
                 statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
                 return
             }

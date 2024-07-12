@@ -1,8 +1,6 @@
 import { FeatureFlag } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { localStorage } from '../LocalStorageProvider'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../telemetry'
 
 /**
  * Logs the enrollment event for the given feature flag ONCE in user's lifetime
@@ -26,8 +24,6 @@ export function logFirstEnrollmentEvent(key: FeatureFlag, isEnabled: boolean): b
 
     // Log the enrollment event
     const args = { variant: isEnabled ? 'treatment' : 'control' }
-    const hasV2Event = { hasV2Event: true }
-    telemetryService.log(`CodyVSCodeExtension:experiment:${eventName}:enrolled`, args, hasV2Event)
     telemetryRecorder.recordEvent(`cody.experiment.${eventName}`, 'enrolled', {
         privateMetadata: args,
     })

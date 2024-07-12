@@ -1,7 +1,10 @@
+import {
+    FILE_MENTION_EDITOR_STATE_FIXTURE,
+    type SerializedContextItem,
+    contextItemsFromPromptEditorValue,
+    serializedPromptEditorStateFromText,
+} from '@sourcegraph/cody-shared'
 import { describe, expect, test } from 'vitest'
-import { contextItemsFromPromptEditorValue, serializedPromptEditorStateFromText } from './PromptEditor'
-import { FILE_MENTION_EDITOR_STATE_FIXTURE } from './fixtures'
-import type { SerializedContextItem } from './nodes/ContextItemMentionNode'
 
 describe('serializedPromptEditorStateFromText', () => {
     test('empty', () =>
@@ -35,7 +38,7 @@ describe('serializedPromptEditorStateFromText', () => {
             },
             {
                 type: 'file',
-                uri: 'file:///dir/dir/file-a-1.py',
+                uri: 'file:///dir/dir/README.md',
                 range: {
                     end: {
                         character: 0,

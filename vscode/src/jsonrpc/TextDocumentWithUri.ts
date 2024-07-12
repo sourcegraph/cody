@@ -48,18 +48,18 @@ export class ProtocolTextDocumentWithUri {
     }
 
     public get content(): string | undefined {
-        return this.underlying.content
+        return this.underlying.content ?? undefined
     }
 
     public get contentChanges(): ProtocolTextDocumentContentChangeEvent[] | undefined {
-        return this.underlying.contentChanges
+        return this.underlying.contentChanges ?? undefined
     }
 
     public get selection(): Range | undefined {
-        return this.underlying.selection
+        return this.underlying.selection ?? undefined
     }
 
     public get visibleRange(): Range | undefined {
-        return this.underlying.visibleRange
+        return this.underlying.visibleRange ?? undefined
     }
 }

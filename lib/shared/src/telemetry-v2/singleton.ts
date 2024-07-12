@@ -19,6 +19,8 @@ export let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
  *
  * The default recorder throws an error if it is used before initialization
  * via createOrUpdateTelemetryRecorderProvider.
+ *
+ * DO NOT USE from webviews. Use the {@link useTelemetryRecorder} hook instead.
  */
 export let telemetryRecorder: TelemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder([
     new CallbackTelemetryProcessor(() => {

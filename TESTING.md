@@ -329,11 +329,6 @@ Tests:
 - [ ] Sign in as a Pro user and verify that there is a list of LLM options and you can switch between them.
 - [ ] Sign in as an enterprise user and verify that you cannot change the LLM.
 
-## Search
-
-- [ ] In the `Search` lefthand panel, enter a natural language query (e.g., "enhanced context logic") and verify that search results are displayed.
-- [ ] Select one of the search results and verify that the correct file opens in a new tab.
-
 ## Autocomplete
 
 Primary languages to test: Javascript, Typescript, TypescriptReact, Python, Go

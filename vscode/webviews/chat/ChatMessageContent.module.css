@@ -1,4 +1,4 @@
-.container {
+.buttons-container {
     display: flex;
     align-items: center;
     border-style: solid;
@@ -81,7 +81,6 @@
 
 .content {
     word-break: break-word;
-    line-height: 150%;
     text-wrap: wrap;
 }
 
@@ -124,8 +123,8 @@
 .content pre,
 .content pre > code {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
-    background-color: var(--vscode-editor-background);
-    color: var(--vscode-editor-foreground);
+    background-color: var(--code-background);
+    color: var(--code-foreground);
     margin-bottom: 0;
 }
 body[data-vscode-theme-kind='vscode-light'] .content pre,
@@ -172,4 +171,10 @@ body[data-vscode-theme-kind='vscode-light'] .content pre > code {
 
 .content > *:last-child {
     margin-bottom: 0;
+}
+
+.content ul, .content ol {
+    margin-block: 1rem;
+    padding-inline-start: 2rem;
+    list-style: revert;
 }

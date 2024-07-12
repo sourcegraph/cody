@@ -1,6 +1,6 @@
 import { type PromptString, ps } from '@sourcegraph/cody-shared'
 
-interface LanguageConfig {
+export interface LanguageConfig {
     blockStart: string
     blockElseTest: RegExp
     blockEnd: string | null

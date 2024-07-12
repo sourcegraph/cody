@@ -1,7 +1,7 @@
 @file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
-package com.sourcegraph.cody.protocol_generated
+package com.sourcegraph.cody.protocol_generated;
 
-import com.google.gson.annotations.SerializedName
+import com.google.gson.annotations.SerializedName;
 
 data class ClientCapabilities(
   val completions: CompletionsEnum? = null, // Oneof: none
@@ -15,6 +15,8 @@ data class ClientCapabilities(
   val codeLenses: CodeLensesEnum? = null, // Oneof: none, enabled
   val showWindowMessage: ShowWindowMessageEnum? = null, // Oneof: notification, request
   val ignore: IgnoreEnum? = null, // Oneof: none, enabled
+  val codeActions: CodeActionsEnum? = null, // Oneof: none, enabled
+  val webviewMessages: WebviewMessagesEnum? = null, // Oneof: object-encoded, string-encoded
 ) {
 
   enum class CompletionsEnum {
@@ -69,6 +71,16 @@ data class ClientCapabilities(
   enum class IgnoreEnum {
     @SerializedName("none") None,
     @SerializedName("enabled") Enabled,
+  }
+
+  enum class CodeActionsEnum {
+    @SerializedName("none") None,
+    @SerializedName("enabled") Enabled,
+  }
+
+  enum class WebviewMessagesEnum {
+    @SerializedName("object-encoded") `Object-encoded`,
+    @SerializedName("string-encoded") `String-encoded`,
   }
 }
 

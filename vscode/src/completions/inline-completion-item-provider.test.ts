@@ -11,9 +11,8 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { localStorage } from '../services/LocalStorageProvider'
-import { vsCodeMocks } from '../testutils/mocks'
+import { DEFAULT_VSCODE_SETTINGS, vsCodeMocks } from '../testutils/mocks'
 import { withPosixPaths } from '../testutils/textDocument'
-
 import { SupportedLanguage } from '../tree-sitter/grammars'
 import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
 import { getParser, resetParsersCache } from '../tree-sitter/parser'
@@ -46,6 +45,7 @@ const DUMMY_AUTH_STATUS: AuthStatus = {
     endpoint: 'https://fastsourcegraph.com',
     isDotCom: true,
     isLoggedIn: true,
+    isFireworksTracingEnabled: false,
     showInvalidAccessTokenError: false,
     authenticated: true,
     hasVerifiedEmail: true,
@@ -77,8 +77,10 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             providerConfig: createProviderConfig({
                 client: null as any,
             }),
-            triggerNotice: null,
             authStatus: DUMMY_AUTH_STATUS,
+            firstCompletionTimeout:
+                superArgs?.firstCompletionTimeout ??
+                DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
             ...superArgs,
         })
         this.getInlineCompletions = mockGetInlineCompletions
@@ -90,6 +92,12 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
 describe('InlineCompletionItemProvider', () => {
     beforeAll(async () => {
         await initCompletionProviderConfig({})
+
+        // Dummy noop implementation of localStorage.
+        localStorage.setStorage({
+            get: () => null,
+            update: () => {},
+        } as any as vscode.Memento)
     })
     beforeEach(() => {
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
@@ -179,6 +187,8 @@ describe('InlineCompletionItemProvider', () => {
               "currentLinePrefix": "const foo = ",
               "currentLineSuffix": "",
               "injectedPrefix": null,
+              "maxPrefixLength": 4300,
+              "maxSuffixLength": 716,
               "multilineTrigger": null,
               "multilineTriggerPosition": null,
               "nextNonEmptyLine": "console.log(1)",
@@ -241,87 +251,6 @@ describe('InlineCompletionItemProvider', () => {
         )
         expect(completions).toBe(null)
         expect(fn).not.toHaveBeenCalled()
-    })
-
-    describe('onboarding', () => {
-        // Set up local storage backed by an object. Local storage is used to
-        // track whether a completion was accepted for the first time.
-        let localStorageData: { [key: string]: unknown } = {}
-        localStorage.setStorage({
-            get: (key: string) => localStorageData[key],
-            update: (key: string, value: unknown) => {
-                localStorageData[key] = value
-                return Promise.resolve()
-            },
-        } as any as vscode.Memento)
-
-        beforeEach(() => {
-            localStorageData = {}
-        })
-
-        it('triggers notice the first time an inline completion is accepted', async () => {
-            const { document, position } = documentAndPosition('const foo = █', 'typescript')
-
-            const logId = '1' as CompletionLogID
-            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId,
-                items: [{ insertText: 'bar', range: new vsCodeMocks.Range(position, position) }],
-                source: InlineCompletionsResultSource.Network,
-            })
-
-            const triggerNotice = vi.fn()
-            const provider = new MockableInlineCompletionItemProvider(fn, {
-                triggerNotice,
-            })
-            const completions = await provider.provideInlineCompletionItems(
-                document,
-                position,
-                DUMMY_CONTEXT
-            )
-            expect(completions).not.toBeNull()
-            expect(completions?.items).not.toHaveLength(0)
-
-            // Shouldn't have been called yet.
-            expect(triggerNotice).not.toHaveBeenCalled()
-
-            // Called on first accept.
-            await provider.handleDidAcceptCompletionItem(completions!.items[0]!)
-            expect(triggerNotice).toHaveBeenCalledOnce()
-            expect(triggerNotice).toHaveBeenCalledWith({ key: 'onboarding-autocomplete' })
-
-            // Not called on second accept.
-            await provider.handleDidAcceptCompletionItem(completions!.items[0]!)
-            expect(triggerNotice).toHaveBeenCalledOnce()
-        })
-
-        it('does not triggers notice the first time an inline complation is accepted if not a new install', async () => {
-            await localStorage.setChatHistory(DUMMY_AUTH_STATUS, { chat: { a: null as any } })
-
-            const { document, position } = documentAndPosition('const foo = █', 'typescript')
-
-            const logId = '1' as CompletionLogID
-            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
-                logId,
-                items: [{ insertText: 'bar', range: new vsCodeMocks.Range(position, position) }],
-                source: InlineCompletionsResultSource.Network,
-            })
-
-            const triggerNotice = vi.fn()
-            const provider = new MockableInlineCompletionItemProvider(fn, {
-                triggerNotice,
-            })
-            const completions = await provider.provideInlineCompletionItems(
-                document,
-                position,
-                DUMMY_CONTEXT
-            )
-            expect(completions).not.toBeNull()
-            expect(completions?.items).not.toHaveLength(0)
-
-            // Accepting completion should not have triggered the notice.
-            await provider.handleDidAcceptCompletionItem(completions!.items[0]!)
-            expect(triggerNotice).not.toHaveBeenCalled()
-        })
     })
 
     describe('logger', () => {
@@ -441,6 +370,67 @@ describe('InlineCompletionItemProvider', () => {
             await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
 
             expect(spy).not.toHaveBeenCalled()
+        })
+
+        it('does not log a completion if it is marked as stale', async () => {
+            const spy = vi.spyOn(CompletionLogger, 'suggested')
+
+            const { document, position } = documentAndPosition('const foo = █', 'typescript')
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId: '1' as CompletionLogID,
+                items: [{ insertText: 'bar', range: new vsCodeMocks.Range(position, position) }],
+                source: InlineCompletionsResultSource.Network,
+                stale: true,
+            })
+
+            const provider = new MockableInlineCompletionItemProvider(fn)
+            await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
+
+            expect(spy).not.toHaveBeenCalled()
+        })
+
+        it('does not log a completion if the prefix no longer matches due to a cursor change', async () => {
+            const spy = vi.spyOn(CompletionLogger, 'suggested')
+
+            const { document, position: firstPosition } = documentAndPosition(
+                'const foo = █a',
+                'typescript'
+            )
+
+            // Update the cursor position to be after the expected completion request
+            const cursorSelectionMock = vi
+                .spyOn(vsCodeMocks.window, 'activeTextEditor', 'get')
+                .mockReturnValue({
+                    selection: {
+                        active: firstPosition.with(firstPosition.line, firstPosition.character + 1),
+                    },
+                } as any)
+
+            // Mock the `getInlineCompletions` function to return a completion item that requires the original
+            // prefix to be present.
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId: '1' as CompletionLogID,
+                items: [
+                    {
+                        insertText: 'bar', // Completion: "const foo = bar"
+                        range: new vsCodeMocks.Range(firstPosition, firstPosition),
+                    },
+                ],
+                source: InlineCompletionsResultSource.Network,
+            })
+
+            // Call provideInlineCompletionItems with the `firstPosition`. This will trigger a completion request
+            // but by the time it resolves, the cursor position will have changed. Meaning the prefix is no longer
+            // valid and this completion should not be suggested.
+            new MockableInlineCompletionItemProvider(fn).provideInlineCompletionItems(
+                document,
+                firstPosition,
+                DUMMY_CONTEXT
+            )
+
+            // The completion is no longer visible due to the prefix changing before the request resolved.
+            expect(spy).toHaveBeenCalledTimes(0)
+            cursorSelectionMock.mockReset()
         })
     })
 
@@ -651,7 +641,7 @@ describe('InlineCompletionItemProvider', () => {
                 expect.objectContaining({
                     title: 'Cody Autocomplete Disabled Due to Rate Limit',
                     description:
-                        "You've used all autocompletions for today. Usage will reset tomorrow at 1:00 PM",
+                        "You've used all of your autocompletions for today. Usage will reset tomorrow at 1:00 PM",
                 })
             )
 
@@ -682,11 +672,11 @@ describe('InlineCompletionItemProvider', () => {
                     canUpgrade
                         ? expect.objectContaining({
                               title: 'Upgrade to Continue Using Cody Autocomplete',
-                              description: "You've used all autocompletions for the month.",
+                              description: "You've used all of your autocompletions for the month.",
                           })
                         : expect.objectContaining({
                               title: 'Cody Autocomplete Disabled Due to Rate Limit',
-                              description: "You've used all autocompletions for today.",
+                              description: "You've used all of your autocompletions for today.",
                           })
                 )
 

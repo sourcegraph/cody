@@ -7,8 +7,6 @@ import { CustomCommandType } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { CodyCommandMenuItems } from '..'
 import { executeEdit } from '../../edit/execute'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../../services/telemetry'
 import { executeChat } from '../execute/ask'
 import { openCustomCommandDocsLink } from '../services/custom-commands'
 import type { CodyCommandArgs } from '../types'
@@ -27,11 +25,6 @@ export async function showCommandMenu(
 
     // Log Command Menu opened event
     const source = args?.source
-    telemetryService.log(
-        `CodyVSCodeExtension:menu:command:${type}:clicked`,
-        { source },
-        { hasV2Event: true }
-    )
     telemetryRecorder.recordEvent(`cody.menu.command.${type}`, 'clicked', {
         privateMetadata: { source },
     })
@@ -136,7 +129,6 @@ export async function showCommandMenu(
                     quickPick.items = [
                         CommandMenuOption.chat,
                         CommandMenuOption.edit,
-                        CommandMenuOption.search,
                         ...items.filter(i => i.key !== 'ask' && i.key !== 'edit'),
                     ]
                 } else {
@@ -169,7 +161,7 @@ export async function showCommandMenu(
                 if (selection.key === 'ask') {
                     // show input box if no value
                     if (value.length === 0) {
-                        void commands.executeCommand('cody.chat.panel.new')
+                        void commands.executeCommand('cody.chat.newEditorPanel')
                     } else {
                         void executeChat({
                             text: value.trim(),
@@ -227,7 +219,6 @@ function normalize(input: string): string {
 export async function showNewCustomCommandMenu(
     commands: string[]
 ): Promise<CustomCommandsBuilder | null> {
-    telemetryService.log('CodyVSCodeExtension:menu:custom:build:clicked')
     telemetryRecorder.recordEvent('cody.menu.custom.build', 'clicked')
     const builder = new CustomCommandsBuilderMenu()
     return builder.start(commands)

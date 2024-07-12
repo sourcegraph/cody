@@ -5,6 +5,7 @@ import {
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
     type Guardrails,
+    type SourcegraphCompletionsClient,
     SourcegraphGuardrailsClient,
     graphqlClient,
     isError,
@@ -21,6 +22,7 @@ import type { AuthProvider } from './services/AuthProvider'
 
 interface ExternalServices {
     chatClient: ChatClient
+    completionsClient: SourcegraphCompletionsClient
     codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
     contextRanking: ContextRankingController | undefined
@@ -89,6 +91,7 @@ export async function configureExternalServices(
 
     return {
         chatClient,
+        completionsClient,
         codeCompletionsClient,
         guardrails,
         localEmbeddings,

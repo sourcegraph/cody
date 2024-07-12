@@ -1,5 +1,5 @@
 @file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
-package com.sourcegraph.cody.protocol_generated
+package com.sourcegraph.cody.protocol_generated;
 
 data class CodyLLMSiteConfiguration(
   val chatModel: String? = null,
@@ -9,6 +9,6 @@ data class CodyLLMSiteConfiguration(
   val completionModel: String? = null,
   val completionModelMaxTokens: Int? = null,
   val provider: String? = null,
-  val smartContext: Boolean? = null,
+  val smartContextWindow: Boolean? = null,
 )
 

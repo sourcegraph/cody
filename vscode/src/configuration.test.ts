@@ -35,21 +35,9 @@ describe('getConfiguration', () => {
                         return { '*': true }
                     case 'cody.commandCodeLenses':
                         return true
-                    case 'cody.experimental.guardrails':
-                        return true
                     case 'cody.codeActions.enabled':
                         return true
                     case 'cody.commandHints.enabled':
-                        return true
-                    case 'cody.experimental.localSymbols':
-                        return true
-                    case 'cody.experimental.ollamaChat':
-                        return true
-                    case 'cody.experimental.symf.path':
-                        return '/usr/local/bin/symf'
-                    case 'cody.experimental.simpleChatContext':
-                        return true
-                    case 'cody.experimental.symfContext':
                         return true
                     case 'cody.experimental.tracing':
                         return true
@@ -92,11 +80,13 @@ describe('getConfiguration', () => {
                         }
                     case 'cody.autocomplete.experimental.graphContext':
                         return 'bfg'
-                    case 'cody.autocomplete.experimental.smartThrottle':
-                        return false
                     case 'cody.advanced.agent.running':
                         return false
                     case 'cody.advanced.agent.ide':
+                        return undefined
+                    case 'cody.advanced.agent.ide.version':
+                        return undefined
+                    case 'cody.advanced.agent.extension.version':
                         return undefined
                     case 'cody.internal.unstable':
                         return false
@@ -106,10 +96,14 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.noodle':
                         return false
-                    case 'cody.experimental.urlContext':
+                    case 'cody.experimental.minion.anthropicKey':
+                        return undefined
+                    case 'cody.autocomplete.advanced.timeout.firstCompletion':
+                        return 1500
+                    case 'cody.autocomplete.experimental.smartThrottle':
                         return false
-                    case 'cody.experimental.github.accessToken':
-                        return ''
+                    case 'cody.autocomplete.experimental.smartThrottleExtended':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -130,16 +124,11 @@ describe('getConfiguration', () => {
                 '*': true,
             },
             commandCodeLenses: true,
-            experimentalSimpleChatContext: true,
             experimentalSupercompletions: false,
-            experimentalSymfContext: true,
+            experimentalMinionAnthropicKey: undefined,
             experimentalTracing: true,
-            experimentalGuardrails: true,
-            experimentalOllamaChat: true,
             experimentalCommitMessage: true,
             experimentalNoodle: false,
-            experimentalURLContext: false,
-            experimentalGithubAccessToken: '',
             codeActions: true,
             commandHints: true,
             isRunningInsideAgent: false,
@@ -156,7 +145,6 @@ describe('getConfiguration', () => {
             autocompleteExperimentalFireworksOptions: undefined,
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: 'bfg',
-            autocompleteExperimentalSmartThrottle: false,
             autocompleteExperimentalOllamaOptions: {
                 model: 'codellama:7b-code',
                 url: OLLAMA_DEFAULT_URL,
@@ -165,6 +153,9 @@ describe('getConfiguration', () => {
                 multiline: undefined,
                 singleline: undefined,
             },
+            autocompleteFirstCompletionTimeout: 1500,
+            autocompleteExperimentalSmartThrottle: false,
+            autocompleteExperimentalSmartThrottleExtended: false,
             testingModelConfig: undefined,
             experimentalChatContextRanker: false,
         } satisfies Configuration)

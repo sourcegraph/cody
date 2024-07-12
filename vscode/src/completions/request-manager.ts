@@ -5,13 +5,13 @@ import type * as vscode from 'vscode'
 import {
     type AutocompleteContextSnippet,
     type DocumentContext,
-    FeatureFlag,
     isDefined,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
 import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-utils'
 
+import levenshtein from 'js-levenshtein'
 import { logDebug } from '../log'
 import { completionProviderConfig } from './completion-provider-config'
 import {
@@ -23,7 +23,7 @@ import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import { STOP_REASON_HOT_STREAK } from './providers/hot-streak'
 import type { CompletionProviderTracer, Provider } from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
-import { lines, removeIndentation } from './text-processing'
+import { getPrevNonEmptyLineIndex, lines, removeIndentation } from './text-processing'
 import {
     type InlineCompletionItemWithAnalytics,
     processInlineCompletions,
@@ -50,6 +50,7 @@ export interface RequestParams {
 export interface RequestManagerResult {
     completions: InlineCompletionItemWithAnalytics[]
     source: InlineCompletionsResultSource
+    isFuzzyMatch: boolean
 }
 
 interface RequestsManagerParams {
@@ -91,16 +92,13 @@ export class RequestManager {
     }
 
     public async request(params: RequestsManagerParams): Promise<RequestManagerResult> {
-        const eagerCancellation = completionProviderConfig.getPrefetchedFlag(
-            FeatureFlag.CodyAutocompleteEagerCancellation
-        )
         this.latestRequestParams = params
 
         const { requestParams, provider, context, tracer } = params
 
         addAutocompleteDebugEvent('RequestManager.request')
 
-        const shouldHonorCancellation = eagerCancellation || completionProviderConfig.smartThrottle
+        const shouldHonorCancellation = completionProviderConfig.smartThrottle
 
         // When request recycling is enabled, we do not pass the original abort signal forward as to
         // not interrupt requests that are no longer relevant. Instead, we let all previous requests
@@ -151,16 +149,12 @@ export class RequestManager {
                         request.resolve({
                             completions: processedCompletions,
                             source: InlineCompletionsResultSource.Network,
+                            isFuzzyMatch: false,
                         })
 
                         request.lastCompletions = processedCompletions
 
-                        if (!eagerCancellation) {
-                            this.testIfResultCanBeRecycledForInflightRequests(
-                                request,
-                                processedCompletions
-                            )
-                        }
+                        this.testIfResultCanBeRecycledForInflightRequests(request, processedCompletions)
                     }
 
                     // Save hot streak completions for later use.
@@ -179,9 +173,7 @@ export class RequestManager {
                         )
                     }
 
-                    if (!eagerCancellation) {
-                        this.cancelIrrelevantRequests()
-                    }
+                    this.cancelIrrelevantRequests()
                 }
             } catch (error) {
                 request.reject(error as Error)
@@ -190,9 +182,7 @@ export class RequestManager {
             }
         }
 
-        if (!eagerCancellation) {
-            this.cancelIrrelevantRequests()
-        }
+        this.cancelIrrelevantRequests()
 
         void wrapInActiveSpan('autocomplete.generate', generateCompletions)
         return request.promise
@@ -247,6 +237,7 @@ export class RequestManager {
                 request.resolve({
                     completions: synthesizedItems,
                     source: InlineCompletionsResultSource.CacheAfterRequestStart,
+                    isFuzzyMatch: false,
                 })
                 request.abortController.abort()
                 this.inflightRequests.delete(request)
@@ -316,25 +307,124 @@ interface RequestCacheItem {
     completions: InlineCompletionItemWithAnalytics[]
     source: InlineCompletionsResultSource
 }
+
+interface CacheKey {
+    prefixWithoutLastNLines: string
+    prevNonEmptyLines: string[]
+    currentLinePrefix: string
+    nextNonEmptyLine: string
+}
+
+type CacheEntry = { key: CacheKey; value: RequestCacheItem }
+
 class RequestCache {
-    private cache = new LRUCache<string, RequestCacheItem>({
-        max: 50,
+    private cache = new LRUCache<string, CacheEntry>({
+        max: 250,
     })
 
-    private toCacheKey(key: Pick<RequestParams, 'docContext'>): string {
-        return `${key.docContext.prefix}█${key.docContext.nextNonEmptyLine}`
+    /**
+     * The base allowed Levenshtein distance between lines to match.
+     */
+    private levenshteinBaseThreshold = 3
+    /**
+     * The maximum allowed Levenshtein distance between lines to match.
+     */
+    private levenshteinMaxThreshold = 5
+    /**
+     * The number of lines to fuzzy match.
+     */
+    private fuzzyPrefixMatchLineCount = 5
+
+    private toCacheKey(requestParams: Pick<RequestParams, 'docContext'>): CacheKey {
+        const { prefix, currentLinePrefix, nextNonEmptyLine } = requestParams.docContext
+
+        const prefixWithoutCurrentLinePrefix = prefix.slice(0, -currentLinePrefix.length).trim()
+
+        const prevNonEmptyLines: string[] = []
+        let remainingPrefix = prefixWithoutCurrentLinePrefix
+
+        for (let i = 0; i < this.fuzzyPrefixMatchLineCount; i++) {
+            let lastNewLineIndex = getPrevNonEmptyLineIndex(remainingPrefix)
+            if (lastNewLineIndex === null) {
+                lastNewLineIndex = 0
+            }
+
+            const prevNonEmptyLine = remainingPrefix.slice(lastNewLineIndex)
+            prevNonEmptyLines.unshift(prevNonEmptyLine)
+            remainingPrefix = remainingPrefix.slice(0, -prevNonEmptyLine.length).trim()
+
+            if (lastNewLineIndex === 0) {
+                break
+            }
+        }
+
+        return {
+            prefixWithoutLastNLines: remainingPrefix,
+            prevNonEmptyLines,
+            currentLinePrefix,
+            nextNonEmptyLine,
+        }
     }
 
-    public get(key: RequestParams): RequestCacheItem | undefined {
-        return this.cache.get(this.toCacheKey(key))
+    private serializeCacheKey(key: CacheKey): string {
+        return `${key.prefixWithoutLastNLines}\n${key.prevNonEmptyLines.join('\n')}\n${
+            key.currentLinePrefix
+        }█${key.nextNonEmptyLine}`
     }
 
-    public set(key: Pick<RequestParams, 'docContext'>, item: RequestCacheItem): void {
-        this.cache.set(this.toCacheKey(key), item)
+    private getDynamicThreshold(str: string): number {
+        // Empirically picked number to increase the maximum threshold for long strings.
+        const lengthFactor = Math.floor(str.length / 20)
+        return Math.min(this.levenshteinBaseThreshold + lengthFactor, this.levenshteinMaxThreshold)
     }
 
-    public delete(key: RequestParams): void {
-        this.cache.delete(this.toCacheKey(key))
+    public get(requestParams: RequestParams): RequestManagerResult | undefined {
+        const cacheKey = this.toCacheKey(requestParams)
+        const cacheKeyString = this.serializeCacheKey(cacheKey)
+
+        const exactMatch = this.cache.get(cacheKeyString)
+        if (exactMatch) {
+            return { ...exactMatch.value, isFuzzyMatch: false }
+        }
+
+        // If no exact match found, look for a close match using levenshtein distance.
+        // This is useful for cases when previous lines have minor changes
+        // like added semicolons or extra spaces.
+        for (const entry of this.cache.values() as Generator<CacheEntry | undefined>) {
+            if (
+                entry &&
+                entry.key.prefixWithoutLastNLines === cacheKey.prefixWithoutLastNLines &&
+                entry.key.currentLinePrefix === cacheKey.currentLinePrefix &&
+                entry.key.nextNonEmptyLine === cacheKey.nextNonEmptyLine &&
+                entry.key.prevNonEmptyLines.length === cacheKey.prevNonEmptyLines.length
+            ) {
+                const allLinesMatch = entry.key.prevNonEmptyLines.every((line, index) => {
+                    const threshold = this.getDynamicThreshold(line)
+                    const distance = levenshtein(line, cacheKey.prevNonEmptyLines[index])
+                    return distance <= threshold
+                })
+
+                if (allLinesMatch) {
+                    return {
+                        ...entry.value,
+                        isFuzzyMatch: true,
+                    }
+                }
+            }
+        }
+
+        return undefined
+    }
+
+    public set(requestParams: Pick<RequestParams, 'docContext'>, item: RequestCacheItem): void {
+        const cacheKey = this.toCacheKey(requestParams)
+        const hashKey = this.serializeCacheKey(cacheKey)
+        this.cache.set(hashKey, { key: cacheKey, value: item })
+    }
+
+    public delete(requestParams: RequestParams): void {
+        const hashKey = this.serializeCacheKey(this.toCacheKey(requestParams))
+        this.cache.delete(hashKey)
     }
 }
 

@@ -3,8 +3,8 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     type ChatClient,
-    ConfigFeaturesSingleton,
-    type ModelProvider,
+    ClientConfigSingleton,
+    type Model,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
@@ -21,12 +21,11 @@ import type { ExtensionClient } from '../extension-client'
 import { editModel } from '../models'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import type { AuthProvider } from '../services/AuthProvider'
-import { telemetryService } from '../services/telemetry'
 import { splitSafeMetadata } from '../services/telemetry-v2'
-import { DEFAULT_EDIT_MODE } from './constants'
 import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
 import { getEditIntent } from './utils/edit-intent'
+import { getEditMode } from './utils/edit-mode'
 import { getEditModelsForUser } from './utils/edit-models'
 import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
 
@@ -45,7 +44,7 @@ export class EditManager implements vscode.Disposable {
     private readonly controller: FixupController
     private disposables: vscode.Disposable[] = []
     private editProviders = new WeakMap<FixupTask, EditProvider>()
-    private models: ModelProvider[] = []
+    private models: Model[] = []
 
     constructor(public options: EditManagerOptions) {
         this.controller = new FixupController(options.authProvider, options.extensionClient)
@@ -92,8 +91,8 @@ export class EditManager implements vscode.Disposable {
             source = DEFAULT_EVENT_SOURCE,
             telemetryMetadata,
         } = args
-        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        if (!configFeatures.commands) {
+        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
+        if (!clientConfig?.customCommandsEnabled) {
             void vscode.window.showErrorMessage(
                 'This feature has been disabled by your Sourcegraph site admin.'
             )
@@ -124,9 +123,9 @@ export class EditManager implements vscode.Disposable {
         // Set default edit configuration, if not provided
         // It is possible that these values may be overriden later, e.g. if the user changes them in the edit input.
         const range = getEditLineSelection(document, proposedRange)
-        const mode = configuration.mode || DEFAULT_EDIT_MODE
         const model = configuration.model || editModel.get(this.options.authProvider, this.models)
         const intent = getEditIntent(document, range, configuration.intent)
+        const mode = getEditMode(intent, configuration.mode)
 
         let expandedRange: vscode.Range | undefined
         // Support expanding the selection range for intents where it is useful
@@ -200,9 +199,6 @@ export class EditManager implements vscode.Disposable {
             source: task.source,
             ...telemetryMetadata,
         }
-        telemetryService.log(`CodyVSCodeExtension:command:${eventName}:executed`, legacyMetadata, {
-            hasV2Event: true,
-        })
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         telemetryRecorder.recordEvent(`cody.command.${eventName}`, 'executed', {
             metadata,

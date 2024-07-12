@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
-import envPaths from 'env-paths'
+import { type CodyCommand, isWindows, telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 
@@ -11,14 +11,14 @@ import {
     type BillingCategory,
     type BillingProduct,
     FeatureFlag,
-    ModelProvider,
-    NoOpTelemetryRecorderProvider,
+    ModelsService,
     PromptString,
     contextFiltersProvider,
     convertGitCloneURLToCodebaseName,
     featureFlagProvider,
     graphqlClient,
     isError,
+    isFileURI,
     isRateLimitError,
     logDebug,
     logError,
@@ -27,38 +27,44 @@ import {
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
-import { SimpleChatModel } from '../../vscode/src/chat/chat-view/SimpleChatModel'
+import { ChatModel } from '../../vscode/src/chat/chat-view/ChatModel'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 
+import { copyFileSync, mkdirSync, statSync } from 'node:fs'
+import { PassThrough } from 'node:stream'
 import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
-import {
-    AbstractMessageReader,
-    AbstractMessageWriter,
-    type Disposable,
-    type MessageConnection,
-    type MessageReader,
-    type MessageWriter,
-} from 'vscode-jsonrpc'
+import * as uuid from 'uuid'
+import type { MessageConnection } from 'vscode-jsonrpc'
 import { ModelUsage } from '../../lib/shared/src/models/types'
+import type { CommandResult } from '../../vscode/src/CommandResult'
+import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
+import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient, ExtensionObjects } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
-import type { CommandResult } from '../../vscode/src/main'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
-import { AgentCodeLenses } from './AgentCodeLenses'
 import { AgentFixupControls } from './AgentFixupControls'
 import { AgentGlobalState } from './AgentGlobalState'
+import { AgentProviders } from './AgentProviders'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
-import type { PollyRequestError } from './cli/jsonrpc'
-import { MessageHandler, type RequestCallback, type RequestMethodName } from './jsonrpc-alias'
+import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
+import { codyPaths } from './codyPaths'
+import {
+    MessageHandler,
+    type RequestCallback,
+    type RequestMethodName,
+    type RpcMessageHandler,
+} from './jsonrpc-alias'
+import { getLanguageForFileName } from './language'
 import type {
     AutocompleteItem,
     ClientInfo,
@@ -66,14 +72,15 @@ import type {
     CustomCommandResult,
     EditTask,
     ExtensionConfiguration,
+    GetDocumentsParams,
+    GetDocumentsResult,
     GetFoldingRangeResult,
     ProtocolCommand,
     ProtocolTextDocument,
     TextEdit,
 } from './protocol-alias'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
+import { vscodeLocation, vscodeRange } from './vscode-type-converters'
 
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
@@ -84,12 +91,44 @@ type ExtensionActivate = (
     extensionClient?: ExtensionClient
 ) => Promise<unknown>
 
+// In certs.js, we run `win-ca` to install self-signed certificates.  The
+// `win-ca` package needs access to a "roots.exe" file, which we bundle
+// alongside the agent as 'win-ca-roots.exe'. In VS Code, we use
+// `vscode.ExtensionContext.extensionUri` to discover the location of this file.
+// In the agent, we assume this file is placed next to the bundled `index.js`
+// file, and we copy it over to the `extensionPath` so the VS Code logic works
+// without changes.
+function copyWinCaRootsBinary(extensionPath: string): void {
+    const source = path.join(__dirname, 'win-ca-roots.exe')
+    const target = path.join(extensionPath, 'dist', 'win-ca-roots.exe')
+    try {
+        const stat = statSync(source)
+        if (!stat.isFile()) {
+            return
+        }
+    } catch {
+        if (isWindows()) {
+            logDebug('win-ca', `Failed to find ${source}, skipping copy`)
+        }
+        return
+    }
+    try {
+        mkdirSync(path.dirname(target), { recursive: true })
+        copyFileSync(source, target)
+    } catch (err) {
+        logDebug('win-ca', `Failed to copy ${source} to dist ${target}`, err)
+    }
+}
+
 export async function initializeVscodeExtension(
     workspaceRoot: vscode.Uri,
     extensionActivate: ExtensionActivate,
     extensionClient: ExtensionClient
 ): Promise<void> {
-    const paths = envPaths('Cody')
+    const paths = codyPaths()
+    const extensionPath = paths.config
+    copyWinCaRootsBinary(extensionPath)
+
     const context: vscode.ExtensionContext = {
         asAbsolutePath(relativePath) {
             return path.resolve(workspaceRoot.fsPath, relativePath)
@@ -100,7 +139,7 @@ export async function initializeVscodeExtension(
         // Placeholder string values for extension path/uri. These are only used
         // to resolve paths to icon in the UI. They need to have compatible
         // types but don't have to point to a meaningful path/URI.
-        extensionPath: paths.config,
+        extensionPath,
         extensionUri: vscode.Uri.file(paths.config),
         globalState,
         logUri: vscode.Uri.file(paths.log),
@@ -131,15 +170,21 @@ export async function initializeVscodeExtension(
 }
 
 export async function newAgentClient(
-    clientInfo: ClientInfo & { codyAgentPath?: string }
-): Promise<MessageHandler> {
-    const asyncHandler = async (reject: (reason?: any) => void): Promise<MessageHandler> => {
-        const nodeArguments = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
-        nodeArguments.push('jsonrpc')
+    clientInfo: ClientInfo & {
+        codyAgentPath?: string
+        inheritStderr?: boolean
+        extraEnvVariables?: Record<string, string>
+    }
+): Promise<InitializedClient> {
+    const asyncHandler = async (reject: (reason?: any) => void): Promise<InitializedClient> => {
+        const nodeArguments = process.argv0.endsWith('node')
+            ? ['--enable-source-maps', ...process.argv.slice(1, 2)]
+            : []
+        nodeArguments.push('api', 'jsonrpc-stdio')
         const arg0 = clientInfo.codyAgentPath ?? process.argv[0]
         const args = clientInfo.codyAgentPath ? [] : nodeArguments
         const child = spawn(arg0, args, {
-            env: { ENABLE_SENTRY: 'false', ...process.env },
+            env: { ...clientInfo.extraEnvVariables, ENABLE_SENTRY: 'false', ...process.env },
         })
         child.on('error', error => reject?.(error))
         child.on('exit', code => {
@@ -147,6 +192,10 @@ export async function newAgentClient(
                 reject?.(new Error(`exit: ${code}`))
             }
         })
+
+        if (clientInfo.inheritStderr) {
+            child.stderr.pipe(process.stderr)
+        }
 
         const conn = createMessageConnection(
             new StreamMessageReader(child.stdout),
@@ -156,47 +205,54 @@ export async function newAgentClient(
         serverHandler.registerNotification('debug/message', params => {
             console.error(`${params.channel}: ${params.message}`)
         })
+        serverHandler.registerRequest('window/showMessage', async (params): Promise<null> => {
+            console.log(`window/showMessage: ${JSON.stringify(params, null, 2)}`)
+            return null
+        })
         conn.listen()
         serverHandler.conn.onClose(() => reject())
-        await serverHandler.request('initialize', clientInfo)
+        const serverInfo = await serverHandler.request('initialize', clientInfo)
         serverHandler.notify('initialized', null)
-        return serverHandler
+        return { client: serverHandler, serverInfo }
     }
-    return new Promise<MessageHandler>((resolve, reject) => {
+    return new Promise<InitializedClient>((resolve, reject) => {
         asyncHandler(reject).then(
             handler => resolve(handler),
             error => reject(error)
         )
     })
 }
+export interface InitializedClient {
+    serverInfo: agent_protocol.ServerInfo
+    client: RpcMessageHandler
+}
 
 export async function newEmbeddedAgentClient(
     clientInfo: ClientInfo,
     extensionActivate: ExtensionActivate
-): Promise<Agent> {
+): Promise<InitializedClient & { agent: Agent; messageHandler: MessageHandler }> {
     process.env.ENABLE_SENTRY = 'false'
-
-    // Create noop MessageConnection because we're just using clientForThisInstance.
-    const conn = createMessageConnection(
-        new (class extends AbstractMessageReader implements MessageReader {
-            listen(): Disposable {
-                return { dispose: () => {} }
-            }
-        })(),
-        new (class extends AbstractMessageWriter implements MessageWriter {
-            async write(): Promise<void> {}
-            end(): void {}
-        })()
+    const serverToClient = new PassThrough()
+    const clientToServer = new PassThrough()
+    const serverConnection = createMessageConnection(
+        new StreamMessageReader(clientToServer),
+        new StreamMessageWriter(serverToClient)
     )
-
-    const agent = new Agent({ conn, extensionActivate })
+    const clientConnection = createMessageConnection(
+        new StreamMessageReader(serverToClient),
+        new StreamMessageWriter(clientToServer)
+    )
+    const agent = new Agent({ conn: serverConnection, extensionActivate })
+    serverConnection.listen()
+    const messageHandler = new MessageHandler(clientConnection)
+    clientConnection.listen()
     agent.registerNotification('debug/message', params => {
         console.error(`${params.channel}: ${params.message}`)
     })
     const client = agent.clientForThisInstance()
-    await client.request('initialize', clientInfo)
+    const serverInfo = await client.request('initialize', clientInfo)
     client.notify('initialized', null)
-    return agent
+    return { agent, serverInfo, client, messageHandler }
 }
 
 export function errorToCodyError(error?: Error): CodyError | undefined {
@@ -210,8 +266,25 @@ export function errorToCodyError(error?: Error): CodyError | undefined {
 }
 
 export class Agent extends MessageHandler implements ExtensionClient {
-    public codeLenses = new AgentCodeLenses()
+    // Used to track background work of the extension, like tree-sitter parsing.
+    // In several places in the extension, we register event handler that run
+    // background work (`Promise<void>` that we don't await on). We sometimes
+    // need to await on these promises, for example when writing deterministic
+    // tests.
+    private pendingPromises = new Set<Promise<any>>()
+    public codeLens = new AgentProviders<vscode.CodeLensProvider>()
+    public codeAction = new AgentProviders<vscode.CodeActionProvider>()
     public workspace = new AgentWorkspaceDocuments({
+        doPanic: (message: string) => {
+            const panicMessage =
+                '!PANIC! Client document content is out of sync with server document content'
+            process.stderr.write(panicMessage)
+            process.stderr.write(message + '\n')
+            this.notify('debug/message', {
+                channel: 'Document Sync Check',
+                message: panicMessage + '\n' + message,
+            })
+        },
         edit: (uri, callback, options) => {
             if (this.clientInfo?.capabilities?.edit !== 'enabled') {
                 logDebug('CodyAgent', 'client does not support operation: textDocument/edit')
@@ -260,25 +333,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
     private clientInfo: ClientInfo | null = null
 
-    /**
-     * agentTelemetryRecorderProvider must be used for all events recording
-     * directly within the agent (i.e. code in agent/src/...) and via the agent's
-     * 'telemetry/recordEvent' RPC.
-     *
-     * Components that use VSCode implementations directly (i.e. code in
-     * vscode/src/...) will continue to use the shared recorder initialized and
-     * configured as part of VSCode initialization in vscode/src/services/telemetry-v2.ts.
-     */
-    private agentTelemetryRecorderProvider: AgentHandlerTelemetryRecorderProvider =
-        new NoOpTelemetryRecorderProvider([
-            {
-                processEvent: event =>
-                    console.error(
-                        `Cody Agent: failed to record telemetry event '${event.feature}/${event.action}' before agent initialization\n`
-                    ),
-            },
-        ])
-
     constructor(
         private readonly params: {
             polly?: Polly | undefined
@@ -295,18 +349,32 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 '*',
                 new IndentationBasedFoldingRangeProvider()
             )
+            if (clientInfo.extensionConfiguration?.baseGlobalState) {
+                for (const key in clientInfo.extensionConfiguration.baseGlobalState) {
+                    const value = clientInfo.extensionConfiguration.baseGlobalState[key]
+                    globalState.update(key, value)
+                }
+            }
             this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
             vscode_shim.setWorkspaceDocuments(this.workspace)
+            if (clientInfo.capabilities?.codeActions === 'enabled') {
+                vscode_shim.onDidRegisterNewCodeActionProvider(codeActionProvider => {
+                    this.codeAction.addProvider(codeActionProvider, undefined)
+                })
+                vscode_shim.onDidUnregisterNewCodeActionProvider(codeActionProvider =>
+                    this.codeAction.removeProvider(codeActionProvider)
+                )
+            }
             if (clientInfo.capabilities?.codeLenses === 'enabled') {
                 vscode_shim.onDidRegisterNewCodeLensProvider(codeLensProvider => {
-                    this.codeLenses.add(
+                    this.codeLens.addProvider(
                         codeLensProvider,
                         codeLensProvider.onDidChangeCodeLenses?.(() => this.updateCodeLenses())
                     )
                     this.updateCodeLenses()
                 })
                 vscode_shim.onDidUnregisterNewCodeLensProvider(codeLensProvider =>
-                    this.codeLenses.remove(codeLensProvider)
+                    this.codeLens.removeProvider(codeLensProvider)
                 )
             }
             if (clientInfo.capabilities?.ignore === 'enabled') {
@@ -325,19 +393,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.clientInfo = clientInfo
             setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
 
-            this.agentTelemetryRecorderProvider?.unsubscribe()
-            this.agentTelemetryRecorderProvider = new AgentHandlerTelemetryRecorderProvider(
-                this.clientInfo,
-                {
-                    getMarketingTrackingMetadata: () => this.clientInfo?.marketingTracking || null,
-                }
-            )
-
             this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
                 ? vscode.Uri.parse(clientInfo.workspaceRootUri)
                 : vscode.Uri.from({
                       scheme: 'file',
-                      path: clientInfo.workspaceRootPath,
+                      path: clientInfo.workspaceRootPath ?? undefined,
                   })
             try {
                 await initializeVscodeExtension(
@@ -388,37 +448,26 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.workspace.setActiveTextEditor(
                 this.workspace.newTextEditor(this.workspace.loadDocument(documentWithUri))
             )
+            this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
         })
 
         this.registerNotification('textDocument/didOpen', document => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
             const textDocument = this.workspace.loadDocument(documentWithUri)
             vscode_shim.onDidOpenTextDocument.fire(textDocument)
+            this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
             this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
         })
 
-        this.registerNotification('textDocument/didChange', document => {
-            const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-            const { document: textDocument, contentChanges } =
-                this.workspace.loadDocumentWithChanges(documentWithUri)
-            const textEditor = this.workspace.newTextEditor(textDocument)
-            this.workspace.setActiveTextEditor(textEditor)
+        this.registerNotification('textDocument/didChange', async document => {
+            this.handleDocumentChange(document)
+        })
 
-            if (contentChanges.length > 0) {
-                vscode_shim.onDidChangeTextDocument.fire({
-                    document: textDocument,
-                    contentChanges,
-                    reason: undefined,
-                })
-            }
-
-            if (document.selection) {
-                vscode_shim.onDidChangeTextEditorSelection.fire({
-                    textEditor,
-                    kind: undefined,
-                    selections: [textEditor.selection],
-                })
-            }
+        this.registerRequest('textDocument/change', async document => {
+            // We don't await the promise here, as it's got a fragile implicit contract.
+            // Call testing/awaitPendingPromises if you want to wait for changes to settle.
+            this.handleDocumentChange(document)
+            return { success: true }
         })
 
         this.registerNotification('textDocument/didClose', document => {
@@ -428,6 +477,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 this.workspace.deleteDocument(documentWithUri.uri)
                 vscode_shim.onDidCloseTextDocument.fire(oldDocument)
             }
+            this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
         })
 
         this.registerNotification('textDocument/didSave', async params => {
@@ -460,6 +510,131 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
+        // Store in-memory copy of the most recent Code action
+        const codeActionById = new Map<string, vscode.CodeAction>()
+        this.registerAuthenticatedRequest('codeActions/provide', async (params, token) => {
+            codeActionById.clear()
+            const document = this.workspace.getDocument(vscode.Uri.parse(params.location.uri))
+            if (!document) {
+                throw new Error(`codeActions/provide: document not found for ${params.location.uri}`)
+            }
+            const codeActions: agent_protocol.ProtocolCodeAction[] = []
+            const diagnostics = vscode.languages.getDiagnostics(document.uri)
+            for (const providers of this.codeAction.providers()) {
+                const result = await providers.provideCodeActions(
+                    document,
+                    vscodeRange(params.location.range),
+                    {
+                        diagnostics,
+                        only: undefined,
+                        triggerKind:
+                            params.triggerKind === 'Automatic'
+                                ? vscode.CodeActionTriggerKind.Automatic
+                                : vscode.CodeActionTriggerKind.Invoke,
+                    },
+                    token
+                )
+                for (const vscAction of result ?? []) {
+                    if (vscAction instanceof vscode.CodeAction) {
+                        const diagnostics: agent_protocol.ProtocolDiagnostic[] = []
+                        for (const diagnostic of vscAction.diagnostics ?? []) {
+                            diagnostics.push({
+                                location: {
+                                    uri: params.location.uri,
+                                    range: diagnostic.range,
+                                },
+                                severity: 'error',
+                                source: diagnostic.source,
+                                message: diagnostic.message,
+                            })
+                        }
+                        const id = uuid.v4()
+                        const codeAction: agent_protocol.ProtocolCodeAction = {
+                            id,
+                            title: vscAction.title,
+                            commandID: vscAction.command?.command,
+                            diagnostics,
+                        }
+                        codeActionById.set(id, vscAction)
+                        codeActions.push(codeAction)
+                    }
+                }
+            }
+            return { codeActions }
+        })
+
+        this.registerAuthenticatedRequest('codeActions/trigger', async ({ id }) => {
+            const codeAction = codeActionById.get(id)
+            if (!codeAction || !codeAction.command) {
+                throw new Error(`codeActions/trigger: unknown ID ${id}`)
+            }
+            const args: ExecuteEditArguments = codeAction.command.arguments?.[0]
+            if (!args) {
+                throw new Error(`codeActions/trigger: no arguments for ID ${id}`)
+            }
+            return this.createEditTask(
+                executeEdit(args).then<CommandResult | undefined>(task => ({ type: 'edit', task }))
+            )
+        })
+
+        this.registerAuthenticatedRequest('diagnostics/publish', async params => {
+            const result = new Map<string, vscode.Diagnostic[]>()
+            for (const diagnostic of params.diagnostics) {
+                let diagnostics = result.get(diagnostic.location.uri)
+                if (diagnostics === undefined) {
+                    diagnostics = []
+                    result.set(diagnostic.location.uri, diagnostics)
+                }
+                const relatedInformation: vscode.DiagnosticRelatedInformation[] = []
+                for (const related of diagnostic.relatedInformation ?? []) {
+                    relatedInformation.push({
+                        location: vscodeLocation(related.location),
+                        message: related.message,
+                    })
+                }
+                diagnostics.push({
+                    message: diagnostic.message,
+                    range: vscodeRange(diagnostic.location.range),
+                    severity: vscode.DiagnosticSeverity.Error,
+                    code: diagnostic.code ?? undefined,
+                    source: diagnostic.source ?? undefined,
+                    relatedInformation,
+                })
+            }
+            vscode_shim.diagnostics.publish(result)
+            return null
+        })
+
+        this.registerAuthenticatedRequest('testing/diagnostics', async params => {
+            const uri = vscode.Uri.parse(params.uri)
+            const language = getLanguageForFileName(uri.fsPath)
+            const retriever = loadTscRetriever()
+            if (!isFileURI(uri) || !supportedTscLanguages.has(language) || !retriever) {
+                throw new Error(`testing/diagnostics: unsupported file type ${language} for URI ${uri}`)
+            }
+            const diagnostics = retriever.diagnostics(uri)
+            return { diagnostics }
+        })
+
+        this.registerAuthenticatedRequest('testing/awaitPendingPromises', async () => {
+            if (!(vscode_shim.isTesting || vscode_shim.isIntegrationTesting)) {
+                throw new Error(
+                    'testing/awaitPendingPromises can only be called from tests. ' +
+                        'To fix this problem, set the environment variable CODY_SHIM_TESTING=true.'
+                )
+            }
+            await Promise.all(this.pendingPromises.values())
+            return null
+        })
+
+        this.registerAuthenticatedRequest('testing/memoryUsage', async () => {
+            if (!global.gc) {
+                throw new Error('testing/memoryUsage requires running node with --expose-gc')
+            }
+            global.gc()
+            return { usage: process.memoryUsage() }
+        })
+
         this.registerAuthenticatedRequest('testing/networkRequests', async () => {
             const requests = this.params.networkRequests ?? []
             return {
@@ -470,20 +645,21 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const polly = this.params.polly
             let closestDistance = Number.MAX_VALUE
             let closest = ''
-            if (polly) {
-                // @ts-ignore
-                const persister = polly.persister._cache as Map<string, Har>
-                for (const [, har] of persister) {
-                    for (const entry of har?.log?.entries ?? []) {
-                        if (entry.request.url !== url) {
-                            continue
-                        }
-                        const entryPostData = entry.request.postData?.text ?? ''
-                        const distance = levenshtein(postData, entryPostData)
-                        if (distance < closestDistance) {
-                            closest = entryPostData
-                            closestDistance = distance
-                        }
+            if (!polly) {
+                throw new Error('testing/closestPostData: Polly is not enabled')
+            }
+            // @ts-ignore
+            const persister = polly.persister._cache as Map<string, Promise<Har>>
+            for (const [, har] of persister) {
+                for (const entry of (await har)?.log?.entries ?? []) {
+                    if (entry.request.url !== url) {
+                        continue
+                    }
+                    const entryPostData = entry.request.postData?.text ?? ''
+                    const distance = levenshtein(postData, entryPostData)
+                    if (distance < closestDistance) {
+                        closest = entryPostData
+                        closestDistance = distance
                     }
                 }
             }
@@ -556,8 +732,34 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return null
         })
 
+        this.registerAuthenticatedRequest(
+            'testing/workspaceDocuments',
+            async (params: GetDocumentsParams): Promise<GetDocumentsResult> => {
+                const uris = params?.uris ?? this.workspace.allDocuments().map(doc => doc.uri.toString())
+
+                const documents: ProtocolTextDocument[] = []
+
+                for (const uri of uris) {
+                    const document = this.workspace.getDocument(vscode.Uri.parse(uri))
+                    if (document) {
+                        documents.push({
+                            uri: document.uri.toString(),
+                            content: document.content ?? undefined,
+                            selection: document.protocolDocument?.selection ?? undefined,
+                        })
+                    }
+                }
+                return { documents }
+            }
+        )
+
         this.registerAuthenticatedRequest('command/execute', async params => {
             await vscode.commands.executeCommand(params.command, ...(params.arguments ?? []))
+        })
+
+        this.registerAuthenticatedRequest('customCommands/list', async () => {
+            const commands = await vscode.commands.executeCommand('cody.commands.get-custom-commands')
+            return (commands as CodyCommand[]) ?? []
         })
 
         this.registerAuthenticatedRequest('autocomplete/execute', async (params, token) => {
@@ -631,7 +833,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
                 return { items, completionEvent: result?.completionEvent }
             } catch (error) {
-                console.log('autocomplete failed', error)
                 if (isRateLimitError(error)) {
                     throw error
                 }
@@ -684,7 +885,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('telemetry/recordEvent', async event => {
-            this.agentTelemetryRecorderProvider.getRecorder().recordEvent(
+            telemetryRecorder.recordEvent(
                 // 👷 HACK: We have no control over what gets sent over JSON RPC,
                 // so we depend on client implementations to give type guidance
                 // to ensure that we don't accidentally share arbitrary,
@@ -819,7 +1020,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('editCommands/code', params => {
             const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
             const args: ExecuteEditArguments = {
-                configuration: { instruction, model: params.model },
+                configuration: {
+                    instruction,
+                    model: params.model ?? undefined,
+                    mode: params.mode ?? 'edit',
+                },
             }
             return this.createEditTask(executeEdit(args).then(task => task && { type: 'edit', task }))
         })
@@ -850,34 +1055,33 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return this.createChatPanel(
                 Promise.resolve({
                     type: 'chat',
-                    session: await vscode.commands.executeCommand('cody.chat.panel.new'),
+                    session: await vscode.commands.executeCommand('cody.chat.newEditorPanel'),
                 })
             )
+        })
+
+        this.registerAuthenticatedRequest('chat/web/new', async () => {
+            const panelId = await this.createChatPanel(
+                Promise.resolve({
+                    type: 'chat',
+                    session: await vscode.commands.executeCommand('cody.chat.newEditorPanel'),
+                })
+            )
+
+            const chatId = this.webPanels.panels.get(panelId)?.chatID ?? ''
+            return { panelId, chatId }
         })
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             const theModel = modelID
                 ? modelID
-                : ModelProvider.getProviders(
+                : ModelsService.getModels(
                       ModelUsage.Chat,
                       authStatus.isDotCom && !authStatus.userCanUpgrade
-                  ).at(0)?.model
-            if (!theModel) {
-                throw new Error('No default chat model found')
-            }
-
-            const chatModel = new SimpleChatModel(modelID!, [], chatID)
-            for (const message of messages) {
-                const deserializedMessage = PromptString.unsafe_deserializeChatMessage(message)
-                if (deserializedMessage.error) {
-                    chatModel.addErrorAsBotMessage(deserializedMessage.error)
-                } else if (deserializedMessage.speaker === 'assistant') {
-                    chatModel.addBotMessage(deserializedMessage)
-                } else if (deserializedMessage.speaker === 'human') {
-                    chatModel.addHumanMessage(deserializedMessage)
-                }
-            }
+                  ).at(0)?.model ?? ''
+            const chatMessages = messages?.map(m => PromptString.unsafe_deserializeChatMessage(m)) ?? []
+            const chatModel = new ChatModel(theModel, chatMessages, chatID)
             await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
             return this.createChatPanel(
                 Promise.resolve({
@@ -889,24 +1093,50 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            const providers = ModelProvider.getProviders(
+            const providers = ModelsService.getModels(
                 modelUsage,
                 authStatus.isDotCom && !authStatus.userCanUpgrade
             )
             return { models: providers ?? [] }
         })
 
-        this.registerAuthenticatedRequest('chat/export', async () => {
+        this.registerAuthenticatedRequest('chat/export', async input => {
+            const { fullHistory = false } = input ?? {}
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             const localHistory = chatHistory.getLocalHistory(authStatus)
 
             if (localHistory != null) {
-                return Object.entries(localHistory?.chat)
-                    .filter(([chatID, chatTranscript]) => chatTranscript.interactions.length > 0)
-                    .map(([chatID, chatTranscript]) => ({
-                        chatID: chatID,
-                        transcript: chatTranscript,
-                    }))
+                return (
+                    Object.entries(localHistory?.chat)
+                        // Return filtered (non-empty) chats by default, but if requests has fullHistory: true
+                        // return the full list of chats from the storage, empty chats included
+                        .filter(
+                            ([chatID, chatTranscript]) =>
+                                chatTranscript.interactions.length > 0 || fullHistory
+                        )
+                        .map(([chatID, chatTranscript]) => ({
+                            chatID: chatID,
+                            transcript: chatTranscript,
+                        }))
+                )
+            }
+
+            return []
+        })
+
+        this.registerAuthenticatedRequest('chat/delete', async params => {
+            await vscode.commands.executeCommand<AuthStatus>('cody.chat.history.delete', {
+                id: params.chatId,
+            })
+
+            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            const localHistory = await chatHistory.getLocalHistory(authStatus)
+
+            if (localHistory != null) {
+                return Object.entries(localHistory?.chat).map(([chatID, chatTranscript]) => ({
+                    chatID: chatID,
+                    transcript: chatTranscript,
+                }))
             }
 
             return []
@@ -975,6 +1205,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
             await this.receiveWebviewMessage(id, message)
             return null
         })
+        this.registerAuthenticatedRequest(
+            'webview/receiveMessageStringEncoded',
+            async ({ id, messageStringEncoded }) => {
+                await this.receiveWebviewMessage(id, JSON.parse(messageStringEncoded))
+                return null
+            }
+        )
 
         this.registerAuthenticatedRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
             return featureFlagProvider.evaluateFeatureFlag(
@@ -1004,9 +1241,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('remoteRepo/list', async ({ query, first, afterId }) => {
             const result = await this.extension.enterpriseContextFactory.repoSearcher.list(
-                query,
+                query ?? undefined,
                 first,
-                afterId
+                afterId ?? undefined
             )
             return {
                 repos: result.repos,
@@ -1031,6 +1268,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
             contextFiltersProvider.setTestingContextFilters(contextFilters)
             return null
         })
+    }
+
+    private pushPendingPromise(pendingPromise: Promise<unknown>): void {
+        if (vscode_shim.isTesting || vscode_shim.isIntegrationTesting) {
+            this.pendingPromises.add(pendingPromise)
+            pendingPromise.finally(() => this.pendingPromises.delete(pendingPromise))
+        }
     }
 
     // ExtensionClient callbacks.
@@ -1126,7 +1370,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.codeLensToken.cancel()
         this.codeLensToken = new vscode.CancellationTokenSource()
         const promises: Promise<vscode.CodeLens[]>[] = []
-        for (const provider of this.codeLenses.providers()) {
+        for (const provider of this.codeLens.providers()) {
             promises.push(this.provideCodeLenses(provider, document))
         }
         const lenses = (await Promise.all(promises)).flat()
@@ -1207,6 +1451,33 @@ export class Agent extends MessageHandler implements ExtensionClient {
         return result
     }
 
+    private async handleDocumentChange(document: ProtocolTextDocument) {
+        const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
+        const { document: textDocument, contentChanges } =
+            this.workspace.loadDocumentWithChanges(documentWithUri)
+        const textEditor = this.workspace.newTextEditor(textDocument)
+        this.workspace.setActiveTextEditor(textEditor)
+
+        if (contentChanges.length > 0) {
+            this.pushPendingPromise(
+                vscode_shim.onDidChangeTextDocument.cody_fireAsync({
+                    document: textDocument,
+                    contentChanges,
+                    reason: undefined,
+                })
+            )
+        }
+        if (document.selection) {
+            this.pushPendingPromise(
+                vscode_shim.onDidChangeTextEditorSelection.cody_fireAsync({
+                    textEditor,
+                    kind: undefined,
+                    selections: [textEditor.selection],
+                })
+            )
+        }
+    }
+
     private registerWebviewHandlers(): void {
         vscode_shim.setCreateWebviewPanel((viewType, title, showOptions, options) => {
             const panel = new AgentWebviewPanel(viewType, title, showOptions, options)
@@ -1242,13 +1513,24 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 } else if (message.type === 'errors') {
                     panel.messageInProgressChange.fire(message)
                 } else if (message.type === 'attribution') {
-                    panel.pushAttribution(message)
+                    panel.pushAttribution({
+                        ...message,
+                        attribution: message.attribution ?? undefined,
+                        error: message.error ?? undefined,
+                    })
                 }
 
-                this.notify('webview/postMessage', {
-                    id: panel.panelID,
-                    message,
-                })
+                if (this.clientInfo?.capabilities?.webviewMessages === 'string-encoded') {
+                    this.notify('webview/postMessageStringEncoded', {
+                        id: panel.panelID,
+                        stringEncodedMessage: JSON.stringify(message),
+                    })
+                } else {
+                    this.notify('webview/postMessage', {
+                        id: panel.panelID,
+                        message,
+                    })
+                }
             })
 
             return panel
@@ -1280,7 +1562,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             throw new TypeError(`Expected chat command result, got ${result.type}`)
         }
 
-        const { sessionID, webviewPanel } = result.session ?? {}
+        const { sessionID, webviewPanelOrView: webviewPanel } = result.session ?? {}
         if (sessionID === undefined || webviewPanel === undefined) {
             throw new Error('chatID is undefined')
         }
@@ -1330,6 +1612,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
     ): void {
         this.registerRequest(method, async (params, token) => {
             await this.authenticationPromise
+            if (vscode_shim.isTesting) {
+                await Promise.all(this.pendingPromises.values())
+            }
             return callback(params, token)
         })
     }

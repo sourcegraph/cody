@@ -1,3 +1,5 @@
+/// <reference types="vite-plugin-svgr/client" />
+
 import type { Assertion, AsymmetricMatchersContaining } from 'vitest'
 
 // TODO(sqs): necessary to avoid tsc complaining that vitest types do not exist

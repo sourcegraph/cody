@@ -2,7 +2,7 @@ import { Utils } from 'vscode-uri'
 
 import {
     BotResponseMultiplexer,
-    ModelProvider,
+    ModelsService,
     Typewriter,
     isAbortError,
     isDotCom,
@@ -20,13 +20,13 @@ import { isNetworkError } from '../services/AuthProvider'
 import { workspace } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
 import { CodyTaskState } from '../non-stop/utils'
-import { telemetryService } from '../services/telemetry'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import type { EditManagerOptions } from './manager'
 import { responseTransformer } from './output/response-transformer'
 import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
+import { isStreamedIntent } from './utils/edit-intent'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
@@ -47,7 +47,7 @@ export class EditProvider {
         return wrapInActiveSpan('command.edit.start', async span => {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
-            const contextWindow = ModelProvider.getContextWindowByID(model)
+            const contextWindow = ModelsService.getContextWindowByID(model)
             const {
                 messages,
                 stopSequences,
@@ -197,9 +197,6 @@ export class EditProvider {
                 source: task.source,
                 ...countCode(response),
             }
-            telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', legacyMetadata, {
-                hasV2Event: true,
-            })
             const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
             const endpoint = this.config.authProvider?.getAuthStatus()?.endpoint
             telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
@@ -215,8 +212,7 @@ export class EditProvider {
             })
         }
 
-        const intentsForInsert = ['add', 'test']
-        if (intentsForInsert.includes(this.config.task.intent)) {
+        if (isStreamedIntent(this.config.task.intent)) {
             this.queueInsertion(response, isMessageInProgress)
         } else {
             this.handleFixupEdit(response, isMessageInProgress)

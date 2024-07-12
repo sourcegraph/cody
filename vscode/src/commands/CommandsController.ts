@@ -1,8 +1,8 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { logDebug } from '../log'
 
-import type { CommandResult } from '../main'
+import type { CommandResult } from '../CommandResult'
 import { executeDefaultCommand, isDefaultChatCommand, isDefaultEditCommand } from './execute'
 import type { CommandsProvider } from './services/provider'
 import { CommandRunner } from './services/runner'
@@ -30,13 +30,6 @@ class CommandsController implements vscode.Disposable {
     public init(provider?: CommandsProvider) {
         if (provider) {
             this.provider = provider
-            this.disposables.push(
-                this.provider,
-                vscode.window.registerTreeDataProvider(
-                    'cody.commands.tree.view',
-                    this.provider.treeViewProvider
-                )
-            )
         }
     }
 
@@ -128,6 +121,9 @@ function convertDefaultCommandsToPromptString(input: DefaultCodyCommands | Promp
             return ps`doc`
         case DefaultEditCommands.Edit:
             return ps`edit`
+        case DefaultEditCommands.Custom:
+        case DefaultChatCommands.Custom:
+            return ps`custom`
         default:
             return input
     }

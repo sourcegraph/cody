@@ -82,6 +82,13 @@ export enum OverviewRulerLane {
     Full = 7,
 }
 
+export enum DecorationRangeBehavior {
+    OpenOpen = 0,
+    ClosedClosed = 1,
+    OpenClosed = 2,
+    ClosedOpen = 3,
+}
+
 export class CodeLens {
     public readonly isResolved = true
     constructor(
@@ -148,6 +155,12 @@ export enum ExtensionMode {
     Development = 2,
     Test = 3,
 }
+export class DiagnosticRelatedInformation {
+    constructor(
+        public readonly location: Location,
+        public readonly message: string
+    ) {}
+}
 export enum DiagnosticSeverity {
     Error = 0,
     Warning = 1,
@@ -210,16 +223,15 @@ export class CodeAction {
 }
 export class CodeActionKind {
     static readonly Empty = new CodeActionKind('Empty')
-    static readonly QuickFix = new CodeActionKind('')
-    static readonly Refactor = new CodeActionKind('')
-    static readonly RefactorExtract = new CodeActionKind('')
-    static readonly RefactorInline = new CodeActionKind('')
-    static readonly RefactorMove = new CodeActionKind('')
-    static readonly RefactorRewrite = new CodeActionKind('')
-    static readonly Source = new CodeActionKind('')
-    static readonly SourceOrganizeImports = new CodeActionKind('')
-
-    static readonly SourceFixAll = new CodeActionKind('')
+    static readonly QuickFix = new CodeActionKind('QuickFix')
+    static readonly Refactor = new CodeActionKind('Refactor')
+    static readonly RefactorExtract = new CodeActionKind('RefactorExtract')
+    static readonly RefactorInline = new CodeActionKind('RefactorInline')
+    static readonly RefactorMove = new CodeActionKind('RefactorMove')
+    static readonly RefactorRewrite = new CodeActionKind('RefactorRewrite')
+    static readonly Source = new CodeActionKind('Source')
+    static readonly SourceOrganizeImports = new CodeActionKind('SourceOrganizeImports')
+    static readonly SourceFixAll = new CodeActionKind('SourceFixAll')
 
     constructor(public readonly value: string) {}
 }
@@ -305,6 +317,34 @@ export class Position implements VSCodePosition {
 
     public compareTo(other: VSCodePosition): number {
         return this.isBefore(other) ? -1 : this.isAfter(other) ? 1 : 0
+    }
+
+    static Min(...positions: Position[]): Position {
+        if (positions.length === 0) {
+            throw new TypeError()
+        }
+        let result = positions[0]
+        for (let i = 1; i < positions.length; i++) {
+            const p = positions[i]
+            if (p.isBefore(result)) {
+                result = p
+            }
+        }
+        return result
+    }
+
+    static Max(...positions: Position[]): Position {
+        if (positions.length === 0) {
+            throw new TypeError()
+        }
+        let result = positions[0]
+        for (let i = 1; i < positions.length; i++) {
+            const p = positions[i]
+            if (p.isAfter(result)) {
+                result = p
+            }
+        }
+        return result
     }
 }
 
@@ -395,8 +435,16 @@ export class Range implements VSCodeRange {
 
         throw new Error('not implemented')
     }
-    public intersection(): VSCodeRange | undefined {
-        throw new Error('not implemented')
+    public intersection(other: VSCodeRange): VSCodeRange | undefined {
+        const start = Position.Max(other.start, this.start)
+        const end = Position.Min(other.end, this.end)
+        if (start.isAfter(end)) {
+            // this happens when there is no overlap:
+            // |-----|
+            //          |----|
+            return undefined
+        }
+        return new Range(start, end)
     }
     public union(): VSCodeRange {
         throw new Error('not implemented')
@@ -443,6 +491,10 @@ export class Selection extends Range {
     isReversed = false
 }
 
+export enum CodeActionTriggerKind {
+    Invoke = 1,
+    Automatic = 2,
+}
 export enum FoldingRangeKind {
     Comment = 1,
     Imports = 2,
@@ -688,6 +740,12 @@ export enum UIKind {
     Web = 2,
 }
 
+export enum ProgressLocation {
+    SourceControl = 1,
+    Window = 10,
+    Notification = 15,
+}
+
 export class FileSystemError extends Error {
     public code = 'FileSystemError'
 }
@@ -713,6 +771,7 @@ export const vsCodeMocks = {
     Uri,
     Location,
     languages,
+    version: '1.85.1-testing',
     env: {
         uiKind: 1 satisfies vscode_types.UIKind.Desktop,
     },
@@ -730,12 +789,23 @@ export const vsCodeMocks = {
         activeTextEditor: {
             document: { uri: { scheme: 'not-cody' } },
             options: { tabSize: 4 },
+            selection: {},
         },
         onDidChangeActiveTextEditor() {},
         createTextEditorDecorationType: () => ({
             key: 'foo',
             dispose: () => {},
         }),
+        withProgress: async (
+            options: vscode_types.ProgressOptions,
+            task: (
+                progress: vscode_types.Progress<{ message?: string; increment?: number }>,
+                token: CancellationToken
+            ) => Thenable<unknown>
+        ) => {
+            const cancel = new CancellationTokenSource()
+            return await task({ report: () => {} }, cancel.token)
+        },
         visibleTextEditors: [],
         tabGroups: { all: [] },
     },
@@ -746,12 +816,12 @@ export const vsCodeMocks = {
         fs: workspaceFs,
         getConfiguration() {
             return {
-                get(key: string) {
+                get(key: string, defaultValue: unknown = undefined) {
                     switch (key) {
                         case 'cody.debug.filter':
                             return '.*'
                         default:
-                            return undefined
+                            return defaultValue
                     }
                 },
                 update(): void {},
@@ -787,13 +857,8 @@ export const vsCodeMocks = {
     DiagnosticSeverity,
     ViewColumn,
     TextDocumentChangeReason,
+    ProgressLocation,
 } as const
-
-export enum ProgressLocation {
-    SourceControl = 1,
-    Window = 10,
-    Notification = 15,
-}
 
 export class MockFeatureFlagProvider extends FeatureFlagProvider {
     constructor(private readonly enabledFlags: Set<FeatureFlag>) {
@@ -827,16 +892,11 @@ export const DEFAULT_VSCODE_SETTINGS = {
         '*': true,
     },
     commandCodeLenses: false,
-    experimentalGuardrails: false,
-    experimentalSimpleChatContext: true,
     experimentalSupercompletions: false,
-    experimentalOllamaChat: true,
-    experimentalSymfContext: true,
+    experimentalMinionAnthropicKey: undefined,
     experimentalTracing: false,
-    experimentalGithubAccessToken: '',
     experimentalCommitMessage: true,
     experimentalNoodle: false,
-    experimentalURLContext: false,
     codeActions: true,
     commandHints: false,
     isRunningInsideAgent: false,
@@ -852,7 +912,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteDisableInsideComments: false,
     autocompleteExperimentalHotStreak: false,
     autocompleteExperimentalGraphContext: null,
-    autocompleteExperimentalSmartThrottle: false,
     autocompleteExperimentalOllamaOptions: {
         model: 'codellama:7b-code',
         url: OLLAMA_DEFAULT_URL,
@@ -861,6 +920,9 @@ export const DEFAULT_VSCODE_SETTINGS = {
         multiline: undefined,
         singleline: undefined,
     },
+    autocompleteFirstCompletionTimeout: 3500,
+    autocompleteExperimentalSmartThrottle: false,
+    autocompleteExperimentalSmartThrottleExtended: false,
     testingModelConfig: undefined,
     experimentalChatContextRanker: false,
 } satisfies Configuration
