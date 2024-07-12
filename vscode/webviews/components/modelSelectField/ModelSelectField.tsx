@@ -43,6 +43,7 @@ export const ModelSelectField: React.FunctionComponent<{
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
+    // The first model is the always the default.
     const selectedModel = models[0]
 
     const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
