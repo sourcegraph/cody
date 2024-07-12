@@ -60,7 +60,7 @@ import type { SymfRunner } from './local-context/symf'
 import { logDebug, logError } from './log'
 import { MinionOrchestrator } from './minion/MinionOrchestrator'
 import { PoorMansBash } from './minion/environment'
-import { registerModelsFromVSCodeConfiguration, syncModels } from './models/sync'
+import { registerModelsFromVSCodeConfiguration } from './models/sync'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { initVSCodeGitApi } from './repository/git-extension-api'
@@ -196,10 +196,9 @@ const register = async (
         contextRanking,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
         symfRunner,
-    } = await configureExternalServices(context, initialConfig, platform, authProvider)
+    } = await configureExternalServices(context, configWatcher, platform, authProvider)
     configWatcher.onChange(async config => {
         externalServicesOnDidConfigurationChange(config)
-        symfRunner?.setAuthStatus(config.serverEndpoint, config.accessToken)
     }, disposables)
 
     if (symfRunner) {
@@ -262,21 +261,20 @@ const register = async (
     disposables.push(
         authProvider.initAndOnChange(async (authStatus: AuthStatus) => {
             // NOTE: MUST update the config and graphQL client first.
+            // graphqlClient.setConfig(newConfig)
+
             const newConfig = await getFullConfig()
-            graphqlClient.setConfig(newConfig)
 
             // Refresh server configuration that controls features enablement and models.
             await ClientConfigSingleton.getInstance().setAuthStatus(authStatus)
 
-            // Reset models list based on the updated auth status and server configuration.
-            await syncModels(authStatus)
-            await chatsController.setAuthStatus(authStatus)
+            // // Reset models list based on the updated auth status and server configuration.
+            // await syncModels(authStatus)
+
             editorManager.setAuthStatus(authStatus)
 
             const parallelTasks: Promise<void>[] = [featureFlagProvider.refresh(), setupAutocomplete()]
             await Promise.all(parallelTasks)
-
-            symfRunner?.setAuthStatus(authStatus.endpoint, newConfig.accessToken)
 
             void exposeOpenCtxClient(
                 context,
@@ -289,13 +287,17 @@ const register = async (
             sourceControl.setAuthStatus(authStatus)
             await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
 
-            const eventValue =
-                !authStatus.isLoggedIn && !authStatus.endpoint
-                    ? 'disconnected'
-                    : authStatus.isLoggedIn &&
-                        !(authStatus.showNetworkError || authStatus.showInvalidAccessTokenError)
-                      ? 'connected'
-                      : 'failed'
+            let eventValue: 'disconnected' | 'connected' | 'failed'
+            if (!authStatus.isLoggedIn && !authStatus.endpoint) {
+                eventValue = 'disconnected'
+            } else if (
+                authStatus.isLoggedIn &&
+                !(authStatus.showNetworkError || authStatus.showInvalidAccessTokenError)
+            ) {
+                eventValue = 'connected'
+            } else {
+                eventValue = 'failed'
+            }
             telemetryRecorder.recordEvent('cody.auth', eventValue)
         })
     )
@@ -700,6 +702,7 @@ function registerChat(
             startTokenReceiver: platform.startTokenReceiver,
         },
         chatClient,
+        authProvider,
         enterpriseContextFactory,
         localEmbeddings || null,
         contextRanking || null,

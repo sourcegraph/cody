@@ -27,6 +27,7 @@ import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import { getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
+import type { AuthProvider } from '../../services/AuthProvider'
 import {
     ChatController,
     type ChatSession,
@@ -63,6 +64,7 @@ export class ChatsController implements vscode.Disposable {
     constructor(
         private options: Options,
         private chatClient: ChatClient,
+        private authProvider: AuthProvider,
         private readonly enterpriseContext: EnterpriseContextFactory,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
         private readonly contextRanking: ContextRankingController | null,
@@ -71,9 +73,12 @@ export class ChatsController implements vscode.Disposable {
     ) {
         logDebug('ChatsController:constructor', 'init')
         this.panel = this.createChatController()
+        this.disposables.push(
+            this.authProvider.initAndOnChange(authStatus => this.setAuthStatus(authStatus))
+        )
     }
 
-    public async setAuthStatus(authStatus: AuthStatus): Promise<void> {
+    private async setAuthStatus(authStatus: AuthStatus): Promise<void> {
         const hasLoggedOut = !authStatus.isLoggedIn
         const hasSwitchedAccount =
             this.currentAuthAccount && this.currentAuthAccount.endpoint !== authStatus.endpoint
@@ -88,9 +93,8 @@ export class ChatsController implements vscode.Disposable {
             username: authStatus.username,
         }
 
-        this.supportTreeViewProvider.syncAuthStatus(authStatus)
-
-        this.panel.syncAuthStatus()
+        this.supportTreeViewProvider.setAuthStatus(authStatus)
+        this.panel.setAuthStatus(authStatus)
     }
 
     public async restoreToPanel(panel: vscode.WebviewPanel, chatID: string): Promise<void> {

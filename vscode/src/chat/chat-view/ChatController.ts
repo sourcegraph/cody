@@ -2,6 +2,7 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
+    type AuthStatus,
     type BillingCategory,
     type BillingProduct,
     CHAT_INPUT_TOKEN_BUDGET,
@@ -526,13 +527,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // #region top-level view action handlers
     // =======================================================================
 
-    public syncAuthStatus(): void {
+    public setAuthStatus(authStatus: AuthStatus): void {
         // Run this async because this method may be called during initialization
         // and awaiting on this.postMessage may result in a deadlock
         void this.sendConfig()
 
-        // Get the latest model list available to the current user to update the ChatModel.
-        const authStatus = this.authProvider.getAuthStatus()
         const models = ModelsService.getModels(
             ModelUsage.Chat,
             authStatus.isDotCom && !authStatus.userCanUpgrade

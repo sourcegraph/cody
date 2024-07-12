@@ -9,6 +9,7 @@ import {
     LOCAL_APP_URL,
     SourcegraphGraphQLAPIClient,
     defaultAuthStatus,
+    graphqlClient,
     isError,
     logError,
     networkErrorAuthStatus,
@@ -23,6 +24,7 @@ import { ACCOUNT_USAGE_URL, isLoggedIn as isAuthenticated, isSourcegraphToken } 
 import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
 import { logDebug } from '../log'
+import { syncModels } from '../models/sync'
 import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
 import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
 import { getAuthReferralCode } from './AuthProviderSimplified'
@@ -397,7 +399,17 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         if (authStatus.endpoint === 'init') {
             return
         }
-        this.didChangeEvent.fire(this.getAuthStatus())
+
+        // HACK: we must update the graphqlClient and ModelsService first
+        // because many listeners rely on these
+        Promise.all([
+            syncModels(authStatus),
+            getFullConfig().then(config => {
+                graphqlClient.setConfig(config)
+            }),
+        ]).finally(() => {
+            this.didChangeEvent.fire(this.getAuthStatus())
+        })
     }
 
     // Register URI Handler (vscode://sourcegraph.cody-ai) for resolving token

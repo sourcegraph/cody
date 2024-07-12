@@ -28,6 +28,7 @@ import {
 import { logDebug } from '../log'
 
 import path from 'node:path'
+import type { ConfigWatcher } from '../configwatcher'
 import { getEditor } from '../editor/active-editor'
 import { getSymfPath } from './download-symf'
 import { rewriteKeywordQuery } from './rewrite-keyword-query'
@@ -61,12 +62,14 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
 
     private status: IndexStatus = new IndexStatus()
 
-    private indexManagementDisposable: vscode.Disposable
+    private disposables: vscode.Disposable[] = []
 
     constructor(
         private context: vscode.ExtensionContext,
-        private sourcegraphServerEndpoint: string | null,
-        private authToken: string | null,
+        private config: ConfigWatcher<{
+            serverEndpoint: string
+            accessToken: string | null
+        }>,
         private completionsClient: SourcegraphCompletionsClient
     ) {
         const indexRoot = vscode.Uri.joinPath(context.globalStorageUri, 'symf', 'indexroot').with(
@@ -80,12 +83,14 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         }
         this.indexRoot = indexRoot
 
-        this.indexManagementDisposable = initializeSymfIndexManagement(this)
+        this.disposables.push(initializeSymfIndexManagement(this))
     }
 
     public dispose(): void {
-        this.status.dispose()
-        this.indexManagementDisposable.dispose()
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+        this.disposables = []
     }
 
     public onIndexStart(cb: (e: IndexStartEvent) => void): vscode.Disposable {
@@ -96,21 +101,15 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return this.status.onDidEnd(cb)
     }
 
-    public setAuthStatus(endpoint: string | null, authToken: string | null): void {
-        this.sourcegraphServerEndpoint = endpoint
-        this.authToken = authToken
-    }
-
     private async getSymfInfo(): Promise<{
         symfPath: string
         serverEndpoint: string
         accessToken: string
     }> {
-        const accessToken = this.authToken
+        const { accessToken, serverEndpoint } = this.config.get()
         if (!accessToken) {
             throw new Error('SymfRunner.getResults: No access token')
         }
-        const serverEndpoint = this.sourcegraphServerEndpoint
         if (!serverEndpoint) {
             throw new Error('SymfRunner.getResults: No Sourcegraph server endpoint')
         }
