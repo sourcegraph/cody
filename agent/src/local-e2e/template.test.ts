@@ -1,8 +1,6 @@
 // The goal of this file is to document the steps to run Cody with all services locally.
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-
-import { ModelsService, getDotComDefaultModels } from '@sourcegraph/cody-shared'
 import { TestClient } from '../TestClient'
 import { TestWorkspace } from '../TestWorkspace'
 import { LocalSGInstance, isLocal } from './helpers'
@@ -13,7 +11,6 @@ describe.runIf(isLocal)('E2E-local', () => {
     const sg = new LocalSGInstance()
 
     beforeAll(async () => {
-        ModelsService.setModels(getDotComDefaultModels())
         await workspace.beforeAll()
         await sg.beforeAll()
 
