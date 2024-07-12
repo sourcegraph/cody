@@ -181,7 +181,6 @@ const register = async (
 
     await configWatcher.initAndOnChange(async config => {
         graphqlClient.onConfigurationChange(config)
-        // githubClient.onConfigurationChange({ authToken: config.experimentalGithubAccessToken })
         await featureFlagProvider.syncAuthStatus()
     }, disposables)
 
