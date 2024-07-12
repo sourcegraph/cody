@@ -238,7 +238,7 @@ const register = async (
         await localEmbeddings?.setAccessToken(config.serverEndpoint, config.accessToken)
     }, disposables)
 
-    const { chatsController, editorManager } = registerChat(
+    const { chatsController } = registerChat(
         {
             context,
             platform,
@@ -258,8 +258,12 @@ const register = async (
     const sourceControl = new CodySourceControl(chatClient)
     const statusBar = createStatusBar()
 
+    // Allow the VS Code app's instance of ModelsService to use local storage to persist
+    // user's model choices
+    ModelsService.setStorage(localStorage)
+
     // Functions that need to be called on auth status changes
-    async function handleAuthStatusChange(authStatus: AuthStatus) {
+    const handleAuthStatusChange = async (authStatus: AuthStatus) => {
         // NOTE: MUST update the config and graphQL client first.
         const newConfig = await getFullConfig()
         // Propagate access token through config
@@ -273,7 +277,6 @@ const register = async (
         // Reset models list based on the updated auth status and server configuration.
         await syncModels(authStatus)
         await chatsController.syncAuthStatus(authStatus)
-        editorManager.syncAuthStatus(authStatus)
 
         const parallelTasks: Promise<void>[] = [
             featureFlagProvider.syncAuthStatus(),
@@ -306,10 +309,6 @@ const register = async (
 
     // Add change listener to auth provider
     authProvider.addChangeListener(handleAuthStatusChange)
-
-    // Setup config watcher
-    configWatcher.onChange(setupAutocomplete, disposables)
-    await configWatcher.initAndOnChange(() => ModelsService.onConfigChange(), disposables)
 
     setCommandController(platform.createCommandsProvider?.())
     repoNameResolver.init(authProvider)
@@ -560,7 +559,7 @@ const register = async (
         dispose: disposeAutocomplete,
     })
 
-    function setupAutocomplete(): Promise<void> {
+    const setupAutocomplete = (): Promise<void> => {
         setupAutocompleteQueue = setupAutocompleteQueue
             .then(async () => {
                 const config = await getFullConfig()
@@ -618,6 +617,10 @@ const register = async (
     }
 
     const autocompleteSetup = setupAutocomplete().catch(() => {})
+
+    // Setup config watcher
+    configWatcher.onChange(setupAutocomplete, disposables)
+    await configWatcher.initAndOnChange(ModelsService.onConfigChange, disposables)
 
     if (!isRunningInsideAgent()) {
         // TODO: The interactive tutorial is currently VS Code specific, both in terms of features and keyboard shortcuts.

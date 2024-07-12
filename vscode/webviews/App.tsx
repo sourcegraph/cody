@@ -8,9 +8,11 @@ import {
     type ClientStateForWebview,
     CodyIDE,
     GuardrailsPost,
-    type Model,
+    Model,
     PromptString,
     type SerializedChatTranscript,
+    isCodyProUser,
+    isEnterpriseUser,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
 
@@ -98,10 +100,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setConfig(message.config)
                         setAuthStatus(message.authStatus)
                         setUserAccountInfo({
-                            isCodyProUser: !message.authStatus.userCanUpgrade,
+                            isCodyProUser: isCodyProUser(message.authStatus),
                             // Receive this value from the extension backend to make it work
                             // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
                             isDotComUser: message.authStatus.isDotCom,
+                            // Default to assuming they are a single model enterprise
+                            isOldStyleEnterpriseUser: isEnterpriseUser(message.authStatus),
                             user: message.authStatus,
                             ide: message.config.agentIDE || CodyIDE.VSCode,
                         })
@@ -136,6 +140,15 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'chatModels':
                         setChatModels(message.models)
+                        setUserAccountInfo(
+                            info =>
+                                info && {
+                                    ...info,
+                                    isOldStyleEnterpriseUser:
+                                        !info.isDotComUser &&
+                                        !message.models.some(Model.isNewStyleEnterprise),
+                                }
+                        )
                         break
                     case 'attribution':
                         if (message.attribution) {
@@ -198,10 +211,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 command: 'chatModel',
                 model: selected.model,
             })
-            const updatedChatModels = chatModels.map(m =>
-                m.model === selected.model ? { ...m, default: true } : { ...m, default: false }
-            )
-            setChatModels(updatedChatModels)
+            setChatModels([selected].concat(chatModels.filter(m => m.model !== selected.model)))
         },
         [chatModels, vscodeAPI]
     )

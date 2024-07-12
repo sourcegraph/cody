@@ -99,9 +99,8 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
 
     return (
         !!chatModels?.length &&
-        onCurrentChatModelChange &&
-        userInfo &&
-        userInfo.isDotComUser && (
+        (userInfo?.isDotComUser || !userInfo?.isOldStyleEnterpriseUser) &&
+        onCurrentChatModelChange && (
             <ModelSelectField
                 models={chatModels}
                 onModelSelect={onModelSelect}

@@ -1,7 +1,7 @@
 import {
     ClientConfigSingleton,
     Model,
-    ModelUIGroup,
+    ModelTag,
     ModelUsage,
     ModelsService,
     RestClient,
@@ -73,13 +73,12 @@ describe('syncModels', () => {
         // i.e. this gets the one and only chat model from the Sourcegraph instance.
         expect(setModelsSpy).not.toHaveBeenCalledWith(getDotComDefaultModels())
         expect(setModelsSpy).toHaveBeenCalledWith([
-            new Model(
-                authStatus.configOverwrites.chatModel,
-                [ModelUsage.Chat, ModelUsage.Edit],
-                getEnterpriseContextWindow(chatModel, authStatus.configOverwrites),
-                undefined,
-                ModelUIGroup.Enterprise
-            ),
+            new Model({
+                model: authStatus.configOverwrites.chatModel,
+                usage: [ModelUsage.Chat, ModelUsage.Edit],
+                contextWindow: getEnterpriseContextWindow(chatModel, authStatus.configOverwrites),
+                tags: [ModelTag.Enterprise],
+            }),
         ])
     })
 })
