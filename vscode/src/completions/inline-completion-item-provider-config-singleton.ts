@@ -1,5 +1,5 @@
 import type { AuthStatus } from '@sourcegraph/cody-shared'
-import type { CodyStatusBar } from '../services/StatusBar'
+import type { CodyStatusBar } from '../services/status-bar/types'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import type { ProviderConfig } from './providers/provider'
 import type { ProvideInlineCompletionItemsTracer } from './tracer'

@@ -75,7 +75,7 @@ import { registerSidebarCommands } from './services/SidebarCommands'
 import { upstreamHealthProvider } from './services/UpstreamHealthProvider'
 import { autocompleteStageCounterLogger } from './services/autocomplete-stage-counter-logger'
 import { setUpCodyIgnore } from './services/cody-ignore'
-import { createStatusBar } from './services/status-bar/StatusBar'
+import { createStatusBar } from './services/status-bar'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
@@ -256,7 +256,7 @@ const register = async (
     disposables.push(chatsController)
 
     const sourceControl = new CodySourceControl(chatClient)
-    const statusBar = createStatusBar()
+    const statusBar = createStatusBar(authProvider)
 
     // Functions that need to be called on auth status changes
     async function handleAuthStatusChange(authStatus: AuthStatus) {

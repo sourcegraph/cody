@@ -1,99 +1,36 @@
 import * as vscode from 'vscode'
 
-import type { AuthStatus, Configuration } from '@sourcegraph/cody-shared'
-
-import { getConfiguration } from '../../configuration'
-
-import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import type { CodyIgnoreType } from '../../cody-ignore/notification'
+import type { Configuration } from '@sourcegraph/cody-shared'
+import { isCurrentFileIgnored } from '../../cody-ignore/utils'
 import { getGhostHintEnablement } from '../../commands/GhostHintDecorator'
+import { getConfiguration } from '../../configuration'
 import { FeedbackOptionItems, SupportOptionItems } from '../FeedbackOptions'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../telemetry'
 import { enableVerboseDebugMode } from '../utils/export-logs'
-import { CodyStatusError } from './errors-manager'
+import { CodyStatusError } from './CodyStatusError'
+import type { StatusBarItem } from './types'
 
 const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check) '
 const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0 '
 
-let authStatus: AuthStatus | undefined
-
-interface StatusBarItem extends vscode.QuickPickItem {
-    onSelect: () => Promise<void>
-}
-
 const workspaceConfig = vscode.workspace.getConfiguration()
 
-export function registerStatusBarCommand(isCodyIgnoredType?: CodyIgnoreType): vscode.Disposable {
-    return vscode.commands.registerCommand('cody.status-bar.interacted', async () => {
-        telemetryService.log(
-            'CodyVSCodeExtension:statusBarIcon:clicked',
-            { loggedIn: Boolean(authStatus?.isLoggedIn) },
-            { hasV2Event: true }
-        )
-        telemetryRecorder.recordEvent('cody.statusbarIcon', 'clicked', {
-            privateMetadata: { loggedIn: Boolean(authStatus?.isLoggedIn) },
-        })
+const quickPick: vscode.QuickPick<StatusBarItem> = vscode.window.createQuickPick()
 
-        if (!authStatus?.isLoggedIn) {
-            // Bring up the sidebar view
-            void vscode.commands.executeCommand('cody.focus')
-            return
-        }
-
-        const quickPick: vscode.QuickPick<StatusBarItem> = vscode.window.createQuickPick()
-
-        // Debug Mode
-        quickPick.buttons = [
-            {
-                iconPath: new vscode.ThemeIcon('bug'),
-                tooltip: getConfiguration(workspaceConfig).debugVerbose
-                    ? 'Check Debug Logs'
-                    : 'Turn on Debug Mode',
-                onClick: () => enableVerboseDebugMode(),
-            } as vscode.QuickInputButton,
-        ]
-
-        openStatusBarQuickPicks(quickPick, isCodyIgnoredType)
-    })
-}
-
-async function createFeatureToggle(
-    name: string,
-    description: string | undefined,
-    detail: string,
-    setting: string,
-    getValue: (config: Configuration) => boolean | Promise<boolean>,
-    requiresReload = false,
-    buttons: readonly vscode.QuickInputButton[] | undefined = undefined
-): Promise<StatusBarItem> {
-    const config = getConfiguration(workspaceConfig)
-    const isEnabled = await getValue(config)
-    return {
-        label: (isEnabled ? QUICK_PICK_ITEM_CHECKED_PREFIX : QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX) + name,
-        description,
-        detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + detail,
-        onSelect: async () => {
-            await workspaceConfig.update(setting, !isEnabled, vscode.ConfigurationTarget.Global)
-
-            const info = `${name} ${isEnabled ? 'disabled' : 'enabled'}.`
-            const response = await (requiresReload
-                ? vscode.window.showInformationMessage(info, 'Reload Window')
-                : vscode.window.showInformationMessage(info))
-
-            if (response === 'Reload Window') {
-                await vscode.commands.executeCommand('workbench.action.reloadWindow')
-            }
-        },
-        buttons,
-    }
-}
-
-async function openStatusBarQuickPicks(
-    quickPick: vscode.QuickPick<StatusBarItem>,
-    isCodyIgnoredType?: CodyIgnoreType
-): Promise<void> {
+export async function openStatusBarQuickPicks(): Promise<void> {
     const errors = CodyStatusError.errors
+    const isCodyIgnoredType = await isCurrentFileIgnored()
+
+    // Debug Mode
+    quickPick.buttons = [
+        {
+            iconPath: new vscode.ThemeIcon('bug'),
+            tooltip: getConfiguration(workspaceConfig).debugVerbose
+                ? 'Check Debug Logs'
+                : 'Turn on Debug Mode',
+            onClick: () => enableVerboseDebugMode(),
+        } as vscode.QuickInputButton,
+    ]
+
     quickPick.items = [
         // These description should stay in sync with the settings in package.json
         ...(errors.length > 0
@@ -172,29 +109,6 @@ async function openStatusBarQuickPicks(
                 return enablement.Document || enablement.EditOrChat || enablement.Generate
             }
         ),
-        await createFeatureToggle(
-            'Search Context',
-            'Beta',
-            'Enable using the natural language search index as an Enhanced Context chat source',
-            'cody.experimental.symfContext',
-            c => c.experimentalSymfContext,
-            false
-        ),
-        await createFeatureToggle(
-            'Ollama for Chat',
-            'Experimental',
-            'Use local Ollama models for chat and commands when available',
-            'cody.experimental.ollamaChat',
-            c => c.experimentalOllamaChat,
-            false,
-            [
-                {
-                    iconPath: new vscode.ThemeIcon('book'),
-                    tooltip: 'Learn more about using local models',
-                    onClick: () => vscode.commands.executeCommand('cody.statusBar.ollamaDocs'),
-                } as vscode.QuickInputButton,
-            ]
-        ),
         { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
         {
             label: '$(gear) Cody Extension Settings',
@@ -235,4 +149,39 @@ async function openStatusBarQuickPicks(
         item?.onClick?.()
         quickPick.hide()
     })
+
+    if (errors.length > 0) {
+        errors.map(error => error.onShow?.())
+    }
+}
+
+async function createFeatureToggle(
+    name: string,
+    description: string | undefined,
+    detail: string,
+    setting: string,
+    getValue: (config: Configuration) => boolean | Promise<boolean>,
+    requiresReload = false,
+    buttons: readonly vscode.QuickInputButton[] | undefined = undefined
+): Promise<StatusBarItem> {
+    const config = getConfiguration(workspaceConfig)
+    const isEnabled = await getValue(config)
+    return {
+        label: (isEnabled ? QUICK_PICK_ITEM_CHECKED_PREFIX : QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX) + name,
+        description,
+        detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + detail,
+        onSelect: async () => {
+            await workspaceConfig.update(setting, !isEnabled, vscode.ConfigurationTarget.Global)
+
+            const info = `${name} ${isEnabled ? 'disabled' : 'enabled'}.`
+            const response = await (requiresReload
+                ? vscode.window.showInformationMessage(info, 'Reload Window')
+                : vscode.window.showInformationMessage(info))
+
+            if (response === 'Reload Window') {
+                await vscode.commands.executeCommand('workbench.action.reloadWindow')
+            }
+        },
+        buttons,
+    }
 }

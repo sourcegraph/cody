@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
-
-export type StatusBarErrorName = 'auth' | 'RateLimitError' | 'AutoCompleteDisabledByAdmin'
+import type { StatusBarErrorName } from './types'
 
 export class CodyStatusError {
     private createdAt = Date.now()
