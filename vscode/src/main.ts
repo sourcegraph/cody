@@ -117,8 +117,7 @@ export async function start(
         registerModelsFromVSCodeConfiguration()
     }, disposables)
 
-    const { disposable } = await register(context, await authProvider, configWatcher, platform)
-    disposables.push(disposable)
+    disposables.push(await register(context, await authProvider, configWatcher, platform))
 
     return vscode.Disposable.from(...disposables)
 }
@@ -129,14 +128,11 @@ const register = async (
     authProvider: AuthProvider,
     configWatcher: ConfigWatcher<ConfigurationWithAccessToken>,
     platform: PlatformContext
-): Promise<{
-    disposable: vscode.Disposable
-}> => {
+): Promise<vscode.Disposable> => {
     const disposables: vscode.Disposable[] = []
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
-
     setClientNameVersion(platform.extensionClient.clientName, platform.extensionClient.clientVersion)
 
     // Initialize `displayPath` first because it might be used to display paths in error messages
@@ -144,37 +140,12 @@ const register = async (
     disposables.push(manageDisplayPathEnvInfoForExtension())
 
     // Initialize singletons
-    setCommandController(platform.createCommandsProvider?.())
-    repoNameResolver.init(authProvider)
-    await configWatcher.onChange(
-        config => {
-            const promises: Promise<void>[] = []
-
-            promises.push(localStorage.setConfig(config))
-            promises.push(configureEventsInfra(config, isExtensionModeDevOrTest, authProvider))
-            graphqlClient.setConfig(config)
-            promises.push(featureFlagProvider.refresh())
-            promises.push(contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri))
-            ModelsService.onConfigChange()
-            upstreamHealthProvider.onConfigurationChange(config)
-
-            return Promise.all(promises).then()
-        },
-        disposables,
-        { runImmediately: true }
-    )
-    disposables.push(
-        authProvider.onChange(
-            async (authStatus: AuthStatus) => {
-                // Refresh server configuration that controls features enablement and models.
-                await ClientConfigSingleton.getInstance().setAuthStatus(authStatus)
-                // await Promise.all([featureFlagProvider.refresh(), setupAutocomplete()])
-                await PromptMixin.updateContextPreamble(
-                    isExtensionModeDevOrTest || isRunningInsideAgent()
-                )
-            },
-            { runImmediately: true }
-        )
+    await initializeSingletons(
+        platform,
+        authProvider,
+        configWatcher,
+        isExtensionModeDevOrTest,
+        disposables
     )
 
     // Ensure Git API is available
@@ -182,8 +153,6 @@ const register = async (
 
     registerParserListeners(disposables)
     registerChatListeners(disposables)
-
-    await registerOpenCtxClient(context, platform, configWatcher, authProvider, disposables)
 
     // Initialize external services
     const {
@@ -210,8 +179,6 @@ const register = async (
     configWatcher.onChange(async () => {
         enterpriseContextFactory.clientConfigurationDidChange()
     }, disposables)
-
-    await registerMinion(context, configWatcher, authProvider, symfRunner, disposables)
 
     const editor = new VSCodeEditor()
     const { chatsController } = registerChat(
@@ -247,7 +214,7 @@ const register = async (
         )
     )
 
-    const autoCompleteInitialization = registerAutocomplete(
+    const autocompleteSetup = registerAutocomplete(
         configWatcher,
         platform,
         authProvider,
@@ -255,59 +222,26 @@ const register = async (
         codeCompletionsClient,
         disposables
     )
+    const tutorialSetup = tryRegisterTutorial(context, disposables)
+    const openCtxSetup = registerOpenCtxClient(
+        context,
+        platform,
+        configWatcher,
+        authProvider,
+        disposables
+    )
 
-    await registerCodyCommands(statusBar, sourceControl, chatClient, disposables)
-
-    if (isExtensionModeDevOrTest) {
-        await registerTestCommands(context, authProvider, disposables)
-    }
-
+    registerCodyCommands(configWatcher, statusBar, sourceControl, chatClient, disposables)
     registerAuthCommands(authProvider, disposables)
     registerChatCommands(authProvider, disposables)
     disposables.push(...registerSidebarCommands())
     disposables.push(...setUpCodyIgnore(configWatcher.get()))
     registerOtherCommands(disposables)
-
-    disposables.push(
-        // Register URI Handler (e.g. vscode://sourcegraph.cody-ai)
-        vscode.window.registerUriHandler({
-            handleUri: async (uri: vscode.Uri) => {
-                if (uri.path === '/app-done') {
-                    // This is an old re-entrypoint from App that is a no-op now.
-                } else {
-                    authProvider.tokenCallbackHandler(uri, configWatcher.get().customHeaders)
-                }
-            },
-        }),
-
-        // Check if user has just moved back from a browser window to upgrade cody pro
-        vscode.window.onDidChangeWindowState(async ws => {
-            const authStatus = authProvider.getAuthStatus()
-            if (ws.focused && authStatus.isDotCom && authStatus.isLoggedIn) {
-                const res = await graphqlClient.getCurrentUserCodyProEnabled()
-                if (res instanceof Error) {
-                    console.error(res)
-                    return
-                }
-                // Re-auth if user's cody pro status has changed
-                const isCurrentCodyProUser = !authStatus.userCanUpgrade
-                if (res.codyProEnabled !== isCurrentCodyProUser) {
-                    authProvider.reloadAuthStatus()
-                }
-            }
-        }),
-        new CodyProExpirationNotifications(
-            graphqlClient,
-            authProvider,
-            featureFlagProvider,
-            vscode.window.showInformationMessage,
-            vscode.env.openExternal
-        ),
-        new CharactersLogger(),
-        upstreamHealthProvider
-    )
-
-    await tryRegisterTutorial(context, disposables)
+    if (isExtensionModeDevOrTest) {
+        await registerTestCommands(context, authProvider, disposables)
+    }
+    registerUpgradeHandlers(configWatcher, authProvider, disposables)
+    disposables.push(new CharactersLogger())
 
     // INC-267 do NOT await on this promise. This promise triggers
     // `vscode.window.showInformationMessage()`, which only resolves after the
@@ -315,27 +249,58 @@ const register = async (
     // extension timeout during activation.
     void showSetupNotification(configWatcher.get())
 
-    // Register a serializer for reviving the chat panel on reload
-    if (vscode.window.registerWebviewPanelSerializer) {
-        vscode.window.registerWebviewPanelSerializer(CodyChatEditorViewType, {
-            async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, chatID: string) {
-                if (chatID && webviewPanel.title) {
-                    logDebug('main:deserializeWebviewPanel', 'reviving last unclosed chat panel')
-                    await chatsController.restoreToPanel(webviewPanel, chatID)
-                }
-            },
-        })
-    }
-
-    const [_, extensionClientDispose] = await Promise.all([
-        autoCompleteInitialization,
+    const [extensionClientDispose] = await Promise.all([
         platform.extensionClient.provide({ enterpriseContextFactory }),
+        autocompleteSetup,
+        openCtxSetup,
+        tutorialSetup,
+        registerMinion(context, configWatcher, authProvider, symfRunner, disposables),
     ])
     disposables.push(extensionClientDispose)
 
-    return {
-        disposable: vscode.Disposable.from(...disposables),
-    }
+    return vscode.Disposable.from(...disposables)
+}
+
+async function initializeSingletons(
+    platform: PlatformContext,
+    authProvider: AuthProvider,
+    configWatcher: ConfigWatcher<ConfigurationWithAccessToken>,
+    isExtensionModeDevOrTest: boolean,
+    disposables: vscode.Disposable[]
+): Promise<void> {
+    disposables.push(upstreamHealthProvider, contextFiltersProvider)
+    setCommandController(platform.createCommandsProvider?.())
+    repoNameResolver.init(authProvider)
+    await configWatcher.onChange(
+        config => {
+            const promises: Promise<void>[] = []
+
+            promises.push(localStorage.setConfig(config))
+            promises.push(configureEventsInfra(config, isExtensionModeDevOrTest, authProvider))
+            graphqlClient.setConfig(config)
+            promises.push(featureFlagProvider.refresh())
+            promises.push(contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri))
+            ModelsService.onConfigChange()
+            upstreamHealthProvider.onConfigurationChange(config)
+
+            return Promise.all(promises).then()
+        },
+        disposables,
+        { runImmediately: true }
+    )
+    disposables.push(
+        authProvider.onChange(
+            async (authStatus: AuthStatus) => {
+                // Refresh server configuration that controls features enablement and models.
+                await ClientConfigSingleton.getInstance().setAuthStatus(authStatus)
+                // await Promise.all([featureFlagProvider.refresh(), setupAutocomplete()])
+                await PromptMixin.updateContextPreamble(
+                    isExtensionModeDevOrTest || isRunningInsideAgent()
+                )
+            },
+            { runImmediately: true }
+        )
+    )
 }
 
 // Registers listeners to trigger parsing of visible documents
@@ -420,12 +385,13 @@ async function registerOtherCommands(disposables: vscode.Disposable[]) {
     )
 }
 
-async function registerCodyCommands(
+function registerCodyCommands(
+    config: ConfigWatcher<ConfigurationWithAccessToken>,
     statusBar: CodyStatusBar,
     sourceControl: CodySourceControl,
     chatClient: ChatClient,
     disposables: vscode.Disposable[]
-): Promise<void> {
+): void {
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (
         commandKey: DefaultCodyCommands | string,
@@ -457,8 +423,7 @@ async function registerCodyCommands(
     }
 
     // Initialize supercompletion provider if experimental feature is enabled
-    const initialConfig = await getFullConfig()
-    if (initialConfig.experimentalSupercompletions) {
+    if (config.get().experimentalSupercompletions) {
         disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
     }
 
@@ -526,6 +491,49 @@ function registerAuthCommands(authProvider: AuthProvider, disposables: vscode.Di
                     })
                 ).authStatus
             }
+        )
+    )
+}
+
+function registerUpgradeHandlers(
+    configWatcher: ConfigWatcher<ConfigurationWithAccessToken>,
+    authProvider: AuthProvider,
+    disposables: vscode.Disposable[]
+): void {
+    disposables.push(
+        // Register URI Handler (e.g. vscode://sourcegraph.cody-ai)
+        vscode.window.registerUriHandler({
+            handleUri: async (uri: vscode.Uri) => {
+                if (uri.path === '/app-done') {
+                    // This is an old re-entrypoint from App that is a no-op now.
+                } else {
+                    authProvider.tokenCallbackHandler(uri, configWatcher.get().customHeaders)
+                }
+            },
+        }),
+
+        // Check if user has just moved back from a browser window to upgrade cody pro
+        vscode.window.onDidChangeWindowState(async ws => {
+            const authStatus = authProvider.getAuthStatus()
+            if (ws.focused && authStatus.isDotCom && authStatus.isLoggedIn) {
+                const res = await graphqlClient.getCurrentUserCodyProEnabled()
+                if (res instanceof Error) {
+                    console.error(res)
+                    return
+                }
+                // Re-auth if user's cody pro status has changed
+                const isCurrentCodyProUser = !authStatus.userCanUpgrade
+                if (res.codyProEnabled !== isCurrentCodyProUser) {
+                    authProvider.reloadAuthStatus()
+                }
+            }
+        }),
+        new CodyProExpirationNotifications(
+            graphqlClient,
+            authProvider,
+            featureFlagProvider,
+            vscode.window.showInformationMessage,
+            vscode.env.openExternal
         )
     )
 }
@@ -788,6 +796,18 @@ function registerChat(
     if (localEmbeddings) {
         // kick-off embeddings initialization
         localEmbeddings.start()
+    }
+
+    // Register a serializer for reviving the chat panel on reload
+    if (vscode.window.registerWebviewPanelSerializer) {
+        vscode.window.registerWebviewPanelSerializer(CodyChatEditorViewType, {
+            async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, chatID: string) {
+                if (chatID && webviewPanel.title) {
+                    logDebug('main:deserializeWebviewPanel', 'reviving last unclosed chat panel')
+                    await chatsController.restoreToPanel(webviewPanel, chatID)
+                }
+            },
+        })
     }
 
     return { chatsController }
