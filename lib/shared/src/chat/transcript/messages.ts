@@ -94,20 +94,21 @@ export type EventSource =
 /**
  * Create a mapping of all source types to numerical values, so telemetry can be recorded on `metadata`.
  */
-export enum EventSourceMetadataMapping {
-    chat = 1,
-    menu = 2,
-    sidebar = 3,
-    'code-action:explain' = 4,
-    'code-action:document' = 5,
-    'code-action:edit' = 6,
-    'code-action:fix' = 7,
-    'code-action:generate' = 8,
-    'code-action:test' = 9,
-    'custom-commands' = 10,
-    codeLens = 11,
-    hover = 12,
-    terminal = 13,
+export const EventSourceTelemetryMetadataMapping: Record<EventSource, number> = {
+    [DEFAULT_EVENT_SOURCE]: 0,
+    chat: 1,
+    menu: 2,
+    sidebar: 3,
+    'code-action:explain': 4,
+    'code-action:document': 5,
+    'code-action:edit': 6,
+    'code-action:fix': 7,
+    'code-action:generate': 8,
+    'code-action:test': 9,
+    'custom-commands': 10,
+    'code-lens': 11,
+    hover: 12,
+    terminal: 13,
 }
 /**
  * Converts an Error to a ChatError. Note that this cannot be done naively,

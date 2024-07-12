@@ -23,14 +23,14 @@ import type {
 } from '../common/persistence-tracker/types'
 import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
 import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
-import { type CompletionIntent, CompletionIntentMetadataMapping } from '../tree-sitter/queries'
+import { type CompletionIntent, CompletionIntentTelemetryMetadataMapping } from '../tree-sitter/queries'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
 import {
     InlineCompletionsResultSource,
-    InlineCompletionsResultSourceMetadataMapping,
+    InlineCompletionsResultSourceTelemetryMetadataMapping,
     TriggerKind,
-    TriggerKindMetadataMapping,
+    TriggerKindTelemetryMetadataMapping,
 } from './get-inline-completions'
 import type { RequestParams } from './request-manager'
 import * as statistics from './statistics'
@@ -388,23 +388,21 @@ function writeCompletionEvent<SubFeature extends string, Action extends string, 
         params.interactionID = legacyParams.id?.toString()
     }
     /**
-     * Helper function to convert privateMetadata string values to numerical based on enum lookup. Enables data collection on `metadata`
+     * Helper function to convert privateMetadata string values to numerical based on 'telemetryMetadataMapping...' lookup. Enables data collection on `metadata`
      */
     function mapEnumToMetadata<
-        T extends Record<string, number>,
-        U extends string | number,
-        V extends Record<string, U>,
+        V extends Record<string, string>,
+        // Do not allow number keys in `telemetryMetadataMapping`
+        K extends keyof V extends string ? string : never,
     >(
-        value: U | undefined,
-        enumType: V,
-        metadataMapping: T | { [key: string]: number } | { [key: number]: string | number }
+        value: string | undefined,
+        valueEnum: V,
+        metadataMapping: Record<V[K], number>
     ): number | undefined {
         if (value === undefined) return undefined
-
-        const enumKey = Object.keys(enumType).find(key => enumType[key] === value)
+        const enumKey = Object.keys(valueEnum).find(key => valueEnum[key] === value)
         if (!enumKey) return undefined
-
-        const mappingValue = (metadataMapping as any)[enumKey]
+        const mappingValue = metadataMapping[enumKey as V[K]]
         return typeof mappingValue === 'number' ? mappingValue : undefined
     }
 
@@ -412,7 +410,7 @@ function writeCompletionEvent<SubFeature extends string, Action extends string, 
         const mappedTriggerKind = mapEnumToMetadata(
             params.privateMetadata?.triggerKind,
             TriggerKind,
-            TriggerKindMetadataMapping
+            TriggerKindTelemetryMetadataMapping
         )
 
         if (mappedTriggerKind !== undefined) {
@@ -422,7 +420,7 @@ function writeCompletionEvent<SubFeature extends string, Action extends string, 
         const mappedSource = mapEnumToMetadata(
             params.privateMetadata?.source,
             InlineCompletionsResultSource,
-            InlineCompletionsResultSourceMetadataMapping
+            InlineCompletionsResultSourceTelemetryMetadataMapping
         )
         if (mappedSource !== undefined) {
             params.metadata.source = mappedSource
@@ -430,7 +428,7 @@ function writeCompletionEvent<SubFeature extends string, Action extends string, 
 
         // Need to convert since CompletionIntent only refers to a type
         const CompletionIntentEnum: Record<CompletionIntent, CompletionIntent> = Object.keys(
-            CompletionIntentMetadataMapping
+            CompletionIntentTelemetryMetadataMapping
         ).reduce(
             (acc, key) => {
                 acc[key as CompletionIntent] = key as CompletionIntent
@@ -442,7 +440,7 @@ function writeCompletionEvent<SubFeature extends string, Action extends string, 
         const mappedCompletionIntent = mapEnumToMetadata(
             params.privateMetadata?.completionIntent,
             CompletionIntentEnum,
-            CompletionIntentMetadataMapping
+            CompletionIntentTelemetryMetadataMapping
         )
         if (mappedCompletionIntent !== undefined) {
             params.metadata.completionIntent = mappedCompletionIntent

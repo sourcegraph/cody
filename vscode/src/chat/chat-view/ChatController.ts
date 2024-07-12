@@ -918,19 +918,19 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const source = 'chat'
 
         // Use enum to send source values to metadata, making this data available on all instances.
-        enum atMentionSourceMetadataMapping {
+        enum atMentionSourceTelemetryMetadataMapping {
             chat = 1,
         }
         const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
             empty: () => {
                 telemetryRecorder.recordEvent('cody.at-mention', 'executed', {
-                    metadata: { source: atMentionSourceMetadataMapping[source] },
+                    metadata: { source: atMentionSourceTelemetryMetadataMapping[source] },
                     privateMetadata: { source },
                 })
             },
             withProvider: (provider, providerMetadata) => {
                 telemetryRecorder.recordEvent(`cody.at-mention.${provider}`, 'executed', {
-                    metadata: { source: atMentionSourceMetadataMapping[source] },
+                    metadata: { source: atMentionSourceTelemetryMetadataMapping[source] },
                     privateMetadata: { source, providerMetadata },
                 })
             },

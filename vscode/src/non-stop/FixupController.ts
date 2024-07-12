@@ -12,15 +12,18 @@ import {
 import { executeEdit } from '../edit/execute'
 import {
     type EditIntent,
-    EditIntentMetadataMapping,
+    EditIntentTelemetryMetadataMapping,
     type EditMode,
-    EditModeMetadataMapping,
+    EditModeTelemetryMetadataMapping,
 } from '../edit/types'
 import { logDebug } from '../log'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 
-import { EventSourceMetadataMapping } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import {
+    DEFAULT_EVENT_SOURCE,
+    EventSourceTelemetryMetadataMapping,
+} from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
 import { getInput } from '../edit/input/get-input'
@@ -182,14 +185,10 @@ export class FixupController
         const editOk = await this.revertToOriginal(task, editor.edit)
 
         const legacyMetadata = {
-            intent:
-                EditIntentMetadataMapping[task.intent as keyof typeof EditIntentMetadataMapping] ||
-                task.intent,
-            mode:
-                EditModeMetadataMapping[task.mode as keyof typeof EditModeMetadataMapping] || task.mode,
+            intent: EditIntentTelemetryMetadataMapping[task.intent] || task.intent,
+            mode: EditModeTelemetryMetadataMapping[task.mode] || task.mode,
             source:
-                EventSourceMetadataMapping[task.source as keyof typeof EventSourceMetadataMapping] ||
-                task.source,
+                EventSourceTelemetryMetadataMapping[task.source || DEFAULT_EVENT_SOURCE] || task.source,
             ...this.countEditInsertions(task),
             ...task.telemetryMetadata,
         }
@@ -517,13 +516,17 @@ export class FixupController
     private logTaskCompletion(task: FixupTask, document: vscode.TextDocument, editOk: boolean): void {
         const legacyMetadata = {
             intent:
-                EditIntentMetadataMapping[task.intent as keyof typeof EditIntentMetadataMapping] ||
-                task.intent,
+                EditIntentTelemetryMetadataMapping[
+                    task.intent as keyof typeof EditIntentTelemetryMetadataMapping
+                ] || task.intent,
             mode:
-                EditModeMetadataMapping[task.mode as keyof typeof EditModeMetadataMapping] || task.mode,
+                EditModeTelemetryMetadataMapping[
+                    task.mode as keyof typeof EditModeTelemetryMetadataMapping
+                ] || task.mode,
             source:
-                EventSourceMetadataMapping[task.source as keyof typeof EventSourceMetadataMapping] ||
-                task.source,
+                EventSourceTelemetryMetadataMapping[
+                    task.source as keyof typeof EventSourceTelemetryMetadataMapping
+                ] || task.source,
             model: task.model,
             ...this.countEditInsertions(task),
             ...task.telemetryMetadata,

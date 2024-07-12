@@ -128,12 +128,15 @@ export enum InlineCompletionsResultSource {
 /**
  * Create a mapping of all inline completion sources to numerical values, so telemetry can be recorded on `metadata`.
  */
-export enum InlineCompletionsResultSourceMetadataMapping {
-    Network = 1,
-    Cache = 2,
-    HotStreak = 3,
-    CacheAfterRequestStart = 4,
-    LastCandidate = 5,
+export const InlineCompletionsResultSourceTelemetryMetadataMapping: Record<
+    InlineCompletionsResultSource,
+    number
+> = {
+    [InlineCompletionsResultSource.Network]: 1,
+    [InlineCompletionsResultSource.Cache]: 2,
+    [InlineCompletionsResultSource.HotStreak]: 3,
+    [InlineCompletionsResultSource.CacheAfterRequestStart]: 4,
+    [InlineCompletionsResultSource.LastCandidate]: 5,
 }
 /**
  * Extends the default VS Code trigger kind to distinguish between manually invoking a completion
@@ -152,12 +155,11 @@ export enum TriggerKind {
     /** When the user uses the suggest widget to cycle through different completions. */
     SuggestWidget = 'SuggestWidget',
 }
-
-export enum TriggerKindMetadataMapping {
-    Hover = 1,
-    Automatic = 2,
-    Manual = 3,
-    SuggestWidget = 4,
+export const TriggerKindTelemetryMetadataMapping: Record<TriggerKind, number> = {
+    [TriggerKind.Hover]: 1,
+    [TriggerKind.Automatic]: 2,
+    [TriggerKind.Manual]: 3,
+    [TriggerKind.SuggestWidget]: 4,
 }
 
 export function allTriggerKinds(): TriggerKind[] {

@@ -7,12 +7,12 @@ export type EditIntent = 'add' | 'edit' | 'fix' | 'doc' | 'test'
 /**
  * Create a mapping of all source types to numerical values, so telemetry can be recorded on `metadata`.
  */
-export enum EditIntentMetadataMapping {
-    Add = 1,
-    Edit = 2,
-    Fix = 3,
-    Doc = 4,
-    Test = 5,
+export enum EditIntentTelemetryMetadataMapping {
+    add = 1,
+    edit = 2,
+    fix = 3,
+    doc = 4,
+    test = 5,
 }
 
 /**
@@ -22,7 +22,7 @@ export enum EditIntentMetadataMapping {
  */
 export type EditMode = 'edit' | 'insert'
 
-export enum EditModeMetadataMapping {
-    Insert = 1,
-    Edit = 2,
+export enum EditModeTelemetryMetadataMapping {
+    insert = 1,
+    edit = 2,
 }

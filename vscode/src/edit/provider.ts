@@ -17,7 +17,7 @@ import type { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 import { isNetworkError } from '../services/AuthProvider'
 
-import { EventSourceMetadataMapping } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { EventSourceTelemetryMetadataMapping } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { workspace } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
 import { CodyTaskState } from '../non-stop/utils'
@@ -27,7 +27,7 @@ import type { EditManagerOptions } from './manager'
 import { responseTransformer } from './output/response-transformer'
 import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
-import { EditIntentMetadataMapping, EditModeMetadataMapping } from './types'
+import { EditIntentTelemetryMetadataMapping, EditModeTelemetryMetadataMapping } from './types'
 import { isStreamedIntent } from './utils/edit-intent'
 
 interface EditProviderOptions extends EditManagerOptions {
@@ -194,14 +194,16 @@ export class EditProvider {
             const { task } = this.config
             const legacyMetadata = {
                 intent:
-                    EditIntentMetadataMapping[task.intent as keyof typeof EditIntentMetadataMapping] ||
-                    task.intent,
+                    EditIntentTelemetryMetadataMapping[
+                        task.intent as keyof typeof EditIntentTelemetryMetadataMapping
+                    ] || task.intent,
                 mode:
-                    EditModeMetadataMapping[task.mode as keyof typeof EditModeMetadataMapping] ||
+                    EditModeTelemetryMetadataMapping[task.mode as keyof typeof EditModeTelemetryMetadataMapping] ||
                     task.mode,
                 source:
-                    EventSourceMetadataMapping[task.source as keyof typeof EventSourceMetadataMapping] ||
-                    task.source,
+                    EventSourceTelemetryMetadataMapping[
+                        task.source as keyof typeof EventSourceTelemetryMetadataMapping
+                    ] || task.source,
                 ...countCode(response),
             }
             const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)

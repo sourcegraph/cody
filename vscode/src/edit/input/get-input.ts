@@ -13,7 +13,7 @@ import {
 import * as vscode from 'vscode'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import { EventSourceMetadataMapping } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { EventSourceTelemetryMetadataMapping } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { GENERAL_HELP_LABEL, LARGE_FILE_WARNING_LABEL } from '../../chat/context/constants'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { executeDocCommand, executeTestEditCommand } from '../../commands/execute'
@@ -82,7 +82,7 @@ export const getInput = async (
 
     telemetryRecorder.recordEvent('cody.menu.edit', 'clicked', {
         metadata: {
-            source: EventSourceMetadataMapping[source as keyof typeof EventSourceMetadataMapping],
+            source: EventSourceTelemetryMetadataMapping[source as keyof typeof EventSourceTelemetryMetadataMapping],
         },
         privateMetadata: { source },
     })
