@@ -159,8 +159,11 @@ export class InlineCompletionItemProvider
             )
         )
 
-        if (completionProviderConfig.smartThrottle) {
-            this.smartThrottleService = new SmartThrottleService()
+        if (completionProviderConfig.smartThrottle || completionProviderConfig.smartThrottleExtended) {
+            this.smartThrottleService = new SmartThrottleService(
+                // Use an extended throttle timeout of 500ms for the extended throttle.
+                completionProviderConfig.smartThrottleExtended ? 500 : undefined
+            )
             this.disposables.push(this.smartThrottleService)
         }
 
