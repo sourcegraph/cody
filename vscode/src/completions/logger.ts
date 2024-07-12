@@ -16,7 +16,7 @@ import { captureException, shouldErrorBeReported } from '../services/sentry/sent
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
-import type { Span } from '@opentelemetry/api'
+import { type Span, trace } from '@opentelemetry/api'
 import { PersistenceTracker } from '../common/persistence-tracker'
 import type {
     PersistencePresentEventPayload,
@@ -24,6 +24,11 @@ import type {
 } from '../common/persistence-tracker/types'
 import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
 import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
+import {
+    AUTOCOMPLETE_STAGE_COUNTER_INITIAL_STATE,
+    type AutocompletePipelineCountedStage,
+    autocompleteStageCounterLogger,
+} from '../services/autocomplete-stage-counter-logger'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
 import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
@@ -127,6 +132,11 @@ interface SharedEventPayload extends InteractionIDPayload {
      * A subset of HTTP response headers returned by the completion provider.
      */
     responseHeaders?: InlineCompletionResponseHeaders
+
+    /**
+     * Duration in ms for events that are part of the autocomplete generation pipeline.
+     */
+    stageTimings: Partial<Record<AutocompletePipelineStage, number>>
 
     /** Language of the document being completed. */
     languageId: string
@@ -1031,4 +1041,44 @@ const otherCompletionProviders = [
 ]
 function getOtherCompletionProvider(): string[] {
     return otherCompletionProviders.filter(id => vscode.extensions.getExtension(id)?.isActive)
+}
+
+type AutocompletePipelineStage =
+    | AutocompletePipelineCountedStage
+    | 'preClientConfigCheck'
+    | 'preContentPopupCheck'
+    | 'preDocContext'
+    | 'preCompletionIntent'
+    | 'preGetInlineCompletions'
+
+export class AutocompleteStageRecorder {
+    private createdAt = performance.now()
+    private logId?: CompletionLogID
+
+    public stageTimings = {} as Record<string, number>
+
+    public setLogId(logId: CompletionLogID): void {
+        this.logId = logId
+    }
+
+    public record(eventName: AutocompletePipelineStage): void {
+        // Record event for OpenTelemetry traces.
+        trace.getActiveSpan()?.addEvent(eventName)
+
+        // Record event timing to later assign it to the analytics event.
+        this.stageTimings[eventName] = performance.now() - this.createdAt
+
+        if (this.logId) {
+            const event = activeSuggestionRequests.get(this.logId)
+
+            if (event) {
+                event.params.stageTimings = this.stageTimings
+            }
+        }
+
+        // Count event in the autocomplete stage counter if it's a counted stage.
+        if (eventName in AUTOCOMPLETE_STAGE_COUNTER_INITIAL_STATE) {
+            autocompleteStageCounterLogger.record(eventName as AutocompletePipelineCountedStage)
+        }
+    }
 }

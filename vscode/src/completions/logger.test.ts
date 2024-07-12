@@ -18,6 +18,7 @@ const defaultArgs = {
     providerIdentifier: 'bfl',
     providerModel: 'blazing-fast-llm',
     languageId: 'typescript',
+    stageTimings: {},
 }
 
 const defaultContextSummary = {
