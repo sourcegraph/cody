@@ -33,6 +33,7 @@ import {
     TriggerKind,
     getInlineCompletions as _getInlineCompletions,
 } from '../get-inline-completions'
+import { AutocompleteStageRecorder } from '../logger'
 import {
     MULTI_LINE_STOP_SEQUENCES,
     SINGLE_LINE_STOP_SEQUENCES,
@@ -212,6 +213,7 @@ export function params(
         }),
         isDotComUser,
         configuration,
+        stageRecorder: new AutocompleteStageRecorder(),
         ...restParams,
 
         // Test-specific helpers

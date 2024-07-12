@@ -539,6 +539,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // Run this async because this method may be called during initialization
         // and awaiting on this.postMessage may result in a deadlock
         void this.sendConfig()
+
+        // Get the latest model list available to the current user to update the ChatModel.
+        const authStatus = this.authProvider.getAuthStatus()
+        const models = ModelsService.getModels(
+            ModelUsage.Chat,
+            authStatus.isDotCom && !authStatus.userCanUpgrade
+        )
+        this.handleSetChatModel(getDefaultModelID(this.authProvider, models))
     }
 
     // When the webview sends the 'ready' message, respond by posting the view config
@@ -890,6 +898,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async handleSetChatModel(modelID: string): Promise<void> {
         this.chatModel.updateModel(modelID)
         await chatModel.set(modelID)
+        this.postChatModels()
     }
 
     private async handleGetAllMentionProvidersMetadata(): Promise<void> {
