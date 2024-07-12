@@ -136,7 +136,7 @@ const register = async (
         context.extensionMode === vscode.ExtensionMode.Test
 
     setClientNameVersion(platform.extensionClient.clientName, platform.extensionClient.clientVersion)
-    const authProvider = AuthProvider.create(initialConfig)
+    const authProviderPromise = AuthProvider.create(initialConfig)
 
     // Initialize `displayPath` first because it might be used to display paths in error messages
     // from the subsequent initialization.
@@ -152,7 +152,7 @@ const register = async (
 
     // Telemetry
     await configWatcher.initAndOnChange(async config => {
-        await configureEventsInfra(config, isExtensionModeDevOrTest, authProvider)
+        await configureEventsInfra(config, isExtensionModeDevOrTest, await authProviderPromise)
     }, disposables)
 
     registerParserListeners(disposables)
@@ -169,8 +169,7 @@ const register = async (
         })
     )
 
-    await authProvider.init()
-
+    const authProvider = await authProviderPromise
     if (authProvider.getAuthStatus().authenticated) {
         await exposeOpenCtxClient(
             context,
@@ -305,7 +304,7 @@ const register = async (
     }
 
     // Add change listener to auth provider
-    authProvider.addChangeListener(handleAuthStatusChange)
+    disposables.push(authProvider.initAndOnChange(handleAuthStatusChange))
 
     // Setup config watcher
     configWatcher.onChange(setupAutocomplete, disposables)
@@ -482,7 +481,7 @@ const register = async (
                 if (uri.path === '/app-done') {
                     // This is an old re-entrypoint from App that is a no-op now.
                 } else {
-                    await authProvider.tokenCallbackHandler(uri, initialConfig.customHeaders)
+                    authProvider.tokenCallbackHandler(uri, initialConfig.customHeaders)
                 }
             },
         }),
@@ -594,8 +593,7 @@ const register = async (
                         config,
                         client: codeCompletionsClient,
                         statusBar,
-                        authProvider,
-
+                        authProvider: authProvider,
                         createBfgRetriever: platform.createBfgRetriever,
                     })
                 )
@@ -604,8 +602,7 @@ const register = async (
                         config,
                         client: codeCompletionsClient,
                         statusBar,
-                        authProvider,
-
+                        authProvider: authProvider,
                         createBfgRetriever: platform.createBfgRetriever,
                     }),
                     autocompleteStageCounterLogger

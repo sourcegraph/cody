@@ -52,11 +52,13 @@ describe('Cody Pro expiration notifications', () => {
             }),
         } as unknown as SourcegraphGraphQLAPIClient
         authProvider = {
-            addChangeListener: (f: () => void) => {
+            initAndOnChange: (f: () => void) => {
                 authChangeListener = f
                 // (return an object that simulates the unsubscribe
-                return () => {
-                    authChangeListener = () => {}
+                return {
+                    dispose: () => {
+                        authChangeListener = () => {}
+                    },
                 }
             },
             getAuthStatus: () => authStatus,

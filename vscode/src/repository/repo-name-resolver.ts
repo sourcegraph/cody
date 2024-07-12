@@ -27,7 +27,8 @@ export class RepoNameResolver {
     public init(authProvider: AuthProvider): void {
         this.authProvider = authProvider
 
-        this.authProvider.addChangeListener(() => {
+        // TODO(beyang): handle disposable
+        this.authProvider.initAndOnChange(() => {
             this.fsPathToRepoNameCache.clear()
             this.remoteUrlToRepoNameCache.clear()
         })

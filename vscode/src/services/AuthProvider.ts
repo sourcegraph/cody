@@ -29,30 +29,40 @@ import { getAuthReferralCode } from './AuthProviderSimplified'
 import { localStorage } from './LocalStorageProvider'
 import { secretStorage } from './SecretStorageProvider'
 
-type Listener = (authStatus: AuthStatus) => void
-type Unsubscribe = () => void
-
 const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
 
 type AuthConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
-export class AuthProvider implements AuthStatusProvider {
+export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
     private endpointHistory: string[] = []
-
     private client: SourcegraphGraphQLAPIClient | null = null
+    private status: AuthStatus = defaultAuthStatus
+    private readonly didChangeEvent: vscode.EventEmitter<AuthStatus> =
+        new vscode.EventEmitter<AuthStatus>()
+    private disposables: vscode.Disposable[] = [this.didChangeEvent]
 
-    private authStatus: AuthStatus = defaultAuthStatus
-    private listeners: Set<Listener> = new Set()
+    private static _instance: AuthProvider | null = null
+    public static get instance(): AuthProvider | null {
+        return AuthProvider._instance
+    }
 
-    static create(config: AuthConfig) {
-        if (!authProvider) {
-            authProvider = new AuthProvider(config)
+    public static async create(config: AuthConfig) {
+        if (!AuthProvider._instance) {
+            AuthProvider._instance = new AuthProvider(config)
+            await AuthProvider._instance.init()
         }
-        return authProvider
+        return AuthProvider._instance
     }
 
     private constructor(private config: AuthConfig) {
-        this.authStatus.endpoint = 'init'
+        this.status.endpoint = 'init'
         this.loadEndpointHistory()
+    }
+
+    public dispose(): void {
+        for (const d of this.disposables) {
+            d.dispose()
+        }
+        this.disposables = []
     }
 
     // Sign into the last endpoint the user was signed into, if any
@@ -79,15 +89,14 @@ export class AuthProvider implements AuthStatusProvider {
         }).catch(error => logError('AuthProvider:init:failed', lastEndpoint, { verbose: error }))
     }
 
-    public addChangeListener(listener: Listener): Unsubscribe {
-        listener(this.authStatus)
-        this.listeners.add(listener)
-        return () => this.listeners.delete(listener)
+    public initAndOnChange(listener: (authStatus: AuthStatus) => void): vscode.Disposable {
+        listener(this.status)
+        return this.didChangeEvent.event(listener)
     }
 
     // Display quickpick to select endpoint to sign in to
     public async signinMenu(type?: 'enterprise' | 'dotcom' | 'token', uri?: string): Promise<void> {
-        const mode = this.authStatus.isLoggedIn ? 'switch' : 'signin'
+        const mode = this.status.isLoggedIn ? 'switch' : 'signin'
         logDebug('AuthProvider:signinMenu', mode)
         telemetryRecorder.recordEvent('cody.auth.login', 'clicked')
         const item = await AuthMenu(mode, this.endpointHistory)
@@ -104,7 +113,7 @@ export class AuthProvider implements AuthStatusProvider {
                 if (!instanceUrl) {
                     return
                 }
-                this.authStatus.endpoint = instanceUrl
+                this.status.endpoint = instanceUrl
                 this.redirectToEndpointLogin(instanceUrl)
                 break
             }
@@ -171,7 +180,7 @@ export class AuthProvider implements AuthStatusProvider {
     }
 
     public async accountMenu(): Promise<void> {
-        const selected = await openAccountMenu(this.authStatus)
+        const selected = await openAccountMenu(this.status)
         if (selected === undefined) {
             return
         }
@@ -180,7 +189,7 @@ export class AuthProvider implements AuthStatusProvider {
             case AccountMenuOptions.Manage: {
                 // Add the username to the web can warn if the logged in session on web is different from VS Code
                 const uri = vscode.Uri.parse(ACCOUNT_USAGE_URL.toString()).with({
-                    query: `cody_client_user=${encodeURIComponent(this.authStatus.username)}`,
+                    query: `cody_client_user=${encodeURIComponent(this.status.username)}`,
                 })
                 void vscode.env.openExternal(uri)
                 break
@@ -199,7 +208,7 @@ export class AuthProvider implements AuthStatusProvider {
         await secretStorage.deleteToken(endpoint)
         await localStorage.deleteEndpoint()
         await this.auth({ endpoint, token: null })
-        this.authStatus.endpoint = ''
+        this.status.endpoint = ''
         await vscode.commands.executeCommand('setContext', 'cody.activated', false)
     }
 
@@ -229,7 +238,7 @@ export class AuthProvider implements AuthStatusProvider {
                 return { ...defaultAuthStatus, endpoint }
             }
         }
-        // Cache the config and the GraphQL client
+        // Cache the config and GraphQL client
         if (this.config !== config || !this.client) {
             this.config = config
             this.client = new SourcegraphGraphQLAPIClient(config)
@@ -306,7 +315,7 @@ export class AuthProvider implements AuthStatusProvider {
     }
 
     public getAuthStatus(): AuthStatus {
-        return this.authStatus
+        return this.status
     }
 
     // It processes the authentication steps and stores the login info before sharing the auth status with chatview
@@ -375,21 +384,15 @@ export class AuthProvider implements AuthStatusProvider {
 
     // Set auth status and share it with chatview
     private syncAuthStatus(authStatus: AuthStatus): void {
-        if (this.authStatus === authStatus) {
+        if (this.status === authStatus) {
             return
         }
-        this.authStatus = authStatus
-        this.announceNewAuthStatus()
-    }
+        this.status = authStatus
 
-    public announceNewAuthStatus(): void {
-        if (this.authStatus.endpoint === 'init') {
+        if (authStatus.endpoint === 'init') {
             return
         }
-        const authStatus = this.getAuthStatus()
-        for (const listener of this.listeners) {
-            listener(authStatus)
-        }
+        this.didChangeEvent.fire(this.getAuthStatus())
     }
 
     // Register URI Handler (vscode://sourcegraph.cody-ai) for resolving token
@@ -402,7 +405,7 @@ export class AuthProvider implements AuthStatusProvider {
 
         const params = new URLSearchParams(uri.query)
         const token = params.get('code')
-        const endpoint = this.authStatus.endpoint
+        const endpoint = this.status.endpoint
         if (!token || !endpoint) {
             return
         }
@@ -438,7 +441,7 @@ export class AuthProvider implements AuthStatusProvider {
 
         const newTokenCallbackUrl = new URL('/user/settings/tokens/new/callback', endpoint)
         newTokenCallbackUrl.searchParams.append('requestFrom', getAuthReferralCode())
-        this.authStatus.endpoint = endpoint
+        this.status.endpoint = endpoint
         void vscode.env.openExternal(vscode.Uri.parse(newTokenCallbackUrl.href))
     }
 
@@ -471,7 +474,7 @@ export class AuthProvider implements AuthStatusProvider {
         // endpoint and races with everything else this class does.
 
         // Simplified onboarding only supports dotcom.
-        this.authStatus.endpoint = DOTCOM_URL.toString()
+        this.status.endpoint = DOTCOM_URL.toString()
     }
 
     // Logs a telemetry event if the user has never authenticated to Sourcegraph.
@@ -489,10 +492,6 @@ export class AuthProvider implements AuthStatusProvider {
         return localStorage.set(HAS_AUTHENTICATED_BEFORE_KEY, 'true')
     }
 }
-/**
- * Singleton instance of auth provider.
- */
-export let authProvider: AuthProvider | null = null
 
 export function isNetworkError(error: Error): boolean {
     const message = error.message
