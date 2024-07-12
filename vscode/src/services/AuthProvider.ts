@@ -352,7 +352,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
                 await this.storeAuthInfo(config.serverEndpoint, config.accessToken)
             }
 
-            this.syncAuthStatus(authStatus)
+            this.setAuthStatus(authStatus)
             await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
 
             // If the extension is authenticated on startup, it can't be a user's first
@@ -388,7 +388,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
     }
 
     // Set auth status and share it with chatview
-    private syncAuthStatus(authStatus: AuthStatus): void {
+    private setAuthStatus(authStatus: AuthStatus): void {
         if (this.status === authStatus) {
             return
         }
