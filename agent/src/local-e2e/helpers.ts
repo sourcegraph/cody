@@ -117,21 +117,21 @@ export class LocalSGInstance {
         if (this.params.accessToken === '') {
             throw new LocalInstanceError({
                 reason: 'Sourcegraph Local instance access token cannot be blank',
-                fix: 'TODO',
+                fix: 'Ensure a token is passed to `new LocalSGInstance(arg)` or use the default value',
             })
         }
         // Someone might think it's ok to use this against a live instance, which is not what this is made for.
         if (!this.params.accessToken.startsWith('sgp_local_')) {
             throw new LocalInstanceError({
                 reason: "Sourcegraph Local instance access token isn't a local access token, i.e. not starting with sgp_local.",
-                fix: 'TODO',
+                fix: 'Ensure the token passed to `new LocalSGInstance(arg)` is a local access token',
             })
         }
         // Avoid residual environment variables messing up with flow.
         if (process.env.CODY_RECORDING_MODE !== 'passthrough') {
             throw new LocalInstanceError({
                 reason: 'Local E2E tests should never record response',
-                fix: 'TODO',
+                fix: 'Check package.json, the task should never have CODY_RECORDING_MODE set to anything other than "passthrough"',
             })
         }
 
@@ -247,6 +247,13 @@ export class LocalSGInstance {
                 .fetchSourcegraphAPI<APIResponse<JSONCLLMSiteConfig>>(q)
                 .then(resp => {
                     if (isError(resp)) {
+                        if (resp.message.includes('401')) {
+                            resolve({
+                                reason: `Sourcegraph instance rejected our access token: ${resp.message}`,
+                                fix: 'In your sourcegraph folder, run `sg db default-site-admin`.',
+                            })
+                            return
+                        }
                         resolve({
                             reason: `Failed to connect to Sourcegraph instance: ${resp.message} `,
                             fix: 'Something went wrong, if you have a running `sg start dotcom-cody-e2e`, you could try to restart it',

@@ -23,7 +23,7 @@ describe('[getInlineCompletions] completion event', () => {
         code: string,
         completion: string,
         additionalParams: { isDotComUser?: boolean } = {}
-    ): Promise<Partial<CompletionBookkeepingEvent>> {
+    ): Promise<CompletionBookkeepingEvent> {
         vi.spyOn(uuid, 'v4').mockImplementation(() => 'stable-uuid')
         const spy = vi.spyOn(CompletionLogger, 'loaded')
 
@@ -54,10 +54,16 @@ describe('[getInlineCompletions] completion event', () => {
         )
 
         // Get `suggestionId` from `CompletionLogger.loaded` call.
-        const suggestionId: CompletionLogger.CompletionLogID = spy.mock.calls[0][0]
-        const completionEvent = CompletionLogger.getCompletionEvent(suggestionId)
+        const suggestionId: CompletionLogger.CompletionLogID = spy.mock.calls[0][0].logId
+        const completionEvent = CompletionLogger.getCompletionEvent(suggestionId)!
 
-        return omit(completionEvent, [
+        return completionEvent
+    }
+
+    function eventWithoutTimestamps(
+        event: CompletionBookkeepingEvent
+    ): Partial<CompletionBookkeepingEvent> {
+        return omit(event, [
             'acceptedAt',
             'loadedAt',
             'networkRequestStartedAt',
@@ -67,17 +73,28 @@ describe('[getInlineCompletions] completion event', () => {
             'suggestionAnalyticsLoggedAt',
             'suggestionLoggedAt',
             'params.contextSummary.duration',
+            'params.stageTimings',
         ])
     }
 
     describe('fills all the expected fields on `CompletionLogger.loaded` calls', () => {
         it('for multiLine completions', async () => {
-            const eventWithoutTimestamps = await getAnalyticsEvent(
+            const event = await getAnalyticsEvent(
                 'function foo() {█}',
                 'console.log(bar)\nreturn false}'
             )
 
-            expect(eventWithoutTimestamps).toMatchInlineSnapshot(`
+            expect(Object.keys(event.params.stageTimings)).toMatchInlineSnapshot(`
+              [
+                "preLastCandidate",
+                "preCache",
+                "preDebounce",
+                "preContextRetrieval",
+                "preNetworkRequest",
+              ]
+            `)
+
+            expect(eventWithoutTimestamps(event)).toMatchInlineSnapshot(`
               {
                 "id": "stable-uuid",
                 "items": [
@@ -114,6 +131,7 @@ describe('[getInlineCompletions] completion event', () => {
                     "totalChars": 0,
                   },
                   "id": "stable-uuid",
+                  "isFuzzyMatch": false,
                   "languageId": "typescript",
                   "multiline": true,
                   "multilineMode": "block",
@@ -133,12 +151,19 @@ describe('[getInlineCompletions] completion event', () => {
         })
 
         it('for singleline completions', async () => {
-            const eventWithoutTimestamps = await getAnalyticsEvent(
-                'function foo() {\n  return█}',
-                '"foo"'
-            )
+            const event = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"')
 
-            expect(eventWithoutTimestamps).toMatchInlineSnapshot(`
+            expect(Object.keys(event.params.stageTimings)).toMatchInlineSnapshot(`
+              [
+                "preLastCandidate",
+                "preCache",
+                "preDebounce",
+                "preContextRetrieval",
+                "preNetworkRequest",
+              ]
+            `)
+
+            expect(eventWithoutTimestamps(event)).toMatchInlineSnapshot(`
               {
                 "id": "stable-uuid",
                 "items": [
@@ -175,6 +200,7 @@ describe('[getInlineCompletions] completion event', () => {
                     "totalChars": 0,
                   },
                   "id": "stable-uuid",
+                  "isFuzzyMatch": false,
                   "languageId": "typescript",
                   "multiline": false,
                   "multilineMode": null,
@@ -194,31 +220,21 @@ describe('[getInlineCompletions] completion event', () => {
         })
 
         it('logs `insertText` only for DotCom users', async () => {
-            const eventWithoutTimestamps = await getAnalyticsEvent(
-                'function foo() {\n  return█}',
-                '"foo"'
-            )
+            const event = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"')
 
-            expect(eventWithoutTimestamps.items?.some(item => item.insertText)).toBe(false)
+            expect(event.items?.some(item => item.insertText)).toBe(false)
         })
 
         it('does not log `insertText` for enterprise users', async () => {
-            const eventWithoutTimestamps = await getAnalyticsEvent(
-                'function foo() {\n  return█}',
-                '"foo"',
-                {
-                    isDotComUser: true,
-                }
-            )
+            const event = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"', {
+                isDotComUser: true,
+            })
 
-            expect(eventWithoutTimestamps.items?.some(item => item.insertText)).toBe(true)
+            expect(event.items?.some(item => item.insertText)).toBe(true)
         })
         it('does not log `inlineCompletionItemContext` for enterprise users', async () => {
-            const eventWithoutTimestamps = await getAnalyticsEvent(
-                'function foo() {\n  return█}',
-                '"foo"'
-            )
-            expect(eventWithoutTimestamps.params?.inlineCompletionItemContext).toBeUndefined()
+            const event = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"')
+            expect(event.params?.inlineCompletionItemContext).toBeUndefined()
         })
     })
 })

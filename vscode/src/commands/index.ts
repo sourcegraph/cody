@@ -66,6 +66,13 @@ export const CodyCommandMenuItems: MenuCommandAccessor[] = [
         mode: 'ask',
     },
     {
+        key: 'auto',
+        description: 'Auto Edit (Experimental)',
+        icon: 'surround-with',
+        command: { command: 'cody.command.auto-edit' },
+        keybinding: '${osIcon}Tab',
+    },
+    {
         key: 'commit',
         description: 'Generate Commit Message (Experimental)',
         icon: 'git-commit',

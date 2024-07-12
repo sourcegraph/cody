@@ -77,6 +77,7 @@ export interface Configuration {
     autocompleteExperimentalFireworksOptions?: FireworksOptions
     autocompleteExperimentalMultiModelCompletions?: MultimodelSingleModelConfig[]
     autocompleteExperimentalSmartThrottle?: boolean
+    autocompleteExperimentalSmartThrottleExtended?: boolean
 
     /**
      * Hidden settings

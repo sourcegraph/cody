@@ -56,6 +56,7 @@ instance is running, saving that file will reload the instance.
 ## Running the tests 
 
 1. In your Sourcegraph folder, run `sg start dotcom-cody-e2e`.
+  1. To ensure the default site-admin is available (mandatory), still in the Sourcegraph folder you can run `sg db default-site-admin`.
 1. Back to the Cody repo, run `pnpm run test:local-e2e`
 
 ## FAQ 
@@ -86,3 +87,8 @@ configurable? Please remember that sane defaults that works out of the box are r
 
 Perhaps try resetting the Redis instance, i.e. in the Sourcegraph folder, run `sg db reset-redis` and 
 try again.
+
+### What does `sg db default-site-admin` do exactly? 
+
+It creates if necessary a site-admin user in your local instance, which always have the same email, username, 
+password and more importantly, the same access token (`sgf_f0f0f0f0...`).

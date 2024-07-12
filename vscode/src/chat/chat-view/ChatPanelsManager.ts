@@ -195,7 +195,6 @@ export class ChatPanelsManager implements vscode.Disposable {
 
         this.activePanelProvider = provider
         this.panelProviders.push(provider)
-
         return provider
     }
 

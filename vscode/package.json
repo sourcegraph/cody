@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.26.0",
+  "version": "1.26.2",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -340,6 +340,14 @@
         "when": "cody.activated && cody.isGeneratingCommit"
       },
       {
+        "command": "cody.command.auto-edit",
+        "category": "Cody Command",
+        "group": "Cody Command",
+        "title": "Auto Edit Code at Cursor",
+        "icon": "$(surround-with)",
+        "enablement": "cody.activated && config.cody.internal.unstable"
+      },
+      {
         "command": "cody.auth.signout",
         "category": "Cody",
         "title": "Sign Out",
@@ -620,6 +628,11 @@
         "command": "cody.command.edit-code",
         "key": "alt+k",
         "when": "cody.activated && !editorReadonly"
+      },
+      {
+        "command": "cody.command.auto-edit",
+        "key": "alt+tab",
+        "when": "cody.activated && !editorReadonly && config.cody.internal.unstable"
       },
       {
         "command": "cody.tutorial.edit",
@@ -1198,6 +1211,11 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Changes the debounce time for autocomplete requests based on the amount of time since the last request."
+        },
+        "cody.autocomplete.experimental.smartThrottleExtended": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Changes the (extended) debounce time for autocomplete requests based on the amount of time since the last request."
         },
         "openctx.enable": {
           "type": "boolean",
