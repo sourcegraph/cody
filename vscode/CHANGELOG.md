@@ -6,9 +6,11 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
-- Chat: Chat has been added back to the VS Code sidebar (after being removed about 6 months ago). By default, new chats open in the sidebar. New chats can still be opened in an editor panel with the `New Chat in Sidebar` command. Currently open chats can be moved from the sidebar into an editor panel and vice versa.
+- Chat: Chat has been added back to the VS Code sidebar (after being removed about 6 months ago). By default, new chats open in the sidebar. New chats can still be opened in an editor panel with the `New Chat in Sidebar` command. Currently open chats can be moved from the sidebar into an editor panel and vice versa. [pull/4832](https://github.com/sourcegraph/cody/pull/4832)
 
 ### Fixed
+
+- Autocomplete: Fixed an issue where in-flight requests would sometimes be incorrectly resolved if the cursor position changed. [pull/4827](https://github.com/sourcegraph/cody/pull/4827)
 
 ### Changed
 
@@ -16,7 +18,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
-- A no-op command `New Chat in Sidebar` was removed. (This will be added back with functionality in the next minor stable release version.)
+- A no-op command `New Chat in Sidebar` was removed. (This will be added back with functionality in the next minor stable release version.) [pull/4837](https://github.com/sourcegraph/cody/pull/4837)
 
 ## 1.26.0
 
