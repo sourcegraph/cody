@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import {
     ClientConfigSingleton,
+    type DocumentContext,
     FeatureFlag,
     RateLimitError,
     contextFiltersProvider,
@@ -77,7 +78,7 @@ interface CompletionRequest {
 export class InlineCompletionItemProvider
     implements vscode.InlineCompletionItemProvider, vscode.Disposable
 {
-    private lastCompletionRequest: CompletionRequest | null = null
+    private latestCompletionRequest: CompletionRequest | null = null
     // This field is going to be set if you use the keyboard shortcut to manually trigger a
     // completion. Since VS Code does not provide a way to distinguish manual vs automatic
     // completions, we use consult this field inside the completion callback instead.
@@ -198,8 +199,8 @@ export class InlineCompletionItemProvider
 
     public async provideInlineCompletionItems(
         document: vscode.TextDocument,
-        position: vscode.Position,
-        context: vscode.InlineCompletionContext,
+        invokedPosition: vscode.Position,
+        invokedContext: vscode.InlineCompletionContext,
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
     ): Promise<AutocompleteResult | null> {
@@ -223,13 +224,13 @@ export class InlineCompletionItemProvider
             }
 
             // Update the last request
-            const lastCompletionRequest = this.lastCompletionRequest
+            const lastCompletionRequest = this.latestCompletionRequest
             const completionRequest: CompletionRequest = {
                 document,
-                position,
-                context,
+                position: invokedPosition,
+                context: invokedContext,
             }
-            this.lastCompletionRequest = completionRequest
+            this.latestCompletionRequest = completionRequest
 
             stageRecorder.record('preClientConfigCheck')
             const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
@@ -282,7 +283,7 @@ export class InlineCompletionItemProvider
             stageRecorder.record('preContentPopupCheck')
             // When the user has the completions popup open and an item is selected that does not match
             // the text that is already in the editor, VS Code will never render the completion.
-            if (!currentEditorContentMatchesPopupItem(document, context)) {
+            if (!currentEditorContentMatchesPopupItem(document, invokedContext)) {
                 return null
             }
 
@@ -299,7 +300,7 @@ export class InlineCompletionItemProvider
 
             const triggerKind = isManualCompletion
                 ? TriggerKind.Manual
-                : context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
+                : invokedContext.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
                   ? TriggerKind.Automatic
                   : takeSuggestWidgetSelectionIntoAccount
                     ? TriggerKind.SuggestWidget
@@ -307,19 +308,17 @@ export class InlineCompletionItemProvider
             this.lastManualCompletionTimestamp = null
 
             stageRecorder.record('preDocContext')
-            const docContext = getCurrentDocContext({
+            let docContext = this.getDocContext(
                 document,
-                position,
-                maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
-                maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
-                // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
-                context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
-            })
+                invokedPosition,
+                invokedContext,
+                takeSuggestWidgetSelectionIntoAccount
+            )
 
             stageRecorder.record('preCompletionIntent')
             const completionIntent = getCompletionIntent({
                 document,
-                position,
+                position: invokedPosition,
                 prefix: docContext.prefix,
             })
 
@@ -345,6 +344,11 @@ export class InlineCompletionItemProvider
             stageRecorder.record('preGetInlineCompletions')
 
             try {
+                // We cannot rely on `position` and `context` being accurate after this request is
+                // completed, so we support reassinging them later.
+                let position: vscode.Position = invokedPosition
+                let context: vscode.InlineCompletionContext | undefined = invokedContext
+
                 const result = await this.getInlineCompletions({
                     document,
                     position,
@@ -394,6 +398,45 @@ export class InlineCompletionItemProvider
                     return null
                 }
 
+                if (result.stale) {
+                    // Although we have a result, we have marked it as stale which means that we're prioritising
+                    // a different result. We want to avoid cases where we run `provideInlineCompletionItems` multiple times
+                    // for a single position, so we do nothing here.
+                    return null
+                }
+
+                const autocompleteItems = analyticsItemToAutocompleteItem(
+                    result.logId,
+                    document,
+                    docContext,
+                    position,
+                    result.items,
+                    context,
+                    span
+                )
+
+                const latestCursorPosition = vscode.window.activeTextEditor?.selection.active
+                if (
+                    latestCursorPosition !== undefined &&
+                    !latestCursorPosition.isEqual(invokedPosition)
+                ) {
+                    // The cursor position has changed since the request was made.
+                    // This is likely due to another completion request starting, and this request staying in-flight.
+                    // We must update the `position`, `context` and associated values
+                    position = latestCursorPosition
+                    // If the cursor position is the same as the position of the completion request, we should use
+                    // the provided context. This allows us to re-use useful information such as `selectedCompletionInfo`
+                    context = latestCursorPosition.isEqual(this.latestCompletionRequest.position)
+                        ? this.latestCompletionRequest.context
+                        : undefined
+                    docContext = this.getDocContext(
+                        document,
+                        position,
+                        context,
+                        takeSuggestWidgetSelectionIntoAccount
+                    )
+                }
+
                 // Checks if the current line prefix length is less than or equal to the last triggered prefix length
                 // If true, that means user has backspaced/deleted characters to trigger a new completion request,
                 // meaning the previous result is unwanted/rejected.
@@ -424,11 +467,11 @@ export class InlineCompletionItemProvider
                     )
                 }
 
-                const visibleItems = result.items.filter(item =>
+                const visibleItems = autocompleteItems.filter(item =>
                     isCompletionVisible(
                         item,
                         document,
-                        position,
+                        { invokedPosition, latestPosition: position },
                         docContext,
                         context,
                         takeSuggestWidgetSelectionIntoAccount,
@@ -461,26 +504,16 @@ export class InlineCompletionItemProvider
                     }
                 }
 
-                const autocompleteItems = analyticsItemToAutocompleteItem(
-                    result.logId,
-                    document,
-                    docContext,
-                    position,
-                    visibleItems,
-                    context,
-                    span
-                )
-
                 // Store the log ID for each completion item so that we can later map to the selected
                 // item from the ID alone
-                for (const item of autocompleteItems) {
+                for (const item of visibleItems) {
                     suggestedAutocompleteItemsCache.add(item)
                 }
 
                 // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
                 const autocompleteResult: AutocompleteResult = {
                     logId: result.logId,
-                    items: updateInsertRangeForVSCode(autocompleteItems),
+                    items: updateInsertRangeForVSCode(visibleItems),
                     completionEvent: CompletionLogger.getCompletionEvent(result.logId),
                 }
 
@@ -488,7 +521,7 @@ export class InlineCompletionItemProvider
                     // Since VS Code has no callback as to when a completion is shown, we assume
                     // that if we pass the above visibility tests, the completion is going to be
                     // rendered in the UI
-                    this.unstable_handleDidShowCompletionItem(autocompleteItems[0])
+                    this.unstable_handleDidShowCompletionItem(visibleItems[0])
                 }
 
                 recordExposedExperimentsToSpan(span)
@@ -746,6 +779,22 @@ export class InlineCompletionItemProvider
         //        outputChannel.show()
         //    },
         // })
+    }
+
+    private getDocContext(
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        context: vscode.InlineCompletionContext | undefined,
+        takeSuggestWidgetSelectionIntoAccount: boolean
+    ): DocumentContext {
+        return getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
+            maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
+            // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
+            context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
+        })
     }
 
     public dispose(): void {

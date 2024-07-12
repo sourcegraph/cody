@@ -112,7 +112,7 @@ export function analyticsItemToAutocompleteItem(
     docContext: DocumentContext,
     position: vscode.Position,
     items: InlineCompletionItemWithAnalytics[],
-    context: vscode.InlineCompletionContext,
+    context: vscode.InlineCompletionContext | undefined,
     span: Span
 ): AutocompleteItem[] {
     return items.map(item => {
@@ -142,7 +142,7 @@ export function analyticsItemToAutocompleteItem(
         const requestParams = {
             document,
             docContext,
-            selectedCompletionInfo: context.selectedCompletionInfo,
+            selectedCompletionInfo: context?.selectedCompletionInfo,
             position,
         } satisfies RequestParams
 
