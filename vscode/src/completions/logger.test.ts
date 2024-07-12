@@ -63,13 +63,14 @@ describe('logger', () => {
 
         CompletionLogger.start(id)
         CompletionLogger.networkRequestStarted(id, defaultContextSummary)
-        CompletionLogger.loaded(
-            id,
-            defaultRequestParams,
-            [item],
-            InlineCompletionsResultSource.Network,
-            false
-        )
+        CompletionLogger.loaded({
+            logId: id,
+            requestParams: defaultRequestParams,
+            completions: [item],
+            source: InlineCompletionsResultSource.Network,
+            isFuzzyMatch: false,
+            isDotComUser: false,
+        })
         CompletionLogger.suggested(id)
         CompletionLogger.accepted(id, document, item, range(0, 0, 0, 0), false)
 
@@ -94,13 +95,14 @@ describe('logger', () => {
         const id1 = CompletionLogger.create(defaultArgs)
         CompletionLogger.start(id1)
         CompletionLogger.networkRequestStarted(id1, defaultContextSummary)
-        CompletionLogger.loaded(
-            id1,
-            defaultRequestParams,
-            [item],
-            InlineCompletionsResultSource.Network,
-            false
-        )
+        CompletionLogger.loaded({
+            logId: id1,
+            requestParams: defaultRequestParams,
+            completions: [item],
+            source: InlineCompletionsResultSource.Network,
+            isFuzzyMatch: false,
+            isDotComUser: false,
+        })
         CompletionLogger.suggested(id1)
 
         const loggerItem = CompletionLogger.getCompletionEvent(id1)
@@ -110,13 +112,14 @@ describe('logger', () => {
         const id2 = CompletionLogger.create(defaultArgs)
         CompletionLogger.start(id2)
         CompletionLogger.networkRequestStarted(id2, defaultContextSummary)
-        CompletionLogger.loaded(
-            id2,
-            defaultRequestParams,
-            [item],
-            InlineCompletionsResultSource.Cache,
-            false
-        )
+        CompletionLogger.loaded({
+            logId: id2,
+            requestParams: defaultRequestParams,
+            completions: [item],
+            source: InlineCompletionsResultSource.Cache,
+            isFuzzyMatch: false,
+            isDotComUser: false,
+        })
         CompletionLogger.suggested(id2)
         CompletionLogger.accepted(id2, document, item, range(0, 0, 0, 0), false)
 
@@ -133,13 +136,14 @@ describe('logger', () => {
         const id3 = CompletionLogger.create(defaultArgs)
         CompletionLogger.start(id3)
         CompletionLogger.networkRequestStarted(id3, defaultContextSummary)
-        CompletionLogger.loaded(
-            id3,
-            defaultRequestParams,
-            [item],
-            InlineCompletionsResultSource.Cache,
-            false
-        )
+        CompletionLogger.loaded({
+            logId: id3,
+            requestParams: defaultRequestParams,
+            completions: [item],
+            source: InlineCompletionsResultSource.Cache,
+            isFuzzyMatch: false,
+            isDotComUser: false,
+        })
         CompletionLogger.suggested(id3)
 
         const loggerItem3 = CompletionLogger.getCompletionEvent(id3)

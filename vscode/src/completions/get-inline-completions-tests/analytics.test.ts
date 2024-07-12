@@ -54,7 +54,7 @@ describe('[getInlineCompletions] completion event', () => {
         )
 
         // Get `suggestionId` from `CompletionLogger.loaded` call.
-        const suggestionId: CompletionLogger.CompletionLogID = spy.mock.calls[0][0]
+        const suggestionId: CompletionLogger.CompletionLogID = spy.mock.calls[0][0].logId
         const completionEvent = CompletionLogger.getCompletionEvent(suggestionId)
 
         return omit(completionEvent, [
@@ -114,6 +114,7 @@ describe('[getInlineCompletions] completion event', () => {
                     "totalChars": 0,
                   },
                   "id": "stable-uuid",
+                  "isFuzzyMatch": false,
                   "languageId": "typescript",
                   "multiline": true,
                   "multilineMode": "block",
@@ -175,6 +176,7 @@ describe('[getInlineCompletions] completion event', () => {
                     "totalChars": 0,
                   },
                   "id": "stable-uuid",
+                  "isFuzzyMatch": false,
                   "languageId": "typescript",
                   "multiline": false,
                   "multilineMode": null,
