@@ -510,7 +510,7 @@ export class SourcegraphGraphQLAPIClient {
         this._config = config
     }
 
-    public onConfigurationChange(newConfig: GraphQLAPIClientConfig): void {
+    public setConfig(newConfig: GraphQLAPIClientConfig): void {
         this._config = newConfig
     }
 

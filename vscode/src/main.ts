@@ -182,7 +182,7 @@ const register = async (
     }
 
     await configWatcher.initAndOnChange(async config => {
-        graphqlClient.onConfigurationChange(config)
+        graphqlClient.setConfig(config)
         await featureFlagProvider.syncAuthStatus()
     }, disposables)
 
@@ -258,53 +258,50 @@ const register = async (
     const sourceControl = new CodySourceControl(chatClient)
     const statusBar = createStatusBar()
 
-    // Functions that need to be called on auth status changes
-    async function handleAuthStatusChange(authStatus: AuthStatus) {
-        // NOTE: MUST update the config and graphQL client first.
-        const newConfig = await getFullConfig()
+    // Listen for auth changes
+    disposables.push(
+        authProvider.initAndOnChange(async (authStatus: AuthStatus) => {
+            // NOTE: MUST update the config and graphQL client first.
+            const newConfig = await getFullConfig()
+            graphqlClient.setConfig(newConfig)
 
-        // Sync auth status to graphqlClient
-        graphqlClient.onConfigurationChange(newConfig)
+            // Refresh server configuration that controls features enablement and models.
+            await ClientConfigSingleton.getInstance().syncAuthStatus(authStatus)
 
-        // Refresh server configuration that controls features enablement and models.
-        await ClientConfigSingleton.getInstance().syncAuthStatus(authStatus)
+            // Reset models list based on the updated auth status and server configuration.
+            await syncModels(authStatus)
+            await chatsController.syncAuthStatus(authStatus)
+            editorManager.syncAuthStatus(authStatus)
 
-        // Reset models list based on the updated auth status and server configuration.
-        await syncModels(authStatus)
-        await chatsController.syncAuthStatus(authStatus)
-        editorManager.syncAuthStatus(authStatus)
+            const parallelTasks: Promise<void>[] = [
+                featureFlagProvider.syncAuthStatus(),
+                setupAutocomplete(),
+            ]
+            await Promise.all(parallelTasks)
 
-        const parallelTasks: Promise<void>[] = [
-            featureFlagProvider.syncAuthStatus(),
-            setupAutocomplete(),
-        ]
-        await Promise.all(parallelTasks)
+            symfRunner?.setSourcegraphAuth(authStatus.endpoint, newConfig.accessToken)
 
-        symfRunner?.setSourcegraphAuth(authStatus.endpoint, newConfig.accessToken)
+            void exposeOpenCtxClient(
+                context,
+                newConfig,
+                authStatus.isDotCom,
+                platform.createOpenCtxController
+            )
 
-        void exposeOpenCtxClient(
-            context,
-            newConfig,
-            authStatus.isDotCom,
-            platform.createOpenCtxController
-        )
+            statusBar.syncAuthStatus(authStatus)
+            sourceControl.syncAuthStatus(authStatus)
+            await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
 
-        statusBar.syncAuthStatus(authStatus)
-        sourceControl.syncAuthStatus(authStatus)
-        await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
-
-        const eventValue =
-            !authStatus.isLoggedIn && !authStatus.endpoint
-                ? 'disconnected'
-                : authStatus.isLoggedIn &&
-                    !(authStatus.showNetworkError || authStatus.showInvalidAccessTokenError)
-                  ? 'connected'
-                  : 'failed'
-        telemetryRecorder.recordEvent('cody.auth', eventValue)
-    }
-
-    // Add change listener to auth provider
-    disposables.push(authProvider.initAndOnChange(handleAuthStatusChange))
+            const eventValue =
+                !authStatus.isLoggedIn && !authStatus.endpoint
+                    ? 'disconnected'
+                    : authStatus.isLoggedIn &&
+                        !(authStatus.showNetworkError || authStatus.showInvalidAccessTokenError)
+                      ? 'connected'
+                      : 'failed'
+            telemetryRecorder.recordEvent('cody.auth', eventValue)
+        })
+    )
 
     // Setup config watcher
     configWatcher.onChange(setupAutocomplete, disposables)
