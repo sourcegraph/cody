@@ -51,10 +51,9 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         return AuthProvider._instance
     }
 
-    public static async createAndInit(config: AuthConfig) {
+    public static create(config: AuthConfig): AuthProvider {
         if (!AuthProvider._instance) {
             AuthProvider._instance = new AuthProvider(config)
-            await AuthProvider._instance.init()
         }
         return AuthProvider._instance
     }

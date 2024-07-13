@@ -109,15 +109,31 @@ export async function start(
 
     const disposables: vscode.Disposable[] = []
 
-    const authProvider = AuthProvider.createAndInit(await getFullConfig())
+    const authProvider = AuthProvider.create(await getFullConfig())
     const configWatcher = await BaseConfigWatcher.create(authProvider, disposables)
+    const isExtensionModeDevOrTest =
+        context.extensionMode === vscode.ExtensionMode.Development ||
+        context.extensionMode === vscode.ExtensionMode.Test
+    await configWatcher.onChange(
+        async config => {
+            await configureEventsInfra(config, isExtensionModeDevOrTest, authProvider)
+        },
+        disposables,
+        { runImmediately: true }
+    )
+    // The split between AuthProvider construction and initialization is
+    // awkward, but necessary, so we can initialize the telemetry recorder
+    // first, as this is used in AuthProvider
+    await authProvider.init()
 
     configWatcher.onChange(async config => {
         platform.onConfigurationChange?.(config)
         registerModelsFromVSCodeConfiguration()
     }, disposables)
 
-    disposables.push(await register(context, await authProvider, configWatcher, platform))
+    disposables.push(
+        await register(context, authProvider, configWatcher, platform, isExtensionModeDevOrTest)
+    )
 
     return vscode.Disposable.from(...disposables)
 }
@@ -127,12 +143,10 @@ const register = async (
     context: vscode.ExtensionContext,
     authProvider: AuthProvider,
     configWatcher: ConfigWatcher<ConfigurationWithAccessToken>,
-    platform: PlatformContext
+    platform: PlatformContext,
+    isExtensionModeDevOrTest: boolean
 ): Promise<vscode.Disposable> => {
     const disposables: vscode.Disposable[] = []
-    const isExtensionModeDevOrTest =
-        context.extensionMode === vscode.ExtensionMode.Development ||
-        context.extensionMode === vscode.ExtensionMode.Test
     setClientNameVersion(platform.extensionClient.clientName, platform.extensionClient.clientVersion)
 
     // Initialize `displayPath` first because it might be used to display paths in error messages
@@ -280,7 +294,6 @@ async function initializeSingletons(
             const promises: Promise<void>[] = []
 
             promises.push(localStorage.setConfig(config))
-            promises.push(configureEventsInfra(config, isExtensionModeDevOrTest, authProvider))
             graphqlClient.setConfig(config)
             promises.push(featureFlagProvider.refresh())
             promises.push(contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri))
