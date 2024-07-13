@@ -13,7 +13,7 @@ const buttonVariants = cva(
                 default:
                     'tw-bg-button-background tw-text-button-foreground hover:tw-bg-button-background-hover focus-visible:tw-bg-primary-hover',
                 outline:
-                    'tw-border tw-border-border tw-bg-background hover:tw-bg-muted-transparent hover:tw-text-foreground',
+                    'tw-border tw-border-border tw-bg-background hover:tw-bg-muted hover:tw-text-foreground',
                 secondary:
                     'tw-bg-button-secondary-background tw-text-button-secondary-foreground hover:tw-bg-button-secondary-background-hover disabled:tw-opacity-75',
                 ghost: 'hover:tw-bg-muted-transparent',
