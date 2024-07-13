@@ -3,7 +3,7 @@ package com.sourcegraph.cody.protocol_generated;
 
 data class AuthStatus(
   val username: String,
-  val endpoint: String? = null,
+  val endpoint: String = "",
   val isDotCom: Boolean,
   val isLoggedIn: Boolean,
   val isFireworksTracingEnabled: Boolean,
