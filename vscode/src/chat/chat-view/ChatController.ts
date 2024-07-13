@@ -77,7 +77,6 @@ import type { LocalEmbeddingsController } from '../../local-context/local-embedd
 import { rewriteChatQuery } from '../../local-context/rewrite-chat-query'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
-import { chatModel } from '../../models'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
 import type { AuthProvider } from '../../services/AuthProvider'
@@ -203,7 +202,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
 
-        this.chatModel = new ChatModel(getDefaultModelID(authProvider, models))
+        this.chatModel = new ChatModel(getDefaultModelID(authProvider.getAuthStatus()))
 
         this.guardrails = guardrails
         this.startTokenReceiver = startTokenReceiver
@@ -313,6 +312,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.handleAbort()
                 break
             case 'chatModel':
+                // Because this was a user action to change the model we will set that
+                // as a global default for chat
+                await ModelsService.setDefaultModel(ModelUsage.Chat, message.model)
                 this.handleSetChatModel(message.model)
                 break
             case 'get-chat-models':
@@ -532,11 +534,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // and awaiting on this.postMessage may result in a deadlock
         void this.sendConfig()
 
-        const models = ModelsService.getModels(
-            ModelUsage.Chat,
-            authStatus.isDotCom && !authStatus.userCanUpgrade
-        )
-        this.handleSetChatModel(getDefaultModelID(this.authProvider, models))
+        // Get the latest model list available to the current user to update the ChatModel.
+        this.handleSetChatModel(getDefaultModelID(this.authProvider.getAuthStatus()))
     }
 
     // When the webview sends the 'ready' message, respond by posting the view config
@@ -877,9 +876,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
     }
 
-    private async handleSetChatModel(modelID: string): Promise<void> {
+    private handleSetChatModel(modelID: string) {
         this.chatModel.updateModel(modelID)
-        await chatModel.set(modelID)
         this.postChatModels()
     }
 
@@ -1119,11 +1117,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (!authStatus?.isLoggedIn) {
             return
         }
-        const models = ModelsService.getModels(
-            ModelUsage.Chat,
-            authStatus.isDotCom && !authStatus.userCanUpgrade,
-            this.chatModel.modelID
-        )
+        const models = ModelsService.getModels(ModelUsage.Chat, authStatus)
 
         void this.postMessage({
             type: 'chatModels',
@@ -1614,6 +1608,7 @@ function newChatModelFromSerializedChatTranscript(
 ): ChatModel {
     return new ChatModel(
         migrateAndNotifyForOutdatedModels(json.chatModel || modelID)!,
+        json.id,
         json.interactions.flatMap((interaction: SerializedChatInteraction): ChatMessage[] =>
             [
                 PromptString.unsafe_deserializeChatMessage(interaction.humanMessage),
@@ -1622,7 +1617,6 @@ function newChatModelFromSerializedChatTranscript(
                     : null,
             ].filter(isDefined)
         ),
-        json.id,
         json.chatTitle,
         json.enhancedContext?.selectedRepos
     )
@@ -1665,11 +1659,12 @@ export function revealWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscod
     }
 }
 
-function getDefaultModelID(authProvider: AuthProvider, models: Model[]): string {
+function getDefaultModelID(status: AuthStatus): string {
+    const pending = ''
     try {
-        return chatModel.get(authProvider, models)
+        return ModelsService.getDefaultChatModel(status) || pending
     } catch {
-        return '(pending)'
+        return pending
     }
 }
 

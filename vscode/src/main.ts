@@ -268,6 +268,10 @@ async function initializeSingletons(
     isExtensionModeDevOrTest: boolean,
     disposables: vscode.Disposable[]
 ): Promise<void> {
+    // Allow the VS Code app's instance of ModelsService to use local storage to persist
+    // user's model choices
+    ModelsService.setStorage(localStorage)
+
     disposables.push(upstreamHealthProvider, contextFiltersProvider)
     setCommandController(platform.createCommandsProvider?.())
     repoNameResolver.init(authProvider)
@@ -602,7 +606,6 @@ function registerAutocomplete(
     disposables: vscode.Disposable[]
 ): Promise<void> {
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
-    void configWatcher.onChange(setupAutocomplete, disposables)
 
     let autocompleteDisposables: vscode.Disposable[] = []
     function disposeAutocomplete(): void {
@@ -617,7 +620,7 @@ function registerAutocomplete(
         dispose: disposeAutocomplete,
     })
 
-    function setupAutocomplete(): Promise<void> {
+    const setupAutocomplete = (): Promise<void> => {
         setupAutocompleteQueue = setupAutocompleteQueue
             .then(async () => {
                 const config = await getFullConfig()
@@ -671,7 +674,7 @@ function registerAutocomplete(
             })
         return setupAutocompleteQueue
     }
-
+    void configWatcher.onChange(setupAutocomplete, disposables)
     return setupAutocomplete().catch(() => {})
 }
 
@@ -784,14 +787,6 @@ function registerChat(
         extensionClient: platform.extensionClient,
     })
     disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider())
-    disposables.push(
-        authProvider.onChange(
-            authStatus => {
-                editorManager.setAuthStatus(authStatus)
-            },
-            { runImmediately: true }
-        )
-    )
 
     if (localEmbeddings) {
         // kick-off embeddings initialization

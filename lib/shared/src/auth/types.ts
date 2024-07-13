@@ -118,3 +118,15 @@ export const offlineModeAuthStatus = {
     avatarURL: '',
     codyApiVersion: 0,
 } satisfies AuthStatus
+
+export function isCodyProUser(authStatus: AuthStatus): boolean {
+    return authStatus.isDotCom && !authStatus.userCanUpgrade
+}
+
+export function isFreeUser(authStatus: AuthStatus): boolean {
+    return authStatus.isDotCom && authStatus.userCanUpgrade
+}
+
+export function isEnterpriseUser(authStatus: AuthStatus): boolean {
+    return !authStatus.isDotCom
+}

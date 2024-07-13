@@ -4,12 +4,12 @@ import {
     CHAT_INPUT_TOKEN_BUDGET,
     ClientConfigSingleton,
     Model,
-    ModelUIGroup,
     ModelUsage,
     ModelsService,
     RestClient,
     getDotComDefaultModels,
 } from '@sourcegraph/cody-shared'
+import { ModelTag } from '@sourcegraph/cody-shared/src/models/tags'
 import * as vscode from 'vscode'
 import { logDebug } from '../log'
 import { secretStorage } from '../services/SecretStorageProvider'
@@ -69,17 +69,16 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // automatically fallback to use the default model configured on the instance.
     if (authStatus?.configOverwrites?.chatModel) {
         ModelsService.setModels([
-            new Model(
-                authStatus.configOverwrites.chatModel,
+            new Model({
+                model: authStatus.configOverwrites.chatModel,
                 // TODO (umpox) Add configOverwrites.editModel for separate edit support
-                [ModelUsage.Chat, ModelUsage.Edit],
-                getEnterpriseContextWindow(
+                usage: [ModelUsage.Chat, ModelUsage.Edit],
+                contextWindow: getEnterpriseContextWindow(
                     authStatus?.configOverwrites?.chatModel,
                     authStatus?.configOverwrites
                 ),
-                undefined,
-                ModelUIGroup.Enterprise
-            ),
+                tags: [ModelTag.Enterprise],
+            }),
         ])
     } else {
         // If the enterprise instance didn't have any configuration data for Cody,
@@ -114,18 +113,21 @@ export function registerModelsFromVSCodeConfiguration() {
         return
     }
 
-    const models: Model[] = []
-    for (const m of modelsConfig) {
-        const provider = new Model(
-            `${m.provider}/${m.model}`,
-            [ModelUsage.Chat, ModelUsage.Edit],
-            { input: m.inputTokens ?? CHAT_INPUT_TOKEN_BUDGET, output: m.outputTokens ?? ANSWER_TOKENS },
-            { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint }
+    ModelsService.addModels(
+        modelsConfig.map(
+            m =>
+                new Model({
+                    model: `${m.provider}/${m.model}`,
+                    usage: [ModelUsage.Chat, ModelUsage.Edit],
+                    contextWindow: {
+                        input: m.inputTokens ?? CHAT_INPUT_TOKEN_BUDGET,
+                        output: m.outputTokens ?? ANSWER_TOKENS,
+                    },
+                    clientSideConfig: { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint },
+                    tags: [ModelTag.Local, ModelTag.BYOK, ModelTag.Experimental],
+                })
         )
-        models.push(provider)
-    }
-
-    ModelsService.addModels(models)
+    )
 }
 
 // fetchServerSideModels contacts the Sourcegraph endpoint, and fetches the LLM models it

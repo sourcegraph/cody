@@ -232,7 +232,7 @@ export class CodySourceControl implements vscode.Disposable {
     }
 
     public setAuthStatus(authStatus: AuthStatus): void {
-        const models = ModelsService.getModels(ModelUsage.Chat, !authStatus.userCanUpgrade)
+        const models = ModelsService.getModels(ModelUsage.Chat, authStatus)
         const preferredModel = models?.find(p => p.model.includes('claude-3-haiku'))
         this.model = preferredModel ?? models[0]
     }
