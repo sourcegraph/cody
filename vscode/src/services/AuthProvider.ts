@@ -217,8 +217,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
     private async signout(endpoint: string): Promise<void> {
         await secretStorage.deleteToken(endpoint)
         await localStorage.deleteEndpoint()
-        await this.auth({ endpoint, token: null })
-        this.status.endpoint = ''
+        await this.auth({ endpoint: '', token: null })
         await vscode.commands.executeCommand('setContext', 'cody.activated', false)
     }
 
@@ -413,15 +412,12 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         ]).finally(() => {
             this.didChangeEvent.fire(this.getAuthStatus())
             let eventValue: 'disconnected' | 'connected' | 'failed'
-            if (!authStatus.isLoggedIn && !authStatus.endpoint) {
-                eventValue = 'disconnected'
-            } else if (
-                authStatus.isLoggedIn &&
-                !(authStatus.showNetworkError || authStatus.showInvalidAccessTokenError)
-            ) {
+            if (authStatus.showNetworkError || authStatus.showInvalidAccessTokenError) {
+                eventValue = 'failed'
+            } else if (authStatus.isLoggedIn) {
                 eventValue = 'connected'
             } else {
-                eventValue = 'failed'
+                eventValue = 'disconnected'
             }
             telemetryRecorder.recordEvent('cody.auth', eventValue)
         })
