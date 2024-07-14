@@ -36,7 +36,7 @@ export interface CodyStatusBar {
     ): () => void
     addError(error: StatusBarError): () => void
     hasError(error: StatusBarErrorName): boolean
-    syncAuthStatus(newStatus: AuthStatus): void
+    setAuthStatus(newStatus: AuthStatus): void
 }
 
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
@@ -381,7 +381,7 @@ export function createStatusBar(): CodyStatusBar {
         hasError(errorName: StatusBarErrorName): boolean {
             return errors.some(e => e.error.errorType === errorName)
         },
-        syncAuthStatus(newStatus: AuthStatus) {
+        setAuthStatus(newStatus: AuthStatus) {
             authStatus = newStatus
             rerender()
         },

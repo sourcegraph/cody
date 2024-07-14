@@ -6,7 +6,7 @@ import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client
  */
 export interface AuthStatus {
     username: string
-    endpoint: string | null
+    endpoint: string
     isDotCom: boolean
     isLoggedIn: boolean
     /**

@@ -1,4 +1,11 @@
+import type { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { getFullConfig } from './configuration'
+import type { AuthProvider } from './services/AuthProvider'
+
+interface OnChangeOptions {
+    runImmediately: boolean
+}
 
 /**
  * A wrapper around a configuration source that lets the client retrieve the current config and watch for changes.
@@ -6,48 +13,50 @@ import * as vscode from 'vscode'
 export interface ConfigWatcher<C> extends vscode.Disposable {
     get(): C
 
-    // NOTE(beyang): should remove this
-    set(c: C): void
-
     /*
      * Register a callback that is called only when Cody's configuration is changed.
-     * Appends to the disposable array methods that unregister the callback
+     * Appends to the disposable array methods that unregister the callback.
+     *
+     * If `runImmediately` is true, the callback is called immediately and the returned
+     * Promise is that of the callback. If false (the default), then the return value
+     * is a resolved Promise.
      */
-    onChange(callback: (config: C) => Promise<void>, disposables: vscode.Disposable[]): void
-
-    /**
-     * Same behavior as onChange, but fires the callback once immediately for initialization.
-     */
-    initAndOnChange(
+    onChange(
         callback: (config: C) => Promise<void>,
-        disposables: vscode.Disposable[]
+        disposables: vscode.Disposable[],
+        options?: OnChangeOptions
     ): Promise<void>
 }
 
-export class BaseConfigWatcher<C> implements ConfigWatcher<C> {
-    private currentConfig: C
+export class BaseConfigWatcher implements ConfigWatcher<ConfigurationWithAccessToken> {
+    private currentConfig: ConfigurationWithAccessToken
     private disposables: vscode.Disposable[] = []
-    private configChangeEvent: vscode.EventEmitter<C>
+    private configChangeEvent: vscode.EventEmitter<ConfigurationWithAccessToken>
 
-    public static async create<C>(
-        getConfig: () => Promise<C>,
+    public static async create(
+        authProvider: AuthProvider,
         disposables: vscode.Disposable[]
-    ): Promise<ConfigWatcher<C>> {
-        const w = new BaseConfigWatcher(await getConfig())
+    ): Promise<ConfigWatcher<ConfigurationWithAccessToken>> {
+        const w = new BaseConfigWatcher(await getFullConfig())
+        disposables.push(w)
         disposables.push(
             vscode.workspace.onDidChangeConfiguration(async event => {
                 if (!event.affectsConfiguration('cody')) {
                     return
                 }
-                w.set(await getConfig())
+                w.set(await getFullConfig())
             })
         )
-        disposables.push(w)
+        disposables.push(
+            authProvider.onChange(async () => {
+                w.set(await getFullConfig())
+            })
+        )
 
         return w
     }
 
-    constructor(initialConfig: C) {
+    constructor(initialConfig: ConfigurationWithAccessToken) {
         this.currentConfig = initialConfig
         this.configChangeEvent = new vscode.EventEmitter()
         this.disposables.push(this.configChangeEvent)
@@ -60,7 +69,22 @@ export class BaseConfigWatcher<C> implements ConfigWatcher<C> {
         this.disposables = []
     }
 
-    public set(config: C): void {
+    public get(): ConfigurationWithAccessToken {
+        return this.currentConfig
+    }
+
+    public async onChange(
+        callback: (config: ConfigurationWithAccessToken) => Promise<void>,
+        disposables: vscode.Disposable[],
+        { runImmediately }: OnChangeOptions = { runImmediately: false }
+    ): Promise<void> {
+        disposables.push(this.configChangeEvent.event(callback))
+        if (runImmediately) {
+            await callback(this.currentConfig)
+        }
+    }
+
+    private set(config: ConfigurationWithAccessToken): void {
         const oldConfig = JSON.stringify(this.currentConfig)
         const newConfig = JSON.stringify(config)
         if (oldConfig === newConfig) {
@@ -69,21 +93,5 @@ export class BaseConfigWatcher<C> implements ConfigWatcher<C> {
 
         this.currentConfig = config
         this.configChangeEvent.fire(config)
-    }
-
-    get(): C {
-        return this.currentConfig
-    }
-
-    async initAndOnChange(
-        callback: (config: C) => Promise<void>,
-        disposables: vscode.Disposable[]
-    ): Promise<void> {
-        await callback(this.currentConfig)
-        this.onChange(callback, disposables)
-    }
-
-    public onChange(callback: (config: C) => Promise<void>, disposables: vscode.Disposable[]): void {
-        disposables.push(this.configChangeEvent.event(callback))
     }
 }

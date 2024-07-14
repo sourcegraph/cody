@@ -104,7 +104,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
         this._onDidChangeTreeData.fire(undefined)
     }
 
-    public syncAuthStatus(authStatus: AuthStatus): void {
+    public setAuthStatus(authStatus: AuthStatus): void {
         this.authStatus = authStatus
         void this.refresh()
     }

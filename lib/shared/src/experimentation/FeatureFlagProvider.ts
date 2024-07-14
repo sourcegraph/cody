@@ -161,13 +161,13 @@ export class FeatureFlagProvider {
         })
     }
 
-    public async syncAuthStatus(): Promise<void> {
+    public async refresh(): Promise<void> {
         this.exposedFeatureFlags = {}
         this.unexposedFeatureFlags = {}
         await this.refreshFeatureFlags()
     }
 
-    public async refreshFeatureFlags(): Promise<void> {
+    private async refreshFeatureFlags(): Promise<void> {
         return wrapInActiveSpan('FeatureFlagProvider.refreshFeatureFlags', async () => {
             const endpoint = this.apiClient.endpoint
             const data = process.env.DISABLE_FEATURE_FLAGS

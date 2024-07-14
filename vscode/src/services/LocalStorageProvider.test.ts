@@ -68,7 +68,7 @@ describe('LocalStorageProvider', () => {
 })
 
 const DUMMY_AUTH_STATUS: AuthStatus = {
-    endpoint: null,
+    endpoint: '',
     isDotCom: true,
     isLoggedIn: true,
     isFireworksTracingEnabled: false,
