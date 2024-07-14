@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     type AuthStatusProvider,
+    ClientConfigSingleton,
     CodyIDE,
     type ConfigurationWithAccessToken,
     DOTCOM_URL,
@@ -401,15 +402,19 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         if (authStatus.endpoint === 'init') {
             return
         }
+        void this.updateAuthStatus(authStatus)
+    }
 
-        // HACK: we must update the graphqlClient and ModelsService first
-        // because many listeners rely on these
-        Promise.all([
-            syncModels(authStatus),
-            getFullConfig().then(config => {
-                graphqlClient.setConfig(config)
-            }),
-        ]).finally(() => {
+    private async updateAuthStatus(authStatus: AuthStatus): Promise<void> {
+        try {
+            // We update the graphqlClient and ModelsService first
+            // because many listeners rely on these
+            graphqlClient.setConfig(await getFullConfig())
+            await ClientConfigSingleton.getInstance().setAuthStatus(authStatus)
+            await syncModels(authStatus)
+        } catch (error) {
+            logDebug('AuthProvider', 'updateAuthStatus error', error)
+        } finally {
             this.didChangeEvent.fire(this.getAuthStatus())
             let eventValue: 'disconnected' | 'connected' | 'failed'
             if (authStatus.showNetworkError || authStatus.showInvalidAccessTokenError) {
@@ -420,7 +425,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
                 eventValue = 'disconnected'
             }
             telemetryRecorder.recordEvent('cody.auth', eventValue)
-        })
+        }
     }
 
     // Register URI Handler (vscode://sourcegraph.cody-ai) for resolving token

@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
 import {
-    type AuthStatus,
     type ChatClient,
     ClientConfigSingleton,
     type CodeCompletionsClient,
@@ -122,8 +121,11 @@ export async function start(
         { runImmediately: true }
     )
     // The split between AuthProvider construction and initialization is
-    // awkward, but necessary, so we can initialize the telemetry recorder
-    // first, as this is used in AuthProvider
+    // awkward, but exists so we can initialize the telemetry recorder
+    // first, as it is used in AuthProvider before AuthProvider initialization
+    // is complete. It is also important that AuthProvider inintialization
+    // completes before initializeSingletons is called, because many of
+    // those assume an initialized AuthProvider
     await authProvider.init()
 
     configWatcher.onChange(async config => {
@@ -295,7 +297,15 @@ async function initializeSingletons(
 
             promises.push(localStorage.setConfig(config))
             graphqlClient.setConfig(config)
-            promises.push(featureFlagProvider.refresh())
+            promises.push(
+                featureFlagProvider
+                    .refresh()
+                    .then(() =>
+                        PromptMixin.updateContextPreamble(
+                            isExtensionModeDevOrTest || isRunningInsideAgent()
+                        )
+                    )
+            )
             promises.push(contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri))
             ModelsService.onConfigChange()
             upstreamHealthProvider.onConfigurationChange(config)
@@ -304,19 +314,6 @@ async function initializeSingletons(
         },
         disposables,
         { runImmediately: true }
-    )
-    disposables.push(
-        authProvider.onChange(
-            async (authStatus: AuthStatus) => {
-                // Refresh server configuration that controls features enablement and models.
-                await ClientConfigSingleton.getInstance().setAuthStatus(authStatus)
-                // await Promise.all([featureFlagProvider.refresh(), setupAutocomplete()])
-                await PromptMixin.updateContextPreamble(
-                    isExtensionModeDevOrTest || isRunningInsideAgent()
-                )
-            },
-            { runImmediately: true }
-        )
     )
 }
 
