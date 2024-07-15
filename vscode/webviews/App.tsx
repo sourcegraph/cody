@@ -204,16 +204,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const onCurrentChatModelChange = useCallback(
         (selected: Model): void => {
-            if (!chatModels || !setChatModels) {
-                return
-            }
             vscodeAPI.postMessage({
                 command: 'chatModel',
                 model: selected.model,
             })
-            setChatModels([selected].concat(chatModels.filter(m => m.model !== selected.model)))
         },
-        [chatModels, vscodeAPI]
+        [vscodeAPI]
     )
     const chatModelContext = useMemo<ChatModelContext>(
         () => ({ chatModels, onCurrentChatModelChange }),

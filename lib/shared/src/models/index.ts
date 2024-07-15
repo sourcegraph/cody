@@ -1,4 +1,4 @@
-import { type AuthStatus, isCodyProUser, isEnterpriseUser, isFreeUser } from '../auth/types'
+import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { logDebug } from '../logger'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
@@ -283,9 +283,6 @@ export class ModelsService {
         // Free users can only use the default free model, so we just find the first model they can use
         const models = ModelsService.getModelsByType(type)
         const firstModelUserCanUse = models.find(m => ModelsService.canUserUseModel(authStatus, m))
-        if (!authStatus.authenticated || isFreeUser(authStatus)) {
-            return firstModelUserCanUse
-        }
         const current = ModelsService.defaultModels.get(type)
         if (current && ModelsService.canUserUseModel(authStatus, current)) {
             return current
@@ -338,7 +335,7 @@ export class ModelsService {
             return tier !== 'enterprise'
         }
 
-        return tier === 'free'
+        return true
     }
 
     private static resolveModel(modelID: Model | string): Model | undefined {
