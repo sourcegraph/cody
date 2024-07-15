@@ -184,6 +184,9 @@ export type ExtensionMessage =
       }
     | { type: 'clientState'; value: ClientStateForWebview }
     | { type: 'clientAction'; addContextItemsToLastHumanInput: ContextItem[] }
+    /**
+     * The current default model will always be the first one on the list.
+     */
     | { type: 'chatModels'; models: Model[] }
     | { type: 'enhanced-context'; enhancedContextStatus: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
