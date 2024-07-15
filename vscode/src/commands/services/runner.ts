@@ -2,9 +2,10 @@ import * as vscode from 'vscode'
 
 import type { Span } from '@opentelemetry/api'
 import {
+    ClientConfigSingleton,
     type CodyCommand,
-    ConfigFeaturesSingleton,
     type ContextItem,
+    DefaultChatCommands,
     type EventSource,
     PromptString,
 } from '@sourcegraph/cody-shared'
@@ -13,12 +14,9 @@ import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import type { EditMode } from '../../edit/types'
 import { logDebug } from '../../log'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../../services/telemetry'
 
 import type { CommandResult } from '../../CommandResult'
 import type { ChatCommandResult, EditCommandResult } from '../../CommandResult'
-import { sortContextFiles } from '../../chat/chat-view/agentContextSorting'
 import { getEditor } from '../../editor/active-editor'
 import { getCommandContextFiles } from '../context'
 import { executeChat } from '../execute/ask'
@@ -62,14 +60,6 @@ export class CommandRunner implements vscode.Disposable {
         }
 
         const addCodebaseContex = false
-        telemetryService.log('CodyVSCodeExtension:command:custom:executed', {
-            mode: this.command.mode,
-            useCodebaseContex: addCodebaseContex,
-            useShellCommand: !!this.command.context?.command,
-            requestID: this.args.requestID,
-            source: this.args.source,
-            traceId: this.span.spanContext().traceId,
-        })
         telemetryRecorder.recordEvent('cody.command.custom', 'executed', {
             metadata: {
                 useCodebaseContex: addCodebaseContex ? 1 : 0,
@@ -85,8 +75,8 @@ export class CommandRunner implements vscode.Disposable {
         })
 
         // Conditions checks
-        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        if (!configFeatures.commands) {
+        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
+        if (!clientConfig?.customCommandsEnabled) {
             const disabledMsg = 'This feature has been disabled by your Sourcegraph site admin.'
             void vscode.window.showErrorMessage(disabledMsg)
             this.span.end()
@@ -133,6 +123,7 @@ export class CommandRunner implements vscode.Disposable {
                 contextFiles,
                 addEnhancedContext: this.command.context?.codebase ?? false,
                 source: 'custom-commands',
+                command: DefaultChatCommands.Custom,
             }),
         }
     }
@@ -174,9 +165,6 @@ export class CommandRunner implements vscode.Disposable {
             const commandContext = await getCommandContextFiles(contextConfig)
             userContextFiles.push(...commandContext)
         }
-
-        sortContextFiles(userContextFiles)
-
         return userContextFiles
     }
 

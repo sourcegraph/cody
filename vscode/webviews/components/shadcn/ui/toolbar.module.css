@@ -19,7 +19,7 @@
     --padding-x: 3px;
     padding: var(--padding-y) var(--padding-x);
 
-    --icon-size: 13px;
+    --icon-size: 16px;
 
     --gap: 2px;
     gap: var(--gap);
@@ -30,6 +30,7 @@
         flex-shrink: 0;
         width: var(--icon-size);
         height: var(--icon-size);
+        stroke-width: 1.5px;
     }
 }
 
@@ -51,13 +52,12 @@
 }
 
 .button--secondary {
-    /* Make it look like text in an input. */
-    color: color-mix(in lch, var(--vscode-input-foreground) 60%, transparent);
+    opacity: 0.6;
+    color: var(--vscode-input-foreground);
     background-color: unset;
 
     &:enabled:is(:hover, :focus-within) {
-        color: var(--vscode-input-foreground);
-        fill: var(--vscode-input-foreground);
+        opacity: 1;
     }
 }
 

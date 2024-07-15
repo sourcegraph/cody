@@ -10,7 +10,6 @@ import { type DebouncedFunc, throttle } from 'lodash'
 import * as vscode from 'vscode'
 import type { SyntaxNode } from 'web-tree-sitter'
 import type { AuthProvider } from '../services/AuthProvider'
-import { telemetryService } from '../services/telemetry'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
 
 const EDIT_SHORTCUT_LABEL = isMacOS() ? 'Opt+K' : 'Alt+K'
@@ -160,7 +159,12 @@ const GHOST_TEXT_THROTTLE = 250
 const TELEMETRY_THROTTLE = 30 * 1000 // 30 Seconds
 
 export class GhostHintDecorator implements vscode.Disposable {
-    private disposables: vscode.Disposable[] = []
+    // permanentDisposables are disposed when this instance is disposed.
+    private permanentDisposables: vscode.Disposable[] = []
+
+    // activeDisposables are disposed when the ghost hint is inactive (e.g., due to sign out)
+    private activeDisposables: vscode.Disposable[] = []
+
     private isActive = false
     private activeDecorationRange: vscode.Range | null = null
     private setThrottledGhostText: DebouncedFunc<typeof this.setGhostText>
@@ -197,10 +201,14 @@ export class GhostHintDecorator implements vscode.Disposable {
         this.updateEnablement(initialAuth)
 
         // Listen to authentication changes
-        authProvider.addChangeListener(authStatus => this.updateEnablement(authStatus))
+        this.permanentDisposables.push(
+            authProvider.onChange(authStatus => this.updateEnablement(authStatus), {
+                runImmediately: true,
+            })
+        )
 
         // Listen to configuration changes (e.g. if the setting is disabled)
-        this.disposables.push(
+        this.permanentDisposables.push(
             vscode.workspace.onDidChangeConfiguration(e => {
                 if (e.affectsConfiguration('cody')) {
                     this.updateEnablement(authProvider.getAuthStatus())
@@ -220,7 +228,7 @@ export class GhostHintDecorator implements vscode.Disposable {
     }
 
     private init(enabledFeatures: EnabledFeatures): void {
-        this.disposables.push(
+        this.activeDisposables.push(
             vscode.window.onDidChangeTextEditorSelection(
                 async (event: vscode.TextEditorSelectionChangeEvent) => {
                     const editor = event.textEditor
@@ -318,7 +326,7 @@ export class GhostHintDecorator implements vscode.Disposable {
         )
 
         if (enabledFeatures.Generate) {
-            this.disposables.push(
+            this.activeDisposables.push(
                 vscode.window.onDidChangeActiveTextEditor((editor?: vscode.TextEditor) => {
                     if (!editor) {
                         return
@@ -401,7 +409,6 @@ export class GhostHintDecorator implements vscode.Disposable {
     }
 
     private _fireDisplayEvent(variant: GhostVariant): void {
-        telemetryService.log('CodyVSCodeExtension:ghostText:visible', { variant }, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.ghostText', 'visible', { privateMetadata: { variant } })
     }
 
@@ -411,7 +418,7 @@ export class GhostHintDecorator implements vscode.Disposable {
             !authStatus.isLoggedIn ||
             !(featureEnablement.Document || featureEnablement.EditOrChat || featureEnablement.Generate)
         ) {
-            this.dispose()
+            this.disposeActive()
             return
         }
 
@@ -423,6 +430,14 @@ export class GhostHintDecorator implements vscode.Disposable {
     }
 
     public dispose(): void {
+        this.disposeActive()
+        for (const d of this.permanentDisposables) {
+            d.dispose()
+        }
+        this.permanentDisposables = []
+    }
+
+    private disposeActive(): void {
         this.isActive = false
 
         // Clear any existing ghost text
@@ -430,9 +445,9 @@ export class GhostHintDecorator implements vscode.Disposable {
             this.clearGhostText(vscode.window.activeTextEditor)
         }
 
-        for (const disposable of this.disposables) {
+        for (const disposable of this.activeDisposables) {
             disposable.dispose()
         }
-        this.disposables = []
+        this.activeDisposables = []
     }
 }

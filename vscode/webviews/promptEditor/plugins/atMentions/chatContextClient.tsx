@@ -17,6 +17,14 @@ import {
 } from 'react'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
 
+export interface ChatMentionsSettings {
+    resolutionMode: 'remote' | 'local'
+}
+
+export const ChatMentionContext = createContext<ChatMentionsSettings>({
+    resolutionMode: 'local',
+})
+
 export interface ChatContextClient {
     getChatContextItems(query: MentionQuery): Promise<ContextItem[]>
 }
@@ -33,10 +41,14 @@ const ChatContextClientContext: React.Context<ChatContextClient> = createContext
             // Clean up after a while to avoid resource exhaustion in case there is a bug
             // somewhere.
             const MAX_WAIT_SECONDS = 15
-            const rejectTimeout = setTimeout(() => {
-                reject(new Error(`no ${RESPONSE_MESSAGE_TYPE} response after ${MAX_WAIT_SECONDS}s`))
-                dispose()
-            }, MAX_WAIT_SECONDS * 1000)
+            const rejectTimeout = !query.includeRemoteRepositories
+                ? setTimeout(() => {
+                      reject(
+                          new Error(`no ${RESPONSE_MESSAGE_TYPE} response after ${MAX_WAIT_SECONDS}s`)
+                      )
+                      dispose()
+                  }, MAX_WAIT_SECONDS * 1000)
+                : ''
 
             // Wait for the response. We assume the first message of the right type is the response to
             // our call.
@@ -62,10 +74,15 @@ export function useChatContextItems(
     query: string | null,
     provider: ContextMentionProviderMetadata | null
 ): ContextItem[] | undefined {
+    const mentionSettings = useContext(ChatMentionContext)
     const unmemoizedClient = useContext(ChatContextClientContext)
+
     const chatContextClient = useMemo(
-        () => memoizeChatContextClient(unmemoizedClient),
-        [unmemoizedClient]
+        () =>
+            mentionSettings.resolutionMode === 'local'
+                ? memoizeChatContextClient(unmemoizedClient)
+                : unmemoizedClient,
+        [unmemoizedClient, mentionSettings]
     )
     const [results, setResults] = useState<ContextItem[]>()
     const lastProvider = useRef<ContextMentionProviderMetadata['id'] | null>(null)
@@ -83,7 +100,11 @@ export function useChatContextItems(
 
         // If user has typed an incomplete range, fetch new chat context items only if there are no
         // results.
-        const mentionQuery = parseMentionQuery(query, provider)
+        const mentionQuery: MentionQuery = {
+            ...parseMentionQuery(query, provider),
+            includeRemoteRepositories: mentionSettings.resolutionMode === 'remote',
+        }
+
         if (!hasResults && mentionQuery.maybeHasRangeSuffix && !mentionQuery.range) {
             return
         }
@@ -102,7 +123,10 @@ export function useChatContextItems(
             chatContextClient
                 .getChatContextItems(mentionQuery)
                 .then(mentions => {
-                    if (invalidated) {
+                    // Since remote mention search debounce and batches all mention
+                    // search requests we shouldn't invalidate any old responses like
+                    // we do for local search.
+                    if (invalidated && !mentionQuery.includeRemoteRepositories) {
                         return
                     }
                     setResults(mentions)
@@ -116,7 +140,7 @@ export function useChatContextItems(
         return () => {
             invalidated = true
         }
-    }, [query, provider, chatContextClient])
+    }, [query, provider, chatContextClient, mentionSettings])
     return results
 }
 

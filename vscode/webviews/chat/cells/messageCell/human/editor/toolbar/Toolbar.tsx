@@ -1,14 +1,11 @@
-import type { ModelProvider } from '@sourcegraph/cody-shared'
+import type { Model } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
-import { AtSignIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
-import { EnhancedContextSettings } from '../../../../../../components/EnhancedContextSettings'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
-import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
-import { SubmitButton, type SubmitButtonDisabled } from './SubmitButton'
-import styles from './Toolbar.module.css'
+import { AddContextButton } from './AddContextButton'
+import { SubmitButton, type SubmitButtonState } from './SubmitButton'
 
 /**
  * The toolbar for the human message editor.
@@ -18,13 +15,10 @@ export const Toolbar: FunctionComponent<{
 
     isEditorFocused: boolean
 
-    /** Whether this editor is for a message whose assistant response is in progress. */
-    isPendingResponse: boolean
-
     onMentionClick?: () => void
 
-    onSubmitClick: (withEnhancedContext: boolean) => void
-    submitDisabled: SubmitButtonDisabled
+    onSubmitClick: () => void
+    submitState: SubmitButtonState
 
     /** Handler for clicks that are in the "gap" (dead space), not any toolbar items. */
     onGapClick?: () => void
@@ -36,10 +30,9 @@ export const Toolbar: FunctionComponent<{
 }> = ({
     userInfo,
     isEditorFocused,
-    isPendingResponse,
     onMentionClick,
     onSubmitClick,
-    submitDisabled,
+    submitState,
     onGapClick,
     focusEditor,
     hidden,
@@ -67,30 +60,23 @@ export const Toolbar: FunctionComponent<{
             role="toolbar"
             aria-hidden={hidden}
             hidden={hidden}
-            className={clsx(styles.container, className)}
+            className={clsx('tw-flex tw-items-center', className)}
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
         >
-            {onMentionClick && (
-                <ToolbarButton
-                    variant="secondary"
-                    tooltip="Add files and other context"
-                    iconStart={AtSignIcon}
-                    onClick={onMentionClick}
-                    aria-label="Add context"
-                />
-            )}
-            <EnhancedContextSettings
-                presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
-                onCloseByEscape={focusEditor}
-            />
-            <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
-            <div className={styles.spacer} />
+            <div className="tw-flex tw-gap-1 tw-items-center">
+                {onMentionClick && (
+                    <AddContextButton onClick={onMentionClick} className="tw-opacity-60" />
+                )}
+                <span>
+                    <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
+                </span>
+            </div>
+            <div className="tw-flex-1" />
             <SubmitButton
                 onClick={onSubmitClick}
                 isEditorFocused={isEditorFocused}
-                isPendingResponse={isPendingResponse}
-                disabled={submitDisabled}
+                state={submitState}
             />
         </menu>
     )
@@ -104,7 +90,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     const { chatModels, onCurrentChatModelChange } = useChatModelContext()
 
     const onModelSelect = useCallback(
-        (model: ModelProvider) => {
+        (model: Model) => {
             onCurrentChatModelChange?.(model)
             focusEditor?.()
         },
@@ -113,9 +99,8 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
 
     return (
         !!chatModels?.length &&
-        onCurrentChatModelChange &&
-        userInfo &&
-        userInfo.isDotComUser && (
+        (userInfo.isDotComUser || !userInfo.isOldStyleEnterpriseUser) &&
+        onCurrentChatModelChange && (
             <ModelSelectField
                 models={chatModels}
                 onModelSelect={onModelSelect}

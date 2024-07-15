@@ -3,6 +3,8 @@ out/
 .vscode-test/
 dist/
 .vscode-test-web/
+.test-reports
 resources/wasm/
 GITHUB_CHANGELOG.md
 walkthroughs/cody_tutorial.py
+tsconfig.typehacks.json

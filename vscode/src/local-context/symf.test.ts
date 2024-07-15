@@ -1,102 +1,85 @@
-import type { Polly } from '@pollyjs/core'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-
-import { startPollyRecording } from '../testutils/polly'
-
-import { _getSymfPath } from './download-symf'
-import { symfExpandQuery } from './symfExpandQuery'
-
-import { mkdtemp, open, rmdir } from 'node:fs/promises'
+import { mkdtemp, open, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { type PromptString, ps } from '@sourcegraph/cody-shared'
-import { SourcegraphNodeCompletionsClient } from '../completions/nodeClient'
-import { TESTING_CREDENTIALS } from '../testutils/testing-credentials'
+import { describe, expect, it, vi } from 'vitest'
+import { getOSArch } from '../os'
+import { _config, _getNamesForPlatform, _upsertSymfForPlatform } from './download-symf'
+import { downloadFile } from './utils'
 
-describe('symf', () => {
-    const client = new SourcegraphNodeCompletionsClient({
-        accessToken: TESTING_CREDENTIALS.dotcom.token ?? TESTING_CREDENTIALS.dotcom.redactedToken,
-        serverEndpoint: TESTING_CREDENTIALS.dotcom.serverEndpoint,
-        customHeaders: {},
-    })
+//@ts-ignore
+_config.FILE_LOCK_RETRY_DELAY = 1
 
-    describe('expand-query', () => {
-        let polly: Polly
-        beforeAll(() => {
-            polly = startPollyRecording({
-                recordingName: 'symf',
-                // Run the command below to update symf recordings:
-                // source agent/scripts/export-cody-http-recording-tokens.sh
-                // CODY_RECORDING_MODE=record pnpm -C vscode test:unit
-            })
-        })
-
-        function check(query: PromptString, expectedHandler: (expandedTerm: string) => void): void {
-            it(query.toString(), async () => {
-                expectedHandler(await symfExpandQuery(client, query))
-            })
-        }
-
-        check(ps`ocean`, expanded =>
-            expect(expanded).toMatchInlineSnapshot(
-                `"aquatic fish marine maritime nautical ocean sea sealife surf swell tide underwater water wave"`
-            )
-        )
-
-        check(ps`How do I write a file to disk in Go`, expanded =>
-            expect(expanded).toMatchInlineSnapshot(
-                `"disk file files go golang io persist save storage store write"`
-            )
-        )
-
-        check(ps`Where is authentication router defined?`, expanded =>
-            expect(expanded).toMatchInlineSnapshot(
-                `"auth authentication authorization config configuration route router routing"`
-            )
-        )
-
-        check(ps`parse file with tree-sitter`, expanded =>
-            expect(expanded).toMatchInlineSnapshot(
-                `"file files parse parser parsing sitter tree tree-sitter treesitter"`
-            )
-        )
-
-        check(ps`scan tokens in C++`, expanded =>
-            expect(expanded).toMatchInlineSnapshot(
-                `"analyze c++ cplusplus cpp cxx lex lexer lexical parse scan scanner token tokenizer"`
-            )
-        )
-        afterAll(async () => {
-            await polly.stop()
-        })
-    })
-
-    describe('download', () => {
-        it('no parallel download', async () => {
-            const dir = await mkdtemp(path.join(tmpdir(), 'symf-'))
-            try {
-                const makeEmptyFile = async (filePath: string) => {
-                    const file = await open(filePath, 'w')
-                    await file.close()
-                }
-
-                let mockDownloadSymfCalled = 0
-                const mockDownloadSymf = async (op: {
-                    symfPath: string
-                    symfFilename: string
-                    symfURL: string
-                }): Promise<void> => {
-                    mockDownloadSymfCalled++
-                    await makeEmptyFile(op.symfPath)
-                }
-                const symfPaths = await Promise.all(
-                    [...Array(10).keys()].map(() => _getSymfPath(dir, mockDownloadSymf))
-                )
-                expect(symfPaths.every(p => p === symfPaths[0])).toBeTruthy()
-                expect(mockDownloadSymfCalled).toEqual(1)
-            } finally {
-                await rmdir(dir, { recursive: true })
+vi.mock('./utils', async importOriginal => {
+    //use the vscode mock inside this mock too
+    const mod = await importOriginal<typeof import('./utils')>()
+    let firstDownload = true
+    return {
+        ...mod,
+        downloadFile: vi.fn(async (url: string, dest: string) => {
+            // we abandon the first download
+            if (firstDownload) {
+                await makeEmptyFile(dest)
+                firstDownload = false
+                throw new Error('Test Mock Deliberate Abandon')
             }
-        })
+            await sleep(2)
+            // make an empty file
+            await makeEmptyFile(dest)
+        }),
+        unzip: vi.fn(async (zipPath: string, dest: string) => {
+            await sleep(2)
+            // just check the zip file exists first
+            if (!(await mod.fileExists(zipPath))) {
+                throw new Error("File doesn't exist")
+            }
+            // we ensure that at leats the expected file exists
+            const { platform, arch } = getOSArch()
+            const { symfUnzippedFilename } = _getNamesForPlatform(platform!, arch!)
+            const symfUnzippedPath = path.join(dest, symfUnzippedFilename)
+            await makeEmptyFile(symfUnzippedPath)
+        }),
+    }
+})
+
+describe('upsertSymfForPlatform', () => {
+    // NOTE: This really only checks downloads in the same Node process Instead
+    // we probably want to mock the fs and network layer directly and ensure
+    // that this works regardless of Mutex locks
+    it('prevents parallel downloads', async () => {
+        const dir = await mkdtemp(path.join(tmpdir(), 'symf-'))
+        try {
+            // we first create a "abandoned" download so that we can ensure that
+            // after some expiration time one of the processes will forcefully
+            // download regardless
+            const abandonedDownload = _upsertSymfForPlatform(dir)
+            expect(await abandonedDownload).toBeNull()
+
+            vi.mocked(downloadFile).mockClear()
+
+            // we now start parallel async functions
+            const results = await Promise.all([
+                _upsertSymfForPlatform(dir),
+                _upsertSymfForPlatform(dir),
+                _upsertSymfForPlatform(dir),
+                _upsertSymfForPlatform(dir),
+            ])
+            // only one actual download should have happened
+            expect(downloadFile).toHaveBeenCalledOnce()
+
+            // expect all results to be the same and valid strings
+            expect(new Set(results).size).toBe(1)
+            expect(results[0]).toBeTruthy()
+        } finally {
+            await rm(dir, { recursive: true })
+        }
     })
 })
+
+async function makeEmptyFile(filePath: string) {
+    const file = await open(filePath, 'w')
+    await file.close()
+}
+
+function sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms))
+}

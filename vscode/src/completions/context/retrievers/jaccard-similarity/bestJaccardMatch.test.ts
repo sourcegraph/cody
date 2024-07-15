@@ -9,14 +9,14 @@ import { bestJaccardMatch, getWords } from './context'
 describe('getWords', () => {
     it('works with regular text', () => {
         expect(getWords('foo bar baz')).toEqual(
-            new Map<string, number>([
+            new Map([
                 ['foo', 1],
                 ['bar', 1],
                 ['baz', 1],
             ])
         )
         expect(getWords('running rocks slipped over')).toEqual(
-            new Map<string, number>([
+            new Map([
                 ['run', 1],
                 ['rock', 1],
                 ['slip', 1],
@@ -28,17 +28,17 @@ describe('getWords', () => {
 
 const MAX_MATCHES = 50
 
-describe('getWords', () => {
+describe('getWordOccurrences', () => {
     it('works with regular text', () => {
         expect(getWordOccurrences('foo bar baz')).toEqual(
-            new Map<string, number>([
+            new Map([
                 ['foo', 1],
                 ['bar', 1],
                 ['baz', 1],
             ])
         )
         expect(getWordOccurrences('running rocks slipped over')).toEqual(
-            new Map<string, number>([
+            new Map([
                 ['run', 1],
                 ['rock', 1],
                 ['slip', 1],
@@ -48,30 +48,60 @@ describe('getWords', () => {
 
     it('works with code snippets', () => {
         expect(getWordOccurrences(targetSnippet)).toEqual(
-            new Map<string, number>([
-                ['import', 1],
-                ['bestjaccardmatch', 1],
+            new Map([
+                ['1', 6],
+                ['get', 4],
+                ['word', 4],
                 ['getword', 4],
-                ['context', 1],
-                ['describ', 1],
-                ['work', 1],
-                ['regular', 1],
-                ['text', 1],
-                ['expect', 2],
-                ['foo', 2],
                 ['bar', 2],
                 ['baz', 2],
+                ['equal', 2],
                 ['toequal', 2],
-                ['new', 2],
+                ['expect', 2],
+                ['foo', 2],
                 ['map', 2],
-                ['string', 2],
-                ['number', 2],
-                ['1', 6],
-                ['run', 2],
+                ['new', 2],
                 ['rock', 2],
+                ['run', 2],
                 ['slip', 2],
+                ['best', 1],
+                ['bestjaccardmatch', 1],
+                ['context', 1],
+                ['describ', 1],
+                ['import', 1],
+                ['jaccard', 1],
+                ['match', 1],
+                ['regular', 1],
+                ['text', 1],
+                ['work', 1],
             ])
         )
+    })
+
+    it.each([
+        { symbol: 'comeVisitVienna', words: { comevisitvienna: 1, come: 1, visit: 1, vienna: 1 } },
+        {
+            symbol: 'a_dev_named_philipp',
+            words: { a_dev_named_philipp: 1, dev: 1, name: 1, philipp: 1 },
+        },
+        {
+            symbol: 'MySuperCaliFragilisticExpialidociousControllerController',
+            words: {
+                mysupercalifragilisticexpialidociouscontrollercontrol: 1,
+                my: 1,
+                super: 1,
+                cali: 1,
+                // The next three terms are stemmed and thus do not match the original:
+                fragilist: 1,
+                expialidoci: 1,
+                control: 2,
+            },
+        },
+        { symbol: 'PDFiumPDFPDF', words: { pdfiumpdfpdf: 1, pdfium: 1, pdfpdf: 1 } },
+        // Kebab-case is already split by the default tokenizer we use
+        { symbol: 'best-kebab-in-favoriten', words: { best: 1, kebab: 1, favoriten: 1 } },
+    ])('breaks and stems $symbol', ({ symbol, words }) => {
+        expect(getWordOccurrences(symbol)).toEqual(new Map(Object.entries(words)))
     })
 })
 
@@ -176,7 +206,7 @@ describe('bestJaccardMatch', () => {
                       'foo',
                       'bar',",
             "endLine": 4,
-            "score": 0.08695652173913043,
+            "score": 0.14285714285714285,
             "startLine": 0,
           }
         `)

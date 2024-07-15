@@ -17,7 +17,12 @@ describe('getDocumentQuerySDK', () => {
         { languageId: SupportedLanguage.typescriptreact },
         { languageId: SupportedLanguage.go },
         { languageId: SupportedLanguage.python },
+        { languageId: SupportedLanguage.java },
+        { languageId: SupportedLanguage.kotlin },
+        { languageId: SupportedLanguage.rust },
         { languageId: SupportedLanguage.php },
+        { languageId: SupportedLanguage.c },
+        { languageId: SupportedLanguage.cpp },
     ])('returns valid SDK for $languageId', async ({ languageId }) => {
         const nonInitializedSDK = getDocumentQuerySDK(languageId)
         expect(nonInitializedSDK).toBeNull()
@@ -29,18 +34,17 @@ describe('getDocumentQuerySDK', () => {
         expect(sdk?.queries.intents).toBeTruthy()
     })
 
-    it.each([
-        { languageId: SupportedLanguage.csharp },
-        { languageId: SupportedLanguage.cpp },
-        { languageId: SupportedLanguage.csharp },
-    ])('returns null for $languageId because queries are not defined', async ({ languageId }) => {
-        const nonInitializedSDK = getDocumentQuerySDK(languageId)
-        expect(nonInitializedSDK).toBeNull()
+    it.each([{ languageId: SupportedLanguage.csharp }])(
+        'returns null for $languageId because queries are not defined',
+        async ({ languageId }) => {
+            const nonInitializedSDK = getDocumentQuerySDK(languageId)
+            expect(nonInitializedSDK).toBeNull()
 
-        const parser = await initTreeSitterParser(languageId)
-        expect(parser).toBeTruthy()
+            const parser = await initTreeSitterParser(languageId)
+            expect(parser).toBeTruthy()
 
-        const sdk = getDocumentQuerySDK(languageId)
-        expect(sdk).toBeNull()
-    })
+            const sdk = getDocumentQuerySDK(languageId)
+            expect(sdk).toBeNull()
+        }
+    )
 })

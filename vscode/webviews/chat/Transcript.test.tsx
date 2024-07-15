@@ -1,18 +1,20 @@
-import { errorToChatError, ps } from '@sourcegraph/cody-shared'
-import { fireEvent, render as render_, screen } from '@testing-library/react'
+import { type ChatMessage, errorToChatError, ps } from '@sourcegraph/cody-shared'
+import { fireEvent, getQueriesForElement, render as render_, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { type Assertion, describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { TestAppWrapper } from '../AppWrapper'
-import { Transcript } from './Transcript'
+import { type Interaction, Transcript, transcriptToInteractionPairs } from './Transcript'
 import { FIXTURE_USER_ACCOUNT_INFO } from './fixtures'
 
 const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
+    chatID: 'test',
     messageInProgress: null,
     feedbackButtonsOnSubmit: () => {},
     copyButtonOnSubmit: () => {},
     insertButtonOnSubmit: () => {},
     userInfo: FIXTURE_USER_ACCOUNT_INFO,
+    chatEnabled: true,
     postMessage: () => {},
 }
 
@@ -22,7 +24,10 @@ vi.mock('@vscode/webview-ui-toolkit/react', () => ({
 }))
 
 vi.mock('../utils/VSCodeApi', () => ({
-    getVSCodeAPI: vi.fn().mockReturnValue({ postMessage: () => {} }),
+    getVSCodeAPI: vi.fn().mockReturnValue({
+        onMessage: () => {},
+        postMessage: () => {},
+    }),
 }))
 
 function render(element: JSX.Element): ReturnType<typeof render_> {
@@ -103,7 +108,7 @@ describe('Transcript', () => {
         expectCells([
             { message: 'Foo' },
             { context: { loading: true } },
-            { message: '', canSubmit: false },
+            { message: '', canSubmit: true },
         ])
     })
 
@@ -125,7 +130,7 @@ describe('Transcript', () => {
             { message: 'Foo' },
             { context: { files: 1 } },
             { message: { loading: true } },
-            { message: '', canSubmit: false },
+            { message: '', canSubmit: true },
         ])
     })
 
@@ -146,7 +151,7 @@ describe('Transcript', () => {
         expectCells([
             { message: 'Foo' },
             { message: { loading: true } },
-            { message: '', canSubmit: false },
+            { message: '', canSubmit: true },
         ])
     })
 
@@ -168,7 +173,7 @@ describe('Transcript', () => {
             { message: 'Foo' },
             { context: { files: 1 } },
             { message: 'Bar' },
-            { message: '', canSubmit: false },
+            { message: '', canSubmit: true },
         ])
     })
 
@@ -186,7 +191,7 @@ describe('Transcript', () => {
                 messageInProgress={{ speaker: 'assistant', text: ps`Bar` }}
             />
         )
-        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: '', canSubmit: false }])
+        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: '', canSubmit: true }])
     })
 
     test('assistant message with error', () => {
@@ -200,38 +205,37 @@ describe('Transcript', () => {
             />
         )
         expectCells([{ message: 'Foo' }, { message: 'Request Failed: some error' }])
+        expect(screen.queryByText('Try again with different context')).toBeNull()
     })
 
     test('does not clobber user input into followup while isPendingPriorResponse when it completes', async () => {
+        const humanMessage: ChatMessage = { speaker: 'human', text: ps`Foo`, contextFiles: [] }
+        const assistantMessage: ChatMessage = { speaker: 'assistant', text: ps`Bar` }
         const { container, rerender } = render(
-            <Transcript
-                {...PROPS}
-                transcript={[{ speaker: 'human', text: ps`Foo`, contextFiles: [] }]}
-                messageInProgress={{ speaker: 'assistant', text: ps`Bar` }}
-            />
+            <Transcript {...PROPS} transcript={[humanMessage]} messageInProgress={assistantMessage} />
         )
         const editor = container.querySelector<EditorHTMLElement>(
             '[role="row"]:last-child [data-lexical-editor="true"]'
         )! as EditorHTMLElement
         await typeInEditor(editor, 'qux')
-        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: 'qux', canSubmit: false }])
+        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: 'qux', canSubmit: true }])
 
         rerender(
             <Transcript
                 {...PROPS}
-                transcript={[
-                    { speaker: 'human', text: ps`Foo`, contextFiles: [] },
-                    { speaker: 'assistant', text: ps`Bar` },
-                ]}
+                transcript={[humanMessage, assistantMessage]}
                 messageInProgress={null}
             />
         )
         await typeInEditor(editor, 'yap')
-        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: 'qux', canSubmit: true }])
+        expectCells(
+            [{ message: 'Foo' }, { message: 'Bar' }, { message: 'qux', canSubmit: true }],
+            container
+        )
     })
 
     test('focus', async () => {
-        const { container } = render(
+        const { container, rerender } = render(
             <Transcript
                 {...PROPS}
                 transcript={[
@@ -247,6 +251,15 @@ describe('Transcript', () => {
         )! as EditorHTMLElement
         expect(lastEditor).toHaveFocus()
         await typeInEditor(lastEditor, 'xyz')
+        rerender(
+            <Transcript
+                {...PROPS}
+                transcript={[
+                    { speaker: 'human', text: ps`Foo`, contextFiles: [] },
+                    { speaker: 'assistant', text: ps`Bar` },
+                ]}
+            />
+        )
         expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: 'xyz', canSubmit: true }])
     })
 })
@@ -270,15 +283,20 @@ type CellMatcher =
       }
 
 /** A test helper to make it easier to describe an expected transcript. */
-function expectCells(expectedCells: CellMatcher[]): void {
-    const actualCells = screen.getAllByRole('row')
+function expectCells(expectedCells: CellMatcher[], containerElement?: HTMLElement): void {
+    const container = containerElement ? getQueriesForElement(containerElement) : screen
+    const actualCells = container.getAllByRole('row')
     expect(actualCells).toHaveLength(expectedCells.length)
     for (const [i, cell] of actualCells.entries()) {
         const expectedCell = expectedCells[i]
         if ('message' in expectedCell) {
             expect(cell).toHaveAttribute('data-testid', 'message')
             if (typeof expectedCell.message === 'string') {
-                expect(cell.innerText).toMatch(expectedCell.message)
+                const textElement =
+                    cell.querySelector<HTMLDivElement>('[data-lexical-editor]') ??
+                    cell.querySelector<HTMLDivElement>('[data-testid="chat-message-content"]') ??
+                    cell
+                expect(textElement.innerText.trim()).toBe(expectedCell.message)
             } else if ('loading' in expectedCell.message) {
                 expect(cell.querySelector('[role="status"]')).toHaveAttribute('aria-busy')
             }
@@ -291,8 +309,8 @@ function expectCells(expectedCells: CellMatcher[]): void {
         } else if ('context' in expectedCell) {
             expect(cell).toHaveAttribute('data-testid', 'context')
             if (expectedCell.context.files !== undefined) {
-                expect(cell.querySelector('summary')).toHaveAccessibleDescription(
-                    `${expectedCell.context.files} file`
+                expect(cell.querySelector('button')).toHaveAccessibleDescription(
+                    `${expectedCell.context.files} item`
                 )
             } else if (expectedCell.context.loading) {
                 expect(cell.querySelector('[role="status"]')).toHaveAttribute('aria-busy')
@@ -306,3 +324,79 @@ function expectCells(expectedCells: CellMatcher[]): void {
         return value ? assertion : assertion.not
     }
 }
+
+describe('transcriptToInteractionPairs', () => {
+    test('empty transcript', () => {
+        expect(transcriptToInteractionPairs([], null)).toEqual<Interaction[]>([
+            {
+                humanMessage: { index: 0, speaker: 'human', isUnsentFollowup: true },
+                assistantMessage: null,
+            },
+        ])
+    })
+
+    test('finished response pairs', () => {
+        expect(
+            transcriptToInteractionPairs(
+                [
+                    { speaker: 'human', text: ps`a` },
+                    { speaker: 'assistant', text: ps`b` },
+                    { speaker: 'human', text: ps`c` },
+                    { speaker: 'assistant', text: ps`d` },
+                ],
+                null
+            )
+        ).toEqual<Interaction[]>([
+            {
+                humanMessage: { index: 0, speaker: 'human', text: ps`a`, isUnsentFollowup: false },
+                assistantMessage: { index: 1, speaker: 'assistant', text: ps`b`, isLoading: false },
+            },
+            {
+                humanMessage: { index: 2, speaker: 'human', text: ps`c`, isUnsentFollowup: false },
+                assistantMessage: { index: 3, speaker: 'assistant', text: ps`d`, isLoading: false },
+            },
+            {
+                humanMessage: { index: 4, speaker: 'human', isUnsentFollowup: true },
+                assistantMessage: null,
+            },
+        ])
+    })
+
+    test('assistant message is loading', () => {
+        expect(
+            transcriptToInteractionPairs([{ speaker: 'human', text: ps`a` }], {
+                speaker: 'assistant',
+                text: ps`b`,
+            })
+        ).toEqual<Interaction[]>([
+            {
+                humanMessage: { index: 0, speaker: 'human', text: ps`a`, isUnsentFollowup: false },
+                assistantMessage: { index: 1, speaker: 'assistant', text: ps`b`, isLoading: true },
+            },
+            {
+                humanMessage: { index: 2, speaker: 'human', isUnsentFollowup: true },
+                assistantMessage: null,
+            },
+        ])
+    })
+
+    test('last assistant message is error', () => {
+        const error = errorToChatError(new Error('x'))
+        expect(
+            transcriptToInteractionPairs([{ speaker: 'human', text: ps`a` }], {
+                speaker: 'assistant',
+                error,
+            })
+        ).toEqual<Interaction[]>([
+            {
+                humanMessage: { index: 0, speaker: 'human', text: ps`a`, isUnsentFollowup: false },
+                assistantMessage: {
+                    index: 1,
+                    speaker: 'assistant',
+                    error,
+                    isLoading: false,
+                },
+            },
+        ])
+    })
+})

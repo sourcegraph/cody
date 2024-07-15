@@ -5,9 +5,10 @@ import {
     type CompletionGeneratorValue,
     type ContextItem,
     type Message,
+    type Model,
     type ModelContextWindow,
-    ModelProvider,
     ModelUsage,
+    ModelsService,
     Typewriter,
     getDotComDefaultModels,
     getSimplePreamble,
@@ -24,7 +25,7 @@ export class CodySourceControl implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private gitAPI: API | undefined
     private abortController: AbortController | undefined
-    private modelProvider = getDotComDefaultModels()[0]
+    private model: Model = getDotComDefaultModels()[0]
 
     private commitTemplate?: string
 
@@ -145,7 +146,7 @@ export class CodySourceControl implements vscode.Disposable {
                 this.statusUpdate()
             })
 
-            const { model, contextWindow } = this.modelProvider
+            const { model, contextWindow } = this.model
             const { prompt, ignoredContext } = await this.buildPrompt(
                 contextWindow,
                 getSimplePreamble(model, 1, COMMIT_COMMAND_PROMPTS.intro),
@@ -230,10 +231,10 @@ export class CodySourceControl implements vscode.Disposable {
         this.abortController = abortController
     }
 
-    public syncAuthStatus(authStatus: AuthStatus): void {
-        const providers = ModelProvider.getProviders(ModelUsage.Chat, !authStatus.userCanUpgrade)
-        const preferredProvider = providers?.find(p => p.model.includes('claude-3-haiku'))
-        this.modelProvider = preferredProvider ?? providers[0]
+    public setAuthStatus(authStatus: AuthStatus): void {
+        const models = ModelsService.getModels(ModelUsage.Chat, authStatus)
+        const preferredModel = models?.find(p => p.model.includes('claude-3-haiku'))
+        this.model = preferredModel ?? models[0]
     }
 
     public dispose(): void {

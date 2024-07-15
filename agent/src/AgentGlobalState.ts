@@ -17,6 +17,7 @@ export class AgentGlobalState implements vscode.Memento {
         // tests with the following error message "chat/new: command finished executing
         // without creating a webview" because we reuse the webview when sending
         // chat/new.
+        this.globalStorage.set('notification.setupDismissed', 'true')
         this.globalStorage.set('completion.inline.hasAcceptedFirstCompletion', true)
         this.globalStorage.set('extension.hasActivatedPreviously', 'true')
     }

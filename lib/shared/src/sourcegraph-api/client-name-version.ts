@@ -5,8 +5,8 @@
 let clientName = ''
 let clientVersion = ''
 
-export const CLIENT_NAME_PARAM = 'client-name'
-export const CLIENT_VERSION_PARAM = 'client-version'
+const CLIENT_NAME_PARAM = 'client-name'
+const CLIENT_VERSION_PARAM = 'client-version'
 
 /**
  * Sets the client name and version. These are sent in HTTP parameters to

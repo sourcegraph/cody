@@ -2,8 +2,6 @@ import * as vscode from 'vscode'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../telemetry'
 
 import { countCode, matchCodeSnippets } from './code-count'
 
@@ -23,6 +21,13 @@ let insertInProgress = false
 let lastClipboardText = ''
 
 /**
+ * SourceMetadataMapping is used to map the source to a numerical value, so telemetry can be recorded on `metadata`.
+ **/
+enum SourceMetadataMapping {
+    chat = 1,
+}
+
+/**
  * Sets the last stored code snippet and associated metadata.
  *
  * This is used to track code generation events in VS Code.
@@ -37,7 +42,7 @@ function setLastStoredCode(
     lineCount: number
     charCount: number
     eventName: string
-    source?: string
+    source: string
     requestID?: string
 } {
     // All non-copy events are considered as insertions since we don't need to listen for paste events
@@ -49,11 +54,10 @@ function setLastStoredCode(
 
     // Currently supported events are: copy, insert, save
     const op = eventName.includes('copy') ? 'copy' : eventName.startsWith('insert') ? 'insert' : 'save'
-    const args = { op, charCount, lineCount, source, requestID }
 
-    telemetryService.log(`CodyVSCodeExtension:${eventName}:clicked`, { args }, { hasV2Event: true })
     telemetryRecorder.recordEvent(`cody.${eventName}`, 'clicked', {
         metadata: {
+            source: SourceMetadataMapping[source as keyof typeof SourceMetadataMapping] || 0, // Use 0 as default if source is not found
             lineCount,
             charCount,
         },
@@ -135,25 +139,12 @@ export async function onTextDocumentChange(newCode: string): Promise<void> {
     if (matchCodeSnippets(code, lastClipboardText) && matchCodeSnippets(code, newCode)) {
         const op = 'paste'
         const eventType = 'keyDown'
-        // e.g.'CodyVSCodeExtension:keyDown:Paste:clicked'
-        telemetryService.log(
-            `CodyVSCodeExtension:${eventType}:Paste:clicked`,
-            {
-                op,
-                lineCount,
-                charCount,
-                source,
-                requestID,
-            },
-            {
-                hasV2Event: true,
-            }
-        )
 
         telemetryRecorder.recordEvent(`cody.${eventType}`, 'paste', {
             metadata: {
                 lineCount,
                 charCount,
+                source: SourceMetadataMapping[source as keyof typeof SourceMetadataMapping] || 0, // Use 0 as default if source is not found
             },
             interactionID: requestID,
             privateMetadata: {

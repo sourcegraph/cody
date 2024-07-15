@@ -1,34 +1,28 @@
-import { type FrameLocator, type Locator, expect } from '@playwright/test'
 import { isWindows } from '@sourcegraph/cody-shared'
+import { expect } from 'playwright/test'
 import {
-    atMentionMenuItem,
+    atMentionMenuMessage,
+    chatInputMentions,
     createEmptyChatPanel,
     expectContextCellCounts,
     focusChatInputAtEnd,
     getContextCell,
-    sidebarExplorer,
+    openContextCell,
+    openFileInEditorTab,
+    openMentionsForProvider,
+    selectLineRangeInEditorTab,
     sidebarSignin,
 } from './common'
-import { type ExpectedEvents, getMetaKeyByOS, test, withPlatformSlashes } from './helpers'
+import { type ExpectedV2Events, executeCommandInPalette, test, withPlatformSlashes } from './helpers'
 
 // See chat-atFile.test.md for the expected behavior for this feature.
 //
 // NOTE: Creating new chats is slow, and setup is slow, so collapse these into fewer tests.
 
-test.extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyInstalled',
-        // This is fired on empty @-mention query for open tabs context
-        'CodyVSCodeExtension:at-mention:executed',
-        // Log once on the first character entered for an @-mention query, e.g. "@."
-        'CodyVSCodeExtension:at-mention:file:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-    ],
+test.extend<ExpectedV2Events>({
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
@@ -57,7 +51,7 @@ test.extend<ExpectedEvents>({
 
     // No results
     await chatInput.fill('@definitelydoesntexist')
-    await expect(atMentionMenuItem(chatPanelFrame, 'No files found')).toBeVisible()
+    await expect(atMentionMenuMessage(chatPanelFrame, 'No files found')).toBeVisible()
 
     // Clear the input so the next test doesn't detect the same text already visible from the previous
     // check (otherwise the test can pass even without the filter working).
@@ -69,7 +63,7 @@ test.extend<ExpectedEvents>({
     //   and assert that it contains `fixtures` to ensure this check isn't passing because the fixture folder no
     //   longer matches.
     await chatInput.fill('@fixtures') // fixture is in the test project folder name, but not in the relative paths.
-    await expect(atMentionMenuItem(chatPanelFrame, 'No files found')).toBeVisible()
+    await expect(atMentionMenuMessage(chatPanelFrame, 'No files found')).toBeVisible()
 
     // Includes dotfiles after just "."
     await chatInput.fill('@.')
@@ -78,14 +72,14 @@ test.extend<ExpectedEvents>({
     // Forward slashes
     await chatInput.fill('@lib/batches/env')
     await expect(
-        chatPanelFrame.getByRole('option', { name: withPlatformSlashes('var.go lib/batches/env') })
+        chatPanelFrame.getByRole('option', { name: withPlatformSlashes('var.go') })
     ).toBeVisible()
 
     // Backslashes
     if (isWindows()) {
         await chatInput.fill('@lib\\batches\\env')
         await expect(
-            chatPanelFrame.getByRole('option', { name: withPlatformSlashes('var.go lib/batches/env') })
+            chatPanelFrame.getByRole('option', { name: withPlatformSlashes('var.go') })
         ).toBeVisible()
     }
 
@@ -99,14 +93,13 @@ test.extend<ExpectedEvents>({
     // Searching and clicking
     await chatInput.fill('Explain @mj')
     await chatPanelFrame.getByRole('option', { name: 'Main.java' }).click()
-    await expect(chatInput).toHaveText('Explain @Main.java ')
-    await expect(chatInput.getByText('@Main.java')).toHaveClass(/context-item-mention-node/)
+    await expect(chatInput).toHaveText('Explain Main.java ')
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
-    await expect(chatPanelFrame.getByText('Explain @Main.java')).toBeVisible()
+    await expect(chatPanelFrame.getByText('Explain Main.java')).toBeVisible()
     const contextCell = getContextCell(chatPanelFrame)
     await expect(contextCell).toHaveCount(1)
-    await expect(chatInput).not.toHaveText('Explain @Main.java ')
+    await expect(chatInput).not.toHaveText('Explain Main.java ')
     await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).not.toBeVisible()
 
     // Keyboard nav through context files
@@ -116,7 +109,7 @@ test.extend<ExpectedEvents>({
     ).toBeVisible()
     await chatInput.press('Tab')
     await chatInput.press('Tab')
-    await expect(chatInput).toHaveText(withPlatformSlashes('Explain @lib/batches/env/var.go '))
+    await expect(chatInput).toHaveText(withPlatformSlashes('Explain var.go '))
     await chatInput.focus()
     await chatInput.pressSequentially('and ')
     await chatInput.pressSequentially('@vgo', { delay: 10 })
@@ -129,21 +122,14 @@ test.extend<ExpectedEvents>({
     await chatInput.press('ArrowDown') // second item again
     await expect(chatPanelFrame.getByRole('option', { selected: true })).toHaveText(/visualize\.go/)
     await chatInput.press('Tab')
-    await expect(chatInput).toHaveText(
-        withPlatformSlashes(
-            'Explain @lib/batches/env/var.go and @lib/codeintel/tools/lsif-visualize/visualize.go '
-        )
-    )
+    await expect(chatInput).toHaveText(withPlatformSlashes('Explain var.go and visualize.go '))
+    await expect(chatInputMentions(chatInput)).toHaveText(['var.go', 'visualize.go'])
 
     // Send the message and check it was included
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
     await expect(
-        chatPanelFrame.getByText(
-            withPlatformSlashes(
-                'Explain @lib/batches/env/var.go and @lib/codeintel/tools/lsif-visualize/visualize.go'
-            )
-        )
+        chatPanelFrame.getByText(withPlatformSlashes('Explain var.go and visualize.go'))
     ).toBeVisible()
 
     // Ensure explicitly @-included context shows up as enhanced context
@@ -156,14 +142,16 @@ test.extend<ExpectedEvents>({
     await chatInput.pressSequentially('@Main.java', { delay: 10 })
     await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).toBeVisible()
     await chatInput.press('Tab')
-    await expect(chatInput).toHaveText('@Main.java ')
+    await expect(chatInput).toHaveText('Main.java ')
+    await expect(chatInputMentions(chatInput)).toHaveText(['Main.java'])
 
     // Check pressing tab after typing a partial filename but where that complete
     // filename already exists earlier in the input.
     // https://github.com/sourcegraph/cody/issues/2243
     await chatInput.pressSequentially('and @Main.ja', { delay: 10 })
     await chatInput.press('Tab')
-    await expect(chatInput).toHaveText('@Main.java and @Main.java ')
+    await expect(chatInput).toHaveText('Main.java and Main.java ')
+    await expect(chatInputMentions(chatInput)).toHaveText(['Main.java', 'Main.java'])
 
     // Support @-file in mid-sentence
     await chatInput.focus()
@@ -178,16 +166,16 @@ test.extend<ExpectedEvents>({
     await chatInput.pressSequentially('@Main', { delay: 10 })
     await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).toBeVisible()
     await chatInput.press('Tab')
-    await expect(chatInput).toHaveText('Explain the @Main.java file')
+    await expect(chatInput).toHaveText('Explain the Main.java file')
     // Confirm the cursor is at the end of the newly added file name with space
     await page.keyboard.press('!')
     await page.keyboard.press('Delete')
-    await expect(chatInput).toHaveText('Explain the @Main.java !file')
+    await expect(chatInput).toHaveText('Explain the Main.java !file')
 
     //  "ArrowLeft" / "ArrowRight" keys alter the query input for @-mentions.
-    const noMatches = atMentionMenuItem(chatPanelFrame, 'No files found')
+    const noMatches = atMentionMenuMessage(chatPanelFrame, 'No files found')
     await chatInput.pressSequentially(' @abcdefg')
-    await expect(chatInput).toHaveText('Explain the @Main.java ! @abcdefgfile')
+    await expect(chatInput).toHaveText('Explain the Main.java ! @abcdefgfile')
     await noMatches.hover()
     await expect(noMatches).toBeVisible()
     await chatInput.press('ArrowLeft')
@@ -195,7 +183,7 @@ test.extend<ExpectedEvents>({
     await chatInput.press('ArrowRight')
     await expect(noMatches).toBeVisible()
     await chatInput.press('$')
-    await expect(chatInput).toHaveText('Explain the @Main.java ! @abcdefg$file')
+    await expect(chatInput).toHaveText('Explain the Main.java ! @abcdefg$file')
     await expect(noMatches).not.toBeVisible()
     // Selection close on submit
     await chatInput.press('Enter')
@@ -214,30 +202,15 @@ test.extend<ExpectedEvents>({
     await expect(noMatches).toBeVisible()
 })
 
-test.extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyInstalled',
-        // This is fired on empty @-mention query for open tabs context
-        'CodyVSCodeExtension:at-mention:executed',
-        // Log once on the first character entered for an @-mention query, e.g. "@."
-        'CodyVSCodeExtension:at-mention:file:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-        'CodyVSCodeExtension:editChatButton:clicked',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-    ],
+test.extend<ExpectedV2Events>({
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
-        'cody.extension:savedLogin',
         'cody.codyIgnore:hasFile',
         'cody.auth:connected',
         'cody.at-mention:executed',
@@ -255,43 +228,32 @@ test.extend<ExpectedEvents>({
     // Send a message with an @-mention.
     await firstChatInput.fill('Explain @mj')
     await chatPanelFrame.getByRole('option', { name: 'Main.java' }).click()
-    await expect(firstChatInput).toHaveText('Explain @Main.java ')
-    await expect(firstChatInput.getByText('@Main.java')).toHaveClass(/context-item-mention-node/)
+    await expect(firstChatInput).toHaveText('Explain Main.java ')
     await firstChatInput.press('Enter')
     const contextCell = getContextCell(chatPanelFrame)
     await expectContextCellCounts(contextCell, { files: 1 })
 
     // Edit the just-sent message and resend it. Confirm it is sent with the right context items.
-    await expect(firstChatInput).toHaveText('Explain @Main.java ')
+    await expect(firstChatInput).toHaveText('Explain Main.java ')
     await firstChatInput.press('Meta+Enter')
     await expectContextCellCounts(contextCell, { files: 1 })
 
     // Edit it again, add a new @-mention, and resend.
-    await expect(firstChatInput).toHaveText('Explain @Main.java ')
+    await expect(firstChatInput).toHaveText('Explain Main.java ')
     await focusChatInputAtEnd(firstChatInput)
     await firstChatInput.pressSequentially('and @index.ht')
     await chatPanelFrame.getByRole('option', { name: 'index.html' }).click()
-    await expect(firstChatInput).toHaveText('Explain @Main.java and @index.html')
-    await expect(firstChatInput.getByText('@index.html')).toHaveClass(/context-item-mention-node/)
+    await expect(firstChatInput).toHaveText('Explain Main.java and index.html')
     await firstChatInput.press('Enter')
-    await expect(firstChatInput).toHaveText('Explain @Main.java and @index.html')
+    await expect(firstChatInput).toHaveText('Explain Main.java and index.html')
+    await expect(chatInputMentions(firstChatInput)).toHaveText(['Main.java', 'index.html'])
     await expectContextCellCounts(contextCell, { files: 2 })
 })
 
-test.extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyVSCodeExtension:at-mention:file:executed',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-        'CodyVSCodeExtension:chat:context:opened',
-        'CodyVSCodeExtension:chat:context:fileLink:clicked',
-    ],
+test.extend<ExpectedV2Events>({
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
@@ -312,7 +274,7 @@ test.extend<ExpectedEvents>({
     await chatInput.fill('@buzz.ts:2-4')
     await expect(chatPanelFrame.getByRole('option', { name: 'buzz.ts Lines 2-4' })).toBeVisible()
     await chatPanelFrame.getByRole('option', { name: 'buzz.ts Lines 2-4' }).click()
-    await expect(chatInput).toHaveText('@buzz.ts:2-4 ')
+    await expect(chatInput).toHaveText('buzz.ts:2-4 ')
     // Submit the message
     await chatInput.press('Enter')
 
@@ -320,8 +282,8 @@ test.extend<ExpectedEvents>({
     const contextCell = getContextCell(chatPanelFrame)
     await expectContextCellCounts(contextCell, { files: 1 })
     await contextCell.hover()
-    await contextCell.click()
-    const chatContext = chatPanelFrame.locator('details').last()
+    await openContextCell(contextCell)
+    const chatContext = getContextCell(chatPanelFrame).last()
     await chatContext.getByRole('link', { name: 'buzz.ts:2-4' }).hover()
     await chatContext.getByRole('link', { name: 'buzz.ts:2-4' }).click()
     const previewTab = page.getByRole('tab', { name: /buzz.ts, preview, Editor Group/ })
@@ -330,21 +292,10 @@ test.extend<ExpectedEvents>({
 })
 
 // NOTE: @symbols does not require double tabbing to select an option.
-test.extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyVSCodeExtension:at-mention:executed',
-        'CodyVSCodeExtension:at-mention:symbol:executed',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-        'CodyVSCodeExtension:chat:context:opened',
-        'CodyVSCodeExtension:chat:context:fileLink:clicked',
-    ],
+test.extend<ExpectedV2Events>({
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
@@ -356,53 +307,54 @@ test.extend<ExpectedEvents>({
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
     ],
-})('@-mention symbol in chat', async ({ page, sidebar }) => {
+})('@-mention symbol in chat', async ({ page, nap, sidebar }) => {
     await sidebarSignin(page, sidebar)
+
+    // Open the buzz.ts file so that VS Code starts to populate symbols.
+    await openFileInEditorTab(page, 'buzz.ts')
 
     // Open chat.
     const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
 
-    // Open the buzz.ts file so that VS Code starts to populate symbols.
-    await sidebarExplorer(page).click()
-    await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
-    await page.getByRole('tab', { name: 'buzz.ts' }).click()
-
     // Wait for the tsserver to become ready: when sync icon disappears
     const langServerLoadingState = 'Editor Language Status: Loading'
-    await expect(page.getByRole('button', { name: langServerLoadingState })).toBeVisible()
-    await page.waitForSelector(`span[class*="codicon codicon-sync"]`, { state: 'detached' })
     await expect(page.getByRole('button', { name: langServerLoadingState })).not.toBeVisible()
 
     // Go back to the Cody chat tab
+    await nap()
     await page.getByRole('tab', { name: 'New Chat' }).click()
 
     // Symbol empty state shows tooltip to search for a symbol
     await openMentionsForProvider(chatPanelFrame, chatInput, 'Symbols')
 
     // Symbol empty symbol results updates tooltip title to show no symbols found
-    await chatInput.pressSequentially('invalide', { delay: 10 })
-    await expect(atMentionMenuItem(chatPanelFrame, /^No symbols found/)).toBeVisible()
+    await chatInput.pressSequentially('xx', { delay: 10 })
+    await expect(atMentionMenuMessage(chatPanelFrame, /^No symbols found/)).toBeVisible()
+    await chatInput.press('Backspace')
+    await chatInput.press('Backspace')
+    await chatInput.press('Backspace')
 
     // Clicking on a file in the selector should autocomplete the file in chat input with added space
     await openMentionsForProvider(chatPanelFrame, chatInput, 'Symbols')
     await chatInput.pressSequentially('fizzb', { delay: 10 })
     await expect(chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' })).toBeVisible()
     await chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' }).click()
-    await expect(chatInput).toHaveText('@buzz.ts:1-15#fizzbuzz() ')
+    await expect(chatInput).toHaveText('buzz.ts fizzbuzz() ')
+    await expect(chatInputMentions(chatInput)).toHaveText(['buzz.ts', 'fizzbuzz()'])
 
     // Submit the message
     await chatInput.press('Enter')
 
     // Close file.
     const pinnedTab = page.getByRole('tab', { name: 'buzz.ts', exact: true })
-    await pinnedTab.getByRole('button', { name: /^Close/ }).click()
+    await pinnedTab.getByRole('button', { name: /^Close/ }).click({ force: true })
 
     // @-file with the correct line range shows up in the chat view and it opens on click
     const contextCell = getContextCell(chatPanelFrame)
-    await expectContextCellCounts(contextCell, { files: 1 })
+    await expectContextCellCounts(contextCell, { files: 2 })
     await contextCell.hover()
-    await contextCell.click()
-    const chatContext = chatPanelFrame.locator('details').last()
+    await openContextCell(contextCell)
+    const chatContext = getContextCell(chatPanelFrame).last()
     await chatContext.getByRole('link', { name: 'buzz.ts:1-15' }).hover()
     await chatContext.getByRole('link', { name: 'buzz.ts:1-15' }).click()
     const previewTab = page.getByRole('tab', { name: /buzz.ts, preview, Editor Group/ })
@@ -410,52 +362,18 @@ test.extend<ExpectedEvents>({
     await expect(previewTab).toBeVisible()
 })
 
-test.extend<ExpectedEvents>({
-    expectedEvents: ['CodyVSCodeExtension:addChatContext:clicked'],
+test.extend<ExpectedV2Events>({
     expectedV2Events: ['cody.addChatContext:clicked'],
-})('add selected code as @-mention with "Cody Chat: Add context"', async ({ page, sidebar }) => {
+})('Add Selection to Cody Chat', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
-    // Open the buzz.ts file to highlight line 2-13 in the editor
-    await sidebarExplorer(page).click()
-    await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
-    await page.getByRole('tab', { name: 'buzz.ts' }).click()
-    await page.getByText('2', { exact: true }).click()
-    await page.getByText('13').click({
-        modifiers: ['Shift'],
-    })
+    await openFileInEditorTab(page, 'buzz.ts')
+    await selectLineRangeInEditorTab(page, 2, 5)
 
-    // Open the Command Palette and run the "Cody Chat: Add context" command
-    const metaKey = getMetaKeyByOS()
-    await page.keyboard.press(`${metaKey}+Shift+P`)
-    const commandPaletteInputBox = page.getByPlaceholder('Type the name of a command to run.')
-    await expect(commandPaletteInputBox).toBeVisible()
-    await commandPaletteInputBox.fill('>New Chat with Selection')
-    await page.locator('a').filter({ hasText: 'New Chat with Selection' }).click()
+    const [, lastChatInput] = await createEmptyChatPanel(page)
 
-    // Verify the chat input has the selected code as an @-mention item
-    const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
-    await expect(chatInput).toHaveText('@buzz.ts:2-13 ')
-
-    // Repeat the above steps to add another code selection as an @-mention item.
-    // The chat input should have the new code selections appended as @-mention items
-    // instead of replacing the existing one or adding to a new chat.
-    await page.getByRole('tab', { name: 'buzz.ts' }).click()
-    await page.locator('div[class*="line-numbers"]').getByText('4', { exact: true }).click()
-    await page.getByText('6', { exact: true }).click({ modifiers: ['Shift'] })
-    await page.keyboard.press(`${metaKey}+Shift+P`)
-    await expect(commandPaletteInputBox).toBeVisible()
-    await commandPaletteInputBox.fill('>Add Selection to Cody Chat')
-    await page.locator('a').filter({ hasText: 'Add Selection to Cody Chat' }).click()
-    await expect(chatInput).toHaveText('@buzz.ts:2-13 @buzz.ts:4-6 ')
+    await lastChatInput.press('x')
+    await selectLineRangeInEditorTab(page, 7, 10)
+    await executeCommandInPalette(page, 'Cody: Add Selection to Cody Chat')
+    await expect(chatInputMentions(lastChatInput)).toHaveText(['buzz.ts:2-5', 'buzz.ts:7-10'])
 })
-
-async function openMentionsForProvider(
-    frame: FrameLocator,
-    chatInput: Locator,
-    provider: string
-): Promise<void> {
-    await chatInput.fill('@')
-    await frame.getByRole('option', { name: provider }).click()
-}

@@ -1,14 +1,10 @@
 import type { GroqCompletionsStreamResponse } from '.'
+import type { ChatNetworkClientParams } from '..'
 import { getCompletionsModelConfig } from '../..'
 import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { onAbort } from '../../common/abortController'
 import { CompletionStopReason } from '../../inferenceClient/misc'
-import type { CompletionLogger } from '../../sourcegraph-api/completions/client'
-import type {
-    CompletionCallbacks,
-    CompletionParameters,
-    CompletionResponse,
-} from '../../sourcegraph-api/completions/types'
+import type { CompletionResponse } from '../../sourcegraph-api/completions/types'
 
 const GROQ_CHAT_API_URL = new URL('https://api.groq.com/openai/v1/chat/completions')
 
@@ -19,14 +15,13 @@ const GROQ_CHAT_API_URL = new URL('https://api.groq.com/openai/v1/chat/completio
  * This also works with the OpenAI API or any OpenAI compatible providers.
  * The endpoint can be changed via the apiEndpoint field in the `chat.dev.models` configuration.
  */
-export async function groqChatClient(
-    params: CompletionParameters,
-    cb: CompletionCallbacks,
-    // This is used for logging as the completions request is sent to the provider's API
-    completionsEndpoint: string,
-    logger?: CompletionLogger,
-    signal?: AbortSignal
-): Promise<void> {
+export async function groqChatClient({
+    params,
+    cb,
+    completionsEndpoint,
+    logger,
+    signal,
+}: ChatNetworkClientParams): Promise<void> {
     const log = logger?.startCompletion(params, completionsEndpoint)
     if (!params.model || !params.messages) {
         log?.onError('No model or messages')
@@ -39,6 +34,9 @@ export async function groqChatClient(
         return
     }
 
+    // Support [Cortex](https://jan.ai/cortex) experimentally, which commonly uses this port.
+    const isCortex = config?.endpoint?.includes(':1337')
+
     const chatParams = {
         model: config?.model,
         messages: await Promise.all(
@@ -50,6 +48,16 @@ export async function groqChatClient(
             })
         ),
         stream: true,
+        ...(isCortex
+            ? {
+                  max_tokens: 1000,
+                  stop: [],
+                  frequency_penalty: 0,
+                  presence_penalty: 0,
+                  temperature: 0.1,
+                  top_p: -1,
+              }
+            : {}),
     }
 
     fetch(config?.endpoint ?? GROQ_CHAT_API_URL, {
@@ -61,6 +69,13 @@ export async function groqChatClient(
         },
         signal,
     })
+        .then(async res => {
+            if (!res.ok) {
+                log?.onError(res.statusText)
+                throw new Error(`HTTP ${res.status} ${res.statusText}: ${await res.text()}`)
+            }
+            return res
+        })
         .then(res => res.body?.getReader())
         .then(async reader => {
             if (!reader) {

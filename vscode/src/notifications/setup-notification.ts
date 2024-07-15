@@ -6,7 +6,6 @@ import { localStorage } from '../services/LocalStorageProvider'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { showActionNotification } from '.'
-import { telemetryService } from '../services/telemetry'
 
 export const showSetupNotification = async (config: ConfigurationWithAccessToken): Promise<void> => {
     if (config.serverEndpoint && config.accessToken) {
@@ -23,11 +22,10 @@ export const showSetupNotification = async (config: ConfigurationWithAccessToken
     if (localStorage.get('extension.hasActivatedPreviously') !== 'true') {
         // User is on first activation, so has only just installed Cody.
         // Show Cody so that they can get started.
-        await vscode.commands.executeCommand('cody.focus')
+        await vscode.commands.executeCommand('cody.chat.focus')
         return
     }
 
-    telemetryService.log('CodyVSCodeExtension:signInNotification:shown', undefined, { hasV2Event: true })
     telemetryRecorder.recordEvent('cody.signInNotification', 'shown')
 
     return showActionNotification({
@@ -36,12 +34,7 @@ export const showSetupNotification = async (config: ConfigurationWithAccessToken
             {
                 label: 'Sign In',
                 onClick: async () => {
-                    vscode.commands.executeCommand('cody.focus')
-                    telemetryService.log(
-                        'CodyVSCodeExtension:signInNotification:signIn:clicked',
-                        undefined,
-                        { hasV2Event: true }
-                    )
+                    vscode.commands.executeCommand('cody.chat.focus')
                     telemetryRecorder.recordEvent('cody.signInNotification.signInButton', 'clicked')
                 },
             },
@@ -49,13 +42,6 @@ export const showSetupNotification = async (config: ConfigurationWithAccessToken
                 label: 'Do not show again',
                 onClick: async () => {
                     localStorage.set('notification.setupDismissed', 'true')
-                    telemetryService.log(
-                        'CodyVSCodeExtension:signInNotification:doNotShow:clicked',
-                        undefined,
-                        {
-                            hasV2Event: true,
-                        }
-                    )
                     telemetryRecorder.recordEvent('cody.signInNotification.doNotShow', 'clicked')
                 },
             },

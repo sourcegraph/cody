@@ -25,14 +25,17 @@
     "source.organizeImports.biome": "explicit"
   },
   "editor.insertSpaces": true,
-  "cSpell.words": [
-    "Supercompletion",
-    "Supercompletions"
-  ],
+  "cSpell.words": ["Supercompletion", "Supercompletions"],
+  "[json]": {
+    "editor.defaultFormatter": "biomejs.biome",
+  },
   "[typescript]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
   "[typescriptreact]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
+  "[css]": {
+    "editor.defaultFormatter": "stylelint.vscode-stylelint"
+  }
 }

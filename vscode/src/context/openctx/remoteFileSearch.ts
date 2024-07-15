@@ -1,40 +1,53 @@
-import type { Item, Mention, Provider } from '@openctx/client'
-import { graphqlClient, isDefined, isError } from '@sourcegraph/cody-shared'
+import type { Item, Mention } from '@openctx/client'
+import {
+    contextFiltersProvider,
+    displayPathBasename,
+    graphqlClient,
+    isDefined,
+    isError,
+} from '@sourcegraph/cody-shared'
+import { URI } from 'vscode-uri'
 
-const RemoteFileProvider: Provider & { providerUri: string } = {
-    providerUri: 'internal-remote-file-search',
+import type { OpenContextProvider } from './types'
 
-    meta() {
-        return {
-            name: 'Sourcegraph Files',
-            mentions: {},
-        }
-    },
+const RemoteFileProvider = createRemoteFileProvider()
 
-    async mentions({ query }) {
-        const [repoName, filePath] = query?.split(':') || []
+export function createRemoteFileProvider(customTitle?: string): OpenContextProvider {
+    return {
+        providerUri: 'internal-remote-file-search',
 
-        if (!query?.includes(':') || !repoName.trim()) {
-            return await getRepoMentions(query?.trim())
-        }
+        meta() {
+            return {
+                name: customTitle ?? 'Remote Files',
+                mentions: {},
+            }
+        },
 
-        return await getFileMentions(repoName, filePath.trim())
-    },
+        async mentions({ query }) {
+            const [repoName, filePath] = query?.split(':') || []
 
-    async items({ mention }) {
-        if (!mention?.data?.repoName || !mention?.data?.filePath) {
-            return []
-        }
+            if (!query?.includes(':') || !repoName.trim()) {
+                return await getRepoMentions(query?.trim())
+            }
 
-        return await getFileItem(
-            mention.data.repoName as string,
-            mention.data.filePath as string,
-            mention.data.rev as string
-        )
-    },
+            return await getFileMentions(repoName, filePath.trim())
+        },
+
+        async items({ mention }) {
+            if (!mention?.data?.repoName || !mention?.data?.filePath) {
+                return []
+            }
+
+            return await getFileItem(
+                mention.data.repoName as string,
+                mention.data.filePath as string,
+                mention.data.rev as string
+            )
+        },
+    }
 }
 
-export async function getRepoMentions(query?: string): Promise<Mention[]> {
+async function getRepoMentions(query?: string): Promise<Mention[]> {
     const dataOrError = await graphqlClient.searchRepos(10, undefined, query)
 
     if (isError(dataOrError) || dataOrError === null) {
@@ -43,18 +56,24 @@ export async function getRepoMentions(query?: string): Promise<Mention[]> {
 
     const repositories = dataOrError.repositories.nodes
 
-    return repositories.map(repo => ({
-        uri: repo.url,
-        title: repo.name,
-        description: ' ',
-        data: {
-            repoName: repo.name,
-        },
-    }))
+    return repositories.map(
+        repo =>
+            ({
+                uri: repo.url,
+                title: repo.name,
+                description: ' ',
+                data: {
+                    repoName: repo.name,
+                    isIgnored: contextFiltersProvider.isRepoNameIgnored(repo.name),
+                },
+            }) satisfies Mention
+    )
 }
 
-export async function getFileMentions(repoName: string, filePath?: string): Promise<Mention[]> {
-    const query = `repo:${repoName} type:file count:10` + (filePath ? ` file:${filePath}` : '')
+async function getFileMentions(repoName: string, filePath?: string): Promise<Mention[]> {
+    const repoRe = `^${escapeRegExp(repoName)}$`
+    const fileRe = filePath ? escapeRegExp(filePath) : '^.*$'
+    const query = `repo:${repoRe} file:${fileRe} type:file count:10`
 
     const dataOrError = await graphqlClient.searchFileMatches(query)
 
@@ -70,12 +89,13 @@ export async function getFileMentions(repoName: string, filePath?: string): Prom
 
             const url = `${graphqlClient.endpoint.replace(/\/$/, '')}${result.file.url}`
 
+            const basename = displayPathBasename(URI.parse(result.file.path))
+
             return {
                 uri: url,
-                title: result.file.path,
-                description: result.repository.name,
+                title: basename,
+                description: result.file.path,
                 data: {
-                    mentionLabel: `${result.repository.name}:${result.file.path}`,
                     repoName: result.repository.name,
                     rev: result.file.commit.oid,
                     filePath: result.file.path,
@@ -84,7 +104,8 @@ export async function getFileMentions(repoName: string, filePath?: string): Prom
         })
         .filter(isDefined)
 }
-export async function getFileItem(repoName: string, filePath: string, rev = 'HEAD'): Promise<Item[]> {
+
+async function getFileItem(repoName: string, filePath: string, rev = 'HEAD'): Promise<Item[]> {
     const dataOrError = await graphqlClient.getFileContents(repoName, filePath, rev)
 
     if (isError(dataOrError)) {
@@ -107,6 +128,10 @@ export async function getFileItem(repoName: string, filePath: string, rev = 'HEA
             },
         },
     ] satisfies Item[]
+}
+
+function escapeRegExp(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 export default RemoteFileProvider

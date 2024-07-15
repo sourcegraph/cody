@@ -1,167 +1,392 @@
+import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
+import { logDebug } from '../logger'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
-import type { ModelContextWindow, ModelUsage } from './types'
+import { ModelTag } from './tags'
+import { type ChatModel, type EditModel, type ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
+export type ModelId = string
+export type ApiVersionId = string
+export type ProviderId = string
+
+export type ModelRef = `${ProviderId}::${ApiVersionId}::${ModelId}`
+
+export type ModelCategory = ModelTag.Accuracy | ModelTag.Balanced | ModelTag.Speed
+export type ModelStatus = ModelTag.Experimental | ModelTag.Experimental | 'stable' | ModelTag.Deprecated
+export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise
+export type ModelCapability = 'chat' | 'autocomplete'
+
+export interface ContextWindow {
+    maxInputTokens: number
+    maxOutputTokens: number
+}
+
+export interface ServerModel {
+    modelRef: ModelRef
+    displayName: string
+    modelName: string
+    capabilities: ModelCapability[]
+    category: ModelCategory
+    status: ModelStatus
+    tier: ModelTier
+
+    contextWindow: ContextWindow
+
+    clientSideConfig?: unknown
+}
+
+interface Provider {
+    id: string
+    displayName: string
+}
+
+interface DefaultModels {
+    chat: ModelRef
+    fastChat: ModelRef
+    codeCompletion: ModelRef
+}
+
+export interface ServerModelConfiguration {
+    schemaVersion: string
+    revision: string
+    providers: Provider[]
+    models: ServerModel[]
+    defaultModels: DefaultModels
+}
+
 /**
- * ModelProvider manages available chat and edit models.
- * It stores a set of available providers and methods to add,
- * retrieve and select between them.
+ * Model describes an LLM model and its capabilities.
  */
-export class ModelProvider {
+export class Model {
     /**
-     * Whether the model is the default model for new chats and edits. The user can change their
-     * default model.
+     * The model id that includes the provider name & the model name,
+     * e.g. "anthropic/claude-3-sonnet-20240229"
+     *
+     * TODO(PRIME-282): Replace this with a `ModelRef` instance and introduce a separate
+     * "modelId" that is distinct from the "modelName". (e.g. "claude-3-sonnet" vs. "claude-3-sonnet-20240229")
      */
-    public default = false
+    public readonly model: string
+    /**
+     * The usage of the model, e.g. chat or edit.
+     */
+    public readonly usage: ModelUsage[]
+    /**
+     * The default context window of the model reserved for Chat and Context.
+     * {@see TokenCounter on how the token usage is calculated.}
+     */
+    public readonly contextWindow: ModelContextWindow
 
     /**
-     * Whether the model is the server-set initial default for new users.
+     * The client-specific configuration for the model.
      */
-    public initialDefault? = false
+    public readonly clientSideConfig?: {
+        /**
+         * The API key for the model
+         */
+        apiKey?: string
+        /**
+         * The API endpoint for the model
+         */
+        apiEndpoint?: string
+    }
 
-    // Whether the model is only available to Pro users
-    public codyProOnly = false
     // The name of the provider of the model, e.g. "Anthropic"
     public provider: string
     // The title of the model, e.g. "Claude 3 Sonnet"
     public readonly title: string
-    // A deprecated model can be used (to not break agent) but won't be rendered
-    // in the UI
-    public deprecated = false
+    /**
+     * The tags assigned for categorizing the model.
+     */
+    public readonly tags: ModelTag[] = []
 
-    constructor(
-        /**
-         * The model id that includes the provider name & the model name,
-         * e.g. "anthropic/claude-3-sonnet-20240229"
-         */
-        public readonly model: string,
-        /**
-         * The usage of the model, e.g. chat or edit.
-         */
-        public readonly usage: ModelUsage[],
-        /**
-         * The default context window of the model reserved for Chat and Context.
-         * {@see TokenCounter on how the token usage is calculated.}
-         */
-        public readonly contextWindow: ModelContextWindow = {
+    constructor({
+        model,
+        usage,
+        contextWindow = {
             input: CHAT_INPUT_TOKEN_BUDGET,
             output: CHAT_OUTPUT_TOKEN_BUDGET,
         },
-        /**
-         * The configuration for the model.
-         */
-        public readonly config?: {
-            /**
-             * The API key for the model
-             */
-            apiKey?: string
-            /**
-             * The API endpoint for the model
-             */
-            apiEndpoint?: string
-        },
-        public readonly uiGroup?: string
-    ) {
-        const { provider, title } = getModelInfo(model)
-        this.provider = provider
-        this.title = title
+        clientSideConfig,
+        tags = [],
+        provider,
+        title,
+    }: ModelParams) {
+        this.model = model
+        this.usage = usage
+        this.contextWindow = contextWindow
+        this.clientSideConfig = clientSideConfig
+        this.tags = tags
+
+        const info = getModelInfo(model)
+        this.provider = provider ?? info.provider
+        this.title = title ?? info.title
+    }
+
+    static fromApi({
+        modelRef,
+        displayName,
+        capabilities,
+        category,
+        tier,
+        clientSideConfig,
+        contextWindow,
+    }: ServerModel) {
+        // BUG: There is data loss here and the potential for ambiguity.
+        // BUG: We are assuming the modelRef is valid, but it might not be.
+        const [providerId, _, modelId] = modelRef.split('::', 3)
+
+        return new Model({
+            model: modelId,
+            usage: capabilities.flatMap(capabilityToUsage),
+            contextWindow: {
+                input: contextWindow.maxInputTokens,
+                output: contextWindow.maxOutputTokens,
+            },
+            // @ts-ignore
+            clientSideConfig: clientSideConfig,
+            tags: [category, tier],
+            provider: providerId,
+            title: displayName,
+        })
+    }
+
+    static isNewStyleEnterprise(model: Model): boolean {
+        return model.tags.includes(ModelTag.Enterprise)
+    }
+
+    static tier(model: Model): ModelTier {
+        const tierSet = new Set<ModelTag>([ModelTag.Pro, ModelTag.Enterprise])
+        return (model.tags.find(tag => tierSet.has(tag)) ?? ModelTag.Free) as ModelTier
+    }
+
+    static isCodyPro(model?: Model): boolean {
+        return Boolean(model?.tags.includes(ModelTag.Pro))
+    }
+}
+
+interface ModelParams {
+    model: string
+    usage: ModelUsage[]
+    contextWindow?: ModelContextWindow
+    clientSideConfig?: {
+        apiKey?: string
+        apiEndpoint?: string
+    }
+    tags?: ModelTag[]
+    provider?: string
+    title?: string
+}
+
+/**
+ * ModelsService is the component responsible for keeping track of which models
+ * are supported on the backend, which ones are available based on the user's
+ * preferences, etc.
+ *
+ * TODO(PRIME-228): Update this type to be able to fetch the models from the
+ *      Sourcegraph backend instead of being hard-coded.
+ * TODO(PRIME-283): Enable Cody Enterprise users to select which LLM model to
+ *      used in the UI. (By having the relevant code paths just pull the models
+ *      from this type.)
+ */
+export class ModelsService {
+    // Unused. Only to work around the linter complaining about a static-only class.
+    // When we are fetching data from the Sourcegraph backend, and relying on the
+    // current user's credentials, we'll need to turn this into a proper singleton
+    // with an initialization step on startup.
+    protected ModelsService() {}
+
+    public static reset() {
+        ModelsService.primaryModels = []
+        ModelsService.localModels = []
+        ModelsService.defaultModels.clear()
+        ModelsService.storage = undefined
     }
 
     /**
      * Get all the providers currently available to the user
      */
-    private static get providers(): ModelProvider[] {
-        return ModelProvider.primaryProviders.concat(ModelProvider.localProviders)
+    private static get models(): Model[] {
+        return ModelsService.primaryModels.concat(ModelsService.localModels)
     }
     /**
-     * Providers available on the user's Sourcegraph instance
+     * Models available on the user's Sourcegraph instance.
      */
-    private static primaryProviders: ModelProvider[] = []
+    private static primaryModels: Model[] = []
     /**
-     * Providers available from user's local instances, e.g. Ollama
+     * Models available from user's local instances, e.g. Ollama.
      */
-    private static localProviders: ModelProvider[] = []
+    private static localModels: Model[] = []
 
-    public static async onConfigChange(enableOllamaModels: boolean): Promise<void> {
-        // Only fetch local models if user has enabled the config
-        ModelProvider.localProviders = enableOllamaModels ? await fetchLocalOllamaModels() : []
+    private static defaultModels: Map<ModelUsage, Model> = new Map()
+
+    private static storage: Storage | undefined
+
+    private static storageKeys = {
+        [ModelUsage.Chat]: 'chat',
+        [ModelUsage.Edit]: 'editModel',
+    }
+
+    public static setStorage(storage: Storage): void {
+        ModelsService.storage = storage
+    }
+
+    public static async onConfigChange(): Promise<void> {
+        try {
+            ModelsService.localModels = await fetchLocalOllamaModels()
+        } catch {
+            ModelsService.localModels = []
+        }
+    }
+
+    private static getModelsByType(usage: ModelUsage): Model[] {
+        return ModelsService.models.filter(model => model.usage.includes(usage))
     }
 
     /**
-     * Sets the primary model providers.
-     * NOTE: private instances can only support 1 provider atm
+     * Sets the primary models available to the user.
+     * NOTE: private instances can only support 1 provider ATM.
      */
-    public static setProviders(providers: ModelProvider[]): void {
-        ModelProvider.primaryProviders = providers
+    public static setModels(models: Model[]): void {
+        logDebug('ModelsService', `Setting primary model: ${JSON.stringify(models.map(m => m.model))}`)
+        ModelsService.primaryModels = models
     }
 
     /**
-     * Add new providers as primary model providers.
+     * Add new models for use.
      */
-    public static addProviders(providers: ModelProvider[]): void {
-        const set = new Set(ModelProvider.primaryProviders)
-        for (const provider of providers) {
+    public static addModels(models: Model[]): void {
+        const set = new Set(ModelsService.primaryModels)
+        for (const provider of models) {
             set.add(provider)
         }
-        ModelProvider.primaryProviders = Array.from(set)
+        ModelsService.primaryModels = Array.from(set)
     }
 
     /**
-     * Get the list of the primary models providers with local models.
-     * If currentModel is provided, sets it as the default model.
+     * Gets the available models of the specified usage type, with the default model first.
+     *
+     * @param type - The usage type of the models to retrieve.
+     * @param authStatus - The authentication status of the user.
+     * @returns An array of models, with the default model first.
      */
-    public static getProviders(
-        type: ModelUsage,
-        isCodyProUser: boolean,
-        currentModel?: string
-    ): ModelProvider[] {
-        const availableModels = ModelProvider.providers.filter(m => m.usage.includes(type))
+    public static getModels(type: ModelUsage, authStatus: AuthStatus): Model[] {
+        const models = ModelsService.getModelsByType(type)
+        const currentModel = ModelsService.getDefaultModel(type, authStatus)
+        if (!currentModel) {
+            return models
+        }
+        return [currentModel].concat(models.filter(m => m.model !== currentModel.model))
+    }
 
-        const currentDefault = currentModel
-            ? availableModels.find(m => m.model === currentModel)
-            : undefined
-        const canUseCurrentDefault = currentDefault?.codyProOnly ? isCodyProUser : !!currentDefault
+    private static getDefaultModel(type: ModelUsage, authStatus: AuthStatus): Model | undefined {
+        // Free users can only use the default free model, so we just find the first model they can use
+        const models = ModelsService.getModelsByType(type)
+        const firstModelUserCanUse = models.find(m => ModelsService.canUserUseModel(authStatus, m))
+        const current = ModelsService.defaultModels.get(type)
+        if (current && ModelsService.canUserUseModel(authStatus, current)) {
+            return current
+        }
 
-        return ModelProvider.providers
-            .filter(m => m.usage.includes(type))
-            ?.map(model => ({
-                ...model,
-                // Set the current model as default
-                default: canUseCurrentDefault ? model.model === currentModel : model.default,
-            }))
+        // If this editor has local storage enabled, check to see if the
+        // user set a default model in a previous session.
+        const lastSelectedModelID = ModelsService.storage?.get(ModelsService.storageKeys[type])
+        // return either the last selected model or first model they can use if any
+        return models.find(m => m.model === lastSelectedModelID) || firstModelUserCanUse
+    }
+
+    public static getDefaultEditModel(authStatus: AuthStatus): EditModel | undefined {
+        return ModelsService.getDefaultModel(ModelUsage.Edit, authStatus)?.model
+    }
+
+    public static getDefaultChatModel(authStatus: AuthStatus): ChatModel | undefined {
+        return ModelsService.getDefaultModel(ModelUsage.Chat, authStatus)?.model
+    }
+
+    public static async setDefaultModel(type: ModelUsage, model: Model | string): Promise<void> {
+        const resolved = ModelsService.resolveModel(model)
+        if (!resolved) {
+            return
+        }
+        if (!resolved.usage.includes(type)) {
+            throw new Error(`Model "${resolved.model}" is not compatible with usage type "${type}".`)
+        }
+        logDebug('ModelsService', `Setting default ${type} model to ${resolved.model}`)
+        ModelsService.defaultModels.set(type, resolved)
+        // If we have persistent storage set, write it there
+        await ModelsService.storage?.set(ModelsService.storageKeys[type], resolved.model)
+    }
+
+    public static canUserUseModel(status: AuthStatus, model: string | Model): boolean {
+        const resolved = ModelsService.resolveModel(model)
+        if (!resolved) {
+            return false
+        }
+        const tier = Model.tier(resolved)
+        // Cody Enterprise users are able to use any models that the backend says is supported.
+        if (isEnterpriseUser(status)) {
+            return true
+        }
+
+        // A Cody Pro user can use any Free or Pro model, but not Enterprise.
+        // (But in reality, Sourcegraph.com wouldn't serve any Enterprise-only models to
+        // Cody Pro users anyways.)
+        if (isCodyProUser(status)) {
+            return tier !== 'enterprise'
+        }
+
+        return tier === 'free'
+    }
+
+    private static resolveModel(modelID: Model | string): Model | undefined {
+        if (typeof modelID !== 'string') {
+            return modelID
+        }
+        return ModelsService.models.find(m => m.model === modelID)
     }
 
     /**
      * Finds the model provider with the given model ID and returns its Context Window.
      */
     public static getContextWindowByID(modelID: string): ModelContextWindow {
-        const model = ModelProvider.providers.find(m => m.model === modelID)
+        const model = ModelsService.models.find(m => m.model === modelID)
         return model
             ? model.contextWindow
             : { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET }
     }
 
-    public static getProviderByModel(modelID: string): ModelProvider | undefined {
-        return ModelProvider.providers.find(m => m.model === modelID)
+    public static getModelByID(modelID: string): Model | undefined {
+        return ModelsService.models.find(m => m.model === modelID)
     }
 
-    public static getProviderByModelSubstringOrError(modelSubstring: string): ModelProvider {
-        const models = ModelProvider.providers.filter(m => m.model.includes(modelSubstring))
+    public static getModelByIDSubstringOrError(modelSubstring: string): Model {
+        const models = ModelsService.models.filter(m => m.model.includes(modelSubstring))
         if (models.length === 1) {
             return models[0]
         }
-        if (models.length === 0) {
-            throw new Error(
-                `No model found for substring ${modelSubstring}. Available models: ${ModelProvider.providers
-                    .map(m => m.model)
-                    .join(', ')}`
-            )
-        }
-        throw new Error(
-            `Multiple models found for substring ${modelSubstring}: ${models
-                .map(m => m.model)
-                .join(', ')}`
-        )
+        const errorMessage =
+            models.length > 1
+                ? `Multiple models found for substring ${modelSubstring}.`
+                : `No models found for substring ${modelSubstring}.`
+        const modelsList = ModelsService.models.map(m => m.model).join(', ')
+        throw new Error(`${errorMessage} Available models: ${modelsList}`)
+    }
+
+    public static hasModelTag(model: Model, modelTag: ModelTag): boolean {
+        return model.tags.includes(modelTag)
+    }
+}
+
+interface Storage {
+    get(key: string): string | null
+    set(key: string, value: string): Promise<void>
+}
+
+export function capabilityToUsage(capability: ModelCapability): ModelUsage[] {
+    switch (capability) {
+        case 'autocomplete':
+            return []
+        case 'chat':
+            return [ModelUsage.Chat, ModelUsage.Edit]
     }
 }

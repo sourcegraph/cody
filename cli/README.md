@@ -1,36 +1,33 @@
 # Cody CLI (experimental)
 
-A command-line interface for Cody.
+A command-line interface for Cody. Important note: this tool used to be called `cody-agent` but was renamed to just `cody`.
 
 **Status:** experimental
 
+## Changelog
+
+See [CHANGELOG.md](../agent/CHANGELOG.md).
+
 ## Usage
 
-Set the `SRC_ENDPOINT` and `SRC_ACCESS_TOKEN` environment variables:
-
-```
-# Sourcegraph URL (https://sourcegraph.com or a URL to an enterprise instance)
-export SRC_ENDPOINT=https://sourcegraph.com
-
-# Sourcegraph access token (created in Sourcegraph > User settings > Access tokens)
-export SRC_ACCESS_TOKEN=sgp_0000000000_0000000000000000000
-```
-
-Then run:
+Run the following commands to get started with the Cody CLI:
 
 ```
 npm install -g @sourcegraph/cody-agent
 
+# Authenticate with Sourcegraph by opening a browser window
+cody-agent auth login --web
+
 # Ask Cody a question (with no context):
-cody-agent experimental-cli chat -m 'what color is the sky?'
+cody-agent chat -m 'what color is the sky?'
 
 # Ask Cody a question (with Sourcegraph Enterprise repository context):
-cody-agent experimental-cli chat --context-repo github.com/sourcegraph/{sourcegraph,cody} --show-context -m 'how is authentication handled in sourcegraph/cody?'
+cody-agent chat --context-repo github.com/sourcegraph/{sourcegraph,cody} --show-context -m 'how is authentication handled in sourcegraph/cody?'
 ```
 
 ## Development & feedback
 
-Use the [Feedback on Cody CLI (experimental feature)](https://community.sourcegraph.com/t/feedback-on-cody-cli-experimental-feature/78) thread in the Sourcegraph community forum.
+Use the [Feedback on upcoming Cody CLI Beta](https://community.sourcegraph.com/t/share-your-feedback-on-the-upcoming-cody-cli-beta/672) thread in the Sourcegraph community forum.
 
 Issues and PRs appreciated!
 

@@ -1,8 +1,14 @@
-import { type AuthStatus, type EditModel, ModelProvider, ModelUsage } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type EditModel,
+    type Model,
+    ModelUsage,
+    ModelsService,
+} from '@sourcegraph/cody-shared'
 import type { EditIntent } from '../types'
 
-export function getEditModelsForUser(authStatus: AuthStatus): ModelProvider[] {
-    return ModelProvider.getProviders(ModelUsage.Edit, !authStatus.userCanUpgrade)
+export function getEditModelsForUser(authStatus: AuthStatus): Model[] {
+    return ModelsService.getModels(ModelUsage.Edit, authStatus)
 }
 
 export function getOverridenModelForIntent(
@@ -23,7 +29,7 @@ export function getOverridenModelForIntent(
             // TODO: Make the model usage more visible to users outside of the normal edit flow. This means
             // we could let the user provide any model they want for `fix`.
             // Issue: https://github.com/sourcegraph/cody/issues/3512
-            return 'anthropic/claude-3-sonnet-20240229'
+            return 'anthropic/claude-3-5-sonnet-20240620'
         case 'doc':
             // Doc is a case where we can sacrifice LLM performnace for improved latency and get comparable results.
             return 'anthropic/claude-3-haiku-20240307'

@@ -8,6 +8,7 @@ import {
     type FunctionComponent,
     type KeyboardEventHandler,
     type PropsWithChildren,
+    type ReactNode,
     forwardRef,
     useCallback,
     useEffect,
@@ -36,10 +37,10 @@ const buttonVariants = cva('tw-border-none tw-flex tw-items-center focus-visible
 
 type IconComponent = ComponentType<{ width?: number | string; height?: number | string }>
 
-export interface ToolbarButtonProps
+interface ToolbarButtonProps
     extends ButtonHTMLAttributes<HTMLButtonElement>,
         VariantProps<typeof buttonVariants> {
-    tooltip?: string
+    tooltip?: ReactNode
     iconStart?: IconComponent
     iconEnd?: IconComponent | 'chevron'
 
@@ -82,7 +83,7 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
         return tooltip ? (
             <Tooltip>
                 <TooltipTrigger asChild={true}>{button}</TooltipTrigger>
-                <TooltipContent>{tooltip}</TooltipContent>
+                <TooltipContent side="bottom">{tooltip}</TooltipContent>
             </Tooltip>
         ) : (
             button

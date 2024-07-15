@@ -49,7 +49,7 @@ describe('TreeViewProvider', () => {
         endpoint: URL
     }): Promise<void> {
         const nextUpdate = waitForTreeUpdate()
-        tree.syncAuthStatus(
+        tree.setAuthStatus(
             newAuthStatus(
                 endpoint.toString(),
                 isDotCom(endpoint.toString()),

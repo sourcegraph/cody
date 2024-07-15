@@ -1,5 +1,7 @@
 import fspromises from 'node:fs/promises'
 import { globalAgent } from 'node:https'
+import path from 'node:path'
+
 /**
  * Registers local root certificates onto the global HTTPS agent.
  *
@@ -8,23 +10,43 @@ import { globalAgent } from 'node:https'
  * On Linux, this adds Linux root certs.
  *
  * This allows HTTPS requests made via the global agent to trust these root certs.
+ * @param {Pick<vscode.ExtensionContext, 'extensionUri'>} context
  */
-export function registerLocalCertificates() {
-    // Deduplicates and installs mac root certs onto the global agent
-    // This is a no op for non-mac environments
-    require('mac-ca').addToGlobalAgent({ excludeBundled: false })
-    // Installs windows root certs onto the global agent
-    // This is a no op for non-windows environments
-    require('win-ca/fallback').inject('+')
-    // Installs linux root certs onto the global agent
-    // This is a no op for non-linux environments
+export function registerLocalCertificates(context) {
+    // Deduplicates and installs macOS root certs onto the global agent. This is a no-op for
+    // non-macOS environments
+    try {
+        require('mac-ca').addToGlobalAgent({ excludeBundled: false })
+    } catch (e) {
+        console.warn('Error installing macOS certs', e)
+    }
+
+    // Installs Windows root certs onto the global agent. This is a no-op for non-Windows
+    // environments.
+    try {
+        // By default, win-ca automatically locates the path to roots.exe from
+        // node_modules, but this doesn't work for Cody in VSC because we bundle
+        // the extension. Instead, we manually include roots.exe in the
+        // extension distribution and locate it via `vscode.ExtensionContext.extensionUri`.
+        // Docs https://github.com/ukoloff/win-ca#exe
+        const ca = require('win-ca/api')
+        const rootsExe = path.join(context.extensionUri.fsPath, 'dist', 'win-ca-roots.exe')
+        ca.exe(rootsExe)
+        ca({ fallback: true })
+    } catch (e) {
+        console.warn('Error installing Windows certs', e)
+    }
+
+    // Installs Linux root certs onto the global agent. This is a no-op for non-Linux environments.
     try {
         addLinuxCerts()
     } catch (e) {
-        console.warn('Error installing linux certs', e)
+        console.warn('Error installing Linux certs', e)
     }
 }
+
 const linuxPossibleCertPaths = ['/etc/ssl/certs/ca-certificates.crt', '/etc/ssl/certs/ca-bundle.crt']
+
 function addLinuxCerts() {
     if (process.platform !== 'linux') {
         return
@@ -38,9 +60,10 @@ function addLinuxCerts() {
     }
     loadLinuxCerts()
         .then(certs => cas.push(...certs))
-        .catch(err => console.warn('Error loading linux certs', err))
+        .catch(err => console.warn('Error loading Linux certs', err))
     globalAgent.options.ca = cas
 }
+
 async function loadLinuxCerts() {
     const certs = new Set()
     for (const path of linuxPossibleCertPaths) {
@@ -59,4 +82,3 @@ async function loadLinuxCerts() {
     }
     return Array.from(certs)
 }
-//# sourceMappingURL=certs.js.map

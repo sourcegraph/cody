@@ -14,7 +14,6 @@ import type { AuthProvider } from '../services/AuthProvider'
 import { gitRemoteUrlsFromGitExtension } from './git-extension-api'
 import { gitRemoteUrlsFromParentDirs } from './remote-urls-from-parent-dirs'
 
-export type RemoteUrlGetter = (uri: vscode.Uri) => Promise<string[] | undefined>
 type RepoName = string
 type RemoteUrl = string
 type UriFsPath = string
@@ -28,10 +27,14 @@ export class RepoNameResolver {
     public init(authProvider: AuthProvider): void {
         this.authProvider = authProvider
 
-        this.authProvider.addChangeListener(() => {
-            this.fsPathToRepoNameCache.clear()
-            this.remoteUrlToRepoNameCache.clear()
-        })
+        // TODO(beyang): handle disposable
+        this.authProvider.onChange(
+            () => {
+                this.fsPathToRepoNameCache.clear()
+                this.remoteUrlToRepoNameCache.clear()
+            },
+            { runImmediately: true }
+        )
     }
 
     /**

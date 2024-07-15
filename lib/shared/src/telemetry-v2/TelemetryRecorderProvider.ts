@@ -10,6 +10,7 @@ import {
 
 import {
     CONTEXT_SELECTION_ID,
+    type CodyIDE,
     type Configuration,
     type ConfigurationWithAccessToken,
 } from '../configuration'
@@ -23,7 +24,7 @@ import type { AuthStatusProvider } from '../auth/types'
 import { getTier } from './cody-tier'
 
 interface ExtensionDetails {
-    ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
+    ide: CodyIDE
     ideExtensionType: 'Cody' | 'CodeSearch'
 
     /** Version number for the extension. */
@@ -136,14 +137,6 @@ class ConfigurationMetadataProcessor implements TelemetryProcessor {
             {
                 key: 'contextSelection',
                 value: CONTEXT_SELECTION_ID[this.config.useContext],
-            },
-            {
-                key: 'guardrails',
-                value: this.config.experimentalGuardrails ? 1 : 0,
-            },
-            {
-                key: 'ollama',
-                value: this.config.experimentalOllamaChat ? 1 : 0,
             },
             {
                 key: 'tier',

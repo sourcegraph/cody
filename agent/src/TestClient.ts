@@ -27,6 +27,7 @@ import {
 } from '../../vscode/src/testutils/testing-credentials'
 import { AgentTextDocument } from './AgentTextDocument'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
+import { allClientCapabilitiesEnabled } from './allClientCapabilitiesEnabled'
 import { MessageHandler, type NotificationMethodName } from './jsonrpc-alias'
 import type {
     AutocompleteParams,
@@ -38,10 +39,12 @@ import type {
     EditTask,
     ExtensionConfiguration,
     NetworkRequest,
+    Position,
     ProgressReportParams,
     ProgressStartParams,
     ProtocolCodeLens,
     ProtocolTextDocument,
+    Range,
     RenameFileOperation,
     ServerInfo,
     ShowWindowMessageParams,
@@ -88,7 +91,7 @@ interface TestClientParams {
 }
 
 let isBuilt = false
-function buildAgentBinary(): void {
+export function buildAgentBinary(): void {
     if (isBuilt) {
         return
     }
@@ -129,6 +132,7 @@ function buildAgentBinary(): void {
 }
 
 export class TestClient extends MessageHandler {
+    private extensionConfigurationDuringInitialization: ExtensionConfiguration | undefined
     public static create({ bin = 'node', ...params }: TestClientParams): TestClient {
         buildAgentBinary()
         const agentDir = getAgentDir()
@@ -141,9 +145,10 @@ export class TestClient extends MessageHandler {
                       '--enable-source-maps',
                       // '--expose-gc', // Uncoment when running memory.test.ts
                       agentScript,
-                      'jsonrpc',
+                      'api',
+                      'jsonrpc-stdio',
                   ]
-                : ['jsonrpc']
+                : ['api', 'jsonrpc-stdio']
 
         const child = spawn(bin, args, {
             stdio: 'pipe',
@@ -201,7 +206,7 @@ export class TestClient extends MessageHandler {
         return this.params?.extraConfiguration?.['cody.autocomplete.advanced.model'] ?? ''
     }
 
-    private constructor(
+    constructor(
         conn: MessageConnection,
         public readonly params: TestClientParams
     ) {
@@ -268,11 +273,8 @@ export class TestClient extends MessageHandler {
             const createdFiles: CreateFileOperation[] = []
             for (const operation of params.operations) {
                 if (operation.type === 'edit-file') {
-                    const { success, protocolDocument } = this.editDocument(operation)
-                    result ||= success
-                    if (protocolDocument) {
-                        this.notify('textDocument/didChange', protocolDocument.underlying)
-                    }
+                    const protocolDocument = await this.editDocument(operation)
+                    this.notify('textDocument/didChange', protocolDocument.underlying)
                 } else if (operation.type === 'create-file') {
                     const fileExists = await doesFileExist(vscode.Uri.parse(operation.uri))
                     if (operation.options?.ignoreIfExists && fileExists) {
@@ -341,9 +343,11 @@ export class TestClient extends MessageHandler {
             this.notify('textDocument/didOpen', params)
             return Promise.resolve(true)
         })
-        this.registerRequest('textDocument/edit', params => {
+        this.registerRequest('textDocument/edit', async params => {
             this.textDocumentEditParams.push(params)
-            return Promise.resolve(this.editDocument(params).success)
+            const protocolDocument = await this.editDocument(params)
+            this.notify('textDocument/didChange', protocolDocument.underlying)
+            return Promise.resolve(true)
         })
         this.registerRequest('textDocument/show', () => {
             return Promise.resolve(true)
@@ -351,17 +355,25 @@ export class TestClient extends MessageHandler {
         this.registerNotification('debug/message', message => {
             this.logMessage(message)
         })
+
+        this.registerNotification('editTask/didUpdate', params => {
+            this.taskUpdate.fire(params)
+        })
+        this.registerNotification('editTask/didDelete', params => {
+            this.taskDelete.fire(params)
+        })
+
+        this.registerNotification('webview/postMessage', params => {
+            this.webviewMessages.push(params)
+            this.webviewMessagesEmitter.fire(params)
+        })
+        this.registerNotification('remoteRepo/didChange', () => {
+            // Do nothing
+        })
     }
 
-    private editDocument(params: TextDocumentEditParams): {
-        success: boolean
-        protocolDocument?: ProtocolTextDocumentWithUri
-    } {
-        const document = this.workspace.getDocument(vscode.Uri.parse(params.uri))
-        if (!document) {
-            logError('textDocument/edit: document not found', params.uri)
-            return { success: false }
-        }
+    private async editDocument(params: TextDocumentEditParams): Promise<ProtocolTextDocumentWithUri> {
+        const document = await this.workspace.openTextDocument(vscode.Uri.parse(params.uri))
         const patches = params.edits.map<[number, number, string]>(edit => {
             switch (edit.type) {
                 case 'delete':
@@ -385,31 +397,25 @@ export class TestClient extends MessageHandler {
             content: updatedContent,
         })
         this.workspace.loadDocument(protocolDocument)
-        return { success: true, protocolDocument }
+        return protocolDocument
     }
     private logMessage(params: DebugMessage): void {
         // Uncomment below to see `logDebug` messages.
         // console.log(`${params.channel}: ${params.message}`)
     }
 
-    public openFile(
-        uri: Uri,
-        params?: { selectionName?: string; removeCursor?: boolean }
-    ): Promise<void> {
+    public openFile(uri: Uri, params?: TextDocumentEventParams): Promise<void> {
         return this.textDocumentEvent(uri, 'textDocument/didOpen', params)
     }
 
-    public changeFile(
-        uri: Uri,
-        params?: { text?: string; selectionName?: string; removeCursor?: boolean }
-    ): Promise<void> {
+    public changeFile(uri: Uri, params?: TextDocumentEventParams): Promise<void> {
         return this.textDocumentEvent(uri, 'textDocument/didChange', params)
     }
 
     public async textDocumentEvent(
         uri: Uri,
         method: NotificationMethodName,
-        params?: { text?: string; selectionName?: string; removeCursor?: boolean }
+        params?: TextDocumentEventParams
     ): Promise<void> {
         const selectionName = params?.selectionName ?? 'SELECTION'
         let content: string = params?.text
@@ -430,7 +436,7 @@ export class TestClient extends MessageHandler {
             content = content.replace('/* CURSOR */', '')
         }
 
-        const document = AgentTextDocument.from(uri, content)
+        const document = AgentTextDocument.from(uri, content, params)
         const start =
             cursor >= 0
                 ? document.positionAt(cursor)
@@ -442,7 +448,7 @@ export class TestClient extends MessageHandler {
         const protocolDocument: ProtocolTextDocument = {
             uri: uri.toString(),
             content,
-            selection: start && end ? { start, end } : undefined,
+            selection: params?.selection ?? (start && end ? { start, end } : undefined),
         }
         const clientDocument = this.workspace.loadDocument(
             ProtocolTextDocumentWithUri.fromDocument(protocolDocument)
@@ -477,6 +483,70 @@ export class TestClient extends MessageHandler {
 
         await this.request('editTask/accept', { id: task.id })
         return this.workspace.getDocument(uri)?.content ?? ''
+    }
+
+    public async generateUnitTestFor(uri: vscode.Uri, line: number): Promise<TestInfo | undefined> {
+        await this.openFile(uri, {
+            removeCursor: false,
+            selection: {
+                start: { line, character: 0 },
+                end: { line, character: 0 },
+            },
+        })
+
+        const task = await this.request('editCommands/test', null)
+        await this.taskHasReachedAppliedPhase(task)
+        const lenses = this.codeLenses.get(uri.toString()) ?? []
+        if (lenses.length > 0) {
+            throw new Error(
+                `Code lenses are not supported in this mode ${JSON.stringify(lenses, null, 2)}`
+            )
+        }
+
+        await this.request('editTask/accept', { id: task.id })
+        return this.getTestEdit()
+    }
+
+    private async getTestEdit(): Promise<TestInfo | undefined> {
+        // first check if a new text file was created in the workspace
+        if (this.textDocumentEditParams.length === 1) {
+            const [editParams] = this.textDocumentEditParams
+            for (const edit of editParams.edits) {
+                if (edit.type === 'replace') {
+                    return {
+                        uri: vscode.Uri.parse(editParams.uri).with({ scheme: 'file' }),
+                        value: edit.value,
+                        fullFile: edit.value,
+                        isUpdate: false,
+                    }
+                }
+            }
+        }
+        // Otherwise it is an update to test file so it should
+        for (const param of this.workspaceEditParams) {
+            for (const operation of param.operations) {
+                if (operation.type === 'edit-file') {
+                    for (const edit of operation.edits) {
+                        // looks for a replace with an appropriate range
+                        if (
+                            edit.type === 'replace' &&
+                            !isPositionEqual(edit.range.start, edit.range.end)
+                        ) {
+                            const uri = vscode.Uri.parse(operation.uri).with({ scheme: 'file' })
+                            await this.openFile(uri)
+                            return {
+                                uri,
+                                value: edit.value,
+                                fullFile: this.documentText(uri),
+                                isUpdate: true,
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return undefined
     }
 
     public async autocompleteText(params?: Partial<AutocompleteParams>): Promise<string[]> {
@@ -519,7 +589,13 @@ export class TestClient extends MessageHandler {
             case CodyTaskState.Finished:
             case CodyTaskState.Error:
                 return Promise.reject(
-                    new Error(`Task reached terminal state before being applied ${params}`)
+                    new Error(
+                        `Task reached terminal state before being applied ${JSON.stringify(
+                            params,
+                            null,
+                            2
+                        )}`
+                    )
                 )
         }
 
@@ -610,21 +686,6 @@ export class TestClient extends MessageHandler {
     }
 
     public async initialize(additionalConfig?: Partial<ExtensionConfiguration>): Promise<ServerInfo> {
-        this.registerNotification('editTask/didUpdate', params => {
-            this.taskUpdate.fire(params)
-        })
-        this.registerNotification('editTask/didDelete', params => {
-            this.taskDelete.fire(params)
-        })
-
-        this.registerNotification('webview/postMessage', params => {
-            this.webviewMessages.push(params)
-            this.webviewMessagesEmitter.fire(params)
-        })
-        this.registerNotification('remoteRepo/didChange', () => {
-            // Do nothing
-        })
-
         this.conn.listen()
 
         try {
@@ -732,6 +793,13 @@ export class TestClient extends MessageHandler {
         transcript: ExtensionTranscriptMessage
     }> {
         const id = params?.id ?? (await this.request('chat/new', null))
+        if (params?.addEnhancedContext === true && this.isSymfDisabled()) {
+            throw new Error(
+                'addEnhancedContext:true when symf is disabled. ' +
+                    'To fix this problem, make sure the setting "cody.experimental.symf.enabled" is set to true. ' +
+                    'You can enable symf in the call to `TestClient.beforeAll()` or `TestClient.initialize()`.'
+            )
+        }
         const reply = asTranscriptMessage(
             await this.request('chat/submitMessage', {
                 id,
@@ -749,6 +817,10 @@ export class TestClient extends MessageHandler {
             transcript: reply,
             lastMessage: reply.messages.at(-1),
         }
+    }
+    private isSymfDisabled(): boolean {
+        const customConfiguration = this.extensionConfigurationDuringInitialization?.customConfiguration
+        return customConfiguration?.['cody.experimental.symf.enabled'] === false
     }
 
     // Given the following missing recording, tries to find an existing
@@ -813,8 +885,8 @@ ${patch}`
         }
     }
 
-    public async beforeAll() {
-        const info = await this.initialize()
+    public async beforeAll(additionalConfig?: Partial<ExtensionConfiguration>) {
+        const info = await this.initialize(additionalConfig)
         if (!info.authStatus?.isLoggedIn) {
             throw new Error('Could not log in')
         }
@@ -858,6 +930,19 @@ ${patch}`
         clientInfo: ClientInfo,
         additionalConfig?: Partial<ExtensionConfiguration>
     ): Promise<ServerInfo> {
+        if (this.extensionConfigurationDuringInitialization !== undefined) {
+            throw new Error(
+                'the "initialize" request has already been sent. ' +
+                    'To fix this problem, make sure you only call "initialize" only once.'
+            )
+        }
+        this.extensionConfigurationDuringInitialization = {
+            serverEndpoint: 'https://invalid',
+            accessToken: 'invalid',
+            customHeaders: {},
+            ...clientInfo.extensionConfiguration,
+            ...additionalConfig,
+        }
         return new Promise((resolve, reject) => {
             setTimeout(
                 () =>
@@ -872,13 +957,7 @@ ${patch}`
             )
             this.request('initialize', {
                 ...clientInfo,
-                extensionConfiguration: {
-                    serverEndpoint: 'https://invalid',
-                    accessToken: 'invalid',
-                    customHeaders: {},
-                    ...clientInfo.extensionConfiguration,
-                    ...additionalConfig,
-                },
+                extensionConfiguration: this.extensionConfigurationDuringInitialization,
             }).then(
                 info => {
                     this.notify('initialized', null)
@@ -895,16 +974,7 @@ ${patch}`
             version: 'v1',
             workspaceRootUri: this.params.workspaceRootUri.toString(),
             workspaceRootPath: this.params.workspaceRootUri.fsPath,
-            capabilities: {
-                progressBars: 'enabled',
-                edit: 'enabled',
-                editWorkspace: 'enabled',
-                untitledDocuments: 'enabled',
-                showDocument: 'enabled',
-                codeLenses: 'enabled',
-                showWindowMessage: 'request',
-                ignore: 'enabled',
-            },
+            capabilities: allClientCapabilitiesEnabled,
             extensionConfiguration: {
                 anonymousUserID: `${this.name}abcde1234`,
                 accessToken: this.params.credentials.token ?? this.params.credentials.redactedToken,
@@ -913,6 +983,9 @@ ${patch}`
                 customConfiguration: {
                     // For testing .cody/ignore
                     'cody.internal.unstable': true,
+                    // Symf is disabled for all agent integration tests because
+                    // it makes the tests more stable.
+                    'cody.experimental.symf.enabled': false,
                     ...this.params.extraConfiguration,
                 },
                 debug: false,
@@ -928,4 +1001,27 @@ export function asTranscriptMessage(reply: ExtensionMessage): ExtensionTranscrip
         return reply
     }
     throw new Error(`expected transcript, got: ${JSON.stringify(reply)}`)
+}
+
+interface TextDocumentEventParams {
+    text?: string
+    selectionName?: string
+    removeCursor?: boolean
+    selection?: Range | undefined | null
+}
+
+function isPositionEqual(a: Position, b: Position): boolean {
+    return a.line === b.line && a.character === b.character
+}
+
+interface TestInfo {
+    // Test files "on disk" URI (not actually written about but uses "file" protocol)
+    uri: vscode.Uri
+
+    // Test content
+    value: string
+    fullFile: string
+
+    // Was this an update to an exisiting test file or a new file
+    isUpdate: boolean
 }

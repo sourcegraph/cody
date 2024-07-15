@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "jsx": "react",
+    "module": "commonjs",
+    "rootDir": ".",
+    "outDir": "dist",
+    "target": "es2019",
+    "allowJs": true,
+    "lib": ["ES2019"],
+  },
+}

@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode'
 
-import type { Configuration } from '@sourcegraph/cody-shared'
+import { CodyIDE, type Configuration } from '@sourcegraph/cody-shared'
 
 import { defaultConfigurationValue } from '../../vscode/src/configuration-keys'
 
@@ -33,13 +33,15 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
     private clientNameToIDE(value: string): Configuration['agentIDE'] | undefined {
         switch (value.toLowerCase()) {
             case 'vscode':
-                return 'VSCode'
+                return CodyIDE.VSCode
             case 'jetbrains':
-                return 'JetBrains'
+                return CodyIDE.JetBrains
             case 'emacs':
-                return 'Emacs'
+                return CodyIDE.Emacs
             case 'neovim':
-                return 'Neovim'
+                return CodyIDE.Neovim
+            case 'web':
+                return CodyIDE.Web
             default:
                 return undefined
         }
@@ -88,8 +90,14 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                 return extensionConfig?.codebase
             case 'cody.advanced.agent.ide':
                 return this.clientNameToIDE(this.clientInfo()?.name ?? '')
+            case 'cody.advanced.agent.ide.version':
+                return this.clientInfo()?.ideVersion
+            case 'cody.advanced.agent.extension.version':
+                return this.clientInfo()?.version
             case 'editor.insertSpaces':
                 return true // TODO: override from IDE clients
+            case 'cody.accessToken':
+                return extensionConfig?.accessToken
             default:
                 // VS Code picks up default value in package.json, and only uses
                 // the `defaultValue` parameter if package.json provides no

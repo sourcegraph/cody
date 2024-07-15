@@ -6,8 +6,8 @@ import { forkSignal, sleep } from './utils'
 
 // The throttle timeout is relatively high so that we do not keep a lot of concurrent requests. 250
 // is chosen as it will keep about 2 requests concurrent with our current median latency of about
-// 500ms.
-export const THROTTLE_TIMEOUT = 250
+// 500ms
+export const DEFAULT_THROTTLE_TIMEOUT = 250
 
 // A smart throttle service for autocomplete requests. The idea is to move beyond a simple debounce
 // based timeout and start a bunch of requests immediately. Additionally, we also want to be more
@@ -30,9 +30,19 @@ export class SmartThrottleService implements vscode.Disposable {
     // exceeds the throttle timeout, a tail request will be promoted again.
     private lastThrottlePromotion = 0
 
-    async throttle(request: RequestParams, triggerKind: TriggerKind): Promise<RequestParams | null> {
+    private THROTTLE_TIMEOUT: number
+
+    constructor(timeout = DEFAULT_THROTTLE_TIMEOUT) {
+        this.THROTTLE_TIMEOUT = timeout
+    }
+
+    async throttle(
+        request: RequestParams,
+        triggerKind: TriggerKind,
+        stale: () => void
+    ): Promise<RequestParams | null> {
         return wrapInActiveSpan('autocomplete.smartThrottle', async () => {
-            const throttledRequest = new ThrottledRequest(request)
+            const throttledRequest = new ThrottledRequest(request, stale)
             const now = Date.now()
 
             // Case 1: If this is a start-of-line request, cancel any previous start-of-line requests
@@ -53,10 +63,15 @@ export class SmartThrottleService implements vscode.Disposable {
             // Case 2: The last throttled promotion is more than the throttle timeout ago. In this case,
             //         promote the last tail request to a throttled request and continue with the third
             //         case.
-            if (now - this.lastThrottlePromotion > THROTTLE_TIMEOUT && this.tailRequest) {
+            if (now - this.lastThrottlePromotion > this.THROTTLE_TIMEOUT && this.tailRequest) {
+                // Mark the tailRequest as stale, this means we will not mark it as a completion to be suggested
+                // Instead we the incoming request will benefit from the cached response, if still relevant.
+                this.tailRequest.stale()
+
                 // Setting tailRequest to null will make sure the throttled request can no longer be
                 // cancelled by this logic.
                 this.tailRequest = null
+
                 this.lastThrottlePromotion = now
             }
 
@@ -93,7 +108,10 @@ export class SmartThrottleService implements vscode.Disposable {
 
 class ThrottledRequest {
     public abortController: AbortController
-    constructor(public requestParams: RequestParams) {
+    constructor(
+        public requestParams: RequestParams,
+        public stale: () => void
+    ) {
         this.abortController = requestParams.abortSignal
             ? forkSignal(requestParams.abortSignal)
             : new AbortController()

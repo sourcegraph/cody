@@ -23,10 +23,10 @@ import {
     createLocalEmbeddingsController,
 } from './local-context/local-embeddings'
 import { SymfRunner } from './local-context/symf'
-import { authProvider } from './services/AuthProvider'
+import { AuthProvider } from './services/AuthProvider'
 import { localStorage } from './services/LocalStorageProvider'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
-import { getExtensionDetails } from './services/telemetry'
+import { getExtensionDetails } from './services/telemetry-v2'
 import { serializeConfigSnapshot } from './uninstall/serializeConfig'
 
 /**
@@ -37,7 +37,7 @@ export function activate(
     context: vscode.ExtensionContext,
     extensionClient?: ExtensionClient
 ): Promise<ExtensionApi> {
-    initializeNetworkAgent()
+    initializeNetworkAgent(context)
 
     // When activated by VSCode, we are only passed the extension context.
     // Create the default client for VSCode.
@@ -50,6 +50,14 @@ export function activate(
         .getConfiguration()
         .get<boolean>('cody.advanced.agent.running', false)
 
+    const isSymfEnabled = vscode.workspace
+        .getConfiguration()
+        .get<boolean>('cody.experimental.symf.enabled', true)
+
+    const isTelemetryEnabled = vscode.workspace
+        .getConfiguration()
+        .get<boolean>('cody.experimental.telemetry.enabled', true)
+
     return activateCommon(context, {
         createLocalEmbeddingsController: isLocalEmbeddingsDisabled
             ? undefined
@@ -59,12 +67,13 @@ export function activate(
             createContextRankingController(context, config),
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         createCommandsProvider: () => new CommandsProvider(),
-        createSymfRunner: (...args) => new SymfRunner(...args),
+        createSymfRunner: isSymfEnabled ? (...args) => new SymfRunner(...args) : undefined,
         createBfgRetriever: () => new BfgRetriever(context),
         createSentryService: (...args) => new NodeSentryService(...args),
-        createOpenTelemetryService: (...args) => new OpenTelemetryService(...args),
+        createOpenTelemetryService: isTelemetryEnabled
+            ? (...args) => new OpenTelemetryService(...args)
+            : undefined,
         startTokenReceiver: (...args) => startTokenReceiver(...args),
-
         onConfigurationChange: setCustomAgent,
         extensionClient,
     })
@@ -75,7 +84,7 @@ export function activate(
 // The vscode API is not available in the post-uninstall script.
 export async function deactivate(): Promise<void> {
     const config = localStorage.getConfig() ?? (await getFullConfig())
-    const authStatus = authProvider?.getAuthStatus() ?? defaultAuthStatus
+    const authStatus = AuthProvider.instance?.getAuthStatus() ?? defaultAuthStatus
     const { anonymousUserID } = await localStorage.anonymousUserID()
     serializeConfigSnapshot({
         config,

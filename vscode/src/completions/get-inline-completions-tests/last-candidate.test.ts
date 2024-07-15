@@ -236,6 +236,27 @@ describe('[getInlineCompletions] reuseLastCandidate', () => {
             source: InlineCompletionsResultSource.LastCandidate,
         }))
 
+    it('handles automatically-inserted semis', async () =>
+        // The user types `console.log()` and puts the cursor between brackets. Then they sees
+        // the ghost text `'hello world');` and save a TypeScript document with automatically
+        // inserted semis, changing the suffix to `);`. The completion should update the insert
+        // range to not show the semi twice.
+        expect(
+            await getInlineCompletions(
+                params('console.log(█);', [], {
+                    lastCandidate: lastCandidate(
+                        'console.log(█)',
+                        '"Hello from Vienna!");',
+                        undefined,
+                        range(0, 12, 0, 13)
+                    ),
+                })
+            )
+        ).toEqual<V>({
+            items: [{ insertText: '"Hello from Vienna!");', range: range(0, 12, 0, 14) }],
+            source: InlineCompletionsResultSource.LastCandidate,
+        }))
+
     describe('partial acceptance', () => {
         it('marks a completion as partially accepted when you type at least one word', async () => {
             const handleDidPartiallyAcceptCompletionItem = vitest.fn()

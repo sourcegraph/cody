@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import {
+    type CodyIDE,
     type Configuration,
     type ConfigurationUseContext,
     type ConfigurationWithAccessToken,
@@ -136,21 +137,15 @@ export function getConfiguration(
         internalUnstable: getHiddenSetting('internal.unstable', isTesting),
 
         autocompleteExperimentalGraphContext,
-        experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', true),
-        experimentalSymfContext: getHiddenSetting('experimental.symfContext', true),
         experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', true),
         experimentalNoodle: getHiddenSetting('experimental.noodle', false),
-        experimentalURLContext: getHiddenSetting('experimental.urlContext', false),
 
-        experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
-        experimentalOllamaChat: getHiddenSetting('experimental.ollamaChat', true),
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
+        experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),
 
         experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
-
-        experimentalGithubAccessToken: getHiddenSetting('experimental.github.accessToken', ''),
 
         autocompleteExperimentalHotStreak: getHiddenSetting(
             'autocomplete.experimental.hotStreak',
@@ -167,13 +162,17 @@ export function getConfiguration(
             'autocomplete.experimental.fireworksOptions',
             undefined
         ),
+        autocompleteExperimentalMultiModelCompletions: getHiddenSetting(
+            'autocomplete.experimental.multiModelCompletions',
+            undefined
+        ),
         autocompleteExperimentalSmartThrottle: getHiddenSetting(
             'autocomplete.experimental.smartThrottle',
             false
         ),
-        autocompleteExperimentalMultiModelCompletions: getHiddenSetting(
-            'autocomplete.experimental.multiModelCompletions',
-            undefined
+        autocompleteExperimentalSmartThrottleExtended: getHiddenSetting(
+            'autocomplete.experimental.smartThrottleExtended',
+            false
         ),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
@@ -181,7 +180,9 @@ export function getConfiguration(
         // when something goes wrong, and to suppress event logging in the agent.
         // Rely on this flag sparingly.
         isRunningInsideAgent: getHiddenSetting('advanced.agent.running', false),
-        agentIDE: getHiddenSetting<'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'>('advanced.agent.ide'),
+        agentIDE: getHiddenSetting<CodyIDE>('advanced.agent.ide'),
+        agentIDEVersion: getHiddenSetting('advanced.agent.ide.version'),
+        agentExtensionVersion: getHiddenSetting('advanced.agent.extension.version'),
         autocompleteTimeouts: {
             multiline: getHiddenSetting<number | undefined>(
                 'autocomplete.advanced.timeout.multiline',
@@ -192,6 +193,10 @@ export function getConfiguration(
                 undefined
             ),
         },
+        autocompleteFirstCompletionTimeout: getHiddenSetting<number>(
+            'autocomplete.advanced.timeout.firstCompletion',
+            3_500
+        ),
         testingModelConfig:
             isTesting && hasValidLocalEmbeddingsConfig()
                 ? {
@@ -201,7 +206,7 @@ export function getConfiguration(
                       indexPath: URI.file(
                           getHiddenSetting<string>('testing.localEmbeddings.indexLibraryPath')
                       ),
-                      provider: 'openai',
+                      provider: 'sourcegraph',
                   }
                 : undefined,
     }
@@ -221,7 +226,10 @@ export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => 
     const isTesting = process.env.CODY_TESTING === 'true'
     const serverEndpoint =
         localStorage?.getEndpoint() || (isTesting ? 'http://localhost:49300/' : DOTCOM_URL.href)
-    const accessToken = (await getAccessToken()) || null
+    const accessToken =
+        vscode.workspace.getConfiguration().get<string>('cody.accessToken') ||
+        (await getAccessToken()) ||
+        null
     return { ...config, accessToken, serverEndpoint }
 }
 

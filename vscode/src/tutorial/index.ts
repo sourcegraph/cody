@@ -21,7 +21,7 @@ import {
 import { setTutorialUri } from './helpers'
 import { ResetLensProvider, TutorialLinkProvider } from './providers'
 
-export const startTutorial = async (document: vscode.TextDocument): Promise<vscode.Disposable> => {
+const startTutorial = async (document: vscode.TextDocument): Promise<vscode.Disposable> => {
     const disposables: vscode.Disposable[] = []
     const editor = await vscode.window.showTextDocument(document)
     const diagnosticCollection = vscode.languages.createDiagnosticCollection('codyTutorial')

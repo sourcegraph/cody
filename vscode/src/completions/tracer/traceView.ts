@@ -3,10 +3,6 @@ import * as vscode from 'vscode'
 import { displayPath, displayRange, isDefined } from '@sourcegraph/cody-shared'
 import { marked } from 'marked'
 
-import {
-    SectionHistoryRetriever,
-    registerDebugListener as registerSectionObserverDebugListener,
-} from '../context/retrievers/section-history/section-history-retriever'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import type { InlineCompletionItemProvider } from '../inline-completion-item-provider'
 import * as statistics from '../statistics'
@@ -62,7 +58,6 @@ export function registerAutocompleteTraceView(
             rerender()
 
             const unsubscribeStatistics = statistics.registerChangeListener(rerender)
-            const unsubscribeSectionObserver = registerSectionObserverDebugListener(rerender)
 
             provider.setTracer(_data => {
                 data = _data
@@ -72,7 +67,6 @@ export function registerAutocompleteTraceView(
             return {
                 dispose: () => {
                     unsubscribeStatistics()
-                    unsubscribeSectionObserver()
                 },
             }
         }),
@@ -206,12 +200,6 @@ ${
 
 ${markdownCodeBlock(data.error)}
 `,
-        SectionHistoryRetriever.instance
-            ? `
-## Document sections
-
-${documentSections()}`
-            : '',
 
         `
 ## Advanced tools
@@ -233,13 +221,6 @@ function statisticSummary(): string {
     return `📈 Suggested: ${suggested} | Accepted: ${accepted} | Acceptance rate: ${
         suggested === 0 ? 'N/A' : `${((accepted / suggested) * 100).toFixed(2)}%`
     }`
-}
-
-function documentSections(): string {
-    if (!SectionHistoryRetriever.instance) {
-        return ''
-    }
-    return `\`\`\`\n${SectionHistoryRetriever.instance.debugPrint()}\n\`\`\``
 }
 
 function codeDetailsWithSummary(

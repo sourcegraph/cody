@@ -1,6 +1,8 @@
 import { decode } from 'he'
 import type { FixupTask } from '../../non-stop/FixupTask'
 import { PROMPT_TOPICS } from '../prompt/constants'
+import { matchIndentation } from './match-indentation'
+import { matchLanguage } from './match-language'
 
 /**
  * Regular expression to match prompt topics.
@@ -50,9 +52,26 @@ export function responseTransformer(
     // Strip the response of any remaining HTML entities such as &lt; and &gt;
     const decodedText = decode(strippedText)
 
-    if (task.mode === 'insert' && !isMessageInProgress && !decodedText.endsWith('\n')) {
-        // For insertions, we want to always ensure we include a new line at the end of the response
-        return decodedText + '\n'
+    if (!isMessageInProgress) {
+        const formattedToMatchLanguage = matchLanguage(decodedText, task)
+
+        if (task.mode === 'insert') {
+            // For insertions, we want to always ensure we include a new line at the end of the response
+            // We do not attempt to match indentation, as we don't have any original text to compare to
+            return formattedToMatchLanguage.endsWith('\n')
+                ? formattedToMatchLanguage
+                : formattedToMatchLanguage + '\n'
+        }
+
+        // LLMs have a tendency to complete the response with a final new line, but we don't want to
+        // include this unless necessary, as we already trim the users' selection, and any additional whitespace will
+        // hurt the readability of the diff.
+        const trimmedReplacement =
+            task.original.trimEnd().length === task.original.length
+                ? formattedToMatchLanguage.trimEnd()
+                : formattedToMatchLanguage
+        // Attempt to match the indentation of the replacement with the original text
+        return matchIndentation(trimmedReplacement, task.original)
     }
 
     return decodedText

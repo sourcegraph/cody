@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { nextTick } from '@sourcegraph/cody-shared'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
+import type { CompletionLogID } from './logger'
 import type { FetchCompletionResult } from './providers/fetch-and-process-completions'
 import { STOP_REASON_HOT_STREAK } from './providers/hot-streak'
 import { Provider } from './providers/provider'
@@ -12,7 +14,7 @@ import {
     type RequestParams,
     computeIfRequestStillRelevant,
 } from './request-manager'
-import { documentAndPosition, nextTick } from './test-helpers'
+import { documentAndPosition } from './test-helpers'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
 class MockProvider extends Provider {
@@ -75,6 +77,7 @@ function createProvider(prefix: string) {
         n: 1,
         firstCompletionTimeout: 1500,
         triggerKind: TriggerKind.Automatic,
+        completionLogId: 'mock-log-id' as CompletionLogID,
     })
 }
 
@@ -201,10 +204,69 @@ describe('RequestManager', () => {
             setTimeout(() => provider1.yield(["'hello')"]), 0)
             await createRequest(prefix, provider1)
 
-            const { completions, source } = checkCache(prefix)!
+            const { completions, source, isFuzzyMatch } = checkCache(prefix)!
 
+            expect(isFuzzyMatch).toBe(false)
             expect(source).toBe(InlineCompletionsResultSource.Cache)
             expect(completions[0].insertText).toBe("'hello')")
+        })
+
+        describe('fuzzy matching with multiple previous lines', () => {
+            it('does not match when multiple previous lines are different', async () => {
+                const prefix1 = 'function yourHelper() {\n  const x = 1;\n  const y = 2;\n  console.'
+                const provider1 = createProvider(prefix1)
+                setTimeout(() => provider1.yield(['log(x + y)']), 0)
+                await createRequest(prefix1, provider1)
+
+                const prefix2 =
+                    'function myHelperAtHome() {\n  const a = 10;\n  const b = 20;\n  console.'
+
+                expect(checkCache(prefix2)).toBe(null)
+            })
+
+            it('fuzzy matches when semicolons are added', async () => {
+                const prefix1 = 'function foo() {\n  const x = 1;\n  const y = 2;\n  console.'
+                const provider1 = createProvider(prefix1)
+                setTimeout(() => provider1.yield(['log(x + y)']), 0)
+                await createRequest(prefix1, provider1)
+
+                const prefix2 = 'function foo() {\n  const x = 1\n  const y = 2\n  console.'
+                const { completions, source, isFuzzyMatch } = checkCache(prefix2)!
+
+                expect(source).toBe(InlineCompletionsResultSource.Cache)
+                expect(isFuzzyMatch).toBe(true)
+                expect(completions[0].insertText).toBe('log(x + y)')
+            })
+
+            it('fuzzy matches when previous lines are similar and within the fuzzy match distance', async () => {
+                const prefix1 =
+                    'function foo() {\n  const x = 1;\n  const y = 2;\n  const z = 3;\n  console.'
+                const provider1 = createProvider(prefix1)
+                setTimeout(() => provider1.yield(['log(x + y + z)']), 0)
+                await createRequest(prefix1, provider1)
+
+                const prefix2 =
+                    'function bar() {\n  const a = 1;\n  const b = 2;\n  const c = 4;\n  console.'
+                const { completions, source, isFuzzyMatch } = await checkCache(prefix2)!
+
+                expect(source).toBe(InlineCompletionsResultSource.Cache)
+                expect(isFuzzyMatch).toBe(true)
+                expect(completions[0].insertText).toBe('log(x + y + z)')
+            })
+
+            it('fuzzy matches when new lines are added', async () => {
+                const prefix1 = 'function foo() {\n  const x = 1;\n  const y = 2;\n  console.'
+                const provider1 = createProvider(prefix1)
+                setTimeout(() => provider1.yield(['log(x + y)']), 0)
+                await createRequest(prefix1, provider1)
+
+                const prefix2 = 'function foo() {\n  const x = 1\n\n  const y = 2\n\n\n  console.'
+                const { completions, source, isFuzzyMatch } = checkCache(prefix2)!
+
+                expect(source).toBe(InlineCompletionsResultSource.Cache)
+                expect(isFuzzyMatch).toBe(true)
+                expect(completions[0].insertText).toBe('log(x + y)')
+            })
         })
     })
 

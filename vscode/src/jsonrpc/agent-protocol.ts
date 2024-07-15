@@ -2,9 +2,10 @@ import type {
     AuthStatus,
     BillingCategory,
     BillingProduct,
+    CodyCommand,
     ContextFilters,
     CurrentUserCodySubscription,
-    ModelProvider,
+    Model,
     ModelUsage,
     SerializedChatMessage,
     SerializedChatTranscript,
@@ -47,18 +48,31 @@ export type ClientRequests = {
     // webview/didDispose.
     'chat/new': [null, string]
 
+    // Start a new chat session and returns panel id and chat id that later can
+    // be used to reference to the session with panel id and restore chat with
+    // chat id. Main difference compared to the chat/new is that we return chatId.
+    'chat/web/new': [null, { panelId: string; chatId: string }]
+
+    // Deletes chat by its ID and returns newly updated chat history list
+    // Primary is used only in cody web client
+    'chat/delete': [{ chatId: string }, ChatExportResult[]]
+
     // Similar to `chat/new` except it starts a new chat session from an
     // existing transcript. The chatID matches the `chatID` property of the
     // `type: 'transcript'` ExtensionMessage that is sent via
     // `webview/postMessage`. Returns a new *panel* ID, which can be used to
     // send a chat message via `chat/submitMessage`.
     'chat/restore': [
-        { modelID?: string | undefined | null; messages: SerializedChatMessage[]; chatID: string },
+        {
+            modelID?: string | undefined | null
+            messages: SerializedChatMessage[]
+            chatID: string
+        },
         string,
     ]
 
-    'chat/models': [{ modelUsage: ModelUsage }, { models: ModelProvider[] }]
-    'chat/export': [null, ChatExportResult[]]
+    'chat/models': [{ modelUsage: ModelUsage }, { models: Model[] }]
+    'chat/export': [null | { fullHistory: boolean }, ChatExportResult[]]
     'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] | undefined | null }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage
@@ -80,6 +94,9 @@ export type ClientRequests = {
 
     // Trigger custom commands that could be a chat-based command or an edit command.
     'commands/custom': [{ key: string }, CustomCommandResult]
+
+    // A list of available custom commands stored in .cody/commands.json.
+    'customCommands/list': [null, CodyCommand[]]
 
     // Trigger commands that edit the code.
     'editCommands/code': [
@@ -108,6 +125,21 @@ export type ClientRequests = {
     // Low-level API to trigger a VS Code command with any argument list. Avoid
     // using this API in favor of high-level wrappers like 'chat/new'.
     'command/execute': [ExecuteCommandParams, any]
+
+    // Code actions are shortcuts to commands that can be triggered at a given
+    // location.  You may be most familiar with code actions as the menu that
+    // appears when you click on the lightbulb icon over diagnostics (red
+    // squiggles). The flow to use code actions is:
+    // 1. Request codeActions/provide to determine what actions are available
+    //    at the given location
+    // 2. Request codeActions/trigger for the selected code action.
+    'codeActions/provide': [
+        { location: ProtocolLocation; triggerKind: CodeActionTriggerKind },
+        { codeActions: ProtocolCodeAction[] },
+    ]
+    // The ID parameter should match ProtocolCodeAction.id from
+    // codeActions/provide.
+    'codeActions/trigger': [{ id: string }, EditTask]
 
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
 
@@ -142,6 +174,15 @@ export type ClientRequests = {
     // session).  Refrain from using this API in favor of high-level APIs like
     // `chat/submitMessage`.
     'webview/receiveMessage': [{ id: string; message: WebviewMessage }, null]
+    // Same as `webview/receiveMessage` except the parameter is a JSON-encoded
+    // string.  The server processes this message by parsing
+    // `messageStringEncoded` as JSON and then calling `webview/receiveMessage`.
+    'webview/receiveMessageStringEncoded': [{ id: string; messageStringEncoded: string }, null]
+
+    // Register diagnostics (aka. error/warning messages). Overwrites existing
+    // diagnostics for the provided document URIs. This request should be used
+    // alongside the `codeActions/provide` request.
+    'diagnostics/publish': [{ diagnostics: ProtocolDiagnostic[] }, null]
 
     // Only used for testing purposes. If you want to write an integration test
     // for dealing with progress bars then you can send a request to this
@@ -152,6 +193,11 @@ export type ClientRequests = {
     'testing/closestPostData': [{ url: string; postData: string }, { closestBody: string }]
     'testing/memoryUsage': [null, { usage: MemoryUsage }]
     'testing/awaitPendingPromises': [null, null]
+    // Retrieve the Agent's copy of workspace documents, for testing/validation.
+    'testing/workspaceDocuments': [GetDocumentsParams, GetDocumentsResult]
+    // Returns diagnostics for the given URI. Lives under `testing/` instead of
+    // standalone `diagnostics/` because it only works for TypeScript files.
+    'testing/diagnostics': [{ uri: string }, { diagnostics: ProtocolDiagnostic[] }]
 
     // Only used for testing purposes. This operation runs indefinitely unless
     // the client sends progress/cancel.
@@ -169,6 +215,8 @@ export type ClientRequests = {
 
     // Returns the current authentication status without making changes to it.
     'extensionConfiguration/status': [null, AuthStatus | null]
+
+    'textDocument/change': [ProtocolTextDocument, { success: boolean }]
 
     // Run attribution search for a code snippet displayed in chat.
     // Attribution is an enterprise feature which allows to look for code generated
@@ -248,7 +296,10 @@ export type ServerRequests = {
     'textDocument/edit': [TextDocumentEditParams, boolean]
     'textDocument/openUntitledDocument': [UntitledTextDocument, boolean]
     'textDocument/show': [
-        { uri: string; options?: TextDocumentShowOptionsParams | undefined | null },
+        {
+            uri: string
+            options?: TextDocumentShowOptionsParams | undefined | null
+        },
         boolean,
     ]
     'workspace/edit': [WorkspaceEditParams, boolean]
@@ -344,6 +395,10 @@ export type ServerNotifications = {
     // chat/new). Subscribe to these messages to get access to streaming updates
     // on the chat reply.
     'webview/postMessage': [WebviewPostMessageParams]
+    // Same as `webview/postMessage` but the `WebviewMessage` is string-encoded.
+    // This method is only used when the `webviewMessages` client capability is
+    // set to the value `'string'`.
+    'webview/postMessageStringEncoded': [{ id: string; stringEncodedMessage: string }]
 
     'progress/start': [ProgressStartParams]
 
@@ -393,7 +448,7 @@ export interface ChatExportResult {
 export interface AutocompleteResult {
     items: AutocompleteItem[]
 
-    /** completionEvent is not deprecated because it's used by non-editor clients like evaluate-autocomplete that need access to book-keeping data to evaluate results. */
+    /** completionEvent is not deprecated because it's used by non-editor clients like cody-bench that need access to book-keeping data to evaluate results. */
     completionEvent?: CompletionBookkeepingEvent | undefined | null
 }
 
@@ -405,7 +460,8 @@ export interface AutocompleteItem {
 
 export interface ClientInfo {
     name: string
-    version: string
+    version: string // extension version
+    ideVersion?: string | undefined | null
     workspaceRootUri: string
 
     /** @deprecated Use `workspaceRootUri` instead. */
@@ -422,7 +478,7 @@ export interface ClientInfo {
 }
 
 // The capability should match the name of the JSON-RPC methods.
-interface ClientCapabilities {
+export interface ClientCapabilities {
     completions?: 'none' | undefined | null
     //  When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
     chat?: 'none' | 'streaming' | undefined | null
@@ -439,6 +495,13 @@ interface ClientCapabilities {
     codeLenses?: 'none' | 'enabled' | undefined | null
     showWindowMessage?: 'notification' | 'request' | undefined | null
     ignore?: 'none' | 'enabled' | undefined | null
+    codeActions?: 'none' | 'enabled' | undefined | null
+    // When 'object-encoded' (default), the server uses the `webview/postMessage` method
+    // to send structured JSON objects.  When 'string-encoded', the server uses the
+    // `webview/postMessageStringEncoded` method to send a JSON-encoded string. This is
+    // convenient for clients that forward the string directly to an underlying
+    // webview container.
+    webviewMessages?: 'object-encoded' | 'string-encoded' | undefined | null
 }
 
 export interface ServerInfo {
@@ -476,6 +539,8 @@ export interface ExtensionConfiguration {
     eventProperties?: EventProperties | undefined | null
 
     customConfiguration?: Record<string, any> | undefined | null
+
+    baseGlobalState?: Record<string, any> | undefined | null
 }
 
 /**
@@ -826,4 +891,64 @@ export interface MemoryUsage {
     heapUsed: number
     external: number
     arrayBuffers: number
+}
+
+export interface ProtocolLocation {
+    uri: string
+    range: Range
+}
+
+export interface ProtocolDiagnostic {
+    location: ProtocolLocation
+    message: string
+    severity: DiagnosticSeverity
+    code?: string | undefined | null
+    source?: string | undefined | null
+    relatedInformation?: ProtocolRelatedInformationDiagnostic[] | undefined | null
+}
+
+export interface ProtocolRelatedInformationDiagnostic {
+    location: ProtocolLocation
+    message: string
+}
+
+export type DiagnosticSeverity = 'error' | 'warning' | 'info' | 'suggestion'
+export type CodeActionTriggerKind = 'Invoke' | 'Automatic'
+export interface ProtocolCodeAction {
+    // Randomly generated ID of this code action that should be referenced in
+    // the `codeActions/trigger` request. In codeActions/trigger, you can only
+    // reference IDs from the most recent response from codeActions/provide.
+    // IDs from old codeActions/provide results are invalidated as soon as you
+    // send a new codeActions/provide request.
+    id: string
+    // Stable string ID of the VS Code command that will be triggered if you
+    // send a request to codeActions/trigger. Use this ID over `title`
+    commandID?: string | undefined | null
+    title: string
+    diagnostics?: ProtocolDiagnostic[] | undefined | null
+    kind?: string | undefined | null
+    isPreferred?: boolean | undefined | null
+    disabled?:
+        | {
+              /**
+               * Human readable description of why the code action is currently disabled.
+               *
+               * This is displayed in the code actions UI.
+               */
+              readonly reason: string
+          }
+        | undefined
+        | null
+}
+
+/**
+ * Omitting uris parameter will retrieve all open documents for the
+ * current workspace root.
+ */
+export interface GetDocumentsParams {
+    uris?: string[] | undefined | null
+}
+
+export interface GetDocumentsResult {
+    documents: ProtocolTextDocument[]
 }

@@ -6,9 +6,8 @@ import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { clsx } from 'clsx'
-import { $getRoot, type EditorState, type LexicalEditor, type SerializedEditorState } from 'lexical'
+import type { EditorState, LexicalEditor, SerializedEditorState } from 'lexical'
 import { type FunctionComponent, type RefObject, useMemo } from 'react'
-import type { UserAccountInfo } from '../Chat'
 import styles from './BaseEditor.module.css'
 import { RICH_EDITOR_NODES } from './nodes'
 import MentionsPlugin from './plugins/atMentions/atMentions'
@@ -19,9 +18,8 @@ import { NoRichTextFormatShortcutsPlugin } from './plugins/noRichTextShortcuts'
 import { OnFocusChangePlugin } from './plugins/onFocus'
 
 interface Props extends KeyboardEventPluginProps {
-    userInfo?: UserAccountInfo
     initialEditorState: SerializedEditorState | null
-    onChange: (editorState: EditorState, editor: LexicalEditor) => void
+    onChange: (editorState: EditorState, editor: LexicalEditor, tags: Set<string>) => void
     onFocusChange?: (focused: boolean) => void
     editorRef?: RefObject<LexicalEditor>
     placeholder?: string
@@ -35,7 +33,6 @@ interface Props extends KeyboardEventPluginProps {
  * The low-level rich editor for messages to Cody.
  */
 export const BaseEditor: FunctionComponent<Props> = ({
-    userInfo,
     initialEditorState,
     onChange,
     onFocusChange,
@@ -83,8 +80,13 @@ export const BaseEditor: FunctionComponent<Props> = ({
                     />
                     <NoRichTextFormatShortcutsPlugin />
                     <HistoryPlugin />
-                    <OnChangePlugin onChange={onChange} ignoreSelectionChange={true} />
-                    <MentionsPlugin userInfo={userInfo} />
+                    <OnChangePlugin
+                        onChange={onChange}
+                        // `ignoreHistoryMergeTagChange={false}` is necessary for onChange to run in
+                        // our tests using JSDOM. It doesn't hurt to enable otherwise.
+                        ignoreHistoryMergeTagChange={false}
+                    />
+                    <MentionsPlugin />
                     <CodeHighlightPlugin />
                     {onFocusChange && <OnFocusChangePlugin onFocusChange={onFocusChange} />}
                     {editorRef && <EditorRefPlugin editorRef={editorRef} />}
@@ -94,8 +96,4 @@ export const BaseEditor: FunctionComponent<Props> = ({
             </div>
         </div>
     )
-}
-
-export function editorStateToText(editorState: EditorState): string {
-    return editorState.read(() => $getRoot().getTextContent())
 }

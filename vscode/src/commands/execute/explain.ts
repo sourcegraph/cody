@@ -2,17 +2,15 @@ import {
     type ContextItem,
     DefaultChatCommands,
     PromptString,
-    displayLineRange,
+    isDefined,
     logDebug,
     ps,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { defaultCommands } from '.'
+import { defaultCommands, selectedCodePromptWithExtraFiles } from '.'
 import type { ChatCommandResult } from '../../CommandResult'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../../services/telemetry'
 import { getContextFileFromCurrentFile } from '../context/current-file'
 import { getContextFileFromCursor } from '../context/selection'
 import type { CodyCommandArgs } from '../types'
@@ -27,11 +25,10 @@ import { getEditor } from '../../editor/active-editor'
  *
  * Context: Current selection and current file
  */
-async function explainCommand(
+export async function explainCommand(
     span: Span,
     args?: Partial<CodyCommandArgs>
 ): Promise<ExecuteChatArguments | null> {
-    const addEnhancedContext = false
     let prompt = PromptString.fromDefaultCommands(defaultCommands, 'explain')
 
     if (args?.additionalInstruction) {
@@ -39,31 +36,23 @@ async function explainCommand(
         prompt = ps`${prompt} ${args.additionalInstruction}`
     }
 
-    // fetches the context file from the current cursor position using getContextFileFromCursor().
-    const contextFiles: ContextItem[] = []
-
     const currentSelection = await getContextFileFromCursor(args?.range?.start)
-    contextFiles.push(...currentSelection)
-
     const currentFile = await getContextFileFromCurrentFile()
-    contextFiles.push(...currentFile)
-
-    const cs = currentSelection[0] ?? currentFile[0]
-    if (cs) {
-        const range = cs.range && ps`:${displayLineRange(cs.range)}`
-        prompt = prompt.replaceAll(
-            'the selected code',
-            ps`@${PromptString.fromDisplayPath(cs.uri)}${range ?? ''} `
-        )
-    } else {
+    const contextItems: ContextItem[] = [currentSelection, currentFile].filter(isDefined)
+    if (contextItems.length === 0) {
         return null
     }
+
+    prompt = prompt.replaceAll(
+        'the selected code',
+        selectedCodePromptWithExtraFiles(contextItems[0], contextItems.slice(1))
+    )
 
     return {
         text: prompt,
         submitType: 'user-newchat',
-        contextFiles,
-        addEnhancedContext,
+        contextFiles: contextItems,
+        addEnhancedContext: false,
         source: args?.source,
         command: DefaultChatCommands.Explain,
     }
@@ -87,12 +76,6 @@ export async function executeExplainCommand(
             return
         }
 
-        telemetryService.log('CodyVSCodeExtension:command:explain:executed', {
-            useCodebaseContex: false,
-            requestID: args?.requestID,
-            source: args?.source,
-            traceId: span.spanContext().traceId,
-        })
         telemetryRecorder.recordEvent('cody.command.explain', 'executed', {
             metadata: {
                 useCodebaseContex: 0,

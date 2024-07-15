@@ -1,9 +1,13 @@
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import { all } from 'lowlight'
 import type { ComponentProps, FunctionComponent } from 'react'
+import { useMemo } from 'react'
 import Markdown, { defaultUrlTransform } from 'react-markdown'
+import type { UrlTransform } from 'react-markdown/lib'
 import rehypeHighlight, { type Options as RehypeHighlightOptions } from 'rehype-highlight'
 import rehypeSanitize, { type Options as RehypeSanitizeOptions, defaultSchema } from 'rehype-sanitize'
 import remarkGFM from 'remark-gfm'
+import { useChatEnvironment } from '../chat/ChatEnvironmentContext'
 
 /**
  * Supported URIs to render as links in outputted markdown.
@@ -11,7 +15,6 @@ import remarkGFM from 'remark-gfm'
  * - file: local file scheme
  * - vscode: VS Code URL scheme (open in editor)
  * - command:cody. VS Code command scheme for cody (run command)
- *  - e.g. command:cody.welcome: VS Code command scheme exception we add to support directly linking to the welcome guide from within the chat.
  * {@link CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}
  */
 const ALLOWED_URI_REGEXP = /^((https?|file|vscode):\/\/[^\s#$./?].\S*$|(command:_?cody.*))/i
@@ -51,6 +54,16 @@ const ALLOWED_ELEMENTS = [
     'br',
 ]
 
+function defaultUrlProcessor(url: string): string {
+    const processedURL = defaultUrlTransform(url)
+
+    if (!ALLOWED_URI_REGEXP.test(processedURL)) {
+        return ''
+    }
+
+    return processedURL
+}
+
 /**
  * Transform URLs to opens links in assistant responses using the `_cody.vscode.open` command.
  */
@@ -63,18 +76,27 @@ function wrapLinksWithCodyOpenCommand(url: string): string {
     return `command:_cody.vscode.open?${encodedURL}`
 }
 
+const URL_PROCESSORS: Record<CodyIDE, UrlTransform> = {
+    [CodyIDE.Web]: defaultUrlProcessor,
+    [CodyIDE.JetBrains]: defaultUrlProcessor,
+    [CodyIDE.Neovim]: defaultUrlProcessor,
+    [CodyIDE.Emacs]: defaultUrlProcessor,
+    [CodyIDE.VSCode]: wrapLinksWithCodyOpenCommand,
+}
+
 export const MarkdownFromCody: FunctionComponent<{ className?: string; children: string }> = ({
     className,
     children,
-}) => (
-    <Markdown
-        className={className}
-        {...markdownPluginProps()}
-        urlTransform={wrapLinksWithCodyOpenCommand}
-    >
-        {children}
-    </Markdown>
-)
+}) => {
+    const { clientType } = useChatEnvironment()
+    const urlTransform = useMemo(() => URL_PROCESSORS[clientType], [clientType])
+
+    return (
+        <Markdown className={className} {...markdownPluginProps()} urlTransform={urlTransform}>
+            {children}
+        </Markdown>
+    )
+}
 
 let _markdownPluginProps: ReturnType<typeof markdownPluginProps> | undefined
 function markdownPluginProps(): Pick<
@@ -82,7 +104,7 @@ function markdownPluginProps(): Pick<
     'rehypePlugins' | 'remarkPlugins'
 > {
     if (_markdownPluginProps) {
-        //return _markdownPluginProps
+        return _markdownPluginProps
     }
 
     _markdownPluginProps = {
@@ -102,13 +124,23 @@ function markdownPluginProps(): Pick<
                 } satisfies RehypeSanitizeOptions,
             ],
             [
-                rehypeHighlight,
+                // HACK(sqs): Need to use rehype-highlight@^6.0.0 to avoid a memory leak
+                // (https://github.com/remarkjs/react-markdown/issues/791), but the types are
+                // slightly off.
+                rehypeHighlight as any,
                 {
                     detect: true,
                     languages: Object.fromEntries(
                         Object.entries(all).filter(([language]) => LANGUAGES.includes(language))
                     ),
-                } satisfies RehypeHighlightOptions,
+
+                    // `ignoreMissing: true` is required to avoid errors when trying to highlight
+                    // partial code blocks received from the LLM that have (e.g.) "```p" for
+                    // "```python". This is only needed on rehype-highlight@^6.0.0, which we needed
+                    // to downgrade to in order to avoid a memory leak
+                    // (https://github.com/remarkjs/react-markdown/issues/791).
+                    ignoreMissing: true,
+                } satisfies RehypeHighlightOptions & { ignoreMissing: boolean },
             ],
         ],
         remarkPlugins: [remarkGFM],

@@ -2,16 +2,16 @@ import type { URI } from 'vscode-uri'
 
 import type {
     AuthStatus,
+    ClientStateForWebview,
+    CodyIDE,
     ConfigurationWithAccessToken,
     ContextItem,
     ContextMentionProviderMetadata,
     EnhancedContextContextT,
     MentionQuery,
-    ModelProvider,
+    Model,
     RangeData,
-    SearchPanelFile,
     SerializedChatMessage,
-    TelemetryEventProperties,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
 
@@ -19,6 +19,7 @@ import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/s
 
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
+import type { Uri } from 'vscode'
 import type { View } from '../../webviews/NavBar'
 import type { Repo } from '../context/repo-fetcher'
 
@@ -37,6 +38,21 @@ export type WebviewRecordEventParameters = TelemetryEventParameters<
     BillingProduct,
     BillingCategory
 >
+
+/**
+ * @deprecated v1 telemetry event properties format - use 'recordEvent' instead
+ */
+interface TelemetryEventProperties {
+    [key: string]:
+        | string
+        | number
+        | boolean
+        | null
+        | undefined
+        | string[]
+        | TelemetryEventProperties[]
+        | TelemetryEventProperties
+}
 
 /**
  * A message sent from the webview to the extension host.
@@ -73,6 +89,7 @@ export type WebviewMessage =
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }
+    | { command: 'openURI'; uri: Uri }
     | {
           command: 'show-page'
           page: string
@@ -106,7 +123,7 @@ export type WebviewMessage =
       }
     | {
           command: 'auth'
-          authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding'
+          authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding' | 'offline'
           endpoint?: string | undefined | null
           value?: string | undefined | null
           authMethod?: AuthMethod | undefined | null
@@ -125,12 +142,6 @@ export type WebviewMessage =
           command: 'queryContextItems'
           query: MentionQuery
       }
-    | { command: 'search'; query: string }
-    | {
-          command: 'show-search-result'
-          uri: URI
-          range: RangeData
-      }
     | {
           command: 'reset'
       }
@@ -144,6 +155,9 @@ export type WebviewMessage =
     | {
           command: 'getAllMentionProvidersMetadata'
       }
+    | {
+          command: 'experimental-unit-test-prompt'
+      }
 
 /**
  * A message sent from the extension host to the webview.
@@ -155,15 +169,11 @@ export type ExtensionMessage =
           authStatus: AuthStatus
           workspaceFolderUris: string[]
       }
-    | {
-          type: 'search:config'
-          workspaceFolderUris: string[]
-      }
+    | { type: 'ui/theme'; agentIDE: CodyIDE; cssVariables: CodyIDECssVariables }
     | { type: 'history'; localHistory?: UserLocalHistory | undefined | null }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; view: View }
     | { type: 'errors'; errors: string }
-    | { type: 'notice'; notice: { key: string } }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     /**
      * Context files returned from a @-mention search
@@ -172,20 +182,14 @@ export type ExtensionMessage =
           type: 'userContextFiles'
           userContextFiles?: ContextItem[] | undefined | null
       }
+    | { type: 'clientState'; value: ClientStateForWebview }
+    | { type: 'clientAction'; addContextItemsToLastHumanInput: ContextItem[] }
     /**
-     * Send Context Files to chat view as input context (@-mentions)
+     * The current default model will always be the first one on the list.
      */
-    | { type: 'chat-input-context'; items: ContextItem[] }
-    | { type: 'chatModels'; models: ModelProvider[] }
-    | {
-          type: 'update-search-results'
-          results: SearchPanelFile[]
-          query: string
-      }
-    | { type: 'index-updated'; scopeDir: string }
+    | { type: 'chatModels'; models: Model[] }
     | { type: 'enhanced-context'; enhancedContextStatus: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
-    | { type: 'setChatEnabledConfigFeature'; data: boolean }
     | { type: 'context/remote-repos'; repos: Repo[] }
     | {
           type: 'setConfigFeatures'
@@ -197,6 +201,11 @@ export type ExtensionMessage =
     | {
           type: 'allMentionProvidersMetadata'
           providers: ContextMentionProviderMetadata[]
+      }
+    | {
+          type: 'updateEditorState'
+          /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
+          editorState?: unknown | undefined | null
       }
 
 interface ExtensionAttributionMessage {
@@ -246,13 +255,16 @@ export interface ExtensionTranscriptMessage {
 export interface ConfigurationSubsetForWebview
     extends Pick<
         ConfigurationWithAccessToken,
-        'experimentalGuardrails' | 'experimentalNoodle' | 'experimentalURLContext' | 'serverEndpoint'
-    > {}
+        'experimentalNoodle' | 'serverEndpoint' | 'agentIDE' | 'agentExtensionVersion'
+    > {
+    experimentalUnitTest: boolean
+}
 
 /**
  * URLs for the Sourcegraph instance and app.
  */
 export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
+export const SG_BLOG_URL = new URL('https://sourcegraph.com/blog/')
 
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
@@ -299,4 +311,8 @@ const sourcegraphTokenRegex =
  */
 export function isSourcegraphToken(text: string): boolean {
     return sourcegraphTokenRegex.test(text)
+}
+
+interface CodyIDECssVariables {
+    [key: string]: string
 }

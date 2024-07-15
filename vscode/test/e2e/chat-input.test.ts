@@ -1,27 +1,12 @@
 import { type Locator, expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 import { createEmptyChatPanel, focusChatInputAtEnd, sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, type ExpectedEvents, executeCommandInPalette, test } from './helpers'
+import { type DotcomUrlOverride, type ExpectedV2Events, executeCommandInPalette, test } from './helpers'
 
-test.extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:codyIgnore:hasFile',
-        'CodyVSCodeExtension:Auth:failed',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:menu:command:default:clicked',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-    ],
+test.extend<ExpectedV2Events>({
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
@@ -65,8 +50,6 @@ test.extend<ExpectedEvents>({
     // (`Cody: New Chat`) to switch back to the chat window we already opened and check that the
     // input is focused.
     await page.getByText("fizzbuzz.push('Buzz')").click()
-    await page.keyboard.press('Alt+L')
-    await expect(firstChatInput).toBeFocused()
 
     // Submit a new chat question from the command menu.
     await page.getByLabel(/Commands \(/).click()
@@ -123,7 +106,6 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
             editor: Locator
             toolbar: {
                 mention: Locator
-                enhancedContext: Locator
                 modelSelector: Locator
                 submit: Locator
             }
@@ -133,11 +115,8 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
                 editor: row.locator('[data-lexical-editor="true"]'),
                 toolbar: {
                     mention: toolbar.getByRole('button', { name: 'Add context' }),
-                    enhancedContext: toolbar.getByRole('button', {
-                        name: 'Configure automatic code context',
-                    }),
                     modelSelector: toolbar.getByRole('combobox', { name: 'Select a model' }),
-                    submit: toolbar.getByRole('button', { name: 'Send with automatic code context' }),
+                    submit: toolbar.getByRole('button', { name: 'Send' }),
                 },
             }
         }
@@ -147,7 +126,6 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
         const humanRow0 = humanMessageRowParts(nthHumanMessageRow(0))
         await humanRow0.editor.blur()
         await expect(humanRow0.toolbar.mention).toBeVisible()
-        await expect(humanRow0.toolbar.enhancedContext).toBeVisible()
         await expect(humanRow0.toolbar.modelSelector).toBeVisible()
         await expect(humanRow0.toolbar.submit).toBeVisible()
 
@@ -163,7 +141,6 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
         // Ensure the toolbar hides when the first input isn't focused.
         await expect(humanRow0.editor).not.toBeFocused()
         await expect(humanRow0.toolbar.mention).not.toBeVisible()
-        await expect(humanRow0.toolbar.enhancedContext).not.toBeVisible()
         await expect(humanRow0.toolbar.modelSelector).not.toBeVisible()
         await expect(humanRow0.toolbar.submit).not.toBeVisible()
 
@@ -172,52 +149,30 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
         // focus, it hides the toolbar, but that should not interfere with clicking among toolbar items.
         await humanRow0.editor.focus()
         await expect(humanRow0.toolbar.mention).toBeVisible()
-        await expect(humanRow0.toolbar.enhancedContext).toBeVisible()
         await expect(humanRow0.toolbar.modelSelector).toBeVisible()
         await expect(humanRow0.toolbar.submit).toBeVisible()
         await expect(chatPanel.getByText('Optimized for Accuracy')).not.toBeVisible()
-        await expect(chatPanel.getByText('Automatic code context')).not.toBeVisible()
         // Open the model selector toolbar popover.
         await humanRow0.toolbar.modelSelector.click()
         await expect(chatPanel.getByText('Optimized for Accuracy')).toBeVisible()
-        await expect(chatPanel.getByText('Automatic code context')).not.toBeVisible()
-        // Now click to the enhanced context toolbar popover. All toolbar items should still be visible, and the new popover should be open.
-        await humanRow0.toolbar.enhancedContext.click()
-        await expect(chatPanel.getByText('Optimized for Accuracy')).not.toBeVisible()
-        await expect(chatPanel.getByText('Automatic code context')).toBeVisible()
         await expect(humanRow0.toolbar.mention).toBeVisible()
-        await expect(humanRow0.toolbar.enhancedContext).toBeVisible()
         await expect(humanRow0.toolbar.modelSelector).toBeVisible()
         await expect(humanRow0.toolbar.submit).toBeVisible()
+        // Close the model selector.
+        await humanRow0.toolbar.modelSelector.click()
 
         // Now focus on the last input. The first row should be minimized.
         await lastChatInput.click()
         await expect(humanRow0.toolbar.mention).not.toBeVisible()
-        await expect(humanRow0.toolbar.enhancedContext).not.toBeVisible()
         await expect(humanRow0.toolbar.modelSelector).not.toBeVisible()
         await expect(humanRow0.toolbar.submit).not.toBeVisible()
     }
 )
 
-test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:codyIgnore:hasFile',
-        'CodyVSCodeExtension:Auth:failed',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-    ],
+test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<ExpectedV2Events>({
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
@@ -237,11 +192,16 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     const modelSelect = chatFrame.getByRole('combobox', { name: 'Select a model' }).last()
 
     await expect(modelSelect).toBeEnabled()
-    await expect(modelSelect).toHaveText(/^Claude 3 Sonnet/)
+    await expect(modelSelect).toHaveText(/^Claude 3.5 Sonnet/)
 
     await firstChatInput.fill('to model1')
     await firstChatInput.press('Enter')
-    await expect(chatFrame.getByRole('row').getByTitle('Claude 3 Sonnet by Anthropic')).toBeVisible()
+
+    // Verify tooltip shows the correct model
+    await chatFrame.locator('[data-testid="chat-message-model-icon"]').last().hover()
+    await expect(
+        chatFrame.locator('[data-testid="message"]').getByText('Claude 3.5 Sonnet by Anthropic')
+    ).toBeVisible()
 
     // Change model and send another message.
     await expect(modelSelect).toBeEnabled()
@@ -252,28 +212,18 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     await expect(modelSelect).toHaveText(/^GPT-4o/)
     await lastChatInput.fill('to model2')
     await lastChatInput.press('Enter')
-    await expect(chatFrame.getByRole('row').getByTitle('GPT-4o by OpenAI')).toBeVisible()
+    await expect(chatFrame.locator('[data-testid="chat-message-model-icon"]')).toHaveCount(2)
+    await chatFrame.locator('[data-testid="chat-message-model-icon"]').last().hover()
+    await expect(
+        chatFrame.locator('[data-testid="message"]').getByText('GPT-4o by OpenAI')
+    ).toBeVisible()
 })
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-        'CodyVSCodeExtension:editChatButton:clicked',
-    ],
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',

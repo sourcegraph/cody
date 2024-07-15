@@ -153,7 +153,12 @@ export class CodyPersister extends FSPersister {
     private filterHeaders(
         headers: { name: string; value: string }[]
     ): { name: string; value: string }[] {
-        const removeHeaderNames = new Set(['set-cookie', 'server', 'via'])
+        const removeHeaderNames = new Set([
+            'set-cookie',
+            'server',
+            'via',
+            'x-sourcegraph-actor-anonymous-uid',
+        ])
         const removeHeaderPrefixes = ['x-trace', 'cf-']
         return headers.filter(
             header =>
@@ -168,7 +173,7 @@ function postProcessResponseText(entry: HarEntry): string | undefined {
         return undefined
     }
     if (
-        !entry.request.url.includes('/.api/completions/stream?api-version=1') &&
+        !entry.request.url.includes('/.api/completions/stream') &&
         !entry.request.url.includes('/completions/code')
     ) {
         return text

@@ -3,7 +3,8 @@ import {
     type EditModel,
     type EventSource,
     FILE_CONTEXT_MENTION_PROVIDER,
-    ModelProvider,
+    ModelUsage,
+    ModelsService,
     PromptString,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     displayLineRange,
@@ -13,16 +14,14 @@ import {
 import * as vscode from 'vscode'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import { EventSourceTelemetryMetadataMapping } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { GENERAL_HELP_LABEL, LARGE_FILE_WARNING_LABEL } from '../../chat/context/constants'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { executeDocCommand, executeTestEditCommand } from '../../commands/execute'
 import { getEditor } from '../../editor/active-editor'
-import { editModel } from '../../models'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 import type { AuthProvider } from '../../services/AuthProvider'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../../services/telemetry'
-import type { EditIntent } from '../types'
+import type { EditIntent, EditMode } from '../types'
 import { isGenerateIntent } from '../utils/edit-intent'
 import { getEditModelsForUser } from '../utils/edit-models'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
@@ -50,6 +49,8 @@ interface QuickPickInput {
      * position, or vice-versa.
      */
     intent: EditIntent
+    /** The derived mode from the users' selected range */
+    mode: EditMode
 }
 
 export interface EditInputInitialValues {
@@ -79,8 +80,12 @@ export const getInput = async (
         return null
     }
 
-    telemetryService.log('CodyVSCodeExtension:menu:edit:clicked', { source }, { hasV2Event: true })
-    telemetryRecorder.recordEvent('cody.menu.edit', 'clicked', { privateMetadata: { source } })
+    telemetryRecorder.recordEvent('cody.menu.edit', 'clicked', {
+        metadata: {
+            source: EventSourceTelemetryMetadataMapping[source],
+        },
+        privateMetadata: { source },
+    })
 
     const initialCursorPosition = editor.selection.active
     let activeRange = initialValues.initialExpandedRange || initialValues.initialRange
@@ -101,7 +106,7 @@ export const getInput = async (
     let activeModelItem = modelItems.find(item => item.model === initialValues.initialModel)
 
     const getContextWindowOnModelChange = (model: EditModel) => {
-        const latestContextWindow = ModelProvider.getContextWindowByID(model)
+        const latestContextWindow = ModelsService.getContextWindowByID(model)
         return latestContextWindow.input + (latestContextWindow.context?.user ?? 0)
     }
     let activeModelContextWindow = getContextWindowOnModelChange(activeModel)
@@ -205,7 +210,7 @@ export const getInput = async (
                     return
                 }
 
-                editModel.set(acceptedItem.model)
+                ModelsService.setDefaultModel(ModelUsage.Edit, acceptedItem.model)
                 activeModelItem = acceptedItem
                 activeModel = acceptedItem.model
                 activeModelContextWindow = getContextWindowOnModelChange(acceptedItem.model)
@@ -323,7 +328,10 @@ export const getInput = async (
                     return
                 }
 
-                const mentionTrigger = scanForMentionTriggerInUserTextInput(value)
+                const mentionTrigger = scanForMentionTriggerInUserTextInput({
+                    textBeforeCursor: value,
+                    includeWhitespace: false,
+                })
                 const mentionQuery = mentionTrigger
                     ? parseMentionQuery(mentionTrigger.matchingString, null)
                     : undefined
@@ -452,6 +460,7 @@ export const getInput = async (
                 // Submission flow, validate selected items and return final output
                 input.hide()
                 textDocumentListener.dispose()
+                const isGenerate = isGenerateIntent(document, activeRange)
                 return resolve({
                     instruction: instruction.trim(),
                     userContextFiles: Array.from(selectedContextItems)
@@ -459,7 +468,8 @@ export const getInput = async (
                         .map(([, value]) => value),
                     model: activeModel,
                     range: activeRange,
-                    intent: isGenerateIntent(document, activeRange) ? 'add' : 'edit',
+                    intent: isGenerate ? 'add' : 'edit',
+                    mode: isGenerate ? 'insert' : 'edit',
                 })
             },
         })

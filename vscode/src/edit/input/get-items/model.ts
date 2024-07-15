@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type EditModel, type ModelProvider, isDefined } from '@sourcegraph/cody-shared'
+import { type EditModel, type Model, isCodyProModel, isDefined } from '@sourcegraph/cody-shared'
 import {
     QUICK_PICK_ITEM_CHECKED_PREFIX,
     QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX,
@@ -21,19 +21,13 @@ const getModelProviderIcon = (provider: string): string => {
         case 'Google':
             return '$(gemini-logo)'
         default:
-            return ''
+            return '$(cody-logo)'
     }
 }
 
-export const getModelOptionItems = (
-    modelOptions: ModelProvider[],
-    isCodyPro: boolean
-): EditModelItem[] => {
+export const getModelOptionItems = (modelOptions: Model[], isCodyPro: boolean): EditModelItem[] => {
     const allOptions = modelOptions
         .map(modelOption => {
-            if (modelOption.deprecated) {
-                return
-            }
             const icon = getModelProviderIcon(modelOption.provider)
             return {
                 label: `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX} ${icon} ${modelOption.title}`,
@@ -41,7 +35,7 @@ export const getModelOptionItems = (
                 alwaysShow: true,
                 model: modelOption.model,
                 modelTitle: modelOption.title,
-                codyProOnly: modelOption.codyProOnly,
+                codyProOnly: isCodyProModel(modelOption),
             }
         })
         .filter(isDefined)
@@ -58,7 +52,7 @@ export const getModelOptionItems = (
 }
 
 export const getModelInputItems = (
-    modelOptions: ModelProvider[],
+    modelOptions: Model[],
     activeModel: EditModel,
     isCodyPro: boolean
 ): GetItemsResult => {

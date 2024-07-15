@@ -1,14 +1,18 @@
 import { type Position, Range, type TextDocument } from 'vscode'
 import type { Tree } from 'web-tree-sitter'
 
-import { type DocumentContext, dedupeWith } from '@sourcegraph/cody-shared'
+import {
+    type BrowserOrNodeResponse,
+    type CompletionResponseWithMetaData,
+    type DocumentContext,
+    dedupeWith,
+} from '@sourcegraph/cody-shared'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { getNodeAtCursorAndParents } from '../../tree-sitter/ast-getters'
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import type { ItemPostProcessingInfo } from '../logger'
 import type { InlineCompletionItem } from '../types'
-
 import { type ParsedCompletion, dropParserFields } from './parse-completion'
 import { findLastAncestorOnTheSameRow } from './truncate-parsed-completion'
 import { collapseDuplicativeWhitespace, removeTrailingWhitespace, trimUntilSuffix } from './utils'
@@ -21,6 +25,8 @@ interface ProcessInlineCompletionsParams {
 
 export interface InlineCompletionItemWithAnalytics extends ItemPostProcessingInfo, InlineCompletionItem {
     stopReason?: string
+    resolvedModel?: string
+    responseHeaders?: InlineCompletionResponseHeaders
 }
 
 /**
@@ -53,17 +59,18 @@ export function processInlineCompletions(
     return rankedResults.map(dropParserFields)
 }
 
-interface ProcessItemParams {
+export interface ProcessItemParams {
     document: TextDocument
     position: Position
     docContext: DocumentContext
+    metadata?: CompletionResponseWithMetaData['metadata']
 }
 
 export function processCompletion(
     completion: ParsedCompletion,
     params: ProcessItemParams
 ): ParsedCompletion {
-    const { document, position, docContext } = params
+    const { document, position, docContext, metadata } = params
     const { prefix, suffix, currentLineSuffix, multilineTrigger, multilineTriggerPosition } = docContext
     let { insertText } = completion
 
@@ -101,6 +108,11 @@ export function processCompletion(
         multilineTriggerPosition,
     })
 
+    // Assign the resolved model to `InlineCompletionItemWithAnalytics` to make it available
+    // for analytics events when completions are synthesized from cache.
+    completion.resolvedModel = metadata?.response?.headers.get('x-cody-resolved-model') || undefined
+    completion.responseHeaders = extractRelevantResponseHeaders(metadata?.response)
+
     if (multilineTrigger) {
         insertText = removeTrailingWhitespace(insertText)
     } else {
@@ -119,6 +131,38 @@ export function processCompletion(
     insertText = insertText.trimEnd()
 
     return { ...completion, insertText }
+}
+
+const RESPONSE_HEADERS_TO_SAVE = [
+    'fireworks-cached-prompt-tokens',
+    'fireworks-num-concurrent-requests',
+    'fireworks-prefill-duration',
+    'fireworks-prefill-queue-duration',
+    'fireworks-prompt-tokens',
+    'fireworks-server-time-to-first-token',
+    'fireworks-speculation-matched-tokens',
+] as const
+
+type ResponseHeaderName = (typeof RESPONSE_HEADERS_TO_SAVE)[number]
+export type InlineCompletionResponseHeaders = Partial<Record<ResponseHeaderName, string>>
+
+function extractRelevantResponseHeaders(
+    response?: BrowserOrNodeResponse
+): InlineCompletionResponseHeaders | undefined {
+    if (!response) {
+        return undefined
+    }
+
+    const extractedHeaders: Record<string, string> = {}
+
+    for (const header of RESPONSE_HEADERS_TO_SAVE) {
+        const value = response.headers.get(header)
+        if (value) {
+            extractedHeaders[header] = value
+        }
+    }
+
+    return Object.keys(extractedHeaders).length > 0 ? extractedHeaders : undefined
 }
 
 interface GetNodeTypesInfoParams {

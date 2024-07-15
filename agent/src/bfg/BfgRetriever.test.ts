@@ -63,7 +63,7 @@ describe('BfgRetriever', async () => {
     // To fix this test the following functionality should be implemented:
     // - https://github.com/sourcegraph/cody/issues/4137
     // - https://github.com/sourcegraph/cody/issues/4138
-    const agent = await newEmbeddedAgentClient(
+    const { agent, client } = await newEmbeddedAgentClient(
         {
             name: 'BfgContextFetcher',
             version: '0.1.0',
@@ -79,7 +79,6 @@ describe('BfgRetriever', async () => {
         },
         activate
     )
-    const client = agent.clientForThisInstance()
 
     const filePath = path.join(dir, testFile)
     const uri = vscode.Uri.file(filePath)

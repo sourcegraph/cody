@@ -2,6 +2,7 @@ import { mkdtempSync } from 'node:fs'
 import fspromises from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import type { ContextItem } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
 /**
@@ -29,9 +30,30 @@ export class TestWorkspace {
     }
 
     public async afterAll(): Promise<void> {
-        await fspromises.rm(this.rootPath, {
-            recursive: true,
-            force: true,
-        })
+        try {
+            await fspromises.rm(this.rootPath, {
+                recursive: true,
+                force: true,
+                maxRetries: 5,
+            })
+        } catch (error) {
+            console.error(
+                `Ignoring error in afterAll hook while recursively deleting the directory '${this.rootPath}'`,
+                error
+            )
+        }
+    }
+
+    public async loadContextItem(name: string): Promise<ContextItem> {
+        const uri = this.file(name)
+        const buffer = await vscode.workspace.fs.readFile(uri)
+        const decoder = new TextDecoder('utf-8')
+        const content = decoder.decode(buffer)
+
+        return {
+            uri,
+            type: 'file',
+            content: content,
+        }
     }
 }

@@ -95,3 +95,29 @@ export function createSubscriber<T>(): Subscriber<T> {
         notify,
     }
 }
+
+export function nextTick() {
+    return new Promise(resolve => process.nextTick(resolve))
+}
+
+export type SemverString<Prefix extends string> = `${Prefix}${number}.${number}.${number}`
+
+export namespace SemverString {
+    const splitPrefixRegex = /^(?<prefix>.*)(?<version>\d+\.\d+\.\d+)$/
+    export function forcePrefix<P extends string>(prefix: P, value: string): SemverString<P> {
+        const match = splitPrefixRegex.exec(value)
+        if (!match || !match.groups?.version) {
+            throw new Error(`Invalid semver string: ${value}`)
+        }
+        return `${prefix}${match.groups?.version}` as SemverString<P>
+    }
+}
+
+type TupleFromUnion<T, U = T> = [T] extends [never]
+    ? []
+    : T extends any
+      ? [T, ...TupleFromUnion<Exclude<U, T>>]
+      : []
+
+// Helper type to ensure an array contains all members of T
+export type ArrayContainsAll<T extends string> = TupleFromUnion<T>

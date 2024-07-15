@@ -4,9 +4,9 @@ import * as mockServer from '../fixtures/mock-server'
 import { sidebarSignin } from './common'
 import {
     type DotcomUrlOverride,
-    type ExpectedEvents,
     type ExtraWorkspaceSettings,
     test as baseTest,
+    executeCommandInPalette,
 } from './helpers'
 import { testGitWorkspace } from './utils/gitWorkspace'
 
@@ -16,18 +16,12 @@ test.beforeEach(() => {
     mockServer.resetLoggedEvents()
 })
 
-testGitWorkspace
-    .extend<ExpectedEvents>({
-        // list of events we expect this test to log, add to this list as needed
-        expectedEvents: ['CodyVSCodeExtension:sidebar:commit:clicked'],
-        expectedV2Events: ['cody.sidebar.commit:clicked'],
-    })
-    .extend<ExtraWorkspaceSettings>({
-        extraWorkspaceSettings: {
-            'cody.internal.unstable': true, // Needed for Cody Ignore
-            'cody.experimental.commitMessage': true,
-        },
-    })('use terminal output as context', async ({ page, sidebar }) => {
+testGitWorkspace.extend<ExtraWorkspaceSettings>({
+    extraWorkspaceSettings: {
+        'cody.internal.unstable': true, // Needed for Cody Ignore
+        'cody.experimental.commitMessage': true,
+    },
+})('use terminal output as context', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // Open the Source Control View to confirm this is a git workspace
@@ -45,13 +39,15 @@ testGitWorkspace
 
     // Click on the command in the sidebar to verify it opens the source control panel.
     await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
-    await page.getByText('Generate Commit Message (Experimental)', { exact: true }).click()
+    await executeCommandInPalette(page, 'Generate Commit Message (Experimental)')
 
     const scmInputBox = page.getByLabel('Source Control Input')
     await expect(scmInputBox.filter({ hasText: 'hello from the assistant' }).first()).toBeVisible()
 
     // Ensure that no notification is shown
-    await expect(page.getByLabel('Cody was forced to skip').first()).not.toBeVisible({ timeout: 1000 })
+    await expect(page.getByLabel('Cody was forced to skip').first()).not.toBeVisible({
+        timeout: 1000,
+    })
 
     // Ensure that no additional files have been staged
     await expect(

@@ -1,6 +1,7 @@
 import http from 'node:http'
 import { agent } from '@sourcegraph/cody-shared'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import * as vscode from 'vscode'
 import { initializeNetworkAgent } from './fetch.node'
 
 describe('customAgent', () => {
@@ -30,7 +31,7 @@ describe('customAgent', () => {
     })
 
     it('uses keep-alive', async () => {
-        initializeNetworkAgent()
+        initializeNetworkAgent({ extensionUri: vscode.Uri.parse('file:///foo') })
 
         async function makeRequest() {
             return new Promise<http.IncomingMessage>(resolve => {

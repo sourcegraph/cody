@@ -1,0 +1,12 @@
+.initial-context-anchor-node {
+    user-select: none;
+    display: inline-block;
+    width: 0;
+    white-space: nowrap;
+    overflow: visible;
+
+    &::before {
+        opacity: 0.6;
+        content: 'Ask...';
+    }
+}

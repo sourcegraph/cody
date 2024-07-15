@@ -1,5 +1,5 @@
-import { FeatureFlag } from '@sourcegraph/cody-shared'
-import { releaseType } from '../../release'
+import { CodyIDE, FeatureFlag } from '@sourcegraph/cody-shared'
+import { getReleaseTypeByIDE } from '../../release'
 import { version } from '../../version'
 import type { CodySidebarTreeItem } from './treeViewItems'
 
@@ -36,7 +36,9 @@ export const SupportSidebarItems: CodySidebarTreeItem[] = [
         command: { command: 'cody.sidebar.keyboardShortcuts' },
     },
     {
-        title: `${releaseType(version) === 'stable' ? 'Release' : 'Pre-Release'} Notes`,
+        title: `${
+            getReleaseTypeByIDE(CodyIDE.VSCode, version) === 'stable' ? 'Release' : 'Pre-Release'
+        } Notes`,
         description: `v${version}`,
         icon: 'github',
         command: { command: 'cody.sidebar.releaseNotes' },

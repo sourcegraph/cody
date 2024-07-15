@@ -34,9 +34,9 @@ export async function createLocalEmbeddingsController(
 ): Promise<LocalEmbeddingsController> {
     const modelConfig =
         config.testingModelConfig ||
-        ((await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyUseSourcegraphEmbeddings))
-            ? sourcegraphModelConfig
-            : openaiModelConfig)
+        (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEmbeddingsGenerateMetadata))
+            ? sourcegraphMetadataModelConfig
+            : sourcegraphModelConfig
     const autoIndexingEnabled = await featureFlagProvider.evaluateFeatureFlag(
         FeatureFlag.CodyEmbeddingsAutoIndexing
     )
@@ -88,13 +88,12 @@ const sourcegraphModelConfig: EmbeddingsModelConfig = {
     indexPath: getIndexLibraryPath('st-v1'),
 }
 
-const openaiModelConfig: EmbeddingsModelConfig = {
-    model: 'openai/text-embedding-ada-002',
-    dimension: 1536,
-    provider: 'openai',
+const sourcegraphMetadataModelConfig: EmbeddingsModelConfig = {
+    model: 'sourcegraph/st-multi-qa-mpnet-metadata',
+    dimension: 768,
+    provider: 'sourcegraph',
     endpoint: CODY_GATEWAY_PROD_ENDPOINT,
-    // empty prefix to keep backwards compatibility
-    indexPath: getIndexLibraryPath(''),
+    indexPath: getIndexLibraryPath('st-metadata'),
 }
 
 export class LocalEmbeddingsController
@@ -425,7 +424,6 @@ export class LocalEmbeddingsController
             this.statusEmitter.fire(this)
         } catch (error: any) {
             logDebug('LocalEmbeddingsController', captureException(error), error)
-            await vscode.window.showErrorMessage(`Cody Embeddings — Error: ${error?.message}`)
         }
     }
 

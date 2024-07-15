@@ -2,6 +2,7 @@ import { describe, expect, it, vitest } from 'vitest'
 
 import type { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
+import { nextTick } from '../utils'
 import { FeatureFlag, FeatureFlagProvider } from './FeatureFlagProvider'
 
 describe('FeatureFlagProvider', () => {
@@ -25,7 +26,7 @@ describe('FeatureFlagProvider', () => {
         }
 
         const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
-        await provider.syncAuthStatus()
+        await provider.refresh()
 
         // Wait for the async initialization
         await nextTick()
@@ -63,7 +64,7 @@ describe('FeatureFlagProvider', () => {
             [FeatureFlag.TestFlagDoNotUse]: false,
         })
 
-        await provider.syncAuthStatus()
+        await provider.refresh()
 
         // Wait for the async reload
         await nextTick()
@@ -83,7 +84,7 @@ describe('FeatureFlagProvider', () => {
             }
 
             const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
-            await provider.syncAuthStatus()
+            await provider.refresh()
 
             // Wait for the async initialization
             await nextTick()
@@ -246,7 +247,3 @@ describe('FeatureFlagProvider', () => {
         })
     })
 })
-
-async function nextTick() {
-    return new Promise(resolve => setTimeout(resolve, 0))
-}

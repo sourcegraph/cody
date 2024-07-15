@@ -70,7 +70,7 @@ shutdown: [null, null]
 
 
 ```ts
-'chat/models': [{ id: string; }, { models: ModelProvider[]; }]
+'chat/models': [{ id: string; }, { models: Model[]; }]
 ```
 <h2 id="chat_remoteRepos"><a href="#chat_remoteRepos" name="chat_remoteRepos"><code>chat/remoteRepos</code> (<img class="emoji" title=":arrow_right:" alt=":arrow_right:" src="https://github.githubassets.com/images/icons/emoji/unicode/27a1.png" height="20" width="20">)</a></h2>
 <p>Request sent from the client to client server.</p>

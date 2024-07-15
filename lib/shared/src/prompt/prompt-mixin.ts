@@ -1,9 +1,15 @@
 import type { ChatMessage } from '../chat/transcript/messages'
+import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
 import { PromptString, ps } from './prompt-string'
 
-const identity = ps`Reply as Cody, a coding assistant developed by Sourcegraph.`
-const hallucinate = ps`If context is available: never make any assumptions nor provide any misleading or hypothetical examples.`
-const CODY_INTRO_PROMPT = ps`(${identity} ${hallucinate}) `
+/**
+ * The preamble we add to the start of the last human open-end chat message that has context items.
+ */
+const CONTEXT_PREAMBLE = ps`You have access to the provided codebase context. `
+/**
+ * The preamble for preventing known models from hedging.
+ */
+const HEDGES_PREVENTION = ps`Answer positively without apologizing. `
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
@@ -11,38 +17,54 @@ const CODY_INTRO_PROMPT = ps`(${identity} ${hallucinate}) `
  */
 export class PromptMixin {
     private static mixins: PromptMixin[] = []
-    private static customMixin: PromptMixin[] = []
-    // The prompt that instructs Cody to identify itself and avoid hallucinations.
-    private static defaultMixin: PromptMixin = new PromptMixin(CODY_INTRO_PROMPT)
-
-    /**
-     * Adds a custom prompt mixin but not to the global set to make sure it will not be added twice
-     * and any new change could replace the old one.
-     */
-    public static addCustom(mixin: PromptMixin): void {
-        PromptMixin.customMixin = [mixin]
-    }
+    private static defaultMixin: PromptMixin = new PromptMixin(ps``)
 
     /**
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
+     * Add hedging prevention prompt to specific models who need this.
      */
-    public static mixInto(humanMessage: ChatMessage): ChatMessage {
-        // Default Mixin is added at the end so that it cannot be overriden by a custom mixin.
-        const mixins = PromptString.join(
-            [...PromptMixin.mixins, ...PromptMixin.customMixin, PromptMixin.defaultMixin].map(
-                mixin => mixin.prompt
-            ),
+    public static mixInto(humanMessage: ChatMessage, modelID: string): ChatMessage {
+        // Default Mixin is added at the end so that it cannot be overriden by other mixins.
+        let mixins = PromptString.join(
+            [...PromptMixin.mixins, PromptMixin.defaultMixin].map(mixin => mixin.prompt),
             ps`\n\n`
         )
+
+        if (modelID.includes('claude-3-5-sonnet')) {
+            mixins = mixins.concat(HEDGES_PREVENTION)
+        }
+
         if (mixins) {
             // Stuff the prompt mixins at the start of the human text.
             // Note we do not reflect them in `text`.
             return {
                 ...humanMessage,
-                text: ps`${mixins}${humanMessage.text ? humanMessage.text : ''}`,
+                text: ps`${mixins}\n\nQuestion: ${humanMessage.text ? humanMessage.text : ''}`,
             }
         }
         return humanMessage
+    }
+
+    /**
+     * Sets the default prompt mixin determined by evaluating the CodyChatContextPreamble feature flag.
+     * Always enable the context preamble in testing and development mode.
+     *
+     * If the feature flag is enabled, set the context preamble as the default mixin.
+     * If the feature flag is disabled or an error occurs, the default mixin will be an empty prompt.
+     */
+    public static async updateContextPreamble(isExtensionModeDevOrTest = false): Promise<void> {
+        try {
+            const enabled =
+                isExtensionModeDevOrTest ||
+                (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatContextPreamble))
+            PromptMixin.defaultMixin = new PromptMixin(enabled ? CONTEXT_PREAMBLE : ps``)
+        } catch {
+            PromptMixin.resetDefaultPromptMixin()
+        }
+    }
+
+    private static resetDefaultPromptMixin(): void {
+        PromptMixin.defaultMixin = new PromptMixin(ps``)
     }
 
     /**

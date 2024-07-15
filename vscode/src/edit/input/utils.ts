@@ -1,7 +1,6 @@
 import {
     type ContextItem,
     FILE_CONTEXT_MENTION_PROVIDER,
-    PACKAGE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     displayLineRange,
     displayPath,
@@ -31,8 +30,6 @@ export function removeAfterLastAt(str: string): string {
  */
 export function getLabelForContextItem(item: ContextItem): string {
     switch (item.type) {
-        case PACKAGE_CONTEXT_MENTION_PROVIDER.id:
-            return `${item.ecosystem}:${item.name}`
         case FILE_CONTEXT_MENTION_PROVIDER.id:
             if (item.title) {
                 return `Add context from: ${item.title}`

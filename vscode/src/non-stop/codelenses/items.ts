@@ -29,20 +29,22 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             const cancel = getCancelLens(codeLensRange, task.id)
             return [title, cancel]
         }
-        case CodyTaskState.Formatting: {
-            const title = getFormattingLens(codeLensRange)
-            const skip = getFormattingSkipLens(codeLensRange, task.id)
-            return [title, skip]
-        }
         case CodyTaskState.Applied: {
             const accept = getAcceptLens(codeLensRange, task.id)
             const retry = getRetryLens(codeLensRange, task.id)
             const undo = getUndoLens(codeLensRange, task.id)
-            const showDiff = getDiffLens(codeLensRange, task.id)
             if (isTest) {
                 return [accept, undo]
             }
             if (isEdit) {
+                const showDiff = getDiffLens(
+                    codeLensRange,
+                    task.id,
+                    // Note: We already show an inline-diff in VS Code, so we change the wording slightly.
+                    // It is still useful to open the diff fully here, as it provides additional controls such as
+                    // reverting specific lines
+                    isRunningInsideAgent() ? 'Show Diff' : 'Open Diff'
+                )
                 return [accept, retry, undo, showDiff]
             }
             return [accept, retry, undo]
@@ -96,7 +98,7 @@ function getWorkingLens(codeLensRange: vscode.Range): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: '$(sync~spin) Cody is working...',
-        command: 'cody.focus',
+        command: 'cody.chat.focus',
     }
     return lens
 }
@@ -105,7 +107,7 @@ function getInsertingLens(codeLensRange: vscode.Range): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: '$(sync~spin) Inserting...',
-        command: 'cody.focus',
+        command: 'cody.chat.focus',
     }
     return lens
 }
@@ -114,26 +116,7 @@ function getApplyingLens(codeLensRange: vscode.Range): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: '$(sync~spin) Applying...',
-        command: 'cody.focus',
-    }
-    return lens
-}
-
-function getFormattingLens(codeLensRange: vscode.Range): vscode.CodeLens {
-    const lens = new vscode.CodeLens(codeLensRange)
-    lens.command = {
-        title: '$(sync~spin) Formatting...',
-        command: 'cody.focus',
-    }
-    return lens
-}
-
-function getFormattingSkipLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
-    const lens = new vscode.CodeLens(codeLensRange)
-    lens.command = {
-        title: 'Skip',
-        command: 'cody.fixup.codelens.skip-formatting',
-        arguments: [id],
+        command: 'cody.chat.focus',
     }
     return lens
 }
@@ -159,10 +142,10 @@ function getDiscardLens(codeLensRange: vscode.Range, id: string): vscode.CodeLen
     return lens
 }
 
-function getDiffLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+function getDiffLens(codeLensRange: vscode.Range, id: string, title: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
-        title: 'Show Diff',
+        title,
         command: 'cody.fixup.codelens.diff',
         arguments: [id],
     }
@@ -206,7 +189,7 @@ function getUnitTestLens(codeLensRange: vscode.Range): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: '$(sync~spin) Generating tests...',
-        command: 'cody.focus',
+        command: 'cody.chat.focus',
     }
     return lens
 }

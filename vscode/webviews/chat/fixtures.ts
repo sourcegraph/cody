@@ -1,8 +1,13 @@
 import { URI } from 'vscode-uri'
 
-import { type ChatMessage, ContextItemSource, ps } from '@sourcegraph/cody-shared'
+import {
+    type ChatMessage,
+    CodyIDE,
+    ContextItemSource,
+    FILE_MENTION_EDITOR_STATE_FIXTURE,
+    ps,
+} from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from '../Chat'
-import { FILE_MENTION_EDITOR_STATE_FIXTURE } from '../promptEditor/fixtures'
 
 export function transcriptFixture(transcript: ChatMessage[]): ChatMessage[] {
     return transcript.map(m => ({
@@ -82,7 +87,7 @@ export const FIXTURE_TRANSCRIPT: Record<
     explainCode2: transcriptFixture([
         {
             speaker: 'human',
-            text: ps`What does @Symbol1 in @dir/dir/file-a-1.py do? Also use @README.md:2-8.`,
+            text: ps`What does Symbol1 in dir/dir/file-a-1.py do? Also use README.md:2-8.`,
             editorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
             contextFiles: [
                 {
@@ -102,7 +107,7 @@ export const FIXTURE_TRANSCRIPT: Record<
         },
         {
             speaker: 'assistant',
-            text: ps`This code is very cool.`,
+            text: ps`This code is very cool. Here is some more code:\n\n\n\`\`\`javascript\nfunction Symbol1() {\n  console.log('Hello, world!')\n}\n\`\`\`\n`,
         },
     ]),
     long: transcriptFixture([
@@ -139,9 +144,11 @@ export const FIXTURE_TRANSCRIPT: Record<
 export const FIXTURE_USER_ACCOUNT_INFO: UserAccountInfo = {
     isCodyProUser: true,
     isDotComUser: true,
+    isOldStyleEnterpriseUser: false,
     user: {
         username: 'sqs',
         displayName: 'Quinn Slack',
         avatarURL: 'https://avatars.githubusercontent.com/u/1976',
     },
+    ide: CodyIDE.VSCode,
 }

@@ -1,9 +1,11 @@
+import {
+    FILE_MENTION_EDITOR_STATE_FIXTURE,
+    serializedPromptEditorStateFromText,
+} from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { type Assertion, type Mock, describe, expect, test, vi } from 'vitest'
 import { TestAppWrapper } from '../../../../../AppWrapper'
-import { serializedPromptEditorStateFromText } from '../../../../../promptEditor/PromptEditor'
-import { FILE_MENTION_EDITOR_STATE_FIXTURE } from '../../../../../promptEditor/fixtures'
 import { FIXTURE_USER_ACCOUNT_INFO } from '../../../../fixtures'
 import { HumanMessageEditor } from './HumanMessageEditor'
 
@@ -18,38 +20,33 @@ const ENTER_KEYBOARD_EVENT_DATA: Pick<KeyboardEvent, 'key' | 'code' | 'keyCode'>
     keyCode: 13,
 }
 
-const ALT_KEYBOARD_EVENT_DATA: Pick<KeyboardEvent, 'key' | 'code' | 'keyCode' | 'altKey'> = {
-    key: 'Alt',
-    code: 'AltLeft',
-    keyCode: 18,
-    altKey: true,
-}
-
 describe('HumanMessageEditor', () => {
     test('renders textarea', async () => {
         const { editor } = renderWithMocks({})
-        expect(editor).toHaveTextContent('What does @#Symbol1')
+        expect(editor).toHaveTextContent('What does Symbol1')
     })
 
     describe('states', () => {
         function expectState(
-            { mentionButton, submitButton }: ReturnType<typeof renderWithMocks>,
+            { addContextButton, submitButton }: ReturnType<typeof renderWithMocks>,
             expected: {
                 toolbarVisible?: boolean
+                submitButtonVisible?: boolean
                 submitButtonEnabled?: boolean
-                submitButtonText?: string
+                submitButtonText?: string | RegExp
             }
         ): void {
             if (expected.toolbarVisible !== undefined) {
-                notUnless(expect.soft(mentionButton), expected.toolbarVisible).toBeVisible()
-                notUnless(expect.soft(submitButton), expected.toolbarVisible).toBeVisible()
+                notUnless(expect.soft(addContextButton), expected.toolbarVisible).toBeVisible()
             }
-
+            if (expected.submitButtonVisible !== undefined) {
+                notUnless(expect.soft(submitButton), expected.submitButtonVisible).toBeVisible()
+            }
             if (expected.submitButtonEnabled !== undefined) {
                 notUnless(expect.soft(submitButton), expected.submitButtonEnabled).toBeEnabled()
             }
             if (expected.submitButtonText !== undefined) {
-                expect.soft(submitButton).toHaveTextContent(expected.submitButtonText)
+                expect.soft(submitButton).toHaveAccessibleName(expected.submitButtonText)
             }
 
             function notUnless<T>(assertion: Assertion<T>, value: boolean): Assertion<T> {
@@ -63,35 +60,14 @@ describe('HumanMessageEditor', () => {
                     initialEditorState: serializedPromptEditorStateFromText('abc'),
                     isSent: false,
                 }),
-                { toolbarVisible: true, submitButtonEnabled: true, submitButtonText: 'Send' }
+                { toolbarVisible: true, submitButtonEnabled: true, submitButtonText: /send/i }
             )
-        })
-
-        describe('isSent && isPendingResponse', () => {
-            function renderSentPending(): ReturnType<typeof renderWithMocks> {
-                const rendered = renderWithMocks({
-                    initialEditorState: serializedPromptEditorStateFromText('abc'),
-                    isSent: true,
-                    isPendingResponse: true,
-                })
-                return rendered
-            }
-
-            test('initial', () => {
-                const rendered = renderSentPending()
-                expectState(rendered, {
-                    toolbarVisible: true,
-                    submitButtonEnabled: true,
-                    submitButtonText: 'Send',
-                })
-            })
         })
 
         test('isSent && !isPendingResponse', () => {
             const rendered = renderWithMocks({
                 initialEditorState: undefined,
                 isSent: true,
-                isPendingResponse: false,
             })
             expectState(rendered, { toolbarVisible: false })
             fireEvent.focus(rendered.editor)
@@ -99,28 +75,30 @@ describe('HumanMessageEditor', () => {
         })
 
         test('isPendingPriorResponse', () => {
-            const rendered = renderWithMocks({
-                initialEditorState: undefined,
-                isPendingPriorResponse: true,
-            })
-            expectState(rendered, { toolbarVisible: true })
+            expectState(
+                renderWithMocks({
+                    initialEditorState: undefined,
+                    isPendingPriorResponse: true,
+                }),
+                { toolbarVisible: true, submitButtonEnabled: true, submitButtonText: /stop/i }
+            )
         })
     })
 
     describe('submitting', () => {
         function testNoSubmitting({
-            container,
+            editor,
             submitButton,
             onSubmit,
         }: ReturnType<typeof renderWithMocks>): void {
-            expect(submitButton).toBeDisabled()
-
-            // Click
-            fireEvent.click(submitButton!)
-            expect(onSubmit).toHaveBeenCalledTimes(0)
+            if (submitButton) {
+                expect(submitButton).toBeDisabled()
+                // Click
+                fireEvent.click(submitButton!)
+                expect(onSubmit).toHaveBeenCalledTimes(0)
+            }
 
             // Enter
-            const editor = container.querySelector<HTMLElement>('[data-lexical-editor="true"]')!
             fireEvent.keyDown(editor, ENTER_KEYBOARD_EVENT_DATA)
             expect(onSubmit).toHaveBeenCalledTimes(0)
         }
@@ -134,16 +112,20 @@ describe('HumanMessageEditor', () => {
         })
 
         test('isPendingPriorResponse', () => {
-            testNoSubmitting(
-                renderWithMocks({
-                    initialEditorState: serializedPromptEditorStateFromText('abc'),
-                    isPendingPriorResponse: true,
-                })
-            )
+            const { submitButton, onStop } = renderWithMocks({
+                initialEditorState: serializedPromptEditorStateFromText('abc'),
+                isPendingPriorResponse: true,
+            })
+
+            expect(submitButton).toBeEnabled()
+
+            // Click
+            fireEvent.click(submitButton!)
+            expect(onStop).toHaveBeenCalledTimes(1)
         })
 
         test('submit', async () => {
-            const { container, submitButton, onSubmit } = renderWithMocks({
+            const { submitButton, editor, onSubmit } = renderWithMocks({
                 initialEditorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
             })
             expect(submitButton).toBeEnabled()
@@ -151,35 +133,10 @@ describe('HumanMessageEditor', () => {
             // Click
             fireEvent.click(submitButton!)
             expect(onSubmit).toHaveBeenCalledTimes(1)
-            expect(onSubmit.mock.lastCall[1]).toBe(true) // addEnhancedContext === true
 
             // Enter
-            const editor = container.querySelector<HTMLElement>('[data-lexical-editor="true"]')!
             fireEvent.keyDown(editor, ENTER_KEYBOARD_EVENT_DATA)
             expect(onSubmit).toHaveBeenCalledTimes(2)
-            expect(onSubmit.mock.lastCall[1]).toBe(true) // addEnhancedContext === true
-        })
-
-        test('submit w/o context', async () => {
-            const { container, editor, onSubmit } = renderWithMocks({
-                initialEditorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
-            })
-            fireEvent.focus(editor)
-
-            // Click
-            const submitWithoutContextButton = screen.getByRole('button', {
-                name: 'Send without automatic code context',
-            })
-            fireEvent.keyDown(container, ALT_KEYBOARD_EVENT_DATA)
-            fireEvent.click(submitWithoutContextButton)
-            expect(onSubmit).toHaveBeenCalledTimes(1)
-            expect(onSubmit.mock.lastCall[1]).toBe(false) // addEnhancedContext === false
-
-            // Alt+Enter
-            fireEvent.keyDown(container, ALT_KEYBOARD_EVENT_DATA)
-            fireEvent.keyDown(editor, { ...ENTER_KEYBOARD_EVENT_DATA, altKey: true })
-            expect(onSubmit).toHaveBeenCalledTimes(2)
-            expect(onSubmit.mock.lastCall[1]).toBe(false) // addEnhancedContext === false
         })
     })
 })
@@ -189,24 +146,26 @@ type EditorHTMLElement = HTMLDivElement & { dataset: { lexicalEditor: 'true' } }
 function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor>>): {
     container: HTMLElement
     editor: EditorHTMLElement
-    mentionButton: HTMLElement | null
+    addContextButton: HTMLElement | null
     submitButton: HTMLElement | null
     onChange: Mock
     onSubmit: Mock
+    onStop: Mock
 } {
     const onChange = vi.fn()
     const onSubmit = vi.fn()
+    const onStop = vi.fn()
 
     const DEFAULT_PROPS: React.ComponentProps<typeof HumanMessageEditor> = {
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
         initialEditorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
         placeholder: 'my-placeholder',
         isFirstMessage: true,
-        isPendingResponse: false,
         isPendingPriorResponse: false,
         isSent: false,
         onChange,
         onSubmit,
+        onStop,
     }
 
     const { container } = render(<HumanMessageEditor {...DEFAULT_PROPS} {...props} />, {
@@ -215,12 +174,13 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
     return {
         container,
         editor: container.querySelector<EditorHTMLElement>('[data-lexical-editor="true"]')!,
-        mentionButton: screen.queryByRole('button', { name: 'Add context', hidden: true }),
+        addContextButton: screen.queryByRole('button', { name: 'Add context', hidden: true }),
         submitButton: screen.queryByRole('button', {
-            name: 'Send with automatic code context',
+            name: /send|stop/i,
             hidden: true,
         }),
         onChange,
         onSubmit,
+        onStop,
     }
 }

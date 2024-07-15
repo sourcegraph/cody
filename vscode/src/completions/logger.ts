@@ -3,6 +3,7 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
+    type AutocompleteContextSnippet,
     type BillingCategory,
     type BillingProduct,
     FeatureFlag,
@@ -11,26 +12,37 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
-import { getConfiguration } from '../configuration'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
-import { getExtensionDetails, logPrefix, telemetryService } from '../services/telemetry'
 import { splitSafeMetadata } from '../services/telemetry-v2'
-import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
-import type { Span } from '@opentelemetry/api'
+import { type Span, trace } from '@opentelemetry/api'
 import { PersistenceTracker } from '../common/persistence-tracker'
 import type {
     PersistencePresentEventPayload,
     PersistenceRemovedEventPayload,
 } from '../common/persistence-tracker/types'
-import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
+import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
 import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
+import {
+    AUTOCOMPLETE_STAGE_COUNTER_INITIAL_STATE,
+    type AutocompletePipelineCountedStage,
+    autocompleteStageCounterLogger,
+} from '../services/autocomplete-stage-counter-logger'
+import { type CompletionIntent, CompletionIntentTelemetryMetadataMapping } from '../tree-sitter/queries'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
-import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
+import {
+    InlineCompletionsResultSource,
+    InlineCompletionsResultSourceTelemetryMetadataMapping,
+    TriggerKind,
+    TriggerKindTelemetryMetadataMapping,
+} from './get-inline-completions'
 import type { RequestParams } from './request-manager'
 import * as statistics from './statistics'
-import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import type {
+    InlineCompletionItemWithAnalytics,
+    InlineCompletionResponseHeaders,
+} from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
 import type { InlineCompletionItem } from './types'
 
@@ -38,7 +50,7 @@ import type { InlineCompletionItem } from './types'
 // point in the document. A single completion can be suggested multiple times.
 //
 // Note: This ID is only used by our downstream services and should not be used by the clients.
-export type CompletionAnalyticsID = string & { _opaque: typeof CompletionAnalyticsID }
+type CompletionAnalyticsID = string & { _opaque: typeof CompletionAnalyticsID }
 declare const CompletionAnalyticsID: unique symbol
 
 // A completion log ID is a unique identifier for a suggestion lifecycle (starting with the key
@@ -50,6 +62,31 @@ declare const CompletionLogID: unique symbol
 // for a suggestion request.
 export type CompletionItemID = string & { _opaque: typeof CompletionItemID }
 declare const CompletionItemID: unique symbol
+
+export interface InlineCompletionItemRetrievedContext {
+    content: string
+    filePath: string
+    startLine: number
+    endLine: number
+}
+
+export interface InlineContextItemsParams {
+    context: AutocompleteContextSnippet[]
+    filePath: string | undefined
+    gitUrl: string | undefined
+    commit: string | undefined
+}
+
+export interface InlineCompletionItemContext {
+    gitUrl: string
+    commit?: string
+    filePath?: string
+    prefix?: string
+    suffix?: string
+    triggerLine?: number
+    triggerCharacter?: number
+    context?: InlineCompletionItemRetrievedContext[]
+}
 
 interface InteractionIDPayload {
     /**
@@ -76,11 +113,35 @@ interface SharedEventPayload extends InteractionIDPayload {
     /** Describes how the autocomplete request was triggered by the user. */
     triggerKind: TriggerKind
 
-    /** Information about what provider is used. e.g. `anthropic` or `fireworks`. */
+    /** Information about what inference provider is used. e.g. `anthropic` or `fireworks`. */
     providerIdentifier: string
 
-    /** Information about which model was used. e.g. `starcoder-7b` or `claude-instant`. */
+    /**
+     * Model used by Cody client to request the completion. e.g. `starcoder-7b` or `claude-instant`.
+     * Controls completion request parameters such as prompt template, stop sequences, context size, etc.
+     */
     providerModel: string
+
+    /**
+     * Model used by Cody Gateway to make the inference. e.g. `fireworks/accounts/sourcegraph/models/starcoder-7b-w8a16`
+     * This is a fully unique identifier of the model used to route a request to the inference provider.
+     * It can include model version, quantization, inference account, and other details not exposed
+     * on the client side (`providerModel`).
+     *
+     * This model can be completely different from the `providerModel` based on the Cody Gateway configuration.
+     * For example, CG can re-route requests to a different model based on the inference provider load.
+     */
+    resolvedModel?: string
+
+    /**
+     * A subset of HTTP response headers returned by the completion provider.
+     */
+    responseHeaders?: InlineCompletionResponseHeaders
+
+    /**
+     * Duration in ms for events that are part of the autocomplete generation pipeline.
+     */
+    stageTimings: Partial<Record<AutocompletePipelineStage, number>>
 
     /** Language of the document being completed. */
     languageId: string
@@ -99,6 +160,11 @@ interface SharedEventPayload extends InteractionIDPayload {
      * from a cache).
      */
     source?: InlineCompletionsResultSource
+
+    /**
+     * True if a completion was fuzzy-matched by the request manager cache.
+     */
+    isFuzzyMatch?: boolean
 
     /** Eventual artificial delay that was used to throttle unwanted completions. */
     artificialDelay?: number
@@ -121,6 +187,10 @@ interface SharedEventPayload extends InteractionIDPayload {
     /** The round trip timings to reach the Sourcegraph and Cody Gateway instances. */
     upstreamLatency?: number
     gatewayLatency?: number
+
+    /** Inline Context items used by LLM to get the completions */
+    // 🚨 SECURITY: included log for DotCom users.
+    inlineCompletionItemContext?: InlineCompletionItemContext
 }
 
 /**
@@ -192,15 +262,26 @@ interface FormatEventPayload {
     formatter?: string
 }
 
-function logCompletionSuggestedEvent(params: SuggestedEventPayload): void {
+function logCompletionSuggestedEvent(
+    isDotComUser: boolean,
+    inlineCompletionItemContext: InlineCompletionItemContext | undefined,
+    params: SuggestedEventPayload
+): void {
     // Use automatic splitting for now - make this manual as needed
-    const { metadata, privateMetadata } = splitSafeMetadata(params)
+    const { metadata, privateMetadata } = splitSafeMetadata({
+        ...params,
+        inlineCompletionItemContext,
+    })
     writeCompletionEvent(
         null,
         'suggested',
         {
             version: 0,
-            metadata,
+            metadata: {
+                ...metadata,
+                recordsPrivateMetadataTranscript:
+                    isDotComUser && inlineCompletionItemContext !== undefined ? 1 : 0,
+            },
             privateMetadata,
         },
         params
@@ -234,7 +315,7 @@ function logCompletionPartiallyAcceptedEvent(params: PartiallyAcceptedEventPaylo
         params
     )
 }
-export function logCompletionPersistencePresentEvent(params: PersistencePresentEventPayload): void {
+function logCompletionPersistencePresentEvent(params: PersistencePresentEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
@@ -248,7 +329,7 @@ export function logCompletionPersistencePresentEvent(params: PersistencePresentE
         params
     )
 }
-export function logCompletionPersistenceRemovedEvent(params: PersistenceRemovedEventPayload): void {
+function logCompletionPersistenceRemovedEvent(params: PersistenceRemovedEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
@@ -315,21 +396,72 @@ function writeCompletionEvent<SubFeature extends string, Action extends string, 
     params?: TelemetryEventParameters<{ [key: string]: number }, BillingProduct, BillingCategory>,
     legacyParams?: LegacyParams
 ): void {
-    const extDetails = getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration()))
-    telemetryService.log(
-        `${logPrefix(extDetails.ide)}:completion:${subfeature ? `${subfeature}:` : ''}${action}`,
-        legacyParams,
-        {
-            agent: true,
-            hasV2Event: true, // this helper translates the event for us
-        }
-    )
     /**
      * Extract interaction ID from the full legacy params for convenience
      */
     if (params && hasInteractionID(legacyParams)) {
         params.interactionID = legacyParams.id?.toString()
     }
+    /**
+     * Helper function to convert privateMetadata string values to numerical based on 'telemetryMetadataMapping...' lookup. Enables data collection on `metadata`
+     */
+    function mapEnumToMetadata<
+        V extends Record<string, string>,
+        // Do not allow number keys in `telemetryMetadataMapping`
+        K extends keyof V extends string ? string : never,
+    >(
+        value: string | undefined,
+        valueEnum: V,
+        metadataMapping: Record<V[K], number>
+    ): number | undefined {
+        if (value === undefined) return undefined
+        const enumKey = Object.keys(valueEnum).find(key => valueEnum[key] === value)
+        if (!enumKey) return undefined
+        const mappingValue = metadataMapping[enumKey as V[K]]
+        return typeof mappingValue === 'number' ? mappingValue : undefined
+    }
+
+    if (params?.metadata) {
+        const mappedTriggerKind = mapEnumToMetadata(
+            params.privateMetadata?.triggerKind,
+            TriggerKind,
+            TriggerKindTelemetryMetadataMapping
+        )
+
+        if (mappedTriggerKind !== undefined) {
+            params.metadata.triggerKind = mappedTriggerKind
+        }
+
+        const mappedSource = mapEnumToMetadata(
+            params.privateMetadata?.source,
+            InlineCompletionsResultSource,
+            InlineCompletionsResultSourceTelemetryMetadataMapping
+        )
+        if (mappedSource !== undefined) {
+            params.metadata.source = mappedSource
+        }
+
+        // Need to convert since CompletionIntent only refers to a type
+        const CompletionIntentEnum: Record<CompletionIntent, CompletionIntent> = Object.keys(
+            CompletionIntentTelemetryMetadataMapping
+        ).reduce(
+            (acc, key) => {
+                acc[key as CompletionIntent] = key as CompletionIntent
+                return acc
+            },
+            {} as Record<CompletionIntent, CompletionIntent>
+        )
+
+        const mappedCompletionIntent = mapEnumToMetadata(
+            params.privateMetadata?.completionIntent,
+            CompletionIntentEnum,
+            CompletionIntentTelemetryMetadataMapping
+        )
+        if (mappedCompletionIntent !== undefined) {
+            params.metadata.completionIntent = mappedCompletionIntent
+        }
+    }
+
     /**
      * New telemetry automatically adds extension context - we do not need to
      * include platform in the name of the event. However, we MUST prefix the
@@ -422,15 +554,17 @@ const activeSuggestionRequests = new LRUCache<CompletionLogID, CompletionBookkee
 
 // Maintain a history of the last n displayed completions and their generated completion IDs. This
 // allows us to reuse the completion ID across multiple suggestions.
-const recentCompletions = new LRUCache<string, CompletionAnalyticsID>({
+const recentCompletions = new LRUCache<RecentCompletionKey, CompletionAnalyticsID>({
     max: 20,
 })
-function getRecentCompletionsKey(params: RequestParams, completion: string): string {
+
+type RecentCompletionKey = string
+function getRecentCompletionsKey(params: RequestParams, completion: string): RecentCompletionKey {
     return `${params.docContext.prefix}█${completion}█${params.docContext.nextNonEmptyLine}`
 }
 
 // On our analytics dashboards, we apply a distinct count on the completion ID to count unique
-// completions as suggested. Since we don't have want to maintain a list of all completion IDs in
+// completions as suggested. Since we don't want to maintain a list of all completion IDs in
 // the client, we instead retain the last few completion IDs that were marked as suggested to
 // prevent local over counting.
 const completionIdsMarkedAsSuggested = new LRUCache<CompletionAnalyticsID, true>({
@@ -488,14 +622,29 @@ export function networkRequestStarted(
     }
 }
 
-export function loaded(
-    id: CompletionLogID,
-    params: RequestParams,
-    items: InlineCompletionItemWithAnalytics[],
-    source: InlineCompletionsResultSource,
+interface LoadedParams {
+    logId: CompletionLogID
+    requestParams: RequestParams
+    completions: InlineCompletionItemWithAnalytics[]
+    source: InlineCompletionsResultSource
     isDotComUser: boolean
-): void {
-    const event = activeSuggestionRequests.get(id)
+    isFuzzyMatch: boolean
+    inlineContextParams?: InlineContextItemsParams
+}
+
+export function loaded(params: LoadedParams): void {
+    const {
+        logId,
+        requestParams,
+        completions,
+        source,
+        isDotComUser,
+        isFuzzyMatch,
+        inlineContextParams = undefined,
+    } = params
+
+    const event = activeSuggestionRequests.get(logId)
+
     if (!event) {
         return
     }
@@ -503,18 +652,63 @@ export function loaded(
     event.params.source = source
 
     // Check if we already have a completion id for the loaded completion item
-    const key = items.length > 0 ? getRecentCompletionsKey(params, items[0].insertText) : ''
-    const completionId: CompletionAnalyticsID =
-        recentCompletions.get(key) ?? (uuid.v4() as CompletionAnalyticsID)
-    recentCompletions.set(key, completionId)
-    event.params.id = completionId
+    const recentCompletionKey =
+        completions.length > 0 ? getRecentCompletionsKey(requestParams, completions[0].insertText) : ''
+
+    const completionAnalyticsId =
+        recentCompletions.get(recentCompletionKey) ?? (uuid.v4() as CompletionAnalyticsID)
+
+    recentCompletions.set(recentCompletionKey, completionAnalyticsId)
+    event.params.id = completionAnalyticsId
+    event.params.isFuzzyMatch = isFuzzyMatch
 
     if (!event.loadedAt) {
         event.loadedAt = performance.now()
     }
-
     if (event.items.length === 0) {
-        event.items = items.map(item => completionItemToItemInfo(item, isDotComUser))
+        event.items = completions.map(item => completionItemToItemInfo(item, isDotComUser))
+    }
+
+    if (!event.params.resolvedModel && completions[0]?.resolvedModel) {
+        event.params.resolvedModel = completions[0]?.resolvedModel
+    }
+
+    if (!event.params.responseHeaders && completions[0]?.responseHeaders) {
+        event.params.responseHeaders = completions[0]?.responseHeaders
+    }
+
+    // 🚨 SECURITY: included only for DotCom users & Public github Repos.
+    if (
+        isDotComUser &&
+        inlineContextParams?.gitUrl &&
+        event.params.inlineCompletionItemContext === undefined
+    ) {
+        const instance = RepoMetadatafromGitApi.getInstance()
+        // Get the metadata only if already cached, We don't wait for the network call here.
+        const gitRepoMetadata = instance.getRepoMetadataIfCached(inlineContextParams.gitUrl)
+        if (gitRepoMetadata === undefined || gitRepoMetadata.isPublic === false) {
+            // 🚨 SECURITY: For Non-Public git Repos, We cannot log any code related information, just git url and commit.
+            event.params.inlineCompletionItemContext = {
+                gitUrl: inlineContextParams.gitUrl,
+                commit: inlineContextParams.commit,
+            }
+            return
+        }
+        event.params.inlineCompletionItemContext = {
+            gitUrl: inlineContextParams.gitUrl,
+            commit: inlineContextParams.commit,
+            filePath: inlineContextParams.filePath,
+            prefix: requestParams.docContext.prefix,
+            suffix: requestParams.docContext.suffix,
+            triggerLine: requestParams.position.line,
+            triggerCharacter: requestParams.position.character,
+            context: inlineContextParams.context.map(snippet => ({
+                content: snippet.content,
+                startLine: snippet.startLine,
+                endLine: snippet.endLine,
+                filePath: snippet.uri.fsPath,
+            })),
+        }
     }
 }
 
@@ -601,7 +795,7 @@ export function accepted(
     // when the current one is rejected.
     //
     // One such condition is when using backspace. In VS Code, we create completions such that they
-    // always start at the binning of the line. This means when backspacing past the initial trigger
+    // always start at the beginning of the line. This means when backspacing past the initial trigger
     // point, we keep showing the currently rendered completion until the next request is finished.
     // However, we do log the completion as rejected with the keystroke leaving a small window where
     // the completion can be accepted after it was marked as suggested.
@@ -627,14 +821,14 @@ export function accepted(
 
     completionEvent.acceptedAt = performance.now()
 
-    logSuggestionEvents()
+    logSuggestionEvents(isDotComUser)
     logCompletionAcceptedEvent({
         ...getSharedParams(completionEvent),
         acceptedItem: completionItemToItemInfo(completion, isDotComUser),
     })
     statistics.logAccepted()
 
-    if (trackedRange === undefined || isRunningInsideAgent()) {
+    if (trackedRange === undefined) {
         return
     }
     if (persistenceTracker === null) {
@@ -713,11 +907,30 @@ export function noResponse(id: CompletionLogID): void {
  * This callback should be triggered whenever VS Code tries to highlight a new completion and it's
  * used to measure how long previous completions were visible.
  */
-export function flushActiveSuggestionRequests(): void {
-    logSuggestionEvents()
+export function flushActiveSuggestionRequests(isDotComUser: boolean): void {
+    logSuggestionEvents(isDotComUser)
 }
 
-function logSuggestionEvents(): void {
+function getInlineContextItemToLog(
+    inlineCompletionItemContext: InlineCompletionItemContext | undefined
+): InlineCompletionItemContext | undefined {
+    if (inlineCompletionItemContext === undefined) {
+        return undefined
+    }
+    const MAX_CONTEXT_ITEMS = 15
+    const MAX_CHARACTERS = 20_000
+    return {
+        ...inlineCompletionItemContext,
+        prefix: inlineCompletionItemContext.prefix?.slice(-MAX_CHARACTERS),
+        suffix: inlineCompletionItemContext.suffix?.slice(0, MAX_CHARACTERS),
+        context: inlineCompletionItemContext.context?.slice(0, MAX_CONTEXT_ITEMS).map(c => ({
+            ...c,
+            content: c.content.slice(0, MAX_CHARACTERS),
+        })),
+    }
+}
+
+function logSuggestionEvents(isDotComUser: boolean): void {
     const now = performance.now()
     // biome-ignore lint/complexity/noForEach: LRUCache#forEach has different typing than #entries, so just keeping it for now
     activeSuggestionRequests.forEach(completionEvent => {
@@ -744,6 +957,9 @@ function logSuggestionEvents(): void {
         const seen = displayDuration >= READ_TIMEOUT_MS
         const accepted = acceptedAt !== null
         const read = accepted || seen
+        const inlineCompletionItemContext = getInlineContextItemToLog(
+            completionEvent.params.inlineCompletionItemContext
+        )
 
         if (!suggestionAnalyticsLoggedAt) {
             completionEvent.suggestionAnalyticsLoggedAt = now
@@ -753,7 +969,7 @@ function logSuggestionEvents(): void {
             }
         }
 
-        logCompletionSuggestedEvent({
+        logCompletionSuggestedEvent(isDotComUser, inlineCompletionItemContext, {
             ...getSharedParams(completionEvent),
             latency,
             displayDuration,
@@ -770,7 +986,7 @@ function logSuggestionEvents(): void {
     // need to retain the ability to mark them as seen
 }
 
-// Restores the logger's internals to a pristine state§
+// Restores the logger's internals to a pristine state.
 export function reset_testOnly(): void {
     activeSuggestionRequests.clear()
     completionIdsMarkedAsSuggested.clear()
@@ -834,6 +1050,9 @@ function getSharedParams(event: CompletionBookkeepingEvent): SharedEventPayload 
         otherCompletionProviders,
         upstreamLatency: upstreamHealthProvider.getUpstreamLatency(),
         gatewayLatency: upstreamHealthProvider.getGatewayLatency(),
+
+        // 🚨 SECURITY: Do not include any context by default
+        inlineCompletionItemContext: undefined,
     }
 }
 
@@ -887,4 +1106,44 @@ const otherCompletionProviders = [
 ]
 function getOtherCompletionProvider(): string[] {
     return otherCompletionProviders.filter(id => vscode.extensions.getExtension(id)?.isActive)
+}
+
+type AutocompletePipelineStage =
+    | AutocompletePipelineCountedStage
+    | 'preClientConfigCheck'
+    | 'preContentPopupCheck'
+    | 'preDocContext'
+    | 'preCompletionIntent'
+    | 'preGetInlineCompletions'
+
+export class AutocompleteStageRecorder {
+    private createdAt = performance.now()
+    private logId?: CompletionLogID
+
+    public stageTimings = {} as Record<string, number>
+
+    public setLogId(logId: CompletionLogID): void {
+        this.logId = logId
+    }
+
+    public record(eventName: AutocompletePipelineStage): void {
+        // Record event for OpenTelemetry traces.
+        trace.getActiveSpan()?.addEvent(eventName)
+
+        // Record event timing to later assign it to the analytics event.
+        this.stageTimings[eventName] = performance.now() - this.createdAt
+
+        if (this.logId) {
+            const event = activeSuggestionRequests.get(this.logId)
+
+            if (event) {
+                event.params.stageTimings = this.stageTimings
+            }
+        }
+
+        // Count event in the autocomplete stage counter if it's a counted stage.
+        if (eventName in AUTOCOMPLETE_STAGE_COUNTER_INITIAL_STATE) {
+            autocompleteStageCounterLogger.record(eventName as AutocompletePipelineCountedStage)
+        }
+    }
 }

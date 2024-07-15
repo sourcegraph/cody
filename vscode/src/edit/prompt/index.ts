@@ -7,7 +7,7 @@ import {
     type EditModel,
     type EditProvider,
     type Message,
-    ModelProvider,
+    ModelsService,
     PromptString,
     TokenCounter,
     getModelInfo,
@@ -28,6 +28,8 @@ import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } fro
 const INTERACTION_PROVIDERS: Record<EditProvider, EditLLMInteraction> = {
     Anthropic: claude,
     OpenAI: openai,
+    // NOTE: Sharing the same model for GPT models for now.
+    Google: openai,
 } as const
 
 const getInteractionArgsFromIntent = (
@@ -74,25 +76,25 @@ export const buildInteraction = async ({
     editor,
 }: BuildInteractionOptions): Promise<BuiltInteraction> => {
     const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
-    const precedingText = PromptString.fromDocumentText(
-        document,
-        new vscode.Range(
-            task.selectionRange.start.translate({
-                lineDelta: -Math.min(task.selectionRange.start.line, 50),
-            }),
-            task.selectionRange.start
-        )
+    const prefixRange = new vscode.Range(
+        task.selectionRange.start.translate({
+            lineDelta: -Math.min(task.selectionRange.start.line, 50),
+        }),
+        task.selectionRange.start
     )
+    const precedingText = PromptString.fromDocumentText(document, prefixRange)
     const selectedText = PromptString.fromDocumentText(document, task.selectionRange)
     const tokenCount = TokenCounter.countPromptString(selectedText)
     if (tokenCount > contextWindow) {
         throw new Error("The amount of text selected exceeds Cody's current capacity.")
     }
     task.original = selectedText.toString()
-    const followingText = PromptString.fromDocumentText(
-        document,
-        new vscode.Range(task.selectionRange.end, task.selectionRange.end.translate({ lineDelta: 50 }))
+    const suffixRange = new vscode.Range(
+        task.selectionRange.end,
+        task.selectionRange.end.translate({ lineDelta: 50 })
     )
+    const followingText = PromptString.fromDocumentText(document, suffixRange)
+
     const { prompt, responseTopic, stopSequences, assistantText, assistantPrefix } =
         getInteractionArgsFromIntent(task.intent, model, {
             uri: task.fixupFile.uri,
@@ -102,7 +104,7 @@ export const buildInteraction = async ({
             instruction: task.instruction,
             document,
         })
-    const promptBuilder = new PromptBuilder(ModelProvider.getContextWindowByID(model))
+    const promptBuilder = new PromptBuilder(ModelsService.getContextWindowByID(model))
 
     const preamble = getSimplePreamble(model, codyApiVersion, prompt.system)
     promptBuilder.tryAddToPrefix(preamble)
@@ -124,17 +126,17 @@ export const buildInteraction = async ({
     }
     promptBuilder.tryAddMessages(transcript.reverse())
 
-    const contextItemsAndMessages = await getContext({
+    const contextItems = await getContext({
         intent: task.intent,
         uri: task.fixupFile.uri,
         selectionRange: task.selectionRange,
         userContextItems: task.userContextItems,
         editor,
-        followingText,
-        precedingText,
+        suffix: { text: followingText, range: suffixRange },
+        prefix: { text: precedingText, range: prefixRange },
         selectedText,
     })
-    await promptBuilder.tryAddContext('user', contextItemsAndMessages)
+    await promptBuilder.tryAddContext('user', contextItems)
 
     return {
         messages: promptBuilder.build(),

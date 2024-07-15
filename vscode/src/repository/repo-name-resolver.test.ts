@@ -12,7 +12,7 @@ describe('getRepoNamesFromWorkspaceUri', () => {
     it('resolves the repo name using graphql for enterprise accounts', async () => {
         const repoNameResolver = new RepoNameResolver()
         repoNameResolver.init({
-            addChangeListener: () => () => {},
+            onChange: () => () => {},
             getAuthStatus: () => ({ ...defaultAuthStatus, isLoggedIn: true, isDotCom: false }),
         } as unknown as AuthProvider)
 
@@ -46,7 +46,7 @@ describe('getRepoNamesFromWorkspaceUri', () => {
     it('resolves the repo name using local conversion function for PLG accounts', async () => {
         const repoNameResolver = new RepoNameResolver()
         repoNameResolver.init({
-            addChangeListener: () => () => {},
+            onChange: () => () => {},
             getAuthStatus: () => ({ ...defaultAuthStatus, isLoggedIn: true, isDotCom: true }),
         } as unknown as AuthProvider)
 

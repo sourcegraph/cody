@@ -25,8 +25,9 @@ const getVSCodeConfigurationWithAccessToken = (
 })
 
 const dummyCodeCompletionsClient: CodeCompletionsClient = {
+    // biome-ignore lint/correctness/useYield: keep TS happy in tests.
     async *complete() {
-        yield { completion: '', stopReason: '' }
+        return { completionResponse: { completion: '', stopReason: '' } }
     },
     logger: undefined,
     onConfigurationChange: () => undefined,
@@ -34,7 +35,7 @@ const dummyCodeCompletionsClient: CodeCompletionsClient = {
 
 const dummyAuthStatus: AuthStatus = defaultAuthStatus
 
-graphqlClient.onConfigurationChange({} as unknown as GraphQLAPIClientConfig)
+graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
 
 describe('createProviderConfig', () => {
     describe('if completions provider fields are defined in VSCode settings', () => {
@@ -235,8 +236,8 @@ describe('createProviderConfig', () => {
 
                 // fireworks
                 {
-                    codyLLMConfig: { provider: 'fireworks', completionModel: 'llama-code-13b' },
-                    expected: { provider: 'fireworks', model: 'llama-code-13b' },
+                    codyLLMConfig: { provider: 'fireworks', completionModel: 'starcoder-7b' },
+                    expected: { provider: 'fireworks', model: 'starcoder-7b' },
                 },
                 {
                     codyLLMConfig: { provider: 'fireworks' },
@@ -245,13 +246,16 @@ describe('createProviderConfig', () => {
 
                 // unknown-provider
                 {
-                    codyLLMConfig: { provider: 'unknown-provider', completionModel: 'llama-code-7b' },
+                    codyLLMConfig: {
+                        provider: 'unknown-provider',
+                        completionModel: 'superdupercoder-7b',
+                    },
                     expected: null,
                 },
 
                 // provider not defined (backward compat)
                 {
-                    codyLLMConfig: { provider: undefined, completionModel: 'llama-code-7b' },
+                    codyLLMConfig: { provider: undefined, completionModel: 'superdupercoder-7b' },
                     expected: { provider: 'anthropic', model: 'claude-instant-1.2' },
                 },
             ]

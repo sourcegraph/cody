@@ -8,5 +8,5 @@
   },
   "references": [{ "path": "../../" }],
   "include": ["**/*.ts"],
-  "exclude": ["testdata"],
+  "exclude": ["testdata", "typehacks"],
 }
