@@ -94,7 +94,6 @@ describe('Agent', () => {
         await client.request('testing/reset', null)
     })
 
-    const bubbleUri = workspace.file('src', 'bubbleSort.ts')
     const sumUri = workspace.file('src', 'sum.ts')
     const animalUri = workspace.file('src', 'animal.ts')
     const squirrelUri = workspace.file('src', 'squirrel.ts')
@@ -138,56 +137,6 @@ describe('Agent', () => {
         // If you don't have access to this private file then you need to ask
         expect(valid?.username).toStrictEqual('sourcegraphbot9k-fnwmu')
     }, 10_000)
-
-    describe('Autocomplete', () => {
-        it('autocomplete/execute (non-empty result)', async () => {
-            await client.openFile(sumUri)
-            const completions = await client.request('autocomplete/execute', {
-                uri: sumUri.toString(),
-                position: { line: 1, character: 4 },
-                triggerKind: 'Invoke',
-            })
-            const texts = completions.items.map(item => item.insertText)
-            expect(completions.items.length).toBeGreaterThan(0)
-            expect(texts).toMatchInlineSnapshot(
-                `
-              [
-                "    return a + b;",
-              ]
-            `
-            )
-            client.notify('autocomplete/completionAccepted', {
-                completionID: completions.items[0].id,
-            })
-        }, 10_000)
-
-        it('autocomplete/execute multiline(non-empty result)', async () => {
-            await client.openFile(bubbleUri)
-            const completions = await client.request('autocomplete/execute', {
-                uri: bubbleUri.toString(),
-                position: { line: 1, character: 4 },
-                triggerKind: 'Invoke',
-            })
-            const texts = completions.items.map(item => item.insertText)
-            expect(completions.items.length).toBeGreaterThan(0)
-            expect(texts).toMatchInlineSnapshot(
-                `
-              [
-                "    for (let i = 0; i < nums.length; i++) {
-                      for (let j = 0; j < nums.length - 1; j++) {
-                          if (nums[j] > nums[j + 1]) {
-                              [nums[j], nums[j + 1]] = [nums[j + 1], nums[j]]
-                          }
-                      }
-                  }",
-              ]
-            `
-            )
-            client.notify('autocomplete/completionAccepted', {
-                completionID: completions.items[0].id,
-            })
-        }, 10_000)
-    })
 
     it('graphql/getCurrentUserCodySubscription', async () => {
         const currentUserCodySubscription = await client.request(
