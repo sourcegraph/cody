@@ -51,7 +51,7 @@ export interface RequestManagerResult {
     completions: InlineCompletionItemWithAnalytics[]
     source: InlineCompletionsResultSource
     isFuzzyMatch: boolean
-    logId: CompletionLogID
+    updatedLogId?: CompletionLogID
 }
 
 interface RequestsManagerParams {
@@ -144,7 +144,6 @@ export class RequestManager {
                         this.cache.set(requestParams, {
                             completions: processedCompletions,
                             source: InlineCompletionsResultSource.Cache,
-                            logId,
                         })
 
                         // A promise will never resolve twice, so we do not need to
@@ -153,7 +152,6 @@ export class RequestManager {
                             completions: processedCompletions,
                             source: InlineCompletionsResultSource.Network,
                             isFuzzyMatch: false,
-                            logId,
                         })
 
                         request.lastCompletions = processedCompletions
@@ -177,7 +175,6 @@ export class RequestManager {
                             {
                                 completions: [result.completion],
                                 source: InlineCompletionsResultSource.HotStreak,
-                                logId,
                             }
                         )
                     }
@@ -217,9 +214,9 @@ export class RequestManager {
             lastTriggerDocContext: docContext,
             lastTriggerSelectedCompletionInfo: selectedCompletionInfo,
             result: {
+                logId,
                 source: InlineCompletionsResultSource.Network,
                 items,
-                logId,
             },
         }
 
@@ -249,7 +246,7 @@ export class RequestManager {
                     source: InlineCompletionsResultSource.CacheAfterRequestStart,
                     isFuzzyMatch: false,
                     // Re-use the logId, so we do not log this as a separate completion.
-                    logId: synthesizedCandidate.logId,
+                    updatedLogId: synthesizedCandidate.logId,
                 })
                 request.abortController.abort()
                 this.inflightRequests.delete(request)
@@ -318,7 +315,6 @@ class InflightRequest {
 interface RequestCacheItem {
     completions: InlineCompletionItemWithAnalytics[]
     source: InlineCompletionsResultSource
-    logId: CompletionLogID
 }
 
 interface CacheKey {

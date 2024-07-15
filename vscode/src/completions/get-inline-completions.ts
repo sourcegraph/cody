@@ -452,11 +452,7 @@ async function doGetInlineCompletions(
     stageRecorder.record('preNetworkRequest')
 
     // Get the processed completions from providers
-    const {
-        completions,
-        source,
-        logId: updatedLogId,
-    } = await requestManager.request({
+    const { completions, source, updatedLogId } = await requestManager.request({
         logId: logId,
         requestParams,
         provider: completionProvider,
@@ -465,8 +461,9 @@ async function doGetInlineCompletions(
         tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,
     })
 
-    // The log id may be different if the request was restored from the cache
-    logId = updatedLogId
+    if (updatedLogId !== undefined) {
+        logId = updatedLogId
+    }
 
     const inlineContextParams = {
         context: contextResult?.context,
