@@ -1427,11 +1427,6 @@ export class ClientConfigSingleton {
                     return this.fetchClientConfigLegacy()
                 }
 
-                // Otherwise we use our centralized client config endpoint.
-                if (!graphqlClient.hasAccessToken())
-                    throw new Error(
-                        'unable to fetch /.api/client-config, client is not authenticated yet'
-                    )
                 return graphqlClient
                     .fetchHTTP<CodyClientConfig>('client-config', 'GET', '/.api/client-config')
                     .then(clientConfig => {
