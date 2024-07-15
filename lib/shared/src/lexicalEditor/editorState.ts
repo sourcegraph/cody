@@ -21,6 +21,7 @@ import {
     contextItemMentionNodeDisplayText,
     isSerializedContextItemMentionNode,
     serializeContextItem,
+    templateInputNodeDisplayText,
 } from './nodes'
 
 export interface SerializedPromptEditorValue {
@@ -225,6 +226,9 @@ export function textContentFromSerializedLexicalNode(
             const nodeText = contextItemMentionNodeDisplayText(
                 (node as SerializedContextItemMentionNode).contextItem
             )
+            text.push(__testing_wrapText ? __testing_wrapText(nodeText) ?? nodeText : nodeText)
+        } else if ('type' in node && node.type === TEMPLATE_INPUT_NODE_TYPE) {
+            const nodeText = templateInputNodeDisplayText(node as SerializedTemplateInputNode)
             text.push(__testing_wrapText ? __testing_wrapText(nodeText) ?? nodeText : nodeText)
         } else if ('text' in node && typeof node.text === 'string') {
             text.push(node.text)

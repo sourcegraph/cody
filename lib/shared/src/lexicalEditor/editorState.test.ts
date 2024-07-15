@@ -6,6 +6,7 @@ import { PromptString, ps } from '../prompt/prompt-string'
 import { lexicalEditorStateFromPromptString, textContentFromSerializedLexicalNode } from './editorState'
 import {
     FILE_MENTION_EDITOR_STATE_FIXTURE,
+    GENERATE_UNIT_TEST_EDITOR_STATE_FIXTURE,
     OLD_TEXT_FILE_MENTION_EDITOR_STATE_FIXTURE,
 } from './fixtures'
 import type { SerializedContextItemMentionNode } from './nodes'
@@ -40,6 +41,17 @@ describe('textContentFromSerializedLexicalNode', () => {
                 wrapMention
             )
         ).toBe('What does <<Symbol1>> in <<file-a-1.py>> do? Also use <<README.md:2-8>>.')
+    })
+
+    test('fixture from template', () => {
+        expect(
+            textContentFromSerializedLexicalNode(
+                GENERATE_UNIT_TEST_EDITOR_STATE_FIXTURE.lexicalEditorState.root,
+                wrapMention
+            )
+        ).toBe(
+            'Your task is to generate a suit of multiple unit tests for the functions defined inside the <<file1.go>> file. Use the <<mention the testing framework>> framework to generate the unit tests. Follow the example tests from the <<mention an example test file>> test file. Include unit tests for the following cases: <<list test cases>>. Ensure that the unit tests cover all the edge cases and validate the expected functionality of the functions'
+        )
     })
 })
 
@@ -131,6 +143,17 @@ describe('lexicalEditorStateFromPromptString', () => {
         })
         expect(textContentFromSerializedLexicalNode(editorState.root, wrapMention)).toBe(
             'What are <<foo.go:3-5>> and <<bar.go>> about?'
+        )
+    })
+
+    test('parse templates', () => {
+        const input = ps`Generate tests for @${PromptString.fromDisplayPath(
+            URI.file('foo.go')
+        )} using {{mention framework}} framework to generate the unit tests`
+        const editorState = lexicalEditorStateFromPromptString(input, { parseTemplates: true })
+        expect(editorState.root).matchSnapshot()
+        expect(textContentFromSerializedLexicalNode(editorState.root, wrapMention)).toBe(
+            'Generate tests for <<foo.go>> using <<mention framework>> framework to generate the unit tests'
         )
     })
 })

@@ -7,6 +7,7 @@ import {
     FILE_MENTION_EDITOR_STATE_FIXTURE,
     ps,
 } from '@sourcegraph/cody-shared'
+import { GENERATE_UNIT_TEST_EDITOR_STATE_FIXTURE } from '@sourcegraph/cody-shared/src/lexicalEditor/fixtures'
 import type { UserAccountInfo } from '../Chat'
 
 export function transcriptFixture(transcript: ChatMessage[]): ChatMessage[] {
@@ -17,7 +18,13 @@ export function transcriptFixture(transcript: ChatMessage[]): ChatMessage[] {
 }
 
 export const FIXTURE_TRANSCRIPT: Record<
-    'simple' | 'simple2' | 'codeQuestion' | 'explainCode' | 'explainCode2' | 'long',
+    | 'simple'
+    | 'simple2'
+    | 'codeQuestion'
+    | 'explainCode'
+    | 'explainCode2'
+    | 'experimentalGenerateUnitTest'
+    | 'long',
     ChatMessage[]
 > = {
     simple: transcriptFixture([
@@ -108,6 +115,15 @@ export const FIXTURE_TRANSCRIPT: Record<
         {
             speaker: 'assistant',
             text: ps`This code is very cool. Here is some more code:\n\n\n\`\`\`javascript\nfunction Symbol1() {\n  console.log('Hello, world!')\n}\n\`\`\`\n`,
+        },
+    ]),
+    experimentalGenerateUnitTest: transcriptFixture([
+        {
+            speaker: 'human',
+            editorState: GENERATE_UNIT_TEST_EDITOR_STATE_FIXTURE,
+            contextFiles: [
+                { type: 'file', uri: URI.file('/a/b/file1.py'), source: ContextItemSource.User },
+            ],
         },
     ]),
     long: transcriptFixture([

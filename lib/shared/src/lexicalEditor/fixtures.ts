@@ -24,22 +24,6 @@ export const FILE_MENTION_EDITOR_STATE_FIXTURE: SerializedPromptEditorState = {
                             version: 1,
                         },
                         {
-                            type: 'templateInput',
-                            version: 1,
-                            templateInput: {
-                                placeholder: 'placeholder',
-                            },
-                        } satisfies SerializedTemplateInputNode,
-                        {
-                            detail: 0,
-                            format: 0,
-                            mode: 'normal',
-                            style: '',
-                            text: ' ',
-                            type: 'text',
-                            version: 1,
-                        },
-                        {
                             type: 'contextItemMention',
                             version: 1,
                             contextItem: {
@@ -131,6 +115,108 @@ export const FILE_MENTION_EDITOR_STATE_FIXTURE: SerializedPromptEditorState = {
             indent: 0,
             type: 'root',
             version: 1,
+        },
+    },
+}
+
+export const GENERATE_UNIT_TEST_EDITOR_STATE_FIXTURE: SerializedPromptEditorState = {
+    v: STATE_VERSION_CURRENT,
+    minReaderV: STATE_VERSION_CURRENT,
+    lexicalEditorState: {
+        root: {
+            direction: null,
+            format: '',
+            indent: 0,
+            type: 'root',
+            version: 1,
+            children: [
+                {
+                    direction: null,
+                    format: '',
+                    indent: 0,
+                    type: 'paragraph',
+                    version: 1,
+                    children: [
+                        {
+                            detail: 0,
+                            format: 0,
+                            mode: 'normal',
+                            style: '',
+                            type: 'text',
+                            version: 1,
+                            text: 'Your task is to generate a suit of multiple unit tests for the functions defined inside the ',
+                        },
+                        {
+                            type: 'contextItemMention',
+                            contextItem: {
+                                type: 'file',
+                                uri: 'file:///a/b/file1.go',
+                                source: 'user',
+                            },
+                            text: 'file1.go',
+                            isFromInitialContext: false,
+                            version: 1,
+                        },
+                        {
+                            detail: 0,
+                            format: 0,
+                            mode: 'normal',
+                            style: '',
+                            type: 'text',
+                            version: 1,
+                            text: ' file. Use the ',
+                        },
+                        {
+                            type: 'templateInput',
+                            templateInput: {
+                                placeholder: 'mention the testing framework',
+                            },
+                            version: 1,
+                        } satisfies SerializedTemplateInputNode,
+                        {
+                            detail: 0,
+                            format: 0,
+                            mode: 'normal',
+                            style: '',
+                            type: 'text',
+                            version: 1,
+                            text: ' framework to generate the unit tests. Follow the example tests from the ',
+                        },
+                        {
+                            type: 'templateInput',
+                            templateInput: {
+                                placeholder: 'mention an example test file',
+                            },
+                            version: 1,
+                        },
+                        {
+                            detail: 0,
+                            format: 0,
+                            mode: 'normal',
+                            style: '',
+                            type: 'text',
+                            version: 1,
+                            text: ' test file. Include unit tests for the following cases: ',
+                        },
+                        {
+                            type: 'templateInput',
+                            templateInput: {
+                                placeholder: 'list test cases',
+                            },
+                            version: 1,
+                        },
+                        {
+                            detail: 0,
+                            format: 0,
+                            mode: 'normal',
+                            style: '',
+                            type: 'text',
+                            version: 1,
+                            text: '. Ensure that the unit tests cover all the edge cases and validate the expected functionality of the functions',
+                        },
+                    ],
+                } as SerializedLexicalNode,
+            ],
         },
     },
 }
