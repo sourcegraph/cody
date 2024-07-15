@@ -9,7 +9,6 @@ import type { CodyBenchOptions } from './command-bench'
 import { evaluateEachFile } from './evaluateEachFile'
 import { LlmJudge, type LlmJudgeScore } from './llm-judge'
 import { concisenessPrompt, helpfulnessPrompt } from './llm-judge-chat-template'
-import {sleep} from "../../../../vscode/src/completions/utils";
 
 interface ChatTask {
     question: string
@@ -37,7 +36,6 @@ export async function evaluateChatStrategy(
     const files = absoluteFiles.map(file => path.relative(options.workspace, file))
     const yamlFiles = files.filter(file => file.endsWith('.yaml') && file.startsWith('question')) // TODO hack
     await evaluateEachFile(yamlFiles, options, async params => {
-        await sleep(30000)
         const document = EvaluationDocument.from(params, options)
         const task: ChatTask = YAML.parse(params.content)
         const id = await client.request('chat/new', null)
