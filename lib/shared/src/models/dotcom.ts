@@ -2,6 +2,7 @@ import type { Model } from '.'
 import {
     CHAT_INPUT_TOKEN_BUDGET,
     CHAT_OUTPUT_TOKEN_BUDGET,
+    CHAT_OUTPUT_TOKEN_BUDGET_3_5_SONNET,
     EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
     EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
 } from '../token/constants'
@@ -24,6 +25,15 @@ const expandedContextWindow: ModelContextWindow = {
 }
 
 /**
+ * Has a larger chat output limit for Claude 3.5 Sonnet only
+ */
+const expandedContextWindow3_5_Sonnet: ModelContextWindow = {
+    input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
+    output: CHAT_OUTPUT_TOKEN_BUDGET_3_5_SONNET,
+    context: { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET },
+}
+
+/**
  * Returns an array of Models representing the default models for DotCom.
  * The order listed here is the order shown to users. Put the default LLM first.
  *
@@ -42,7 +52,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         model: 'anthropic/claude-3-5-sonnet-20240620',
         provider: 'Anthropic',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: expandedContextWindow,
+        contextWindow: expandedContextWindow3_5_Sonnet,
         tags: [ModelTag.Gateway, ModelTag.Accuracy, ModelTag.Recommended, ModelTag.Free],
     },
     {

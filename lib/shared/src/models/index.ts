@@ -1,7 +1,7 @@
 import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { logDebug } from '../logger'
-import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
+import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET_3_5_SONNET } from '../token/constants'
 import { ModelTag } from './tags'
 import { type ChatModel, type EditModel, type ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
@@ -105,7 +105,9 @@ export class Model {
         usage,
         contextWindow = {
             input: CHAT_INPUT_TOKEN_BUDGET,
-            output: CHAT_OUTPUT_TOKEN_BUDGET,
+            output: model.toLowerCase().includes('claude-3-5-sonnet')
+            ? CHAT_OUTPUT_TOKEN_BUDGET_3_5_SONNET
+            : CHAT_OUTPUT_TOKEN_BUDGET,
         },
         clientSideConfig,
         tags = [],
@@ -349,6 +351,9 @@ export class ModelsService {
      * Finds the model provider with the given model ID and returns its Context Window.
      */
     public static getContextWindowByID(modelID: string): ModelContextWindow {
+        if (modelID.toLowerCase().includes('claude-3-5-sonnet')) {
+            return { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET_3_5_SONNET }
+        }
         const model = ModelsService.models.find(m => m.model === modelID)
         return model
             ? model.contextWindow
