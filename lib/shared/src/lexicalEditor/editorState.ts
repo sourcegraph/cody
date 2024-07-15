@@ -16,6 +16,8 @@ import {
     CONTEXT_ITEM_MENTION_NODE_TYPE,
     type SerializedContextItem,
     type SerializedContextItemMentionNode,
+    type SerializedTemplateInputNode,
+    TEMPLATE_INPUT_NODE_TYPE,
     contextItemMentionNodeDisplayText,
     isSerializedContextItemMentionNode,
     serializeContextItem,
@@ -240,7 +242,20 @@ export function editorStateToText(editorState: EditorState): string {
     return editorState.read(() => $getRoot().getTextContent())
 }
 
-export function lexicalEditorStateFromPromptString(input: PromptString): SerializedEditorState {
+type SupportedSerializedNodes =
+    | SerializedTextNode
+    | SerializedContextItemMentionNode
+    | SerializedTemplateInputNode
+
+export function lexicalEditorStateFromPromptString(
+    input: PromptString,
+    opts?: {
+        /**
+         * Experimental support for template values. These are placeholder values between "{{" and "}}".
+         */
+        parseTemplates: boolean
+    }
+): SerializedEditorState {
     // HACK(sqs): This breaks if the PromptString's references' displayPaths are present anywhere
     // else. A better solution would be to track range information for the constituent PromptString
     // parts.
@@ -250,19 +265,7 @@ export function lexicalEditorStateFromPromptString(input: PromptString): Seriali
         refsByDisplayPath.set(displayPath(ref), ref)
     }
 
-    function textNode(text: string): SerializedTextNode {
-        return {
-            detail: 0,
-            format: 0,
-            mode: 'normal',
-            style: '',
-            type: 'text',
-            version: 1,
-            text,
-        }
-    }
-
-    const children: (SerializedTextNode | SerializedContextItemMentionNode)[] = []
+    let children: SupportedSerializedNodes[] = []
     let lastTextNode: SerializedTextNode | undefined
     const words = input.toString().split(' ')
     for (const word of words) {
@@ -305,6 +308,10 @@ export function lexicalEditorStateFromPromptString(input: PromptString): Seriali
         children.push(lastTextNode)
     }
 
+    if (opts?.parseTemplates) {
+        children = parseTemplateInputsInTextNodes(children)
+    }
+
     return {
         root: {
             direction: null,
@@ -326,6 +333,46 @@ export function lexicalEditorStateFromPromptString(input: PromptString): Seriali
     }
 }
 
+function parseTemplateInputsInTextNodes(nodes: SupportedSerializedNodes[]): SupportedSerializedNodes[] {
+    return nodes.flatMap(node => {
+        if (node.type !== 'text') {
+            return [node]
+        }
+
+        const template = node.text
+
+        const regex = /{{(.*?)}}/g
+        const parts = []
+        let lastIndex = 0
+        while (true) {
+            const match = regex.exec(template)
+            if (!match) {
+                break
+            }
+
+            if (match.index > lastIndex) {
+                parts.push(textNode(template.slice(lastIndex, match.index)))
+            }
+
+            // Add the variable
+            parts.push({
+                type: TEMPLATE_INPUT_NODE_TYPE,
+                templateInput: { placeholder: match[1].trim() },
+                version: 1,
+            } satisfies SerializedTemplateInputNode)
+
+            lastIndex = regex.lastIndex
+        }
+
+        // Add any remaining text after the last match
+        if (lastIndex < template.length) {
+            parts.push(textNode(template.slice(lastIndex)))
+        }
+
+        return parts
+    })
+}
+
 function parseRangeString(str: string): RangeData | undefined {
     const [startStr, endStr] = str.split('-', 2)
     if (!startStr || !endStr) {
@@ -337,4 +384,16 @@ function parseRangeString(str: string): RangeData | undefined {
         return undefined
     }
     return { start: { line: start - 1, character: 0 }, end: { line: end, character: 0 } }
+}
+
+function textNode(text: string): SerializedTextNode {
+    return {
+        detail: 0,
+        format: 0,
+        mode: 'normal',
+        style: '',
+        type: 'text',
+        version: 1,
+        text,
+    }
 }

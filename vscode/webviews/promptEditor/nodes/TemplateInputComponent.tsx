@@ -37,45 +37,46 @@ export const TemplateInputComponent: React.FC<{
         return classes.join(' ').trim() || undefined
     }, [isSelected, className, focusedClassName, isEditorFocused])
 
-    const handleDelete = useCallback(() => {
+    const handleEvent = useCallback(() => {
         const node = $getNodeByKey(nodeKey)
         if ($isTemplateInputNode(node)) {
             node.remove()
         }
+        // TODO ensure the cursor is in the right place
     }, [nodeKey])
 
     const onDelete = useCallback(
         (event: KeyboardEvent) => {
             if (isSelected && $isNodeSelection($getSelection())) {
                 event.preventDefault()
-                handleDelete()
+                handleEvent()
                 return true
             }
             return false
         },
-        [isSelected, handleDelete]
+        [isSelected, handleEvent]
     )
 
     const onClick = useCallback(
         (event: MouseEvent) => {
             if (event.target === ref.current || ref.current?.contains(event.target as Node)) {
                 event.preventDefault()
-                handleDelete()
+                handleEvent()
                 return true
             }
             return false
         },
-        [handleDelete]
+        [handleEvent]
     )
 
     const onKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLInputElement>) => {
             if (event.key === 'Enter') {
                 event.preventDefault()
-                handleDelete()
+                handleEvent()
             }
         },
-        [handleDelete]
+        [handleEvent]
     )
 
     useEffect(() => {

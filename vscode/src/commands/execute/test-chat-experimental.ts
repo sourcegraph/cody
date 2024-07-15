@@ -47,7 +47,7 @@ async function chatMessageTemplate(): Promise<ChatMessage | undefined> {
         speaker: 'human',
         text: prompt,
         editorState: {
-            lexicalEditorState: lexicalEditorStateFromPromptString(prompt),
+            lexicalEditorState: lexicalEditorStateFromPromptString(prompt, { parseTemplates: true }),
             v: STATE_VERSION_CURRENT,
             minReaderV: STATE_VERSION_CURRENT,
         },
