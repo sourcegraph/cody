@@ -11,6 +11,7 @@ import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.openapi.keymap.KeymapManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.edit.FixupService
 import com.sourcegraph.config.ConfigUtil
 import java.awt.Font
@@ -19,7 +20,7 @@ import java.awt.Graphics2D
 import java.awt.Rectangle
 import java.awt.event.KeyEvent
 import java.awt.geom.GeneralPath
-import java.util.*
+import java.util.Locale
 
 class CodySelectionInlayManager(val project: Project) {
 
@@ -39,6 +40,7 @@ class CodySelectionInlayManager(val project: Project) {
       return
     }
     if (!ConfigUtil.isCodyUIHintsEnabled()) return // User-disabled.
+    if (CodyAuthenticationManager.getInstance(project).hasNoActiveAccount()) return
 
     val startOffset = event.newRange.startOffset
     val endOffset = event.newRange.endOffset
