@@ -1,11 +1,10 @@
 .templateInputNode {
-    --template-input-color: var(--vscode-editorWarning-foreground);
-    --template-input-background: var(--vscode-editorWarning-background);
-    --template-input-border: var(--vscode-editorWarning-border);
+    /* TODO: this is all made up, make it match figma */
+    --template-color-opacity: 70%;
 
-    color: var(--template-input-color);
-    background-color: var(--template-input-background);
-    border-radius: 2px;
+    color: color-mix(in lch, var(--vscode-inputOption-activeForeground) var(--template-color-opacity), transparent);
+    background-color: #3D2904;
+    border-radius: 3px;
     white-space: normal;
     padding: 0 3px;
     display: inline-flex;
@@ -15,12 +14,12 @@
 }
 
 .templateInputNode.unset {
-    border: 1px dashed var(--template-input-border);
+    border: 1px dashed #F59F00;
 }
 
 .templateInputNode.focused,
 .templateInputNode.set {
-    border: 1px solid var(--template-input-border);
+    border: 1px solid #F59F00;
 }
 
 .templateInputNode.focused {

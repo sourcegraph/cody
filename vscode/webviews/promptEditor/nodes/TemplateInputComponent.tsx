@@ -121,27 +121,18 @@ export const TemplateInputComponent: React.FC<{
         )
     }, [editor, onClick, onDelete, onBlur, onKeyDown, isSelected])
 
+    const tooltip = node.templateInput.state === 'unset' ? node.templateInput.placeholder : ''
+    const text =
+        node.templateInput.state === 'unset' ? node.templateInput.placeholder : node.getTextContent()
+
     return (
         <Tooltip>
             <TooltipTrigger asChild>
                 <span ref={ref} className={composedClassNames}>
-                    {node.templateInput.state === 'unset' ? (
-                        <span>{node.templateInput.placeholder}</span>
-                    ) : (
-                        <input
-                            ref={inputRef}
-                            type="text"
-                            value={inputValue}
-                            onChange={onInputChange}
-                            onKeyDown={onKeyDown}
-                            onBlur={onBlur}
-                        />
-                    )}
+                    <span>{text}</span>
                 </span>
             </TooltipTrigger>
-            {node.templateInput.state === 'unset' && (
-                <TooltipContent>{node.templateInput.placeholder}</TooltipContent>
-            )}
+            {tooltip && <TooltipContent>{tooltip}</TooltipContent>}
         </Tooltip>
     )
 }
