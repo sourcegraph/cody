@@ -351,9 +351,6 @@ export class ModelsService {
      * Finds the model provider with the given model ID and returns its Context Window.
      */
     public static getContextWindowByID(modelID: string): ModelContextWindow {
-        if (modelID.toLowerCase().includes('claude-3-5-sonnet')) {
-            return { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET_3_5_SONNET }
-        }
         const model = ModelsService.models.find(m => m.model === modelID)
         return model
             ? model.contextWindow
