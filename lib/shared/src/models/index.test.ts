@@ -3,9 +3,28 @@ import { type AuthStatus, defaultAuthStatus } from '../auth/types'
 import { Model, ModelsService } from '../models/index'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import { getDotComDefaultModels } from './dotcom'
+import { ModelTag } from './tags'
 import { ModelUsage } from './types'
 
 describe('Model Provider', () => {
+    const freeUserAuthStatus: AuthStatus = {
+        ...defaultAuthStatus,
+        authenticated: true,
+        isDotCom: true,
+        userCanUpgrade: true,
+    }
+
+    const codyProAuthStatus: AuthStatus = {
+        ...freeUserAuthStatus,
+        userCanUpgrade: false,
+    }
+
+    const enterpriseAuthStatus: AuthStatus = {
+        ...defaultAuthStatus,
+        authenticated: true,
+        isDotCom: false,
+    }
+
     // Reset service
     beforeEach(() => {
         ModelsService.reset()
@@ -85,12 +104,6 @@ describe('Model Provider', () => {
     })
 
     describe('default models', () => {
-        const codyProAuthStatus: AuthStatus = {
-            ...defaultAuthStatus,
-            authenticated: true,
-            isDotCom: true,
-            userCanUpgrade: false,
-        }
         const model1chat = new Model({
             model: 'model-1',
             usage: [ModelUsage.Chat],
@@ -134,6 +147,57 @@ describe('Model Provider', () => {
             expect(async () =>
                 ModelsService.setDefaultModel(ModelUsage.Edit, model1chat)
             ).rejects.toThrow('Model "model-1" is not compatible with usage type "edit"')
+        })
+    })
+
+    describe('canUserUseModel', () => {
+        const enterpriseModel = new Model({
+            model: 'enterprise-model',
+            usage: [ModelUsage.Chat],
+            tags: [ModelTag.Enterprise],
+        })
+        const proModel = new Model({
+            model: 'pro-model',
+            usage: [ModelUsage.Chat],
+            tags: [ModelTag.Pro],
+        })
+        const freeModel = new Model({
+            model: 'free-model',
+            usage: [ModelUsage.Chat],
+            // We don't include ModelTag.Free here to test that it's not required.
+            tags: [],
+        })
+
+        beforeEach(() => {
+            ModelsService.setModels([enterpriseModel, proModel, freeModel])
+        })
+
+        it('returns false for unknown model', () => {
+            expect(ModelsService.canUserUseModel(codyProAuthStatus, 'unknown-model')).toBe(false)
+        })
+
+        it('allows enterprise user to use any model', () => {
+            expect(ModelsService.canUserUseModel(enterpriseAuthStatus, enterpriseModel)).toBe(true)
+            expect(ModelsService.canUserUseModel(enterpriseAuthStatus, proModel)).toBe(true)
+            expect(ModelsService.canUserUseModel(enterpriseAuthStatus, freeModel)).toBe(true)
+        })
+
+        it('allows Cody Pro user to use Pro and Free models', () => {
+            expect(ModelsService.canUserUseModel(codyProAuthStatus, enterpriseModel)).toBe(false)
+            expect(ModelsService.canUserUseModel(codyProAuthStatus, proModel)).toBe(true)
+            expect(ModelsService.canUserUseModel(codyProAuthStatus, freeModel)).toBe(true)
+        })
+
+        it('allows free user to use only Free models', () => {
+            expect(ModelsService.canUserUseModel(freeUserAuthStatus, enterpriseModel)).toBe(false)
+            expect(ModelsService.canUserUseModel(freeUserAuthStatus, proModel)).toBe(false)
+            expect(ModelsService.canUserUseModel(freeUserAuthStatus, freeModel)).toBe(true)
+        })
+
+        it('handles model passed as string', () => {
+            expect(ModelsService.canUserUseModel(freeUserAuthStatus, freeModel.model)).toBe(true)
+            expect(ModelsService.canUserUseModel(freeUserAuthStatus, proModel.model)).toBe(false)
+            expect(ModelsService.canUserUseModel(codyProAuthStatus, proModel.model)).toBe(true)
         })
     })
 })
