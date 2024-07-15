@@ -619,6 +619,20 @@ html[data-ide='JetBrains'] :matches(img, video) {
     max-height: 100%;
 }
 
+html[data-ide='JetBrains'] pre::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+    background-color: transparent;
+}
+
+html[data-ide='JetBrains'] pre::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 100px;
+    border: 3px solid var(--jetbrains-Desktop-background);
+}
+
+
+
 html[data-ide='JetBrains'] :matches(a, a code) {
     color: var(--vscode-textLink-foreground);
 }
