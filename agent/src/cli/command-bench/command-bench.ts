@@ -506,5 +506,5 @@ async function indexContextSourcesDir(options: CodyBenchOptions): Promise<void> 
         await sleep(sleepTime)
     }
 
-    throw new Error('Symf index not ready after 10 min, exiting')
+    throw new Error(`Symf index not ready after ${maxWaitTime / 60 / 1000} min, exiting`)
 }
