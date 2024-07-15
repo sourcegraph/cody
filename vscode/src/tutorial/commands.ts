@@ -89,7 +89,7 @@ export const registerChatTutorialCommand = (onComplete: () => void): vscode.Disp
             telemetryRecorder.recordEvent('cody.interactiveTutorial', 'chat', {
                 privateMetadata: { source },
             })
-            await vscode.commands.executeCommand('cody.chat.panel.new')
+            await vscode.commands.executeCommand('cody.chat.newEditorPanel')
             onComplete()
         }
     )

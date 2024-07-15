@@ -55,8 +55,17 @@ if (isDryRun) {
     process.exit(0)
 }
 
+const ReleaseChecklistTemplate = `VS Code: Release v${nextVersion}
+
+Release Checklist:
+
+    - [x] [vscode/CHANGELOG.md](./CHANGELOG.md)
+    - [x] [vscode/package.json](./package.json)
+    - [ ] Link to PR for the release blog post
+`
+
 // Commit and push
-const gitCommit = `git add . && git commit -m "VS Code: Release v${nextVersion}" && git push -u origin HEAD`
+const gitCommit = `git add . && git commit -m "${ReleaseChecklistTemplate}" && git push -u origin HEAD`
 execSync(gitCommit, { stdio: 'inherit' })
 process.stdout.write(`${releaseType} release job is done!`)
 

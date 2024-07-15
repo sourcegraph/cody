@@ -1,14 +1,19 @@
 import type * as vscode from 'vscode'
 
 import type { DocumentContext } from '@sourcegraph/cody-shared'
-import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import type { AutocompleteItem } from './suggested-autocomplete-items-cache'
+
+interface CompletionPositions {
+    invokedPosition: vscode.Position
+    latestPosition: vscode.Position
+}
 
 export function isCompletionVisible(
-    completion: InlineCompletionItemWithAnalytics,
+    completion: AutocompleteItem,
     document: vscode.TextDocument,
-    position: vscode.Position,
+    positions: CompletionPositions,
     docContext: DocumentContext,
-    context: vscode.InlineCompletionContext,
+    context: vscode.InlineCompletionContext | undefined,
     completeSuggestWidgetSelection: boolean,
     abortSignal: AbortSignal | undefined
 ): boolean {
@@ -37,7 +42,8 @@ export function isCompletionVisible(
         ? true
         : completionMatchesPopupItem(completion, document, context)
     const isMatchingSuffix = completionMatchesSuffix(completion, docContext.currentLineSuffix)
-    const isVisible = !isAborted && isMatchingPopupItem && isMatchingSuffix
+    const isMatchingPrefix = completionMatchesPrefix(completion, document, positions)
+    const isVisible = !isAborted && isMatchingPopupItem && isMatchingSuffix && isMatchingPrefix
 
     return isVisible
 }
@@ -47,11 +53,11 @@ export function isCompletionVisible(
 //
 // VS Code won't show a completion if it won't.
 function completionMatchesPopupItem(
-    completion: InlineCompletionItemWithAnalytics,
+    completion: AutocompleteItem,
     document: vscode.TextDocument,
-    context: vscode.InlineCompletionContext
+    context?: vscode.InlineCompletionContext
 ): boolean {
-    if (context.selectedCompletionInfo) {
+    if (context?.selectedCompletionInfo) {
         const currentText = document.getText(context.selectedCompletionInfo.range)
         const selectedText = context.selectedCompletionInfo.text
 
@@ -68,7 +74,7 @@ function completionMatchesPopupItem(
 }
 
 function completionMatchesSuffix(
-    completion: Pick<InlineCompletionItemWithAnalytics, 'insertText'>,
+    completion: Pick<AutocompleteItem, 'insertText'>,
     currentLineSuffix: string
 ): boolean {
     if (typeof completion.insertText !== 'string') {
@@ -87,4 +93,24 @@ function completionMatchesSuffix(
     }
 
     return false
+}
+
+/**
+ * Check that the full completion matches that _latest_ line prefix
+ * using the users' current position.
+ */
+function completionMatchesPrefix(
+    completion: Pick<AutocompleteItem, 'insertText'>,
+    document: vscode.TextDocument,
+    positions: CompletionPositions
+): boolean {
+    // Derive the proposed completion text using the original position at the point when the request was made.
+    const intendedLine = document.lineAt(positions.invokedPosition)
+    const intendedCompletion =
+        document.getText(intendedLine.range.with({ end: positions.invokedPosition })) +
+        completion.insertText
+
+    const latestLine = document.lineAt(positions.latestPosition)
+    const latestPrefix = document.getText(latestLine.range.with({ end: positions.latestPosition }))
+    return intendedCompletion.startsWith(latestPrefix)
 }

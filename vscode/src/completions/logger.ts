@@ -16,7 +16,7 @@ import { captureException, shouldErrorBeReported } from '../services/sentry/sent
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
-import type { Span } from '@opentelemetry/api'
+import { type Span, trace } from '@opentelemetry/api'
 import { PersistenceTracker } from '../common/persistence-tracker'
 import type {
     PersistencePresentEventPayload,
@@ -24,12 +24,20 @@ import type {
 } from '../common/persistence-tracker/types'
 import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
 import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
+import {
+    AUTOCOMPLETE_STAGE_COUNTER_INITIAL_STATE,
+    type AutocompletePipelineCountedStage,
+    autocompleteStageCounterLogger,
+} from '../services/autocomplete-stage-counter-logger'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
 import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import type { RequestParams } from './request-manager'
 import * as statistics from './statistics'
-import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import type {
+    InlineCompletionItemWithAnalytics,
+    InlineCompletionResponseHeaders,
+} from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
 import type { InlineCompletionItem } from './types'
 
@@ -120,6 +128,16 @@ interface SharedEventPayload extends InteractionIDPayload {
      */
     resolvedModel?: string
 
+    /**
+     * A subset of HTTP response headers returned by the completion provider.
+     */
+    responseHeaders?: InlineCompletionResponseHeaders
+
+    /**
+     * Duration in ms for events that are part of the autocomplete generation pipeline.
+     */
+    stageTimings: Partial<Record<AutocompletePipelineStage, number>>
+
     /** Language of the document being completed. */
     languageId: string
 
@@ -137,6 +155,11 @@ interface SharedEventPayload extends InteractionIDPayload {
      * from a cache).
      */
     source?: InlineCompletionsResultSource
+
+    /**
+     * True if a completion was fuzzy-matched by the request manager cache.
+     */
+    isFuzzyMatch?: boolean
 
     /** Eventual artificial delay that was used to throttle unwanted completions. */
     artificialDelay?: number
@@ -534,15 +557,29 @@ export function networkRequestStarted(
     }
 }
 
-export function loaded(
-    id: CompletionLogID,
-    params: RequestParams,
-    items: InlineCompletionItemWithAnalytics[],
-    source: InlineCompletionsResultSource,
-    isDotComUser: boolean,
-    inlineContextParams: InlineContextItemsParams | undefined = undefined
-): void {
-    const event = activeSuggestionRequests.get(id)
+interface LoadedParams {
+    logId: CompletionLogID
+    requestParams: RequestParams
+    completions: InlineCompletionItemWithAnalytics[]
+    source: InlineCompletionsResultSource
+    isDotComUser: boolean
+    isFuzzyMatch: boolean
+    inlineContextParams?: InlineContextItemsParams
+}
+
+export function loaded(params: LoadedParams): void {
+    const {
+        logId,
+        requestParams,
+        completions,
+        source,
+        isDotComUser,
+        isFuzzyMatch,
+        inlineContextParams = undefined,
+    } = params
+
+    const event = activeSuggestionRequests.get(logId)
+
     if (!event) {
         return
     }
@@ -551,23 +588,28 @@ export function loaded(
 
     // Check if we already have a completion id for the loaded completion item
     const recentCompletionKey =
-        items.length > 0 ? getRecentCompletionsKey(params, items[0].insertText) : ''
+        completions.length > 0 ? getRecentCompletionsKey(requestParams, completions[0].insertText) : ''
 
     const completionAnalyticsId =
         recentCompletions.get(recentCompletionKey) ?? (uuid.v4() as CompletionAnalyticsID)
 
     recentCompletions.set(recentCompletionKey, completionAnalyticsId)
     event.params.id = completionAnalyticsId
+    event.params.isFuzzyMatch = isFuzzyMatch
 
     if (!event.loadedAt) {
         event.loadedAt = performance.now()
     }
     if (event.items.length === 0) {
-        event.items = items.map(item => completionItemToItemInfo(item, isDotComUser))
+        event.items = completions.map(item => completionItemToItemInfo(item, isDotComUser))
     }
 
-    if (!event.params.resolvedModel && items[0]?.resolvedModel) {
-        event.params.resolvedModel = items[0]?.resolvedModel
+    if (!event.params.resolvedModel && completions[0]?.resolvedModel) {
+        event.params.resolvedModel = completions[0]?.resolvedModel
+    }
+
+    if (!event.params.responseHeaders && completions[0]?.responseHeaders) {
+        event.params.responseHeaders = completions[0]?.responseHeaders
     }
 
     // 🚨 SECURITY: included only for DotCom users & Public github Repos.
@@ -591,10 +633,10 @@ export function loaded(
             gitUrl: inlineContextParams.gitUrl,
             commit: inlineContextParams.commit,
             filePath: inlineContextParams.filePath,
-            prefix: params.docContext.prefix,
-            suffix: params.docContext.suffix,
-            triggerLine: params.position.line,
-            triggerCharacter: params.position.character,
+            prefix: requestParams.docContext.prefix,
+            suffix: requestParams.docContext.suffix,
+            triggerLine: requestParams.position.line,
+            triggerCharacter: requestParams.position.character,
             context: inlineContextParams.context.map(snippet => ({
                 content: snippet.content,
                 startLine: snippet.startLine,
@@ -999,4 +1041,44 @@ const otherCompletionProviders = [
 ]
 function getOtherCompletionProvider(): string[] {
     return otherCompletionProviders.filter(id => vscode.extensions.getExtension(id)?.isActive)
+}
+
+type AutocompletePipelineStage =
+    | AutocompletePipelineCountedStage
+    | 'preClientConfigCheck'
+    | 'preContentPopupCheck'
+    | 'preDocContext'
+    | 'preCompletionIntent'
+    | 'preGetInlineCompletions'
+
+export class AutocompleteStageRecorder {
+    private createdAt = performance.now()
+    private logId?: CompletionLogID
+
+    public stageTimings = {} as Record<string, number>
+
+    public setLogId(logId: CompletionLogID): void {
+        this.logId = logId
+    }
+
+    public record(eventName: AutocompletePipelineStage): void {
+        // Record event for OpenTelemetry traces.
+        trace.getActiveSpan()?.addEvent(eventName)
+
+        // Record event timing to later assign it to the analytics event.
+        this.stageTimings[eventName] = performance.now() - this.createdAt
+
+        if (this.logId) {
+            const event = activeSuggestionRequests.get(this.logId)
+
+            if (event) {
+                event.params.stageTimings = this.stageTimings
+            }
+        }
+
+        // Count event in the autocomplete stage counter if it's a counted stage.
+        if (eventName in AUTOCOMPLETE_STAGE_COUNTER_INITIAL_STATE) {
+            autocompleteStageCounterLogger.record(eventName as AutocompletePipelineCountedStage)
+        }
+    }
 }

@@ -14,7 +14,6 @@ import type { CompletionIntent } from '../tree-sitter/query-sdk'
 import { isValidTestFile } from '../commands/utils/test-commands'
 import { gitMetadataForCurrentEditor } from '../repository/git-metadata-for-editor'
 import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
-import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-counter-logger'
 import type { ContextMixer } from './context/context-mixer'
 import { getCompletionProvider } from './get-completion-provider'
 import { insertIntoDocContext } from './get-current-doc-context'
@@ -46,6 +45,7 @@ export interface InlineCompletionsParams {
     requestManager: RequestManager
     contextMixer: ContextMixer
     smartThrottleService: SmartThrottleService | null
+    stageRecorder: CompletionLogger.AutocompleteStageRecorder
 
     // UI state
     isDotComUser: boolean
@@ -105,6 +105,12 @@ export interface InlineCompletionsResult {
 
     /** The completions. */
     items: InlineCompletionItemWithAnalytics[]
+
+    /**
+     * If the request has become stale.
+     * This will be the case if it is left in-flight but superseded by a newer request.
+     */
+    stale?: boolean
 }
 
 /**
@@ -206,6 +212,7 @@ async function doGetInlineCompletions(
         completionIntent,
         lastAcceptedCompletionItem,
         isDotComUser,
+        stageRecorder,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
@@ -266,7 +273,7 @@ async function doGetInlineCompletions(
         }
     }
 
-    autocompleteStageCounterLogger.record('preLastCandidate')
+    stageRecorder.record('preLastCandidate')
 
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
     // ghost text in the editor), and reuse it if it is still valid.
@@ -302,7 +309,9 @@ async function doGetInlineCompletions(
         completionIntent,
         artificialDelay,
         traceId: getActiveTraceAndSpanId()?.traceId,
+        stageTimings: stageRecorder.stageTimings,
     })
+    stageRecorder.setLogId(logId)
 
     let requestParams: RequestParams = {
         document,
@@ -312,16 +321,23 @@ async function doGetInlineCompletions(
         abortSignal,
     }
 
-    autocompleteStageCounterLogger.record('preCache')
+    stageRecorder.record('preCache')
     const cachedResult = requestManager.checkCache({
         requestParams,
         isCacheEnabled: triggerKind !== TriggerKind.Manual,
     })
     if (cachedResult) {
-        const { completions, source } = cachedResult
+        const { completions, source, isFuzzyMatch } = cachedResult
 
         CompletionLogger.start(logId)
-        CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser)
+        CompletionLogger.loaded({
+            logId,
+            requestParams,
+            completions,
+            source,
+            isFuzzyMatch,
+            isDotComUser,
+        })
 
         return {
             logId,
@@ -330,14 +346,27 @@ async function doGetInlineCompletions(
         }
     }
 
+    /**
+     * A request becomes stale if it is left in-flight but superseded by another request.
+     * This only applies to the smart throttle.
+     */
+    let stale: boolean | undefined
+    const markRequestAsStale = () => {
+        stale = true
+    }
+
     if (smartThrottleService) {
         // For the smart throttle to work correctly and preserve tail requests, we need full control
         // over the cancellation logic for each request.
         // Therefore we must stop listening for cancellation events originating from VS Code.
         cancellationListener?.dispose()
 
-        autocompleteStageCounterLogger.record('preSmartThrottle')
-        const throttledRequest = await smartThrottleService.throttle(requestParams, triggerKind)
+        stageRecorder.record('preSmartThrottle')
+        const throttledRequest = await smartThrottleService.throttle(
+            requestParams,
+            triggerKind,
+            markRequestAsStale
+        )
         if (throttledRequest === null) {
             return null
         }
@@ -345,7 +374,7 @@ async function doGetInlineCompletions(
         requestParams = throttledRequest
     }
 
-    autocompleteStageCounterLogger.record('preDebounce')
+    stageRecorder.record('preDebounce')
     const debounceTime = smartThrottleService
         ? 0
         : triggerKind !== TriggerKind.Automatic
@@ -367,7 +396,7 @@ async function doGetInlineCompletions(
 
     setIsLoading?.(true)
     CompletionLogger.start(logId)
-    autocompleteStageCounterLogger.record('preContextRetrieval')
+    stageRecorder.record('preContextRetrieval')
 
     // Fetch context and apply remaining debounce time
     const [contextResult] = await Promise.all([
@@ -392,6 +421,13 @@ async function doGetInlineCompletions(
 
     tracer?.({ context: contextResult })
 
+    let gitContext = undefined
+    if (gitIdentifiersForFile?.gitUrl) {
+        gitContext = {
+            repoName: gitIdentifiersForFile.gitUrl,
+        }
+    }
+
     const completionProvider = getCompletionProvider({
         document,
         position,
@@ -400,6 +436,7 @@ async function doGetInlineCompletions(
         docContext,
         firstCompletionTimeout,
         completionLogId: logId,
+        gitContext,
     })
 
     tracer?.({
@@ -412,7 +449,7 @@ async function doGetInlineCompletions(
     })
 
     CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
-    autocompleteStageCounterLogger.record('preNetworkRequest')
+    stageRecorder.record('preNetworkRequest')
 
     // Get the processed completions from providers
     const { completions, source } = await requestManager.request({
@@ -429,12 +466,21 @@ async function doGetInlineCompletions(
         gitUrl: gitIdentifiersForFile?.gitUrl,
         commit: gitIdentifiersForFile?.commit,
     }
-    CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser, inlineContextParams)
+    CompletionLogger.loaded({
+        logId,
+        requestParams,
+        completions,
+        source,
+        isDotComUser,
+        inlineContextParams,
+        isFuzzyMatch: false,
+    })
 
     return {
         logId,
         items: completions,
         source,
+        stale,
     }
 }
 

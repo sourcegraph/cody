@@ -4,6 +4,7 @@ import {
     type AutocompleteContextSnippet,
     type CompletionParameters,
     type DocumentContext,
+    type GitContext,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
@@ -81,6 +82,11 @@ export interface ProviderOptions {
 
     // feature flags
     hotStreak?: boolean
+
+    /**
+     * Git related context information. Currently only supports a repo name, which is used by various FIM models in prompt.
+     */
+    gitContext?: GitContext
 }
 
 export abstract class Provider {

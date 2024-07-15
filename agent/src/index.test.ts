@@ -144,7 +144,7 @@ describe('Agent', () => {
             await client.openFile(sumUri)
             const completions = await client.request('autocomplete/execute', {
                 uri: sumUri.toString(),
-                position: { line: 1, character: 3 },
+                position: { line: 1, character: 4 },
                 triggerKind: 'Invoke',
             })
             const texts = completions.items.map(item => item.insertText)
@@ -152,7 +152,7 @@ describe('Agent', () => {
             expect(texts).toMatchInlineSnapshot(
                 `
               [
-                "   return a + b",
+                "    return a + b;",
               ]
             `
             )
@@ -165,7 +165,7 @@ describe('Agent', () => {
             await client.openFile(bubbleUri)
             const completions = await client.request('autocomplete/execute', {
                 uri: bubbleUri.toString(),
-                position: { line: 1, character: 3 },
+                position: { line: 1, character: 4 },
                 triggerKind: 'Invoke',
             })
             const texts = completions.items.map(item => item.insertText)
@@ -173,10 +173,10 @@ describe('Agent', () => {
             expect(texts).toMatchInlineSnapshot(
                 `
               [
-                "   for (let i = 0; i < nums.length; i++) {
-                      for (let j = 0; j < nums.length - i - 1; j++) {
+                "    for (let i = 0; i < nums.length; i++) {
+                      for (let j = 0; j < nums.length - 1; j++) {
                           if (nums[j] > nums[j + 1]) {
-                              [nums[j], nums[j + 1]] = [nums[j + 1], nums[j]];
+                              [nums[j], nums[j + 1]] = [nums[j + 1], nums[j]]
                           }
                       }
                   }",
@@ -211,9 +211,9 @@ describe('Agent', () => {
             expect(lastMessage).toMatchInlineSnapshot(
                 `
               {
-                "model": "anthropic/claude-3-sonnet-20240229",
+                "model": "anthropic/claude-3-5-sonnet-20240620",
                 "speaker": "assistant",
-                "text": "Hello! I'm Claude, an AI assistant created by Anthropic. It's nice to meet you. How can I help you today?",
+                "text": "Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with coding today? Whether you need help with a specific programming language, debugging, code optimization, or any other coding-related task, I'm here to assist you. What would you like to work on?",
               }
             `
             )
@@ -226,31 +226,40 @@ describe('Agent', () => {
             const trimmedMessage = trimEndOfLine(lastMessage?.text ?? '')
             expect(trimmedMessage).toMatchInlineSnapshot(
                 `
-              "Certainly! Here's a simple "Hello World" program in Java:
+              "Certainly! Here's a simple "Hello, World!" function in Java:
 
               \`\`\`java
               public class HelloWorld {
                   public static void main(String[] args) {
+                      sayHello();
+                  }
+
+                  public static void sayHello() {
                       System.out.println("Hello, World!");
                   }
               }
               \`\`\`
 
-              To explain the code:
+              This Java code does the following:
 
-              1. \`public class HelloWorld {\`: This line declares a new public class named \`HelloWorld\`. In Java, all code must be inside a class.
+              1. We define a class called \`HelloWorld\`.
+              2. Inside the class, we have the \`main\` method, which is the entry point of any Java program.
+              3. We create a separate method called \`sayHello()\` that prints "Hello, World!" to the console.
+              4. In the \`main\` method, we call the \`sayHello()\` function.
 
-              2. \`public static void main(String[] args) {\`: This line declares the \`main\` method, which is the entry point of a Java program. The \`public\` keyword makes the method accessible from outside the class, \`static\` allows the method to be called without creating an instance of the class, and \`void\` means the method doesn't return any value. The \`String[] args\` is an array that can hold command-line arguments passed to the program.
+              When you run this program, it will output:
 
-              3. \`System.out.println("Hello, World!");\`: This line prints the string \`"Hello, World!"\` to the console using the \`println\` method of the \`System.out\` object.
+              \`\`\`
+              Hello, World!
+              \`\`\`
 
-              4. \`}\`: This closing curly brace marks the end of the \`main\` method.
+              To run this program:
 
-              5. \`}\`: This closing curly brace marks the end of the \`HelloWorld\` class.
+              1. Save the code in a file named \`HelloWorld.java\`
+              2. Compile it using the command: \`javac HelloWorld.java\`
+              3. Run it using the command: \`java HelloWorld\`
 
-              To run this program, you need to save it in a file with a \`.java\` extension (e.g., \`HelloWorld.java\`), compile it using the Java compiler (\`javac HelloWorld.java\`), and then run the compiled bytecode using the Java Virtual Machine (\`java HelloWorld\`).
-
-              When you run the program, it will output \`Hello, World!\` to the console."
+              This will execute the program and display the "Hello, World!" message on the console."
             `,
                 explainPollyError
             )
@@ -294,7 +303,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"You said your name is Lars Monsen."`,
+                `"Your name is Lars Monsen, as you just told me."`,
                 explainPollyError
             )
         }, 30_000)
@@ -332,7 +341,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"I'm afraid I don't have complete information about the specifics of what type of model I am. As an AI system created by Anthropic, there are details about my architecture and training process that are not fully known to me. What I can say is that I am a large language model that has been further trained using reinforcement learning to be a capable coding assistant. But I don't have transparency into whether I'm based on GPT-3, PaLM, or another base model. I hope you can understand that there are aspects of my internals that are uncertain or unknown to me as the AI. Please let me know if you have any other questions!"`,
+                `"I am Cody, an AI coding assistant created by Sourcegraph. I don't have specific information about my underlying model or architecture. Is there a particular coding task or question I can help you with?"`,
                 explainPollyError
             )
         }, 30_000)
@@ -399,8 +408,10 @@ describe('Agent', () => {
             // is not a git directory and symf reports some git-related error.
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "\`\`\`typescript
-              class Dog implements Animal {
+              "Certainly! Here's a Dog class that implements the Animal interface:
+
+              \`\`\`typescript
+              export class Dog implements Animal {
                   name: string;
                   isMammal: boolean = true;
 
@@ -412,7 +423,9 @@ describe('Agent', () => {
                       return "Woof!";
                   }
               }
-              \`\`\`"
+              \`\`\`
+
+              This class fully implements the Animal interface as defined in your workspace."
             `,
                 explainPollyError
             )
@@ -703,23 +716,17 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "The code snippet \`src/animal.ts:1-6\` defines an interface named \`Animal\` in TypeScript. An interface is a way to define a contract or shape for an object. It specifies what properties and methods an object should have, but it does not provide any implementation details.
+              "Sure, I'd be happy to explain.
 
-              The \`Animal\` interface has three properties:
+              The code you've shared is an interface called "Animal" from a TypeScript file called "animal.ts". An interface is like a blueprint for objects that defines what properties and methods an object should have. In this case, the Animal interface defines an object with three properties: "name", "makeAnimalSound", and "isMammal".
 
-              1. \`name\`: This property is a string that likely represents the name of the animal.
-              2. \`makeAnimalSound()\`: This is a method that returns a string. It is expected to return the sound that the animal makes when called.
-              3. \`isMammal\`: This is a boolean property that indicates whether the animal is a mammal or not.
+              1. The purpose of the code is to define the structure of an object that represents a generic animal in a program. The Animal interface specifies that any object that claims to be an animal should have a name, a method for making an animal sound, and a boolean property that indicates if the animal is a mammal.
+              2. The interface doesn't take any inputs, as it only defines a structure. The inputs and outputs are defined by the objects that will implement this interface.
+              3. Again, the interface itself doesn't produce any outputs, but it enables the creation of objects that have a specific structure, which is useful for defining and enforcing consistency and expectations in your code.
+              4. The interface achieves its purpose by specifying the Required properties and methods that an object needs to have. The code states that the Animal interface must have a "name" property of type string, a "makeAnimalSound" method that returns a string, and an "isMammal" property of type boolean.
+              5. The important logic flows or data transformations in this code are the definitions of the "makeAnimalSound" method and the "isMammal" property. These are not defined in the code you shared, but they are required to be implemented by whatever object uses this Animal interface. The "makeAnimalSound" method is expected to produce a sound that an animal makes, and the "isMammal" property is expected to be a boolean value that indicates whether the animal is a mammal. By requiring the implementation of these methods and properties, the Animal interface enables the creation of consistent, predictable animal objects in your code.
 
-              The purpose of this code is to serve as a blueprint or a contract for any object that represents an animal in the application. It defines the required properties and methods that an animal object should have.
-
-              This interface does not take any inputs directly. Instead, it serves as a guideline for creating objects that conform to the \`Animal\` interface. When creating an object that represents an animal, the object must have a \`name\` property (a string), a \`makeAnimalSound()\` method (which returns a string), and an \`isMammal\` property (a boolean).
-
-              The interface itself does not produce any output. It is a contract that other parts of the code can use to ensure that objects representing animals have the required properties and methods.
-
-              The purpose of the \`Animal\` interface is achieved by defining the shape of an animal object. Any object that conforms to this interface will have the specified properties and methods, making it easier to work with animals consistently throughout the codebase.
-
-              It's important to note that this code snippet alone does not contain any logic or algorithms. It merely defines the structure of an animal object, which can be used later in the application to create instances of animals and interact with them."
+              In summary, the Animal interface is a blueprint for animal objects that defines what properties and methods they should have, ensuring consistency and predictability. It doesn't take any inputs or produce any outputs, but it enables the creation of objects that have a specific structure."
             `,
                 explainPollyError
             )
@@ -734,73 +741,70 @@ describe('Agent', () => {
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                     `
-                  "Based on the provided code context, the test framework being used is Vitest. No new imports are needed - I will be using the existing Vitest imports.
+                  "Based on the code context and configurations provided in the examples, it appears that the Vitest testing framework is being used.
 
-                  The \`Animal\` interface represents an animal with properties like \`name\` (string), \`makeAnimalSound\` (function that returns a string), and \`isMammal\` (boolean).
+                  For the \`Animal\` interface that has been shared, I will generate some tests to validate the required functionality.
 
-                  To test this interface, I will create an implementation of the \`Animal\` interface and write unit tests to validate its behavior.
+                  To write the tests, I will import \`describe\`, \`test\`, and \`expect\` from the Vitest framework, along with the \`Animal\` interface from the file at \`src/animal.ts\`.
 
-                  Here's a suite of unit tests for the \`Animal\` interface:
-
+                  Here is a suite of tests that I recommend adding to the project to ensure the correct functionality of the \`Animal\` interface:
                   \`\`\`typescript
-                  import { describe, it, expect } from 'vitest'
+                  import { describe, test, expect } from 'vitest'
+                  import { Animal } from '../animal'
 
-                  // Implementation of the Animal interface
-                  class Dog implements Animal {
-                    name: string
-                    isMammal: boolean
+                  describe('Animal interface', () => {
+                      test('has a name property that is a string', () => {
+                          const animal: Animal = {
+                              name: 'Dog',
+                              makeAnimalSound: () => 'Bark',
+                              isMammal: true
+                          }
 
-                    constructor(name: string) {
-                      this.name = name
-                      this.isMammal = true
-                    }
-
-                    makeAnimalSound(): string {
-                      return 'Woof!'
-                    }
-                  }
-
-                  describe('Animal', () => {
-                    describe('Dog', () => {
-                      const dog = new Dog('Buddy')
-
-                      it('should have a name', () => {
-                        expect(dog.name).toBe('Buddy')
+                          expect(animal.name).toBeTypeOf('string')
                       })
 
-                      it('should be a mammal', () => {
-                        expect(dog.isMammal).toBe(true)
+                      test('has a makeAnimalSound function that returns a string', () => {
+                          const animal: Animal = {
+                              name: 'Dog',
+                              makeAnimalSound: () => 'Bark',
+                              isMammal: true
+                          }
+
+                          expect(animal.makeAnimalSound()).toBeTypeOf('string')
                       })
 
-                      it('should make a sound', () => {
-                        expect(dog.makeAnimalSound()).toBe('Woof!')
-                      })
-                    })
+                      test('has a boolean property isMammal', () => {
+                          const animal: Animal = {
+                              name: 'Dog',
+                              makeAnimalSound: () => 'Bark',
+                              isMammal: true
+                          }
 
-                    describe('Edge cases', () => {
-                      it('should handle empty name', () => {
-                        const dog = new Dog('')
-                        expect(dog.name).toBe('')
+                          expect(animal.isMammal).toBeTypeOf('boolean')
                       })
 
-                      it('should handle non-mammal animal', () => {
-                        const bird = { name: 'Tweety', makeAnimalSound: () => 'Chirp!', isMammal: false }
-                        expect(bird.isMammal).toBe(false)
-                        expect(bird.makeAnimalSound()).toBe('Chirp!')
+                      test('throws an error when the makeAnimalSound function is not defined', () => {
+                          const animal: Animal = {
+                              name: 'Dog',
+                              isMammal: true
+                          }
+
+                          expect(() => animal.makeAnimalSound()).toThrowError()
                       })
-                    })
+
+                      test('throws an error when the name property is not defined', () => {
+                          const animal: Animal = {
+                              makeAnimalSound: () => 'Bark',
+                              isMammal: true
+                          }
+
+                          expect(() => (animal as { name: string })).toThrowError()
+                      })
                   })
                   \`\`\`
+                  This test suite covers the primary functionality of the \`Animal\` interface and checks that the required \`name\` and \`isMammal\` properties are defined and that the \`makeAnimalSound\` function returns a string.
 
-                  This test suite covers the following:
-
-                  1. Validating the \`name\` property of the \`Animal\` implementation.
-                  2. Validating the \`isMammal\` property of the \`Animal\` implementation.
-                  3. Validating the \`makeAnimalSound\` method of the \`Animal\` implementation.
-                  4. Edge case: handling an empty name for the \`Animal\` implementation.
-                  5. Edge case: handling a non-mammal \`Animal\` implementation.
-
-                  The tests ensure that the \`Animal\` interface implementation behaves as expected and covers edge cases like empty names and non-mammal animals."
+                  I hope this helps!"
                 `,
                     explainPollyError
                 )
@@ -815,29 +819,36 @@ describe('Agent', () => {
 
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "Based on the provided code snippet, here are a few suggestions for potential improvements:
+              "Based on the examination of your TypeScript code at \`src/animal.ts:1-6\`, I found some potential improvements:
 
-              1. **Use descriptive interface name**: The interface name \`Animal\` is quite generic and may not provide enough context or clarity, especially in larger codebases. Consider using a more descriptive name that better represents the purpose or domain of the interface, such as \`AnimalEntity\` or \`AnimalModel\`.
+              1. Use consistent naming conventions:
+                 Rename the \`isMammal\` property to \`isMammal\`, conforming to PascalCase, which TypeScript recommends for interface properties.
 
-                 Potential benefit: A more descriptive name can improve code readability and make it easier to understand the intent and usage of the interface.
+                 Benefit: Improves readability and consistency in the codebase.
 
-              2. **Consider adding documentation**: While the code itself is relatively straightforward, adding documentation in the form of comments or utilizing TypeScript's built-in documentation support (e.g., JSDoc) can enhance code maintainability and make it easier for other developers to understand the purpose and expected behavior of the interface.
+              2. Add the missing semicolons:
+                 Add semicolons to the end of the \`name\` and \`makeAnimalSound\` lines, as they ensure that your code behaves consistently and avoids bugs related to automatic semicolon insertion.
 
-                 Potential benefit: Well-documented code is easier to maintain, understand, and extend, especially in collaborative environments or when revisiting the codebase after some time.
+                 Benefit: Ensures predictability and robustness in code execution.
 
-              3. **Implement a base class or interface for common properties**: If there are other interfaces or classes related to animals or living beings in your codebase, it might be worth considering implementing a base class or interface to share common properties and methods. This can help reduce code duplication and promote code reusability.
+              3. Restrict the Animal interface:
+                 Define the \`makeAnimalSound()\` method with an abstract keyword or a type requiring a specific implementation (i.e., a function or a class).
 
-                 Potential benefit: By extracting common properties and methods into a shared base, you can reduce code duplication, improve maintainability, and make it easier to apply changes consistently across related types.
+                 Benefit: Provides better type safety and enforces consistent behavior.
 
-              4. **Consider using TypeScript's built-in utility types**: TypeScript provides several built-in utility types, such as \`Readonly\` and \`Required\`, which can be used to enforce immutability or ensure that all properties are required. These utility types can help catch potential bugs at compile-time and improve code correctness.
+              4. Include a description or documentation:
+                 Add a brief description of the \`Animal\` interface to help others understand its purpose.
 
-                 Potential benefit: Utilizing TypeScript's built-in utility types can enhance type safety, catch potential bugs earlier, and promote better code quality.
+                 Benefit: Improves maintainability and readability for other developers.
 
-              5. **Review the naming conventions**: While the property names \`name\` and \`isMammal\` follow common naming conventions, the method name \`makeAnimalSound\` could be more concise and descriptive. Consider renaming it to something like \`makeSound\` or \`getSound\`.
+              5. Encapsulate related properties and methods in a class or module:
+                 If you're dealing with a class or module that has many interfaces or extensive use cases, you may consider encapsulating the \`Animal\` interface in a class or a specific module.
 
-                 Potential benefit: Consistent and descriptive naming conventions can improve code readability and maintainability, making it easier for developers to understand and work with the codebase.
+                 Benefit: Enhances encapsulation and modularization, also making your code more manageable.
 
-              Overall, while the provided code snippet is relatively simple and follows some good design principles, there are opportunities for improvement, primarily in the areas of documentation, code organization, and naming conventions. By addressing these suggestions, you can enhance the code's readability, maintainability, and overall quality."
+              ---
+
+              In summary, the provided code adheres to fundamental design principles, but can be improved in specific areas for better readability, maintainability, and alignment with best practices in TypeScript. Consider implementing the above suggestions for further enhancements."
             `,
                 explainPollyError
             )
@@ -1163,7 +1174,10 @@ describe('Agent', () => {
 
             // The site config `cody.contextFilters` value on sourcegraph.sourcegraph.com instance
             // should include `sourcegraph/cody` repo for this test to pass.
-            it('autocomplete/execute (with Cody Ignore filters)', async () => {
+            // Skipped because of the API error:
+            //  Request to https://sourcegraph.sourcegraph.com/.api/completions/code?client-name=vscode&client-version=v1 failed with 406 Not Acceptable: ClientCodyIgnoreCompatibilityError: Cody for vscode version "v1" doesn't match version constraint ">= 1.20.0". Please upgrade your client.
+            // https://linear.app/sourcegraph/issue/CODY-2814/fix-and-re-enable-cody-context-filters-agent-integration-test
+            it.skip('autocomplete/execute (with Cody Ignore filters)', async () => {
                 // Documents to be used as context sources.
                 await s2EnterpriseClient.openFile(animalUri)
                 await s2EnterpriseClient.openFile(squirrelUri)

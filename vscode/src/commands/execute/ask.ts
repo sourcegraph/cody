@@ -1,11 +1,11 @@
 import {
-    ConfigFeaturesSingleton,
+    ClientConfigSingleton,
     type DefaultChatCommands,
     type EventSource,
     type PromptString,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import type { ChatSession } from '../../chat/chat-view/SimpleChatPanelProvider'
+import type { ChatSession } from '../../chat/chat-view/ChatController'
 import type { WebviewSubmitMessage } from '../../chat/protocol'
 import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
 import { showCodyIgnoreNotification } from '../../cody-ignore/notification'
@@ -22,9 +22,12 @@ export interface ExecuteChatArguments extends Omit<WebviewSubmitMessage, 'text' 
  * This is also called by all the default commands (e.g., explain).
  */
 export const executeChat = async (args: ExecuteChatArguments): Promise<ChatSession | undefined> => {
-    const { chat, commands } = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+    const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
     const isCommand = Boolean(args.command)
-    if ((!isCommand && !chat) || (isCommand && !commands)) {
+    if (
+        (!isCommand && !clientConfig?.chatEnabled) ||
+        (isCommand && !clientConfig?.customCommandsEnabled)
+    ) {
         void vscode.window.showErrorMessage(
             'This feature has been disabled by your Sourcegraph site admin.'
         )

@@ -23,7 +23,7 @@ import {
     createLocalEmbeddingsController,
 } from './local-context/local-embeddings'
 import { SymfRunner } from './local-context/symf'
-import { authProvider } from './services/AuthProvider'
+import { AuthProvider } from './services/AuthProvider'
 import { localStorage } from './services/LocalStorageProvider'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { getExtensionDetails } from './services/telemetry-v2'
@@ -89,7 +89,7 @@ export function activate(
 // The vscode API is not available in the post-uninstall script.
 export async function deactivate(): Promise<void> {
     const config = localStorage.getConfig() ?? (await getFullConfig())
-    const authStatus = authProvider?.getAuthStatus() ?? defaultAuthStatus
+    const authStatus = AuthProvider.instance?.getAuthStatus() ?? defaultAuthStatus
     const { anonymousUserID } = await localStorage.anonymousUserID()
     serializeConfigSnapshot({
         config,

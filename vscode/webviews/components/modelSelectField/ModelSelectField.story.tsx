@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react'
 
 import { VSCodeStandaloneComponent } from '../../storybook/VSCodeStoryDecorator'
 
-import { type Model, ModelUIGroup, ModelUsage, getDotComDefaultModels } from '@sourcegraph/cody-shared'
+import { type Model, ModelUsage, getDotComDefaultModels } from '@sourcegraph/cody-shared'
+import { ModelTag } from '@sourcegraph/cody-shared/src/models/tags'
 import { useArgs } from '@storybook/preview-api'
 import { ModelSelectField } from './ModelSelectField'
 
@@ -12,12 +13,9 @@ const MODELS: Model[] = [
         title: 'Llama 3 q4_K f16',
         provider: 'Ollama',
         model: 'ollama/llama-3',
-        codyProOnly: false,
         contextWindow: { input: 100, output: 100 },
-        default: false,
-        deprecated: false,
         usage: [ModelUsage.Chat],
-        uiGroup: ModelUIGroup.Ollama,
+        tags: [ModelTag.Ollama, ModelTag.Local],
     },
 ]
 
@@ -56,6 +54,7 @@ export const FreeUser: Story = {
         userInfo: {
             isDotComUser: true,
             isCodyProUser: false,
+            isOldStyleEnterpriseUser: true,
         },
     },
 }
@@ -65,6 +64,17 @@ export const ProUser: Story = {
         userInfo: {
             isDotComUser: true,
             isCodyProUser: true,
+            isOldStyleEnterpriseUser: false,
+        },
+    },
+}
+
+export const EnterpriseUser: Story = {
+    args: {
+        userInfo: {
+            isDotComUser: false,
+            isCodyProUser: false,
+            isOldStyleEnterpriseUser: true,
         },
     },
 }

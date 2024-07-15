@@ -10,10 +10,12 @@ export {
     type ModelContextWindow,
 } from './models/types'
 export { getDotComDefaultModels } from './models/dotcom'
+export { ModelTag } from './models/tags'
 export {
     getProviderName,
     getModelInfo,
-    ModelUIGroup,
+    isCodyProModel,
+    isCustomModel,
 } from './models/utils'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
@@ -115,9 +117,6 @@ export {
     uriExtname,
     uriParseNameAndExtension,
     SUPPORTED_URI_SCHEMAS,
-    createRemoteFileURI,
-    isRemoteFileURI,
-    parseRemoteFileURI,
     type FileURI,
 } from './common/uri'
 export { NoopEditor } from './editor'
@@ -153,6 +152,7 @@ export {
     type CodeCompletionsParams,
     type SerializedCodeCompletionsParams,
     type CompletionResponseGenerator,
+    type CompletionResponseWithMetaData,
 } from './inferenceClient/misc'
 export type {
     IndexedKeywordContextFetcher,
@@ -218,7 +218,7 @@ export {
     graphqlClient,
 } from './sourcegraph-api/graphql'
 export {
-    ConfigFeaturesSingleton,
+    ClientConfigSingleton,
     addCustomUserAgent,
     customUserAgent,
     isNodeResponse,

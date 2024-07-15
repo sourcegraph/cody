@@ -60,7 +60,7 @@ const DUMMY_AUTH_STATUS: AuthStatus = {
     codyApiVersion: 0,
 }
 
-graphqlClient.onConfigurationChange({} as unknown as GraphQLAPIClientConfig)
+graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
 
 class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider {
     constructor(
@@ -187,6 +187,8 @@ describe('InlineCompletionItemProvider', () => {
               "currentLinePrefix": "const foo = ",
               "currentLineSuffix": "",
               "injectedPrefix": null,
+              "maxPrefixLength": 4300,
+              "maxSuffixLength": 716,
               "multilineTrigger": null,
               "multilineTriggerPosition": null,
               "nextNonEmptyLine": "console.log(1)",
@@ -368,6 +370,67 @@ describe('InlineCompletionItemProvider', () => {
             await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
 
             expect(spy).not.toHaveBeenCalled()
+        })
+
+        it('does not log a completion if it is marked as stale', async () => {
+            const spy = vi.spyOn(CompletionLogger, 'suggested')
+
+            const { document, position } = documentAndPosition('const foo = █', 'typescript')
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId: '1' as CompletionLogID,
+                items: [{ insertText: 'bar', range: new vsCodeMocks.Range(position, position) }],
+                source: InlineCompletionsResultSource.Network,
+                stale: true,
+            })
+
+            const provider = new MockableInlineCompletionItemProvider(fn)
+            await provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
+
+            expect(spy).not.toHaveBeenCalled()
+        })
+
+        it('does not log a completion if the prefix no longer matches due to a cursor change', async () => {
+            const spy = vi.spyOn(CompletionLogger, 'suggested')
+
+            const { document, position: firstPosition } = documentAndPosition(
+                'const foo = █a',
+                'typescript'
+            )
+
+            // Update the cursor position to be after the expected completion request
+            const cursorSelectionMock = vi
+                .spyOn(vsCodeMocks.window, 'activeTextEditor', 'get')
+                .mockReturnValue({
+                    selection: {
+                        active: firstPosition.with(firstPosition.line, firstPosition.character + 1),
+                    },
+                } as any)
+
+            // Mock the `getInlineCompletions` function to return a completion item that requires the original
+            // prefix to be present.
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId: '1' as CompletionLogID,
+                items: [
+                    {
+                        insertText: 'bar', // Completion: "const foo = bar"
+                        range: new vsCodeMocks.Range(firstPosition, firstPosition),
+                    },
+                ],
+                source: InlineCompletionsResultSource.Network,
+            })
+
+            // Call provideInlineCompletionItems with the `firstPosition`. This will trigger a completion request
+            // but by the time it resolves, the cursor position will have changed. Meaning the prefix is no longer
+            // valid and this completion should not be suggested.
+            new MockableInlineCompletionItemProvider(fn).provideInlineCompletionItems(
+                document,
+                firstPosition,
+                DUMMY_CONTEXT
+            )
+
+            // The completion is no longer visible due to the prefix changing before the request resolved.
+            expect(spy).toHaveBeenCalledTimes(0)
+            cursorSelectionMock.mockReset()
         })
     })
 

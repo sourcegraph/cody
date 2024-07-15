@@ -231,8 +231,8 @@ export class CodySourceControl implements vscode.Disposable {
         this.abortController = abortController
     }
 
-    public syncAuthStatus(authStatus: AuthStatus): void {
-        const models = ModelsService.getModels(ModelUsage.Chat, !authStatus.userCanUpgrade)
+    public setAuthStatus(authStatus: AuthStatus): void {
+        const models = ModelsService.getModels(ModelUsage.Chat, authStatus)
         const preferredModel = models?.find(p => p.model.includes('claude-3-haiku'))
         this.model = preferredModel ?? models[0]
     }

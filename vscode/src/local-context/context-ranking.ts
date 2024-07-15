@@ -295,10 +295,7 @@ export class ContextRankingController implements ContextRanker {
         numResults: number
     ): Promise<ContextItem[]> {
         return wrapInActiveSpan('chat.context.model-specific-embeddings.local', async () => {
-            logDebug(
-                'SimpleChatPanelProvider',
-                'getEnhancedContext > searching model specific embeddings'
-            )
+            logDebug('ChatController', 'getEnhancedContext > searching model specific embeddings')
             const contextItems: ContextItem[] = []
             const modelName = 'sentence-transformers/multi-qa-mpnet-base-dot-v1'
             const embeddingsResults = await this.retrieveEmbeddingBasedContext(

@@ -325,7 +325,7 @@ export const benchCommand = new commander.Command('bench')
         )
 
         // Required to use `PromptString`.
-        graphqlClient.onConfigurationChange({
+        graphqlClient.setConfig({
             accessToken: options.srcAccessToken,
             serverEndpoint: options.srcEndpoint,
             customHeaders: {},
