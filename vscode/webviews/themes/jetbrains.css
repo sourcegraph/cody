@@ -579,9 +579,12 @@ html[data-ide='JetBrains'] {
     --foreground: var(--jetbrains-Button-foreground);
 
     /* Mimic rules injected by VSCode */
-    --vscode-font-family: var(--font-family)
-    --vscode-font-weight: var(--font-weight)
-    --vscode-font-size: var(--font-size)
+    --vscode-font-family: var(--font-family);
+    --vscode-font-weight: var(--font-weight);
+    --vscode-font-size: var(--type-ramp-base-font-size);
+    --vscode-editor-font-family: var(--font-family);
+    --vscode-editor-font-weight: var(--font-weight);
+    --vscode-editor-font-size: var(--type-ramp-minus1-font-size);
 }
 
 /* Mimic rules injected by VSCode */
