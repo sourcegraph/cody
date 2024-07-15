@@ -2,6 +2,7 @@ import {
     ANSWER_TOKENS,
     CHAT_INPUT_TOKEN_BUDGET,
     CHAT_OUTPUT_TOKEN_BUDGET,
+    CHAT_OUTPUT_TOKEN_BUDGET_3_5_SONNET,
     type CodyLLMSiteConfiguration,
     EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
     EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
@@ -95,6 +96,9 @@ function isModelWithExtendedContextWindowSupport(chatModel: string): boolean {
 // See: https://github.com/sourcegrcaph/cody/issues/3648#issuecomment-2056954101
 // See: https://github.com/sourcegraph/cody/pull/4203
 function getEnterpriseOutputLimit(model?: string) {
+    if (model && isModelWithExtendedContextWindowSupport(model) && model === 'anthropic/claude-3-5-sonnet-20240620') {
+        return CHAT_OUTPUT_TOKEN_BUDGET_3_5_SONNET
+    }
     if (model && isModelWithExtendedContextWindowSupport(model)) {
         return CHAT_OUTPUT_TOKEN_BUDGET
     }
