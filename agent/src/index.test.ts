@@ -690,70 +690,45 @@ describe('Agent', () => {
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                     `
-                  "Based on the code context and configurations provided in the examples, it appears that the Vitest testing framework is being used.
+                  "Based on the provided code context, it appears that the test framework being used is \`vitest\` for the \`src/example.test.ts\` file. Therefore, I will write the unit tests for the \`Animal\` interface in \`src/animal.ts\` using \`vitest\`.
 
-                  For the \`Animal\` interface that has been shared, I will generate some tests to validate the required functionality.
+                  Since the \`Animal\` interface is just a type definition and doesn't have any implementations, I will create a dummy class that implements this interface and write tests for that class.
 
-                  To write the tests, I will import \`describe\`, \`test\`, and \`expect\` from the Vitest framework, along with the \`Animal\` interface from the file at \`src/animal.ts\`.
-
-                  Here is a suite of tests that I recommend adding to the project to ensure the correct functionality of the \`Animal\` interface:
+                  Here is the full code for the new unit tests:
                   \`\`\`typescript
-                  import { describe, test, expect } from 'vitest'
-                  import { Animal } from '../animal'
+                  import { expect, test } from 'vitest'
+                  import { Animal } from '../src/animal'
 
-                  describe('Animal interface', () => {
-                      test('has a name property that is a string', () => {
-                          const animal: Animal = {
-                              name: 'Dog',
-                              makeAnimalSound: () => 'Bark',
-                              isMammal: true
-                          }
+                  class Dog implements Animal {
+                      name: string = 'Dog'
+                      isMammal: boolean = true
+                      makeAnimalSound(): string {
+                          return 'Woof!'
+                      }
+                  }
 
-                          expect(animal.name).toBeTypeOf('string')
-                      })
+                  test('Test animal implementation makes correct sound', () => {
+                      const dog = new Dog()
+                      expect(dog.makeAnimalSound()).toEqual('Woof!')
+                  })
 
-                      test('has a makeAnimalSound function that returns a string', () => {
-                          const animal: Animal = {
-                              name: 'Dog',
-                              makeAnimalSound: () => 'Bark',
-                              isMammal: true
-                          }
+                  test('Test animal implementation isMammal flag', () => {
+                      const dog = new Dog()
+                      expect(dog.isMammal).toBe(true)
+                  })
 
-                          expect(animal.makeAnimalSound()).toBeTypeOf('string')
-                      })
-
-                      test('has a boolean property isMammal', () => {
-                          const animal: Animal = {
-                              name: 'Dog',
-                              makeAnimalSound: () => 'Bark',
-                              isMammal: true
-                          }
-
-                          expect(animal.isMammal).toBeTypeOf('boolean')
-                      })
-
-                      test('throws an error when the makeAnimalSound function is not defined', () => {
-                          const animal: Animal = {
-                              name: 'Dog',
-                              isMammal: true
-                          }
-
-                          expect(() => animal.makeAnimalSound()).toThrowError()
-                      })
-
-                      test('throws an error when the name property is not defined', () => {
-                          const animal: Animal = {
-                              makeAnimalSound: () => 'Bark',
-                              isMammal: true
-                          }
-
-                          expect(() => (animal as { name: string })).toThrowError()
-                      })
+                  test('Test animal implementation name property', () => {
+                      const dog = new Dog()
+                      expect(dog.name).toEqual('Dog')
                   })
                   \`\`\`
-                  This test suite covers the primary functionality of the \`Animal\` interface and checks that the required \`name\` and \`isMammal\` properties are defined and that the \`makeAnimalSound\` function returns a string.
+                  These tests cover the following cases:
 
-                  I hope this helps!"
+                  * The implemented \`makeAnimalSound\` function returns the correct value.
+                  * The \`isMammal\` flag is set to \`true\`.
+                  * The \`name\` property is set to the correct value.
+
+                  Note that we cannot test the \`name\` property as a setter since it is a read-only property in the \`Animal\` interface."
                 `,
                     explainPollyError
                 )

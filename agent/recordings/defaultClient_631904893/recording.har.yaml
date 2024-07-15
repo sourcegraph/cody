@@ -88,252 +88,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: e452543c68f249687ad877433e31e091
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 313
-        cookies: []
-        headers:
-          - _fromType: array
-            name: accept-encoding
-            value: gzip;q=0
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - _fromType: array
-            name: connection
-            value: keep-alive
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "313"
-          - name: host
-            value: sourcegraph.com
-        headersSize: 378
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            maxTokensToSample: 256
-            messages:
-              - speaker: human
-                text: |-
-                  <filename>src/sum.ts<fim_prefix>// 
-                  export function sum(a: number, b: number): number {
-                      <fim_suffix>
-                  }
-                  <fim_middle>
-            model: fireworks/starcoder
-            stopSequences:
-              - "\n\n"
-              - "\n\r\n"
-            stream: true
-            temperature: 0.2
-            timeoutMs: 7000
-            topK: 0
-        queryString:
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/code?client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 235
-        content:
-          mimeType: text/event-stream
-          size: 235
-          text: |+
-            event: completion
-            data: {"completion":"return a + b;","stopReason":"stop"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 11 Jul 2024 11:16:23 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-07-11T11:16:22.536Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 7de6102430cc7ad98c64d13bc2480f30
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 446
-        cookies: []
-        headers:
-          - _fromType: array
-            name: accept-encoding
-            value: gzip;q=0
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - _fromType: array
-            name: connection
-            value: keep-alive
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "446"
-          - name: host
-            value: sourcegraph.com
-        headersSize: 378
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            maxTokensToSample: 256
-            messages:
-              - speaker: human
-                text: >-
-                  <filename>src/bubbleSort.ts<fim_prefix>// Here is a reference
-                  snippet of code from src/sum.ts:
-
-                  // 
-
-                  // export function sum(a: number, b: number): number {
-
-                  //     
-
-                  // }
-
-                  // 
-
-                  export function bubbleSort(nums: number[]) {
-                      <fim_suffix>
-                  }
-
-                  <fim_middle>
-            model: fireworks/starcoder
-            stopSequences:
-              - "\n\n"
-              - "\n\r\n"
-            stream: true
-            temperature: 0.2
-            timeoutMs: 7000
-            topK: 0
-        queryString:
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/code?client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 3368
-        content:
-          mimeType: text/event-stream
-          size: 3368
-          text: >+
-            event: completion
-
-            data: {"completion":"for (let i = 0; i \u003c nums.length; i++) {\n        for (let j = 0; j \u003c nums.length - 1; j++) {\n            if (nums[j] \u003e nums[j + 1]) {\n                [nums[j], nums[j + 1]] = [nums[j + 1], nums[j]]\n            }\n        }\n    }","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 11 Jul 2024 11:16:24 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-07-11T11:16:23.537Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: b078619b86bdc4266d7cea92cc9e4368
       _order: 0
       cache: {}
@@ -3547,172 +3301,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 76444b41b00f1213eafd950ad06efa7a
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2593
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - name: user-agent
-            value: defaultClient / v1
-          - name: traceparent
-            value: 00-35e4ecdef8af3ee5ee512046eee0a9f0-b26c1b45479d5141-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 401
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: human
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example.test.ts: import {
-                  expect } from 'vitest'
-
-                  import { it } from 'vitest'
-
-                  import { describe } from 'vitest'
-
-
-                  describe('test block', () => {
-                      it('does 1', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does 2', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does something else', () => {
-                          // This line will error due to incorrect usage of `performance.now`
-                          const startTime = performance.now(/* CURSOR */)
-                      })
-                  })
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  My selected code from codebase file src/animal.ts:1-6:
-                  ```
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: Review the shared code context and configurations to identify the test
-                  framework and libraries in use. Then, generate a suite of
-                  multiple unit tests for the functions in <selected> using the
-                  detected test framework and libraries. Be sure to import the
-                  function being tested. Follow the same patterns as any shared
-                  context. Only add packages, imports, dependencies, and
-                  assertions if they are used in the shared code. Pay attention
-                  to the file path of each shared context to see if test for
-                  <selected> already exists. If one exists, focus on generating
-                  new unit tests for uncovered cases. If none are detected,
-                  import common unit test libraries for {languageName}. Focus on
-                  validating key functionality with simple and complete
-                  assertions. Only include mocks if one is detected in the
-                  shared code. Before writing the tests, identify which test
-                  libraries and frameworks to import, e.g. 'No new imports
-                  needed - using existing libs' or 'Importing test framework
-                  that matches shared context usage' or 'Importing the defined
-                  framework', etc. Then briefly summarize test coverage and any
-                  limitations. At the end, enclose the full completed code for
-                  the new unit tests, including all necessary imports, in a
-                  single markdown codeblock. No fragments or TODO. The new tests
-                  should validate expected functionality and cover edge cases
-                  for <selected> with all required imports, including importing
-                  the function being tested. Do not repeat existing tests.
-            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 46508
-        content:
-          mimeType: text/event-stream
-          size: 46508
-          text: >+
-            event: completion
-
-            data: {"completion":"Based on the code context and configurations provided in the examples, it appears that the Vitest testing framework is being used.\n\nFor the `Animal` interface that has been shared, I will generate some tests to validate the required functionality.\n\nTo write the tests, I will import `describe`, `test`, and `expect` from the Vitest framework, along with the `Animal` interface from the file at `src/animal.ts`.\n\nHere is a suite of tests that I recommend adding to the project to ensure the correct functionality of the `Animal` interface:\n```typescript\nimport { describe, test, expect } from 'vitest'\nimport { Animal } from '../animal'\n\ndescribe('Animal interface', () =\u003e {\n    test('has a name property that is a string', () =\u003e {\n        const animal: Animal = {\n            name: 'Dog',\n            makeAnimalSound: () =\u003e 'Bark',\n            isMammal: true\n        }\n\n        expect(animal.name).toBeTypeOf('string')\n    })\n\n    test('has a makeAnimalSound function that returns a string', () =\u003e {\n        const animal: Animal = {\n            name: 'Dog',\n            makeAnimalSound: () =\u003e 'Bark',\n            isMammal: true\n        }\n\n        expect(animal.makeAnimalSound()).toBeTypeOf('string')\n    })\n\n    test('has a boolean property isMammal', () =\u003e {\n        const animal: Animal = {\n            name: 'Dog',\n            makeAnimalSound: () =\u003e 'Bark',\n            isMammal: true\n        }\n\n        expect(animal.isMammal).toBeTypeOf('boolean')\n    })\n\n    test('throws an error when the makeAnimalSound function is not defined', () =\u003e {\n        const animal: Animal = {\n            name: 'Dog',\n            isMammal: true\n        }\n\n        expect(() =\u003e animal.makeAnimalSound()).toThrowError()\n    })\n\n    test('throws an error when the name property is not defined', () =\u003e {\n        const animal: Animal = {\n            makeAnimalSound: () =\u003e 'Bark',\n            isMammal: true\n        }\n\n        expect(() =\u003e (animal as { name: string })).toThrowError()\n    })\n})\n```\nThis test suite covers the primary functionality of the `Animal` interface and checks that the required `name` and `isMammal` properties are defined and that the `makeAnimalSound` function returns a string.\n\nI hope this helps!","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 04 Jul 2024 19:08:16 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-07-04T19:08:15.365Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: f81afbdd87bad58d33d5e94a94056470
       _order: 0
       cache: {}
@@ -3846,6 +3434,189 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-07-04T19:08:17.838Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 55219ab057c0d031b200bb5c90e86c4b
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2943
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-cfb4ad0ec6640fe7af6a3f4d371518bc-bcf1a9258d2d99b6-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 401
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/TestClass.ts: const foo =
+                  42
+
+
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
+
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example.test.ts: import {
+                  expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of `performance.now`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  My selected code from codebase file src/animal.ts:1-6:
+                  ```
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: Review the shared code context and configurations to identify the test
+                  framework and libraries in use. Then, generate a suite of
+                  multiple unit tests for the functions in <selected> using the
+                  detected test framework and libraries. Be sure to import the
+                  function being tested. Follow the same patterns as any shared
+                  context. Only add packages, imports, dependencies, and
+                  assertions if they are used in the shared code. Pay attention
+                  to the file path of each shared context to see if test for
+                  <selected> already exists. If one exists, focus on generating
+                  new unit tests for uncovered cases. If none are detected,
+                  import common unit test libraries for {languageName}. Focus on
+                  validating key functionality with simple and complete
+                  assertions. Only include mocks if one is detected in the
+                  shared code. Before writing the tests, identify which test
+                  libraries and frameworks to import, e.g. 'No new imports
+                  needed - using existing libs' or 'Importing test framework
+                  that matches shared context usage' or 'Importing the defined
+                  framework', etc. Then briefly summarize test coverage and any
+                  limitations. At the end, enclose the full completed code for
+                  the new unit tests, including all necessary imports, in a
+                  single markdown codeblock. No fragments or TODO. The new tests
+                  should validate expected functionality and cover edge cases
+                  for <selected> with all required imports, including importing
+                  the function being tested. Do not repeat existing tests.
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 22736
+        content:
+          mimeType: text/event-stream
+          size: 22736
+          text: >+
+            event: completion
+
+            data: {"completion":"Based on the provided code context, it appears that the test framework being used is `vitest` for the `src/example.test.ts` file. Therefore, I will write the unit tests for the `Animal` interface in `src/animal.ts` using `vitest`.\n\nSince the `Animal` interface is just a type definition and doesn't have any implementations, I will create a dummy class that implements this interface and write tests for that class.\n\nHere is the full code for the new unit tests:\n```typescript\nimport { expect, test } from 'vitest'\nimport { Animal } from '../src/animal'\n\nclass Dog implements Animal {\n    name: string = 'Dog'\n    isMammal: boolean = true\n    makeAnimalSound(): string {\n        return 'Woof!'\n    }\n}\n\ntest('Test animal implementation makes correct sound', () =\u003e {\n    const dog = new Dog()\n    expect(dog.makeAnimalSound()).toEqual('Woof!')\n})\n\ntest('Test animal implementation isMammal flag', () =\u003e {\n    const dog = new Dog()\n    expect(dog.isMammal).toBe(true)\n})\n\ntest('Test animal implementation name property', () =\u003e {\n    const dog = new Dog()\n    expect(dog.name).toEqual('Dog')\n})\n```\nThese tests cover the following cases:\n\n* The implemented `makeAnimalSound` function returns the correct value.\n* The `isMammal` flag is set to `true`.\n* The `name` property is set to the correct value.\n\nNote that we cannot test the `name` property as a setter since it is a read-only property in the `Animal` interface.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 15 Jul 2024 15:52:59 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-07-15T15:52:58.666Z
       time: 0
       timings:
         blocked: -1
