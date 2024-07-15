@@ -466,7 +466,7 @@ function expandWorkspaces(
 }
 
 async function gitInitContextSourcesDir(options: CodyBenchOptions): Promise<void> {
-    // If this is our first run, we need to git init the context sources dir so symf & embeddings work
+    // If this is our first run, we need to git init the context sources dir so symf & embeddings pick it up
     if (fs.existsSync(path.join(options.workspace, '.git'))) {
         return
     }
@@ -482,9 +482,9 @@ async function gitInitContextSourcesDir(options: CodyBenchOptions): Promise<void
 }
 
 async function indexContextSourcesDir(options: CodyBenchOptions): Promise<void> {
-    // If this is our first run, we need to index the context sources dir so symf & embeddings work
+    // If this is our first run, we need to index the context sources dir so symf & embeddings can retrieve results
     // The agent has started symf by this point - we need to wait until the symf index has been created
-    // TODO: figure out how to do it for embeddings
+    // TODO: for embeddings, we don't have access to do it the same way
 
     const symfIndex = path.join(
         `${process.env.HOME}`,
