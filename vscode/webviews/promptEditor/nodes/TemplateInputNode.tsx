@@ -1,4 +1,8 @@
-import { type SerializedTemplateInput, TEMPLATE_INPUT_NODE_TYPE } from '@sourcegraph/cody-shared'
+import {
+    type SerializedTemplateInput,
+    SerializedTemplateInputNode,
+    TEMPLATE_INPUT_NODE_TYPE,
+} from '@sourcegraph/cody-shared'
 import {
     $applyNodeReplacement,
     DecoratorNode,
@@ -60,16 +64,22 @@ export class TemplateInputNode extends DecoratorNode<JSX.Element> {
     setValue(value: string): void {
         this.templateInput.value = value
     }
+
+    static importJSON(serializedNode: SerializedTemplateInputNode): TemplateInputNode {
+        return $createTemplateInputNode(serializedNode.templateInput)
+    }
+
+    exportJSON(): SerializedTemplateInputNode {
+        return {
+            type: TemplateInputNode.getType(),
+            templateInput: this.templateInput,
+            version: 1,
+        }
+    }
 }
 
-export function $createTemplateInputNode(placeholder: string): TemplateInputNode {
-    return $applyNodeReplacement(
-        new TemplateInputNode({
-            state: 'unset',
-            value: '',
-            placeholder,
-        })
-    )
+export function $createTemplateInputNode(templateInput: SerializedTemplateInput): TemplateInputNode {
+    return $applyNodeReplacement(new TemplateInputNode(templateInput))
 }
 
 export function $isTemplateInputNode(node: unknown): node is TemplateInputNode {

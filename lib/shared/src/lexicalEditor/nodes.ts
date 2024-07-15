@@ -34,6 +34,7 @@ export type SerializedContextItem = {
 
 export type SerializedTemplateInput = {
     state: 'unset' | 'focused' | 'set'
+    // TODO should these be PromptStrings?
     placeholder: string
     value: string
 }
@@ -51,7 +52,7 @@ export type SerializedContextItemMentionNode = Spread<
 export type SerializedTemplateInputNode = Spread<
     {
         type: typeof TEMPLATE_INPUT_NODE_TYPE
-        templateInput: SerializedTemplateInput,
+        templateInput: SerializedTemplateInput
     },
     SerializedLexicalNode
 >
