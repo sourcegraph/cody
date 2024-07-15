@@ -63,30 +63,44 @@ class FixupService(val project: Project) : Disposable {
     }
   }
 
+  /**
+   * Returns true if the given Editor is eligible for inline edit commands.
+   *
+   * @param editor the Editor to check
+   * @param verbose if true, log the reason and present the user with a notification.
+   */
   @RequiresEdt
-  fun isEligibleForInlineEdit(editor: Editor): Boolean {
+  fun isEligibleForInlineEdit(editor: Editor, verbose: Boolean = true): Boolean {
     if (!isCodyEnabled()) {
-      logger.warn("Edit code invoked when Cody not enabled")
+      if (verbose) {
+        logger.warn("Edit code invoked when Cody not enabled")
+      }
       return false
     }
 
     if (!CodyAgentService.isConnected(project)) {
-      runInEdt { CodyStartingNotification().notify(project) }
-      logger.warn("The agent is not connected")
+      if (verbose) {
+        runInEdt { CodyStartingNotification().notify(project) }
+        logger.warn("The agent is not connected")
+      }
       return false
     }
 
     if (!CodyEditorUtil.isEditorValidForAutocomplete(editor)) {
-      runInEdt { EditingNotAvailableNotification().notify(project) }
-      logger.warn("Edit code invoked when editing not available")
+      if (verbose) {
+        runInEdt { EditingNotAvailableNotification().notify(project) }
+        logger.warn("Edit code invoked when editing not available")
+      }
       getActiveSession()?.cancel()
       return false
     }
 
     val policy = IgnoreOracle.getInstance(project).policyForEditor(editor)
     if (policy != IgnorePolicy.USE) {
-      runInEdt { ActionInIgnoredFileNotification().notify(project) }
-      logger.warn("Ignoring file for inline edits: $editor, policy=$policy")
+      if (verbose) {
+        runInEdt { ActionInIgnoredFileNotification().notify(project) }
+        logger.warn("Ignoring file for inline edits: $editor, policy=$policy")
+      }
       return false
     }
 

@@ -30,7 +30,8 @@ class CodySelectionInlayManager(val project: Project) {
   fun handleSelectionChanged(editor: Editor, event: SelectionEvent) {
     clearInlay()
     val service = FixupService.getInstance(project)
-    if (!service.isEligibleForInlineEdit(editor)) {
+    // Don't spam with notifications as we're selecting code.
+    if (!service.isEligibleForInlineEdit(editor, verbose = false)) {
       return
     }
     // Don't show it if we're in the middle of an edit.
