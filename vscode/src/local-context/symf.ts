@@ -10,7 +10,6 @@ import * as vscode from 'vscode'
 import {
     AbortError,
     type AuthStatus,
-    type ConfigurationWithAccessToken,
     type FileURI,
     type IndexedKeywordContextFetcher,
     type PromptString,

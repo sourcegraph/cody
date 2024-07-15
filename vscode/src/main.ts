@@ -694,11 +694,11 @@ async function registerMinion(
     context: vscode.ExtensionContext,
     config: ConfigWatcher<ConfigurationWithAccessToken>,
     authProvider: AuthProvider,
-    symfRunner: SymfRunner | undefined,
+    symf: SymfWrapper,
     disposables: vscode.Disposable[]
 ): Promise<void> {
     if (config.get().experimentalMinionAnthropicKey) {
-        const minionOrchestrator = new MinionOrchestrator(context.extensionUri, authProvider, symfRunner)
+        const minionOrchestrator = new MinionOrchestrator(context.extensionUri, authProvider, symf)
         disposables.push(minionOrchestrator)
         disposables.push(
             vscode.commands.registerCommand('cody.minion.panel.new', () =>
