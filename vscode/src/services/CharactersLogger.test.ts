@@ -28,9 +28,10 @@ describe('CharactersLogger', () => {
         vi.clearAllTimers()
     })
 
-    function createInsertion(
+    function createChange(
         text: string,
-        insertRange: vscode.Range = range(0, 0, 0, 0)
+        range: vscode.Range,
+        rangeLength: number
     ): vscode.TextDocumentChangeEvent {
         return {
             document: testDocument,
@@ -38,23 +39,8 @@ describe('CharactersLogger', () => {
             contentChanges: [
                 {
                     text,
-                    range: insertRange,
-                    rangeLength: 0,
-                    rangeOffset: 0,
-                },
-            ],
-        }
-    }
-
-    function createDeletion(range: vscode.Range): vscode.TextDocumentChangeEvent {
-        return {
-            document: testDocument,
-            reason: undefined,
-            contentChanges: [
-                {
-                    text: '',
                     range,
-                    rangeLength: range.end.character - range.start.character,
+                    rangeLength,
                     rangeOffset: range.start.character,
                 },
             ],
@@ -74,8 +60,8 @@ describe('CharactersLogger', () => {
     })
 
     it('returns number of inserted characters', () => {
-        onDidChangeTextDocument(createInsertion('foo'))
-        onDidChangeTextDocument(createInsertion('bar'))
+        onDidChangeTextDocument(createChange('foo', range(0, 0, 0, 0), 0))
+        onDidChangeTextDocument(createChange('bar', range(0, 3, 0, 3), 0))
 
         vi.advanceTimersByTime(LOG_INTERVAL)
 
@@ -88,8 +74,8 @@ describe('CharactersLogger', () => {
     })
 
     it('returns number of deleted characters', () => {
-        onDidChangeTextDocument(createDeletion(range(0, 0, 0, 3)))
-        onDidChangeTextDocument(createDeletion(range(0, 0, 0, 3)))
+        onDidChangeTextDocument(createChange('', range(0, 0, 0, 3), 3))
+        onDidChangeTextDocument(createChange('', range(0, 0, 0, 3), 3))
 
         vi.advanceTimersByTime(LOG_INTERVAL)
 
@@ -102,22 +88,35 @@ describe('CharactersLogger', () => {
     })
 
     it('calculates the number of actually changed characters', () => {
-        // replacing `foo` with `fob` should result in 1 addition and 1 deletion
-        onDidChangeTextDocument(createInsertion('fob', range(0, 0, 0, 3)))
+        // replacing `foo` with `fob` should result in 3 deletions and 3 insertions
+        onDidChangeTextDocument(createChange('fob', range(0, 0, 0, 3), 3))
         vi.advanceTimersByTime(LOG_INTERVAL)
 
         expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
             metadata: {
-                insertedCharacters: 1,
-                deletedCharacters: 1,
+                insertedCharacters: 3,
+                deletedCharacters: 3,
+            },
+        })
+    })
+
+    it('handles multi-line changes', () => {
+        // Delete 2 lines and insert 1 line
+        onDidChangeTextDocument(createChange('new line', range(0, 0, 2, 0), 20))
+        vi.advanceTimersByTime(LOG_INTERVAL)
+
+        expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
+            metadata: {
+                insertedCharacters: 8,
+                deletedCharacters: 20,
             },
         })
     })
 
     it('resets counter after flushing', () => {
-        onDidChangeTextDocument(createInsertion('foo'))
-        onDidChangeTextDocument(createInsertion('bar'))
-        onDidChangeTextDocument(createDeletion(range(0, 0, 0, 3)))
+        onDidChangeTextDocument(createChange('foo', range(0, 0, 0, 0), 0))
+        onDidChangeTextDocument(createChange('bar', range(0, 3, 0, 3), 0))
+        onDidChangeTextDocument(createChange('', range(0, 0, 0, 3), 3))
 
         vi.advanceTimersByTime(LOG_INTERVAL)
 
@@ -128,7 +127,7 @@ describe('CharactersLogger', () => {
             },
         })
 
-        onDidChangeTextDocument(createInsertion('baz'))
+        onDidChangeTextDocument(createChange('baz', range(0, 3, 0, 3), 0))
 
         vi.advanceTimersByTime(LOG_INTERVAL)
 
