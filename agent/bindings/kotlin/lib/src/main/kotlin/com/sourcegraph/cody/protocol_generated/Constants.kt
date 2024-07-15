@@ -13,6 +13,7 @@ object Constants {
   const val Neovim = "Neovim"
   const val Emacs = "Emacs"
   const val Web = "Web"
+  const val VisualStudio = "VisualStudio"
   const val history = "history"
   const val transcript = "transcript"
   const val view = "view"
