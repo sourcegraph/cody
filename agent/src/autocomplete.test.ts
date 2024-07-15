@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
@@ -11,6 +11,16 @@ describe('Autocomplete', () => {
         workspaceRootUri: workspace.rootUri,
         name: 'autocomplete',
         credentials: TESTING_CREDENTIALS.dotcom,
+    })
+
+    beforeAll(async () => {
+        await workspace.beforeAll()
+        await client.beforeAll()
+    })
+
+    afterAll(async () => {
+        await workspace.afterAll()
+        await client.afterAll()
     })
 
     it('autocomplete/execute (non-empty result)', async () => {
