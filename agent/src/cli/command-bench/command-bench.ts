@@ -366,7 +366,7 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
     }
 
     if (isDefined(options.context)) {
-        await gitInitContextSources(options)
+        await gitInitContextSourcesDir(options)
     }
 
     const { client } = await newAgentClient({
@@ -403,7 +403,7 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
         },
     })
     if (isDefined(options.context)) {
-        await indexContextSources(options)
+        await indexContextSourcesDir(options)
     }
     try {
         if (options.fixture.strategy === BenchStrategy.Autocomplete) {
@@ -465,7 +465,7 @@ function expandWorkspaces(
     })
 }
 
-async function gitInitContextSources(options: CodyBenchOptions): Promise<void> {
+async function gitInitContextSourcesDir(options: CodyBenchOptions): Promise<void> {
     // If this is our first run, we need to git init the context sources dir so symf & embeddings work
     if (fs.existsSync(path.join(options.workspace, '.git'))) {
         return
@@ -481,17 +481,16 @@ async function gitInitContextSources(options: CodyBenchOptions): Promise<void> {
     )
 }
 
-async function indexContextSources(options: CodyBenchOptions): Promise<void> {
+async function indexContextSourcesDir(options: CodyBenchOptions): Promise<void> {
     // If this is our first run, we need to index the context sources dir so symf & embeddings work
+    // The agent has started symf by this point - we need to wait until the symf index has been created
+    // TODO: figure out how to do it for embeddings
 
-    // TODO this is hacky but works
     const symfIndex = path.join(
         `${process.env.HOME}`,
         'Library/Application Support/Cody-nodejs/symf/indexroot',
         options.workspace
     )
-
-    // TODO figure out what can we do with embeddings - don't really have access to the correct dir here
 
     // Allow max 10 min for the index to be ready
     const maxWaitTime = 10 * 60 * 1000
@@ -503,8 +502,8 @@ async function indexContextSources(options: CodyBenchOptions): Promise<void> {
             return
         }
         console.log('Symf index not ready, waiting...')
-        await sleep(sleepTime)
         waitTime += sleepTime
+        await sleep(sleepTime)
     }
 
     throw new Error('Symf index not ready after 10 min, exiting')

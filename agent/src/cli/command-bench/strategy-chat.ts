@@ -34,7 +34,7 @@ export async function evaluateChatStrategy(
     const scores: LlmJudgeScore[] = []
     const model = ModelsService.getModelByIDSubstringOrError(chatModel).model
     const files = absoluteFiles.map(file => path.relative(options.workspace, file))
-    const yamlFiles = files.filter(file => file.endsWith('.yaml') && file.startsWith('question')) // TODO hack
+    const yamlFiles = files.filter(file => file.endsWith('.yaml') && file.startsWith('question'))
     await evaluateEachFile(yamlFiles, options, async params => {
         const document = EvaluationDocument.from(params, options)
         const task: ChatTask = YAML.parse(params.content)
@@ -69,13 +69,9 @@ export async function evaluateChatStrategy(
                 const contextItems = query?.contextFiles?.map(i => ({
                     source: i.source,
                     file: i.uri.path + `L${i.range?.start.line}-${i.range?.end.line}`,
-                    //content: i.content,
+                    content: i.content,
                 }))
 
-                console.log('Context items num:', contextItems?.length)
-                for (const item of contextItems ?? []) {
-                    console.log(JSON.stringify(item))
-                }
                 document.pushItem({
                     range,
                     chatReply: reply.text,
