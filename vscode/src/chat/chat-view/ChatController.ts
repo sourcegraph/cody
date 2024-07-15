@@ -919,14 +919,24 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.contextFilesQueryCancellation = cancellation
 
         const source = 'chat'
+
+        // Use numerical mapping to send source values to metadata, making this data available on all instances.
+        const atMentionSourceTelemetryMetadataMapping: Record<typeof source, number> = {
+            chat: 1,
+        } as const
+
         const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
             empty: () => {
                 telemetryRecorder.recordEvent('cody.at-mention', 'executed', {
+                    metadata: {
+                        source: atMentionSourceTelemetryMetadataMapping[source],
+                    },
                     privateMetadata: { source },
                 })
             },
             withProvider: (provider, providerMetadata) => {
                 telemetryRecorder.recordEvent(`cody.at-mention.${provider}`, 'executed', {
+                    metadata: { source: atMentionSourceTelemetryMetadataMapping[source] },
                     privateMetadata: { source, providerMetadata },
                 })
             },
