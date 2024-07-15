@@ -8,8 +8,9 @@ import {
     type ContextItem,
     type ContextItemRepository,
     ContextItemSource,
-    type Model,
+    Model,
     PromptString,
+    isEnterpriseUser,
     isErrorLike,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
@@ -96,12 +97,22 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                 case 'chatModels':
                     // The default model will always be the first one on the list.
                     setChatModels(message.models)
+                    setUserAccountInfo(
+                        info =>
+                            info && {
+                                ...info,
+                                isOldStyleEnterpriseUser:
+                                    !info.isDotComUser &&
+                                    !message.models.some(Model.isNewStyleEnterprise),
+                            }
+                    )
                     break
                 case 'config':
                     setUserAccountInfo({
                         isCodyProUser: !message.authStatus.userCanUpgrade,
                         isDotComUser: message.authStatus.isDotCom,
-                        isOldStyleEnterpriseUser: !message.authStatus.isDotCom,
+                        // Default to assuming they are a single model enterprise
+                        isOldStyleEnterpriseUser: isEnterpriseUser(message.authStatus),
                         user: message.authStatus,
                         ide: CodyIDE.Web,
                     })
