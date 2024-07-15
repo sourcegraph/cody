@@ -113,6 +113,7 @@ describe('RequestManager', () => {
                 provider,
                 context: [],
                 isCacheEnabled: true,
+                logId: '1' as CompletionLogID,
             })
         checkCache = (prefix: string, suffix?: string) =>
             requestManager.checkCache({ requestParams: docState(prefix, suffix), isCacheEnabled: true })

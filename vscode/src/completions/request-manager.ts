@@ -51,6 +51,7 @@ export interface RequestManagerResult {
     completions: InlineCompletionItemWithAnalytics[]
     source: InlineCompletionsResultSource
     isFuzzyMatch: boolean
+    logId: CompletionLogID
 }
 
 interface RequestsManagerParams {
@@ -58,6 +59,7 @@ interface RequestsManagerParams {
     provider: Provider
     context: AutocompleteContextSnippet[]
     isCacheEnabled: boolean
+    logId: CompletionLogID
     tracer?: CompletionProviderTracer
 }
 
@@ -94,7 +96,7 @@ export class RequestManager {
     public async request(params: RequestsManagerParams): Promise<RequestManagerResult> {
         this.latestRequestParams = params
 
-        const { requestParams, provider, context, tracer } = params
+        const { requestParams, provider, context, tracer, logId } = params
 
         addAutocompleteDebugEvent('RequestManager.request')
 
@@ -142,6 +144,7 @@ export class RequestManager {
                         this.cache.set(requestParams, {
                             completions: processedCompletions,
                             source: InlineCompletionsResultSource.Cache,
+                            logId,
                         })
 
                         // A promise will never resolve twice, so we do not need to
@@ -150,11 +153,16 @@ export class RequestManager {
                             completions: processedCompletions,
                             source: InlineCompletionsResultSource.Network,
                             isFuzzyMatch: false,
+                            logId,
                         })
 
                         request.lastCompletions = processedCompletions
 
-                        this.testIfResultCanBeRecycledForInflightRequests(request, processedCompletions)
+                        this.testIfResultCanBeRecycledForInflightRequests(
+                            request,
+                            processedCompletions,
+                            logId
+                        )
                     }
 
                     // Save hot streak completions for later use.
@@ -169,6 +177,7 @@ export class RequestManager {
                             {
                                 completions: [result.completion],
                                 source: InlineCompletionsResultSource.HotStreak,
+                                logId,
                             }
                         )
                     }
@@ -198,7 +207,8 @@ export class RequestManager {
      */
     private testIfResultCanBeRecycledForInflightRequests(
         resolvedRequest: InflightRequest,
-        items: InlineCompletionItemWithAnalytics[]
+        items: InlineCompletionItemWithAnalytics[],
+        logId: CompletionLogID
     ): void {
         const { document, position, docContext, selectedCompletionInfo } = resolvedRequest.params
         const lastCandidate: LastInlineCompletionCandidate = {
@@ -207,9 +217,9 @@ export class RequestManager {
             lastTriggerDocContext: docContext,
             lastTriggerSelectedCompletionInfo: selectedCompletionInfo,
             result: {
-                logId: '' as CompletionLogID,
                 source: InlineCompletionsResultSource.Network,
                 items,
+                logId,
             },
         }
 
@@ -238,6 +248,8 @@ export class RequestManager {
                     completions: synthesizedItems,
                     source: InlineCompletionsResultSource.CacheAfterRequestStart,
                     isFuzzyMatch: false,
+                    // Re-use the logId, so we do not log this as a separate completion.
+                    logId: synthesizedCandidate.logId,
                 })
                 request.abortController.abort()
                 this.inflightRequests.delete(request)
@@ -306,6 +318,7 @@ class InflightRequest {
 interface RequestCacheItem {
     completions: InlineCompletionItemWithAnalytics[]
     source: InlineCompletionsResultSource
+    logId: CompletionLogID
 }
 
 interface CacheKey {
