@@ -142,9 +142,6 @@ async function fetchServerSideModels(endpoint: string): Promise<Model[]> {
 
     // Get the user's access token, assumed to be already saved in the secret store.
     const userAccessToken = await secretStorage.getToken(endpoint)
-    if (!userAccessToken) {
-        throw new Error('no userAccessToken available. Unable to fetch models.')
-    }
 
     // Fetch the data via REST API.
     // NOTE: We may end up exposing this data via GraphQL, it's still TBD.
