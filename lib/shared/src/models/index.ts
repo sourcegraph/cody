@@ -335,7 +335,7 @@ export class ModelsService {
             return tier !== 'enterprise'
         }
 
-        return true
+        return tier === 'free'
     }
 
     private static resolveModel(modelID: Model | string): Model | undefined {
