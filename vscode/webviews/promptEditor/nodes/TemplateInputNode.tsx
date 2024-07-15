@@ -1,6 +1,6 @@
 import {
     type SerializedTemplateInput,
-    SerializedTemplateInputNode,
+    type SerializedTemplateInputNode,
     TEMPLATE_INPUT_NODE_TYPE,
 } from '@sourcegraph/cody-shared'
 import {
@@ -41,9 +41,7 @@ export class TemplateInputNode extends DecoratorNode<JSX.Element> {
     }
 
     getTextContent(): string {
-        return this.templateInput.state === 'unset'
-            ? this.templateInput.placeholder
-            : this.templateInput.value
+        return this.templateInput.placeholder
     }
 
     decorate(_editor: LexicalEditor, _config: EditorConfig): JSX.Element {
@@ -51,18 +49,10 @@ export class TemplateInputNode extends DecoratorNode<JSX.Element> {
             <TemplateInputComponent
                 nodeKey={this.getKey()}
                 node={this}
-                className={`${styles.templateInputNode} ${styles[this.templateInput.state]}`}
+                className={`${styles.templateInputNode}`}
                 focusedClassName={styles.focused}
             />
         )
-    }
-
-    setState(state: TemplateInputState): void {
-        this.templateInput.state = state
-    }
-
-    setValue(value: string): void {
-        this.templateInput.value = value
     }
 
     static importJSON(serializedNode: SerializedTemplateInputNode): TemplateInputNode {

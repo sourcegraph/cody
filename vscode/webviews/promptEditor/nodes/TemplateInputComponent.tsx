@@ -5,8 +5,6 @@ import {
     $getNodeByKey,
     $getSelection,
     $isNodeSelection,
-    $setSelection,
-    BLUR_COMMAND,
     CLICK_COMMAND,
     COMMAND_PRIORITY_LOW,
     KEY_BACKSPACE_COMMAND,
@@ -15,7 +13,7 @@ import {
     type NodeKey,
     SELECTION_CHANGE_COMMAND,
 } from 'lexical'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/shadcn/ui/tooltip'
 import { $isTemplateInputNode, type TemplateInputNode } from './TemplateInputNode'
 import { useIsFocused } from './mentionUtils'
@@ -28,10 +26,8 @@ export const TemplateInputComponent: React.FC<{
 }> = ({ nodeKey, node, className, focusedClassName }) => {
     const [editor] = useLexicalComposerContext()
     const isEditorFocused = useIsFocused()
-    const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(nodeKey)
+    const [isSelected] = useLexicalNodeSelection(nodeKey)
     const ref = useRef<HTMLSpanElement>(null)
-    const inputRef = useRef<HTMLInputElement>(null)
-    const [inputValue, setInputValue] = useState(node.getTextContent())
 
     const composedClassNames = useMemo(() => {
         const classes = [className]
@@ -41,57 +37,45 @@ export const TemplateInputComponent: React.FC<{
         return classes.join(' ').trim() || undefined
     }, [isSelected, className, focusedClassName, isEditorFocused])
 
+    const handleDelete = useCallback(() => {
+        const node = $getNodeByKey(nodeKey)
+        if ($isTemplateInputNode(node)) {
+            node.remove()
+        }
+    }, [nodeKey])
+
     const onDelete = useCallback(
         (event: KeyboardEvent) => {
             if (isSelected && $isNodeSelection($getSelection())) {
                 event.preventDefault()
-                const node = $getNodeByKey(nodeKey)
-                if ($isTemplateInputNode(node)) {
-                    node.remove()
-                }
+                handleDelete()
                 return true
             }
             return false
         },
-        [isSelected, nodeKey]
+        [isSelected, handleDelete]
     )
 
     const onClick = useCallback(
         (event: MouseEvent) => {
             if (event.target === ref.current || ref.current?.contains(event.target as Node)) {
-                if (!event.shiftKey) {
-                    clearSelection()
-                }
-                setSelected(true)
-                node.setState('focused')
-                inputRef.current?.focus()
+                event.preventDefault()
+                handleDelete()
                 return true
             }
             return false
         },
-        [clearSelection, setSelected, node]
+        [handleDelete]
     )
-
-    const onBlur = useCallback(() => {
-        node.setState('set')
-        node.setValue(inputValue)
-        return false
-    }, [node, inputValue])
-
-    const onInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-        setInputValue(event.target.value)
-    }, [])
 
     const onKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLInputElement>) => {
             if (event.key === 'Enter') {
                 event.preventDefault()
-                node.setState('set')
-                node.setValue(inputValue)
-                $setSelection(null)
+                handleDelete()
             }
         },
-        [node, inputValue]
+        [handleDelete]
     )
 
     useEffect(() => {
@@ -99,7 +83,6 @@ export const TemplateInputComponent: React.FC<{
             editor.registerCommand(CLICK_COMMAND, onClick, COMMAND_PRIORITY_LOW),
             editor.registerCommand(KEY_DELETE_COMMAND, onDelete, COMMAND_PRIORITY_LOW),
             editor.registerCommand(KEY_BACKSPACE_COMMAND, onDelete, COMMAND_PRIORITY_LOW),
-            editor.registerCommand(BLUR_COMMAND, onBlur, COMMAND_PRIORITY_LOW),
             editor.registerCommand(
                 SELECTION_CHANGE_COMMAND,
                 () => {
@@ -119,11 +102,10 @@ export const TemplateInputComponent: React.FC<{
                 COMMAND_PRIORITY_LOW
             )
         )
-    }, [editor, onClick, onDelete, onBlur, onKeyDown, isSelected])
+    }, [editor, onClick, onDelete, onKeyDown, isSelected])
 
-    const tooltip = node.templateInput.state === 'unset' ? node.templateInput.placeholder : ''
-    const text =
-        node.templateInput.state === 'unset' ? node.templateInput.placeholder : node.getTextContent()
+    const tooltip = node.templateInput.placeholder
+    const text = node.templateInput.placeholder
 
     return (
         <Tooltip>

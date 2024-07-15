@@ -33,10 +33,8 @@ export type SerializedContextItem = {
 )
 
 export type SerializedTemplateInput = {
-    state: 'unset' | 'focused' | 'set'
     // TODO should these be PromptStrings?
     placeholder: string
-    value: string
 }
 
 export type SerializedContextItemMentionNode = Spread<
@@ -117,7 +115,7 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
 }
 
 export function templateInputNodeDisplayText(templateInput: SerializedTemplateInputNode): string {
-    return templateInput.value || templateInput.placeholder
+    return templateInput.templateInput.placeholder
 }
 
 function trimCommonRepoNamePrefixes(repoName: string): string {

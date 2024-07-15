@@ -27,45 +27,7 @@ export const FILE_MENTION_EDITOR_STATE_FIXTURE: SerializedPromptEditorState = {
                             type: 'templateInput',
                             version: 1,
                             templateInput: {
-                                state: 'unset',
                                 placeholder: 'placeholder',
-                                value: '',
-                            },
-                        } satisfies SerializedTemplateInputNode,
-                        {
-                            detail: 0,
-                            format: 0,
-                            mode: 'normal',
-                            style: '',
-                            text: ' ',
-                            type: 'text',
-                            version: 1,
-                        },
-                        {
-                            type: 'templateInput',
-                            version: 1,
-                            templateInput: {
-                                state: 'focused',
-                                placeholder: 'placeholder',
-                                value: 'foo',
-                            },
-                        } satisfies SerializedTemplateInputNode,
-                        {
-                            detail: 0,
-                            format: 0,
-                            mode: 'normal',
-                            style: '',
-                            text: ' ',
-                            type: 'text',
-                            version: 1,
-                        },
-                        {
-                            type: 'templateInput',
-                            version: 1,
-                            templateInput: {
-                                state: 'set',
-                                placeholder: 'placeholder',
-                                value: 'foobar',
                             },
                         } satisfies SerializedTemplateInputNode,
                         {
