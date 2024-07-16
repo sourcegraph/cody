@@ -24,8 +24,10 @@ exports[`--context-repo (squirrel test) 1`] = `
   what is squirrel? Explain as briefly as possible.
 exitCode: 0
 stdout: >+
-  Squirrel is a lightweight, high-performance SQL database engine written in
-  Rust. It's designed to be embedded into other applications.
+  Squirrel is a service within the Sourcegraph codebase that uses tree-sitter
+  and the symbols service to analyze and traverse files to find symbols. It
+  provides functionality for local code intelligence, including symbol search
+  and hover information.
 
 stderr: ""
 "

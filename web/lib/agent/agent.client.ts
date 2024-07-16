@@ -28,6 +28,7 @@ interface AgentClientOptions {
     serverEndpoint: string
     accessToken: string
     workspaceRootUri: string
+    customHeaders?: Record<string, string>
     debug?: boolean
     trace?: boolean
 }
@@ -36,6 +37,7 @@ export async function createAgentClient({
     serverEndpoint,
     accessToken,
     workspaceRootUri,
+    customHeaders,
     debug = true,
     trace = false,
 }: AgentClientOptions): Promise<AgentClient> {
@@ -77,7 +79,7 @@ export async function createAgentClient({
         extensionConfiguration: {
             accessToken,
             serverEndpoint,
-            customHeaders: {},
+            customHeaders: customHeaders ?? {},
             customConfiguration: {
                 'cody.experimental.noodle': true,
                 'cody.autocomplete.enabled': false,

@@ -1533,6 +1533,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // to some default values:
                 chat: clientConfig?.chatEnabled ?? true,
                 attribution: clientConfig?.attributionEnabled ?? false,
+                serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
             },
         })
 

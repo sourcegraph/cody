@@ -87,7 +87,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     focusEditor?: () => void
     className?: string
 }> = ({ userInfo, focusEditor, className }) => {
-    const { chatModels, onCurrentChatModelChange } = useChatModelContext()
+    const { chatModels, onCurrentChatModelChange, serverSentModelsEnabled } = useChatModelContext()
 
     const onModelSelect = useCallback(
         (model: Model) => {
@@ -99,11 +99,12 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
 
     return (
         !!chatModels?.length &&
-        (userInfo.isDotComUser || !userInfo.isOldStyleEnterpriseUser) &&
+        (userInfo.isDotComUser || serverSentModelsEnabled) &&
         onCurrentChatModelChange && (
             <ModelSelectField
                 models={chatModels}
                 onModelSelect={onModelSelect}
+                serverSentModelsEnabled={!!serverSentModelsEnabled}
                 userInfo={userInfo}
                 onCloseByEscape={focusEditor}
                 className={className}
