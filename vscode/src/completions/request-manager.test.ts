@@ -186,10 +186,17 @@ describe('RequestManager', () => {
 
         provider1.yield(["log('hello')"])
 
-        expect((await promise1).completions[0].insertText).toBe("log('hello')")
-        const { completions, source } = await promise2
-        expect(completions[0].insertText).toBe("'hello')")
-        expect(source).toBe(InlineCompletionsResultSource.CacheAfterRequestStart)
+        const firstResult = await promise1
+        expect(firstResult.completions[0].insertText).toBe("log('hello')")
+        // The first result is not synthesized, so we will maintain the existing logId
+        expect(firstResult.updatedLogId).toBeUndefined()
+
+        const secondResult = await promise2
+        expect(secondResult.completions[0].insertText).toBe("'hello')")
+        expect(secondResult.source).toBe(InlineCompletionsResultSource.CacheAfterRequestStart)
+        // The second request is synthesized from the previous result, so we set `updatedLogId` to ensure
+        // the logging of the second result matches that of the first.
+        expect(secondResult.updatedLogId).not.toBeUndefined()
 
         expect(provider1.didFinishNetworkRequest).toBe(true)
         expect(provider2.didFinishNetworkRequest).toBe(false)
