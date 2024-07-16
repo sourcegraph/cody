@@ -68,6 +68,10 @@ export class CommandsProvider implements vscode.Disposable {
         await showCommandMenu(type, commandArray, args)
     }
 
+    public list(): CodyCommand[] {
+        return [...this.allCommands.values()]
+    }
+
     /**
      * Find a command by its id
      */

@@ -55,18 +55,16 @@ export const WelcomeMessage: FunctionComponent<{
     // NOTE: The current welcome message only applies to VS Code client.
     if (!showMessage || IDE !== CodyIDE.VSCode) {
         return (
-            <div className="tw-flex-1 tw-flex tw-relative tw-min-h-12">
-                <div className="tw-absolute tw-bottom-0 tw-w-full tw-flex tw-justify-end tw-pb-8 tw-pr-8">
-                    <button
-                        type="button"
-                        className="tw-text-sm tw-opacity-50 hover:tw-opacity-100 tw-flex tw-gap-2"
-                        onClick={onShowClicked}
-                        aria-label="Cody Chat Help"
-                    >
-                        <HelpCircleIcon strokeWidth={2} className="tw-h-8 tw-w-8" />{' '}
-                        <span>Cody Chat Help</span>
-                    </button>
-                </div>
+            <div className="tw-absolute tw-bottom-0 tw-w-full tw-flex tw-justify-center tw-pb-8">
+                <button
+                    type="button"
+                    className="tw-text-sm tw-opacity-50 hover:tw-opacity-100 tw-flex tw-gap-2"
+                    onClick={onShowClicked}
+                    aria-label="Cody Chat Help"
+                >
+                    <HelpCircleIcon strokeWidth={2} className="tw-h-8 tw-w-8" />{' '}
+                    <span>Cody Chat Help</span>
+                </button>
             </div>
         )
     }
