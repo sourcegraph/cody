@@ -34,7 +34,7 @@ export async function evaluateChatStrategy(
     const scores: LlmJudgeScore[] = []
     const model = ModelsService.getModelByIDSubstringOrError(chatModel).model
     const files = absoluteFiles.map(file => path.relative(options.workspace, file))
-    const yamlFiles = files.filter(file => file.endsWith('.yaml') && file.startsWith('question'))
+    const yamlFiles = files.filter(file => file.endsWith('question.yaml'))
     await evaluateEachFile(yamlFiles, options, async params => {
         const document = EvaluationDocument.from(params, options)
         const task: ChatTask = YAML.parse(params.content)

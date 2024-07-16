@@ -28,6 +28,7 @@ import { evaluateChatStrategy } from './strategy-chat'
 import { evaluateFixStrategy } from './strategy-fix'
 import { evaluateGitLogStrategy } from './strategy-git-log'
 import { evaluateUnitTestStrategy } from './strategy-unit-test'
+import { codyPaths } from '../../codyPaths'
 
 export interface CodyBenchOptions {
     workspace: string
@@ -486,11 +487,7 @@ async function indexContextSourcesDir(options: CodyBenchOptions): Promise<void> 
     // The agent has started symf by this point - we need to wait until the symf index has been created
     // TODO: for embeddings, we don't have access to do it the same way
 
-    const symfIndex = path.join(
-        `${process.env.HOME}`,
-        'Library/Application Support/Cody-nodejs/symf/indexroot',
-        options.workspace
-    )
+    const symfIndex = path.join(codyPaths().data, 'symf/indexroot', options.workspace)
 
     // Allow max 10 min for the index to be ready
     const maxWaitTime = 10 * 60 * 1000

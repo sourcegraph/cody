@@ -81,7 +81,7 @@ export class EvaluationDocument {
             item.eventJSON = JSON.stringify(item.event)
         }
         if (item.contextItems) {
-            item.contextItemsJSON = JSON.stringify(item.contextItems)
+            item.contextItemsJSON = JSON.stringify(item.contextItems, null, 2)
         }
         this.items.push({
             ...item,
@@ -157,7 +157,6 @@ export class EvaluationDocument {
                 if (item.resultExact) {
                     out.push(' EXACT_MATCH')
                 }
-
                 if (item.contextItems) {
                     pushMultilineText('CONTEXT_ITEMS', item.contextItemsJSON ?? '[]')
                 }
