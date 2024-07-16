@@ -2,6 +2,19 @@
 
 This is a log of all notable changes to Cody for VS Code. [Unreleased] changes are included in the nightly pre-release builds.
 
+## [Unreleased]
+
+### Added
+
+- Chat: Chat has been added back to the VS Code sidebar (after being removed about 6 months ago). By default, new chats open in the sidebar. New chats can still be opened in an editor panel with the `New Chat in Sidebar` command. Currently open chats can be moved from the sidebar into an editor panel and vice versa. [pull/4832](https://github.com/sourcegraph/cody/pull/4832)
+
+### Fixed
+
+- Command: The "Ask Cody to Explain" command for explaining terminal output has been removed from the command palette, as it is only callable from the terminal context menu. [pull/4860](https://github.com/sourcegraph/cody/pull/4860)
+- Autocomplete: Characters logger now accounts for multiline deletions. [pull/4865](https://github.com/sourcegraph/cody/pull/4865)
+
+### Changed
+
 ## 1.26.2
 
 ### Added
