@@ -1,5 +1,5 @@
 import type { SerializedLexicalNode, SerializedTextNode } from 'lexical'
-import { STATE_VERSION_CURRENT, type SerializedPromptEditorState } from './editorState'
+import { type SerializedPromptEditorState } from './editorState'
 import type {
     SerializedContextItem,
     SerializedContextItemMentionNode,
@@ -7,8 +7,8 @@ import type {
 } from './nodes'
 
 export const FILE_MENTION_EDITOR_STATE_FIXTURE: SerializedPromptEditorState = {
-    v: STATE_VERSION_CURRENT,
-    minReaderV: STATE_VERSION_CURRENT,
+    v: 'lexical-v0',
+    minReaderV: 'lexical-v0',
     lexicalEditorState: {
         root: {
             children: [
@@ -120,8 +120,8 @@ export const FILE_MENTION_EDITOR_STATE_FIXTURE: SerializedPromptEditorState = {
 }
 
 export const GENERATE_UNIT_TEST_EDITOR_STATE_FIXTURE: SerializedPromptEditorState = {
-    v: STATE_VERSION_CURRENT,
-    minReaderV: STATE_VERSION_CURRENT,
+    v: 'lexical-v1',
+    minReaderV: 'lexical-v1',
     lexicalEditorState: {
         root: {
             direction: null,
@@ -227,8 +227,8 @@ export const GENERATE_UNIT_TEST_EDITOR_STATE_FIXTURE: SerializedPromptEditorStat
  * should be seamlessly interpreted as DecoratorNodes due to sharing the same `type` name.
  */
 export const OLD_TEXT_FILE_MENTION_EDITOR_STATE_FIXTURE: SerializedPromptEditorState = {
-    v: STATE_VERSION_CURRENT,
-    minReaderV: STATE_VERSION_CURRENT,
+    v: 'lexical-v0',
+    minReaderV: 'lexical-v0',
     lexicalEditorState: {
         root: {
             children: [
@@ -364,8 +364,8 @@ export const OLD_TEXT_FILE_MENTION_EDITOR_STATE_FIXTURE: SerializedPromptEditorS
 // dev to trigger this error condition. There is not a good way to handle this case within Lexical
 // itself; we need to avoid this case by using minReaderV checks.
 export const UNKNOWN_NODES_EDITOR_STATE_FIXTURE: SerializedPromptEditorState = {
-    v: STATE_VERSION_CURRENT,
-    minReaderV: STATE_VERSION_CURRENT,
+    v: 'lexical-v0',
+    minReaderV: 'lexical-v0',
     lexicalEditorState: {
         root: {
             children: [

@@ -1,8 +1,7 @@
 import {
     type ChatMessage,
     PromptString,
-    STATE_VERSION_CURRENT,
-    lexicalEditorStateFromPromptString,
+    editorStateFromPromptString,
     ps,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -46,10 +45,6 @@ async function chatMessageTemplate(): Promise<ChatMessage | undefined> {
     return {
         speaker: 'human',
         text: prompt,
-        editorState: {
-            lexicalEditorState: lexicalEditorStateFromPromptString(prompt, { parseTemplates: true }),
-            v: STATE_VERSION_CURRENT,
-            minReaderV: STATE_VERSION_CURRENT,
-        },
+        editorState: editorStateFromPromptString(prompt, { parseTemplates: true }),
     }
 }

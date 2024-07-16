@@ -45,6 +45,11 @@ export function toSerializedPromptEditorValue(editor: LexicalEditor): Serialized
 }
 
 /**
+ * This type encodes all known versions of serialized editor state.
+ */
+type StateVersion = 'lexical-v0' | 'lexical-v1'
+
+/**
  * This version string is stored in {@link SerializedPromptEditorState} to indicate the schema
  * version of the value.
  *
@@ -58,7 +63,7 @@ export function toSerializedPromptEditorValue(editor: LexicalEditor): Serialized
  * written. Then you can switch to having it write the new schema (knowing that even clients ~1
  * month old can read that schema).
  */
-export const STATE_VERSION_CURRENT = 'lexical-v0' as const
+const STATE_VERSION_CURRENT: StateVersion = 'lexical-v1'
 
 /**
  * The representation of a user's prompt input in the chat view.
@@ -68,14 +73,14 @@ export interface SerializedPromptEditorState {
      * Version identifier for this type. If this type changes, the version identifier must change,
      * and callers must check this value to ensure they are working with the correct type.
      */
-    v: typeof STATE_VERSION_CURRENT
+    v: StateVersion
 
     /**
      * The minimum version of reader that can read this value. If STATE_VERSION_CURRENT >=
      * minReaderV, then this version of the code can read this value. If undefined, its value is
      * {@link DEFAULT_MIN_READER_V},
      */
-    minReaderV?: typeof STATE_VERSION_CURRENT
+    minReaderV?: StateVersion
 
     /**
      * The [Lexical editor state](https://lexical.dev/docs/concepts/editor-state).
@@ -83,14 +88,21 @@ export interface SerializedPromptEditorState {
     lexicalEditorState: SerializedEditorState
 }
 
-const DEFAULT_MIN_READER_V = 'lexical-v0' as const
+const DEFAULT_MIN_READER_V: StateVersion = 'lexical-v0'
+
+// We support reading from lexical-v0
+const SUPPORTED_READER_VERSIONS: StateVersion[] = ['lexical-v0', 'lexical-v1']
 
 function toPromptEditorState(editor: LexicalEditor): SerializedPromptEditorState {
-    const editorState = editor.getEditorState()
+    const editorState = editor.getEditorState().toJSON()
+    // We don't need to encode as the latest version unless the editor state
+    // contains new features. Given our reader is backwards compatible we can
+    // still encode as the older version.
+    const v = minimumReaderVersion(editorState)
     return {
-        v: STATE_VERSION_CURRENT,
-        minReaderV: STATE_VERSION_CURRENT,
-        lexicalEditorState: editorState.toJSON(),
+        v,
+        minReaderV: v,
+        lexicalEditorState: editorState,
     }
 }
 
@@ -138,12 +150,17 @@ export function serializedPromptEditorStateFromChatMessage(
     chatMessage: ChatMessage
 ): SerializedPromptEditorState {
     function isCompatibleVersionEditorState(value: unknown): value is SerializedPromptEditorState {
+        if (!value) {
+            return false
+        }
+
+        const editorState = value as SerializedPromptEditorState
+
+        // We can read this if the version of the serialized text is compatible
+        // or its minimum version is compatible.
         return (
-            Boolean(value) &&
-            ((value as SerializedPromptEditorState).v === STATE_VERSION_CURRENT ||
-                // Update if the SerializedPromptEditorState version changes.
-                ((value as SerializedPromptEditorState).minReaderV ?? DEFAULT_MIN_READER_V) ===
-                    STATE_VERSION_CURRENT)
+            SUPPORTED_READER_VERSIONS.includes(editorState.v) ||
+            SUPPORTED_READER_VERSIONS.includes(editorState.minReaderV ?? DEFAULT_MIN_READER_V)
         )
     }
 
@@ -246,19 +263,62 @@ export function editorStateToText(editorState: EditorState): string {
     return editorState.read(() => $getRoot().getTextContent())
 }
 
+interface EditorStateFromPromptStringOptions {
+    /**
+     * Experimental support for template values. These are placeholder values between "{{" and "}}".
+     */
+    parseTemplates: boolean
+}
+
+export function editorStateFromPromptString(
+    input: PromptString,
+    opts?: EditorStateFromPromptStringOptions
+): SerializedPromptEditorState {
+    return {
+        lexicalEditorState: lexicalEditorStateFromPromptString(input, opts),
+        v: STATE_VERSION_CURRENT,
+        minReaderV: STATE_VERSION_CURRENT,
+    }
+}
+
+/**
+ * This inspects the editor state to find out what the minimum version we can
+ * encode it as.
+ *
+ * In particular if there are template inputs then we need to encode it as
+ * lexical-v1, otherwise lexical-v0 is sufficient.
+ */
+function minimumReaderVersion(editorState: SerializedEditorState): StateVersion {
+    let hasTemplateInput = false
+
+    // We visit all nodes (via BFS) to look for a template input.
+    const queue: SerializedLexicalNode[] = [editorState.root]
+    while (queue.length > 0) {
+        const node = queue.shift()!
+        if ('type' in node && node.type === TEMPLATE_INPUT_NODE_TYPE) {
+            hasTemplateInput = true
+            break
+        }
+        if (node && 'children' in node && Array.isArray(node.children)) {
+            queue.push(...(node.children as SerializedLexicalNode[]))
+        }
+    }
+
+    /* Only if there are templateInputs do we need a newer parser */
+    if (hasTemplateInput) {
+        return 'lexical-v1'
+    }
+    return 'lexical-v0'
+}
+
 type SupportedSerializedNodes =
     | SerializedTextNode
     | SerializedContextItemMentionNode
     | SerializedTemplateInputNode
 
-export function lexicalEditorStateFromPromptString(
+function lexicalEditorStateFromPromptString(
     input: PromptString,
-    opts?: {
-        /**
-         * Experimental support for template values. These are placeholder values between "{{" and "}}".
-         */
-        parseTemplates: boolean
-    }
+    opts?: EditorStateFromPromptStringOptions
 ): SerializedEditorState {
     // HACK(sqs): This breaks if the PromptString's references' displayPaths are present anywhere
     // else. A better solution would be to track range information for the constituent PromptString

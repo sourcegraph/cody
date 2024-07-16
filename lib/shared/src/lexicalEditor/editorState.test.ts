@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest'
 import { URI } from 'vscode-uri'
 import { ContextItemSource } from '../codebase-context/messages'
 import { PromptString, ps } from '../prompt/prompt-string'
-import { lexicalEditorStateFromPromptString, textContentFromSerializedLexicalNode } from './editorState'
+import { editorStateFromPromptString, textContentFromSerializedLexicalNode } from './editorState'
 import {
     FILE_MENTION_EDITOR_STATE_FIXTURE,
     GENERATE_UNIT_TEST_EDITOR_STATE_FIXTURE,
@@ -55,13 +55,13 @@ describe('textContentFromSerializedLexicalNode', () => {
     })
 })
 
-describe('lexicalEditorStateFromPromptString', () => {
+describe('editorStateFromPromptString', () => {
     test('converts to rich mentions', async () => {
         const input = ps`What are @${PromptString.fromDisplayPath(
             URI.file('foo.go')
         )}:3-5 and @${PromptString.fromDisplayPath(URI.file('bar.go'))} about?`
-        const editorState = lexicalEditorStateFromPromptString(input)
-        expect(editorState.root).toEqual<SerializedRootNode>({
+        const editorState = editorStateFromPromptString(input)
+        expect(editorState.lexicalEditorState.root).toEqual<SerializedRootNode>({
             children: [
                 {
                     children: [
@@ -141,18 +141,20 @@ describe('lexicalEditorStateFromPromptString', () => {
             type: 'root',
             version: 1,
         })
-        expect(textContentFromSerializedLexicalNode(editorState.root, wrapMention)).toBe(
-            'What are <<foo.go:3-5>> and <<bar.go>> about?'
-        )
+        expect(
+            textContentFromSerializedLexicalNode(editorState.lexicalEditorState.root, wrapMention)
+        ).toBe('What are <<foo.go:3-5>> and <<bar.go>> about?')
     })
 
     test('parse templates', () => {
         const input = ps`Generate tests for @${PromptString.fromDisplayPath(
             URI.file('foo.go')
         )} using {{mention framework}} framework to generate the unit tests`
-        const editorState = lexicalEditorStateFromPromptString(input, { parseTemplates: true })
-        expect(editorState.root).matchSnapshot()
-        expect(textContentFromSerializedLexicalNode(editorState.root, wrapMention)).toBe(
+        const editorState = editorStateFromPromptString(input, { parseTemplates: true })
+        expect(editorState.lexicalEditorState.root).matchSnapshot()
+        expect(
+            textContentFromSerializedLexicalNode(editorState.lexicalEditorState.root, wrapMention)
+        ).toBe(
             'Generate tests for <<foo.go>> using <<mention framework>> framework to generate the unit tests'
         )
     })

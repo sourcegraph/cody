@@ -7,8 +7,7 @@ import {
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
     type ChatClient,
     type Guardrails,
-    STATE_VERSION_CURRENT,
-    lexicalEditorStateFromPromptString,
+    editorStateFromPromptString,
 } from '@sourcegraph/cody-shared'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
@@ -139,17 +138,13 @@ export class ChatManager implements vscode.Disposable {
     }: ExecuteChatArguments): Promise<ChatSession | undefined> {
         const provider = await this.chatPanelsManager.getNewChatPanel()
         const abortSignal = provider.startNewSubmitOrEditOperation()
-        const editorState = lexicalEditorStateFromPromptString(text)
+        const editorState = editorStateFromPromptString(text)
         await provider.handleUserMessageSubmission(
             uuid.v4(),
             text,
             submitType,
             contextFiles ?? [],
-            {
-                lexicalEditorState: editorState,
-                v: STATE_VERSION_CURRENT,
-                minReaderV: STATE_VERSION_CURRENT,
-            },
+            editorState,
             addEnhancedContext ?? true,
             abortSignal,
             source,
