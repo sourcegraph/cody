@@ -22,6 +22,24 @@ export interface ContextWindow {
     maxOutputTokens: number
 }
 
+interface ServerSideConfig {
+    /**
+     * Provider type
+     */
+    type?: string
+}
+
+interface ClientSideConfig {
+    /**
+     * The API key for the model
+     */
+    apiKey?: string
+    /**
+     * The API endpoint for the model
+     */
+    apiEndpoint?: string
+}
+
 export interface ServerModel {
     modelRef: ModelRef
     displayName: string
@@ -34,9 +52,7 @@ export interface ServerModel {
     contextWindow: ContextWindow
 
     clientSideConfig?: unknown
-    serverSideConfig?: {
-        // TODO(slimsag)
-    }
+    serverSideConfig?: ServerSideConfig
 }
 
 interface Provider {
@@ -83,23 +99,12 @@ export class Model {
     /**
      * The client-specific configuration for the model.
      */
-    public readonly clientSideConfig?: {
-        /**
-         * The API key for the model
-         */
-        apiKey?: string
-        /**
-         * The API endpoint for the model
-         */
-        apiEndpoint?: string
-    }
+    public readonly clientSideConfig?: ClientSideConfig
 
     /**
      * The server-specific configuration for the model.
      */
-    public readonly serverSideConfig?: {
-        // TODO(slimsag)
-    }
+    public readonly serverSideConfig?: ServerSideConfig
 
     // The name of the provider of the model, e.g. "Anthropic"
     public provider: string
@@ -184,13 +189,8 @@ interface ModelParams {
     model: string
     usage: ModelUsage[]
     contextWindow?: ModelContextWindow
-    clientSideConfig?: {
-        apiKey?: string
-        apiEndpoint?: string
-    }
-    serverSideConfig?: {
-        // TODO(slimsag)
-    }
+    clientSideConfig?: ClientSideConfig
+    serverSideConfig?: ServerSideConfig
     tags?: ModelTag[]
     provider?: string
     title?: string
@@ -243,6 +243,7 @@ export class ModelsService {
     private static storageKeys = {
         [ModelUsage.Chat]: 'chat',
         [ModelUsage.Edit]: 'editModel',
+        [ModelUsage.AutoComplete]: 'autocomplete',
     }
 
     public static setStorage(storage: Storage): void {
@@ -300,9 +301,9 @@ export class ModelsService {
     private static getDefaultModel(type: ModelUsage, authStatus: AuthStatus): Model | undefined {
         // Free users can only use the default free model, so we just find the first model they can use
         const models = ModelsService.getModelsByType(type)
-        const firstModelUserCanUse = models.find(m => ModelsService.canUserUseModel(authStatus, m))
+        const firstModelUserCanUse = models.find(m => ModelsService.isModelAvailableFor(m, authStatus))
         const current = ModelsService.defaultModels.get(type)
-        if (current && ModelsService.canUserUseModel(authStatus, current)) {
+        if (current && ModelsService.isModelAvailableFor(current, authStatus)) {
             return current
         }
 
@@ -335,7 +336,7 @@ export class ModelsService {
         await ModelsService.storage?.set(ModelsService.storageKeys[type], resolved.model)
     }
 
-    public static canUserUseModel(status: AuthStatus, model: string | Model): boolean {
+    public static isModelAvailableFor(model: string | Model, status: AuthStatus): boolean {
         const resolved = ModelsService.resolveModel(model)
         if (!resolved) {
             return false
@@ -356,11 +357,18 @@ export class ModelsService {
         return tier === 'free'
     }
 
-    static resolveModel(modelID: Model | string): Model | undefined {
+    static resolveModel(
+        modelID: Model | string,
+        customOptions?: ResolveModelOptions
+    ): Model | undefined {
+        const options = { ...defaultOptions, ...customOptions }
         if (typeof modelID !== 'string') {
             return modelID
         }
-        return ModelsService.models.find(m => m.model === modelID)
+        if (options.exact) {
+            return ModelsService.models.find(m => m.model === modelID)
+        }
+        return ModelsService.models.find(m => m.model.includes(modelID))
     }
 
     /**
@@ -395,6 +403,14 @@ export class ModelsService {
     }
 }
 
+interface ResolveModelOptions {
+    exact?: boolean
+}
+
+const defaultOptions: ResolveModelOptions = {
+    exact: true,
+}
+
 interface Storage {
     get(key: string): string | null
     set(key: string, value: string): Promise<void>
@@ -403,7 +419,7 @@ interface Storage {
 export function capabilityToUsage(capability: ModelCapability): ModelUsage[] {
     switch (capability) {
         case 'autocomplete':
-            return []
+            return [ModelUsage.AutoComplete]
         case 'chat':
             return [ModelUsage.Chat, ModelUsage.Edit]
     }

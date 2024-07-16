@@ -4,7 +4,6 @@ import {
     type ConfigurationWithAccessToken,
     FeatureFlag,
     featureFlagProvider,
-    ModelsService,
 } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
