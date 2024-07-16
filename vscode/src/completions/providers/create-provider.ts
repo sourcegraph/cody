@@ -3,6 +3,9 @@ import {
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
     FeatureFlag,
+    type Model,
+    ModelUsage,
+    ModelsService,
     featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 
@@ -36,6 +39,7 @@ export async function createProviderConfigFromVSCodeConfig(
     config: ConfigurationWithAccessToken
 ): Promise<ProviderConfig | null> {
     switch (provider) {
+        case 'azure-openai':
         case 'unstable-openai': {
             return createUnstableOpenAIProviderConfig({
                 client,
@@ -53,6 +57,7 @@ export async function createProviderConfigFromVSCodeConfig(
         case 'anthropic': {
             return createAnthropicProviderConfig({ client, model })
         }
+        case 'gemini':
         case 'unstable-gemini': {
             return createGeminiProviderConfig({ client, model })
         }
@@ -93,80 +98,88 @@ export async function createProviderConfig(
         const { provider, model } = providerAndModelFromVSCodeConfig
         return createProviderConfigFromVSCodeConfig(client, authStatus, model, provider, config)
     }
-
+    const info = getAutocompleteModelInfo(authStatus)
+    if (!info) {
+        /**
+         * If autocomplete provider is not defined neither in VSCode nor in Sourcegraph instance site config,
+         * use the default provider config ("anthropic").
+         */
+        return createAnthropicProviderConfig({ client })
+    }
+    if (info instanceof Error) {
+        logError('createProviderConfig', info.message)
+        return null
+    }
     /**
      * If autocomplete provider is not defined in the VSCode settings,
      * check the completions provider in the connected Sourcegraph instance site config
      * and return the matching provider config.
      */
-    if (authStatus.configOverwrites?.provider) {
-        const parsed = parseProviderAndModel({
-            provider: authStatus.configOverwrites.provider,
-            model: authStatus.configOverwrites.completionModel,
-        })
-        if (!parsed) {
-            logError(
-                'createProviderConfig',
-                `Failed to parse the model name for '${authStatus.configOverwrites.provider}' completions provider.`
-            )
-            return null
-        }
-        const { provider, model } = parsed
-        switch (provider) {
-            case 'openai':
-            case 'azure-openai':
-                return createUnstableOpenAIProviderConfig({
-                    client,
-                    // Model name for azure openai provider is a deployment name. It shouldn't appear in logs.
-                    model: provider === 'azure-openai' && model ? '' : model,
-                })
+    const { provider, modelId, model } = info
+    switch (provider) {
+        case 'openai':
+        case 'azure-openai':
+            return createUnstableOpenAIProviderConfig({
+                client,
+                // Model name for azure openai provider is a deployment name. It shouldn't appear in logs.
+                model: provider === 'azure-openai' && modelId ? '' : modelId,
+            })
 
-            case 'fireworks':
-                return createFireworksProviderConfig({
-                    client,
-                    timeouts: config.autocompleteTimeouts,
-                    model: model ?? null,
-                    authStatus,
-                    config,
-                })
-            case 'experimental-openaicompatible':
+        case 'fireworks':
+            return createFireworksProviderConfig({
+                client,
+                timeouts: config.autocompleteTimeouts,
+                model: modelId ?? null,
+                authStatus,
+                config,
+            })
+        case 'experimental-openaicompatible':
+            return createOpenAICompatibleProviderConfig({
+                client,
+                timeouts: config.autocompleteTimeouts,
+                model: modelId ?? null,
+                authStatus,
+                config,
+            })
+        case 'openaicompatible-v2':
+            if (model) {
                 return createOpenAICompatibleProviderConfig({
                     client,
                     timeouts: config.autocompleteTimeouts,
-                    model: model ?? null,
+                    model: modelId ?? null,
                     authStatus,
                     config,
                 })
-            case 'aws-bedrock':
-            case 'anthropic':
+            }
+            logError(
+                'createProviderConfig',
+                'Model definition is missing for openaicompatible-v2 provider.',
+                modelId
+            )
+            return null
+        case 'aws-bedrock':
+        case 'anthropic':
+            return createAnthropicProviderConfig({
+                client,
+                // Only pass through the upstream-defined model if we're using Cody Gateway
+                model:
+                    authStatus.configOverwrites?.provider === 'sourcegraph'
+                        ? authStatus.configOverwrites.completionModel
+                        : undefined,
+            })
+        case 'google':
+            if (authStatus.configOverwrites?.completionModel?.includes('claude')) {
                 return createAnthropicProviderConfig({
-                    client,
-                    // Only pass through the upstream-defined model if we're using Cody Gateway
-                    model:
-                        authStatus.configOverwrites.provider === 'sourcegraph'
-                            ? authStatus.configOverwrites.completionModel
-                            : undefined,
+                    client, // Model name for google provider is a deployment name. It shouldn't appear in logs.
+                    model: undefined,
                 })
-            case 'google':
-                if (authStatus.configOverwrites.completionModel?.includes('claude')) {
-                    return createAnthropicProviderConfig({
-                        client, // Model name for google provider is a deployment name. It shouldn't appear in logs.
-                        model: undefined,
-                    })
-                }
-                // Gemini models
-                return createGeminiProviderConfig({ client, model })
-            default:
-                logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
-                return null
-        }
+            }
+            // Gemini models
+            return createGeminiProviderConfig({ client, model: modelId })
+        default:
+            logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
+            return null
     }
-
-    /**
-     * If autocomplete provider is not defined neither in VSCode nor in Sourcegraph instance site config,
-     * use the default provider config ("anthropic").
-     */
-    return createAnthropicProviderConfig({ client })
 }
 
 async function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<
@@ -273,6 +286,31 @@ const delimiters: Record<string, string> = {
     'aws-bedrock': '.',
 }
 
+interface AutocompleteModelInfo {
+    provider: string
+    modelId?: string
+    model?: Model
+}
+
+function getAutocompleteModelInfo(authStatus: AuthStatus): AutocompleteModelInfo | Error | undefined {
+    const model = ModelsService.getDefaultModel(ModelUsage.Autocomplete, authStatus)
+    if (model) {
+        let provider = model.provider
+        if (model.clientSideConfig?.openAICompatible) {
+            provider = 'openaicompatible-v2'
+        }
+        return { provider, modelId: model.model, model }
+    }
+    if (authStatus.configOverwrites?.provider) {
+        return parseProviderAndModel({
+            provider: authStatus.configOverwrites.provider,
+            modelId: authStatus.configOverwrites.completionModel,
+        })
+    }
+
+    // If no provider info specified, return undefined to fall back to default provider
+    return
+}
 /**
  * For certain completions providers configured in the Sourcegraph instance site config
  * the model name consists MODEL_PROVIDER and MODEL_NAME separated by a specific delimiter (see {@link delimiters}).
@@ -286,24 +324,29 @@ const delimiters: Record<string, string> = {
  */
 function parseProviderAndModel({
     provider,
-    model,
+    modelId,
 }: {
     provider: string
-    model?: string
-}): { provider: string; model?: string } | null {
+    modelId?: string
+}): AutocompleteModelInfo | Error {
     const delimiter = delimiters[provider]
     if (!delimiter) {
-        return { provider, model }
+        return { provider, modelId }
     }
 
-    if (model) {
-        const index = model.indexOf(delimiter)
-        const parsedProvider = model.slice(0, index)
-        const parsedModel = model.slice(index + 1)
+    if (modelId) {
+        const index = modelId.indexOf(delimiter)
+        const parsedProvider = modelId.slice(0, index)
+        const parsedModel = modelId.slice(index + 1)
         if (parsedProvider && parsedModel) {
-            return { provider: parsedProvider, model: parsedModel }
+            return { provider: parsedProvider, modelId: parsedModel }
         }
     }
 
-    return null
+    return new Error(
+        (modelId
+            ? `Failed to parse the model name ${modelId}`
+            : `Model missing but delimiter ${delimiter} expected`) +
+            `for '${provider}' completions provider.`
+    )
 }
