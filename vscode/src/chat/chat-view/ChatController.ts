@@ -629,64 +629,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 sessionID: this.chatModel.sessionID,
                 addEnhancedContext,
             }
-            const mentionsInInitialContext = mentions.filter(
-                item => item.source !== ContextItemSource.User
+            await this.recordChatQuestionTelemetryEvent(
+                authStatus,
+                addEnhancedContext,
+                mentions,
+                sharedProperties,
+                inputText
             )
-            const mentionsByUser = mentions.filter(item => item.source === ContextItemSource.User)
-            telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
-                metadata: {
-                    // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
-                    // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                    recordsPrivateMetadataTranscript: authStatus.endpoint && authStatus.isDotCom ? 1 : 0,
-                    addEnhancedContext: addEnhancedContext ? 1 : 0,
-
-                    // All mentions
-                    mentionsTotal: mentions.length,
-                    mentionsOfRepository: mentions.filter(item => item.type === 'repository').length,
-                    mentionsOfTree: mentions.filter(item => item.type === 'tree').length,
-                    mentionsOfWorkspaceRootTree: mentions.filter(
-                        item => item.type === 'tree' && item.isWorkspaceRoot
-                    ).length,
-                    mentionsOfFile: mentions.filter(item => item.type === 'file').length,
-
-                    // Initial context mentions
-                    mentionsInInitialContext: mentionsInInitialContext.length,
-                    mentionsInInitialContextOfRepository: mentionsInInitialContext.filter(
-                        item => item.type === 'repository'
-                    ).length,
-                    mentionsInInitialContextOfTree: mentionsInInitialContext.filter(
-                        item => item.type === 'tree'
-                    ).length,
-                    mentionsInInitialContextOfWorkspaceRootTree: mentionsInInitialContext.filter(
-                        item => item.type === 'tree' && item.isWorkspaceRoot
-                    ).length,
-                    mentionsInInitialContextOfFile: mentionsInInitialContext.filter(
-                        item => item.type === 'file'
-                    ).length,
-
-                    // Explicit mentions by user
-                    mentionsByUser: mentionsByUser.length,
-                    mentionsByUserOfRepository: mentionsByUser.filter(item => item.type === 'repository')
-                        .length,
-                    mentionsByUserOfTree: mentionsByUser.filter(item => item.type === 'tree').length,
-                    mentionsByUserOfWorkspaceRootTree: mentionsByUser.filter(
-                        item => item.type === 'tree' && item.isWorkspaceRoot
-                    ).length,
-                    mentionsByUserOfFile: mentionsByUser.filter(item => item.type === 'file').length,
-                },
-                privateMetadata: {
-                    ...sharedProperties,
-                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
-                    // V2 telemetry exports privateMetadata only for DotCom users
-                    // the condition below is an additional safeguard measure
-                    promptText:
-                        authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
-                    gitMetadata:
-                        authStatus.isDotCom && addEnhancedContext
-                            ? await this.getRepoMetadataIfPublic()
-                            : '',
-                },
-            })
 
             tracer.startActiveSpan('chat.submit.firstToken', async (firstTokenSpan): Promise<void> => {
                 if (inputText.toString().match(/^\/reset$/)) {
@@ -919,14 +868,24 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.contextFilesQueryCancellation = cancellation
 
         const source = 'chat'
+
+        // Use numerical mapping to send source values to metadata, making this data available on all instances.
+        const atMentionSourceTelemetryMetadataMapping: Record<typeof source, number> = {
+            chat: 1,
+        } as const
+
         const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
             empty: () => {
                 telemetryRecorder.recordEvent('cody.at-mention', 'executed', {
+                    metadata: {
+                        source: atMentionSourceTelemetryMetadataMapping[source],
+                    },
                     privateMetadata: { source },
                 })
             },
             withProvider: (provider, providerMetadata) => {
                 telemetryRecorder.recordEvent(`cody.at-mention.${provider}`, 'executed', {
+                    metadata: { source: atMentionSourceTelemetryMetadataMapping[source] },
                     privateMetadata: { source, providerMetadata },
                 })
             },
@@ -1599,6 +1558,71 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // Convenience function for tests
     public getViewTranscript(): readonly ChatMessage[] {
         return this.chatModel.getMessages().map(prepareChatMessage)
+    }
+
+    private async recordChatQuestionTelemetryEvent(
+        authStatus: AuthStatus,
+        addEnhancedContext: boolean,
+        mentions: ContextItem[],
+        sharedProperties: any,
+        inputText: PromptString
+    ): Promise<void> {
+        const mentionsInInitialContext = mentions.filter(item => item.source !== ContextItemSource.User)
+        const mentionsByUser = mentions.filter(item => item.source === ContextItemSource.User)
+        telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
+            metadata: {
+                // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
+                // See https://github.com/sourcegraph/sourcegraph/pull/59524
+                recordsPrivateMetadataTranscript: authStatus.endpoint && authStatus.isDotCom ? 1 : 0,
+                addEnhancedContext: addEnhancedContext ? 1 : 0,
+
+                // All mentions
+                mentionsTotal: mentions.length,
+                mentionsOfRepository: mentions.filter(item => item.type === 'repository').length,
+                mentionsOfTree: mentions.filter(item => item.type === 'tree').length,
+                mentionsOfWorkspaceRootTree: mentions.filter(
+                    item => item.type === 'tree' && item.isWorkspaceRoot
+                ).length,
+                mentionsOfFile: mentions.filter(item => item.type === 'file').length,
+
+                // Initial context mentions
+                mentionsInInitialContext: mentionsInInitialContext.length,
+                mentionsInInitialContextOfRepository: mentionsInInitialContext.filter(
+                    item => item.type === 'repository'
+                ).length,
+                mentionsInInitialContextOfTree: mentionsInInitialContext.filter(
+                    item => item.type === 'tree'
+                ).length,
+                mentionsInInitialContextOfWorkspaceRootTree: mentionsInInitialContext.filter(
+                    item => item.type === 'tree' && item.isWorkspaceRoot
+                ).length,
+                mentionsInInitialContextOfFile: mentionsInInitialContext.filter(
+                    item => item.type === 'file'
+                ).length,
+
+                // Explicit mentions by user
+                mentionsByUser: mentionsByUser.length,
+                mentionsByUserOfRepository: mentionsByUser.filter(item => item.type === 'repository')
+                    .length,
+                mentionsByUserOfTree: mentionsByUser.filter(item => item.type === 'tree').length,
+                mentionsByUserOfWorkspaceRootTree: mentionsByUser.filter(
+                    item => item.type === 'tree' && item.isWorkspaceRoot
+                ).length,
+                mentionsByUserOfFile: mentionsByUser.filter(item => item.type === 'file').length,
+            },
+            privateMetadata: {
+                ...sharedProperties,
+                // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                // V2 telemetry exports privateMetadata only for DotCom users
+                // the condition below is an additional safeguard measure
+                promptText:
+                    authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
+                gitMetadata:
+                    authStatus.isDotCom && addEnhancedContext
+                        ? await this.getRepoMetadataIfPublic()
+                        : '',
+            },
+        })
     }
 }
 

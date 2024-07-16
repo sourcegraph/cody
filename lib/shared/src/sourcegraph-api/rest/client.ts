@@ -22,14 +22,16 @@ export class RestClient {
      */
     constructor(
         private endpointUrl: string,
-        private accessToken: string
+        private accessToken?: string
     ) {}
 
     // Make an authenticated HTTP request to the Sourcegraph instance.
     // "name" is a developer-friendly term to label the request's trace span.
     private getRequest<T>(name: string, urlSuffix: string): Promise<T | Error> {
         const headers = new Headers()
-        headers.set('Authorization', `token ${this.accessToken}`)
+        if (this.accessToken) {
+            headers.set('Authorization', `token ${this.accessToken}`)
+        }
         addCustomUserAgent(headers)
         addTraceparent(headers)
 

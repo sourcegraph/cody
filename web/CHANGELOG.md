@@ -1,3 +1,7 @@
+## 0.2.5
+- Don't send vscode-related init telemetry events 
+- Fix enterprise LLM selector appearance checks for Cody Web 
+
 ## 0.2.4
 - Fix Markdown links for cody web 
 

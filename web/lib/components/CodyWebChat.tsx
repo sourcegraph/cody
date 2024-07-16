@@ -8,8 +8,9 @@ import {
     type ContextItem,
     type ContextItemRepository,
     ContextItemSource,
-    type Model,
+    Model,
     PromptString,
+    isEnterpriseUser,
     isErrorLike,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
@@ -94,13 +95,24 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                     setIsTranscriptError(message.isTranscriptError)
                     break
                 case 'chatModels':
+                    // The default model will always be the first one on the list.
                     setChatModels(message.models)
+                    setUserAccountInfo(
+                        info =>
+                            info && {
+                                ...info,
+                                isOldStyleEnterpriseUser:
+                                    !info.isDotComUser &&
+                                    !message.models.some(Model.isNewStyleEnterprise),
+                            }
+                    )
                     break
                 case 'config':
                     setUserAccountInfo({
                         isCodyProUser: !message.authStatus.userCanUpgrade,
                         isDotComUser: message.authStatus.isDotCom,
-                        isOldStyleEnterpriseUser: !message.authStatus.isDotCom,
+                        // Default to assuming they are a single model enterprise
+                        isOldStyleEnterpriseUser: isEnterpriseUser(message.authStatus),
                         user: message.authStatus,
                         ide: CodyIDE.Web,
                     })
@@ -141,14 +153,12 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
             if (!chatModels || !setChatModels) {
                 return
             }
+            // Notify the host about the manual change,
+            // and the host will return the updated change models via onMessage.
             vscodeAPI.postMessage({
                 command: 'chatModel',
                 model: selected.model,
             })
-            const updatedChatModels = chatModels.map(m =>
-                m.model === selected.model ? { ...m, default: true } : { ...m, default: false }
-            )
-            setChatModels(updatedChatModels)
         },
         [chatModels, vscodeAPI]
     )

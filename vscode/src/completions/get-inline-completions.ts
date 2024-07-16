@@ -114,7 +114,7 @@ export interface InlineCompletionsResult {
 }
 
 /**
- * The source of the inline completions result.
+ * The source of the inline completions result. Using numerical values so telemetry can be recorded on `metadata`
  */
 export enum InlineCompletionsResultSource {
     Network = 'Network',
@@ -131,7 +131,19 @@ export enum InlineCompletionsResultSource {
      */
     LastCandidate = 'LastCandidate',
 }
-
+/**
+ * Create a mapping of all inline completion sources to numerical values, so telemetry can be recorded on `metadata`.
+ */
+export const InlineCompletionsResultSourceTelemetryMetadataMapping: Record<
+    InlineCompletionsResultSource,
+    number
+> = {
+    [InlineCompletionsResultSource.Network]: 1,
+    [InlineCompletionsResultSource.Cache]: 2,
+    [InlineCompletionsResultSource.HotStreak]: 3,
+    [InlineCompletionsResultSource.CacheAfterRequestStart]: 4,
+    [InlineCompletionsResultSource.LastCandidate]: 5,
+}
 /**
  * Extends the default VS Code trigger kind to distinguish between manually invoking a completion
  * via the keyboard shortcut and invoking a completion via hovering over ghost text.
@@ -148,6 +160,12 @@ export enum TriggerKind {
 
     /** When the user uses the suggest widget to cycle through different completions. */
     SuggestWidget = 'SuggestWidget',
+}
+export const TriggerKindTelemetryMetadataMapping: Record<TriggerKind, number> = {
+    [TriggerKind.Hover]: 1,
+    [TriggerKind.Automatic]: 2,
+    [TriggerKind.Manual]: 3,
+    [TriggerKind.SuggestWidget]: 4,
 }
 
 export function allTriggerKinds(): TriggerKind[] {
