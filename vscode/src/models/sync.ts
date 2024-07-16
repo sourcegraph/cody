@@ -145,6 +145,6 @@ async function fetchServerSideModels(endpoint: string): Promise<Model[]> {
 
     // Fetch the data via REST API.
     // NOTE: We may end up exposing this data via GraphQL, it's still TBD.
-    const client = new RestClient(endpoint, userAccessToken!)
+    const client = new RestClient(endpoint, userAccessToken)
     return await client.getAvailableModels()
 }

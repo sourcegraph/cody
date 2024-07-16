@@ -8,11 +8,10 @@ import {
     type ClientStateForWebview,
     CodyIDE,
     GuardrailsPost,
-    Model,
+    type Model,
     PromptString,
     type SerializedChatTranscript,
     isCodyProUser,
-    isEnterpriseUser,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
 
@@ -104,8 +103,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             // Receive this value from the extension backend to make it work
                             // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
                             isDotComUser: message.authStatus.isDotCom,
-                            // Default to assuming they are a single model enterprise
-                            isOldStyleEnterpriseUser: isEnterpriseUser(message.authStatus),
+                            supportsServerSentModels:
+                                // determines if they have enabled server sent models
+                                !!message.codyClient?.modelsAPIEnabled,
                             user: message.authStatus,
                             ide: message.config.agentIDE || CodyIDE.VSCode,
                         })
@@ -140,15 +140,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'chatModels':
                         setChatModels(message.models)
-                        setUserAccountInfo(
-                            info =>
-                                info && {
-                                    ...info,
-                                    isOldStyleEnterpriseUser:
-                                        !info.isDotComUser &&
-                                        !message.models.some(Model.isNewStyleEnterprise),
-                                }
-                        )
                         break
                     case 'attribution':
                         if (message.attribution) {

@@ -26,7 +26,7 @@ export const ModelSelectField: React.FunctionComponent<{
     models: Model[]
     onModelSelect: (model: Model) => void
 
-    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser' | 'isOldStyleEnterpriseUser'>
+    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser' | 'supportsServerSentModels'>
 
     onCloseByEscape?: () => void
     className?: string
@@ -86,7 +86,8 @@ export const ModelSelectField: React.FunctionComponent<{
         [telemetryRecorder.recordEvent, showCodyProBadge, parentOnModelSelect, isCodyProUser]
     )
 
-    const readOnly = userInfo.isOldStyleEnterpriseUser
+    // Readonly if they are an enterprise user that does not support server-sent models
+    const readOnly = !(userInfo.isDotComUser || userInfo.supportsServerSentModels)
 
     const onOpenChange = useCallback(
         (open: boolean): void => {
@@ -266,10 +267,10 @@ const ENTERPRISE_MODEL_DOCS_PAGE =
 type ModelAvailability = 'available' | 'needs-cody-pro' | 'not-selectable-on-enterprise'
 
 function modelAvailability(
-    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser' | 'isOldStyleEnterpriseUser'>,
+    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser' | 'supportsServerSentModels'>,
     model: Model
 ): ModelAvailability {
-    if (!userInfo.isDotComUser && userInfo.isOldStyleEnterpriseUser) {
+    if (!userInfo.isDotComUser && !userInfo.supportsServerSentModels) {
         return 'not-selectable-on-enterprise'
     }
     if (isCodyProModel(model) && !userInfo.isCodyProUser) {

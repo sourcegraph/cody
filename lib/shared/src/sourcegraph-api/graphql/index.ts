@@ -1,1 +1,1 @@
-export { SourcegraphGraphQLAPIClient, graphqlClient } from './client'
+export { SourcegraphGraphQLAPIClient, graphqlClient, CodyClientConfig } from './client'
