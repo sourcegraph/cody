@@ -168,7 +168,6 @@ export type ExtensionMessage =
           config: ConfigurationSubsetForWebview & LocalEnv
           authStatus: AuthStatus
           workspaceFolderUris: string[]
-          // Server provided details about what features are enabled for the current user
       }
     | { type: 'ui/theme'; agentIDE: CodyIDE; cssVariables: CodyIDECssVariables }
     | { type: 'history'; localHistory?: UserLocalHistory | undefined | null }

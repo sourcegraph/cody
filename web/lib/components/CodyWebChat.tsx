@@ -71,7 +71,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
     const [chatModels, setChatModels] = useState<Model[]>()
-    const [serverSentModelsEnabled, setserverSentModelsEnabled] = useState<boolean>(false)
+    const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
 
     useLayoutEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -110,7 +110,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                     dispatchClientAction(message)
                     break
                 case 'setConfigFeatures':
-                    setserverSentModelsEnabled(!!message.configFeatures.serverSentModels)
+                    setServerSentModelsEnabled(!!message.configFeatures.serverSentModels)
             }
         })
     }, [vscodeAPI, dispatchClientAction])
