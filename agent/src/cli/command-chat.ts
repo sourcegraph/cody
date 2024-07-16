@@ -21,6 +21,8 @@ export interface ChatOptions {
     endpoint: string
     accessToken: string
     message: string
+    stdin?: boolean
+    messageArgs?: string[]
     dir: string
     model?: string
     contextRepo?: string[]
@@ -34,8 +36,24 @@ export interface ChatOptions {
 
 export const chatCommand = () =>
     new Command('chat')
-        .description('Chat with codebase context')
-        .requiredOption('-m, --message <message>', 'Message to send')
+        .description(
+            `Chat with codebase context.
+
+Examples:
+  cody chat -m 'Tell me about React hooks'
+  cody chat --context-file README.md --message 'Summarize this readme'
+  git diff | cody chat --stdin -m 'Explain this diff'
+
+Enterprise Only:
+  cody chat --context-repo github.com/sourcegraph/cody --message 'What is the agent?'`
+        )
+        .option('-m, --message <message>', 'Message to send')
+        .option('--stdin', 'Read message from stdin', false)
+        // Intentionally leave out `.arguments('[message...]')` because it
+        // changes the type of `option: ChatOptions` in the action to
+        // `string[]`, which is not what we want. This means that cody chat
+        // --help does not document you can pass arguments, it will just
+        // silently work.
         .option(
             '--endpoint',
             'Sourcegraph instance URL',
@@ -56,7 +74,8 @@ export const chatCommand = () =>
         .option('--show-context', 'Show context items in reply', false)
         .option('--silent', 'Disable streaming reply', false)
         .option('--debug', 'Enable debug logging', false)
-        .action(async (options: ChatOptions) => {
+        .action(async (options: ChatOptions, cmd) => {
+            options.messageArgs = cmd.args
             if (!options.accessToken) {
                 const spinner = ora().start('Loading access token')
                 const account = await AuthenticatedAccount.fromUserSettings(spinner)
@@ -94,6 +113,11 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         isSilent: options.silent,
         stream: streams.stderr,
     }).start()
+    if (!options.dir) {
+        // Should never happen but crashes with a cryptic error message if dir is undefined.
+        spinner.fail('No directory provided. To run in the current directory, use the --dir option')
+        return 1
+    }
     const workspaceRootUri = vscode.Uri.file(path.resolve(options.dir))
     const clientInfo: ClientInfo = {
         name: 'cody-cli',
@@ -166,12 +190,19 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         })
     }
     const start = performance.now()
+    const messageText = await constructMessageText(options)
+    if (!messageText) {
+        spinner.fail(
+            'No message provided. To send a message, use the --message option or pipe a message to stdin via --stdin'
+        )
+        return 1
+    }
     const response = await client.request('chat/submitMessage', {
         id,
         message: {
             command: 'submit',
             submitType: 'user',
-            text: options.message,
+            text: messageText,
             contextFiles,
             addEnhancedContext: false,
         },
@@ -226,4 +257,44 @@ function toUri(dir: string, relativeOrAbsolutePath: string): vscode.Uri {
         ? relativeOrAbsolutePath
         : path.resolve(dir, relativeOrAbsolutePath)
     return vscode.Uri.file(absolutePath)
+}
+
+// Returns the message that is sent to the chat API. The message is a concatenation of
+// - Explicitly provided --message option
+// - Explicitly provided message arguments
+// - From stdin if --stding is provided OR the message argument is exactly the
+//   string '-' (conventional for cli tools)
+// These parts are concatenated with a blank line between them. For example:
+//     git diff || cody chat --stdin explain this diff
+//     git diff || cody chat --message 'explain this diff' -
+async function constructMessageText(options: ChatOptions): Promise<string> {
+    const parts: string[] = []
+    if (options.message) {
+        parts.push(options.message)
+    }
+    const messageArgument = options.messageArgs?.join(' ') ?? ''
+    const isMessageArgumentFromStdin = messageArgument === '-'
+    if (messageArgument && !isMessageArgumentFromStdin) {
+        parts.push(messageArgument)
+    }
+    if (options.stdin || isMessageArgumentFromStdin) {
+        parts.push(await readStdin())
+    }
+
+    return parts.join('\n\n')
+}
+
+async function readStdin(): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+        const input: string[] = []
+
+        process.stdin.on('data', chunk => {
+            input.push(chunk.toString())
+        })
+
+        process.stdin.on('end', () => {
+            resolve(input.join(''))
+        })
+        process.stdin.on('error', reject)
+    })
 }
