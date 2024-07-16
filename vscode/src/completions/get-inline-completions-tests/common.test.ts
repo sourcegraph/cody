@@ -132,26 +132,6 @@ describe('[getInlineCompletions] common', () => {
         // Reuse the same request manager for both requests in this test
         const requestManager = new RequestManager()
 
-        const promise1 = getInlineCompletions(
-            params('console.█', [completion`log('Hello, world!');`], { requestManager })
-        )
-
-        // Start a second completions query before the first one is finished. The second one never
-        // receives a network response
-        const promise2 = getInlineCompletions(
-            params('console.log(█', 'never-resolve', { requestManager })
-        )
-
-        await promise1
-        const completions = await promise2
-
-        expect(completions?.items[0].insertText).toBe("'Hello, world!');")
-    })
-
-    test('synthesizes a completion from a prior request', async () => {
-        // Reuse the same request manager for both requests in this test
-        const requestManager = new RequestManager()
-
         const promise1 = getInlineCompletionsFullResponse(
             params('console.█', [completion`log('Hello, world!');`], { requestManager })
         )
