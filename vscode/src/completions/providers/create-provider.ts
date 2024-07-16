@@ -4,6 +4,7 @@ import {
     type ConfigurationWithAccessToken,
     FeatureFlag,
     featureFlagProvider,
+    ModelsService,
 } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
@@ -36,6 +37,7 @@ export async function createProviderConfigFromVSCodeConfig(
     config: ConfigurationWithAccessToken
 ): Promise<ProviderConfig | null> {
     switch (provider) {
+        case 'azure-openai':
         case 'unstable-openai': {
             return createUnstableOpenAIProviderConfig({
                 client,
@@ -53,6 +55,7 @@ export async function createProviderConfigFromVSCodeConfig(
         case 'anthropic': {
             return createAnthropicProviderConfig({ client, model })
         }
+        case 'gemini':
         case 'unstable-gemini': {
             return createGeminiProviderConfig({ client, model })
         }
@@ -111,6 +114,7 @@ export async function createProviderConfig(
             )
             return null
         }
+        //authStatus.configOverwrites.completionModel.contains('/')
         const { provider, model } = parsed
         switch (provider) {
             case 'openai':
@@ -129,7 +133,17 @@ export async function createProviderConfig(
                     authStatus,
                     config,
                 })
+            // TODO: if this works:
+            //
+            // const modelObject = ModelsService.resolveModel(`${provider}/${model!}`)
+            //
+            // Then hit this switch case if modelObject?.serverSideConfig.type === 'openaicompatible'
+            case 'bigcode':
+            case 'mistral':
             case 'experimental-openaicompatible':
+                // const modelObject = ModelsService.resolveModel(`${provider}/${model!}`)
+                // modelObject?.serverSideConfig.
+                // logError('modelObject', model||'', JSON.stringify(modelObject))
                 return createOpenAICompatibleProviderConfig({
                     client,
                     timeouts: config.autocompleteTimeouts,
@@ -271,6 +285,7 @@ async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
 const delimiters: Record<string, string> = {
     sourcegraph: '/',
     'aws-bedrock': '.',
+    'DO-NOT-USE': '/',
 }
 
 /**

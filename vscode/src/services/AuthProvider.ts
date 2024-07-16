@@ -259,8 +259,18 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
             this.client.getCodyLLMConfiguration(),
             this.client.getCurrentUserInfo(),
         ])
+        logError('codyLLMConfiguration', JSON.stringify(codyLLMConfiguration));
 
-        const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
+        const configOverwrites = isError(codyLLMConfiguration) ? undefined : {
+            chatModel: 'mistral/mixtral-8x7b-instruct',
+            fastChatModel: 'mistral/mixtral-8x7b-instruct',
+            completionModel: 'bigcode/starcoder2-7b',
+            chatModelMaxTokens: 12000,
+            fastChatModelMaxTokens: 12000,
+            completionModelMaxTokens: 12000,
+            provider: 'DO-NOT-USE',
+            smartContextWindow: true,
+        } //codyLLMConfiguration
 
         const isDotCom = this.client.isDotCom()
 

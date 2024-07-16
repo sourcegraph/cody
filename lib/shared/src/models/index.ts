@@ -34,6 +34,9 @@ export interface ServerModel {
     contextWindow: ContextWindow
 
     clientSideConfig?: unknown
+    serverSideConfig?: {
+        // TODO(slimsag)
+    }
 }
 
 interface Provider {
@@ -91,6 +94,13 @@ export class Model {
         apiEndpoint?: string
     }
 
+    /**
+     * The server-specific configuration for the model.
+     */
+    public readonly serverSideConfig?: {
+        // TODO(slimsag)
+    }
+
     // The name of the provider of the model, e.g. "Anthropic"
     public provider: string
     // The title of the model, e.g. "Claude 3 Sonnet"
@@ -108,6 +118,7 @@ export class Model {
             output: CHAT_OUTPUT_TOKEN_BUDGET,
         },
         clientSideConfig,
+        serverSideConfig,
         tags = [],
         provider,
         title,
@@ -116,6 +127,7 @@ export class Model {
         this.usage = usage
         this.contextWindow = contextWindow
         this.clientSideConfig = clientSideConfig
+        this.serverSideConfig = serverSideConfig
         this.tags = tags
 
         const info = getModelInfo(model)
@@ -130,6 +142,7 @@ export class Model {
         category,
         tier,
         clientSideConfig,
+        serverSideConfig,
         contextWindow,
     }: ServerModel) {
         // BUG: There is data loss here and the potential for ambiguity.
@@ -137,7 +150,8 @@ export class Model {
         const [providerId, _, modelId] = modelRef.split('::', 3)
 
         return new Model({
-            model: modelId,
+            // NOTE
+            model: `${providerId}/${modelId}`,
             usage: capabilities.flatMap(capabilityToUsage),
             contextWindow: {
                 input: contextWindow.maxInputTokens,
@@ -145,6 +159,7 @@ export class Model {
             },
             // @ts-ignore
             clientSideConfig: clientSideConfig,
+            serverSideConfig: serverSideConfig,
             tags: [category, tier],
             provider: providerId,
             title: displayName,
@@ -172,6 +187,9 @@ interface ModelParams {
     clientSideConfig?: {
         apiKey?: string
         apiEndpoint?: string
+    }
+    serverSideConfig?: {
+        // TODO(slimsag)
     }
     tags?: ModelTag[]
     provider?: string
@@ -338,7 +356,7 @@ export class ModelsService {
         return tier === 'free'
     }
 
-    private static resolveModel(modelID: Model | string): Model | undefined {
+    static resolveModel(modelID: Model | string): Model | undefined {
         if (typeof modelID !== 'string') {
             return modelID
         }

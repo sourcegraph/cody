@@ -77,6 +77,7 @@ export class RestClient {
         // server-side configuration. Once complete, it should match the data types we
         // use in this repo exactly. Until then, we need to map the "server-side" model
         // types, to the `Model` types used by Cody clients.
+        // NOTE
         return serverSideConfig.models.map(Model.fromApi)
     }
 }

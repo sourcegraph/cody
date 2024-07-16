@@ -68,6 +68,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // NOTE: If authStatus?.configOverwrites?.chatModel is empty,
     // automatically fallback to use the default model configured on the instance.
     if (authStatus?.configOverwrites?.chatModel) {
+        // NOTE
         ModelsService.setModels([
             new Model({
                 model: authStatus.configOverwrites.chatModel,
@@ -117,6 +118,7 @@ export function registerModelsFromVSCodeConfiguration() {
         modelsConfig.map(
             m =>
                 new Model({
+                    // NOTE
                     model: `${m.provider}/${m.model}`,
                     usage: [ModelUsage.Chat, ModelUsage.Edit],
                     contextWindow: {

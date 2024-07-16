@@ -21,6 +21,7 @@ export function getEnterpriseContextWindow(
     chatModel: string,
     configOverwrites: CodyLLMSiteConfiguration
 ): ModelContextWindow {
+    // NOTE
     const { chatModelMaxTokens, smartContextWindow } = configOverwrites
     // Starts with the default context window.
     let contextWindow: ModelContextWindow = {
