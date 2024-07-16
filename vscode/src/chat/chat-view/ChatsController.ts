@@ -147,9 +147,6 @@ export class ChatsController implements vscode.Disposable {
             vscode.commands.registerCommand('cody.action.chat', args =>
                 this.submitChatInNewEditor(args)
             ),
-            vscode.commands.registerCommand('cody.chat.focusView', () =>
-                vscode.commands.executeCommand('cody.chat.focus')
-            ),
             vscode.commands.registerCommand('cody.chat.signIn', () =>
                 vscode.commands.executeCommand('cody.chat.focus')
             ),
@@ -157,6 +154,16 @@ export class ChatsController implements vscode.Disposable {
                 await this.panel.clearAndRestartSession()
                 await vscode.commands.executeCommand('cody.chat.focus')
             }),
+            vscode.commands.registerCommand(
+                'cody.chat.toggle',
+                async (ops: { editorFocus: boolean }) => {
+                    if (ops.editorFocus) {
+                        await vscode.commands.executeCommand('cody.chat.focus')
+                    } else {
+                        await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup')
+                    }
+                }
+            ),
             vscode.commands.registerCommand('cody.chat.newEditorPanel', () =>
                 this.getOrCreateEditorChatController()
             ),
@@ -201,6 +208,9 @@ export class ChatsController implements vscode.Disposable {
     private async sendEditorContextToChat(uri?: URI): Promise<void> {
         telemetryRecorder.recordEvent('cody.addChatContext', 'clicked')
         const provider = await this.getActiveChatController()
+        if (provider === this.panel) {
+            await vscode.commands.executeCommand('cody.chat.focus')
+        }
         await provider.handleGetUserEditorContext(uri)
     }
 
