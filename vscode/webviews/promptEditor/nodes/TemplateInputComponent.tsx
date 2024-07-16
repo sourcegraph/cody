@@ -27,12 +27,16 @@ export const TemplateInputComponent: React.FC<{
     const ref = useRef<HTMLSpanElement>(null)
 
     const handleEvent = useCallback(() => {
-        const node = $getNodeByKey(nodeKey)
-        if ($isTemplateInputNode(node)) {
+        editor.update(() => {
+            const node = $getNodeByKey(nodeKey)
+            if (!$isTemplateInputNode(node)) {
+                return
+            }
+            const next = node.getNextSibling()
             node.remove()
-        }
-        // TODO ensure the cursor is in the right place
-    }, [nodeKey])
+            next?.selectStart()
+        })
+    }, [nodeKey, editor])
 
     const onDelete = useCallback(
         (event: KeyboardEvent) => {
