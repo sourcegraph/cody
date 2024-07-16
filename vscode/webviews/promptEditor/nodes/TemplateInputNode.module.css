@@ -1,10 +1,6 @@
 .template-input-node {
-    /* TODO: this is all made up, make it match figma */
-    --template-color-opacity: 70%;
-
-    color: color-mix(in lch, var(--vscode-inputOption-activeForeground) var(--template-color-opacity), transparent);
-    background-color: #3D2904;
-    border: 1px dashed #F59F00;
+    /* TODO this doesn't come close to matching the figmas due to not having the different levels of warnings colours mentioned */
+    border: 1px dashed var(--vscode-editorWarning-foreground);
     border-radius: 3px;
     white-space: normal;
     padding: 0 3px;
@@ -12,19 +8,8 @@
     align-items: baseline;
     outline-offset: -1px;
     cursor: pointer;
-}
 
-.template-input-node + .template-input-node {
-    margin-left: 2px;
-}
-
-body:is([data-vscode-theme-kind='vscode-high-contrast'], [data-vscode-theme-kind='vscode-high-contrast-light']) .template-input-node {
-    outline: solid 1px var(--vscode-input-foreground);
-}
-
-/* color-mix is not supported on JetBrains webview */
-html[data-ide='JetBrains'] .template-input-node {
-    color: var(--template-input-color);
-    background-color: var(--template-input-background);
-    gap: 0.2rem;
+    & + .template-input-node {
+        margin-left: 2px;
+    }
 }
