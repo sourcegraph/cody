@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test'
-import { createEmptyChatPanel, sidebarSignin } from './common'
+import { createEmptyChatPanel, focusSidebar, sidebarSignin } from './common'
 import { type ExpectedV2Events, executeCommandInPalette, test } from './helpers'
 
 test.extend<ExpectedV2Events>({
@@ -16,7 +16,7 @@ test.extend<ExpectedV2Events>({
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
     ],
-})('shows chat history in sidebar and update chat panel correctly', async ({ page, sidebar }) => {
+})('restore chat from quickPick', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -40,4 +40,38 @@ test.extend<ExpectedV2Events>({
 
     // Check if chat shows up in sidebar chat history tree view
     await expect(await getHeyTreeItem()).toBeVisible()
+})
+
+test.extend<ExpectedV2Events>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedV2Events: [
+        'cody.extension:installed',
+        'cody.codyIgnore:hasFile',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+    ],
+})('restore chat from sidebar history view', async ({ page, sidebar }) => {
+    await sidebarSignin(page, sidebar)
+
+    const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
+
+    // Ensure the chat view is ready before we start typing
+    await expect(chatPanelFrame.getByText('to add context to your chat')).toBeVisible()
+
+    await chatInput.fill('Hey')
+    await chatInput.press('Enter')
+
+    await focusSidebar(page)
+    await page.getByLabel('Settings & Support Section').click()
+    await chatPanelFrame.locator('button:nth-child(2)').first().click()
+
+    const newHistoryItem = chatPanelFrame.getByRole('button', { name: 'Hey' })
+    await expect(newHistoryItem).toBeVisible()
+    await newHistoryItem.click()
 })
