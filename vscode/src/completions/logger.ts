@@ -687,7 +687,11 @@ export function suggested(id: CompletionLogID, span?: Span): void {
 
             // We can assume that this completion will be marked as `read: true` because
             // READ_TIMEOUT_MS has passed without the completion being logged yet.
-            if (event.suggestedAt && !event.suggestionAnalyticsLoggedAt && !event.suggestionLoggedAt) {
+            if (
+                event.suggestedAt !== null &&
+                event.suggestionAnalyticsLoggedAt === null &&
+                event.suggestionLoggedAt === null
+            ) {
                 if (completionIdsMarkedAsSuggested.has(completionId)) {
                     return
                 }
@@ -865,7 +869,7 @@ function getInlineContextItemToLog(
     }
 }
 
-function logSuggestionEvents(isDotComUser: boolean): void {
+export function logSuggestionEvents(isDotComUser: boolean): void {
     const now = performance.now()
     // biome-ignore lint/complexity/noForEach: LRUCache#forEach has different typing than #entries, so just keeping it for now
     activeSuggestionRequests.forEach(completionEvent => {
@@ -882,7 +886,13 @@ function logSuggestionEvents(isDotComUser: boolean): void {
 
         // Only log suggestion events that were already shown to the user and
         // have not been logged yet.
-        if (!loadedAt || !startLoggedAt || !suggestedAt || suggestionLoggedAt || !params.id) {
+        if (
+            loadedAt === null ||
+            startLoggedAt === null ||
+            suggestedAt === null ||
+            suggestionLoggedAt !== null ||
+            params.id === null
+        ) {
             return
         }
         completionEvent.suggestionLoggedAt = now
