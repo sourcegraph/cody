@@ -10,14 +10,17 @@ import {
     graphqlClient,
 } from '@sourcegraph/cody-shared'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { localStorage } from '../services/LocalStorageProvider'
 import { DEFAULT_VSCODE_SETTINGS, vsCodeMocks } from '../testutils/mocks'
 import { withPosixPaths } from '../testutils/textDocument'
 import { SupportedLanguage } from '../tree-sitter/grammars'
 import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
 import { getParser, resetParsersCache } from '../tree-sitter/parser'
+import { InlineCompletionsResultSource } from './get-inline-completions'
 import {
     getInlineCompletions,
+    getInlineCompletionsFullResponse,
     initCompletionProviderConfig,
     params,
 } from './get-inline-completions-tests/helpers'
@@ -435,6 +438,67 @@ describe('InlineCompletionItemProvider', () => {
             // The completion is no longer visible due to the prefix changing before the request resolved.
             expect(spy).toHaveBeenCalledTimes(0)
             cursorSelectionMock.mockReset()
+        })
+
+        it('logs a single completion if a subsequent completion has a matching logId', async () => {
+            vi.useFakeTimers()
+            const spy = vi.spyOn(telemetryRecorder, 'recordEvent')
+
+            // Ensure the mock returns a completion item that requires the original
+            // prefix to be present.
+            const firstCompletionParams = params('const foo = █', [completion`bar`])
+            const secondCompletionParams = params('const foo = █', [completion`bar`])
+
+            let logId: CompletionLogger.CompletionLogID
+            const fn = vi
+                .fn()
+                .mockImplementationOnce(async () => {
+                    const result = await getInlineCompletionsFullResponse(firstCompletionParams)
+                    if (result) {
+                        logId = result.logId
+                    }
+                    return result
+                })
+                .mockImplementationOnce(async () => {
+                    const result = await getInlineCompletionsFullResponse(secondCompletionParams)
+                    if (result) {
+                        // This mimics the behaviour in request-manager, where a synthesized completion
+                        // will re-use the logId.
+                        // TODO: Consider adding better E2E tests that mean we don't need to mimic and instead
+                        // we just mock the network response.
+                        result.logId = logId
+                        result.source = InlineCompletionsResultSource.CacheAfterRequestStart
+                    }
+                    return result
+                })
+
+            const provider = new MockableInlineCompletionItemProvider(fn)
+
+            // Trigger two completion requests. The second one will act as a synthesized completion of the first
+            await Promise.all([
+                provider.provideInlineCompletionItems(
+                    firstCompletionParams.document,
+                    firstCompletionParams.position,
+                    DUMMY_CONTEXT
+                ),
+                provider.provideInlineCompletionItems(
+                    secondCompletionParams.document,
+                    secondCompletionParams.position,
+                    DUMMY_CONTEXT
+                ),
+            ])
+
+            // Advance the clock by the same `READ_TIMEOUT_MS` value that we set to determine
+            // that any completions were visible for long enough
+            // This will mark the first completion was visible, set `suggestionAnalyticsLoggedAt` and then
+            // the second completion (with the same logId) will not be logged..
+            vi.advanceTimersByTime(750)
+            CompletionLogger.logSuggestionEvents(true)
+
+            // Only a single suggestion event should be logged, as the second completion was a synthesized
+            // completion of the first.
+            expect(spy).toHaveBeenCalledTimes(1)
+            expect(spy).toHaveBeenCalledWith('cody.completion', 'suggested', expect.anything())
         })
     })
 
