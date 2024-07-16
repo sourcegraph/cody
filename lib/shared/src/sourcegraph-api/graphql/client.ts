@@ -1353,14 +1353,18 @@ export class ClientConfigSingleton {
     }
 
     public async getConfig(): Promise<CodyClientConfig | undefined> {
-        switch (this.shouldFetch()) {
-            case 'sync':
-                return this.refreshConfig()
-            // biome-ignore lint/suspicious/noFallthroughSwitchClause: This is intentional
-            case 'async':
-                this.refreshConfig()
-            case false:
-                return this.cachedClientConfig
+        try {
+            switch (this.shouldFetch()) {
+                case 'sync':
+                    return this.refreshConfig()
+                // biome-ignore lint/suspicious/noFallthroughSwitchClause: This is intentional
+                case 'async':
+                    this.refreshConfig()
+                case false:
+                    return this.cachedClientConfig
+            }
+        } catch {
+            return
         }
     }
 
