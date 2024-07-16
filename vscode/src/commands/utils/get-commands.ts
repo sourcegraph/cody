@@ -9,9 +9,13 @@ import type { CodyCommandArgs } from '../types'
 export function getDefaultCommandsMap(editorCommands: CodyCommand[] = []): Map<string, CodyCommand> {
     const map = new Map<string, CodyCommand>()
 
+    // Placeholder commands that should not be added to the map.
+    const placeholderCommands = ['ask', 'custom']
+
     // Add editor specific commands
     for (const command of editorCommands) {
-        if (command.key) {
+        if (command.key && !placeholderCommands.includes(command.key)) {
+            command.type = 'default'
             map.set(command.key, command)
         }
     }
