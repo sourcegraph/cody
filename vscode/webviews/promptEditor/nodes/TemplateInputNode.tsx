@@ -50,7 +50,6 @@ export class TemplateInputNode extends DecoratorNode<JSX.Element> {
                 nodeKey={this.getKey()}
                 node={this}
                 className={`${styles.templateInputNode}`}
-                focusedClassName={styles.focused}
             />
         )
     }

@@ -13,29 +13,18 @@ import {
     type NodeKey,
     SELECTION_CHANGE_COMMAND,
 } from 'lexical'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/shadcn/ui/tooltip'
 import { $isTemplateInputNode, type TemplateInputNode } from './TemplateInputNode'
-import { useIsFocused } from './mentionUtils'
 
 export const TemplateInputComponent: React.FC<{
     nodeKey: NodeKey
     node: TemplateInputNode
     className?: string
-    focusedClassName?: string
-}> = ({ nodeKey, node, className, focusedClassName }) => {
+}> = ({ nodeKey, node, className }) => {
     const [editor] = useLexicalComposerContext()
-    const isEditorFocused = useIsFocused()
     const [isSelected] = useLexicalNodeSelection(nodeKey)
     const ref = useRef<HTMLSpanElement>(null)
-
-    const composedClassNames = useMemo(() => {
-        const classes = [className]
-        if (isSelected && isEditorFocused && focusedClassName) {
-            classes.push(focusedClassName)
-        }
-        return classes.join(' ').trim() || undefined
-    }, [isSelected, className, focusedClassName, isEditorFocused])
 
     const handleEvent = useCallback(() => {
         const node = $getNodeByKey(nodeKey)
@@ -111,7 +100,7 @@ export const TemplateInputComponent: React.FC<{
     return (
         <Tooltip>
             <TooltipTrigger asChild>
-                <span ref={ref} className={composedClassNames}>
+                <span ref={ref} className={className}>
                     <span>{text}</span>
                 </span>
             </TooltipTrigger>
