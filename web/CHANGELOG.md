@@ -1,3 +1,6 @@
+## 0.2.6
+- Don't show model-select dropdown for enterprise users who don't have server-sent models enabled
+
 ## 0.2.5
 - Don't send vscode-related init telemetry events 
 - Fix enterprise LLM selector appearance checks for Cody Web 

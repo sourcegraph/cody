@@ -8,9 +8,8 @@ import {
     type ContextItem,
     type ContextItemRepository,
     ContextItemSource,
-    Model,
+    type Model,
     PromptString,
-    isEnterpriseUser,
     isErrorLike,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
@@ -72,6 +71,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
     const [chatModels, setChatModels] = useState<Model[]>()
+    const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
 
     useLayoutEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -97,22 +97,11 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                 case 'chatModels':
                     // The default model will always be the first one on the list.
                     setChatModels(message.models)
-                    setUserAccountInfo(
-                        info =>
-                            info && {
-                                ...info,
-                                isOldStyleEnterpriseUser:
-                                    !info.isDotComUser &&
-                                    !message.models.some(Model.isNewStyleEnterprise),
-                            }
-                    )
                     break
                 case 'config':
                     setUserAccountInfo({
                         isCodyProUser: !message.authStatus.userCanUpgrade,
                         isDotComUser: message.authStatus.isDotCom,
-                        // Default to assuming they are a single model enterprise
-                        isOldStyleEnterpriseUser: isEnterpriseUser(message.authStatus),
                         user: message.authStatus,
                         ide: CodyIDE.Web,
                     })
@@ -120,6 +109,8 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                 case 'clientAction':
                     dispatchClientAction(message)
                     break
+                case 'setConfigFeatures':
+                    setServerSentModelsEnabled(!!message.configFeatures.serverSentModels)
             }
         })
     }, [vscodeAPI, dispatchClientAction])
@@ -163,8 +154,8 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
         [chatModels, vscodeAPI]
     )
     const chatModelContext = useMemo<ChatModelContext>(
-        () => ({ chatModels, onCurrentChatModelChange }),
-        [chatModels, onCurrentChatModelChange]
+        () => ({ chatModels, onCurrentChatModelChange, serverSentModelsEnabled }),
+        [chatModels, onCurrentChatModelChange, serverSentModelsEnabled]
     )
 
     const clientState: ClientStateForWebview = useMemo<ClientStateForWebview>(() => {

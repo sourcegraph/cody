@@ -8,11 +8,10 @@ import {
     type ClientStateForWebview,
     CodyIDE,
     GuardrailsPost,
-    Model,
+    type Model,
     PromptString,
     type SerializedChatTranscript,
     isCodyProUser,
-    isEnterpriseUser,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
 
@@ -51,6 +50,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const [chatEnabled, setChatEnabled] = useState<boolean>(true)
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
+    const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
 
     const [clientState, setClientState] = useState<ClientStateForWebview>({
         initialContext: [],
@@ -104,8 +104,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             // Receive this value from the extension backend to make it work
                             // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
                             isDotComUser: message.authStatus.isDotCom,
-                            // Default to assuming they are a single model enterprise
-                            isOldStyleEnterpriseUser: isEnterpriseUser(message.authStatus),
                             user: message.authStatus,
                             ide: message.config.agentIDE || CodyIDE.VSCode,
                         })
@@ -119,6 +117,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'setConfigFeatures':
                         setChatEnabled(message.configFeatures.chat)
                         setAttributionEnabled(message.configFeatures.attribution)
+                        setServerSentModelsEnabled(message.configFeatures.serverSentModels)
                         break
                     case 'history':
                         setUserHistory(Object.values(message.localHistory?.chat ?? {}))
@@ -140,15 +139,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'chatModels':
                         setChatModels(message.models)
-                        setUserAccountInfo(
-                            info =>
-                                info && {
-                                    ...info,
-                                    isOldStyleEnterpriseUser:
-                                        !info.isDotComUser &&
-                                        !message.models.some(Model.isNewStyleEnterprise),
-                                }
-                        )
                         break
                     case 'attribution':
                         if (message.attribution) {
@@ -212,8 +202,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [vscodeAPI]
     )
     const chatModelContext = useMemo<ChatModelContext>(
-        () => ({ chatModels, onCurrentChatModelChange }),
-        [chatModels, onCurrentChatModelChange]
+        () => ({ chatModels, onCurrentChatModelChange, serverSentModelsEnabled }),
+        [chatModels, onCurrentChatModelChange, serverSentModelsEnabled]
     )
 
     // Wait for all the data to be loaded before rendering Chat View

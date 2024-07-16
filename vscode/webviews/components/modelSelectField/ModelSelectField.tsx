@@ -25,8 +25,9 @@ interface SelectListOption {
 export const ModelSelectField: React.FunctionComponent<{
     models: Model[]
     onModelSelect: (model: Model) => void
+    serverSentModelsEnabled: boolean
 
-    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser' | 'isOldStyleEnterpriseUser'>
+    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
 
     onCloseByEscape?: () => void
     className?: string
@@ -36,6 +37,7 @@ export const ModelSelectField: React.FunctionComponent<{
 }> = ({
     models,
     onModelSelect: parentOnModelSelect,
+    serverSentModelsEnabled,
     userInfo,
     onCloseByEscape,
     className,
@@ -86,7 +88,8 @@ export const ModelSelectField: React.FunctionComponent<{
         [telemetryRecorder.recordEvent, showCodyProBadge, parentOnModelSelect, isCodyProUser]
     )
 
-    const readOnly = userInfo.isOldStyleEnterpriseUser
+    // Readonly if they are an enterprise user that does not support server-sent models
+    const readOnly = !(userInfo.isDotComUser || serverSentModelsEnabled)
 
     const onOpenChange = useCallback(
         (open: boolean): void => {
@@ -112,7 +115,7 @@ export const ModelSelectField: React.FunctionComponent<{
     const options = useMemo<SelectListOption[]>(
         () =>
             models.map(m => {
-                const availability = modelAvailability(userInfo, m)
+                const availability = modelAvailability(userInfo, serverSentModelsEnabled, m)
                 return {
                     value: m.model,
                     title: (
@@ -135,7 +138,7 @@ export const ModelSelectField: React.FunctionComponent<{
                               : `${m.title} by ${m.provider}`,
                 } satisfies SelectListOption
             }),
-        [models, userInfo]
+        [models, userInfo, serverSentModelsEnabled]
     )
     const optionsByGroup: { group: string; options: SelectListOption[] }[] = useMemo(() => {
         return optionByGroup(options)
@@ -266,10 +269,11 @@ const ENTERPRISE_MODEL_DOCS_PAGE =
 type ModelAvailability = 'available' | 'needs-cody-pro' | 'not-selectable-on-enterprise'
 
 function modelAvailability(
-    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser' | 'isOldStyleEnterpriseUser'>,
+    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>,
+    serverSentModelsEnabled: boolean,
     model: Model
 ): ModelAvailability {
-    if (!userInfo.isDotComUser && userInfo.isOldStyleEnterpriseUser) {
+    if (!userInfo.isDotComUser && !serverSentModelsEnabled) {
         return 'not-selectable-on-enterprise'
     }
     if (isCodyProModel(model) && !userInfo.isCodyProUser) {
