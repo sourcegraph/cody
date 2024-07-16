@@ -508,6 +508,7 @@ tasks {
     description = "Runs the integration tests."
     sharedIntegrationTestConfig(buildCodyDir, "replay")
     dependsOn("processIntegrationTestResources")
+    project.properties["repeatTests"]?.let { systemProperty("repeatTests", it) }
   }
 
   register<Test>("passthroughIntegrationTest") {

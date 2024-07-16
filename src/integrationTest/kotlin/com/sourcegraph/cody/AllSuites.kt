@@ -3,6 +3,7 @@ package com.sourcegraph.cody
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.edit.DocumentCodeTest
 import com.sourcegraph.cody.util.CodyIntegrationTextFixture
+import com.sourcegraph.cody.util.RepeatableSuite
 import java.util.concurrent.TimeUnit
 import org.junit.AfterClass
 import org.junit.runner.RunWith
@@ -20,7 +21,7 @@ import org.junit.runners.Suite
  * Multiple recording files can be used, but each should have its own suite with tearDown() method
  * nad define unique CODY_RECORDING_NAME.
  */
-@RunWith(Suite::class)
+@RunWith(RepeatableSuite::class)
 @Suite.SuiteClasses(DocumentCodeTest::class)
 class AllSuites {
   companion object {
