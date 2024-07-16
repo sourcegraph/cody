@@ -21,6 +21,7 @@ import { sleep } from '../../../../vscode/src/completions/utils'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { dotcomCredentials } from '../../../../vscode/src/testutils/testing-credentials'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
+import { codyPaths } from '../../codyPaths'
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateAutocompleteStrategy } from './strategy-autocomplete'
@@ -28,7 +29,6 @@ import { evaluateChatStrategy } from './strategy-chat'
 import { evaluateFixStrategy } from './strategy-fix'
 import { evaluateGitLogStrategy } from './strategy-git-log'
 import { evaluateUnitTestStrategy } from './strategy-unit-test'
-import { codyPaths } from '../../codyPaths'
 
 export interface CodyBenchOptions {
     workspace: string
