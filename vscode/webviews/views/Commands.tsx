@@ -10,7 +10,7 @@ const CommandButton: React.FC<CodyCommand> = ({ key, prompt, description }) => (
     <button
         key={key}
         onClick={() =>
-            getVSCodeAPI().postMessage({ command: 'command', id: 'cody.action.command', args: key })
+            getVSCodeAPI().postMessage({ command: 'command', id: 'cody.action.command', arg: key })
         }
         type="button"
         className="tw-flex tw-border tw-border-border tw-bg-transparent hover:tw-bg-muted-transparent hover:tw-text-muted-foreground tw-py-1 tw-items-end tw-border-none tw-opacity-50 hover:tw-opacity-100 tw-transition-all tw-justify-start"

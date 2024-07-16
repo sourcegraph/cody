@@ -96,7 +96,7 @@ export type WebviewMessage =
           page: string
       }
     | { command: 'chatModel'; model: string }
-    | { command: 'command'; id: string; args?: any }
+    | { command: 'command'; id: string; arg?: string | undefined | null }
     | { command: 'get-chat-models' }
     | {
           command: 'openFile'

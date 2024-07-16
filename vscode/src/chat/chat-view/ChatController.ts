@@ -393,7 +393,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await this.clearAndRestartSession()
                 break
             case 'command':
-                vscode.commands.executeCommand(message.id, message.args)
+                vscode.commands.executeCommand(message.id, message.arg)
                 break
             case 'event':
                 // no-op, legacy v1 telemetry has been removed. This should be removed as well.

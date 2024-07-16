@@ -20,6 +20,7 @@ sealed class ExtensionMessage {
           "view" -> context.deserialize<ViewExtensionMessage>(element, ViewExtensionMessage::class.java)
           "errors" -> context.deserialize<ErrorsExtensionMessage>(element, ErrorsExtensionMessage::class.java)
           "transcript-errors" -> context.deserialize<`transcript-errorsExtensionMessage`>(element, `transcript-errorsExtensionMessage`::class.java)
+          "commands" -> context.deserialize<CommandsExtensionMessage>(element, CommandsExtensionMessage::class.java)
           "userContextFiles" -> context.deserialize<UserContextFilesExtensionMessage>(element, UserContextFilesExtensionMessage::class.java)
           "clientState" -> context.deserialize<ClientStateExtensionMessage>(element, ClientStateExtensionMessage::class.java)
           "clientAction" -> context.deserialize<ClientActionExtensionMessage>(element, ClientActionExtensionMessage::class.java)
@@ -83,7 +84,7 @@ data class TranscriptExtensionMessage(
 
 data class ViewExtensionMessage(
   val type: TypeEnum, // Oneof: view
-  val view: View, // Oneof: chat, login
+  val view: View, // Oneof: chat, login, history, account, commands, settings
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
@@ -108,6 +109,16 @@ data class `transcript-errorsExtensionMessage`(
 
   enum class TypeEnum {
     @SerializedName("transcript-errors") `Transcript-errors`,
+  }
+}
+
+data class CommandsExtensionMessage(
+  val type: TypeEnum, // Oneof: commands
+  val commands: List<CodyCommand>,
+) : ExtensionMessage() {
+
+  enum class TypeEnum {
+    @SerializedName("commands") Commands,
   }
 }
 
