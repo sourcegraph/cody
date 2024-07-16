@@ -41,15 +41,6 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 endpoint: 'https://example.com',
             },
             workspaceFolderUris: [],
-            codyClient: {
-                codyEnabled: true,
-                chatEnabled: true,
-                autoCompleteEnabled: true,
-                customCommandsEnabled: true,
-                attributionEnabled: true,
-                smartContextWindowEnabled: true,
-                modelsAPIEnabled: true,
-            },
         })
         cb({ type: 'chatModels', models: getDotComDefaultModels() })
         cb({

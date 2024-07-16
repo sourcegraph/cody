@@ -54,7 +54,6 @@ export const FreeUser: Story = {
         userInfo: {
             isDotComUser: true,
             isCodyProUser: false,
-            supportsServerSentModels: false,
         },
     },
 }
@@ -64,7 +63,6 @@ export const ProUser: Story = {
         userInfo: {
             isDotComUser: true,
             isCodyProUser: true,
-            supportsServerSentModels: false,
         },
     },
 }
@@ -74,7 +72,6 @@ export const EnterpriseUser: Story = {
         userInfo: {
             isDotComUser: false,
             isCodyProUser: false,
-            supportsServerSentModels: false,
         },
     },
 }
@@ -84,7 +81,6 @@ export const NewStyleEnterpriseUser: Story = {
         userInfo: {
             isDotComUser: false,
             isCodyProUser: false,
-            supportsServerSentModels: true,
         },
     },
 }

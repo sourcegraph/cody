@@ -1,6 +1,7 @@
 import {
     ClientConfigSingleton,
     Model,
+    ModelTag,
     ModelUsage,
     ModelsService,
     RestClient,
@@ -76,7 +77,7 @@ describe('syncModels', () => {
                 model: authStatus.configOverwrites.chatModel,
                 usage: [ModelUsage.Chat, ModelUsage.Edit],
                 contextWindow: getEnterpriseContextWindow(chatModel, authStatus.configOverwrites),
-                tags: [],
+                tags: [ModelTag.Enterprise],
             }),
         ])
     })

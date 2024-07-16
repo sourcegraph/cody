@@ -41,7 +41,6 @@ data class ConfigExtensionMessage(
   val config: ConfigParams,
   val authStatus: AuthStatus,
   val workspaceFolderUris: List<String>,
-  val codyClient: CodyClientConfig? = null,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {

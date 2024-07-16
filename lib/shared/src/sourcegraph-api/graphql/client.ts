@@ -160,7 +160,7 @@ interface CurrentUserInfoResponse {
 // This is fetched from the Sourcegraph instance and is specific to the current user.
 //
 // For the canonical type definition, see https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/clientconfig/types.go
-export interface CodyClientConfig {
+interface CodyClientConfig {
     // Whether the site admin allows this user to make use of Cody at all.
     codyEnabled: boolean
 

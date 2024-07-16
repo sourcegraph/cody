@@ -3,7 +3,6 @@ import type { URI } from 'vscode-uri'
 import type {
     AuthStatus,
     ClientStateForWebview,
-    CodyClientConfig,
     CodyIDE,
     ConfigurationWithAccessToken,
     ContextItem,
@@ -170,7 +169,6 @@ export type ExtensionMessage =
           authStatus: AuthStatus
           workspaceFolderUris: string[]
           // Server provided details about what features are enabled for the current user
-          codyClient?: CodyClientConfig | undefined | null
       }
     | { type: 'ui/theme'; agentIDE: CodyIDE; cssVariables: CodyIDECssVariables }
     | { type: 'history'; localHistory?: UserLocalHistory | undefined | null }
@@ -199,6 +197,7 @@ export type ExtensionMessage =
           configFeatures: {
               chat: boolean
               attribution: boolean
+              serverSentModels: boolean
           }
       }
     | {

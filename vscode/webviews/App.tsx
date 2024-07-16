@@ -50,6 +50,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const [chatEnabled, setChatEnabled] = useState<boolean>(true)
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
+    const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
 
     const [clientState, setClientState] = useState<ClientStateForWebview>({
         initialContext: [],
@@ -103,9 +104,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             // Receive this value from the extension backend to make it work
                             // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
                             isDotComUser: message.authStatus.isDotCom,
-                            supportsServerSentModels:
-                                // determines if they have enabled server sent models
-                                !!message.codyClient?.modelsAPIEnabled,
                             user: message.authStatus,
                             ide: message.config.agentIDE || CodyIDE.VSCode,
                         })
@@ -119,6 +117,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'setConfigFeatures':
                         setChatEnabled(message.configFeatures.chat)
                         setAttributionEnabled(message.configFeatures.attribution)
+                        setServerSentModelsEnabled(message.configFeatures.serverSentModels)
                         break
                     case 'history':
                         setUserHistory(Object.values(message.localHistory?.chat ?? {}))
@@ -203,8 +202,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [vscodeAPI]
     )
     const chatModelContext = useMemo<ChatModelContext>(
-        () => ({ chatModels, onCurrentChatModelChange }),
-        [chatModels, onCurrentChatModelChange]
+        () => ({ chatModels, onCurrentChatModelChange, serverSentModelsEnabled }),
+        [chatModels, onCurrentChatModelChange, serverSentModelsEnabled]
     )
 
     // Wait for all the data to be loaded before rendering Chat View

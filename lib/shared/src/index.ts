@@ -216,7 +216,6 @@ export {
 export {
     SourcegraphGraphQLAPIClient,
     graphqlClient,
-    type CodyClientConfig,
 } from './sourcegraph-api/graphql'
 export {
     ClientConfigSingleton,

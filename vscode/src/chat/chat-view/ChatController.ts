@@ -550,13 +550,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const configForWebview = await this.getConfigForWebview()
         const workspaceFolderUris =
             vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
-        const codyClient = await ClientConfigSingleton.getInstance().getConfig()
         await this.postMessage({
             type: 'config',
             config: configForWebview,
             authStatus,
             workspaceFolderUris,
-            codyClient,
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
@@ -1526,6 +1524,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // to some default values:
                 chat: clientConfig?.chatEnabled ?? true,
                 attribution: clientConfig?.attributionEnabled ?? false,
+                serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
             },
         })
 
