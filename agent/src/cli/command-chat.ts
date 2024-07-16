@@ -13,8 +13,10 @@ import packageJson from '../../package.json'
 import { newEmbeddedAgentClient } from '../agent'
 import type { ClientInfo } from '../protocol-alias'
 import { Streams } from './Streams'
+import { codyCliClientName } from './codyCliClientName'
 import { AuthenticatedAccount } from './command-auth/AuthenticatedAccount'
 import { notLoggedIn } from './command-auth/messages'
+import { isNonEmptyArray } from './isNonEmptyArray'
 
 declare const process: { pkg: { entrypoint: string } } & NodeJS.Process
 export interface ChatOptions {
@@ -120,8 +122,8 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     }
     const workspaceRootUri = vscode.Uri.file(path.resolve(options.dir))
     const clientInfo: ClientInfo = {
-        name: 'cody-cli',
-        version: options.isTesting ? '0.1.0-SNAPSHOT' : packageJson.version,
+        name: codyCliClientName,
+        version: options.isTesting ? '6.0.0-SNAPSHOT' : packageJson.version,
         workspaceRootUri: workspaceRootUri.toString(),
         extensionConfiguration: {
             serverEndpoint: options.endpoint,
@@ -204,6 +206,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         )
         return 1
     }
+    const addEnhancedContext = isNonEmptyArray(options.contextRepo)
     const response = await client.request('chat/submitMessage', {
         id,
         message: {
@@ -211,7 +214,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
             submitType: 'user',
             text: messageText,
             contextFiles,
-            addEnhancedContext: false,
+            addEnhancedContext,
         },
     })
 
