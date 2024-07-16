@@ -77,7 +77,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
                     authStatus?.configOverwrites?.chatModel,
                     authStatus?.configOverwrites
                 ),
-                tags: [],
+                tags: [ModelTag.Enterprise],
             }),
         ])
     } else {
