@@ -50,7 +50,7 @@ export const chatCommand = () =>
         .option('--model <model>', 'Chat model to use')
         .option(
             '--context-repo <repos...>',
-            'Names of repositories to use as context. Example: github.com/sourcegraph/cody'
+            '(Sourcegraph Enterprise only) Names of repositories to use as context. Example: github.com/sourcegraph/cody.'
         )
         .option('--context-file <files...>', 'Local files to include in the context')
         .option('--show-context', 'Show context items in reply', false)
@@ -145,6 +145,13 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     }
 
     if (options.contextRepo && options.contextRepo.length > 0) {
+        if (serverInfo.authStatus?.isDotCom) {
+            spinner.fail(
+                'The --context-repo option is only available for Sourcegraph Enterprise users. ' +
+                    'Please sign into an Enterprise instance with the command: cody auth logout && cody auth login --web'
+            )
+            return 1
+        }
         const { repos } = await client.request('graphql/getRepoIds', {
             names: options.contextRepo,
             first: options.contextRepo.length,
