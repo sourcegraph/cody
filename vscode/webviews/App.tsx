@@ -162,6 +162,19 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 
     useEffect(() => {
+        // On macOS, suppress the '¬' character emitted by default for alt+L
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.altKey && event.key === '¬') {
+                event.preventDefault()
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [])
+
+    useEffect(() => {
         // Notify the extension host that we are ready to receive events
         vscodeAPI.postMessage({ command: 'ready' })
     }, [vscodeAPI])

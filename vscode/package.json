@@ -604,11 +604,6 @@
         "when": "cody.activated"
       },
       {
-        "command": "cody.chat.focus",
-        "key": "alt+l",
-        "when": "cody.activated && editorTextFocus"
-      },
-      {
         "command": "cody.chat.toggle",
         "key": "alt+l",
         "when": "cody.activated && editorTextFocus",
