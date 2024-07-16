@@ -317,7 +317,7 @@ async function doGetInlineCompletions(
     // all.
     CompletionLogger.flushActiveSuggestionRequests(isDotComUser)
     const multiline = Boolean(multilineTrigger)
-    const logId = CompletionLogger.create({
+    let logId = CompletionLogger.create({
         multiline,
         triggerKind,
         providerIdentifier: providerConfig.identifier,
@@ -470,13 +470,22 @@ async function doGetInlineCompletions(
     stageRecorder.record('preNetworkRequest')
 
     // Get the processed completions from providers
-    const { completions, source } = await requestManager.request({
+    const { completions, source, updatedLogId } = await requestManager.request({
+        logId: logId,
         requestParams,
         provider: completionProvider,
         context: contextResult?.context ?? [],
         isCacheEnabled: triggerKind !== TriggerKind.Manual,
         tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,
     })
+
+    if (updatedLogId !== undefined) {
+        // If we have a new `updatedLogId`, we need to use this.
+        // This will usually be because we have determine that we want to re-use an existing result
+        // from the request manager. For example, if a result is recycled for this in-flight request,
+        // we will use the logId of the recycled result, ensuring that we do not have duplicate logging.
+        logId = updatedLogId
+    }
 
     const inlineContextParams = {
         context: contextResult?.context,
