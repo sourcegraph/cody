@@ -93,7 +93,8 @@ describe('cody chat', () => {
         ).toMatchSnapshot()
     }, 10_000)
 
-    it('--context-repo (squirrel test)', async () => {
+    // Only works for Sourcegraph Enterprise users. Blocked by CODY-2884.
+    it.skip('--context-repo (squirrel test)', async () => {
         expect(
             YAML.stringify(
                 await runCommand({
