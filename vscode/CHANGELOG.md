@@ -11,10 +11,15 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Fixed
 
 - Command: The "Ask Cody to Explain" command for explaining terminal output has been removed from the command palette, as it is only callable from the terminal context menu. [pull/4860](https://github.com/sourcegraph/cody/pull/4860)
-- Autocomplete: Characters logger now accounts for multiline deletions. [pull/4865](https://github.com/sourcegraph/cody/pull/4865)
-- Autocomplete: Fixed an issue where subsequent completions would be marked as "suggested" multiple times, if they resolved to an already visible completion. [pull/4866](https://github.com/sourcegraph/cody/pull/4866)
 
 ### Changed
+
+## 1.26.3
+
+### Fixed
+
+- Autocomplete: Characters logger now accounts for multiline deletions. [pull/4865](https://github.com/sourcegraph/cody/pull/4865)
+- Autocomplete: Fixed an issue where subsequent completions would be marked as "suggested" multiple times, if they resolved to an already visible completion. [pull/4866](https://github.com/sourcegraph/cody/pull/4866)
 
 ## 1.26.2
 
