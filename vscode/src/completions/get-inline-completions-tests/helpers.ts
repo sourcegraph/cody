@@ -358,28 +358,41 @@ export async function getInlineCompletionsWithInlinedChunks(
 }
 
 /**
+ * Helper to access `getInlineCompletions` in tests.
+ * Unlike `getInlineCompletions`, this returns the full response, including `logId`.
+ */
+export async function getInlineCompletionsFullResponse(
+    params: ParamsResult
+): Promise<InlineCompletionsResult | null> {
+    const { configuration = {} } = params
+    await initCompletionProviderConfig(configuration)
+
+    const result = await _getInlineCompletions(params)
+    if (!result) {
+        completionProviderConfig.setConfig({} as Configuration)
+    }
+
+    return result
+}
+
+/**
  * Wraps the `getInlineCompletions` function to omit `logId` so that test expected values can omit
  * it and be stable.
  */
 export async function getInlineCompletions(
     params: ParamsResult
 ): Promise<Omit<InlineCompletionsResult, 'logId'> | null> {
-    const { configuration = {} } = params
-    await initCompletionProviderConfig(configuration)
-
-    const result = await _getInlineCompletions(params)
-
-    if (result) {
-        const { logId: _discard, ...rest } = result
-
-        return {
-            ...rest,
-            items: result.items.map(({ stopReason: discard, ...item }) => item),
-        }
+    const result = await getInlineCompletionsFullResponse(params)
+    if (!result) {
+        return null
     }
 
-    completionProviderConfig.setConfig({} as Configuration)
-    return result
+    const { logId: _discard, ...rest } = result
+
+    return {
+        ...rest,
+        items: result.items.map(({ stopReason: discard, ...item }) => item),
+    }
 }
 
 /** Test helper for when you just want to assert the completion strings. */
