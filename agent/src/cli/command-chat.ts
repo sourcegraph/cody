@@ -55,12 +55,12 @@ Enterprise Only:
         // --help does not document you can pass arguments, it will just
         // silently work.
         .option(
-            '--endpoint',
+            '--endpoint <url>',
             'Sourcegraph instance URL',
             process.env.SRC_ENDPOINT ?? 'https://sourcegraph.com'
         )
         .option(
-            '--access-token',
+            '--access-token <token>',
             'Sourcegraph access token. ' + loginInstruction,
             process.env.SRC_ACCESS_TOKEN ?? ''
         )
