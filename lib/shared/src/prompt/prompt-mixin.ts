@@ -1,5 +1,4 @@
 import type { ChatMessage } from '../chat/transcript/messages'
-import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
 import { PromptString, ps } from './prompt-string'
 
 /**
@@ -17,7 +16,7 @@ const HEDGES_PREVENTION = ps`Answer positively without apologizing. `
  */
 export class PromptMixin {
     private static mixins: PromptMixin[] = []
-    private static defaultMixin: PromptMixin = new PromptMixin(ps``)
+    private static defaultMixin: PromptMixin = new PromptMixin(CONTEXT_PREAMBLE)
 
     /**
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
@@ -43,28 +42,6 @@ export class PromptMixin {
             }
         }
         return humanMessage
-    }
-
-    /**
-     * Sets the default prompt mixin determined by evaluating the CodyChatContextPreamble feature flag.
-     * Always enable the context preamble in testing and development mode.
-     *
-     * If the feature flag is enabled, set the context preamble as the default mixin.
-     * If the feature flag is disabled or an error occurs, the default mixin will be an empty prompt.
-     */
-    public static async updateContextPreamble(isExtensionModeDevOrTest = false): Promise<void> {
-        try {
-            const enabled =
-                isExtensionModeDevOrTest ||
-                (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatContextPreamble))
-            PromptMixin.defaultMixin = new PromptMixin(enabled ? CONTEXT_PREAMBLE : ps``)
-        } catch {
-            PromptMixin.resetDefaultPromptMixin()
-        }
-    }
-
-    private static resetDefaultPromptMixin(): void {
-        PromptMixin.defaultMixin = new PromptMixin(ps``)
     }
 
     /**
