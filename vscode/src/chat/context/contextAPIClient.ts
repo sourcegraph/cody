@@ -10,16 +10,15 @@ import type { InputContextItem } from '@sourcegraph/cody-shared/src/sourcegraph-
 
 function toInput(input: ContextItem[]): InputContextItem[] {
     return input
-        .map(i => {
-            if (!i || !i.content) {
-                return null
-            }
-            return {
-                content: i.content,
-                retriever: i.source || '',
-            }
-        })
-        .filter(i => i !== null)
+        .map(i =>
+            !i || !i.content
+                ? null
+                : {
+                      content: i.content,
+                      retriever: i.source || '',
+                  }
+        )
+        .filter(i => i !== null) as InputContextItem[]
 }
 
 export class ContextAPIClient {
