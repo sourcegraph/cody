@@ -548,7 +548,7 @@ export class SourcegraphGraphQLAPIClient {
         this._config = config
     }
 
-    public onConfigurationChange(newConfig: GraphQLAPIClientConfig): void {
+    public setConfig(newConfig: GraphQLAPIClientConfig): void {
         this._config = newConfig
     }
 
@@ -1428,7 +1428,7 @@ export class ClientConfigSingleton {
         return ClientConfigSingleton.instance
     }
 
-    public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
+    public async setAuthStatus(authStatus: AuthStatus): Promise<void> {
         this.isSignedIn = authStatus.authenticated && authStatus.isLoggedIn
         if (this.isSignedIn) {
             await this.refreshConfig()
@@ -1439,14 +1439,18 @@ export class ClientConfigSingleton {
     }
 
     public async getConfig(): Promise<CodyClientConfig | undefined> {
-        switch (this.shouldFetch()) {
-            case 'sync':
-                return this.refreshConfig()
-            // biome-ignore lint/suspicious/noFallthroughSwitchClause: This is intentional
-            case 'async':
-                this.refreshConfig()
-            case false:
-                return this.cachedClientConfig
+        try {
+            switch (this.shouldFetch()) {
+                case 'sync':
+                    return this.refreshConfig()
+                // biome-ignore lint/suspicious/noFallthroughSwitchClause: This is intentional
+                case 'async':
+                    this.refreshConfig()
+                case false:
+                    return this.cachedClientConfig
+            }
+        } catch {
+            return
         }
     }
 
@@ -1513,11 +1517,6 @@ export class ClientConfigSingleton {
                     return this.fetchClientConfigLegacy()
                 }
 
-                // Otherwise we use our centralized client config endpoint.
-                if (!graphqlClient.hasAccessToken())
-                    throw new Error(
-                        'unable to fetch /.api/client-config, client is not authenticated yet'
-                    )
                 return graphqlClient
                     .fetchHTTP<CodyClientConfig>('client-config', 'GET', '/.api/client-config')
                     .then(clientConfig => {

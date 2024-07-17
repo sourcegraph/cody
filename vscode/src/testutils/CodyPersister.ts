@@ -188,7 +188,7 @@ function postProcessResponseText(entry: HarEntry): string | undefined {
     }
 
     const [completionEvent, doneEvent] = parseResult.events.slice(-2)
-    if (completionEvent.type !== 'completion' || doneEvent.type !== 'done') {
+    if (completionEvent?.type !== 'completion' || doneEvent?.type !== 'done') {
         return text
     }
 

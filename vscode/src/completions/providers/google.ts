@@ -31,11 +31,15 @@ import {
 const DEFAULT_GEMINI_MODEL = 'google/gemini-1.5-flash'
 const SUPPORTED_GEMINI_MODELS = ['gemini-1.5-flash', 'gemini-pro', 'gemini-1.0-pro']
 
-const RESPONSE_CODE = ps`<|fim|>`
+const MARKERS = {
+    Prefix: ps`<|prefix|>`,
+    Suffix: ps`<|suffix|>`,
+    Response: ps`<|fim|>`,
+}
 
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: [`${RESPONSE_CODE}`],
-    multilineStopSequences: [`${RESPONSE_CODE}`],
+    singlelineStopSequences: [`${MARKERS.Response}`],
+    multilineStopSequences: [`${MARKERS.Response}`],
 })
 
 interface GoogleGeminiOptions {
@@ -109,7 +113,7 @@ class GoogleGeminiProvider extends Provider {
 
         // See official docs on prompting for Gemini models:
         // https://ai.google.dev/gemini-api/docs/prompting-intro
-        const fimPrompt = ps`<|prefix|>${prefix}<|fim|>${suffix}<|suffix|>`
+        const fimPrompt = ps`${MARKERS.Prefix}${prefix}${MARKERS.Response}${suffix}${MARKERS.Suffix}`
 
         const humanText = ps`You are a code completion AI, designed to autofill code enclosed in special markers based on its surrounding context.
 ${groupedSnippets}
@@ -117,16 +121,16 @@ ${groupedSnippets}
 Code from ${relativeFilePath} file:
 ${fimPrompt}
 
-Your mission is to generate completed code that I can replace the <|fim|> markers with, ensuring a seamless and syntactically correct result.
+Your mission is to generate completed code that I can replace the ${MARKERS.Response} markers with, ensuring a seamless and syntactically correct result.
 
-Do not repeat code from before and after <|fim|> in your output.
+Do not repeat code from before and after ${MARKERS.Response} in your output.
 Maintain consistency with the indentation, spacing, and coding style used in the code.
 Leave the output markers empty if no code is required to bridge the gap.
-Your response should contains only the code required to connect the gap, and the code must be enclosed between <|fim|> WITHOUT backticks`
+Your response should contains only the code required to connect the gap, and the code must be enclosed between ${MARKERS.Response} WITHOUT backticks`
 
         const messages: Message[] = [
             { speaker: 'human', text: humanText },
-            { speaker: 'assistant', text: ps`${RESPONSE_CODE}` },
+            { speaker: 'assistant', text: ps`${MARKERS.Response}` },
         ]
 
         return { messages, prefix: { head, tail, overlap } }
@@ -176,7 +180,7 @@ Your response should contains only the code required to connect the gap, and the
         let completion = rawResponse
 
         // Because the response should be enclosed with RESPONSE_CODE for consistency.
-        completion = completion.replaceAll(`${RESPONSE_CODE}`, '')
+        completion = completion.replaceAll(`${MARKERS.Response}`, '').replaceAll(`${MARKERS.Suffix}`, '')
 
         // Remove bad symbols from the start of the completion string.
         completion = fixBadCompletionStart(completion)

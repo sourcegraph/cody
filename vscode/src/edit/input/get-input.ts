@@ -3,6 +3,7 @@ import {
     type EditModel,
     type EventSource,
     FILE_CONTEXT_MENTION_PROVIDER,
+    ModelUsage,
     ModelsService,
     PromptString,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
@@ -13,11 +14,11 @@ import {
 import * as vscode from 'vscode'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import { EventSourceTelemetryMetadataMapping } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { GENERAL_HELP_LABEL, LARGE_FILE_WARNING_LABEL } from '../../chat/context/constants'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { executeDocCommand, executeTestEditCommand } from '../../commands/execute'
 import { getEditor } from '../../editor/active-editor'
-import { editModel } from '../../models'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 import type { AuthProvider } from '../../services/AuthProvider'
 import type { EditIntent, EditMode } from '../types'
@@ -79,7 +80,12 @@ export const getInput = async (
         return null
     }
 
-    telemetryRecorder.recordEvent('cody.menu.edit', 'clicked', { privateMetadata: { source } })
+    telemetryRecorder.recordEvent('cody.menu.edit', 'clicked', {
+        metadata: {
+            source: EventSourceTelemetryMetadataMapping[source],
+        },
+        privateMetadata: { source },
+    })
 
     const initialCursorPosition = editor.selection.active
     let activeRange = initialValues.initialExpandedRange || initialValues.initialRange
@@ -204,7 +210,7 @@ export const getInput = async (
                     return
                 }
 
-                editModel.set(acceptedItem.model)
+                ModelsService.setDefaultModel(ModelUsage.Edit, acceptedItem.model)
                 activeModelItem = acceptedItem
                 activeModel = acceptedItem.model
                 activeModelContextWindow = getContextWindowOnModelChange(acceptedItem.model)

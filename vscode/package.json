@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.26.0",
+  "version": "1.26.3",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -107,7 +107,7 @@
   },
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
-  "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.chatPanel"],
+  "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.editorPanel"],
   "contributes": {
     "walkthroughs": [
       {
@@ -266,7 +266,8 @@
         "command": "cody.command.explain-output",
         "title": "Ask Cody to Explain",
         "category": "Cody Command",
-        "icon": "$(cody-logo)"
+        "icon": "$(cody-logo)",
+        "enablement": "cody.activated && terminalTabsSingularSelection"
       },
       {
         "command": "cody.command.edit-code",
@@ -419,13 +420,6 @@
         "category": "Cody",
         "title": "Get Completions for multiple autocomplete models",
         "enablement": "cody.activated && config.cody.autocomplete.experimental.multiModelCompletions && config.cody.autocomplete.enabled && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
-      },
-      {
-        "command": "cody.chat.focusView",
-        "category": "Cody",
-        "group": "Cody",
-        "title": "Focus on Chat View",
-        "enablement": "cody.activated"
       },
       {
         "command": "cody.chat.signIn",
@@ -606,8 +600,24 @@
       },
       {
         "command": "cody.chat.newPanel",
-        "key": "alt+l",
+        "key": "alt+shift+l",
         "when": "cody.activated"
+      },
+      {
+        "command": "cody.chat.toggle",
+        "key": "alt+l",
+        "when": "cody.activated && editorTextFocus",
+        "args": {
+          "editorFocus": true
+        }
+      },
+      {
+        "command": "cody.chat.toggle",
+        "key": "alt+l",
+        "when": "cody.activated && !editorTextFocus",
+        "args": {
+          "editorFocus": false
+        }
       },
       {
         "command": "cody.mention.selection",
@@ -770,6 +780,10 @@
           "command": "cody.chat.view.popOut",
           "when": "false",
           "_comment": "Hidden because it is only a wrapper around the workspace pop out command and would place any editor tab (not just Cody chat) in a new window."
+        },
+        {
+          "command": "cody.command.explain-output",
+          "when": "false"
         }
       ],
       "editor/context": [
@@ -885,37 +899,37 @@
       "editor/title": [
         {
           "command": "cody.menu.commands",
-          "when": "cody.activated && !editorReadonly && (resourceScheme == file || activeWebviewPanelId == cody.chatPanel)",
+          "when": "cody.activated && !editorReadonly && (resourceScheme == file || activeWebviewPanelId == cody.editorPanel)",
           "group": "navigation",
           "visibility": "visible"
         },
         {
           "command": "cody.chat.moveFromEditor",
-          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated",
           "group": "navigation@1",
           "visibility": "visible"
         },
         {
           "command": "cody.chat.newEditorPanel",
-          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated",
           "group": "navigation@2",
           "visibility": "visible"
         },
         {
           "command": "cody.chat.history.panel",
-          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated",
           "group": "navigation@3",
           "visibility": "visible"
         },
         {
           "command": "cody.chat.view.popOut",
-          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated && !isAuxiliaryEditorPart",
+          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated && !isAuxiliaryEditorPart",
           "group": "navigation@4",
           "visibility": "visible"
         },
         {
           "command": "cody.settings.extension.chat",
-          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated",
           "group": "navigation@5",
           "visibility": "visible"
         }
@@ -1211,6 +1225,11 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Changes the debounce time for autocomplete requests based on the amount of time since the last request."
+        },
+        "cody.autocomplete.experimental.smartThrottleExtended": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Changes the (extended) debounce time for autocomplete requests based on the amount of time since the last request."
         },
         "openctx.enable": {
           "type": "boolean",

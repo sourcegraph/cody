@@ -16,6 +16,7 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompleteTracing,
         FeatureFlag.CodyAutocompleteContextExtendLanguagePool,
         FeatureFlag.CodyAutocompleteSmartThrottle,
+        FeatureFlag.CodyAutocompleteSmartThrottleExtended,
         FeatureFlag.CodyAutocompleteLatencyExperimentBasedFeatureFlag,
     ] as const
 
@@ -73,22 +74,31 @@ class CompletionProviderConfig {
         }
     }
 
-    private getLatencyExperimentGroup(): 'hot-streak' | 'smart-throttle' | 'control' {
+    private getLatencyExperimentGroup():
+        | 'hot-streak'
+        | 'smart-throttle'
+        | 'smart-throttle-extended'
+        | 'control' {
         // The desired distribution:
-        // - Hot-streak 33%
-        // - Smart-throttle 33%
-        // - Control group 33%
+        // - Hot-streak 25%
+        // - Smart-throttle 25%
+        // - Smart-throttle-extended 25%
+        // - Control group 25%
         //
-        // The rollout values to set;
-        // - CodyAutocompleteLatencyExperimentBasedFeatureFlag 66%
-        // - CodyAutocompleteHotStreak 50%
-        // - CodyAutocompleteSmartThrottle 100%
+        // The rollout values to set:
+        // - CodyAutocompleteLatencyExperimentBasedFeatureFlag 75%
+        // - CodyAutocompleteHotStreak 33%
+        // - CodyAutocompleteSmartThrottle 66%
+        // - CodyAutocompleteSmartThrottleExtended 50%
         if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteLatencyExperimentBasedFeatureFlag)) {
             if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteHotStreak)) {
                 return 'hot-streak'
             }
 
             if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottle)) {
+                if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottleExtended)) {
+                    return 'smart-throttle-extended'
+                }
                 return 'smart-throttle'
             }
         }
@@ -107,6 +117,13 @@ class CompletionProviderConfig {
         return (
             this.config.autocompleteExperimentalSmartThrottle ||
             this.getLatencyExperimentGroup() === 'smart-throttle'
+        )
+    }
+
+    public get smartThrottleExtended(): boolean {
+        return (
+            this.config.autocompleteExperimentalSmartThrottleExtended ||
+            this.getLatencyExperimentGroup() === 'smart-throttle-extended'
         )
     }
 }

@@ -77,6 +77,7 @@ export interface Configuration {
     autocompleteExperimentalFireworksOptions?: FireworksOptions
     autocompleteExperimentalMultiModelCompletions?: MultimodelSingleModelConfig[]
     autocompleteExperimentalSmartThrottle?: boolean
+    autocompleteExperimentalSmartThrottleExtended?: boolean
 
     /**
      * Hidden settings
@@ -97,6 +98,7 @@ export enum CodyIDE {
     Neovim = 'Neovim',
     Emacs = 'Emacs',
     Web = 'Web',
+    VisualStudio = 'VisualStudio',
 }
 
 export interface AutocompleteTimeouts {

@@ -21,7 +21,11 @@ describe('DefaultPrompter', () => {
 
     it('constructs a prompt with no context', async () => {
         ModelsService.setModels([
-            new Model('a-model-id', [ModelUsage.Chat], { input: 100000, output: 100 }),
+            new Model({
+                model: 'a-model-id',
+                usage: [ModelUsage.Chat],
+                contextWindow: { input: 100000, output: 100 },
+            }),
         ])
         const chat = new ChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
@@ -56,7 +60,11 @@ describe('DefaultPrompter', () => {
         }))
 
         ModelsService.setModels([
-            new Model('a-model-id', [ModelUsage.Chat], { input: 100000, output: 100 }),
+            new Model({
+                model: 'a-model-id',
+                usage: [ModelUsage.Chat],
+                contextWindow: { input: 100000, output: 100 },
+            }),
         ])
         const chat = new ChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
@@ -83,7 +91,11 @@ describe('DefaultPrompter', () => {
 
     it('prefers latest enhanced context', async () => {
         ModelsService.setModels([
-            new Model('a-model-id', [ModelUsage.Chat], { input: 100000, output: 100 }),
+            new Model({
+                model: 'a-model-id',
+                usage: [ModelUsage.Chat],
+                contextWindow: { input: 100000, output: 100 },
+            }),
         ])
         const chat = new ChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello, world!` })
