@@ -72,7 +72,7 @@ import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
 import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
-import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
+import type { ContextRankingController } from '../../local-context/context-ranking'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { rewriteChatQuery } from '../../local-context/rewrite-chat-query'
@@ -1866,9 +1866,6 @@ export async function addWebviewViewHTML(
     extensionUri: vscode.Uri,
     view: vscode.WebviewView | vscode.WebviewPanel
 ): Promise<void> {
-    if (isRunningInsideAgent()) {
-        return
-    }
     const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
     // Create Webview using vscode/index.html
     const root = vscode.Uri.joinPath(webviewPath, 'index.html')
