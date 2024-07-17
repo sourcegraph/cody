@@ -39,9 +39,82 @@ interface ClientSideConfig {
      */
     apiEndpoint?: string
     /**
-     * Provider type
+     * if this model is compatible with OpenAI API provider
+     * allow the site admin to set configuration params
      */
-    type?: string
+    openAICompatible?: OpenAICompatible
+}
+
+interface OpenAICompatible {
+    // (optional) List of stop sequences to use for this model.
+    stopSequences?: string[]
+
+    // (optional) EndOfText identifier used by the model. e.g. "<|endoftext|>", "< EOT >"
+    endOfText?: string
+
+    // (optional) A hint the client should use when producing context to send to the LLM.
+    // The maximum length of all context (prefix + suffix + snippets), in characters.
+    contextSizeHintTotalCharacters?: number
+
+    // (optional) A hint the client should use when producing context to send to the LLM.
+    // The maximum length of the document prefix (text before the cursor) to include, in characters.
+    contextSizeHintPrefixCharacters?: number
+
+    // (optional) A hint the client should use when producing context to send to the LLM.
+    // The maximum length of the document suffix (text after the cursor) to include, in characters.
+    contextSizeHintSuffixCharacters?: number
+
+    // (optional) Custom instruction to be included at the start of all chat messages
+    // when using this model, e.g. "Answer all questions in Spanish."
+    //
+    // Note: similar to Cody client config option `cody.chat.preInstruction`; if user has
+    // configured that it will be used instead of this.
+    chatPreInstruction?: string
+
+    // (optional) Custom instruction to be included at the end of all edit commands
+    // when using this model, e.g. "Write all unit tests with Jest instead of detected framework."
+    //
+    // Note: similar to Cody client config option `cody.edit.preInstruction`; if user has
+    // configured that it will be respected instead of this.
+    editPostInstruction?: string
+
+    // (optional) How long the client should wait for autocomplete results to come back (milliseconds),
+    // before giving up and not displaying an autocomplete result at all.
+    //
+    // This applies on single-line completions, e.g. `var i = <completion>`
+    //
+    // Note: similar to hidden Cody client config option `cody.autocomplete.advanced.timeout.singleline`
+    // If user has configured that, it will be respected instead of this.
+    autocompleteSinglelineTimeout?: number
+
+    // (optional) How long the client should wait for autocomplete results to come back (milliseconds),
+    // before giving up and not displaying an autocomplete result at all.
+    //
+    // This applies on multi-line completions, which are based on intent-detection when e.g. a code block
+    // is being completed, e.g. `func parseURL(url string) {<completion>`
+    //
+    // Note: similar to hidden Cody client config option `cody.autocomplete.advanced.timeout.multiline`
+    // If user has configured that, it will be respected instead of this.
+    autocompleteMultilineTimeout?: number
+
+    // (optional) model parameters to use for the chat feature
+    chatTopK?: number
+    chatTopP?: number
+    chatTemperature?: number
+    chatMaxTokens?: number
+
+    // (optional) model parameters to use for the autocomplete feature
+    autoCompleteTopK?: number
+    autoCompleteTopP?: number
+    autoCompleteTemperature?: number
+    autoCompleteSinglelineMaxTokens?: number
+    autoCompleteMultilineMaxTokens?: number
+
+    // (optional) model parameters to use for the edit feature
+    editTopK?: number
+    editTopP?: number
+    editTemperature?: number
+    editMaxTokens?: number
 }
 
 export interface ServerModel {
