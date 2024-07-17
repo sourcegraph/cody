@@ -1,5 +1,5 @@
 import type { SerializedLexicalNode, SerializedTextNode } from 'lexical'
-import { type SerializedPromptEditorState } from './editorState'
+import type { SerializedPromptEditorState } from './editorState'
 import type {
     SerializedContextItem,
     SerializedContextItemMentionNode,

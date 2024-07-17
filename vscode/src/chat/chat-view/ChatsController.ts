@@ -10,8 +10,8 @@ import {
     type Guardrails,
     ModelUsage,
     ModelsService,
-    featureFlagProvider,
     editorStateFromPromptString,
+    featureFlagProvider,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
