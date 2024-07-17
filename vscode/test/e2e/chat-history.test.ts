@@ -68,8 +68,7 @@ test.extend<ExpectedV2Events>({
     await chatInput.press('Enter')
 
     await focusSidebar(page)
-    await page.getByLabel('Settings & Support Section').click()
-    await chatPanelFrame.locator('button:nth-child(2)').first().click()
+    await chatPanelFrame.locator('[id="radix-\\:r0\\:-trigger-history"]').getByRole('button').click()
 
     const newHistoryItem = chatPanelFrame.getByRole('button', { name: 'Hey' })
     await expect(newHistoryItem).toBeVisible()

@@ -122,10 +122,10 @@ test.extend<ExpectedV2Events>({
 
     // Execute the command from the Commands tab in Chat view
     await focusSidebar(page)
-    await page.getByLabel('Settings & Support Section').click()
+
     const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     // Click on the Commands view icon
-    await chatPanel.locator('button:nth-child(3)').first().click()
+    await chatPanel.locator('[id="radix-\\:r0\\:-trigger-commands"]').getByRole('button').click()
     await chatPanel.getByRole('button', { name: 'Explain code' }).click()
     await chatPanel.getByText('hello from the assistant').hover()
 })

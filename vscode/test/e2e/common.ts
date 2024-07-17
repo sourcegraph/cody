@@ -54,7 +54,7 @@ export async function focusSidebar(page: Page): Promise<void> {
 
 export async function expectAuthenticated(page: Page) {
     await focusSidebar(page)
-    await expect(page.getByLabel('Settings & Support Section')).toBeVisible()
+    await expect(page.getByTitle('Person')).toBeVisible()
 }
 
 // Selector for the Explorer button in the sidebar that would match on Mac and Linux

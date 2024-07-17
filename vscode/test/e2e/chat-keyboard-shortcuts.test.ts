@@ -14,9 +14,6 @@ test('chat keyboard shortcuts', async ({ page, sidebar }) => {
     await page.bringToFront()
     await sidebarSignin(page, sidebar)
 
-    // Collapse Settings section to make room for chat components
-    await page.getByLabel('Settings & Support Section').click()
-
     const chatPanel = getChatSidebarPanel(page)
     const chatInput = getChatInputs(chatPanel).first()
 

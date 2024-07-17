@@ -17,7 +17,8 @@ test.extend<ExpectedV2Events>({
         'cody.auth:connected',
         'cody.auth.logout:clicked',
         'cody.auth:disconnected',
-        'cody.statusbarIcon:clicked',
+        'cody.interactiveTutorial:attemptingStart',
+        'cody.experiment.interactiveTutorial:enrolled',
     ],
 })('requires a valid auth token and allows logouts', async ({ page, sidebar }) => {
     await expect(page.getByText('Authentication failed.')).not.toBeVisible()
@@ -41,16 +42,14 @@ test.extend<ExpectedV2Events>({
     await signOut(page)
     await focusSidebar(page)
 
+    // Makes sure the sign in page is loaded in the sidebar view with Cody: Chat as the heading
+    // instead of the chat panel.
     const sidebarFrame = page.frameLocator('iframe.webview').frameLocator('iframe').first()
     await expect(
         sidebarFrame.getByRole('button', { name: 'Sign In to Your Enterprise Instance' })
     ).toBeVisible()
-
-    // Click on Cody at the bottom menu to open sign in
-    await page.getByRole('button', { name: 'Sign In, Sign in to get started with Cody' }).click()
-
-    // Makes sure the sign in page is loaded in the sidebar view with Cody: Chat as the heading
-    // instead of the chat panel.
     await expect(page.getByRole('heading', { name: 'Cody: Chat' })).toBeVisible()
-    await page.getByRole('heading', { name: 'Cody: Chat' }).click()
+
+    // Expect status bar to show the sign in button.
+    await expect(page.getByRole('button', { name: 'cody-logo-heavy Sign In, Sign' })).toBeVisible()
 })
