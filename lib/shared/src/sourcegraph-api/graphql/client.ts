@@ -1271,7 +1271,7 @@ export class SourcegraphGraphQLAPIClient {
         const timeoutId = setTimeout(() => controller.abort(), timeout)
 
         return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
-             fetch(url, {
+            fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({ query, variables }),
                 headers,
