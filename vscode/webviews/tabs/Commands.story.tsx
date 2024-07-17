@@ -1,22 +1,22 @@
 import type { CodyCommand } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
-import { CommandsView } from './Commands'
+import { CommandsTab } from './Commands'
 
-const meta: Meta<typeof CommandsView> = {
-    title: 'cody/CommandsView',
-    component: CommandsView,
+const meta: Meta<typeof CommandsTab> = {
+    title: 'cody/CommandsTab',
+    component: CommandsTab,
     decorators: [VSCodeStandaloneComponent],
     render: args => (
         <div style={{ position: 'relative', padding: '1rem' }}>
-            <CommandsView {...args} />
+            <CommandsTab {...args} />
         </div>
     ),
 }
 
 export default meta
 
-type Story = StoryObj<typeof CommandsView>
+type Story = StoryObj<typeof CommandsTab>
 
 export const DefaultOnly: Story = {
     args: {
@@ -37,16 +37,7 @@ export const DefaultOnly: Story = {
     },
 }
 
-export const CustomOnly: Story = {
-    args: {
-        commands: [
-            { key: 'custom1', prompt: 'Custom command 1', description: 'Custom 1', type: 'user' },
-            { key: 'custom2', prompt: 'Custom command 2', description: 'Custom 2', type: 'workspace' },
-        ] as CodyCommand[],
-    },
-}
-
-export const Mixed: Story = {
+export const WithCustom: Story = {
     args: {
         commands: [
             {

@@ -21,7 +21,7 @@ import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/s
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import type { Uri } from 'vscode'
-import type { View } from '../../webviews/NavBar'
+import type { View } from '../../webviews/tabs/TabsBar'
 import type { Repo } from '../context/repo-fetcher'
 
 /**

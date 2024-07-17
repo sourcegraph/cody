@@ -113,10 +113,6 @@ export class ChatsController implements vscode.Disposable {
 
     public registerViewsAndCommands() {
         this.disposables.push(
-            vscode.window.registerTreeDataProvider(
-                'cody.support.tree.view',
-                this.supportTreeViewProvider
-            ),
             vscode.window.registerWebviewViewProvider('cody.chat', this.panel, {
                 webviewOptions: { retainContextWhenHidden: true },
             })
@@ -294,26 +290,29 @@ export class ChatsController implements vscode.Disposable {
      */
     private async exportHistory(): Promise<void> {
         telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
-        const historyJson = localStorage.getChatHistory(this.options.authProvider.getAuthStatus())?.chat
-        const exportPath = await vscode.window.showSaveDialog({
-            filters: { 'Chat History': ['json'] },
-        })
-        if (!exportPath || !historyJson) {
-            return
-        }
-        try {
-            const logContent = new TextEncoder().encode(JSON.stringify(historyJson))
-            await vscode.workspace.fs.writeFile(exportPath, logContent)
-            // Display message and ask if user wants to open file
-            void vscode.window
-                .showInformationMessage('Chat history exported successfully.', 'Open')
-                .then(choice => {
-                    if (choice === 'Open') {
-                        void vscode.commands.executeCommand('vscode.open', exportPath)
-                    }
+        const authStatus = this.options.authProvider.getAuthStatus()
+        if (authStatus.isLoggedIn) {
+            try {
+                const historyJson = chatHistory.getLocalHistory(authStatus)
+                const exportPath = await vscode.window.showSaveDialog({
+                    filters: { 'Chat History': ['json'] },
                 })
-        } catch (error) {
-            logError('ChatsController:exportHistory', 'Failed to export chat history', error)
+                if (!exportPath || !historyJson) {
+                    return
+                }
+                const logContent = new TextEncoder().encode(JSON.stringify(historyJson))
+                await vscode.workspace.fs.writeFile(exportPath, logContent)
+                // Display message and ask if user wants to open file
+                void vscode.window
+                    .showInformationMessage('Chat history exported successfully.', 'Open')
+                    .then(choice => {
+                        if (choice === 'Open') {
+                            void vscode.commands.executeCommand('vscode.open', exportPath)
+                        }
+                    })
+            } catch (error) {
+                logError('ChatsController:exportHistory', 'Failed to export chat history', error)
+            }
         }
     }
 

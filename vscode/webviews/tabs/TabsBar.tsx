@@ -1,3 +1,4 @@
+import * as Tabs from '@radix-ui/react-tabs'
 import clsx from 'clsx'
 import {
     CircleUserIcon,
@@ -10,8 +11,8 @@ import {
     Trash2Icon,
     ZapIcon,
 } from 'lucide-react'
-import styles from './NavBar.module.css'
-import { getVSCodeAPI } from './utils/VSCodeApi'
+import { getVSCodeAPI } from '../utils/VSCodeApi'
+import styles from './TabsBar.module.css'
 
 export enum View {
     Chat = 'chat',
@@ -22,7 +23,7 @@ export enum View {
     Settings = 'settings',
 }
 
-interface NavBarProps {
+interface TabsBarProps {
     currentView: View
     setView: (view?: View) => void
 }
@@ -57,41 +58,44 @@ const icons: IconConfig[] = [
     { Icon: CircleUserIcon, command: 'cody.auth.account', view: View.Account },
 ]
 
-export const NavBar: React.FC<NavBarProps> = ({ currentView, setView }) => {
+export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView }) => {
     const baseClasses =
-        'tw-rounded-none tw-bg-transparent tw-border-solid tw-border-b tw-px-2 tw-pb-4 tw-transition-all hover:tw-opacity-100'
-    const activeClasses = 'tw-opacity-100 tw-border-foreground'
-    const inactiveClasses = 'tw-opacity-50 tw-border-transparent'
+        'tw-rounded-none tw-bg-transparent tw-border-solid tw-border-b tw-px-2 tw-py-4 tw-transition-all hover:tw-text-button-background'
+    const activeClasses = 'tw-border-button-background tw-text-button-background'
+    const inactiveClasses = 'tw-border-transparent'
 
-    const currentViewRightIcons = icons.find(icon => icon.view === currentView)?.RightIcons
+    // const currentViewRightIcons = icons.find(icon => icon.view === currentView)?.RightIcons
 
     const handleClick = (view: View, command?: string) => {
-        setView(view)
         if (command) {
             getVSCodeAPI().postMessage({ command: 'command', id: command })
         }
+        setView(view)
     }
+    const currentViewRightIcons = icons.find(icon => icon.view === currentView)?.RightIcons
 
     return (
-        <div
+        <Tabs.List
+            aria-label="cody-webview"
             className={clsx(
-                'tw-flex tw-justify-between tw-sticky tw-top-0 tw-z-50 tw-w-full tw-border-b tw-border-border tw-mb-1 tw-px-2',
-                styles.navbarContainer
+                'tw-flex tw-justify-between tw-sticky tw-top-0 tw-z-50 tw-w-full tw-border-b tw-border-border tw-my-1 tw-px-4',
+                styles.tabsContainer
             )}
         >
             <div>
                 {icons.map(({ Icon, view, command }) => (
-                    <button
-                        type="button"
-                        key={view}
-                        onClick={() => handleClick(view, command)}
-                        className={clsx(
-                            baseClasses,
-                            currentView === view ? activeClasses : inactiveClasses
-                        )}
-                    >
-                        <Icon size={16} />
-                    </button>
+                    <Tabs.Trigger key={view} value={view}>
+                        <button
+                            type="button"
+                            onClick={() => handleClick(view, command)}
+                            className={clsx(
+                                baseClasses,
+                                currentView === view ? activeClasses : inactiveClasses
+                            )}
+                        >
+                            <Icon size={16} strokeWidth={1.25} />
+                        </button>
+                    </Tabs.Trigger>
                 ))}
             </div>
             <div>
@@ -102,10 +106,10 @@ export const NavBar: React.FC<NavBarProps> = ({ currentView, setView }) => {
                         className={clsx(baseClasses, inactiveClasses)}
                         onClick={() => getVSCodeAPI().postMessage({ command: 'command', id: command })}
                     >
-                        <Icon size={16} />
+                        <Icon size={16} strokeWidth={1.25} />
                     </button>
                 ))}
             </div>
-        </div>
+        </Tabs.List>
     )
 }

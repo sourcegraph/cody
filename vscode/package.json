@@ -239,11 +239,6 @@
           "type": "webview",
           "id": "cody.chat",
           "name": "Chat"
-        },
-        {
-          "id": "cody.support.tree.view",
-          "name": "Settings & Support",
-          "when": "cody.activated"
         }
       ]
     },
@@ -862,27 +857,27 @@
         },
         {
           "command": "cody.welcome",
-          "when": "view == cody.support.tree.view",
+          "when": "view == cody.chat",
           "group": "7_cody@0"
         },
         {
           "command": "cody.debug.export.logs",
-          "when": "view == cody.support.tree.view",
+          "when": "view == cody.chat",
           "group": "8_cody@1"
         },
         {
           "command": "cody.debug.enable.all",
-          "when": "view == cody.support.tree.view && !config.cody.debug.verbose",
+          "when": "view == cody.chat && !config.cody.debug.verbose",
           "group": "8_cody@0"
         },
         {
           "command": "cody.debug.outputChannel",
-          "when": "view == cody.support.tree.view",
+          "when": "view == cody.chat",
           "group": "8_cody@2"
         },
         {
           "command": "cody.debug.reportIssue",
-          "when": "view == cody.support.tree.view",
+          "when": "view == cody.chat",
           "group": "9_cody@1"
         }
       ],
@@ -922,13 +917,6 @@
           "when": "activeWebviewPanelId == cody.editorPanel && cody.activated",
           "group": "navigation@5",
           "visibility": "visible"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "cody.copy.version",
-          "when": "view == cody.support.tree.view && viewItem == cody.version",
-          "group": "inline@1"
         }
       ],
       "terminal/context": [
@@ -1343,6 +1331,7 @@
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-popover": "^1.0.7",
     "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-tabs": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.0.7",
     "@sentry/browser": "^7.107.0",
     "@sentry/core": "^7.107.0",

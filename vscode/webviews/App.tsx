@@ -1,3 +1,4 @@
+import * as Tabs from '@radix-ui/react-tabs'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import styles from './App.module.css'
@@ -18,18 +19,19 @@ import type { AuthMethod, ConfigurationSubsetForWebview, LocalEnv } from '../src
 import type { UserAccountInfo } from './Chat'
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
-import { NavBar, View } from './NavBar'
 import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
 import { ConnectionIssuesPage } from './Troubleshooting'
 import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
 import { ClientStateContextProvider, useClientActionDispatcher } from './client/clientState'
+
 import { WithContextProviders } from './mentions/providers'
+import { CommandsTab } from './tabs/Commands'
+import { HistoryTab } from './tabs/History'
+import { TabsBar, View } from './tabs/TabsBar'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
-import { CommandsView } from './views/Commands'
-import { HistoryView } from './views/History'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
@@ -258,38 +260,45 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     }
 
     return (
-        <div className={styles.outerContainer}>
-            <NavBar currentView={view} setView={setView} />
+        <Tabs.Root
+            defaultValue={view}
+            value={view}
+            orientation="vertical"
+            className={styles.outerContainer}
+        >
+            <TabsBar currentView={view} setView={setView} />
             {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
-            {view === 'chat' && (
-                <ChatModelContextProvider value={chatModelContext}>
-                    <WithContextProviders>
-                        <TelemetryRecorderContext.Provider value={telemetryRecorder}>
-                            <ClientStateContextProvider value={clientState}>
-                                <Notices
-                                    probablyNewInstall={isNewInstall}
-                                    IDE={config.agentIDE}
-                                    version={config.agentExtensionVersion}
-                                />
-                                <Chat
-                                    chatID={chatID}
-                                    chatEnabled={chatEnabled}
-                                    userInfo={userAccountInfo}
-                                    messageInProgress={messageInProgress}
-                                    transcript={transcript}
-                                    vscodeAPI={vscodeAPI}
-                                    isTranscriptError={isTranscriptError}
-                                    guardrails={attributionEnabled ? guardrails : undefined}
-                                    experimentalUnitTestEnabled={config.experimentalUnitTest}
-                                />
-                            </ClientStateContextProvider>
-                        </TelemetryRecorderContext.Provider>
-                    </WithContextProviders>
-                </ChatModelContextProvider>
-            )}
-            {view === 'history' && <HistoryView userHistory={userHistory} />}
-            {view === 'commands' && <CommandsView commands={commandList} />}
-        </div>
+            <Tabs.Content value={view} className="tw-h-full">
+                {view === 'chat' && (
+                    <ChatModelContextProvider value={chatModelContext}>
+                        <WithContextProviders>
+                            <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                                <ClientStateContextProvider value={clientState}>
+                                    <Notices
+                                        probablyNewInstall={isNewInstall}
+                                        IDE={config.agentIDE}
+                                        version={config.agentExtensionVersion}
+                                    />
+                                    <Chat
+                                        chatID={chatID}
+                                        chatEnabled={chatEnabled}
+                                        userInfo={userAccountInfo}
+                                        messageInProgress={messageInProgress}
+                                        transcript={transcript}
+                                        vscodeAPI={vscodeAPI}
+                                        isTranscriptError={isTranscriptError}
+                                        guardrails={attributionEnabled ? guardrails : undefined}
+                                        experimentalUnitTestEnabled={config.experimentalUnitTest}
+                                    />
+                                </ClientStateContextProvider>
+                            </TelemetryRecorderContext.Provider>
+                        </WithContextProviders>
+                    </ChatModelContextProvider>
+                )}
+                {view === 'history' && <HistoryTab userHistory={userHistory} />}
+                {view === 'commands' && <CommandsTab commands={commandList} />}
+            </Tabs.Content>
+        </Tabs.Root>
     )
 }
 

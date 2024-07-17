@@ -1,21 +1,21 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
-import { HistoryView } from './History'
+import { HistoryTab } from './History'
 
-const meta: Meta<typeof HistoryView> = {
-    title: 'cody/HistoryView',
-    component: HistoryView,
+const meta: Meta<typeof HistoryTab> = {
+    title: 'cody/HistoryTab',
+    component: HistoryTab,
     decorators: [VSCodeStandaloneComponent],
     render: args => (
         <div style={{ position: 'relative', padding: '1rem' }}>
-            <HistoryView {...args} />
+            <HistoryTab {...args} />
         </div>
     ),
 }
 
 export default meta
 
-type Story = StoryObj<typeof HistoryView>
+type Story = StoryObj<typeof HistoryTab>
 
 export const Empty: Story = {
     args: {
