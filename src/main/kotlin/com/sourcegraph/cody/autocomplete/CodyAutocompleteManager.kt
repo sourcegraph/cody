@@ -357,6 +357,10 @@ class CodyAutocompleteManager {
       inlayModel: InlayModel,
       triggerKind: InlineCompletionTriggerKind,
   ) {
+    if (editor.isDisposed) {
+      return
+    }
+
     val project = editor.project
     val defaultItem = items.firstOrNull() ?: return
     val range = getTextRange(editor.document, defaultItem.range)
