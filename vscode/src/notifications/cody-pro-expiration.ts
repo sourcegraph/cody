@@ -33,7 +33,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
     /**
      * Current subscription to auth provider status changes that may trigger a check.
      */
-    private authProviderSubscription: (() => void) | undefined
+    private authProviderSubscription: vscode.Disposable | undefined
 
     /**
      * A timer if there is currently an outstanding timed check.
@@ -83,8 +83,9 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
             // right flags.
             //
             // See https://sourcegraph.slack.com/archives/C05AGQYD528/p1706872864488829
-            this.authProviderSubscription = this.authProvider.addChangeListener(() =>
-                setTimeout(() => this.triggerExpirationCheck(), this.autoUpdateDelay)
+            this.authProviderSubscription = this.authProvider.onChange(
+                () => setTimeout(() => this.triggerExpirationCheck(), this.autoUpdateDelay),
+                { runImmediately: true }
             )
         }
 
@@ -188,7 +189,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
     public dispose() {
         this.isDisposed = true
 
-        this.authProviderSubscription?.()
+        this.authProviderSubscription?.dispose()
         this.authProviderSubscription = undefined
 
         this.nextTimedCheck?.unref()

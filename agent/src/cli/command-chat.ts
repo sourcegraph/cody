@@ -13,14 +13,18 @@ import packageJson from '../../package.json'
 import { newEmbeddedAgentClient } from '../agent'
 import type { ClientInfo } from '../protocol-alias'
 import { Streams } from './Streams'
+import { codyCliClientName } from './codyCliClientName'
 import { AuthenticatedAccount } from './command-auth/AuthenticatedAccount'
 import { notLoggedIn } from './command-auth/messages'
+import { isNonEmptyArray } from './isNonEmptyArray'
 
 declare const process: { pkg: { entrypoint: string } } & NodeJS.Process
 export interface ChatOptions {
     endpoint: string
     accessToken: string
     message: string
+    stdin?: boolean
+    messageArgs?: string[]
     dir: string
     model?: string
     contextRepo?: string[]
@@ -34,15 +38,31 @@ export interface ChatOptions {
 
 export const chatCommand = () =>
     new Command('chat')
-        .description('Chat with codebase context')
-        .requiredOption('-m, --message <message>', 'Message to send')
+        .description(
+            `Chat with codebase context.
+
+Examples:
+  cody chat -m 'Tell me about React hooks'
+  cody chat --context-file README.md --message 'Summarize this readme'
+  git diff | cody chat --stdin -m 'Explain this diff'
+
+Enterprise Only:
+  cody chat --context-repo github.com/sourcegraph/cody --message 'What is the agent?'`
+        )
+        .option('-m, --message <message>', 'Message to send')
+        .option('--stdin', 'Read message from stdin', false)
+        // Intentionally leave out `.arguments('[message...]')` because it
+        // changes the type of `option: ChatOptions` in the action to
+        // `string[]`, which is not what we want. This means that cody chat
+        // --help does not document you can pass arguments, it will just
+        // silently work.
         .option(
-            '--endpoint',
+            '--endpoint <url>',
             'Sourcegraph instance URL',
             process.env.SRC_ENDPOINT ?? 'https://sourcegraph.com'
         )
         .option(
-            '--access-token',
+            '--access-token <token>',
             'Sourcegraph access token. ' + loginInstruction,
             process.env.SRC_ACCESS_TOKEN ?? ''
         )
@@ -50,13 +70,14 @@ export const chatCommand = () =>
         .option('--model <model>', 'Chat model to use')
         .option(
             '--context-repo <repos...>',
-            'Names of repositories to use as context. Example: github.com/sourcegraph/cody'
+            '(Sourcegraph Enterprise only) Names of repositories to use as context. Example: github.com/sourcegraph/cody.'
         )
         .option('--context-file <files...>', 'Local files to include in the context')
         .option('--show-context', 'Show context items in reply', false)
         .option('--silent', 'Disable streaming reply', false)
         .option('--debug', 'Enable debug logging', false)
-        .action(async (options: ChatOptions) => {
+        .action(async (options: ChatOptions, cmd) => {
+            options.messageArgs = cmd.args
             if (!options.accessToken) {
                 const spinner = ora().start('Loading access token')
                 const account = await AuthenticatedAccount.fromUserSettings(spinner)
@@ -94,10 +115,15 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         isSilent: options.silent,
         stream: streams.stderr,
     }).start()
+    if (!options.dir) {
+        // Should never happen but crashes with a cryptic error message if dir is undefined.
+        spinner.fail('No directory provided. To run in the current directory, use the --dir option')
+        return 1
+    }
     const workspaceRootUri = vscode.Uri.file(path.resolve(options.dir))
     const clientInfo: ClientInfo = {
-        name: 'cody-cli',
-        version: options.isTesting ? '0.1.0-SNAPSHOT' : packageJson.version,
+        name: codyCliClientName,
+        version: options.isTesting ? '6.0.0-SNAPSHOT' : packageJson.version,
         workspaceRootUri: workspaceRootUri.toString(),
         extensionConfiguration: {
             serverEndpoint: options.endpoint,
@@ -145,6 +171,13 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     }
 
     if (options.contextRepo && options.contextRepo.length > 0) {
+        if (serverInfo.authStatus?.isDotCom) {
+            spinner.fail(
+                'The --context-repo option is only available for Sourcegraph Enterprise users. ' +
+                    'Please sign into an Enterprise instance with the command: cody auth logout && cody auth login --web'
+            )
+            return 1
+        }
         const { repos } = await client.request('graphql/getRepoIds', {
             names: options.contextRepo,
             first: options.contextRepo.length,
@@ -166,14 +199,22 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         })
     }
     const start = performance.now()
+    const messageText = await constructMessageText(options)
+    if (!messageText) {
+        spinner.fail(
+            'No message provided. To send a message, use the --message option or pipe a message to stdin via --stdin'
+        )
+        return 1
+    }
+    const addEnhancedContext = isNonEmptyArray(options.contextRepo)
     const response = await client.request('chat/submitMessage', {
         id,
         message: {
             command: 'submit',
             submitType: 'user',
-            text: options.message,
+            text: messageText,
             contextFiles,
-            addEnhancedContext: false,
+            addEnhancedContext,
         },
     })
 
@@ -226,4 +267,44 @@ function toUri(dir: string, relativeOrAbsolutePath: string): vscode.Uri {
         ? relativeOrAbsolutePath
         : path.resolve(dir, relativeOrAbsolutePath)
     return vscode.Uri.file(absolutePath)
+}
+
+// Returns the message that is sent to the chat API. The message is a concatenation of
+// - Explicitly provided --message option
+// - Explicitly provided message arguments
+// - From stdin if --stding is provided OR the message argument is exactly the
+//   string '-' (conventional for cli tools)
+// These parts are concatenated with a blank line between them. For example:
+//     git diff || cody chat --stdin explain this diff
+//     git diff || cody chat --message 'explain this diff' -
+async function constructMessageText(options: ChatOptions): Promise<string> {
+    const parts: string[] = []
+    if (options.message) {
+        parts.push(options.message)
+    }
+    const messageArgument = options.messageArgs?.join(' ') ?? ''
+    const isMessageArgumentFromStdin = messageArgument === '-'
+    if (messageArgument && !isMessageArgumentFromStdin) {
+        parts.push(messageArgument)
+    }
+    if (options.stdin || isMessageArgumentFromStdin) {
+        parts.push(await readStdin())
+    }
+
+    return parts.join('\n\n')
+}
+
+async function readStdin(): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+        const input: string[] = []
+
+        process.stdin.on('data', chunk => {
+            input.push(chunk.toString())
+        })
+
+        process.stdin.on('end', () => {
+            resolve(input.join(''))
+        })
+        process.stdin.on('error', reject)
+    })
 }

@@ -42,6 +42,7 @@ export enum FeatureFlag {
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
     // Enable smart-throttling for more aggressive request cancellation and lower initial latencies
     CodyAutocompleteSmartThrottle = 'cody-autocomplete-smart-throttle',
+    CodyAutocompleteSmartThrottleExtended = 'cody-autocomplete-smart-throttle-extended',
 
     // When enabled, it will extend the number of languages considered for context (e.g. React files
     // will be able to use CSS files as context).
@@ -53,12 +54,6 @@ export enum FeatureFlag {
     // cody-pro-trial-ended is a feature flag that indicates if the Cody Pro "Free Trial"  has ended.
     // (Enabling users to use Cody Pro for free for 3-months starting in late Q4'2023.)
     CodyProTrialEnded = 'cody-pro-trial-ended',
-
-    // Show document hints above a symbol if the users' cursor is there. "Opt+D to Document"
-    CodyDocumentHints = 'cody-document-hints',
-
-    /** Support @-mentioning URLs in chat to add context from web pages. */
-    URLContext = 'cody-url-context',
 
     /** Interactive tutorial, primarily for onboarding */
     CodyInteractiveTutorial = 'cody-interactive-tutorial',
@@ -166,13 +161,13 @@ export class FeatureFlagProvider {
         })
     }
 
-    public async syncAuthStatus(): Promise<void> {
+    public async refresh(): Promise<void> {
         this.exposedFeatureFlags = {}
         this.unexposedFeatureFlags = {}
         await this.refreshFeatureFlags()
     }
 
-    public async refreshFeatureFlags(): Promise<void> {
+    private async refreshFeatureFlags(): Promise<void> {
         return wrapInActiveSpan('FeatureFlagProvider.refreshFeatureFlags', async () => {
             const endpoint = this.apiClient.endpoint
             const data = process.env.DISABLE_FEATURE_FLAGS

@@ -35,7 +35,7 @@ const dummyCodeCompletionsClient: CodeCompletionsClient = {
 
 const dummyAuthStatus: AuthStatus = defaultAuthStatus
 
-graphqlClient.onConfigurationChange({} as unknown as GraphQLAPIClientConfig)
+graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
 
 describe('createProviderConfig', () => {
     describe('if completions provider fields are defined in VSCode settings', () => {
@@ -62,7 +62,7 @@ describe('createProviderConfig', () => {
                 dummyAuthStatus
             )
             expect(provider?.identifier).toBe('anthropic')
-            expect(provider?.model).toBe('claude-instant-1.2')
+            expect(provider?.model).toBe('anthropic/claude-instant-1.2')
         })
 
         it('returns "fireworks" provider config and corresponding model if specified', async () => {
@@ -137,7 +137,7 @@ describe('createProviderConfig', () => {
                 dummyAuthStatus
             )
             expect(provider?.identifier).toBe('anthropic')
-            expect(provider?.model).toBe('claude-instant-1.2')
+            expect(provider?.model).toBe('anthropic/claude-instant-1.2')
         })
 
         it('provider specified in VSCode settings takes precedence over the one defined in the site config', async () => {
@@ -200,7 +200,7 @@ describe('createProviderConfig', () => {
                         provider: 'aws-bedrock',
                         completionModel: 'anthropic.claude-instant-1.2',
                     },
-                    expected: { provider: 'anthropic', model: 'claude-instant-1.2' },
+                    expected: { provider: 'anthropic', model: 'anthropic/claude-instant-1.2' },
                 },
                 {
                     codyLLMConfig: { provider: 'aws-bedrock', completionModel: 'anthropic.' },
@@ -256,7 +256,7 @@ describe('createProviderConfig', () => {
                 // provider not defined (backward compat)
                 {
                     codyLLMConfig: { provider: undefined, completionModel: 'superdupercoder-7b' },
-                    expected: { provider: 'anthropic', model: 'claude-instant-1.2' },
+                    expected: { provider: 'anthropic', model: 'anthropic/claude-instant-1.2' },
                 },
             ]
 
@@ -287,6 +287,6 @@ describe('createProviderConfig', () => {
             dummyAuthStatus
         )
         expect(provider?.identifier).toBe('anthropic')
-        expect(provider?.model).toBe('claude-instant-1.2')
+        expect(provider?.model).toBe('anthropic/claude-instant-1.2')
     })
 })

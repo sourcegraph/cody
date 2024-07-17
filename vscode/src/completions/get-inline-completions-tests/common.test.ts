@@ -8,7 +8,7 @@ import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { RequestManager } from '../request-manager'
 import { completion } from '../test-helpers'
 
-import { type V, getInlineCompletions, params } from './helpers'
+import { type V, getInlineCompletions, getInlineCompletionsFullResponse, params } from './helpers'
 
 describe('[getInlineCompletions] common', () => {
     test('single-line mode only completes one line', async () => {
@@ -132,19 +132,21 @@ describe('[getInlineCompletions] common', () => {
         // Reuse the same request manager for both requests in this test
         const requestManager = new RequestManager()
 
-        const promise1 = getInlineCompletions(
+        const promise1 = getInlineCompletionsFullResponse(
             params('console.█', [completion`log('Hello, world!');`], { requestManager })
         )
 
         // Start a second completions query before the first one is finished. The second one never
         // receives a network response
-        const promise2 = getInlineCompletions(
+        const promise2 = getInlineCompletionsFullResponse(
             params('console.log(█', 'never-resolve', { requestManager })
         )
 
-        await promise1
-        const completions = await promise2
+        const firstCompletions = await promise1
+        const secondCompletions = await promise2
 
-        expect(completions?.items[0].insertText).toBe("'Hello, world!');")
+        expect(secondCompletions?.items[0].insertText).toBe("'Hello, world!');")
+        // The logId should match so this completion is not fired in duplicate analytic calls
+        expect(secondCompletions?.logId).toBe(firstCompletions?.logId)
     })
 })
