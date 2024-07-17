@@ -364,10 +364,6 @@ export interface EmbeddingsSearchResult {
     content: string
 }
 
-/**
- * Experimental API. Based on
- * https://sourcegraph.sourcegraph.com/github.com/sourcegraph/cody-chat-intent@5119901b2ad3dd538458f405e4b371bc13cb9db2/-/blob/deploy/app.py?L96-102
- */
 export interface ChatIntentResult {
     intent: string
     score: number
