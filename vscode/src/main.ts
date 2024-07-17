@@ -199,13 +199,6 @@ const register = async (
     }, disposables)
 
     const editor = new VSCodeEditor()
-    disposables.push(contextFiltersProvider)
-    await contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
-
-    configWatcher.onChange(async config => {
-        await contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
-        await localEmbeddings?.setAccessToken(config.serverEndpoint, config.accessToken)
-    }, disposables)
 
     const { chatsController } = registerChat(
         {
