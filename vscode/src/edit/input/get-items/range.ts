@@ -84,12 +84,22 @@ export const getRangeInputItems = async (
     document: vscode.TextDocument,
     initialValues: RangeInputInitialValues,
     activeRange: vscode.Range,
-    symbolsPromise: Thenable<vscode.DocumentSymbol[]>
+    activeModelContextWindow: number
 ): Promise<GetItemsResult> => {
-    const defaultItems = getDefaultRangeItems(document, initialValues).map(item => ({
-        ...item,
-        label: `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX} ${item.label}`,
-    }))
+    const defaultItems = getDefaultRangeItems(document, initialValues).map(item => {
+        const size =
+            item.range instanceof vscode.Range
+                ? document.offsetAt(item.range.end) - document.offsetAt(item.range.start)
+                : -1
+        const isOverLimit = size > activeModelContextWindow
+        return {
+            ...item,
+            label: `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX} ${item.label}`,
+            detail: isOverLimit
+                ? `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX} Selection too large`
+                : undefined,
+        }
+    })
 
     const activeItem = defaultItems.find(
         item => item.range instanceof vscode.Range && item.range.isEqual(activeRange)
