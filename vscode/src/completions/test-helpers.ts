@@ -59,13 +59,24 @@ export function documentAndPosition(
     languageId?: string,
     uriString?: string
 ): { document: VSCodeTextDocument; position: VSCodePosition } {
+    const { prefix, suffix, cursorIndex } = prefixAndSuffix(textWithCursor)
+
+    const doc = document(prefix + suffix, languageId, uriString)
+    const position = doc.positionAt(cursorIndex)
+    return { document: doc, position }
+}
+
+export function prefixAndSuffix(textWithCursor: string): {
+    prefix: string
+    suffix: string
+    cursorIndex: number
+} {
     const cursorIndex = textWithCursor.indexOf(CURSOR_MARKER)
     if (cursorIndex === -1) {
         throw new Error(`The test text must include a ${CURSOR_MARKER} to denote the cursor position.`)
     }
     const prefix = textWithCursor.slice(0, cursorIndex)
     const suffix = textWithCursor.slice(cursorIndex + CURSOR_MARKER.length)
-    const doc = document(prefix + suffix, languageId, uriString)
-    const position = doc.positionAt(cursorIndex)
-    return { document: doc, position }
+
+    return { prefix, suffix, cursorIndex }
 }
