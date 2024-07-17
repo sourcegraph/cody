@@ -347,7 +347,9 @@ class RequestCache {
     private toCacheKey(requestParams: Pick<RequestParams, 'docContext'>): CacheKey {
         const { prefix, currentLinePrefix, nextNonEmptyLine } = requestParams.docContext
 
-        const prefixWithoutCurrentLinePrefix = prefix.slice(0, -currentLinePrefix.length).trim()
+        const prefixWithoutCurrentLinePrefix = (
+            currentLinePrefix.length ? prefix.slice(0, -currentLinePrefix.length) : prefix
+        ).trim()
 
         const prevNonEmptyLines: string[] = []
         let remainingPrefix = prefixWithoutCurrentLinePrefix
