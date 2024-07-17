@@ -32,47 +32,69 @@ type IconComponent = React.ForwardRefExoticComponent<
     Omit<LucideProps, 'ref'> & React.RefAttributes<SVGSVGElement>
 >
 
-interface IconConfig {
+interface TabConfig {
     Icon: IconComponent
     view: View
     command?: string
-    RightIcons?: { Icon: IconComponent; command: string }[]
+    SubIcons?: { Icon: IconComponent; command: string }[]
 }
 
-const icons: IconConfig[] = [
+const tabItems: TabConfig[] = [
     {
-        Icon: MessagesSquareIcon,
         view: View.Chat,
-        RightIcons: [{ Icon: MessageSquarePlusIcon, command: 'cody.chat.newPanel' }],
+        Icon: MessagesSquareIcon,
+        SubIcons: [{ Icon: MessageSquarePlusIcon, command: 'cody.chat.newPanel' }],
     },
     {
-        Icon: HistoryIcon,
         view: View.History,
-        RightIcons: [
+        Icon: HistoryIcon,
+        SubIcons: [
             { Icon: DownloadIcon, command: 'cody.chat.history.export' },
             { Icon: Trash2Icon, command: 'cody.chat.history.clear' },
         ],
     },
-    { Icon: ZapIcon, view: View.Commands },
-    { Icon: SettingsIcon, command: 'cody.status-bar.interacted', view: View.Settings },
-    { Icon: CircleUserIcon, command: 'cody.auth.account', view: View.Account },
+    {
+        view: View.Commands,
+        Icon: ZapIcon,
+        SubIcons: [{ Icon: SettingsIcon, command: 'cody.menu.commands-settings' }],
+    },
+    { view: View.Settings, Icon: SettingsIcon, command: 'cody.status-bar.interacted' },
+    { view: View.Account, Icon: CircleUserIcon, command: 'cody.auth.account' },
 ]
 
+interface TabButtonProps {
+    Icon: IconComponent
+    isSecondary?: boolean
+    view?: View
+    command?: string
+    isActive?: boolean
+    onClick: () => void
+}
+
+const baseClasses =
+    'tw-rounded-none tw-bg-transparent tw-border-solid tw-border-b tw-px-2 tw-py-4 tw-transition-all hover:tw-text-button-background'
+const activeClasses = 'tw-border-button-background tw-text-button-background'
+const inactiveClasses = 'tw-border-transparent'
+
+const TabButton: React.FC<TabButtonProps> = ({ Icon, isActive, onClick, isSecondary }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        className={clsx(baseClasses, isActive ? activeClasses : inactiveClasses)}
+    >
+        <Icon size={isSecondary ? 13 : 16} strokeWidth={1.25} />
+    </button>
+)
+
 export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView }) => {
-    const baseClasses =
-        'tw-rounded-none tw-bg-transparent tw-border-solid tw-border-b tw-px-2 tw-py-4 tw-transition-all hover:tw-text-button-background'
-    const activeClasses = 'tw-border-button-background tw-text-button-background'
-    const inactiveClasses = 'tw-border-transparent'
-
-    // const currentViewRightIcons = icons.find(icon => icon.view === currentView)?.RightIcons
-
     const handleClick = (view: View, command?: string) => {
         if (command) {
             getVSCodeAPI().postMessage({ command: 'command', id: command })
         }
         setView(view)
     }
-    const currentViewRightIcons = icons.find(icon => icon.view === currentView)?.RightIcons
+
+    const currentViewSubIcons = tabItems.find(tab => tab.view === currentView)?.SubIcons
 
     return (
         <Tabs.List
@@ -83,31 +105,28 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView }) => {
             )}
         >
             <div>
-                {icons.map(({ Icon, view, command }) => (
+                {tabItems.map(({ Icon, view, command }) => (
                     <Tabs.Trigger key={view} value={view}>
-                        <button
-                            type="button"
+                        <TabButton
+                            Icon={Icon}
+                            view={view}
+                            command={command}
+                            isActive={currentView === view}
                             onClick={() => handleClick(view, command)}
-                            className={clsx(
-                                baseClasses,
-                                currentView === view ? activeClasses : inactiveClasses
-                            )}
-                        >
-                            <Icon size={16} strokeWidth={1.25} />
-                        </button>
+                            isSecondary={false}
+                        />
                     </Tabs.Trigger>
                 ))}
             </div>
             <div>
-                {currentViewRightIcons?.map(({ Icon, command }) => (
-                    <button
-                        type="button"
+                {currentViewSubIcons?.map(({ Icon, command }) => (
+                    <TabButton
                         key={command}
-                        className={clsx(baseClasses, inactiveClasses)}
+                        Icon={Icon}
+                        command={command}
                         onClick={() => getVSCodeAPI().postMessage({ command: 'command', id: command })}
-                    >
-                        <Icon size={16} strokeWidth={1.25} />
-                    </button>
+                        isSecondary={true}
+                    />
                 ))}
             </div>
         </Tabs.List>
