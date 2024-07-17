@@ -600,7 +600,25 @@ const _window: typeof vscode.window = {
     onDidCloseTerminal: emptyEvent(),
     onDidOpenTerminal: emptyEvent(),
     registerUriHandler: () => emptyDisposable,
-    registerWebviewViewProvider: () => emptyDisposable,
+    registerWebviewViewProvider: (
+        viewId: string,
+        provider: vscode.WebviewViewProvider,
+        options?: { webviewOptions?: { retainContextWhenHidden?: boolean } }
+    ) => {
+        agent?.webviewViewProviders.set(viewId, provider)
+        options ??= {
+            webviewOptions: undefined,
+        }
+        options.webviewOptions ??= {
+            retainContextWhenHidden: undefined,
+        }
+        options.webviewOptions.retainContextWhenHidden ??= false
+        agent?.notify('webview/registerWebviewViewProvider', {
+            viewId,
+            retainContextWhenHidden: options?.webviewOptions.retainContextWhenHidden,
+        })
+        return emptyDisposable
+    },
     createStatusBarItem: () => statusBarItem,
     visibleTextEditors,
     withProgress: async (options, handler) => {

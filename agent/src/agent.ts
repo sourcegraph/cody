@@ -59,7 +59,7 @@ import { AgentGlobalState } from './AgentGlobalState'
 import { AgentProviders } from './AgentProviders'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
-import { registerNativeWebviewHandlers } from './NativeWebview'
+import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
 import { codyPaths } from './codyPaths'
 import {
@@ -337,6 +337,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
     })
 
     public webPanels = new AgentWebviewPanels()
+    public webviewViewProviders = new Map<string, vscode.WebviewViewProvider>()
 
     private authenticationPromise: Promise<AuthStatus | undefined> = Promise.resolve(undefined)
 
@@ -1270,6 +1271,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('chat/submitMessage', submitOrEditHandler)
         this.registerAuthenticatedRequest('chat/editMessage', submitOrEditHandler)
 
+        this.registerAuthenticatedRequest('webview/resolveWebviewView', async params => {
+            await this.resolveWebviewView(params)
+            return null
+        })
         this.registerAuthenticatedRequest('webview/receiveMessage', async ({ id, message }) => {
             await this.receiveWebviewMessage(id, message)
             return null
@@ -1629,6 +1634,17 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
             return panel
         })
+    }
+
+    private async resolveWebviewView({
+        viewId,
+        webviewHandle,
+    }: { viewId: string; webviewHandle: string }): Promise<void> {
+        const provider = this.webviewViewProviders.get(viewId)
+        if (!provider) {
+            return
+        }
+        resolveWebviewView(provider, viewId, webviewHandle)
     }
 
     private async receiveWebviewMessage(id: string, message: WebviewMessage): Promise<void> {

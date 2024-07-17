@@ -182,9 +182,13 @@ export type ClientRequests = {
     // webview ID (from chat/new).
     'webview/didDispose': [{ id: string }, null]
 
+    // Implements the VSCode Webview View API. Called when the client has
+    // created a native webview for the specified view provider.
+    'webview/resolveWebviewView': [{ viewId: string; webviewHandle: string }, null]
+
     // Low-level API to send a raw WebviewMessage from a specific webview (chat
     // session).  Refrain from using this API in favor of high-level APIs like
-    // `chat/submitMessage`.
+    // `chat/submitMessage` unless using native webviews.
     'webview/receiveMessage': [{ id: string; message: WebviewMessage }, null]
     // Same as `webview/receiveMessage` except the parameter is a JSON-encoded
     // string.  The server processes this message by parsing
@@ -438,6 +442,12 @@ export type ServerNotifications = {
     'remoteRepo/didChangeState': [RemoteRepoFetchState]
 
     // Clients with 'native' webview capability.
+    'webview/registerWebviewViewProvider': [
+        {
+            viewId: string
+            retainContextWhenHidden: boolean
+        },
+    ]
     'webview/createWebviewPanel': [
         {
             handle: string

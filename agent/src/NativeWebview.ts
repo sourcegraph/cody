@@ -33,17 +33,45 @@ interface WebviewProtocolDelegate {
             retainContextWhenHidden: boolean
         }
     ): void
+
+    // Used by both panels and views.
+    setTitle(handle: NativeWebviewHandle, title: string): void
+
+    // For panels.
     dispose(handle: NativeWebviewHandle): void
     reveal(handle: NativeWebviewHandle, viewColumn?: vscode.ViewColumn, preserveFocus?: boolean): void
-    setTitle(handle: NativeWebviewHandle, title: string): void
     setIconPath(
         handle: NativeWebviewHandle,
         value: { light: vscode.Uri; dark: vscode.Uri } | undefined
     ): void
 
+    // For views.
+    setDescription(viewId: string, description: string | undefined): void
+    // TODO: Is there another API to show views, can we simply use that?
+    show(viewId: string, preserveFocus?: boolean): void
+
     // Webview
     setHtml(handle: NativeWebviewHandle, value: string): void
     postMessage(handle: NativeWebviewHandle, message: any): Promise<boolean>
+}
+
+let webviewProtocolDelegate: WebviewProtocolDelegate | undefined = undefined
+
+export function resolveWebviewView(
+    provider: vscode.WebviewViewProvider,
+    viewId: string,
+    webviewHandle: string
+): void | Thenable<void> {
+    if (!webviewProtocolDelegate) {
+        return undefined
+    }
+    const view = new NativeWebviewView(viewId, webviewHandle, webviewProtocolDelegate)
+    // TODO: Wire up context (setState, etc.) here
+    return provider.resolveWebviewView(
+        view,
+        { state: undefined },
+        new vscode.CancellationTokenSource().token
+    )
 }
 
 export function registerNativeWebviewHandlers(
@@ -51,7 +79,7 @@ export function registerNativeWebviewHandlers(
     extensionUri: vscode.Uri,
     capabilities: NativeWebviewCapabilities
 ): void {
-    const delegate: WebviewProtocolDelegate = {
+    webviewProtocolDelegate = {
         // TODO: When we want to serve resources outside dist/, make Agent
         // include 'dist' in its bundle paths, and simply set this to
         // extensionUri.
@@ -72,6 +100,9 @@ export function registerNativeWebviewHandlers(
                 handle,
             })
         },
+        show: (viewId, preserveFocus) => {
+            // TODO: implement show
+        },
         reveal: (handle, viewColumn, preserveFocus) => {
             agent.notify('webview/reveal', {
                 handle,
@@ -84,6 +115,9 @@ export function registerNativeWebviewHandlers(
                 handle,
                 title,
             })
+        },
+        setDescription: (viewId, description) => {
+            // TODO: implement setDescription
         },
         setIconPath: (handle, iconPath) => {
             agent.notify('webview/setIconPath', {
@@ -107,7 +141,7 @@ export function registerNativeWebviewHandlers(
     }
     vscode_shim.setCreateWebviewPanel((viewType, title, showOptions, options) => {
         const panel = new NativeWebviewPanel(
-            delegate,
+            webviewProtocolDelegate!,
             viewType,
             title,
             {
@@ -117,7 +151,7 @@ export function registerNativeWebviewHandlers(
             {
                 enableScripts: options?.enableScripts ?? false,
                 enableCommandUris: options?.enableCommandUris ?? false,
-                localResourceRoots: [delegate.webviewBundleLocalPrefix],
+                localResourceRoots: [webviewProtocolDelegate!.webviewBundleLocalPrefix],
             }
         )
         if (typeof showOptions === 'number') {
@@ -125,7 +159,7 @@ export function registerNativeWebviewHandlers(
                 viewColumn: showOptions,
             }
         }
-        delegate.createWebviewPanel(
+        webviewProtocolDelegate!.createWebviewPanel(
             panel.handle,
             viewType,
             title,
@@ -292,5 +326,64 @@ class NativeWebviewPanel implements vscode.WebviewPanel {
 
     dispose(): any {
         this.delegate.dispose(this.handle)
+    }
+}
+
+/**
+ * Implementation of WebviewView that is supported by a native Webview
+ * implementation on the client side.
+ */
+class NativeWebviewView implements vscode.WebviewView {
+    public readonly webview: vscode.Webview
+
+    // TODO: Implement active, visible and this event.
+    private readonly didChangeVisibility: vscode.EventEmitter<void> = new vscode.EventEmitter()
+    public readonly onDidChangeVisibility: vscode.Event<void> = this.didChangeVisibility.event
+    private readonly disposeEmitter: vscode.EventEmitter<void> = new vscode.EventEmitter()
+    public readonly onDidDispose: vscode.Event<void> = this.disposeEmitter.event
+
+    // TODO: Actually implement these properties.
+    public badge?: vscode.ViewBadge | undefined
+    private readonly _visible: boolean = true
+    // TODO: Is there an initial description in package.json
+    private _description?: string
+    // TODO: The initial title should be from package.json; how do we read that?
+    private _title?: string
+
+    constructor(
+        public readonly viewType: string,
+        private readonly handle: string,
+        private readonly delegate: WebviewProtocolDelegate
+    ) {
+        const webviewOptions = {}
+        this.webview = new NativeWebview(this.delegate, handle, webviewOptions)
+    }
+
+    public show(preserveFocus?: boolean) {
+        this.delegate.show(this.viewType, !!preserveFocus)
+    }
+
+    public get title(): string | undefined {
+        return this._title
+    }
+
+    public set title(value: string | undefined) {
+        // TODO: Get the default title from package.json
+        this.delegate.setTitle(this.handle, value || '')
+        this._title = value
+    }
+
+    public get description(): string | undefined {
+        return this._description
+    }
+
+    public set description(value: string | undefined) {
+        this.delegate.setDescription(this.viewType, value)
+        this._description = value
+    }
+
+    public get visible(): boolean {
+        console.warn('Agent "native" webview does not support WebviewView.visible')
+        return this._visible
     }
 }
