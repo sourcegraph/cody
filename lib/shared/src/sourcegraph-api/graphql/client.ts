@@ -1270,8 +1270,8 @@ export class SourcegraphGraphQLAPIClient {
         // Set a timeout to trigger the abort
         const timeoutId = setTimeout(() => controller.abort(), timeout)
 
-        return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () => {
-            return fetch(url, {
+        return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
+             fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({ query, variables }),
                 headers,
@@ -1288,7 +1288,7 @@ export class SourcegraphGraphQLAPIClient {
                     }
                     return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
                 })
-        })
+        )
     }
     // make an anonymous request to the dotcom API
     private fetchSourcegraphDotcomAPI<T>(

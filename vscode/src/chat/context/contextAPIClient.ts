@@ -8,14 +8,18 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { InputContextItem } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
-const toInput = (i: ContextItem | null): InputContextItem | null => {
-    if (!i || !i.content) {
-        return null
-    }
-    return {
-        content: i.content,
-        retriever: i.source || '',
-    }
+function toInput(input: ContextItem[]): InputContextItem[] {
+    return input
+        .map(i => {
+            if (!i || !i.content) {
+                return null
+            }
+            return {
+                content: i.content,
+                retriever: i.source || '',
+            }
+        })
+        .filter(i => i !== null)
 }
 
 export class ContextAPIClient {
@@ -35,14 +39,7 @@ export class ContextAPIClient {
         if (!this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyServerSideContextAPI)) {
             return
         }
-        const res = await this.apiClient.rankContext(
-            interactionID,
-            query,
-            context
-                .map(toInput)
-                .filter(i => i != null)
-                .map(i => i as InputContextItem)
-        )
+        const res = await this.apiClient.rankContext(interactionID, query, toInput(context))
         if (isError(res)) {
             logError('rankContext', 'ranking result', res)
             return res
@@ -54,16 +51,6 @@ export class ContextAPIClient {
         if (!this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyServerSideContextAPI)) {
             return
         }
-        await this.apiClient.recordContext(
-            interactionID,
-            used
-                .map(toInput)
-                .filter(i => i != null)
-                .map(i => i as InputContextItem),
-            unused
-                .map(toInput)
-                .filter(i => i != null)
-                .map(i => i as InputContextItem)
-        )
+        await this.apiClient.recordContext(interactionID, toInput(used), toInput(unused))
     }
 }
