@@ -40,6 +40,7 @@ export interface PromptEditorRefAPI {
     appendText(text: string, ensureWhitespaceBefore?: boolean): void
     addMentions(items: ContextItem[]): void
     setInitialContextMentions(items: ContextItem[]): void
+    setEditorState(state: SerializedPromptEditorState): void
 }
 
 /**
@@ -63,6 +64,12 @@ export const PromptEditor: FunctionComponent<Props> = ({
     useImperativeHandle(
         ref,
         (): PromptEditorRefAPI => ({
+            setEditorState(state: SerializedPromptEditorState): void {
+                const editor = editorRef.current
+                if (editor) {
+                    editor.setEditorState(editor.parseEditorState(state.lexicalEditorState))
+                }
+            },
             getSerializedValue(): SerializedPromptEditorValue {
                 if (!editorRef.current) {
                     throw new Error('PromptEditor has no Lexical editor ref')

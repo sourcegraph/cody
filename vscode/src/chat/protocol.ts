@@ -155,6 +155,9 @@ export type WebviewMessage =
     | {
           command: 'getAllMentionProvidersMetadata'
       }
+    | {
+          command: 'experimental-unit-test-prompt'
+      }
 
 /**
  * A message sent from the extension host to the webview.
@@ -181,6 +184,9 @@ export type ExtensionMessage =
       }
     | { type: 'clientState'; value: ClientStateForWebview }
     | { type: 'clientAction'; addContextItemsToLastHumanInput: ContextItem[] }
+    /**
+     * The current default model will always be the first one on the list.
+     */
     | { type: 'chatModels'; models: Model[] }
     | { type: 'enhanced-context'; enhancedContextStatus: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
@@ -190,11 +196,17 @@ export type ExtensionMessage =
           configFeatures: {
               chat: boolean
               attribution: boolean
+              serverSentModels: boolean
           }
       }
     | {
           type: 'allMentionProvidersMetadata'
           providers: ContextMentionProviderMetadata[]
+      }
+    | {
+          type: 'updateEditorState'
+          /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
+          editorState?: unknown | undefined | null
       }
 
 interface ExtensionAttributionMessage {
@@ -245,12 +257,15 @@ export interface ConfigurationSubsetForWebview
     extends Pick<
         ConfigurationWithAccessToken,
         'experimentalNoodle' | 'serverEndpoint' | 'agentIDE' | 'agentExtensionVersion'
-    > {}
+    > {
+    experimentalUnitTest: boolean
+}
 
 /**
  * URLs for the Sourcegraph instance and app.
  */
 export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
+export const SG_BLOG_URL = new URL('https://sourcegraph.com/blog/')
 
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')

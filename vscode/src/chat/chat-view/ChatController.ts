@@ -2,21 +2,22 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
+    type AuthStatus,
     type BillingCategory,
     type BillingProduct,
     CHAT_INPUT_TOKEN_BUDGET,
     CHAT_OUTPUT_TOKEN_BUDGET,
     type ChatClient,
     type ChatMessage,
+    ClientConfigSingleton,
     CodyIDE,
-    ConfigFeaturesSingleton,
     type ContextItem,
     ContextItemSource,
     type ContextItemWithContent,
     DOTCOM_URL,
     type DefaultChatCommands,
     type EventSource,
-    type FeatureFlagProvider,
+    FeatureFlag,
     type Guardrails,
     type MentionQuery,
     type Message,
@@ -27,8 +28,10 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     type SerializedPromptEditorState,
+    TokenCounter,
     Typewriter,
     allMentionProvidersMetadata,
+    featureFlagProvider,
     hydrateAfterPostMessage,
     isAbortErrorOrSocketHangUp,
     isDefined,
@@ -59,6 +62,7 @@ import {
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
+import { experimentalUnitTestMessageSubmission } from '../../commands/execute/test-chat-experimental'
 import { getConfiguration, getFullConfig } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
@@ -66,13 +70,13 @@ import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
+import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { rewriteChatQuery } from '../../local-context/rewrite-chat-query'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
-import { chatModel } from '../../models'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
 import type { AuthProvider } from '../../services/AuthProvider'
@@ -97,15 +101,15 @@ import type {
 } from '../protocol'
 import { countGeneratedCode } from '../utils'
 import { chatHistory } from './ChatHistoryManager'
-import { CodyChatPanelViewType, addWebviewViewHTML } from './ChatManager'
+import { ChatModel, prepareChatMessage } from './ChatModel'
+import { CodyChatEditorViewType } from './ChatsController'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
-import { SimpleChatModel, prepareChatMessage } from './SimpleChatModel'
 import { getChatPanelTitle, openFile } from './chat-helpers'
-import { getEnhancedContext } from './context'
+import { getContextStrategy, getEnhancedContext } from './context'
 import { DefaultPrompter } from './prompt'
 
-interface SimpleChatPanelProviderOptions {
+interface ChatControllerOptions {
     extensionUri: vscode.Uri
     authProvider: AuthProvider
     chatClient: ChatClient
@@ -114,7 +118,6 @@ interface SimpleChatPanelProviderOptions {
     symf: SymfRunner | null
     enterpriseContext: EnterpriseContextFactory | null
     editor: VSCodeEditor
-    featureFlagProvider: FeatureFlagProvider
     models: Model[]
     guardrails: Guardrails
     startTokenReceiver?: typeof startTokenReceiver
@@ -125,7 +128,7 @@ export interface ChatSession {
     sessionID: string
 }
 /**
- * SimpleChatPanelProvider is the view controller class for the chat panel.
+ * ChatController is the view controller class for the chat panel.
  * It handles all events sent from the view, keeps track of the underlying chat model,
  * and interacts with the rest of the extension.
  *
@@ -151,10 +154,8 @@ export interface ChatSession {
  *    with other components outside the model and view is needed,
  *    use a broadcast/subscription design.
  */
-export class SimpleChatPanelProvider
-    implements vscode.Disposable, vscode.WebviewViewProvider, ChatSession
-{
-    private chatModel: SimpleChatModel
+export class ChatController implements vscode.Disposable, vscode.WebviewViewProvider, ChatSession {
+    private chatModel: ChatModel
 
     private readonly authProvider: AuthProvider
     private readonly chatClient: ChatClient
@@ -190,7 +191,7 @@ export class SimpleChatPanelProvider
         guardrails,
         enterpriseContext,
         startTokenReceiver,
-    }: SimpleChatPanelProviderOptions) {
+    }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
         this.chatClient = chatClient
@@ -201,7 +202,7 @@ export class SimpleChatPanelProvider
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
 
-        this.chatModel = new SimpleChatModel(getDefaultModelID(authProvider, models))
+        this.chatModel = new ChatModel(getDefaultModelID(authProvider.getAuthStatus()))
 
         this.guardrails = guardrails
         this.startTokenReceiver = startTokenReceiver
@@ -311,6 +312,9 @@ export class SimpleChatPanelProvider
                 this.handleAbort()
                 break
             case 'chatModel':
+                // Because this was a user action to change the model we will set that
+                // as a global default for chat
+                await ModelsService.setDefaultModel(ModelUsage.Chat, message.model)
                 this.handleSetChatModel(message.model)
                 break
             case 'get-chat-models':
@@ -494,13 +498,21 @@ export class SimpleChatPanelProvider
                 })
                 break
             }
+            case 'experimental-unit-test-prompt': {
+                await this.experimentalSetUnitTestPrompt()
+                break
+            }
             default:
                 this.postError(new Error(`Invalid request type from Webview Panel: ${message.command}`))
         }
     }
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
-        const config = await getFullConfig()
+        const [config, experimentalUnitTest] = await Promise.all([
+            getFullConfig(),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalUnitTest),
+        ])
+
         return {
             agentIDE: config.isRunningInsideAgent ? config.agentIDE : CodyIDE.VSCode,
             agentExtensionVersion: config.isRunningInsideAgent
@@ -509,6 +521,7 @@ export class SimpleChatPanelProvider
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: config.serverEndpoint,
             experimentalNoodle: config.experimentalNoodle,
+            experimentalUnitTest,
         }
     }
 
@@ -516,10 +529,13 @@ export class SimpleChatPanelProvider
     // #region top-level view action handlers
     // =======================================================================
 
-    public syncAuthStatus(): void {
+    public setAuthStatus(authStatus: AuthStatus): void {
         // Run this async because this method may be called during initialization
         // and awaiting on this.postMessage may result in a deadlock
         void this.sendConfig()
+
+        // Get the latest model list available to the current user to update the ChatModel.
+        this.handleSetChatModel(getDefaultModelID(this.authProvider.getAuthStatus()))
     }
 
     // When the webview sends the 'ready' message, respond by posting the view config
@@ -540,7 +556,7 @@ export class SimpleChatPanelProvider
             authStatus,
             workspaceFolderUris,
         })
-        logDebug('SimpleChatPanelProvider', 'updateViewConfig', {
+        logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
         })
     }
@@ -575,6 +591,18 @@ export class SimpleChatPanelProvider
         return ''
     }
 
+    public async experimentalSetUnitTestPrompt() {
+        const message = await experimentalUnitTestMessageSubmission()
+        if (!message?.editorState) {
+            return
+        }
+
+        this.postMessage({
+            type: 'updateEditorState',
+            editorState: message.editorState as SerializedPromptEditorState,
+        })
+    }
+
     /**
      * Handles user input text for both new and edit submissions
      */
@@ -601,64 +629,13 @@ export class SimpleChatPanelProvider
                 sessionID: this.chatModel.sessionID,
                 addEnhancedContext,
             }
-            const mentionsInInitialContext = mentions.filter(
-                item => item.source !== ContextItemSource.User
+            await this.recordChatQuestionTelemetryEvent(
+                authStatus,
+                addEnhancedContext,
+                mentions,
+                sharedProperties,
+                inputText
             )
-            const mentionsByUser = mentions.filter(item => item.source === ContextItemSource.User)
-            telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
-                metadata: {
-                    // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
-                    // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                    recordsPrivateMetadataTranscript: authStatus.endpoint && authStatus.isDotCom ? 1 : 0,
-                    addEnhancedContext: addEnhancedContext ? 1 : 0,
-
-                    // All mentions
-                    mentionsTotal: mentions.length,
-                    mentionsOfRepository: mentions.filter(item => item.type === 'repository').length,
-                    mentionsOfTree: mentions.filter(item => item.type === 'tree').length,
-                    mentionsOfWorkspaceRootTree: mentions.filter(
-                        item => item.type === 'tree' && item.isWorkspaceRoot
-                    ).length,
-                    mentionsOfFile: mentions.filter(item => item.type === 'file').length,
-
-                    // Initial context mentions
-                    mentionsInInitialContext: mentionsInInitialContext.length,
-                    mentionsInInitialContextOfRepository: mentionsInInitialContext.filter(
-                        item => item.type === 'repository'
-                    ).length,
-                    mentionsInInitialContextOfTree: mentionsInInitialContext.filter(
-                        item => item.type === 'tree'
-                    ).length,
-                    mentionsInInitialContextOfWorkspaceRootTree: mentionsInInitialContext.filter(
-                        item => item.type === 'tree' && item.isWorkspaceRoot
-                    ).length,
-                    mentionsInInitialContextOfFile: mentionsInInitialContext.filter(
-                        item => item.type === 'file'
-                    ).length,
-
-                    // Explicit mentions by user
-                    mentionsByUser: mentionsByUser.length,
-                    mentionsByUserOfRepository: mentionsByUser.filter(item => item.type === 'repository')
-                        .length,
-                    mentionsByUserOfTree: mentionsByUser.filter(item => item.type === 'tree').length,
-                    mentionsByUserOfWorkspaceRootTree: mentionsByUser.filter(
-                        item => item.type === 'tree' && item.isWorkspaceRoot
-                    ).length,
-                    mentionsByUserOfFile: mentionsByUser.filter(item => item.type === 'file').length,
-                },
-                privateMetadata: {
-                    ...sharedProperties,
-                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
-                    // V2 telemetry exports privateMetadata only for DotCom users
-                    // the condition below is an additional safeguard measure
-                    promptText:
-                        authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
-                    gitMetadata:
-                        authStatus.isDotCom && addEnhancedContext
-                            ? await this.getRepoMetadataIfPublic()
-                            : '',
-                },
-            })
 
             tracer.startActiveSpan('chat.submit.firstToken', async (firstTokenSpan): Promise<void> => {
                 if (inputText.toString().match(/^\/reset$/)) {
@@ -700,7 +677,8 @@ export class SimpleChatPanelProvider
                 const hasCorpusMentions = corpusMentions.length > 0
 
                 const config = getConfiguration()
-                span.setAttribute('strategy', config.useContext)
+                const contextStrategy = await getContextStrategy(config.useContext)
+                span.setAttribute('strategy', contextStrategy)
                 const prompter = new DefaultPrompter(
                     userContextItems,
                     addEnhancedContext || hasCorpusMentions
@@ -721,7 +699,7 @@ export class SimpleChatPanelProvider
                                   : inputText
 
                               return getEnhancedContext({
-                                  strategy: config.useContext,
+                                  strategy: contextStrategy,
                                   editor: this.editor,
                                   input: { text: rewrite, mentions },
                                   addEnhancedContext,
@@ -736,7 +714,7 @@ export class SimpleChatPanelProvider
                         : undefined,
                     command !== undefined
                 )
-                const sendTelemetry = (contextSummary: any, privateContextStats?: any): void => {
+                const sendTelemetry = (contextSummary: any, privateContextSummary?: any): void => {
                     const properties = {
                         ...sharedProperties,
                         traceId: span.spanContext().traceId,
@@ -753,7 +731,7 @@ export class SimpleChatPanelProvider
                         },
                         privateMetadata: {
                             properties,
-                            privateContextStats,
+                            privateContextSummary: privateContextSummary,
                             // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                             // V2 telemetry exports privateMetadata only for DotCom users
                             // the condition below is an additional safeguard measure
@@ -847,9 +825,9 @@ export class SimpleChatPanelProvider
         telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
     }
 
-    private async handleSetChatModel(modelID: string): Promise<void> {
+    private handleSetChatModel(modelID: string) {
         this.chatModel.updateModel(modelID)
-        await chatModel.set(modelID)
+        this.postChatModels()
     }
 
     private async handleGetAllMentionProvidersMetadata(): Promise<void> {
@@ -890,14 +868,24 @@ export class SimpleChatPanelProvider
         this.contextFilesQueryCancellation = cancellation
 
         const source = 'chat'
+
+        // Use numerical mapping to send source values to metadata, making this data available on all instances.
+        const atMentionSourceTelemetryMetadataMapping: Record<typeof source, number> = {
+            chat: 1,
+        } as const
+
         const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
             empty: () => {
                 telemetryRecorder.recordEvent('cody.at-mention', 'executed', {
+                    metadata: {
+                        source: atMentionSourceTelemetryMetadataMapping[source],
+                    },
                     privateMetadata: { source },
                 })
             },
             withProvider: (provider, providerMetadata) => {
                 telemetryRecorder.recordEvent(`cody.at-mention.${provider}`, 'executed', {
+                    metadata: { source: atMentionSourceTelemetryMetadataMapping[source] },
                     privateMetadata: { source, providerMetadata },
                 })
             },
@@ -1053,15 +1041,21 @@ export class SimpleChatPanelProvider
             chatID: this.chatModel.sessionID,
         })
 
-        // Update webview panel title
-        this.postChatTitle()
+        this.syncPanelTitle()
+    }
+
+    private syncPanelTitle() {
+        // Update webview panel title if we're in an editor panel
+        if (this._webviewPanelOrView && 'reveal' in this._webviewPanelOrView) {
+            this._webviewPanelOrView.title = this.chatModel.getChatTitle()
+        }
     }
 
     /**
      * Display error message in webview as part of the chat transcript, or as a system banner alongside the chat.
      */
     private postError(error: Error, type?: MessageErrorType): void {
-        logDebug('SimpleChatPanelProvider: postError', error.message)
+        logDebug('ChatController: postError', error.message)
         // Add error to transcript
         if (type === 'transcript') {
             this.chatModel.addErrorAsBotMessage(error)
@@ -1082,11 +1076,7 @@ export class SimpleChatPanelProvider
         if (!authStatus?.isLoggedIn) {
             return
         }
-        const models = ModelsService.getModels(
-            ModelUsage.Chat,
-            authStatus.isDotCom && !authStatus.userCanUpgrade,
-            this.chatModel.modelID
-        )
+        const models = ModelsService.getModels(ModelUsage.Chat, authStatus)
 
         void this.postMessage({
             type: 'chatModels',
@@ -1102,7 +1092,7 @@ export class SimpleChatPanelProvider
         })
         // Only log non-empty status to reduce noises.
         if (status.length > 0) {
-            logDebug('SimpleChatPanelProvider', 'postContextStatus', JSON.stringify(status))
+            logDebug('ChatController', 'postContextStatus', JSON.stringify(status))
         }
     }
 
@@ -1116,12 +1106,6 @@ export class SimpleChatPanelProvider
         return this.initDoer.do(() => this.webviewPanelOrView?.webview.postMessage(message))
     }
 
-    private postChatTitle(): void {
-        if (this.webviewPanelOrView) {
-            this.webviewPanelOrView.title = this.chatModel.getChatTitle()
-        }
-    }
-
     // #endregion
     // =======================================================================
     // #region chat request lifecycle methods
@@ -1133,7 +1117,7 @@ export class SimpleChatPanelProvider
     private async buildPrompt(
         prompter: DefaultPrompter,
         abortSignal: AbortSignal,
-        sendTelemetry?: (contextSummary: any, privateContextStats?: any) => void
+        sendTelemetry?: (contextSummary: any, privateContextSummary?: any) => void
     ): Promise<Message[]> {
         const { prompt, context } = await prompter.makePrompt(
             this.chatModel,
@@ -1160,22 +1144,39 @@ export class SimpleChatPanelProvider
                 }
             }
 
-            // Log the size of all user context items (e.g., @-mentions)
-            // Includes the count of files and the size of each file
-            const getContextStats = (files: ContextItem[]) =>
-                files.length && {
-                    countFiles: files.length,
-                    fileSizes: files.map(f => f.size).filter(isDefined),
-                }
-            // NOTE: The private context stats are only logged for DotCom users
-            const privateContextStats = {
-                included: getContextStats(context.used.filter(f => f.source === 'user')),
-                excluded: getContextStats(context.ignored.filter(f => f.source === 'user')),
-            }
-            sendTelemetry(contextSummary, privateContextStats)
+            const privateContextSummary = await this.buildPrivateContextSummary(context)
+            sendTelemetry(contextSummary, privateContextSummary)
         }
 
         return prompt
+    }
+
+    private async buildPrivateContextSummary(context: {
+        used: ContextItem[]
+        ignored: ContextItem[]
+    }): Promise<object> {
+        // 🚨 SECURITY: included only for dotcom users & public repos
+        const isDotCom = this.authProvider.getAuthStatus().isDotCom
+        const isPublic = (await this.codebaseStatusProvider.currentCodebase())?.isPublic
+
+        if (!(isDotCom && isPublic)) {
+            return {}
+        }
+
+        const getContextSummary = (items: ContextItem[]) => ({
+            count: items.length,
+            items: items.map(i => ({
+                source: i.source,
+                size: i.size || TokenCounter.countTokens(i.content || ''),
+                content: i.content,
+            })),
+        })
+
+        return {
+            included: getContextSummary(context.used),
+            excluded: getContextSummary(context.ignored),
+            gitMetadata: await this.getRepoMetadataIfPublic(),
+        }
     }
 
     private streamAssistantResponse(
@@ -1185,7 +1186,7 @@ export class SimpleChatPanelProvider
         firstTokenSpan: Span,
         abortSignal: AbortSignal
     ): void {
-        logDebug('SimpleChatPanelProvider', 'streamAssistantResponse', {
+        logDebug('ChatController', 'streamAssistantResponse', {
             verbose: { requestID, prompt },
         })
         let firstTokenMeasured = false
@@ -1339,7 +1340,7 @@ export class SimpleChatPanelProvider
     // #region session management
     // =======================================================================
 
-    // A unique identifier for this SimpleChatPanelProvider instance used to identify
+    // A unique identifier for this ChatController instance used to identify
     // it when a handle to this specific panel provider is needed.
     public get sessionID(): string {
         return this.chatModel.sessionID
@@ -1393,14 +1394,10 @@ export class SimpleChatPanelProvider
     }
 
     public async clearAndRestartSession(): Promise<void> {
-        if (this.chatModel.isEmpty()) {
-            return
-        }
-
         this.cancelSubmitOrEditOperation()
         await this.saveSession()
 
-        this.chatModel = new SimpleChatModel(this.chatModel.modelID)
+        this.chatModel = new ChatModel(this.chatModel.modelID)
         this.postViewTranscript()
     }
 
@@ -1420,7 +1417,6 @@ export class SimpleChatPanelProvider
      */
     public async createWebviewViewOrPanel(
         activePanelViewColumn?: vscode.ViewColumn,
-        _chatId?: string,
         lastQuestion?: string
     ): Promise<vscode.WebviewView | vscode.WebviewPanel> {
         // Checks if the webview view or panel already exists and is visible.
@@ -1429,7 +1425,7 @@ export class SimpleChatPanelProvider
             return this.webviewPanelOrView
         }
 
-        const viewType = CodyChatPanelViewType
+        const viewType = CodyChatEditorViewType
         const panelTitle =
             chatHistory.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID)
                 ?.chatTitle || getChatPanelTitle(lastQuestion)
@@ -1455,7 +1451,7 @@ export class SimpleChatPanelProvider
      * Revives the chat panel when the extension is reactivated.
      */
     public async revive(webviewPanel: vscode.WebviewPanel): Promise<void> {
-        logDebug('SimpleChatPanelProvider:revive', 'registering webview panel')
+        logDebug('ChatController:revive', 'registering webview panel')
         await this.registerWebviewPanel(webviewPanel)
     }
 
@@ -1488,6 +1484,8 @@ export class SimpleChatPanelProvider
         }
         this._webviewPanelOrView = viewOrPanel
 
+        this.syncPanelTitle()
+
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         viewOrPanel.webview.options = {
             enableScripts: true,
@@ -1515,15 +1513,18 @@ export class SimpleChatPanelProvider
             )
         )
 
-        // Used for keeping sidebar chat view closed when webview panel is enabled
-        await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
+        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
 
-        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
         void this.postMessage({
             type: 'setConfigFeatures',
             configFeatures: {
-                chat: configFeatures.chat,
-                attribution: configFeatures.attribution,
+                // If clientConfig is undefined means we were unable to fetch the client configuration -
+                // most likely because we are not authenticated yet. We need to be able to display the
+                // chat panel (which is where all login functionality is) in this case, so we fallback
+                // to some default values:
+                chat: clientConfig?.chatEnabled ?? true,
+                attribution: clientConfig?.attributionEnabled ?? false,
+                serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
             },
         })
 
@@ -1534,9 +1535,8 @@ export class SimpleChatPanelProvider
         if (view !== 'chat') {
             // Only chat view is supported in the webview panel.
             // When a different view is requested,
-            // Set context to notifiy the webview panel to close.
+            // Set context to notify the webview panel to close.
             // This should close the webview panel and open the login view in the sidebar.
-            await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
             await vscode.commands.executeCommand('setContext', 'cody.activated', false)
             return
         }
@@ -1560,14 +1560,80 @@ export class SimpleChatPanelProvider
     public getViewTranscript(): readonly ChatMessage[] {
         return this.chatModel.getMessages().map(prepareChatMessage)
     }
+
+    private async recordChatQuestionTelemetryEvent(
+        authStatus: AuthStatus,
+        addEnhancedContext: boolean,
+        mentions: ContextItem[],
+        sharedProperties: any,
+        inputText: PromptString
+    ): Promise<void> {
+        const mentionsInInitialContext = mentions.filter(item => item.source !== ContextItemSource.User)
+        const mentionsByUser = mentions.filter(item => item.source === ContextItemSource.User)
+        telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
+            metadata: {
+                // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
+                // See https://github.com/sourcegraph/sourcegraph/pull/59524
+                recordsPrivateMetadataTranscript: authStatus.endpoint && authStatus.isDotCom ? 1 : 0,
+                addEnhancedContext: addEnhancedContext ? 1 : 0,
+
+                // All mentions
+                mentionsTotal: mentions.length,
+                mentionsOfRepository: mentions.filter(item => item.type === 'repository').length,
+                mentionsOfTree: mentions.filter(item => item.type === 'tree').length,
+                mentionsOfWorkspaceRootTree: mentions.filter(
+                    item => item.type === 'tree' && item.isWorkspaceRoot
+                ).length,
+                mentionsOfFile: mentions.filter(item => item.type === 'file').length,
+
+                // Initial context mentions
+                mentionsInInitialContext: mentionsInInitialContext.length,
+                mentionsInInitialContextOfRepository: mentionsInInitialContext.filter(
+                    item => item.type === 'repository'
+                ).length,
+                mentionsInInitialContextOfTree: mentionsInInitialContext.filter(
+                    item => item.type === 'tree'
+                ).length,
+                mentionsInInitialContextOfWorkspaceRootTree: mentionsInInitialContext.filter(
+                    item => item.type === 'tree' && item.isWorkspaceRoot
+                ).length,
+                mentionsInInitialContextOfFile: mentionsInInitialContext.filter(
+                    item => item.type === 'file'
+                ).length,
+
+                // Explicit mentions by user
+                mentionsByUser: mentionsByUser.length,
+                mentionsByUserOfRepository: mentionsByUser.filter(item => item.type === 'repository')
+                    .length,
+                mentionsByUserOfTree: mentionsByUser.filter(item => item.type === 'tree').length,
+                mentionsByUserOfWorkspaceRootTree: mentionsByUser.filter(
+                    item => item.type === 'tree' && item.isWorkspaceRoot
+                ).length,
+                mentionsByUserOfFile: mentionsByUser.filter(item => item.type === 'file').length,
+            },
+            privateMetadata: {
+                ...sharedProperties,
+                // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                // V2 telemetry exports privateMetadata only for DotCom users
+                // the condition below is an additional safeguard measure
+                promptText:
+                    authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
+                gitMetadata:
+                    authStatus.isDotCom && addEnhancedContext
+                        ? await this.getRepoMetadataIfPublic()
+                        : '',
+            },
+        })
+    }
 }
 
 function newChatModelFromSerializedChatTranscript(
     json: SerializedChatTranscript,
     modelID: string
-): SimpleChatModel {
-    return new SimpleChatModel(
+): ChatModel {
+    return new ChatModel(
         migrateAndNotifyForOutdatedModels(json.chatModel || modelID)!,
+        json.id,
         json.interactions.flatMap((interaction: SerializedChatInteraction): ChatMessage[] =>
             [
                 PromptString.unsafe_deserializeChatMessage(interaction.humanMessage),
@@ -1576,7 +1642,6 @@ function newChatModelFromSerializedChatTranscript(
                     : null,
             ].filter(isDefined)
         ),
-        json.id,
         json.chatTitle,
         json.enhancedContext?.selectedRepos
     )
@@ -1619,10 +1684,36 @@ export function revealWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscod
     }
 }
 
-function getDefaultModelID(authProvider: AuthProvider, models: Model[]): string {
+function getDefaultModelID(status: AuthStatus): string {
+    const pending = ''
     try {
-        return chatModel.get(authProvider, models)
+        return ModelsService.getDefaultChatModel(status) || pending
     } catch {
-        return '(pending)'
+        return pending
     }
+}
+
+/**
+ * Set HTML for webview (panel) & webview view (sidebar)
+ */
+export async function addWebviewViewHTML(
+    extensionUri: vscode.Uri,
+    view: vscode.WebviewView | vscode.WebviewPanel
+): Promise<void> {
+    if (isRunningInsideAgent()) {
+        return
+    }
+    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
+    // Create Webview using vscode/index.html
+    const root = vscode.Uri.joinPath(webviewPath, 'index.html')
+    const bytes = await vscode.workspace.fs.readFile(root)
+    const decoded = new TextDecoder('utf-8').decode(bytes)
+    const resources = view.webview.asWebviewUri(webviewPath)
+
+    // This replace variables from the vscode/dist/index.html with webview info
+    // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
+    // 2. Update URIs for content security policy to only allow specific scripts to be run
+    view.webview.html = decoded
+        .replaceAll('./', `${resources.toString()}/`)
+        .replaceAll('{cspSource}', view.webview.cspSource)
 }

@@ -158,6 +158,12 @@ export interface ContextItemOpenCtx extends ContextItemCommon {
  */
 export interface ContextItemFile extends ContextItemCommon {
     type: 'file'
+
+    /**
+     * Name of remote repository, this is how mention resolve logic checks
+     * that we need to resolve this context item mention via remote search file
+     */
+    remoteRepositoryName?: string
 }
 
 /**
@@ -171,6 +177,12 @@ export interface ContextItemSymbol extends ContextItemCommon {
 
     /** The kind of symbol, used for presentation only (not semantically meaningful). */
     kind: SymbolKind
+
+    /**
+     * Name of remote repository, this is how mention resolve logic checks
+     * that we need to resolve this context item mention via remote search file
+     */
+    remoteRepositoryName?: string
 }
 
 /** The valid kinds of a symbol. */

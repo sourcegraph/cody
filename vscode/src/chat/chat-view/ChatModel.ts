@@ -17,19 +17,19 @@ import { serializeChatMessage } from '@sourcegraph/cody-shared'
 import type { Repo } from '../../context/repo-fetcher'
 import { getChatPanelTitle } from './chat-helpers'
 
-export class SimpleChatModel {
+export class ChatModel {
     public contextWindow: ModelContextWindow
     constructor(
         public modelID: string,
-        private messages: ChatMessage[] = [],
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
+        private messages: ChatMessage[] = [],
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
     ) {
         this.contextWindow = ModelsService.getContextWindowByID(this.modelID)
     }
 
-    public updateModel(newModelID: string): void {
+    public updateModel(newModelID: string) {
         this.modelID = newModelID
         this.contextWindow = ModelsService.getContextWindowByID(this.modelID)
     }
@@ -104,13 +104,13 @@ export class SimpleChatModel {
      */
     public removeMessagesFromIndex(index: number, expectedSpeaker: 'human' | 'assistant'): void {
         if (this.isEmpty()) {
-            throw new Error('SimpleChatModel.removeMessagesFromIndex: not message to remove')
+            throw new Error('ChatModel.removeMessagesFromIndex: not message to remove')
         }
 
         const speakerAtIndex = this.messages.at(index)?.speaker
         if (speakerAtIndex !== expectedSpeaker) {
             throw new Error(
-                `SimpleChatModel.removeMessagesFromIndex: expected ${expectedSpeaker}, got ${speakerAtIndex}`
+                `ChatModel.removeMessagesFromIndex: expected ${expectedSpeaker}, got ${speakerAtIndex}`
             )
         }
 

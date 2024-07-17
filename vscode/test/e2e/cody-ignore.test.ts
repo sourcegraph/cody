@@ -7,7 +7,7 @@ import {
     sidebarExplorer,
     sidebarSignin,
 } from './common'
-import { type ExpectedV2Events, test } from './helpers'
+import { type ExpectedV2Events, executeCommandInPalette, test } from './helpers'
 
 /**
  * NOTE: .cody/ignore current supports behind 'cody.internal.unstable' flag
@@ -75,8 +75,7 @@ test.extend<ExpectedV2Events>({
     await expect(chatPanel.getByRole('option', { name: 'ignoredByCody.css' })).not.toBeVisible()
 
     /* TEST: Command - Ignored file do not show up with context */
-    await page.getByText('Explain Code').hover()
-    await page.getByText('Explain Code').click()
+    await executeCommandInPalette(page, 'Cody Command: Explain Code')
     // Assistant should not response to your command, so you should still see the old message.
     await expect(chatPanel.getByText('Ignore me')).toBeVisible()
     // A system message shows up to notify users that the file is ignored

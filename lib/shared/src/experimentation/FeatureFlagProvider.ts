@@ -21,6 +21,7 @@ export enum FeatureFlag {
     // Enable various feature flags to experiment with FIM trained fine-tuned models via Fireworks
     CodyAutocompleteFIMModelExperimentBaseFeatureFlag = 'cody-autocomplete-fim-model-experiment-flag',
     CodyAutocompleteFIMModelExperimentControl = 'cody-autocomplete-fim-model-experiment-control',
+    CodyAutocompleteFIMModelExperimentCurrentBest = 'cody-autocomplete-fim-model-experiment-current-best',
     CodyAutocompleteFIMModelExperimentVariant1 = 'cody-autocomplete-fim-model-experiment-variant-1',
     CodyAutocompleteFIMModelExperimentVariant2 = 'cody-autocomplete-fim-model-experiment-variant-2',
     CodyAutocompleteFIMModelExperimentVariant3 = 'cody-autocomplete-fim-model-experiment-variant-3',
@@ -41,6 +42,7 @@ export enum FeatureFlag {
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
     // Enable smart-throttling for more aggressive request cancellation and lower initial latencies
     CodyAutocompleteSmartThrottle = 'cody-autocomplete-smart-throttle',
+    CodyAutocompleteSmartThrottleExtended = 'cody-autocomplete-smart-throttle-extended',
 
     // When enabled, it will extend the number of languages considered for context (e.g. React files
     // will be able to use CSS files as context).
@@ -53,12 +55,6 @@ export enum FeatureFlag {
     // (Enabling users to use Cody Pro for free for 3-months starting in late Q4'2023.)
     CodyProTrialEnded = 'cody-pro-trial-ended',
 
-    // Show document hints above a symbol if the users' cursor is there. "Opt+D to Document"
-    CodyDocumentHints = 'cody-document-hints',
-
-    /** Support @-mentioning URLs in chat to add context from web pages. */
-    URLContext = 'cody-url-context',
-
     /** Interactive tutorial, primarily for onboarding */
     CodyInteractiveTutorial = 'cody-interactive-tutorial',
 
@@ -70,6 +66,18 @@ export enum FeatureFlag {
 
     /** Whether to use generated metadata to power embeddings. */
     CodyEmbeddingsGenerateMetadata = 'cody-embeddings-generate-metadata',
+
+    /** Enable experimental generate unit test prompt template */
+    CodyExperimentalUnitTest = 'cody-experimental-unit-test',
+
+    /** Enhanced context experiment */
+    CodyEnhancedContextExperiment = 'cody-enhanced-context-experiment',
+
+    /** Use symf to provide enhanced context. */
+    CodyEnhancedContextUseSymf = 'cody-enhanced-context-use-symf',
+
+    /** Use embeddings to provide enhanced context. */
+    CodyEnhancedContexUseEmbeddings = 'cody-enhanced-context-use-embeddings',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
@@ -153,13 +161,13 @@ export class FeatureFlagProvider {
         })
     }
 
-    public async syncAuthStatus(): Promise<void> {
+    public async refresh(): Promise<void> {
         this.exposedFeatureFlags = {}
         this.unexposedFeatureFlags = {}
         await this.refreshFeatureFlags()
     }
 
-    public async refreshFeatureFlags(): Promise<void> {
+    private async refreshFeatureFlags(): Promise<void> {
         return wrapInActiveSpan('FeatureFlagProvider.refreshFeatureFlags', async () => {
             const endpoint = this.apiClient.endpoint
             const data = process.env.DISABLE_FEATURE_FLAGS
@@ -244,7 +252,10 @@ export class FeatureFlagProvider {
             }
             subs.lastSnapshot = currentSnapshot
         }
-        logDebug('featureflag', 'refreshed')
+        // Disable on CI to unclutter the output.
+        if (!process.env.VITEST) {
+            logDebug('featureflag', 'refreshed')
+        }
         for (const callback of callbacksToTrigger) {
             callback()
         }

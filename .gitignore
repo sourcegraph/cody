@@ -14,3 +14,4 @@ index.scip
 playwright
 playwright-report
 test-results
+.vscode-test/

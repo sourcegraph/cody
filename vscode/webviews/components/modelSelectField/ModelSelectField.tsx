@@ -1,4 +1,4 @@
-import { type Model, ModelUIGroup } from '@sourcegraph/cody-shared'
+import { type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { BookOpenIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
@@ -25,6 +25,7 @@ interface SelectListOption {
 export const ModelSelectField: React.FunctionComponent<{
     models: Model[]
     onModelSelect: (model: Model) => void
+    serverSentModelsEnabled: boolean
 
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
 
@@ -36,6 +37,7 @@ export const ModelSelectField: React.FunctionComponent<{
 }> = ({
     models,
     onModelSelect: parentOnModelSelect,
+    serverSentModelsEnabled,
     userInfo,
     onCloseByEscape,
     className,
@@ -43,8 +45,8 @@ export const ModelSelectField: React.FunctionComponent<{
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
-    const usableModels = useMemo(() => models.filter(m => !m.deprecated), [models])
-    const selectedModel = usableModels.find(m => m.default) ?? usableModels[0]
+    // The first model is the always the default.
+    const selectedModel = models[0]
 
     const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
     const isEnterpriseUser = !userInfo.isDotComUser
@@ -54,7 +56,7 @@ export const ModelSelectField: React.FunctionComponent<{
         (model: Model): void => {
             telemetryRecorder.recordEvent('cody.modelSelector', 'select', {
                 metadata: {
-                    modelIsCodyProOnly: model.codyProOnly ? 1 : 0,
+                    modelIsCodyProOnly: isCodyProModel(model) ? 1 : 0,
                     isCodyProUser: isCodyProUser ? 1 : 0,
                 },
                 privateMetadata: {
@@ -64,7 +66,7 @@ export const ModelSelectField: React.FunctionComponent<{
                 },
             })
 
-            if (showCodyProBadge && model.codyProOnly) {
+            if (showCodyProBadge && isCodyProModel(model)) {
                 getVSCodeAPI().postMessage({
                     command: 'links',
                     value: 'https://sourcegraph.com/cody/subscription',
@@ -86,7 +88,8 @@ export const ModelSelectField: React.FunctionComponent<{
         [telemetryRecorder.recordEvent, showCodyProBadge, parentOnModelSelect, isCodyProUser]
     )
 
-    const readOnly = !userInfo.isDotComUser
+    // Readonly if they are an enterprise user that does not support server-sent models
+    const readOnly = !(userInfo.isDotComUser || serverSentModelsEnabled)
 
     const onOpenChange = useCallback(
         (open: boolean): void => {
@@ -101,18 +104,18 @@ export const ModelSelectField: React.FunctionComponent<{
                 telemetryRecorder.recordEvent('cody.modelSelector', 'open', {
                     metadata: {
                         isCodyProUser: isCodyProUser ? 1 : 0,
-                        totalModels: usableModels.length,
+                        totalModels: models.length,
                     },
                 })
             }
         },
-        [telemetryRecorder.recordEvent, isCodyProUser, usableModels.length]
+        [telemetryRecorder.recordEvent, isCodyProUser, models.length]
     )
 
     const options = useMemo<SelectListOption[]>(
         () =>
-            usableModels.map(m => {
-                const availability = modelAvailability(userInfo, m)
+            models.map(m => {
+                const availability = modelAvailability(userInfo, serverSentModelsEnabled, m)
                 return {
                     value: m.model,
                     title: (
@@ -126,7 +129,7 @@ export const ModelSelectField: React.FunctionComponent<{
                     // needs-cody-pro models should be clickable (not disabled) so the user can
                     // be taken to the upgrade page.
                     disabled: !['available', 'needs-cody-pro'].includes(availability),
-                    group: m.uiGroup ?? 'Other',
+                    group: getModelDropDownUIGroup(m),
                     tooltip:
                         availability === 'not-selectable-on-enterprise'
                             ? 'Chat model set by your Sourcegraph Enterprise admin'
@@ -135,41 +138,17 @@ export const ModelSelectField: React.FunctionComponent<{
                               : `${m.title} by ${m.provider}`,
                 } satisfies SelectListOption
             }),
-        [usableModels, userInfo]
+        [models, userInfo, serverSentModelsEnabled]
     )
     const optionsByGroup: { group: string; options: SelectListOption[] }[] = useMemo(() => {
-        const groups = new Map<string, SelectListOption[]>()
-        for (const option of options) {
-            const groupOptions = groups.get(option.group ?? '')
-            if (groupOptions) {
-                groupOptions.push(option)
-            } else {
-                groups.set(option.group ?? '', [option])
-            }
-        }
-        return Array.from(groups.entries())
-            .sort((a, b) => {
-                const aIndex = GROUP_ORDER.indexOf(a[0])
-                const bIndex = GROUP_ORDER.indexOf(b[0])
-                if (aIndex !== -1 && bIndex !== -1) {
-                    return aIndex - bIndex
-                }
-                if (aIndex !== -1) {
-                    return -1
-                }
-                if (bIndex !== -1) {
-                    return 1
-                }
-                return 0
-            })
-            .map(([group, options]) => ({ group, options }))
+        return optionByGroup(options)
     }, [options])
 
     const onChange = useCallback(
         (value: string | undefined) => {
-            onModelSelect(usableModels.find(m => m.model === value)!)
+            onModelSelect(models.find(m => m.model === value)!)
         },
-        [onModelSelect, usableModels]
+        [onModelSelect, models]
     )
 
     const onKeyDown = useCallback(
@@ -181,7 +160,7 @@ export const ModelSelectField: React.FunctionComponent<{
         [onCloseByEscape]
     )
 
-    if (!usableModels.length || usableModels.length < 1) {
+    if (!models.length || models.length < 1) {
         return null
     }
 
@@ -287,23 +266,17 @@ export const ModelSelectField: React.FunctionComponent<{
 const ENTERPRISE_MODEL_DOCS_PAGE =
     'https://sourcegraph.com/docs/cody/clients/enable-cody-enterprise?utm_source=cody.modelSelector'
 
-const GROUP_ORDER = [
-    ModelUIGroup.Accuracy,
-    ModelUIGroup.Balanced,
-    ModelUIGroup.Speed,
-    ModelUIGroup.Ollama,
-]
-
 type ModelAvailability = 'available' | 'needs-cody-pro' | 'not-selectable-on-enterprise'
 
 function modelAvailability(
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>,
+    serverSentModelsEnabled: boolean,
     model: Model
 ): ModelAvailability {
-    if (!userInfo.isDotComUser) {
+    if (!userInfo.isDotComUser && !serverSentModelsEnabled) {
         return 'not-selectable-on-enterprise'
     }
-    if (model.codyProOnly && !userInfo.isCodyProUser) {
+    if (isCodyProModel(model) && !userInfo.isCodyProUser) {
         return 'needs-cody-pro'
     }
     return 'available'
@@ -314,7 +287,7 @@ const ModelTitleWithIcon: FunctionComponent<{
     showIcon?: boolean
     showProvider?: boolean
     modelAvailability?: ModelAvailability
-}> = ({ model, showIcon, showProvider, modelAvailability }) => (
+}> = ({ model, showIcon, modelAvailability }) => (
     <span
         className={clsx(styles.modelTitleWithIcon, {
             [styles.disabled]: modelAvailability !== 'available',
@@ -325,12 +298,10 @@ const ModelTitleWithIcon: FunctionComponent<{
         {modelAvailability === 'needs-cody-pro' && (
             <span className={clsx(styles.badge, styles.badgePro)}>Cody Pro</span>
         )}
-        {model.provider === 'Ollama' && <span className={clsx(styles.badge)}>Experimental</span>}
-        {model.title === 'Claude 3 Sonnet' ||
-        ((model.title === 'Claude 3 Opus' ||
-            model.title === 'GPT-4o' ||
-            model.title === 'Claude 3.5 Sonnet') &&
-            modelAvailability !== 'needs-cody-pro') ? (
+        {model.tags.includes(ModelTag.Experimental) && (
+            <span className={clsx(styles.badge)}>Experimental</span>
+        )}
+        {model.tags.includes(ModelTag.Recommended) && modelAvailability !== 'needs-cody-pro' ? (
             <span className={clsx(styles.badge, styles.otherBadge, styles.recommendedBadge)}>
                 Recommended
             </span>
@@ -344,4 +315,45 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 }) => {
     const ModelIcon = chatModelIconComponent(model)
     return ModelIcon ? <ModelIcon size={16} className={className} /> : null
+}
+
+/** Common {@link ModelsService.uiGroup} values. */
+export const ModelUIGroup: Record<string, string> = {
+    Accuracy: 'Optimized for Accuracy',
+    Balanced: 'Balanced (Speed & Accuracy)',
+    Speed: 'Optimized for Speed',
+    Ollama: 'Ollama (Local)',
+    Other: 'Other',
+}
+
+const getModelDropDownUIGroup = (model: Model): string => {
+    if (model.tags.includes(ModelTag.Accuracy)) return ModelUIGroup.Accuracy
+    if (model.tags.includes(ModelTag.Balanced)) return ModelUIGroup.Balanced
+    if (model.tags.includes(ModelTag.Speed)) return ModelUIGroup.Speed
+    if (model.tags.includes(ModelTag.Ollama)) return ModelUIGroup.Ollama
+    return ModelUIGroup.Other
+}
+
+const optionByGroup = (
+    options: SelectListOption[]
+): { group: string; options: SelectListOption[] }[] => {
+    const groupOrder = [
+        ModelUIGroup.Accuracy,
+        ModelUIGroup.Balanced,
+        ModelUIGroup.Speed,
+        ModelUIGroup.Ollama,
+        ModelUIGroup.Other,
+    ]
+    const groups = new Map<string, SelectListOption[]>()
+
+    for (const option of options) {
+        const group = option.group ?? ModelUIGroup.Other
+        const groupOptions = groups.get(group) ?? []
+        groupOptions.push(option)
+        groups.set(group, groupOptions)
+    }
+
+    return [...groups.entries()]
+        .sort(([a], [b]) => groupOrder.indexOf(a) - groupOrder.indexOf(b))
+        .map(([group, options]) => ({ group, options }))
 }

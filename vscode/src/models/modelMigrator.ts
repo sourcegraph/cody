@@ -1,20 +1,41 @@
-import { ModelsService, getDotComDefaultModels } from '@sourcegraph/cody-shared'
+import { type Model, ModelUsage, ModelsService } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { localStorage } from '../services/LocalStorageProvider'
 
-const deprecatedModelSet = new Set(
-    getDotComDefaultModels()
-        .filter(m => m.deprecated)
-        .map(m => m.model)
-)
+const DEPRECATED_DOT_COM_MODELS = [
+    {
+        title: 'Claude 2.0',
+        model: 'anthropic/claude-2.0',
+        provider: 'Anthropic',
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: { input: 0, output: 0 },
+    },
+    {
+        title: 'Claude 2.1',
+        model: 'anthropic/claude-2.1',
+        provider: 'Anthropic',
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: { input: 0, output: 0 },
+    },
+    {
+        title: 'Claude Instant',
+        model: 'anthropic/claude-instant-1.2',
+        provider: 'Anthropic',
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: { input: 0, output: 0 },
+    },
+] as Model[]
+
+const deprecatedModelSet = new Set(DEPRECATED_DOT_COM_MODELS.map(m => m.model))
+
 export function migrateAndNotifyForOutdatedModels(model: string | null): string | null {
     if (!model || isRunningInsideAgent() || !deprecatedModelSet.has(model)) {
         return model
     }
 
     // Claude 2 to Claude 3 migration.
-    const newModel = 'anthropic/claude-3-sonnet-20240229'
+    const newModel = 'anthropic/claude-3-5-sonnet-20240620'
     // Verify that the new model is available before migrating.
     if (ModelsService.getModelByID(newModel)) {
         showNotificationIfNotShownYet(

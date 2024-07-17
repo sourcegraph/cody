@@ -7,7 +7,6 @@ import {
     type CodeCompletionsClient,
     type CompletionParameters,
     type CompletionResponse,
-    type CompletionResponseGenerator,
     CompletionStopReason,
     type Configuration,
     type ConfigurationWithAccessToken,
@@ -34,6 +33,7 @@ import {
     TriggerKind,
     getInlineCompletions as _getInlineCompletions,
 } from '../get-inline-completions'
+import { AutocompleteStageRecorder } from '../logger'
 import {
     MULTI_LINE_STOP_SEQUENCES,
     SINGLE_LINE_STOP_SEQUENCES,
@@ -69,7 +69,7 @@ type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'd
     onNetworkRequest?: (params: CodeCompletionsParams, abortController: AbortController) => void
     completionResponseGenerator?: (
         params: CompletionParameters
-    ) => CompletionResponseGenerator | Generator<CompletionResponse>
+    ) => Generator<CompletionResponse> | AsyncGenerator<CompletionResponse>
     providerOptions?: Partial<ProviderOptions>
     configuration?: Partial<Configuration>
 }
@@ -91,7 +91,7 @@ interface ParamsResult extends InlineCompletionsParams {
  */
 export function params(
     code: string,
-    responses: CompletionResponseWithMetaData[] | 'never-resolve',
+    responses: CompletionResponse[] | CompletionResponseWithMetaData[] | 'never-resolve',
     params: Params = {}
 ): ParamsResult {
     const {
@@ -119,7 +119,12 @@ export function params(
 
             if (completionResponseGenerator) {
                 for await (const response of completionResponseGenerator(completeParams)) {
-                    yield { ...response, stopReason: CompletionStopReason.StreamingChunk }
+                    yield {
+                        completionResponse: {
+                            ...response,
+                            stopReason: CompletionStopReason.StreamingChunk,
+                        },
+                    }
                 }
 
                 // Signal to tests that all streaming chunks are processed.
@@ -130,7 +135,18 @@ export function params(
                 return new Promise(() => {})
             }
 
-            return responses[requestCounter++] || { completion: '', stopReason: 'unknown' }
+            const response = responses[requestCounter++]
+
+            if (response && 'completionResponse' in response) {
+                return response
+            }
+
+            return {
+                completionResponse: (response as CompletionResponse) || {
+                    completion: '',
+                    stopReason: 'unknown',
+                },
+            }
         },
         onConfigurationChange() {},
         logger: undefined,
@@ -163,8 +179,8 @@ export function params(
     const docContext = getCurrentDocContext({
         document,
         position,
-        maxPrefixLength: 1000,
-        maxSuffixLength: 1000,
+        maxPrefixLength: providerConfig.contextSizeHints.prefixChars,
+        maxSuffixLength: providerConfig.contextSizeHints.suffixChars,
         context: takeSuggestWidgetSelectionIntoAccount
             ? {
                   triggerKind: 0,
@@ -197,6 +213,7 @@ export function params(
         }),
         isDotComUser,
         configuration,
+        stageRecorder: new AutocompleteStageRecorder(),
         ...restParams,
 
         // Test-specific helpers
@@ -278,7 +295,6 @@ function paramsWithInlinedCompletion(
                 yield {
                     completion: lastResponse,
                     stopReason: CompletionStopReason.StreamingChunk,
-                    resolvedModel: undefined,
                 }
 
                 if (delayBetweenChunks) {
@@ -342,28 +358,41 @@ export async function getInlineCompletionsWithInlinedChunks(
 }
 
 /**
+ * Helper to access `getInlineCompletions` in tests.
+ * Unlike `getInlineCompletions`, this returns the full response, including `logId`.
+ */
+export async function getInlineCompletionsFullResponse(
+    params: ParamsResult
+): Promise<InlineCompletionsResult | null> {
+    const { configuration = {} } = params
+    await initCompletionProviderConfig(configuration)
+
+    const result = await _getInlineCompletions(params)
+    if (!result) {
+        completionProviderConfig.setConfig({} as Configuration)
+    }
+
+    return result
+}
+
+/**
  * Wraps the `getInlineCompletions` function to omit `logId` so that test expected values can omit
  * it and be stable.
  */
 export async function getInlineCompletions(
     params: ParamsResult
 ): Promise<Omit<InlineCompletionsResult, 'logId'> | null> {
-    const { configuration = {} } = params
-    await initCompletionProviderConfig(configuration)
-
-    const result = await _getInlineCompletions(params)
-
-    if (result) {
-        const { logId: _discard, ...rest } = result
-
-        return {
-            ...rest,
-            items: result.items.map(({ stopReason: discard, ...item }) => item),
-        }
+    const result = await getInlineCompletionsFullResponse(params)
+    if (!result) {
+        return null
     }
 
-    completionProviderConfig.setConfig({} as Configuration)
-    return result
+    const { logId: _discard, ...rest } = result
+
+    return {
+        ...rest,
+        items: result.items.map(({ stopReason: discard, ...item }) => item),
+    }
 }
 
 /** Test helper for when you just want to assert the completion strings. */

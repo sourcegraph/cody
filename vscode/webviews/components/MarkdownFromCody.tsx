@@ -1,9 +1,13 @@
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import { all } from 'lowlight'
 import type { ComponentProps, FunctionComponent } from 'react'
+import { useMemo } from 'react'
 import Markdown, { defaultUrlTransform } from 'react-markdown'
+import type { UrlTransform } from 'react-markdown/lib'
 import rehypeHighlight, { type Options as RehypeHighlightOptions } from 'rehype-highlight'
 import rehypeSanitize, { type Options as RehypeSanitizeOptions, defaultSchema } from 'rehype-sanitize'
 import remarkGFM from 'remark-gfm'
+import { useChatEnvironment } from '../chat/ChatEnvironmentContext'
 
 /**
  * Supported URIs to render as links in outputted markdown.
@@ -50,6 +54,16 @@ const ALLOWED_ELEMENTS = [
     'br',
 ]
 
+function defaultUrlProcessor(url: string): string {
+    const processedURL = defaultUrlTransform(url)
+
+    if (!ALLOWED_URI_REGEXP.test(processedURL)) {
+        return ''
+    }
+
+    return processedURL
+}
+
 /**
  * Transform URLs to opens links in assistant responses using the `_cody.vscode.open` command.
  */
@@ -62,18 +76,28 @@ function wrapLinksWithCodyOpenCommand(url: string): string {
     return `command:_cody.vscode.open?${encodedURL}`
 }
 
+const URL_PROCESSORS: Record<CodyIDE, UrlTransform> = {
+    [CodyIDE.Web]: defaultUrlProcessor,
+    [CodyIDE.JetBrains]: defaultUrlProcessor,
+    [CodyIDE.Neovim]: defaultUrlProcessor,
+    [CodyIDE.Emacs]: defaultUrlProcessor,
+    [CodyIDE.VSCode]: wrapLinksWithCodyOpenCommand,
+    [CodyIDE.VisualStudio]: wrapLinksWithCodyOpenCommand,
+}
+
 export const MarkdownFromCody: FunctionComponent<{ className?: string; children: string }> = ({
     className,
     children,
-}) => (
-    <Markdown
-        className={className}
-        {...markdownPluginProps()}
-        urlTransform={wrapLinksWithCodyOpenCommand}
-    >
-        {children}
-    </Markdown>
-)
+}) => {
+    const { clientType } = useChatEnvironment()
+    const urlTransform = useMemo(() => URL_PROCESSORS[clientType], [clientType])
+
+    return (
+        <Markdown className={className} {...markdownPluginProps()} urlTransform={urlTransform}>
+            {children}
+        </Markdown>
+    )
+}
 
 let _markdownPluginProps: ReturnType<typeof markdownPluginProps> | undefined
 function markdownPluginProps(): Pick<

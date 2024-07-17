@@ -36,7 +36,7 @@ export class EnterpriseContextFactory implements vscode.Disposable {
     // Creates a new RemoteSearch proxy. The RemoteSearch is stateful because
     // it maintains a set of selected repositories to search, so each chat panel
     // should use a separate instance. The returned RemoteSearch does not get
-    // configuration updates; this is fine for the SimpleChatPanelProvider
+    // configuration updates; this is fine for the ChatController
     // client because chats are restarted if the configuration changes.
     public createRemoteSearch(): RemoteSearch {
         return new RemoteSearch(this.completions)

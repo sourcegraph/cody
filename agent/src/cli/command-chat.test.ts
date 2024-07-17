@@ -21,7 +21,7 @@ interface ChatCommandResult {
 }
 
 describe('cody chat', () => {
-    const credentials = TESTING_CREDENTIALS.dotcom
+    const credentials = TESTING_CREDENTIALS.s2
     let polly: Polly
     const agentDirectory = getAgentDir()
     const tmp = new TestWorkspace(path.join(agentDirectory, 'src', '__tests__', 'cody-cli-chat'))
@@ -51,12 +51,18 @@ describe('cody chat', () => {
         options.debug = true
         const exitCode = await chatAction(options)
         if (exitCode !== (params.expectedExitCode ?? 0)) {
+            const extraHint =
+                stdout.buffer.length === 0 && stderr.buffer.length === 0
+                    ? 'Stdout and stderr are empty even if the process exited with a non-zero code. ' +
+                      'Comment out the --silent option from the test file to try to get more debugging information.'
+                    : undefined
             throw new Error(
                 YAML.stringify({
                     exitCode,
                     expectedExitCode: params.expectedExitCode,
                     stdout: stdout.buffer,
                     stderr: stderr.buffer,
+                    extraHint,
                 })
             )
         }

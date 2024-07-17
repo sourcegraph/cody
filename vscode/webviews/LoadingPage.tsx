@@ -1,10 +1,8 @@
 import styles from './LoadingPage.module.css'
 
 export const LoadingPage: React.FunctionComponent = () => (
-    <div className="outer-container">
-        <div className={styles.container}>
-            <LoadingDots />
-        </div>
+    <div className={styles.container}>
+        <LoadingDots />
     </div>
 )
 

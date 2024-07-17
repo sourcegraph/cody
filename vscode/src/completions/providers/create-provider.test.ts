@@ -25,8 +25,9 @@ const getVSCodeConfigurationWithAccessToken = (
 })
 
 const dummyCodeCompletionsClient: CodeCompletionsClient = {
+    // biome-ignore lint/correctness/useYield: keep TS happy in tests.
     async *complete() {
-        yield { completion: '', stopReason: '' }
+        return { completionResponse: { completion: '', stopReason: '' } }
     },
     logger: undefined,
     onConfigurationChange: () => undefined,
@@ -34,7 +35,7 @@ const dummyCodeCompletionsClient: CodeCompletionsClient = {
 
 const dummyAuthStatus: AuthStatus = defaultAuthStatus
 
-graphqlClient.onConfigurationChange({} as unknown as GraphQLAPIClientConfig)
+graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
 
 describe('createProviderConfig', () => {
     describe('if completions provider fields are defined in VSCode settings', () => {

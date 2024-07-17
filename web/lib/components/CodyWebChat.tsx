@@ -10,12 +10,12 @@ import {
     ContextItemSource,
     type Model,
     PromptString,
-    createRemoteFileURI,
     isErrorLike,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
 
 import { Chat, type UserAccountInfo } from 'cody-ai/webviews/Chat'
+import { ChatEnvironmentContext } from 'cody-ai/webviews/chat/ChatEnvironmentContext'
 import {
     type ChatModelContext,
     ChatModelContextProvider,
@@ -71,6 +71,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
     const [chatModels, setChatModels] = useState<Model[]>()
+    const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
 
     useLayoutEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -94,6 +95,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                     setIsTranscriptError(message.isTranscriptError)
                     break
                 case 'chatModels':
+                    // The default model will always be the first one on the list.
                     setChatModels(message.models)
                     break
                 case 'config':
@@ -107,6 +109,8 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                 case 'clientAction':
                     dispatchClientAction(message)
                     break
+                case 'setConfigFeatures':
+                    setServerSentModelsEnabled(!!message.configFeatures.serverSentModels)
             }
         })
     }, [vscodeAPI, dispatchClientAction])
@@ -140,20 +144,18 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
             if (!chatModels || !setChatModels) {
                 return
             }
+            // Notify the host about the manual change,
+            // and the host will return the updated change models via onMessage.
             vscodeAPI.postMessage({
                 command: 'chatModel',
                 model: selected.model,
             })
-            const updatedChatModels = chatModels.map(m =>
-                m.model === selected.model ? { ...m, default: true } : { ...m, default: false }
-            )
-            setChatModels(updatedChatModels)
         },
         [chatModels, vscodeAPI]
     )
     const chatModelContext = useMemo<ChatModelContext>(
-        () => ({ chatModels, onCurrentChatModelChange }),
-        [chatModels, onCurrentChatModelChange]
+        () => ({ chatModels, onCurrentChatModelChange, serverSentModelsEnabled }),
+        [chatModels, onCurrentChatModelChange, serverSentModelsEnabled]
     )
 
     const clientState: ClientStateForWebview = useMemo<ClientStateForWebview>(() => {
@@ -179,7 +181,8 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
             mentions.push({
                 type: 'file',
                 isIgnored: false,
-                uri: createRemoteFileURI(repositories[0].name, fileURL),
+                remoteRepositoryName: repositories[0].name,
+                uri: URI.file(repositories[0].name + fileURL),
                 source: ContextItemSource.Initial,
             })
         }
@@ -188,6 +191,8 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
             initialContext: mentions,
         }
     }, [initialContext])
+
+    const envVars = useMemo(() => ({ clientType: CodyIDE.Web }), [])
 
     return (
         <div className={className} data-cody-web-chat={true} ref={setRootElement}>
@@ -199,29 +204,31 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                 isErrorLike(client) ? (
                     <p>Error: {client.message}</p>
                 ) : (
-                    <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
-                        <TelemetryRecorderContext.Provider value={telemetryRecorder}>
-                            <ChatModelContextProvider value={chatModelContext}>
-                                <ClientStateContextProvider value={clientState}>
-                                    <WithContextProviders>
-                                        <Chat
-                                            chatID={activeChatID}
-                                            chatEnabled={true}
-                                            showWelcomeMessage={false}
-                                            showIDESnippetActions={false}
-                                            userInfo={userAccountInfo}
-                                            messageInProgress={messageInProgress}
-                                            transcript={transcript}
-                                            vscodeAPI={vscodeAPI}
-                                            isTranscriptError={isTranscriptError}
-                                            scrollableParent={rootElement}
-                                            className={styles.chat}
-                                        />
-                                    </WithContextProviders>
-                                </ClientStateContextProvider>
-                            </ChatModelContextProvider>
-                        </TelemetryRecorderContext.Provider>
-                    </ChatMentionContext.Provider>
+                    <ChatEnvironmentContext.Provider value={envVars}>
+                        <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
+                            <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                                <ChatModelContextProvider value={chatModelContext}>
+                                    <ClientStateContextProvider value={clientState}>
+                                        <WithContextProviders>
+                                            <Chat
+                                                chatID={activeChatID}
+                                                chatEnabled={true}
+                                                showWelcomeMessage={false}
+                                                showIDESnippetActions={false}
+                                                userInfo={userAccountInfo}
+                                                messageInProgress={messageInProgress}
+                                                transcript={transcript}
+                                                vscodeAPI={vscodeAPI}
+                                                isTranscriptError={isTranscriptError}
+                                                scrollableParent={rootElement}
+                                                className={styles.chat}
+                                            />
+                                        </WithContextProviders>
+                                    </ClientStateContextProvider>
+                                </ChatModelContextProvider>
+                            </TelemetryRecorderContext.Provider>
+                        </ChatMentionContext.Provider>
+                    </ChatEnvironmentContext.Provider>
                 )
             ) : (
                 <div className={styles.loading}>Loading Cody Agent...</div>
