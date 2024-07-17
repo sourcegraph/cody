@@ -210,8 +210,8 @@ query RecordContext($interactionId: String!, $usedContextItems: [InputContextIte
 }`
 
 export const RANK_CONTEXT_QUERY = `
-query RankContext($interactionId: String!, $contextItems: [InputContextItem!]!) {
-    rankContext(interactionId: $interactionId, contextItems: $contextItems) {
+query RankContext($interactionId: String!, $query: String!, $contextItems: [InputContextItem!]!) {
+    rankContext(interactionId: $interactionId, query:$query, contextItems: $contextItems) {
         ranker
         used
         discarded

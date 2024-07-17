@@ -14,7 +14,7 @@ const toInput = (i: ContextItem | null): InputContextItem | null => {
     }
     return {
         content: i.content,
-        retriever: i.source,
+        retriever: i.source || '',
     }
 }
 
@@ -31,12 +31,13 @@ export class ContextAPIClient {
         return this.apiClient.chatIntent(interactionID, query)
     }
 
-    public async rankContext(interactionID: string, context: ContextItem[]) {
+    public async rankContext(interactionID: string, query: string, context: ContextItem[]) {
         if (!this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyServerSideContextAPI)) {
             return
         }
         const res = await this.apiClient.rankContext(
             interactionID,
+            query,
             context
                 .map(toInput)
                 .filter(i => i != null)

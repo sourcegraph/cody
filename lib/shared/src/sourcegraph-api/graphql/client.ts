@@ -378,7 +378,7 @@ export interface ChatIntentResult {
  */
 export interface InputContextItem {
     content: string
-    retriever?: string
+    retriever: string
     score?: number
 }
 
@@ -917,12 +917,14 @@ export class SourcegraphGraphQLAPIClient {
     /** Experimental API */
     public async rankContext(
         interactionID: string,
+        query: string,
         context: InputContextItem[]
     ): Promise<RankContextResponse | Error> {
         const response = await this.fetchSourcegraphAPI<APIResponse<RankContextResponse>>(
             RANK_CONTEXT_QUERY,
             {
                 interactionId: interactionID,
+                query,
                 contextItems: context,
             }
         )
@@ -1271,11 +1273,13 @@ export class SourcegraphGraphQLAPIClient {
 
         // Set a timeout to trigger the abort
         const timeoutId = setTimeout(() => controller.abort(), timeout)
-
-        return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
-            fetch(url, {
+        console.log(query)
+        console.log(variables)
+        return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () => {
+            const body = JSON.stringify({ query, variables })
+            return fetch(url, {
                 method: 'POST',
-                body: JSON.stringify({ query, variables }),
+                body: body,
                 headers,
                 signal, // Pass the signal to the fetch request
             })
@@ -1290,7 +1294,7 @@ export class SourcegraphGraphQLAPIClient {
                     }
                     return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
                 })
-        )
+        })
     }
     // make an anonymous request to the dotcom API
     private fetchSourcegraphDotcomAPI<T>(
