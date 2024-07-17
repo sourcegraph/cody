@@ -1269,13 +1269,11 @@ export class SourcegraphGraphQLAPIClient {
 
         // Set a timeout to trigger the abort
         const timeoutId = setTimeout(() => controller.abort(), timeout)
-        console.log(query)
-        console.log(variables)
+
         return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () => {
-            const body = JSON.stringify({ query, variables })
             return fetch(url, {
                 method: 'POST',
-                body: body,
+                body: JSON.stringify({ query, variables }),
                 headers,
                 signal, // Pass the signal to the fetch request
             })
