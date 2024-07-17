@@ -189,16 +189,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             vscodeAPI.postMessage({ command: 'initialized' })
             return
         }
-        if (view === View.Settings) {
-            vscodeAPI.postMessage({ command: 'command', id: 'cody.status-bar.interacted' })
-            setView(View.Chat)
-            return
-        }
-        if (view === View.Account) {
-            vscodeAPI.postMessage({ command: 'command', id: 'cody.auth.account' })
-            setView(View.Chat)
-            return
-        }
     }, [view, vscodeAPI])
 
     const loginRedirect = useCallback(

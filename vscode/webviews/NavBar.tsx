@@ -3,6 +3,7 @@ import {
     CircleUserIcon,
     DownloadIcon,
     HistoryIcon,
+    type LucideProps,
     MessageSquarePlusIcon,
     MessagesSquareIcon,
     SettingsIcon,
@@ -26,7 +27,18 @@ interface NavBarProps {
     setView: (view?: View) => void
 }
 
-const icons = [
+type IconComponent = React.ForwardRefExoticComponent<
+    Omit<LucideProps, 'ref'> & React.RefAttributes<SVGSVGElement>
+>
+
+interface IconConfig {
+    Icon: IconComponent
+    view: View
+    command?: string
+    RightIcons?: { Icon: IconComponent; command: string }[]
+}
+
+const icons: IconConfig[] = [
     {
         Icon: MessagesSquareIcon,
         view: View.Chat,
@@ -41,34 +53,42 @@ const icons = [
         ],
     },
     { Icon: ZapIcon, view: View.Commands },
-    { Icon: SettingsIcon, view: View.Settings },
-    { Icon: CircleUserIcon, view: View.Account },
+    { Icon: SettingsIcon, command: 'cody.status-bar.interacted', view: View.Settings },
+    { Icon: CircleUserIcon, command: 'cody.auth.account', view: View.Account },
 ]
 
 export const NavBar: React.FC<NavBarProps> = ({ currentView, setView }) => {
     const baseClasses =
-        'tw-rounded-none tw-bg-transparent tw-border-solid tw-border-b-4 tw-px-2 tw-py-3 tw-transition-all hover:tw-opacity-100'
+        'tw-rounded-none tw-bg-transparent tw-border-solid tw-border-b tw-px-2 tw-pb-4 tw-transition-all hover:tw-opacity-100'
     const activeClasses = 'tw-opacity-100 tw-border-foreground'
     const inactiveClasses = 'tw-opacity-50 tw-border-transparent'
 
-    const currentViewRightIcons = icons.find(({ view }) => view === currentView)?.RightIcons
+    const currentViewRightIcons = icons.find(icon => icon.view === currentView)?.RightIcons
+
+    const handleClick = (view: View, command?: string) => {
+        setView(view)
+        if (command) {
+            getVSCodeAPI().postMessage({ command: 'command', id: command })
+        }
+    }
 
     return (
         <div
             className={clsx(
-                'tw-flex tw-justify-between tw-sticky tw-top-0 tw-z-50 tw-w-full tw-border-b-2 tw-border-border tw-my-3',
+                'tw-flex tw-justify-between tw-sticky tw-top-0 tw-z-50 tw-w-full tw-border-b tw-border-border tw-mb-1 tw-px-2',
                 styles.navbarContainer
             )}
         >
             <div>
-                {icons.map(({ Icon, view }) => (
+                {icons.map(({ Icon, view, command }) => (
                     <button
                         type="button"
                         key={view}
-                        onClick={() => setView(view as View)}
-                        className={`${baseClasses} ${
+                        onClick={() => handleClick(view, command)}
+                        className={clsx(
+                            baseClasses,
                             currentView === view ? activeClasses : inactiveClasses
-                        }`}
+                        )}
                     >
                         <Icon size={16} />
                     </button>
@@ -78,8 +98,8 @@ export const NavBar: React.FC<NavBarProps> = ({ currentView, setView }) => {
                 {currentViewRightIcons?.map(({ Icon, command }) => (
                     <button
                         type="button"
-                        key={Icon.displayName}
-                        className={`${baseClasses} ${inactiveClasses}`}
+                        key={command}
+                        className={clsx(baseClasses, inactiveClasses)}
                         onClick={() => getVSCodeAPI().postMessage({ command: 'command', id: command })}
                     >
                         <Icon size={16} />
