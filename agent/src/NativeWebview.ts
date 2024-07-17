@@ -1,6 +1,7 @@
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 import type { Agent } from './agent'
+import type { DefiniteWebviewOptions } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
 
 export type NativeWebviewCapabilities = { cspSource: string; webviewBundleServingPrefix: string }
@@ -23,18 +24,18 @@ interface WebviewProtocolDelegate {
         viewType: string,
         title: string,
         showOptions: { preserveFocus: boolean; viewColumn: vscode.ViewColumn },
-        options: {
-            enableScripts: boolean
-            enableForms: boolean
-            enableCommandUris: boolean | readonly string[]
-            localResourceRoots: readonly string[] | undefined
-            portMapping: readonly { webviewPort: number; extensionHostPort: number }[]
-            enableFindWidget: boolean
-            retainContextWhenHidden: boolean
-        }
+        options: DefiniteWebviewOptions
     ): void
 
     // Used by both panels and views.
+
+    // Registers the sink for client -> host postMessage events.
+    registerWebview(
+        handle: NativeWebviewHandle,
+        postMessageSink: {
+            didReceiveMessage: (message: any) => void
+        }
+    ): void
     setTitle(handle: NativeWebviewHandle, title: string): void
 
     // For panels.
@@ -52,6 +53,7 @@ interface WebviewProtocolDelegate {
 
     // Webview
     setHtml(handle: NativeWebviewHandle, value: string): void
+    setOptions(handle: NativeWebviewHandle, value: DefiniteWebviewOptions): void
     postMessage(handle: NativeWebviewHandle, message: any): Promise<boolean>
 }
 
@@ -67,6 +69,11 @@ export function resolveWebviewView(
     }
     const view = new NativeWebviewView(viewId, webviewHandle, webviewProtocolDelegate)
     // TODO: Wire up context (setState, etc.) here
+    webviewProtocolDelegate!.registerWebview(webviewHandle, {
+        didReceiveMessage(message: any) {
+            ;(view.webview as NativeWebview).didReceiveMessageEmitter.fire(message)
+        },
+    })
     return provider.resolveWebviewView(
         view,
         { state: undefined },
@@ -125,6 +132,12 @@ export function registerNativeWebviewHandlers(
                 iconPathUri: iconPath?.toString(),
             })
         },
+        setOptions: (handle, options) => {
+            agent.notify('webview/setOptions', {
+                handle,
+                options,
+            })
+        },
         setHtml: (handle, html) => {
             agent.notify('webview/setHtml', {
                 handle,
@@ -137,6 +150,9 @@ export function registerNativeWebviewHandlers(
                 stringEncodedMessage: JSON.stringify(message),
             })
             return Promise.resolve(true)
+        },
+        registerWebview: (handle, postMessageSink) => {
+            agent.webPanels.nativePanels.set(handle, postMessageSink)
         },
     }
     vscode_shim.setCreateWebviewPanel((viewType, title, showOptions, options) => {
@@ -180,7 +196,7 @@ export function registerNativeWebviewHandlers(
                 retainContextWhenHidden: panel.options.retainContextWhenHidden ?? false,
             }
         )
-        agent.webPanels.nativePanels.set(panel.handle, {
+        webviewProtocolDelegate!.registerWebview(panel.handle, {
             didReceiveMessage(message: any) {
                 ;(panel.webview as NativeWebview).didReceiveMessageEmitter.fire(message)
             },
@@ -199,7 +215,7 @@ class NativeWebview implements vscode.Webview {
     constructor(
         private readonly delegate: WebviewProtocolDelegate,
         private readonly handle: NativeWebviewHandle,
-        public readonly options: vscode.WebviewOptions
+        private _options: vscode.WebviewOptions
     ) {}
 
     public get html(): string {
@@ -209,6 +225,29 @@ class NativeWebview implements vscode.Webview {
     public set html(value: string) {
         this.delegate.setHtml(this.handle, value)
         this._html = value
+    }
+
+    public get options(): vscode.WebviewOptions {
+        return this._options
+    }
+
+    public set options(value: vscode.WebviewOptions) {
+        const options = {
+            // TODO: Support enableFindWidget
+            enableFindWidget: false,
+            // TODO: Support retainContextWhenHidden
+            retainContextWhenHidden: true,
+            enableScripts: value.enableScripts ?? false,
+            enableCommandUris: value.enableCommandUris ?? false,
+            enableForms: value.enableForms ?? false,
+            localResourceRoots: value.localResourceRoots ?? [],
+            portMapping: value.portMapping || [],
+        }
+        this.delegate.setOptions(this.handle, {
+            ...options,
+            localResourceRoots: options.localResourceRoots.map(uri => uri.toString()),
+        })
+        this._options = options
     }
 
     postMessage(message: any): Thenable<boolean> {
