@@ -288,7 +288,7 @@ export function createProviderConfig({
     providerOptions,
     ...otherOptions
 }: AnthropicOptions & { providerOptions?: Partial<ProviderOptions> }): ProviderConfig {
-    const defaultClientModel  = model ?? 'anthropic/claude-instant-1.2'
+    const defaultClientModel = model ?? 'anthropic/claude-instant-1.2'
     return {
         create(options: ProviderOptions) {
             return new AnthropicProvider(
