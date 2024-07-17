@@ -171,7 +171,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly remoteSearch: RemoteSearch | null
     private readonly repoPicker: RemoteRepoPicker | null
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
-    private readonly featureFlagProvider: FeatureFlagProvider
     private readonly contextAPIClient: ContextAPIClient | null
 
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
@@ -196,7 +195,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         guardrails,
         enterpriseContext,
         startTokenReceiver,
-        featureFlagProvider,
         contextAPIClient,
     }: ChatControllerOptions) {
         this.extensionUri = extensionUri
