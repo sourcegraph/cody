@@ -614,21 +614,19 @@ class EditCommandPrompt(
     /** Returns a compact symbol representation of the action's keyboard shortcut, if any. */
     @JvmStatic
     fun getShortcutDisplayString(actionId: String): String? {
+      fun getFirstShortcut(id: String): String? {
+        return KeymapManager.getInstance().activeKeymap.getShortcuts(id).firstOrNull()?.let {
+          KeymapUtil.getShortcutText(it)
+        }
+      }
+
       return when (actionId) {
         "cody.editCodeAction",
-        "cody.inlineEditRetryAction" -> {
-          KeymapUtil.getShortcutText(
-              KeymapManager.getInstance().activeKeymap.getShortcuts("cody.editCodeAction")[0])
-        }
+        "cody.inlineEditRetryAction" -> getFirstShortcut("cody.editCodeAction")
         "cody.inlineEditCancelAction",
         "cody.inlineEditUndoAction",
-        "cody.inlineEditDismissAction" -> {
-          KeymapUtil.getShortcutText(
-              KeymapManager.getInstance()
-                  .activeKeymap
-                  .getShortcuts("cody.editCancelOrUndoAction")[0])
-        }
-        else -> null
+        "cody.inlineEditDismissAction" -> getFirstShortcut("cody.editCancelOrUndoAction")
+        else -> getFirstShortcut(actionId)
       }
     }
   }
