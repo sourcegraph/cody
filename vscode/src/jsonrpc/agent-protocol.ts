@@ -476,7 +476,23 @@ export type ServerNotifications = {
     'webview/reveal': [{ handle: string; viewColumn: number; preserveFocus: boolean }]
     'webview/setTitle': [{ handle: string; title: string }]
     'webview/setIconPath': [{ handle: string; iconPathUri: string | null | undefined }]
+    'webview/setOptions': [{ handle: string; options: DefiniteWebviewOptions }]
     'webview/setHtml': [{ handle: string; html: string }]
+}
+
+/**
+ * vscode.WebviewOptions with defaults applied so each option is present. Agent
+ * native webviews use this type so defaults are handled in TypeScript and the
+ * client simply interprets the fully specified options.
+ */
+export interface DefiniteWebviewOptions {
+    enableScripts: boolean
+    enableForms: boolean
+    enableCommandUris: boolean | readonly string[]
+    localResourceRoots: readonly string[] | undefined
+    portMapping: readonly { webviewPort: number; extensionHostPort: number }[]
+    enableFindWidget: boolean
+    retainContextWhenHidden: boolean
 }
 
 interface CancelParams {

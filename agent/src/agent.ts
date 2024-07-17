@@ -1644,7 +1644,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         if (!provider) {
             return
         }
-        resolveWebviewView(provider, viewId, webviewHandle)
+        await resolveWebviewView(provider, viewId, webviewHandle)
     }
 
     private async receiveWebviewMessage(id: string, message: WebviewMessage): Promise<void> {
