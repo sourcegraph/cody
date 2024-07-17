@@ -2,7 +2,7 @@ import assert from 'node:assert'
 import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
     type ContextItem,
@@ -13,16 +13,17 @@ import {
     isWindows,
 } from '@sourcegraph/cody-shared'
 
+import * as uuid from 'uuid'
 import { ResponseError } from 'vscode-jsonrpc'
 import { URI } from 'vscode-uri'
 import { CodyJsonRpcErrorCode } from '../../vscode/src/jsonrpc/CodyJsonRpcErrorCode'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
+import { logTestingData } from '../../vscode/test/fixtures/mock-server'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 import { decodeURIs } from './decodeURIs'
 import { explainPollyError } from './explainPollyError'
 import type { NetworkRequest, Requests } from './protocol-alias'
-import { trimEndOfLine } from './trimEndOfLine'
 
 const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
 
@@ -40,7 +41,7 @@ function trimEndOfLine(text: string | undefined): string {
 }
 
 function getTelemetryEvents(requests: NetworkRequest[]): {
-    telemetryEventsV2: string[]
+    loggedTelemetryEventsV2: string[]
 } {
     const v2Requests = requests.filter(req => req.url.includes('RecordTelemetryEvents'))
 
@@ -49,16 +50,27 @@ function getTelemetryEvents(requests: NetworkRequest[]): {
 
         const { variables } = JSON.parse(req.body)
         return variables.events.map((event: { feature: string; action: string }) => {
-            return `${event.feature}.${event.action}`
+            return `${event.feature}:${event.action}`
         })
     })
 
     return {
-        telemetryEventsV2: v2Events,
+        loggedTelemetryEventsV2: v2Events,
+    }
+}
+
+function safeJsonParse(str: string | null | undefined) {
+    if (!str) return null
+    try {
+        return JSON.parse(str)
+    } catch (e) {
+        console.error('Failed to parse JSON:', e)
+        return null
     }
 }
 
 describe('Agent', () => {
+    let expectedEvents: string[] | undefined
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'defaultClient',
@@ -122,6 +134,37 @@ describe('Agent', () => {
 
     beforeEach(async () => {
         await client.request('testing/reset', null)
+        // reset expectedEvents before each test
+        expectedEvents = undefined
+    })
+
+    afterEach(async () => {
+        const { requests } = await client.request('testing/networkRequests', null)
+        const telemetryEvents = getTelemetryEvents(requests)
+        const telemetryRequests = requests.filter(req => req.url.includes('RecordTelemetryEvents'))
+        const testRunId = uuid.v4()
+        // for each request in telemetry request, send to logTestData
+        for (const req of telemetryRequests) {
+            // Parse the request body
+            const bodyObject = safeJsonParse(req.body)
+            let variables: string
+            if (bodyObject.variables.events.length > 1) {
+                variables = bodyObject.variables
+            } else {
+                variables = bodyObject.variables.events[0]
+            }
+            // logTestingData(
+            //     JSON.stringify(variables),
+            //     'v2-agent-e2e',
+            //     expect.getState().currentTestName,
+            //     testRunId
+            // )
+        }
+        if (expectedEvents) {
+            expect(telemetryEvents.loggedTelemetryEventsV2).toEqual(
+                expect.arrayContaining(expectedEvents)
+            )
+        }
     })
 
     const sumUri = workspace.file('src', 'sum.ts')
@@ -133,6 +176,13 @@ describe('Agent', () => {
     const ignoredUri = workspace.file('src', 'isIgnored.ts')
 
     it('extensionConfiguration/change (handle errors)', async () => {
+        // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+        expectedEvents = [
+            'cody.auth:failed',
+            'cody.auth.login:firstEver',
+            'cody.auth:connected',
+            'cody.codyIgnore:hasFile',
+        ]
         // Send two config change notifications because this is what the
         // JetBrains client does and there was a bug where everything worked
         // fine as long as we didn't send the second unauthenticated config
@@ -146,8 +196,6 @@ describe('Agent', () => {
             serverEndpoint: 'https://sourcegraph.com/',
             customHeaders: {},
         })
-        const { requests } = await client.request('testing/networkRequests', null)
-        console.log(requests)
         expect(invalid?.isLoggedIn).toBeFalsy()
         const valid = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
@@ -171,6 +219,13 @@ describe('Agent', () => {
     }, 10_000)
 
     it('graphql/getCurrentUserCodySubscription', async () => {
+        // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+        expectedEvents = [
+            'cody.auth:failed',
+            'cody.auth.login:firstEver',
+            'cody.auth:connected',
+            'cody.codyIgnore:hasFile',
+        ]
         const currentUserCodySubscription = await client.request(
             'graphql/getCurrentUserCodySubscription',
             null
@@ -184,12 +239,20 @@ describe('Agent', () => {
             "status": "ACTIVE",
           }
         `)
-        const { requests } = await client.request('testing/networkRequests', null)
-        console.log(requests)
     }, 10_000)
 
     describe('Chat', () => {
         it('chat/submitMessage (short message)', async () => {
+            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+            expectedEvents = [
+                'cody.auth:failed',
+                'cody.auth.login:firstEver',
+                'cody.auth:connected',
+                'cody.chat-question:submitted',
+                'cody.chat-question:executed',
+                'cody.chatResponse:noCode',
+                'cody.codyIgnore:hasFile',
+            ]
             const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
             expect(lastMessage).toMatchInlineSnapshot(
                 `
@@ -203,6 +266,17 @@ describe('Agent', () => {
         }, 30_000)
 
         it('chat/submitMessage (long message)', async () => {
+            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+            expectedEvents = [
+                'cody.auth:failed',
+                'cody.auth.login:firstEver',
+                'cody.auth:connected',
+                'cody.chat-question:submitted',
+                'cody.chat-question:executed',
+                'cody.chatResponse:noCode',
+                'cody.chatResponse:hasCode',
+                'cody.codyIgnore:hasFile',
+            ]
             const lastMessage = await client.sendSingleMessageToNewChat(
                 'Generate simple hello world function in java!'
             )
@@ -249,6 +323,17 @@ describe('Agent', () => {
         }, 30_000)
 
         it('chat/restore', async () => {
+            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+            expectedEvents = [
+                'cody.auth:failed',
+                'cody.auth.login:firstEver',
+                'cody.auth:connected',
+                'cody.chat-question:submitted',
+                'cody.chat-question:executed',
+                'cody.chatResponse:noCode',
+                'cody.chatResponse:hasCode',
+                'cody.codyIgnore:hasFile',
+            ]
             // Step 1: create a chat session where I share my name.
             const id1 = await client.request('chat/new', null)
             const reply1 = asTranscriptMessage(
@@ -292,6 +377,17 @@ describe('Agent', () => {
         }, 30_000)
 
         it('chat/restore (With null model)', async () => {
+            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+            expectedEvents = [
+                'cody.auth:failed',
+                'cody.auth.login:firstEver',
+                'cody.auth:connected',
+                'cody.chat-question:submitted',
+                'cody.chat-question:executed',
+                'cody.chatResponse:noCode',
+                'cody.chatResponse:hasCode',
+                'cody.codyIgnore:hasFile',
+            ]
             // Step 1: Create a chat session asking what model is used.
             const id1 = await client.request('chat/new', null)
             const reply1 = asTranscriptMessage(
@@ -330,6 +426,17 @@ describe('Agent', () => {
         }, 30_000)
 
         it('chat/restore (multiple) & export', async () => {
+            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+            expectedEvents = [
+                'cody.auth:failed',
+                'cody.auth.login:firstEver',
+                'cody.auth:connected',
+                'cody.chat-question:submitted',
+                'cody.chat-question:executed',
+                'cody.chatResponse:noCode',
+                'cody.chatResponse:hasCode',
+                'cody.codyIgnore:hasFile',
+            ]
             const date = new Date(1997, 7, 2, 12, 0, 0, 0)
 
             // Step 1: Restore multiple chats
@@ -378,6 +485,17 @@ describe('Agent', () => {
         }, 30_000)
 
         it('chat/submitMessage (with enhanced context)', async () => {
+            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+            expectedEvents = [
+                'cody.auth:failed',
+                'cody.auth.login:firstEver',
+                'cody.auth:connected',
+                'cody.chat-question:submitted',
+                'cody.chat-question:executed',
+                'cody.chatResponse:noCode',
+                'cody.chatResponse:hasCode',
+                'cody.codyIgnore:hasFile',
+            ]
             await client.openFile(animalUri)
             const lastMessage = await client.sendSingleMessageToNewChat(
                 'Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.',
@@ -415,6 +533,17 @@ describe('Agent', () => {
         }, 30_000)
 
         it('chat/submitMessage (with enhanced context, squirrel test)', async () => {
+            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+            expectedEvents = [
+                'cody.auth:failed',
+                'cody.auth.login:firstEver',
+                'cody.auth:connected',
+                'cody.chat-question:submitted',
+                'cody.chat-question:executed',
+                'cody.chatResponse:noCode',
+                'cody.chatResponse:hasCode',
+                'cody.codyIgnore:hasFile',
+            ]
             await client.openFile(squirrelUri)
             const { lastMessage, transcript } =
                 await client.sendSingleMessageToNewChatWithFullTranscript('What is Squirrel?', {
@@ -430,6 +559,17 @@ describe('Agent', () => {
         }, 30_000)
 
         it('webview/receiveMessage (type: chatModel)', async () => {
+            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+            expectedEvents = [
+                'cody.auth:failed',
+                'cody.auth.login:firstEver',
+                'cody.auth:connected',
+                'cody.chat-question:submitted',
+                'cody.chat-question:executed',
+                'cody.chatResponse:noCode',
+                'cody.chatResponse:hasCode',
+                'cody.codyIgnore:hasFile',
+            ]
             const id = await client.request('chat/new', null)
             {
                 await client.setChatModel(id, 'openai/gpt-3.5-turbo')
@@ -439,6 +579,17 @@ describe('Agent', () => {
         }, 30_000)
 
         it('webview/receiveMessage (type: reset)', async () => {
+            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+            expectedEvents = [
+                'cody.auth:failed',
+                'cody.auth.login:firstEver',
+                'cody.auth:connected',
+                'cody.chat-question:submitted',
+                'cody.chat-question:executed',
+                'cody.chatResponse:noCode',
+                'cody.chatResponse:hasCode',
+                'cody.codyIgnore:hasFile',
+            ]
             const id = await client.request('chat/new', null)
             await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
             await client.sendMessage(
@@ -460,6 +611,17 @@ describe('Agent', () => {
             it(
                 'edits the last human chat message',
                 async () => {
+                    expectedEvents = [
+                        'cody.auth:failed',
+                        'cody.auth.login:firstEver',
+                        'cody.auth:connected',
+                        'cody.chat-question:submitted',
+                        'cody.chat-question:executed',
+                        'cody.chatResponse:noCode',
+                        'cody.chatResponse:hasCode',
+                        'cody.editChatButton:clicked',
+                        'cody.codyIgnore:hasFile',
+                    ]
                     const id = await client.request('chat/new', null)
                     await client.setChatModel(
                         id,
@@ -486,6 +648,18 @@ describe('Agent', () => {
             )
 
             it('edits messages by index', async () => {
+                // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+                expectedEvents = [
+                    'cody.auth:failed',
+                    'cody.auth.login:firstEver',
+                    'cody.auth:connected',
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                    'cody.chatResponse:hasCode',
+                    'cody.editChatButton:clicked',
+                    'cody.codyIgnore:hasFile',
+                ]
                 const id = await client.request('chat/new', null)
                 await client.setChatModel(
                     id,
@@ -662,6 +836,18 @@ describe('Agent', () => {
 
     describe('Text documents', () => {
         it('chat/submitMessage (understands the selected text)', async () => {
+            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+            expectedEvents = [
+                'cody.auth:failed',
+                'cody.auth.login:firstEver',
+                'cody.auth:connected',
+                'cody.chat-question:submitted',
+                'cody.chat-question:executed',
+                'cody.chatResponse:noCode',
+                'cody.chatResponse:hasCode',
+                'cody.editChatButton:clicked',
+                'cody.codyIgnore:hasFile',
+            ]
             await client.openFile(multipleSelectionsUri)
             await client.changeFile(multipleSelectionsUri)
             await client.changeFile(multipleSelectionsUri, {
@@ -687,6 +873,19 @@ describe('Agent', () => {
 
     describe('Commands', () => {
         it('commands/explain', async () => {
+            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+            expectedEvents = [
+                'cody.auth:failed',
+                'cody.auth.login:firstEver',
+                'cody.auth:connected',
+                'cody.chat-question:submitted',
+                'cody.chat-question:executed',
+                'cody.chatResponse:noCode',
+                'cody.chatResponse:hasCode',
+                'cody.editChatButton:clicked',
+                'cody.command.explain:executed',
+                'cody.codyIgnore:hasFile',
+            ]
             await client.openFile(animalUri)
             const freshChatID = await client.request('chat/new', null)
             const id = await client.request('commands/explain', null)
@@ -719,6 +918,19 @@ describe('Agent', () => {
         it.skipIf(isWindows())(
             'commands/test',
             async () => {
+                // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+                expectedEvents = [
+                    'cody.auth:failed',
+                    'cody.auth.login:firstEver',
+                    'cody.auth:connected',
+                    'cody.command.test:executed',
+                    'cody.command.explain:executed',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                    'cody.chatResponse:hasCode',
+                    'cody.editChatButton:clicked',
+                    'cody.codyIgnore:hasFile',
+                ]
                 await client.openFile(animalUri)
                 const id = await client.request('commands/test', null)
                 const lastMessage = await client.firstNonEmptyTranscript(id)
@@ -771,6 +983,17 @@ describe('Agent', () => {
         )
 
         it('commands/smell', async () => {
+            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+            expectedEvents = [
+                'cody.auth:failed',
+                'cody.auth.login:firstEver',
+                'cody.auth:connected',
+                'cody.command.explain:executed',
+                'cody.command.test:executed',
+                'cody.command.smell:executed',
+                'cody.chat-question:executed',
+                'cody.chatResponse:noCode',
+            ]
             await client.openFile(animalUri)
             const id = await client.request('commands/smell', null)
             const lastMessage = await client.firstNonEmptyTranscript(id)
@@ -815,6 +1038,19 @@ describe('Agent', () => {
 
     describe('Progress bars', () => {
         it('progress/report', async () => {
+            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+            expectedEvents = [
+                'cody.auth:failed',
+                'cody.auth.login:firstEver',
+                'cody.auth:connected',
+                'cody.codyIgnore:hasFile',
+                'cody.editChatButton:clicked',
+                'cody.command.explain:executed',
+                'cody.command.test:executed',
+                'cody.command.smell:executed',
+                'cody.chat-question:executed',
+                'cody.chatResponse:noCode',
+            ]
             const { result } = await client.request('testing/progress', {
                 title: 'Susan',
             })
@@ -878,6 +1114,18 @@ describe('Agent', () => {
         })
 
         it('progress/cancel', async () => {
+            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+            expectedEvents = [
+                'cody.auth:failed',
+                'cody.auth.login:firstEver',
+                'cody.auth:connected',
+                'cody.editChatButton:clicked',
+                'cody.command.explain:executed',
+                'cody.command.test:executed',
+                'cody.command.smell:executed',
+                'cody.chat-question:executed',
+                'cody.chatResponse:noCode',
+            ]
             const disposable = client.progressStartEvents.event(params => {
                 if (params.options.title === 'testing/progressCancelation') {
                     client.notify('progress/cancel', { id: params.id })
@@ -938,7 +1186,6 @@ describe('Agent', () => {
             }
             expect(code).toEqual(CodyJsonRpcErrorCode.RateLimitError)
         }, 30_000)
-
         afterAll(async () => {
             await rateLimitedClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
@@ -961,6 +1208,20 @@ describe('Agent', () => {
         }, 10_000)
 
         it('chat/submitMessage', async () => {
+            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+            expectedEvents = [
+                'cody.auth:failed',
+                'cody.auth.login:firstEver',
+                'cody.auth:connected',
+                'cody.ghostText:visible',
+                'cody.codyIgnore:hasFile',
+                'cody.editChatButton:clicked',
+                'cody.command.explain:executed',
+                'cody.command.test:executed',
+                'cody.command.smell:executed',
+                'cody.chat-question:executed',
+                'cody.chatResponse:noCode',
+            ]
             const lastMessage = await demoEnterpriseClient.sendSingleMessageToNewChat('Reply with "Yes"')
             expect(lastMessage?.text?.trim()).toStrictEqual('Yes')
         }, 20_000)
@@ -997,6 +1258,20 @@ describe('Agent', () => {
         }, 20_000)
 
         it('remoteRepo/list', async () => {
+            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+            expectedEvents = [
+                'cody.auth:failed',
+                'cody.auth.login:firstEver',
+                'cody.auth:connected',
+                'cody.ghostText:visible',
+                'cody.codyIgnore:hasFile',
+                'cody.editChatButton:clicked',
+                'cody.command.explain:executed',
+                'cody.command.test:executed',
+                'cody.command.smell:executed',
+                'cody.chat-question:executed',
+                'cody.chatResponse:noCode',
+            ]
             // List a repo without a query
             let repos: Requests['remoteRepo/list'][1]
             do {
@@ -1027,6 +1302,20 @@ describe('Agent', () => {
         })
 
         it('remoteRepo/has', async () => {
+            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+            expectedEvents = [
+                'cody.auth:failed',
+                'cody.auth.login:firstEver',
+                'cody.auth:connected',
+                'cody.ghostText:visible',
+                'cody.codyIgnore:hasFile',
+                'cody.editChatButton:clicked',
+                'cody.command.explain:executed',
+                'cody.command.test:executed',
+                'cody.command.smell:executed',
+                'cody.chat-question:executed',
+                'cody.chatResponse:noCode',
+            ]
             // Query a repo that does exist.
             const codyRepoExists = await demoEnterpriseClient.request('remoteRepo/has', {
                 repoName: 'github.com/sourcegraph/cody',
@@ -1042,7 +1331,6 @@ describe('Agent', () => {
 
         afterAll(async () => {
             const { requests } = await demoEnterpriseClient.request('testing/networkRequests', null)
-            console.log(requests)
             const nonServerInstanceRequests = requests
                 .filter(({ url }) => !url.startsWith(demoEnterpriseClient.serverEndpoint))
                 .map(({ url }) => url)
@@ -1076,6 +1364,20 @@ describe('Agent', () => {
         // Disabled because `attribution/search` GraphQL does not work on S2
         // See https://sourcegraph.slack.com/archives/C05JDP433DL/p1714017586160079
         it.skip('attribution/found', async () => {
+            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+            expectedEvents = [
+                'cody.auth:failed',
+                'cody.auth.login:firstEver',
+                'cody.auth:connected',
+                'cody.ghostText:visible',
+                'cody.codyIgnore:hasFile',
+                'cody.editChatButton:clicked',
+                'cody.command.explain:executed',
+                'cody.command.test:executed',
+                'cody.command.smell:executed',
+                'cody.chat-question:executed',
+                'cody.chatResponse:noCode',
+            ]
             const id = await s2EnterpriseClient.request('chat/new', null)
             const { repoNames, error } = await s2EnterpriseClient.request('attribution/search', {
                 id,
@@ -1098,6 +1400,20 @@ describe('Agent', () => {
         // Use S2 instance for Cody Context Filters enterprise tests
         describe('Cody Context Filters for enterprise', () => {
             it('testing/ignore/overridePolicy', async () => {
+                // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
+                expectedEvents = [
+                    'cody.auth:failed',
+                    'cody.auth.login:firstEver',
+                    'cody.auth:connected',
+                    'cody.ghostText:visible',
+                    'cody.codyIgnore:hasFile',
+                    'cody.editChatButton:clicked',
+                    'cody.command.explain:executed',
+                    'cody.command.test:executed',
+                    'cody.command.smell:executed',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                ]
                 const onChangeCallback = vi.fn()
 
                 // `sumUri` is located inside of the github.com/sourcegraph/cody repo.

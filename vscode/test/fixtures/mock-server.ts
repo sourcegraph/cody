@@ -558,13 +558,19 @@ export class MockServer {
 
 const loggedTestRun: Record<string, boolean> = {}
 
-async function logTestingData(data: string): Promise<void> {
-    if (process.env.CI === undefined || process.env.NO_LOG_TESTING_TELEMETRY_CALLS) {
+export async function logTestingData(data: string, type?: string, testName?: string, testRunID?: string ): Promise<void> {
+    if (process.env.NO_LOG_TESTING_TELEMETRY_CALLS) {
         return
     }
 
+    if (testName) {
+        currentTestName = testName
+    }
+    if (testRunID) {
+        currentTestRunID = testRunID
+    }
     const message = {
-        type: 'new',
+        type: type || 'v2-vscode-e2e',
         event: data,
         timestamp: new Date().getTime(),
         test_name: currentTestName,

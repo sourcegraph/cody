@@ -107,13 +107,11 @@ export const test = base
             await use(
                 preAuthenticate
                     ? [
-                          // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-                          // 'cody.extention.installed'
+                          'cody.extention.installed',
                           'cody.auth:connected',
                       ]
                     : [
-                          // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-                          // 'cody.extention.installed',
+                          'cody.extention.installed',
                           'cody.auth:connected',
                       ]
             ),
