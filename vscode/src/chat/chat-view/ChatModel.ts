@@ -21,15 +21,15 @@ export class ChatModel {
     public contextWindow: ModelContextWindow
     constructor(
         public modelID: string,
-        private messages: ChatMessage[] = [],
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
+        private messages: ChatMessage[] = [],
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
     ) {
         this.contextWindow = ModelsService.getContextWindowByID(this.modelID)
     }
 
-    public updateModel(newModelID: string): void {
+    public updateModel(newModelID: string) {
         this.modelID = newModelID
         this.contextWindow = ModelsService.getContextWindowByID(this.modelID)
     }

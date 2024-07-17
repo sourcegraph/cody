@@ -12,6 +12,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { createClient as createCodeCompletionsClient } from './completions/client'
+import type { ConfigWatcher } from './configwatcher'
 import type { PlatformContext } from './extension.common'
 import type { ContextRankerConfig } from './local-context/context-ranking'
 import type { ContextRankingController } from './local-context/context-ranking'
@@ -48,7 +49,7 @@ type ExternalServicesConfiguration = Pick<
 
 export async function configureExternalServices(
     context: vscode.ExtensionContext,
-    initialConfig: ExternalServicesConfiguration,
+    config: ConfigWatcher<ExternalServicesConfiguration>,
     platform: Pick<
         PlatformContext,
         | 'createLocalEmbeddingsController'
@@ -60,17 +61,13 @@ export async function configureExternalServices(
     >,
     authProvider: AuthProvider
 ): Promise<ExternalServices> {
+    const initialConfig = config.get()
     const sentryService = platform.createSentryService?.(initialConfig)
     const openTelemetryService = platform.createOpenTelemetryService?.(initialConfig)
     const completionsClient = platform.createCompletionsClient(initialConfig, logger)
     const codeCompletionsClient = createCodeCompletionsClient(initialConfig, logger)
 
-    const symfRunner = platform.createSymfRunner?.(
-        context,
-        initialConfig.serverEndpoint,
-        initialConfig.accessToken,
-        completionsClient
-    )
+    const symfRunner = platform.createSymfRunner?.(context, config, completionsClient)
 
     if (initialConfig.codebase && isError(await graphqlClient.getRepoId(initialConfig.codebase))) {
         logDebug(

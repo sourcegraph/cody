@@ -66,6 +66,7 @@ interface CodyWebChatProviderProps {
     chatID?: string | null
     initialContext?: InitialContext
     onNewChatCreated?: (chatId: string) => void
+    customHeaders?: Record<string, string>
 }
 
 /**
@@ -80,6 +81,7 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
         children,
         chatID: initialChatId,
         onNewChatCreated,
+        customHeaders,
     } = props
 
     // In order to avoid multiple client creation during dev runs
@@ -111,6 +113,7 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
                     workspaceRootUri: '',
                     serverEndpoint: serverEndpoint,
                     accessToken: accessToken ?? '',
+                    customHeaders,
                 })
 
                 // Fetch existing chats from the agent chat storage
@@ -150,7 +153,7 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
                 setClient(() => error as Error)
             }
         })()
-    }, [initialChatId, accessToken, serverEndpoint, lastActiveChatID, initialContext])
+    }, [initialChatId, accessToken, serverEndpoint, lastActiveChatID, initialContext, customHeaders])
 
     const vscodeAPI = useMemo<VSCodeWrapper>(() => {
         if (client && !isErrorLike(client)) {

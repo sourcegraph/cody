@@ -43,29 +43,37 @@ We also have some build-in UI to help during the development of autocomplete req
 
 ## Releases
 
-### Stable builds
+### Stable release
 
-To publish a new **major** release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai).
+Follow these steps to publish a new major release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai).
 
-1. `pnpm vsce-version-bump` to increment the version number for stable release
+1. **Coordinate with Marketing**: Contact the Marketing team in the Cody Slack channel approximately 2 days before the release to ensure a blog post is prepared.
+2. **Update Version**: Run `pnpm vsce-version-bump` to increment the version number for the stable release. This script will:
+   - Increment the `version` in `package.json` and `CHANGELOG.md`.
+   - Commit the version increment with a message like "VS Code: Release X.Y.0".
+3. **Create Pull Request**: Open a PR with the updated version.
+4. **Tag the Release**: After the PR is merged, create a git tag: `git tag vscode-v$(jq -r .version package.json)`
+5. **Push the Tag**: Push the tag to the remote repository: `git push --tags`
+   - This will trigger the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml).
+6. **Monitor Publication**: Once the workflow run is complete, the new version will be published to the marketplaces.
 
-- Increment the `version` in [`package.json`](package.json) & [`CHANGELOG`](CHANGELOG.md).
-- Commit the version increment, e.g. `VS Code: Release 1.1.0`.
+#### Release checklist
 
-2. Open a PR with the version updated
-3. `git tag vscode-v$(jq -r .version package.json)`
-4. `git push --tags`
-5. Wait for the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml) run to finish.
-6. Update the [Release Notes](https://github.com/sourcegraph/cody/releases).
+Include the following checklist in the PR description when creating a new release.
 
-### Release Checklist
+The `vsce-version-bump` script will automatically add this checklist to the PR description.
 
-Version Bump:
+```markdown
+Release Checklist:
 
-- [x] [vscode/CHANGELOG.md](./CHANGELOG.md)
-- [x] [vscode/package.json](./package.json)
+    - [ ] [vscode/CHANGELOG.md](./CHANGELOG.md)
+    - [ ] [vscode/package.json](./package.json)
+    - [ ] Link to PR for the release blog post
+```
 
-### Patch Release
+Note: Ensure all checklist items are completed before merging the release PR.
+
+### Patch release
 
 To publish a **patch** release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai).
 

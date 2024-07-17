@@ -1,5 +1,4 @@
 import { isFileURI } from '@sourcegraph/cody-shared'
-import { diffChars } from 'diff'
 import * as vscode from 'vscode'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
@@ -35,24 +34,23 @@ export class CharactersLogger implements vscode.Disposable {
             return
         }
         for (const change of event.contentChanges) {
-            const existingTextAtRange = event.document.getText(change.range)
+            // We use change.rangeLength for deletions because:
+            // 1. It represents the length of the text being replaced, including newline characters.
+            // 2. It accurately accounts for multi-line deletions.
+            // 3. For pure deletions (without insertions), this will be the number of characters removed.
+            // 4. For replacements, this represents the "old" text that's being replaced.
+            this.deleted += change.rangeLength
 
-            const rangeLength = change.range.end.character - change.range.start.character
-            if (existingTextAtRange.length < rangeLength) {
-                // The document already has the updated changes applied with some characters deleted
-                // These will not be included in the diff below and thus we count them here
-                this.deleted += Math.max(0, rangeLength - existingTextAtRange.length)
-            }
+            // We use change.text.length for insertions because:
+            // 1. It represents the length of the new text being inserted, including newline characters.
+            // 2. It accurately accounts for multi-line insertions.
+            // 3. For pure insertions (without deletions), this will be the number of characters added.
+            // 4. For replacements, this represents the "new" text that's replacing the old.
+            this.inserted += change.text.length
 
-            const diff = diffChars(existingTextAtRange, change.text)
-            for (const charChange of diff) {
-                if (charChange.added) {
-                    this.inserted += charChange.value.length
-                }
-                if (charChange.removed) {
-                    this.deleted += charChange.value.length
-                }
-            }
+            // Note: In the case of replacements, both deleted and inserted will be incremented.
+            // This accurately represents that some text was removed and some was added, even if
+            // the lengths are the same.
         }
     }
 

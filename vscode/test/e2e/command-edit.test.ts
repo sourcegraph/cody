@@ -3,12 +3,7 @@ import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
 import { openFileInEditorTab, sidebarExplorer, sidebarSignin } from './common'
-import {
-    type DotcomUrlOverride,
-    type ExpectedV2Events,
-    test as baseTest,
-    executeCommandInPalette,
-} from './helpers'
+import { type DotcomUrlOverride, type ExpectedV2Events, test as baseTest } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
@@ -80,9 +75,9 @@ test.extend<ExpectedV2Events>({
     await expect(page.getByText('appleName')).toBeVisible()
     await expect(page.getByText('bananaName')).not.toBeVisible()
 
-    // create another edit from the sidebar Edit button
+    // create another edit using shortcut
     await page.getByText('appleName').click()
-    await executeCommandInPalette(page, 'Cody Commands: Edit code')
+    await page.keyboard.press('Alt+K')
     await expect(page.getByText(inputTitle)).toBeVisible()
     await inputBox.focus()
     await inputBox.fill(instruction)
