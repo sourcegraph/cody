@@ -346,8 +346,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     }
 
     private async unsafeEnsureIndex(scopeDir: FileURI, options: IndexOptions): Promise<void> {
-        const foo = this.getSymfInfo() // ensure symf is configured
-        logDebug('SymfRunner', 'unsafeEnsureIndex', foo, scopeDir.toString(), { verbose: { options } })
+        logDebug('SymfRunner', 'unsafeEnsureIndex', scopeDir.toString(), { verbose: { options } })
         if (!options.ignoreExisting) {
             const indexExists = await this.unsafeIndexExists(scopeDir)
             if (indexExists) {
