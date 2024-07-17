@@ -253,7 +253,7 @@ describe('Model Provider', () => {
             expect(ModelsService.getDefaultChatModel(enterpriseAuthStatus)).toBe(opus.model)
             expect(ModelsService.getDefaultEditModel(enterpriseAuthStatus)).toBe(opus.model)
             expect(
-                ModelsService.getDefaultModel(ModelUsage.AutoComplete, enterpriseAuthStatus)
+                ModelsService.getDefaultModel(ModelUsage.Autocomplete, enterpriseAuthStatus)
             ).toStrictEqual(claude)
 
             // // expect storage to be updated

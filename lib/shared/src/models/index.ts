@@ -27,12 +27,7 @@ export interface ContextWindow {
     maxOutputTokens: number
 }
 
-interface ServerSideConfig {
-    /**
-     * Provider type
-     */
-    type?: string
-}
+type ServerSideConfig = unknown
 
 interface ClientSideConfig {
     /**
@@ -43,6 +38,10 @@ interface ClientSideConfig {
      * The API endpoint for the model
      */
     apiEndpoint?: string
+    /**
+     * Provider type
+     */
+    type?: string
 }
 
 export interface ServerModel {
@@ -193,7 +192,6 @@ export class Model {
         })
     }
 
-
     static tier(model: Model): ModelTier {
         const tierSet = new Set<ModelTag>([ModelTag.Pro, ModelTag.Enterprise])
         return (model.tags.find(tag => tierSet.has(tag)) ?? ModelTag.Free) as ModelTier
@@ -285,13 +283,13 @@ export class ModelsService {
     private static selectedStorageKeys = {
         [ModelUsage.Chat]: 'chat',
         [ModelUsage.Edit]: 'editModel',
-        [ModelUsage.AutoComplete]: 'autocomplete',
+        [ModelUsage.Autocomplete]: 'autocomplete',
     }
 
     private static defaultStorageKeys = {
         [ModelUsage.Chat]: 'defaultChatModel',
         [ModelUsage.Edit]: 'defaultEditModel',
-        [ModelUsage.AutoComplete]: 'defaultAutocompleteModel',
+        [ModelUsage.Autocomplete]: 'defaultAutocompleteModel',
     }
 
     public static setStorage(storage: Storage): void {
@@ -327,7 +325,7 @@ export class ModelsService {
         await ModelsService.setServerDefaultModel(ModelUsage.Chat, config.defaultModels.chat)
         await ModelsService.setServerDefaultModel(ModelUsage.Edit, config.defaultModels.chat)
         await ModelsService.setServerDefaultModel(
-            ModelUsage.AutoComplete,
+            ModelUsage.Autocomplete,
             config.defaultModels.codeCompletion
         )
     }
@@ -509,7 +507,7 @@ interface Storage {
 export function capabilityToUsage(capability: ModelCapability): ModelUsage[] {
     switch (capability) {
         case 'autocomplete':
-            return [ModelUsage.AutoComplete]
+            return [ModelUsage.Autocomplete]
         case 'chat':
             return [ModelUsage.Chat, ModelUsage.Edit]
     }
