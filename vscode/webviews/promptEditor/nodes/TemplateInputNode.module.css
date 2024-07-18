@@ -12,4 +12,8 @@
     & + .template-input-node {
         margin-left: 2px;
     }
+
+    &.template-input-node--focused {
+        outline-style: solid;
+    }
 }
