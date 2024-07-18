@@ -98,19 +98,31 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         if (showIDESnippetActions) {
             return (text: string, newFile = false) => {
                 const op = newFile ? 'newFile' : 'insert'
-                const eventType = 'Button'
-                // remove the additional /n added by the text area at the end of the text
-                const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
                 // Log the event type and text to telemetry in chat view
                 vscodeAPI.postMessage({
                     command: op,
-                    eventType,
-                    text: code,
+                    // remove the additional /n added by the text area at the end of the text
+                    text: text.replace(/\n$/, ''),
                 })
             }
         }
 
         return
+    }, [vscodeAPI, showIDESnippetActions])
+
+    const smartApplyButtonOnSubmit = useMemo(() => {
+        if (!showIDESnippetActions) {
+            return
+        }
+
+        return (text: string) => {
+            // Log the event type and text to telemetry in chat view
+            vscodeAPI.postMessage({
+                command: 'smartApply',
+                // remove the additional /n added by the text area at the end of the text
+                text: text.replace(/\n$/, ''),
+            })
+        }
     }, [vscodeAPI, showIDESnippetActions])
 
     const postMessage = useCallback<ApiPostMessage>(msg => vscodeAPI.postMessage(msg), [vscodeAPI])
@@ -181,6 +193,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                 copyButtonOnSubmit={copyButtonOnSubmit}
                 insertButtonOnSubmit={insertButtonOnSubmit}
+                smartApplyButtonOnSubmit={smartApplyButtonOnSubmit}
                 isTranscriptError={isTranscriptError}
                 userInfo={userInfo}
                 chatEnabled={chatEnabled}

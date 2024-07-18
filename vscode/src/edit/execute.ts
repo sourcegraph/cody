@@ -41,6 +41,7 @@ export interface ExecuteEditArguments {
         // The file to write the edit to. If not provided, the edit will be applied to the current file.
         destinationFile?: vscode.Uri
         insertionPoint?: vscode.Position
+        output?: string
     }
     source?: EventSource
     telemetryMetadata?: FixupTelemetryMetadata

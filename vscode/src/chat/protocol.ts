@@ -122,6 +122,10 @@ export type WebviewMessage =
           text: string
       }
     | {
+          command: 'smartApply'
+          text: string
+      }
+    | {
           command: 'auth'
           authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding' | 'offline'
           endpoint?: string | undefined | null

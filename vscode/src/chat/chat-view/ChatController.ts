@@ -86,6 +86,7 @@ import {
     handleCodeFromInsertAtCursor,
     handleCodeFromSaveToNewFile,
     handleCopiedCode,
+    handleSmartApply,
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
@@ -334,6 +335,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             case 'copy':
                 await handleCopiedCode(message.text, message.eventType === 'Button')
+                break
+            case 'smartApply':
+                await handleSmartApply(message.text)
                 break
             case 'openURI':
                 vscode.commands.executeCommand('vscode.open', message.uri)

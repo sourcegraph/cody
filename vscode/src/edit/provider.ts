@@ -174,6 +174,12 @@ export class EditProvider {
         this.abortController?.abort()
     }
 
+    public applyEdit(response: string): Promise<void> {
+        // We need to start the task first, before applying
+        this.config.controller.startTask(this.config.task)
+        return this.handleResponse(response, false)
+    }
+
     private async handleResponse(response: string, isMessageInProgress: boolean): Promise<void> {
         // Error state: The response finished but we didn't receive any text
         if (!response && !isMessageInProgress) {

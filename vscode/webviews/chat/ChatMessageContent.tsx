@@ -8,6 +8,7 @@ import {
     InsertCodeBlockIcon,
     SaveCodeBlockIcon,
     ShieldIcon,
+    SparkleIcon,
 } from '../icons/CodeBlockActionIcons'
 
 import { clsx } from 'clsx'
@@ -17,6 +18,7 @@ import styles from './ChatMessageContent.module.css'
 export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
     insertButtonOnSubmit: (text: string, newFile?: boolean) => void
+    smartApplyButtonOnSubmit: (text: string) => void
 }
 
 interface ChatMessageContentProps {
@@ -25,6 +27,7 @@ interface ChatMessageContentProps {
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+    smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
 
     guardrails?: Guardrails
     className?: string
@@ -33,7 +36,8 @@ interface ChatMessageContentProps {
 function createButtons(
     text: string,
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
-    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
+    smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
 ): HTMLElement {
     const container = document.createElement('div')
     container.className = styles.buttonsContainer
@@ -49,6 +53,7 @@ function createButtons(
     const codeBlockActions = {
         copy: copyButtonOnSubmit,
         insert: insertButtonOnSubmit,
+        smartApply: smartApplyButtonOnSubmit,
     }
 
     const copyButton = createCodeBlockActionButton(
@@ -83,6 +88,18 @@ function createButtons(
         )
     }
 
+    if (smartApplyButtonOnSubmit) {
+        buttons.append(
+            createCodeBlockActionButton(
+                'smartApply',
+                text,
+                'Smart Apply Code to Current File',
+                SparkleIcon,
+                codeBlockActions
+            )
+        )
+    }
+
     container.append(buttons)
 
     return container
@@ -93,13 +110,14 @@ function createButtons(
  * @returns The button element.
  */
 function createCodeBlockActionButton(
-    type: 'copy' | 'insert' | 'new',
+    type: 'copy' | 'insert' | 'new' | 'smartApply',
     text: string,
     title: string,
     iconSvg: string,
     codeBlockActions: {
         copy: CodeBlockActionsProps['copyButtonOnSubmit']
         insert?: CodeBlockActionsProps['insertButtonOnSubmit']
+        smartApply?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
     }
 ): HTMLElement {
     const button = document.createElement('button')
@@ -126,17 +144,21 @@ function createCodeBlockActionButton(
     }
 
     const insertOnSubmit = codeBlockActions.insert
-    if (!insertOnSubmit) {
-        return button
+    if (insertOnSubmit) {
+        switch (type) {
+            case 'insert':
+                button.addEventListener('click', () => insertOnSubmit(text, false))
+                break
+            case 'new':
+                button.addEventListener('click', () => insertOnSubmit(text, true))
+                break
+        }
     }
 
-    switch (type) {
-        case 'insert':
-            button.addEventListener('click', () => insertOnSubmit(text, false))
-            break
-        case 'new':
-            button.addEventListener('click', () => insertOnSubmit(text, true))
-            break
+    const smartApplyOnSubmit = codeBlockActions.smartApply
+    if (smartApplyOnSubmit && type === 'smartApply') {
+        button.addEventListener('click', () => smartApplyOnSubmit(text))
+        return button
     }
 
     return button
@@ -241,6 +263,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     isMessageLoading,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
+    smartApplyButtonOnSubmit,
     guardrails,
     className,
 }) => {
@@ -265,7 +288,12 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         for (const preElement of preElements) {
             const preText = preElement.textContent
             if (preText?.trim() && preElement.parentNode) {
-                const buttons = createButtons(preText, copyButtonOnSubmit, insertButtonOnSubmit)
+                const buttons = createButtons(
+                    preText,
+                    copyButtonOnSubmit,
+                    insertButtonOnSubmit,
+                    smartApplyButtonOnSubmit
+                )
                 if (guardrails) {
                     const container = document.createElement('div')
                     container.classList.add(styles.attributionContainer)

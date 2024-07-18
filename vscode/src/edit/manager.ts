@@ -21,7 +21,9 @@ import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import type { AuthProvider } from '../services/AuthProvider'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import type { ExecuteEditArguments } from './execute'
+import { getSmartApplySelection } from './prompt/smart-apply'
 import { EditProvider } from './provider'
+import type { SmartApplyArguments } from './smart-apply'
 import { getEditIntent } from './utils/edit-intent'
 import { getEditMode } from './utils/edit-mode'
 import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
@@ -53,6 +55,17 @@ export class EditManager implements vscode.Disposable {
             'cody.command.edit-code',
             (args: ExecuteEditArguments) => this.executeEdit(args)
         )
+
+        /**
+         * Entry point to triggering a new Edit from a _known_ result.
+         * Given a result and a given file, this will create a new LLM interaction,
+         * determine the correct selection and start a `FixupTask`.
+         */
+        const smartApplyCommand = vscode.commands.registerCommand(
+            'cody.command.smart-apply',
+            (args: SmartApplyArguments) => this.smartApplyEdit(args)
+        )
+
         /**
          * Entry point to start an existing Edit.
          * This generally should only be required if a `FixupTask` needs
@@ -69,7 +82,7 @@ export class EditManager implements vscode.Disposable {
                 provider.startEdit()
             }
         )
-        this.disposables.push(this.controller, editCommand, startCommand)
+        this.disposables.push(this.controller, editCommand, smartApplyCommand, startCommand)
     }
 
     public async executeEdit(args: ExecuteEditArguments = {}): Promise<FixupTask | undefined> {
@@ -207,6 +220,59 @@ export class EditManager implements vscode.Disposable {
 
         const provider = this.getProviderForTask(task)
         await provider.startEdit()
+        return task
+    }
+
+    public async smartApplyEdit(args: SmartApplyArguments = {}): Promise<FixupTask | undefined> {
+        const { configuration, source = 'chat' } = args
+        if (!configuration) {
+            return
+        }
+
+        const editor = getEditor()
+        if (editor.ignored) {
+            showCodyIgnoreNotification('edit', 'cody-ignore')
+            return
+        }
+
+        const document = configuration?.document || editor.active?.document
+        if (!document) {
+            void vscode.window.showErrorMessage('Please open a file before running a command.')
+            return
+        }
+
+        if (await isUriIgnoredByContextFilterWithNotification(document.uri, 'edit')) {
+            return
+        }
+
+        console.log('CALLING getSmartApplySelection')
+        const selection = await getSmartApplySelection(
+            configuration.replacement,
+            configuration.document,
+            configuration.model,
+            this.options.chat
+        )
+        if (!selection) {
+            void vscode.window.showErrorMessage('Unable to apply edit')
+            return
+        }
+
+        const task = await this.controller.createTask(
+            document,
+            configuration.instruction,
+            [],
+            selection,
+            'edit',
+            'edit',
+            configuration.model,
+            source,
+            configuration.document.uri,
+            undefined,
+            {}
+        )
+
+        const provider = this.getProviderForTask(task)
+        await provider.applyEdit(configuration.replacement)
         return task
     }
 

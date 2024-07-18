@@ -41,6 +41,7 @@ export const AssistantMessageCell: FunctionComponent<{
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+    smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
 
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
@@ -54,6 +55,7 @@ export const AssistantMessageCell: FunctionComponent<{
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
+    smartApplyButtonOnSubmit,
     postMessage,
     guardrails,
 }) => {
@@ -103,6 +105,7 @@ export const AssistantMessageCell: FunctionComponent<{
                             isMessageLoading={isLoading}
                             copyButtonOnSubmit={copyButtonOnSubmit}
                             insertButtonOnSubmit={insertButtonOnSubmit}
+                            smartApplyButtonOnSubmit={smartApplyButtonOnSubmit}
                             guardrails={guardrails}
                         />
                     ) : (

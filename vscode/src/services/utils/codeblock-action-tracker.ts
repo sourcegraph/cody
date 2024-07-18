@@ -1,8 +1,9 @@
 import * as vscode from 'vscode'
 
-import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import { ps, telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 
+import { executeSmartApply } from '../../edit/smart-apply'
 import { countCode, matchCodeSnippets } from './code-count'
 
 /**
@@ -99,6 +100,37 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
     setLastStoredCode(text, eventName)
 }
 
+const SMART_APPLY_DECORATION = vscode.window.createTextEditorDecorationType({
+    isWholeLine: true,
+    backgroundColor: new vscode.ThemeColor('editor.wordHighlightTextBackground'),
+    borderColor: new vscode.ThemeColor('editor.wordHighlightTextBorder'),
+    rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+})
+
+export async function handleSmartApply(text: string): Promise<void> {
+    const editor = getEditor()
+    const activeEditor = editor.active
+    if (!activeEditor) {
+        throw new Error('No editor found to insert text')
+    }
+
+    const fullRange = new vscode.Range(0, 0, activeEditor.document.lineCount - 1, 0)
+    // Add a decoration to show we're working on the full range of the current file
+    activeEditor.setDecorations(SMART_APPLY_DECORATION, [fullRange])
+
+    await executeSmartApply({
+        configuration: {
+            document: activeEditor.document,
+            // test
+            instruction: ps`TODO: Implement instruction`,
+            model: 'anthropic/claude-3-haiku-20240307',
+            replacement: text,
+        },
+    })
+
+    // Clear the decorartion on finish
+    activeEditor.setDecorations(SMART_APPLY_DECORATION, [])
+}
 /**
  * Handles insert event to insert text from code block to new file
  */

@@ -33,6 +33,7 @@ export const Transcript: React.FunctionComponent<{
     feedbackButtonsOnSubmit: (text: string) => void
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+    smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
     isTranscriptError?: boolean
     userInfo: UserAccountInfo
     chatEnabled: boolean
