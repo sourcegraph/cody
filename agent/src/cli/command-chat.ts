@@ -192,6 +192,28 @@ export async function chatAction(options: ChatOptions): Promise<number> {
             names: options.contextRepo,
             first: options.contextRepo.length,
         })
+
+        const invalidRepos: string[] = []
+        for (const repo of options.contextRepo) {
+            if (!repos.some(r => r.name === repo)) {
+                invalidRepos.push(repo)
+            }
+        }
+
+        if (invalidRepos.length > 0) {
+            const reposString = invalidRepos.join(', ')
+            const errorMessage =
+                invalidRepos.length > 1
+                    ? `The repositories ${invalidRepos} do not exist on the instance. `
+                    : `The repository '${reposString}' does not exist on the instance. `
+            spinner.fail(
+                errorMessage +
+                    'The name needs to match exactly the name of the repo as it appears on your Sourcegraph instance. ' +
+                    'Please check the spelling and try again.'
+            )
+            return 1
+        }
+
         await client.request('webview/receiveMessage', {
             id,
             message: {
