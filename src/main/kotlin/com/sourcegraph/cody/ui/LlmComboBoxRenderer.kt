@@ -36,7 +36,7 @@ class LlmComboBoxRenderer(private val llmDropdown: LlmDropdown) : DefaultListCel
     val displayNameLabel = JLabel(chatModelProvider.displayName())
     textBadgePanel.add(displayNameLabel, BorderLayout.CENTER)
     textBadgePanel.border = BorderFactory.createEmptyBorder(0, 5, 0, 0)
-    if (chatModelProvider.codyProOnly && llmDropdown.isCurrentUserFree()) {
+    if (chatModelProvider.isCodyProOnly() && llmDropdown.isCurrentUserFree()) {
       textBadgePanel.add(JLabel(Icons.LLM.ProSticker), BorderLayout.EAST)
     }
     val isInline = llmDropdown.parentDialog != null

@@ -5,12 +5,14 @@ import javax.swing.Icon
 
 data class ChatModelsResponse(val models: List<ChatModelProvider>) {
   data class ChatModelProvider(
-      val default: Boolean,
-      val codyProOnly: Boolean,
       val provider: String?,
       val title: String?,
       val model: String,
-      val deprecated: Boolean = false
+      val tags: MutableList<String>? = mutableListOf(),
+      val usage: MutableList<String>? = mutableListOf(),
+      @Deprecated("No longer provided by agent") val default: Boolean = false,
+      @Deprecated("No longer provided by agent") val codyProOnly: Boolean = false,
+      @Deprecated("No longer provided by agent") val deprecated: Boolean = false
   ) {
     fun getIcon(): Icon? =
         when (provider) {
@@ -34,5 +36,9 @@ data class ChatModelsResponse(val models: List<ChatModelProvider>) {
         provider?.let { append(" by $provider") }
       }
     }
+
+    public fun isCodyProOnly(): Boolean = tags?.contains("pro") ?: codyProOnly
+
+    public fun isDeprecated(): Boolean = tags?.contains("deprecated") ?: deprecated
   }
 }

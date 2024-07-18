@@ -36,7 +36,7 @@ class CodyAgentClientTest : BasePlatformTestCase() {
 
   @Test
   fun `notifies observer`() {
-    val expected = ConfigFeatures(attribution = true)
+    val expected = ConfigFeatures(attribution = true, serverSentModels = true)
     client()
         .webviewPostMessage(
             WebviewPostMessageParams(

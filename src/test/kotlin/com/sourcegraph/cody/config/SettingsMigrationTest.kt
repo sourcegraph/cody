@@ -3,6 +3,7 @@ package com.sourcegraph.cody.config
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.testFramework.registerServiceInstance
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
+import com.sourcegraph.cody.config.migration.ChatTagsLlmMigration
 import com.sourcegraph.cody.config.migration.DeprecatedChatLlmMigration
 import com.sourcegraph.cody.config.migration.SettingsMigration
 import com.sourcegraph.cody.history.HistoryService
@@ -99,7 +100,11 @@ class SettingsMigrationTest : BasePlatformTestCase() {
           it.defaultLlm =
               LLMState.fromChatModel(
                   ChatModelsResponse.ChatModelProvider(
-                      true, false, "Cyberdyne", "Terminator", "T-800"))
+                      provider = "Cyberdyne",
+                      title = "Terminator",
+                      model = "T-800",
+                      default = true,
+                      codyProOnly = false))
           it.defaultEnhancedContext =
               EnhancedContextState().also {
                 it.isEnabled = true
@@ -144,7 +149,7 @@ class SettingsMigrationTest : BasePlatformTestCase() {
                     it.llm =
                         LLMState.fromChatModel(
                             ChatModelsResponse.ChatModelProvider(
-                                false, true, "Uni of IL", "HAL", "HAL 9000"))
+                                "Uni of IL", "HAL", "HAL 9000", codyProOnly = true))
                     it.messages =
                         mutableListOf(
                             MessageState().also {
@@ -190,21 +195,20 @@ class SettingsMigrationTest : BasePlatformTestCase() {
   fun `test DeprecatedChatLlmMigration`() {
     fun createLlmModel(
         version: String,
-        isDefault: Boolean,
-        isDeprecated: Boolean
+        isDefault: Boolean = false,
+        isDeprecated: Boolean = false,
     ): ChatModelsResponse.ChatModelProvider {
       return ChatModelsResponse.ChatModelProvider(
-          isDefault,
-          false,
           "Anthropic",
           "Claude $version",
           "anthropic/claude-$version",
-          isDeprecated)
+          default = isDefault,
+          deprecated = isDeprecated)
     }
 
-    val claude20 = createLlmModel("2.0", isDefault = false, isDeprecated = true)
-    val claude21 = createLlmModel("2.1", isDefault = false, isDeprecated = true)
-    val claude30 = createLlmModel("3.0", isDefault = true, isDeprecated = false)
+    val claude20 = createLlmModel("2.0", isDeprecated = true)
+    val claude21 = createLlmModel("2.1", isDeprecated = true)
+    val claude30 = createLlmModel("3.0", isDefault = true)
     val models = listOf(claude20, claude21, claude30)
 
     val accountData =
@@ -248,6 +252,94 @@ class SettingsMigrationTest : BasePlatformTestCase() {
       ad.chats.forEach { chat ->
         assertEquals(claude30.model, chat.llm?.model)
         assertEquals(claude30.title, chat.llm?.title)
+      }
+    }
+  }
+
+  fun `test ChatTagsLlmMigration`() {
+    fun createLlmModel(
+        version: String,
+        isDeprecated: Boolean = false,
+        isCodyPro: Boolean = false,
+        usage: List<String> = listOf("chat", "edit"),
+        tags: List<String> = listOf()
+    ): ChatModelsResponse.ChatModelProvider {
+      return ChatModelsResponse.ChatModelProvider(
+          "Anthropic",
+          "Claude $version",
+          "anthropic/claude-$version",
+          usage = usage.toMutableList(),
+          tags = tags.toMutableList(),
+          deprecated = isDeprecated,
+          codyProOnly = isCodyPro)
+    }
+
+    val claude20Old = createLlmModel("2.0", isDeprecated = true)
+    val claude20New = createLlmModel("2.0", tags = listOf("deprecated", "free"))
+
+    // This will be included as an old style model in the agent response to simulate
+    // an upgrade that runs before the agent upgrades
+    val claude21Old = createLlmModel("2.1", isDeprecated = true, isCodyPro = true)
+
+    val claude30Old = createLlmModel("3.0")
+    val claude30New = createLlmModel("3.0", tags = listOf("pro", "other"), usage = listOf("edit"))
+    val models = listOf(claude20New, claude21Old, claude30New)
+
+    val accountData =
+        mutableListOf(
+            AccountData().also {
+              it.accountId = "first"
+              it.chats =
+                  mutableListOf(
+                      ChatState("chat1").also {
+                        it.messages = mutableListOf()
+                        it.llm = LLMState.fromChatModel(claude20Old)
+                      },
+                      ChatState("chat2").also {
+                        it.messages = mutableListOf()
+                        it.llm = LLMState.fromChatModel(claude21Old)
+                      })
+            },
+            AccountData().also {
+              it.accountId = "second"
+              it.chats =
+                  mutableListOf(
+                      ChatState("chat1").also {
+                        it.messages = mutableListOf()
+                        it.llm = LLMState.fromChatModel(claude20Old)
+                      },
+                      ChatState("chat2").also {
+                        it.messages = mutableListOf()
+                        it.llm = LLMState.fromChatModel(claude30Old)
+                      })
+            })
+
+    fun getTagsAndUsage(chat: ChatState): Pair<List<String>, List<String>> {
+      val llm = chat.llm ?: return Pair(listOf<String>(), listOf<String>())
+      return Pair(llm.tags.toList(), llm.usage.toList())
+    }
+
+    ChatTagsLlmMigration.migrateHistory(accountData, models)
+    assertEquals(2, accountData.size)
+    accountData.forEach { ad ->
+      ad.chats.forEach { chat ->
+        when (chat.llm?.model) {
+          claude20Old.model -> {
+            val (tags, usage) = getTagsAndUsage(chat)
+            assertEquals(listOf("deprecated", "free"), tags)
+            assertEquals(listOf("chat", "edit"), usage)
+          }
+          claude21Old.model -> {
+            val (tags, usage) = getTagsAndUsage(chat)
+            assertEquals(listOf("deprecated", "pro"), tags)
+            assertEquals(listOf("chat", "edit"), usage)
+          }
+          claude30Old.model -> {
+            val (tags, usage) = getTagsAndUsage(chat)
+            assertEquals(listOf("pro", "other"), tags)
+            assertEquals(listOf("edit"), usage)
+          }
+        }
       }
     }
   }

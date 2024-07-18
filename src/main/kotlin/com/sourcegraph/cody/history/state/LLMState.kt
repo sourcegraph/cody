@@ -13,12 +13,18 @@ class LLMState : BaseState() {
 
   @get:OptionTag(tag = "provider", nameAttribute = "") var provider: String? by string()
 
+  @get:OptionTag(tag = "tags", nameAttribute = "") var tags: MutableList<String> by list()
+
+  @get:OptionTag(tag = "usage", nameAttribute = "") var usage: MutableList<String> by list()
+
   companion object {
     fun fromChatModel(chatModelProvider: ChatModelsResponse.ChatModelProvider): LLMState {
       return LLMState().also {
         it.model = chatModelProvider.model
         it.title = chatModelProvider.title
         it.provider = chatModelProvider.provider
+        it.tags = chatModelProvider.tags ?: mutableListOf()
+        it.usage = chatModelProvider.usage ?: mutableListOf()
       }
     }
   }

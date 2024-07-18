@@ -6,6 +6,8 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.MutableCollectionComboBoxModel
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.ConfigFeatures
+import com.sourcegraph.cody.agent.CurrentConfigFeatures
 import com.sourcegraph.cody.agent.protocol.ChatModelsParams
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.agent.protocol.ModelUsage
@@ -26,12 +28,14 @@ class LlmDropdown(
     val parentDialog: EditCommandPrompt?,
     val chatModelProviderFromState: ChatModelsResponse.ChatModelProvider?,
 ) : ComboBox<ChatModelsResponse.ChatModelProvider>(MutableCollectionComboBoxModel()) {
+  var hasServerSentModels = false
 
   init {
     renderer = LlmComboBoxRenderer(this)
     isVisible = false
     isOpaque = false
 
+    subscribeToFeatureUpdates()
     updateModels()
   }
 
@@ -40,17 +44,31 @@ class LlmDropdown(
       val chatModels = agent.server.chatModels(ChatModelsParams(modelUsage.value))
       val response =
           chatModels.completeOnTimeout(null, 10, TimeUnit.SECONDS).get() ?: return@withAgent
-
       invokeLater { updateModelsInUI(response.models) }
+    }
+  }
+
+  private fun subscribeToFeatureUpdates() {
+    val currentConfigFeatures: CurrentConfigFeatures =
+        project.getService(CurrentConfigFeatures::class.java)
+    currentConfigFeatures.attach(::handleConfigUpdate)
+  }
+
+  private fun handleConfigUpdate(config: ConfigFeatures) {
+    hasServerSentModels = config.serverSentModels
+    if (!isVisible && config.serverSentModels) {
+      isVisible = true
+      revalidate()
     }
   }
 
   @RequiresEdt
   private fun updateModelsInUI(models: List<ChatModelsResponse.ChatModelProvider>) {
     if (project.isDisposed) return
+    this.removeAllItems()
 
-    val availableModels = models.filterNot { it.deprecated }
-    availableModels.sortedBy { it.codyProOnly }.forEach(::addItem)
+    val availableModels = models.filterNot { it.isDeprecated() }
+    availableModels.sortedBy { it.isCodyProOnly() }.forEach(::addItem)
 
     val selectedFromState = chatModelProviderFromState
     val selectedFromHistory = HistoryService.getInstance(project).getDefaultLlm()
@@ -59,8 +77,8 @@ class LlmDropdown(
             ?: availableModels.find { it.model == selectedFromHistory?.model }
 
     selectedItem =
-        if (selectedModel?.codyProOnly == true && isCurrentUserFree())
-            availableModels.find { it.default }
+        if (selectedModel?.isCodyProOnly() == true && isCurrentUserFree())
+            availableModels.getOrNull(0)
         else selectedModel
 
     val isEnterpriseAccount =
@@ -69,7 +87,8 @@ class LlmDropdown(
     // If the dropdown is already disabled, don't change it. It can happen
     // in the case of the legacy commands (updateAfterFirstMessage happens before this call).
     isEnabled = isEnabled && chatModelProviderFromState == null
-    isVisible = !isEnterpriseAccount
+
+    isVisible = !isEnterpriseAccount || hasServerSentModels
     setMaximumRowCount(15)
 
     revalidate()
@@ -84,7 +103,7 @@ class LlmDropdown(
     if (project.isDisposed) return
     val modelProvider = anObject as? ChatModelsResponse.ChatModelProvider
     if (modelProvider != null) {
-      if (modelProvider.codyProOnly && isCurrentUserFree()) {
+      if (modelProvider.isCodyProOnly() && isCurrentUserFree()) {
         BrowserOpener.openInBrowser(project, "https://sourcegraph.com/cody/subscription")
         return
       }

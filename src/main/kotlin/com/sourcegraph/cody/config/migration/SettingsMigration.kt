@@ -64,6 +64,7 @@ class SettingsMigration : Activity {
     }
 
     DeprecatedChatLlmMigration.migrate(project)
+    ChatTagsLlmMigration.migrate(project)
   }
 
   private fun migrateOrphanedChatsToActiveAccount(project: Project) {

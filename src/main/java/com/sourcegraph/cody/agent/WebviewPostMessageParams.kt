@@ -53,9 +53,7 @@ data class ExtensionMessage(
 
 data class WebviewPostMessageParams(val id: String, val message: ExtensionMessage)
 
-data class ConfigFeatures(
-    val attribution: Boolean,
-)
+data class ConfigFeatures(val attribution: Boolean, val serverSentModels: Boolean)
 
 data class EnhancedContextContextT(val groups: List<ContextGroup>)
 
