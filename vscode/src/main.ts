@@ -522,7 +522,7 @@ function registerUpgradeHandlers(
             if (ws.focused && authStatus.isDotCom && authStatus.isLoggedIn) {
                 const res = await graphqlClient.getCurrentUserCodyProEnabled()
                 if (res instanceof Error) {
-                    console.error(res)
+                    logError('onDidChangeWindowState', 'getCurrentUserCodyProEnabled', res)
                     return
                 }
                 // Re-auth if user's cody pro status has changed
@@ -628,7 +628,7 @@ function registerAutocomplete(
                     disposeAutocomplete()
                     if (
                         config.isRunningInsideAgent &&
-                        !process.env.CODY_SUPPRESS_AGENT_AUTOCOMPLETE_WARNING
+                        platform.extensionClient.capabilities?.completions !== 'none'
                     ) {
                         throw new Error(
                             'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
@@ -670,7 +670,7 @@ function registerAutocomplete(
                 )
             })
             .catch(error => {
-                console.error('Error creating inline completion item provider:', error)
+                logError('registerAutocomplete', 'Error creating inline completion item provider', error)
             })
         return setupAutocompleteQueue
     }
