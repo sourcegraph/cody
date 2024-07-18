@@ -9,7 +9,7 @@ import { _config, _getNamesForPlatform, _upsertSymfForPlatform } from './downloa
 //@ts-ignore
 _config.FILE_LOCK_RETRY_DELAY = 1
 
-vi.mock('./utils', async importOriginal => {
+vi.mock('../utils', async importOriginal => {
     //use the vscode mock inside this mock too
     const mod = await importOriginal<typeof import('../utils')>()
     let firstDownload = true
