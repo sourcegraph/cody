@@ -14,7 +14,7 @@ const CommandButton: React.FC<CodyCommand> = ({ key, prompt, description }) => (
             getVSCodeAPI().postMessage({ command: 'command', id: 'cody.action.command', arg: key })
         }
         type="button"
-        className="tw-flex tw-text-foreground tw-border tw-border-border tw-bg-transparent hover:tw-bg-muted-transparent hover:tw-text-muted-foreground tw-py-1.5 tw-items-end tw-border-none tw-transition-all tw-justify-start"
+        className="tw-flex tw-text-foreground tw-border tw-border-border tw-bg-transparent hover:tw-bg-muted-transparent hover:tw-text-muted-foreground tw-py-3 tw-items-end tw-border-none tw-transition-all tw-justify-start"
         title={`Prompt: ${prompt}`}
     >
         <span className="tw-truncate">

@@ -254,7 +254,7 @@ export function createStatusBar(): CodyStatusBar {
             ...FeedbackOptionItems,
             { label: `v${version}`, kind: vscode.QuickPickItemKind.Separator },
             {
-                label: '$(tag) Cody Release Notes',
+                label: '$(cody-logo) Cody Release Blog',
                 async onSelect(): Promise<void> {
                     await vscode.commands.executeCommand(
                         'vscode.open',

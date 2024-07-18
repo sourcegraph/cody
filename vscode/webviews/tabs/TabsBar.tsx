@@ -66,7 +66,6 @@ const tabItems: TabConfig[] = [
 
 interface TabButtonProps {
     Icon: IconComponent
-    isSecondary?: boolean
     view?: View
     command?: string
     isActive?: boolean
@@ -74,12 +73,13 @@ interface TabButtonProps {
 }
 
 const baseClasses =
-    'tw-rounded-none tw-bg-transparent tw-border-solid tw-border-b tw-px-2 tw-py-4 tw-transition-all hover:tw-text-button-background'
-const activeClasses = 'tw-border-button-background tw-text-button-background'
+    'tw-rounded-none tw-bg-transparent tw-border-solid tw-border-b tw-px-2 tw-py-4 tw-transition-all hover:tw-text-button-background-hover'
+const activeClasses = 'tw-border-button-background-hover tw-text-button-background-hover'
 const inactiveClasses = 'tw-border-transparent'
 
-const TabButton: React.FC<TabButtonProps> = ({ Icon, isActive, onClick, isSecondary }) => (
+const TabButton: React.FC<TabButtonProps> = ({ Icon, isActive, onClick, view }) => (
     <button
+        title={view}
         type="button"
         onClick={onClick}
         className={clsx(baseClasses, isActive ? activeClasses : inactiveClasses)}
@@ -106,7 +106,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView }) => {
                 styles.tabsContainer
             )}
         >
-            <div>
+            <div className="tw-flex tw-gap-4">
                 {tabItems.map(({ Icon, view, command }) => (
                     <Tabs.Trigger key={view} value={view}>
                         <TabButton
@@ -119,7 +119,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView }) => {
                     </Tabs.Trigger>
                 ))}
             </div>
-            <div>
+            <div className="tw-flex tw-gap-4">
                 {currentViewSubIcons?.map(({ Icon, command }) => (
                     <TabButton
                         key={command}
