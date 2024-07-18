@@ -125,11 +125,15 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         name: codyCliClientName,
         version: options.isTesting ? '6.0.0-SNAPSHOT' : packageJson.version,
         workspaceRootUri: workspaceRootUri.toString(),
+        capabilities: {
+            completions: 'none',
+        },
         extensionConfiguration: {
             serverEndpoint: options.endpoint,
             accessToken: options.accessToken,
             customHeaders: {},
             customConfiguration: {
+                'cody.internal.autocomplete.entirelyDisabled': true,
                 'cody.experimental.symf.enabled': false,
                 'cody.experimental.telemetry.enabled': options.isTesting ? false : undefined,
             },
@@ -138,6 +142,12 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     spinner.text = 'Initializing...'
     const { serverInfo, client, messageHandler } = await newEmbeddedAgentClient(clientInfo, activate)
     const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+
+    if (options.debug) {
+        messageHandler.registerNotification('debug/message', message => {
+            console.log(`${message.channel}: ${message.message}`)
+        })
+    }
 
     messageHandler.registerNotification('webview/postMessage', message => {
         if (message.message.type === 'transcript') {
@@ -182,6 +192,28 @@ export async function chatAction(options: ChatOptions): Promise<number> {
             names: options.contextRepo,
             first: options.contextRepo.length,
         })
+
+        const invalidRepos: string[] = []
+        for (const repo of options.contextRepo) {
+            if (!repos.some(r => r.name === repo)) {
+                invalidRepos.push(repo)
+            }
+        }
+
+        if (invalidRepos.length > 0) {
+            const reposString = invalidRepos.join(', ')
+            const errorMessage =
+                invalidRepos.length > 1
+                    ? `The repositories ${invalidRepos} do not exist on the instance. `
+                    : `The repository '${reposString}' does not exist on the instance. `
+            spinner.fail(
+                errorMessage +
+                    'The name needs to match exactly the name of the repo as it appears on your Sourcegraph instance. ' +
+                    'Please check the spelling and try again.'
+            )
+            return 1
+        }
+
         await client.request('webview/receiveMessage', {
             id,
             message: {

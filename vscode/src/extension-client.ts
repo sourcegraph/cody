@@ -1,5 +1,6 @@
 import type { Disposable } from 'vscode'
 import type { EnterpriseContextFactory } from './context/enterprise-context-factory'
+import type { ClientCapabilities } from './jsonrpc/agent-protocol'
 import { FixupCodeLenses } from './non-stop/codelenses/provider'
 import type { FixupActor, FixupFileCollection } from './non-stop/roles'
 import type { FixupControlApplicator } from './non-stop/strategies'
@@ -32,6 +33,7 @@ export interface ExtensionClient {
 
     get clientName(): string
     get clientVersion(): string
+    get capabilities(): ClientCapabilities | undefined
 }
 
 /**
@@ -45,5 +47,6 @@ export function defaultVSCodeExtensionClient(): ExtensionClient {
         createFixupControlApplicator: files => new FixupCodeLenses(files),
         clientName: 'vscode',
         clientVersion: version,
+        capabilities: undefined,
     }
 }

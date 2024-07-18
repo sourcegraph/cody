@@ -1087,8 +1087,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            const providers = ModelsService.getModels(modelUsage, authStatus)
-            return { models: providers ?? [] }
+            const models = ModelsService.getModels(modelUsage, authStatus)
+            return { models }
         })
 
         this.registerAuthenticatedRequest('chat/export', async input => {
@@ -1313,6 +1313,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
     get clientVersion(): string {
         return this.clientInfo?.version || '0.0.0'
+    }
+
+    get capabilities(): agent_protocol.ClientCapabilities | undefined {
+        return this.clientInfo?.capabilities ?? undefined
     }
 
     /**

@@ -61,9 +61,6 @@ export enum FeatureFlag {
     /** Automatically start indexing using embeddings. */
     CodyEmbeddingsAutoIndexing = 'cody-embeddings-auto-indexing',
 
-    /** Enable Context Preamble for open-end chat questions. */
-    CodyChatContextPreamble = 'cody-chat-context-preamble',
-
     /** Whether to use generated metadata to power embeddings. */
     CodyEmbeddingsGenerateMetadata = 'cody-embeddings-generate-metadata',
 
@@ -78,6 +75,9 @@ export enum FeatureFlag {
 
     /** Use embeddings to provide enhanced context. */
     CodyEnhancedContexUseEmbeddings = 'cody-enhanced-context-use-embeddings',
+
+    /** Whether to use server-side Context API. */
+    CodyServerSideContextAPI = 'cody-server-side-context-api-enabled',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
