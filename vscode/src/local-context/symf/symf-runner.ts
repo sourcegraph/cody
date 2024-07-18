@@ -9,7 +9,6 @@ import * as vscode from 'vscode'
 
 import {
     AbortError,
-    type AuthStatus,
     type FileURI,
     type IndexedKeywordContextFetcher,
     type PromptString,
@@ -18,9 +17,7 @@ import {
     assertFileURI,
     displayPath,
     isAbortError,
-    isAuthenticated,
     isDefined,
-    isEnterpriseUser,
     isFileURI,
     isWindows,
     telemetryRecorder,
@@ -28,12 +25,11 @@ import {
     uriDirname,
 } from '@sourcegraph/cody-shared'
 
-import { logDebug } from '../log'
+import { logDebug } from '../../log'
 
 import path from 'node:path'
 import { getEditor } from '../editor/active-editor'
 import { getSymfPath } from './download-symf'
-import { rewriteKeywordQuery } from './rewrite-keyword-query'
 
 const execFile = promisify(_execFile)
 const oneDayMillis = 1000 * 60 * 60 * 24

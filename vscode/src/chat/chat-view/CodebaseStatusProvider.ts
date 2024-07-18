@@ -14,7 +14,7 @@ import {
 import { getConfiguration } from '../../configuration'
 import type { CodebaseRepoIdMapper } from '../../context/enterprise-context-factory'
 import { getEditor } from '../../editor/active-editor'
-import type { SymfWrapper } from '../../local-context/symf'
+import type { SymfWrapper } from '../../local-context/symf/symf-wrapper'
 import { RepoMetadatafromGitApi } from '../../repository/repo-metadata-from-git-api'
 import { repoNameResolver } from '../../repository/repo-name-resolver'
 

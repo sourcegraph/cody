@@ -2,7 +2,7 @@ import * as fspromises from 'node:fs/promises'
 import { PromptString, type RangeData, type Result } from '@sourcegraph/cody-shared'
 import { isNumber, isString } from 'lodash'
 import * as vscode from 'vscode'
-import type { SymfWrapper } from '../local-context/symf'
+import type { SymfWrapper } from '../local-context/symf/symf-wrapper'
 import { logDebug } from '../log'
 
 export interface TextSnippet {

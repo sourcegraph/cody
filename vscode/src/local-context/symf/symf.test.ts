@@ -2,16 +2,16 @@ import { mkdtemp, open, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
-import { getOSArch } from '../os'
+import { getOSArch } from '../../os'
+import { downloadFile } from '../utils'
 import { _config, _getNamesForPlatform, _upsertSymfForPlatform } from './download-symf'
-import { downloadFile } from './utils'
 
 //@ts-ignore
 _config.FILE_LOCK_RETRY_DELAY = 1
 
 vi.mock('./utils', async importOriginal => {
     //use the vscode mock inside this mock too
-    const mod = await importOriginal<typeof import('./utils')>()
+    const mod = await importOriginal<typeof import('../utils')>()
     let firstDownload = true
     return {
         ...mod,

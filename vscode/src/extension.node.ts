@@ -18,7 +18,7 @@ import {
     type LocalEmbeddingsController,
     createLocalEmbeddingsController,
 } from './local-context/local-embeddings'
-import { SymfRunner } from './local-context/symf'
+import { SymfRunner } from './local-context/symf/symf-runner'
 import { AuthProvider } from './services/AuthProvider'
 import { localStorage } from './services/LocalStorageProvider'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'

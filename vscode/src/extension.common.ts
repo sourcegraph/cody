@@ -19,7 +19,7 @@ import type { CommandsProvider } from './commands/services/provider'
 import { ExtensionApi } from './extension-api'
 import type { ExtensionClient } from './extension-client'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
-import type { SymfRunner } from './local-context/symf'
+import type { SymfRunner } from './local-context/symf/symf-runner'
 import { start } from './main'
 import type {
     OpenTelemetryService,

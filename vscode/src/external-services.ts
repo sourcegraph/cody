@@ -18,7 +18,7 @@ import { createClient as createCodeCompletionsClient } from './completions/clien
 import type { ConfigWatcher } from './configwatcher'
 import type { PlatformContext } from './extension.common'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
-import { SymfWrapper } from './local-context/symf'
+import { SymfWrapper } from './local-context/symf/symf-wrapper'
 import { logDebug, logger } from './log'
 import type { AuthProvider } from './services/AuthProvider'
 

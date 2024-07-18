@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import * as vscode from 'vscode'
 import { getFullConfig } from '../configuration'
-import type { SymfWrapper } from '../local-context/symf'
+import type { SymfWrapper } from '../local-context/symf/symf-wrapper'
 import type { AuthProvider } from '../services/AuthProvider'
 import { MinionController, ReactPanelController } from './MinionController'
 

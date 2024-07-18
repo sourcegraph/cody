@@ -6,7 +6,7 @@ import type {
     MinionWebviewMessage,
 } from '../../webviews/minion/webview_protocol'
 import { InitDoer } from '../chat/chat-view/InitDoer'
-import type { SymfWrapper } from '../local-context/symf'
+import type { SymfWrapper } from '../local-context/symf/symf-wrapper'
 import type { AuthProvider } from '../services/AuthProvider'
 import { MinionStorage } from './MinionStorage'
 import { PlanController } from './PlanController'
