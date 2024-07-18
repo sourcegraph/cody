@@ -28,6 +28,7 @@ import {
 } from './fireworks'
 import { createProviderConfig as createGeminiProviderConfig } from './google'
 import { createProviderConfig as createExperimentalOpenAICompatibleProviderConfig } from './expopenaicompatible'
+import { createProviderConfig as createOpenAICompatibleProviderConfig } from './openaicompatible'
 import type { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
@@ -145,19 +146,19 @@ export async function createProviderConfig(
                 authStatus,
                 config,
             })
-        case 'openaicompatible-v2':
+        case 'openaicompatible':
             if (model) {
                 return createOpenAICompatibleProviderConfig({
                     client,
                     timeouts: config.autocompleteTimeouts,
-                    model: modelId ?? null,
+                    model: model,
                     authStatus,
                     config,
                 })
             }
             logError(
                 'createProviderConfig',
-                'Model definition is missing for openaicompatible-v2 provider.',
+                'Model definition is missing for openaicompatible provider.',
                 modelId
             )
             return null
@@ -301,7 +302,7 @@ function getAutocompleteModelInfo(authStatus: AuthStatus): AutocompleteModelInfo
     if (model) {
         let provider = model.provider
         if (model.clientSideConfig?.openAICompatible) {
-            provider = 'openaicompatible-v2'
+            provider = 'openaicompatible'
         }
         return { provider, modelId: model.model, model }
     }
