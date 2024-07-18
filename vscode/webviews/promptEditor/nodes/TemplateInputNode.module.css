@@ -18,3 +18,12 @@
         background-color: color-mix(in lch, var(--vscode-editorWarning-foreground) 30%, transparent);
     }
 }
+
+body:is([data-vscode-theme-kind='vscode-high-contrast'], [data-vscode-theme-kind='vscode-high-contrast-light']) .template-input-node {
+    background-color: transparent;
+}
+
+/* color-mix is not supported on JetBrains webview */
+html[data-ide=JetBrains] .template-input-node {
+    background-color: transparent;
+}
