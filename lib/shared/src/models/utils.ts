@@ -1,3 +1,6 @@
+import { type Model, ModelsService } from '.'
+import { ModelTag } from '..'
+
 export function getProviderName(name: string): string {
     const providerName = name.toLowerCase()
     switch (providerName) {
@@ -27,12 +30,22 @@ export function getModelInfo(modelID: string): {
     return { provider, title }
 }
 
-/** Common {@link ModelsService.uiGroup} values. */
-export const ModelUIGroup: Record<string, string> = {
-    Accuracy: 'Optimized for Accuracy',
-    Balanced: 'Balanced (Speed & Accuracy)',
-    Speed: 'Optimized for Speed',
-    Ollama: 'Ollama (Local)',
-    // Used for identifying the model type but currently not used for displaying in the UI.
-    Enterprise: 'Enterprise',
+export function isCodyProModel(model: Model): boolean {
+    return ModelsService.hasModelTag(model, ModelTag.Pro)
+}
+
+export function isLocalModel(model: Model): boolean {
+    return ModelsService.hasModelTag(model, ModelTag.Local)
+}
+
+export function isCustomModel(model: Model): boolean {
+    return (
+        ModelsService.hasModelTag(model, ModelTag.Local) ||
+        ModelsService.hasModelTag(model, ModelTag.Dev) ||
+        ModelsService.hasModelTag(model, ModelTag.BYOK)
+    )
+}
+
+export function isOllamaModel(model: Model): boolean {
+    return model.provider.toLowerCase() === 'ollama' || ModelsService.hasModelTag(model, ModelTag.Ollama)
 }

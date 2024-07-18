@@ -21,6 +21,10 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Autocomplete: Fixed the request manager cache keys computation. [pull/4902](https://github.com/sourcegraph/cody/pull/4902)
 - Autocomplete: Fixes the default model value for the Anthropic autocomplete provider. [pull/4803](https://github.com/sourcegraph/cody/pull/4803)
 
+- Autocomplete: Fixed the request manager cache keys computation. [pull/4902](https://github.com/sourcegraph/cody/pull/4902)
+
+### Changed
+
 ## 1.26.3
 
 ### Fixed
@@ -45,6 +49,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Fixed
 
 - A no-op command `New Chat in Sidebar` was removed. (This will be added back with functionality in the next minor stable release version.)
+- A no-op command `New Chat in Sidebar` was removed. (This will be added back with functionality in the next minor stable release version.) [pull/4837](https://github.com/sourcegraph/cody/pull/4837)
 
 ## 1.26.0
 
@@ -53,6 +58,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Ollama: Added support for running Cody offline with local Ollama models. [pull/4691](https://github.com/sourcegraph/cody/pull/4691)
 - Edit: Added support for users' to edit the applied edit before the diff view is removed. [pull/4684](https://github.com/sourcegraph/cody/pull/4684)
 - Autocomplete: Added experimental support for Gemini 1.5 Flash as the autocomplete model. To enable this experimental feature, update the `autocomplete.advanced.provider` configuration setting to `unstable-gemini`. Prerequisite: Your Sourcegraph instance (v5.5.0+) must first be configured to use Gemini 1.5 Flash as the autocomplete model. [pull/4743](https://github.com/sourcegraph/cody/pull/4743)
+- Enterprise: Enabled support for multiple dynaic models if the Sourcegraph backend provides them. Requires the experimental flag `modelsAPIEnabled` to be sent by the client config API. [pull/4780](https://github.com/sourcegraph/cody/pull/4780)
 - Autocomplete: Fixed hot-streak cache keys for long documents. [pull/4817](https://github.com/sourcegraph/cody/pull/4817)
 - Autocomplete: Added an extra abort call to ensure request cancellation. [pull/4818](https://github.com/sourcegraph/cody/pull/4818)
 
@@ -60,6 +66,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Edit: Fixed an issue where, when unable to detect the indentation of a file, Cody would remove all indentation from a response. [pull/4704](https://github.com/sourcegraph/cody/pull/4704)
 - Edit: Fixed an issue where Cody would sometimes remove unintended parts of the code when an edit was accepted on save. [pull/4720](https://github.com/sourcegraph/cody/pull/4720)
+- Autocomplete: Fixes the default model value for the Anthropic autocomplete provider. [pull/4803](https://github.com/sourcegraph/cody/pull/4803)
 - Chat: The loading dots in the loading page are now centered correctly. [pull/4808](https://github.com/sourcegraph/cody/pull/4808)
 
 ### Changed

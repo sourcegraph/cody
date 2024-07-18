@@ -161,7 +161,7 @@ export async function showCommandMenu(
                 if (selection.key === 'ask') {
                     // show input box if no value
                     if (value.length === 0) {
-                        void commands.executeCommand('cody.chat.panel.new')
+                        void commands.executeCommand('cody.chat.newEditorPanel')
                     } else {
                         void executeChat({
                             text: value.trim(),

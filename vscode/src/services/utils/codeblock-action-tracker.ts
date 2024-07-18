@@ -21,6 +21,13 @@ let insertInProgress = false
 let lastClipboardText = ''
 
 /**
+ * SourceMetadataMapping is used to map the source to a numerical value, so telemetry can be recorded on `metadata`.
+ **/
+enum SourceMetadataMapping {
+    chat = 1,
+}
+
+/**
  * Sets the last stored code snippet and associated metadata.
  *
  * This is used to track code generation events in VS Code.
@@ -35,7 +42,7 @@ function setLastStoredCode(
     lineCount: number
     charCount: number
     eventName: string
-    source?: string
+    source: string
     requestID?: string
 } {
     // All non-copy events are considered as insertions since we don't need to listen for paste events
@@ -50,6 +57,7 @@ function setLastStoredCode(
 
     telemetryRecorder.recordEvent(`cody.${eventName}`, 'clicked', {
         metadata: {
+            source: SourceMetadataMapping[source as keyof typeof SourceMetadataMapping] || 0, // Use 0 as default if source is not found
             lineCount,
             charCount,
         },
@@ -136,6 +144,7 @@ export async function onTextDocumentChange(newCode: string): Promise<void> {
             metadata: {
                 lineCount,
                 charCount,
+                source: SourceMetadataMapping[source as keyof typeof SourceMetadataMapping] || 0, // Use 0 as default if source is not found
             },
             interactionID: requestID,
             privateMetadata: {

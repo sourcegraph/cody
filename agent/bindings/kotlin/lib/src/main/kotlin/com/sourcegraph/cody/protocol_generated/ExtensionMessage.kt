@@ -50,7 +50,7 @@ data class ConfigExtensionMessage(
 
 data class Ui_themeExtensionMessage(
   val type: TypeEnum, // Oneof: ui/theme
-  val agentIDE: CodyIDE, // Oneof: VSCode, JetBrains, Neovim, Emacs, Web
+  val agentIDE: CodyIDE, // Oneof: VSCode, JetBrains, Neovim, Emacs, Web, VisualStudio
   val cssVariables: CodyIDECssVariables,
 ) : ExtensionMessage() {
 

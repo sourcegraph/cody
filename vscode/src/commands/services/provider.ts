@@ -10,6 +10,7 @@ import { CodyCommandMenuItems } from '..'
 import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import { getContextFileFromGitLog } from '../context/git-log'
 import { getContextFileFromShell } from '../context/shell'
+import { executeExplainHistoryCommand } from '../execute/explain-history'
 import { showCommandMenu } from '../menus'
 import type { CodyCommandArgs } from '../types'
 import { getDefaultCommandsMap } from '../utils/get-commands'
@@ -45,6 +46,12 @@ export class CommandsProvider implements vscode.Disposable {
             vscode.commands.registerCommand('cody.commands.open.doc', () => openCustomCommandDocsLink()),
             // Update the custom commands when the tree view is refreshed
             this.treeViewProvider.onDidChangeTreeData(() => this.getCustomCommands())
+        )
+
+        this.disposables.push(
+            vscode.commands.registerCommand('cody.command.explain-history', a =>
+                executeExplainHistoryCommand(this, a)
+            )
         )
 
         this.customCommandsStore.init()

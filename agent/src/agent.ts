@@ -27,7 +27,7 @@ import {
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
-import { SimpleChatModel } from '../../vscode/src/chat/chat-view/SimpleChatModel'
+import { ChatModel } from '../../vscode/src/chat/chat-view/ChatModel'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
@@ -38,7 +38,6 @@ import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
-import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CommandResult } from '../../vscode/src/CommandResult'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
@@ -1055,7 +1054,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return this.createChatPanel(
                 Promise.resolve({
                     type: 'chat',
-                    session: await vscode.commands.executeCommand('cody.chat.panel.new'),
+                    session: await vscode.commands.executeCommand('cody.chat.newEditorPanel'),
                 })
             )
         })
@@ -1064,7 +1063,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const panelId = await this.createChatPanel(
                 Promise.resolve({
                     type: 'chat',
-                    session: await vscode.commands.executeCommand('cody.chat.panel.new'),
+                    session: await vscode.commands.executeCommand('cody.chat.newEditorPanel'),
                 })
             )
 
@@ -1074,14 +1073,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            const theModel = modelID
-                ? modelID
-                : ModelsService.getModels(
-                      ModelUsage.Chat,
-                      authStatus.isDotCom && !authStatus.userCanUpgrade
-                  ).at(0)?.model ?? ''
-            const chatMessages = messages?.map(m => PromptString.unsafe_deserializeChatMessage(m)) ?? []
-            const chatModel = new SimpleChatModel(theModel, chatMessages, chatID)
+            modelID ??= ModelsService.getDefaultChatModel(authStatus) ?? ''
+            const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
+            const chatModel = new ChatModel(modelID, chatID, chatMessages)
             await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
             return this.createChatPanel(
                 Promise.resolve({
@@ -1093,11 +1087,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            const providers = ModelsService.getModels(
-                modelUsage,
-                authStatus.isDotCom && !authStatus.userCanUpgrade
-            )
-            return { models: providers ?? [] }
+            const models = ModelsService.getModels(modelUsage, authStatus)
+            return { models }
         })
 
         this.registerAuthenticatedRequest('chat/export', async input => {
@@ -1111,7 +1102,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         // Return filtered (non-empty) chats by default, but if requests has fullHistory: true
                         // return the full list of chats from the storage, empty chats included
                         .filter(
-                            ([chatID, chatTranscript]) =>
+                            ([_, chatTranscript]) =>
                                 chatTranscript.interactions.length > 0 || fullHistory
                         )
                         .map(([chatID, chatTranscript]) => ({

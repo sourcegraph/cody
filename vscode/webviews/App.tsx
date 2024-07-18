@@ -11,6 +11,7 @@ import {
     type Model,
     PromptString,
     type SerializedChatTranscript,
+    isCodyProUser,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
 
@@ -49,6 +50,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const [chatEnabled, setChatEnabled] = useState<boolean>(true)
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
+    const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
 
     const [clientState, setClientState] = useState<ClientStateForWebview>({
         initialContext: [],
@@ -98,7 +100,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setConfig(message.config)
                         setAuthStatus(message.authStatus)
                         setUserAccountInfo({
-                            isCodyProUser: !message.authStatus.userCanUpgrade,
+                            isCodyProUser: isCodyProUser(message.authStatus),
                             // Receive this value from the extension backend to make it work
                             // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
                             isDotComUser: message.authStatus.isDotCom,
@@ -115,6 +117,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'setConfigFeatures':
                         setChatEnabled(message.configFeatures.chat)
                         setAttributionEnabled(message.configFeatures.attribution)
+                        setServerSentModelsEnabled(message.configFeatures.serverSentModels)
                         break
                     case 'history':
                         setUserHistory(Object.values(message.localHistory?.chat ?? {}))
@@ -159,6 +162,19 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 
     useEffect(() => {
+        // On macOS, suppress the '¬' character emitted by default for alt+L
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.altKey && event.key === '¬') {
+                event.preventDefault()
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [])
+
+    useEffect(() => {
         // Notify the extension host that we are ready to receive events
         vscodeAPI.postMessage({ command: 'ready' })
     }, [vscodeAPI])
@@ -191,23 +207,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const onCurrentChatModelChange = useCallback(
         (selected: Model): void => {
-            if (!chatModels || !setChatModels) {
-                return
-            }
             vscodeAPI.postMessage({
                 command: 'chatModel',
                 model: selected.model,
             })
-            const updatedChatModels = chatModels.map(m =>
-                m.model === selected.model ? { ...m, default: true } : { ...m, default: false }
-            )
-            setChatModels(updatedChatModels)
         },
-        [chatModels, vscodeAPI]
+        [vscodeAPI]
     )
     const chatModelContext = useMemo<ChatModelContext>(
-        () => ({ chatModels, onCurrentChatModelChange }),
-        [chatModels, onCurrentChatModelChange]
+        () => ({ chatModels, onCurrentChatModelChange, serverSentModelsEnabled }),
+        [chatModels, onCurrentChatModelChange, serverSentModelsEnabled]
     )
 
     // Wait for all the data to be loaded before rendering Chat View

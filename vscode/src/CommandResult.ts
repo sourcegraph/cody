@@ -1,4 +1,4 @@
-import type { ChatSession } from './chat/chat-view/SimpleChatPanelProvider'
+import type { ChatSession } from './chat/chat-view/ChatController'
 import type { FixupTask } from './non-stop/FixupTask'
 
 export type CommandResult = ChatCommandResult | EditCommandResult
