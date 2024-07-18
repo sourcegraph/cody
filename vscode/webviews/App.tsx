@@ -4,6 +4,7 @@ import styles from './App.module.css'
 
 import {
     type AuthStatus,
+    AuthTier,
     type ChatMessage,
     type ClientStateForWebview,
     type CodyCommand,
@@ -13,7 +14,7 @@ import {
     PromptString,
     type SerializedChatTranscript,
     type TelemetryRecorder,
-    isCodyProUser,
+    getAuthTier,
 } from '@sourcegraph/cody-shared'
 import type { AuthMethod, ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 import type { UserAccountInfo } from './Chat'
@@ -106,7 +107,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setConfig(message.config)
                         setAuthStatus(message.authStatus)
                         setUserAccountInfo({
-                            isCodyProUser: isCodyProUser(message.authStatus),
+                            isCodyProUser: getAuthTier(message.authStatus) === AuthTier.Pro,
                             // Receive this value from the extension backend to make it work
                             // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
                             isDotComUser: message.authStatus.isDotCom,

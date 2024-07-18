@@ -1,4 +1,4 @@
-import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
+import { type AuthStatus, AuthTier, getAuthTier } from '../auth/types'
 import { CodyIDE, type Configuration } from '../configuration'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { logDebug, logError } from '../logger'
@@ -528,20 +528,21 @@ export class ModelsService {
         if (!resolved) {
             return false
         }
-        const tier = Model.tier(resolved)
-        // Cody Enterprise users are able to use any models that the backend says is supported.
-        if (isEnterpriseUser(status)) {
-            return true
+        const modelTier = Model.tier(resolved)
+        switch (getAuthTier(status)) {
+            case AuthTier.Enterprise:
+                // Cody Enterprise users are able to use any models that the backend says is supported.
+                return true
+            case AuthTier.Pro:
+                // A Cody Pro user can use any Free or Pro model, but not Enterprise.
+                // (But in reality, Sourcegraph.com wouldn't serve any Enterprise-only models to
+                // Cody Pro users anyways.)
+                return modelTier !== ModelTag.Enterprise
+            case AuthTier.Free:
+                return modelTier === ModelTag.Free
+            case AuthTier.LoggedOut:
+                return false
         }
-
-        // A Cody Pro user can use any Free or Pro model, but not Enterprise.
-        // (But in reality, Sourcegraph.com wouldn't serve any Enterprise-only models to
-        // Cody Pro users anyways.)
-        if (isCodyProUser(status)) {
-            return tier !== 'enterprise'
-        }
-
-        return tier === 'free'
     }
 
     // does an approximate match on the model id, seeing if there are any models in the

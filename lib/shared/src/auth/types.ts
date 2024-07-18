@@ -119,18 +119,22 @@ export const offlineModeAuthStatus = {
     codyApiVersion: 0,
 } satisfies AuthStatus
 
-export function isCodyProUser(authStatus: AuthStatus): boolean {
-    return authStatus.isDotCom && !authStatus.userCanUpgrade
+export enum AuthTier {
+    Free = 'free',
+    Pro = 'pro',
+    Enterprise = 'enterprise',
+    LoggedOut = 'loggedOut',
 }
 
-export function isFreeUser(authStatus: AuthStatus): boolean {
-    return authStatus.isDotCom && authStatus.userCanUpgrade
-}
-
-export function isEnterpriseUser(authStatus: AuthStatus): boolean {
-    return !authStatus.isDotCom
-}
-
-export function isAuthenticated(authStatus: AuthStatus): boolean {
-    return authStatus.authenticated
+export function getAuthTier(status: AuthStatus): AuthTier {
+    if (!status.authenticated) {
+        return AuthTier.LoggedOut
+    }
+    if (!status.isDotCom) {
+        return AuthTier.Enterprise
+    }
+    if (!status.userCanUpgrade) {
+        return AuthTier.Pro
+    }
+    return AuthTier.Free
 }

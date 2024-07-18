@@ -1,4 +1,4 @@
-import { type AuthStatus, isAuthenticated, isEnterpriseUser } from '@sourcegraph/cody-shared'
+import { type AuthStatus, AuthTier, getAuthTier } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import type { SymfRunner } from './symf-runner'
 
@@ -9,7 +9,7 @@ export class SymfWrapper implements vscode.Disposable {
     constructor(private ctor: () => SymfRunner | undefined) {}
 
     public syncAuthStatus(status: AuthStatus) {
-        if (!this.hasRun && isAuthenticated(status) && !isEnterpriseUser(status)) {
+        if (!this.hasRun && getAuthTier(status) === AuthTier.Enterprise) {
             this.hasRun = true
             this.runner = this.ctor()
         }
