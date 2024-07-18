@@ -17,7 +17,7 @@ export function transcriptFixture(transcript: ChatMessage[]): ChatMessage[] {
 }
 
 export const FIXTURE_TRANSCRIPT: Record<
-    'simple' | 'simple2' | 'codeQuestion' | 'explainCode' | 'explainCode2' | 'long',
+    'simple' | 'simple2' | 'codeQuestion' | 'explainCode' | 'explainCode2' | 'long' | 'empty',
     ChatMessage[]
 > = {
     simple: transcriptFixture([
@@ -139,6 +139,7 @@ export const FIXTURE_TRANSCRIPT: Record<
             text: ps`Here are some numbers:\n\n* 1\n* 2\n* 3\n* 4\n* 5\n* 6\n* 7\n* 8\n* 9\n* 10\n`,
         },
     ]),
+    empty: [],
 }
 
 export const FIXTURE_USER_ACCOUNT_INFO: UserAccountInfo = {
