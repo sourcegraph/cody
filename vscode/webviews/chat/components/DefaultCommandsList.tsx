@@ -8,8 +8,8 @@ import {
     TextSearchIcon,
 } from 'lucide-react'
 import { type FunctionComponent, useMemo } from 'react'
-import { Kbd } from '../../components/Kbd'
 import { Button } from '../../components/shadcn/ui/button'
+import { Collapsible } from '../../components/shadcn/ui/collapsible'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 
 const commonCommandList = [
@@ -30,30 +30,18 @@ export const DefaultCommandsList: FunctionComponent<{ IDE?: CodyIDE }> = ({ IDE 
         [IDE]
     )
 
-    const ListTitle: FunctionComponent<{ title: string }> = ({ title }) => (
-        <div className="tw-flex tw-justify-between tw-py-3">
-            <div>{title}</div>
-            <Kbd macOS="opt+C" linuxAndWindows="alt+C" />
-        </div>
-    )
+    const commands = commandList.map(({ key, title, icon: Icon }) => (
+        <Button
+            key={key}
+            variant="text"
+            size="none"
+            onClick={() => getVSCodeAPI().postMessage({ command: 'command', id: key })}
+            className="tw-px-2 hover:tw-bg-button-background-hover"
+        >
+            <Icon className="tw-inline-flex" size={13} />
+            <span className="tw-px-4 tw-truncate tw-w-full">{title}</span>
+        </Button>
+    ))
 
-    return (
-        <div className="tw-w-full tw-flex tw-flex-col tw-gap-2 tw-self-stretch">
-            <ListTitle title="Commands" />
-            <div className="tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4 tw-bg-popover tw-border tw-border-border tw-rounded-lg tw-items-baseline">
-                {commandList.map(({ key, title, icon: Icon }) => (
-                    <Button
-                        key={key}
-                        variant="text"
-                        size="none"
-                        onClick={() => getVSCodeAPI().postMessage({ command: 'command', id: key })}
-                        className="tw-px-2 hover:tw-bg-button-background-hover"
-                    >
-                        <Icon className="tw-inline-flex" size={13} />
-                        <span className="tw-px-4 tw-truncate tw-w-full">{title}</span>
-                    </Button>
-                ))}
-            </div>
-        </div>
-    )
+    return <Collapsible title="Commands" items={commands} />
 }

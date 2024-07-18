@@ -1,4 +1,3 @@
-import * as Tabs from '@radix-ui/react-tabs'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import styles from './App.module.css'
@@ -25,11 +24,9 @@ import { ConnectionIssuesPage } from './Troubleshooting'
 import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
 import { ClientStateContextProvider, useClientActionDispatcher } from './client/clientState'
 
+import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
 import { WithContextProviders } from './mentions/providers'
-import { AccountTab } from './tabs/AccountTab'
-import { CommandsTab } from './tabs/Commands'
-import { HistoryTab } from './tabs/History'
-import { TabsBar, View } from './tabs/TabsBar'
+import { AccountTab, CommandsTab, HistoryTab, SettingsTab, TabsBar, View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
@@ -261,15 +258,15 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     }
 
     return (
-        <Tabs.Root
-            defaultValue={view}
+        <TabRoot
+            defaultValue={View.Chat}
             value={view}
             orientation="vertical"
             className={styles.outerContainer}
         >
             <TabsBar currentView={view} setView={setView} />
             {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
-            <Tabs.Content value={view} className="tw-h-full">
+            <TabContainer value={view}>
                 {view === 'chat' && (
                     <ChatModelContextProvider value={chatModelContext}>
                         <WithContextProviders>
@@ -299,8 +296,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 {view === 'history' && <HistoryTab userHistory={userHistory} />}
                 {view === 'commands' && <CommandsTab IDE={config.agentIDE} commands={commandList} />}
                 {view === 'account' && <AccountTab userInfo={userAccountInfo} />}
-            </Tabs.Content>
-        </Tabs.Root>
+                {view === 'settings' && <SettingsTab userInfo={userAccountInfo} />}
+            </TabContainer>
+        </TabRoot>
     )
 }
 

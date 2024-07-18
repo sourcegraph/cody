@@ -9,6 +9,7 @@ import {
 import type { FunctionComponent } from 'react'
 import type React from 'react'
 import { Kbd } from '../../components/Kbd'
+import { Collapsible } from '../../components/shadcn/ui/collapsible'
 import { DefaultCommandsList } from './DefaultCommandsList'
 
 const MenuExample: FunctionComponent<{ children: React.ReactNode }> = ({ children }) => (
@@ -59,15 +60,11 @@ const ChatHelp: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => {
         </>
     )
 
-    return (
-        <div className="tw-flex tw-flex-col tw-gap-3 tw-self-stretch">
-            <p className="tw-py-3">Chat Help</p>
-            <div className="tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4 tw-bg-popover tw-border tw-border-border tw-rounded-lg">
-                {commonFeatures}
-                {IDE === CodyIDE.VSCode && vscodeFeatures}
-            </div>
-        </div>
-    )
+    if (IDE === CodyIDE.VSCode) {
+        return <Collapsible title="Chat Help" items={[commonFeatures, vscodeFeatures]} />
+    }
+
+    return <Collapsible title="Chat Help" items={commonFeatures} />
 }
 
 export const localStorageKey = 'chat.welcome-message-dismissed'

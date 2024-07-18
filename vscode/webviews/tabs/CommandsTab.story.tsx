@@ -1,7 +1,7 @@
 import type { CodyCommand } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
-import { CommandsTab } from './Commands'
+import { CommandsTab } from './CommandsTab'
 
 const meta: Meta<typeof CommandsTab> = {
     title: 'cody/CommandsTab',

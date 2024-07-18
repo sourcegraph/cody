@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
-import { HistoryTab } from './History'
+import { HistoryTab } from './HistoryTab'
 
 const meta: Meta<typeof HistoryTab> = {
     title: 'cody/HistoryTab',
