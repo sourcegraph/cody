@@ -155,12 +155,12 @@ describe('Agent', () => {
             } else {
                 variables = bodyObject.variables.events[0]
             }
-            // logTestingData(
-            //     JSON.stringify(variables),
-            //     'v2-agent-e2e',
-            //     expect.getState().currentTestName,
-            //     testRunId
-            // )
+            logTestingData(
+                JSON.stringify(variables),
+                'v2-agent-e2e',
+                expect.getState().currentTestName,
+                testRunId
+            )
         }
         if (expectedEvents) {
             expect(telemetryEvents.loggedTelemetryEventsV2).toEqual(
