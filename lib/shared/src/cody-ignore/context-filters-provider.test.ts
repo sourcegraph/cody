@@ -40,6 +40,7 @@ describe('ContextFiltersProvider', () => {
             apiResponseForFilters(contextFilters)
         )
         vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
+        vi.spyOn(graphqlClient, 'hasAccessToken').mockReturnValue(true)
         await provider.init(getRepoNamesFromWorkspaceUri)
     }
 
@@ -330,8 +331,18 @@ describe('ContextFiltersProvider', () => {
             expect(await provider.isUriIgnored(uri)).toBe('no-repo-found')
         })
 
+        it('returns a reason when there is no access token', async () => {
+            vi.spyOn(graphqlClient, 'hasAccessToken').mockReturnValue(false)
+            vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
+            await provider.init(getRepoNamesFromWorkspaceUri)
+
+            const uri = getTestURI({ repoName: 'whatever', filePath: 'foo/bar.ts' })
+            expect(await provider.isUriIgnored(uri)).toBe('no-access-token')
+        })
+
         it('excludes everything on network errors', async () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockRejectedValue(new Error('network error'))
+            vi.spyOn(graphqlClient, 'hasAccessToken').mockReturnValue(true)
             vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
             await provider.init(getRepoNamesFromWorkspaceUri)
 
@@ -353,6 +364,8 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
                 new Error('API error message')
             )
+            vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
+            vi.spyOn(graphqlClient, 'hasAccessToken').mockReturnValue(true)
             await provider.init(getRepoNamesFromWorkspaceUri)
 
             const uri = getTestURI({ repoName: 'whatever', filePath: 'foo/bar.ts' })
@@ -366,6 +379,8 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
                 new Error('API error message')
             )
+            vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
+            vi.spyOn(graphqlClient, 'hasAccessToken').mockReturnValue(true)
             await provider.init(getRepoNamesFromWorkspaceUri)
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
@@ -376,6 +391,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue({
                 data: { site: { codyContextFilters: { raw: null } } },
             })
+            vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
             await provider.init(getRepoNamesFromWorkspaceUri)
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
@@ -386,6 +402,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
                 new Error('Error: Cannot query field `codyContextFilters`')
             )
+            vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
             await provider.init(getRepoNamesFromWorkspaceUri)
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })

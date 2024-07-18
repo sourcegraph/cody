@@ -30,6 +30,7 @@ interface ParsedContextFilterItem {
 export type IsIgnored =
     | false
     | 'has-ignore-everything-filters'
+    | 'no-access-token'
     | 'non-file-uri'
     | 'no-repo-found'
     | `repo:${string}`
@@ -146,12 +147,11 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public async isUriIgnored(uri: vscode.Uri): Promise<IsIgnored> {
-        if (
-            allowedSchemes.has(uri.scheme) ||
-            (this.lastContextFiltersResponse === null && graphqlClient.isDotCom()) ||
-            this.hasAllowEverythingFilters()
-        ) {
+        if (allowedSchemes.has(uri.scheme) || this.hasAllowEverythingFilters()) {
             return false
+        }
+        if (!graphqlClient.hasAccessToken()) {
+            return 'no-access-token'
         }
         if (this.hasIgnoreEverythingFilters()) {
             return 'has-ignore-everything-filters'
@@ -184,6 +184,9 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public dispose(): void {
+        this.lastContextFiltersResponse = null
+        this.parsedContextFilters = null
+
         this.cache.clear()
 
         if (this.fetchIntervalId) {
@@ -192,7 +195,10 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     private hasAllowEverythingFilters() {
-        return this.lastContextFiltersResponse === INCLUDE_EVERYTHING_CONTEXT_FILTERS
+        return (
+            graphqlClient.isDotCom() ||
+            this.lastContextFiltersResponse === INCLUDE_EVERYTHING_CONTEXT_FILTERS
+        )
     }
 
     private hasIgnoreEverythingFilters() {
