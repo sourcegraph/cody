@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/cody",
-  "version": "5.5.9",
+  "version": "5.5.10",
   "description": "Cody JSON-RPC agent for consistent cross-editor support",
   "license": "Apache-2.0",
   "repository": {
