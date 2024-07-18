@@ -34,3 +34,8 @@ export class ContextFetcher implements vscode.Disposable {
         return result || []
     }
 }
+
+// NEXT: merge current PLG and enterprise LLM context into this class,
+// further simplifying ChatController
+// - toggle the new context on with a feature flag
+// - then revisit the server side
