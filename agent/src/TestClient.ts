@@ -166,7 +166,6 @@ export class TestClient extends MessageHandler {
                 DISABLE_FEATURE_FLAGS: params.areFeatureFlagsEnabled ? undefined : 'true',
                 DISABLE_UPSTREAM_HEALTH_PINGS: 'true',
                 CODY_LOG_EVENT_MODE: params.logEventMode,
-                CODY_TESTING: 'true',
                 ...process.env,
             },
         })

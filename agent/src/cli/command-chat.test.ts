@@ -35,7 +35,6 @@ describe('cody chat', () => {
         process.env.SRC_ENDPOINT = credentials.serverEndpoint
         process.env.DISABLE_FEATURE_FLAGS = 'true'
         process.env.CODY_TELEMETRY_EXPORTER = 'testing'
-        process.env.CODY_TESTING = 'true'
         const args = [...params.args, '--dir', tmp.rootPath, '--silent']
 
         const command = chatCommand()

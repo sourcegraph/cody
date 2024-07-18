@@ -76,6 +76,8 @@ describe('Agent', () => {
         name: 'defaultClient',
         credentials: TESTING_CREDENTIALS.dotcom,
         logEventMode: 'all',
+        // set telemetryExporter to `graphql` to receive telemetryRecorder requests and determine whats events have been logged
+        telemetryExporter: 'graphql',
     })
 
     const mockEnhancedContext: ContextItem[] = []
