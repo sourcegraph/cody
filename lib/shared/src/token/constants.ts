@@ -14,6 +14,11 @@ export const FAST_CHAT_INPUT_TOKEN_BUDGET = 4096
 export const CHAT_OUTPUT_TOKEN_BUDGET = 4000
 
 /**
+ * The special output token limit for Claude 3.5 Sonnet only
+ */
+export const CHAT_OUTPUT_TOKEN_BUDGET_3_5_SONNET = 8000
+
+/**
  * Enhanced context takes up to 60% of the total context window for chat.
  * The % is the same for both fast and regular chat models.
  */
