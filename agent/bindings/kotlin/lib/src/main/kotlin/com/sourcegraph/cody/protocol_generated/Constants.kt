@@ -61,6 +61,7 @@ object Constants {
   const val ollama = "ollama"
   const val dev = "dev"
   const val edit = "edit"
+  const val autocomplete = "autocomplete"
   const val user = "user"
   const val editor = "editor"
   const val initial = "initial"

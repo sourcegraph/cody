@@ -27,8 +27,6 @@ export interface ContextWindow {
     maxOutputTokens: number
 }
 
-type ServerSideConfig = unknown
-
 interface ClientSideConfig {
     /**
      * The API key for the model
@@ -128,8 +126,7 @@ export interface ServerModel {
 
     contextWindow: ContextWindow
 
-    clientSideConfig?: unknown
-    serverSideConfig?: ServerSideConfig
+    clientSideConfig?: ClientSideConfig
 }
 
 interface Provider {
@@ -182,11 +179,6 @@ export class Model {
      */
     public readonly clientSideConfig?: ClientSideConfig
 
-    /**
-     * The server-specific configuration for the model.
-     */
-    public readonly serverSideConfig?: ServerSideConfig
-
     // The name of the provider of the model, e.g. "Anthropic"
     public provider: string
     // The title of the model, e.g. "Claude 3 Sonnet"
@@ -207,7 +199,6 @@ export class Model {
             output: CHAT_OUTPUT_TOKEN_BUDGET,
         },
         clientSideConfig,
-        serverSideConfig,
         tags = [],
         provider,
         title,
@@ -230,7 +221,6 @@ export class Model {
         this.usage = usage
         this.contextWindow = contextWindow
         this.clientSideConfig = clientSideConfig
-        this.serverSideConfig = serverSideConfig
         this.tags = tags
 
         this.provider = this.modelRef.providerId
@@ -244,7 +234,6 @@ export class Model {
         category,
         tier,
         clientSideConfig,
-        serverSideConfig,
         contextWindow,
     }: ServerModel) {
         const ref = Model.parseModelRef(modelRef)
@@ -256,9 +245,7 @@ export class Model {
                 input: contextWindow.maxInputTokens,
                 output: contextWindow.maxOutputTokens,
             },
-            // @ts-ignore
             clientSideConfig: clientSideConfig,
-            serverSideConfig: serverSideConfig,
             tags: [category, tier],
             provider: ref.providerId,
             title: displayName,
@@ -301,7 +288,6 @@ interface ModelParams {
     usage: ModelUsage[]
     contextWindow?: ModelContextWindow
     clientSideConfig?: ClientSideConfig
-    serverSideConfig?: ServerSideConfig
     tags?: ModelTag[]
     provider?: string
     title?: string

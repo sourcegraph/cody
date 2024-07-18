@@ -2,13 +2,13 @@ import {
     type AuthStatus,
     type AutocompleteContextSnippet,
     type AutocompleteTimeouts,
-    charsToTokens,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
     type ConfigurationWithAccessToken,
-    Model,
+    type Model,
     PromptString,
+    charsToTokens,
     ps,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
@@ -23,6 +23,7 @@ import {
 } from '../text-processing'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
+import { logDebug } from '../../log'
 import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
@@ -39,7 +40,6 @@ import {
     type ProviderOptions,
     standardContextSizeHints,
 } from './provider'
-import { logDebug } from '../../log'
 
 interface OpenAICompatibleOptions {
     model: Model
@@ -138,14 +138,16 @@ class OpenAICompatibleProvider extends Provider {
         const partialRequestParams = getCompletionParams({
             providerOptions: this.options,
             timeouts: this.timeouts,
-            lineNumberDependentCompletionParams: (isStarChat(this.model) || isStarCoder(this.model)) ?
-                getLineNumberDependentCompletionParams({
-                    singlelineStopSequences: ['\n', '<|endoftext|>', '<file_sep>'],
-                    multilineStopSequences: ['\n\n', '\n\r\n', '<|endoftext|>', '<file_sep>'],
-                }) : getLineNumberDependentCompletionParams({
-                    singlelineStopSequences: ['\n'],
-                    multilineStopSequences: ['\n\n', '\n\r\n'],
-                }),
+            lineNumberDependentCompletionParams:
+                isStarChat(this.model) || isStarCoder(this.model)
+                    ? getLineNumberDependentCompletionParams({
+                          singlelineStopSequences: ['\n', '<|endoftext|>', '<file_sep>'],
+                          multilineStopSequences: ['\n\n', '\n\r\n', '<|endoftext|>', '<file_sep>'],
+                      })
+                    : getLineNumberDependentCompletionParams({
+                          singlelineStopSequences: ['\n'],
+                          multilineStopSequences: ['\n\n', '\n\r\n'],
+                      }),
         })
 
         const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
@@ -271,7 +273,9 @@ export function createProviderConfig({
     logDebug('OpenAICompatible', 'note: not all clientSideConfig options are respected yet.')
 
     // TODO(slimsag): self-hosted-models: lift ClientSideConfig defaults to a standard centralized location
-    const maxContextTokens = charsToTokens(model.clientSideConfig?.openAICompatible?.contextSizeHintTotalCharacters || 4096)
+    const maxContextTokens = charsToTokens(
+        model.clientSideConfig?.openAICompatible?.contextSizeHintTotalCharacters || 4096
+    )
 
     return {
         create(options: ProviderOptions) {

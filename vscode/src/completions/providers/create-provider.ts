@@ -16,6 +16,7 @@ import {
     createProviderConfig as createAnthropicProviderConfig,
 } from './anthropic'
 import { createProviderConfig as createExperimentalOllamaProviderConfig } from './experimental-ollama'
+import { createProviderConfig as createExperimentalOpenAICompatibleProviderConfig } from './expopenaicompatible'
 import {
     CODE_QWEN_7B,
     DEEPSEEK_CODER_7B,
@@ -27,7 +28,6 @@ import {
     createProviderConfig as createFireworksProviderConfig,
 } from './fireworks'
 import { createProviderConfig as createGeminiProviderConfig } from './google'
-import { createProviderConfig as createExperimentalOpenAICompatibleProviderConfig } from './expopenaicompatible'
 import { createProviderConfig as createOpenAICompatibleProviderConfig } from './openaicompatible'
 import type { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
