@@ -237,7 +237,13 @@ export function textContentFromSerializedLexicalNode(
 }
 
 export function editorStateToText(editorState: EditorState): string {
-    return editorState.read(() => $getRoot().getTextContent())
+    return editorState.read(() =>
+        $getRoot()
+            .getAllTextNodes()
+            .map(node => node.getTextContent())
+            .join('')
+            .trimStart()
+    )
 }
 
 export function lexicalEditorStateFromPromptString(input: PromptString): SerializedEditorState {
