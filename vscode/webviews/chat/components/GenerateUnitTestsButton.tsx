@@ -1,7 +1,7 @@
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import type React from 'react'
 import { useCallback } from 'react'
 import type { ApiPostMessage } from '../../Chat'
-import { Button } from '../../components/shadcn/ui/button'
 
 interface GenerateUnitTestsButtonProps {
     postMessage: ApiPostMessage
@@ -15,8 +15,13 @@ export const GenerateUnitTestsButton: React.FC<GenerateUnitTestsButtonProps> = (
     }, [postMessage])
 
     return (
-        <div className="tw-mx-auto tw-text-center">
-            <Button onClick={handleGenerateUnitTest}>Generate Unit Tests (Experimental)</Button>
+        <div className="tw-mx-auto">
+            <VSCodeButton appearance="secondary" onClick={handleGenerateUnitTest}>
+                Generate Unit Tests
+                <div className="tw-text-muted-foreground" style={{ marginLeft: '0.75em' }}>
+                    EXPERIMENTAL
+                </div>
+            </VSCodeButton>
         </div>
     )
 }
