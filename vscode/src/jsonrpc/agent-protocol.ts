@@ -240,7 +240,6 @@ export type ClientRequests = {
         { uri: string },
         {
             policy: 'ignore' | 'use'
-            transient: boolean
         },
     ]
 

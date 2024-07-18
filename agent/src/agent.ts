@@ -1259,7 +1259,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const isIgnored = await contextFiltersProvider.isUriIgnored(uri)
             return {
                 policy: isIgnored ? 'ignore' : 'use',
-                transient: isIgnored === 'no-access-token',
             } as const
         })
 

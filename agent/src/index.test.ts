@@ -1084,7 +1084,7 @@ describe('Agent', () => {
                     s2EnterpriseClient.request('ignore/test', { uri: sumUri.toString() })
                 s2EnterpriseClient.registerNotification('ignore/didChange', onChangeCallback)
 
-                expect(await ignoreTest()).toStrictEqual({ policy: 'use', transient: false })
+                expect(await ignoreTest()).toStrictEqual({ policy: 'use' })
 
                 await s2EnterpriseClient.request('testing/ignore/overridePolicy', {
                     include: [{ repoNamePattern: '' }],
@@ -1092,7 +1092,7 @@ describe('Agent', () => {
                 })
 
                 expect(onChangeCallback).toBeCalledTimes(1)
-                expect(await ignoreTest()).toStrictEqual({ policy: 'ignore', transient: false })
+                expect(await ignoreTest()).toStrictEqual({ policy: 'ignore' })
 
                 await s2EnterpriseClient.request('testing/ignore/overridePolicy', {
                     include: [{ repoNamePattern: '' }],
@@ -1100,7 +1100,7 @@ describe('Agent', () => {
                 })
 
                 expect(onChangeCallback).toBeCalledTimes(2)
-                expect(await ignoreTest()).toStrictEqual({ policy: 'use', transient: false })
+                expect(await ignoreTest()).toStrictEqual({ policy: 'use' })
 
                 await s2EnterpriseClient.request('testing/ignore/overridePolicy', {
                     include: [{ repoNamePattern: '' }],

@@ -26,6 +26,7 @@ describe('ContextFiltersProvider', () => {
 
     afterEach(() => {
         provider.dispose()
+        vi.clearAllTimers()
         vi.restoreAllMocks()
     })
 
@@ -40,7 +41,6 @@ describe('ContextFiltersProvider', () => {
             apiResponseForFilters(contextFilters)
         )
         vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
-        vi.spyOn(graphqlClient, 'hasAccessToken').mockReturnValue(true)
         await provider.init(getRepoNamesFromWorkspaceUri)
     }
 
@@ -331,18 +331,51 @@ describe('ContextFiltersProvider', () => {
             expect(await provider.isUriIgnored(uri)).toBe('no-repo-found')
         })
 
-        it('returns a reason when there is no access token', async () => {
-            vi.spyOn(graphqlClient, 'hasAccessToken').mockReturnValue(false)
-            vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
-            await provider.init(getRepoNamesFromWorkspaceUri)
+        it('switches to a short refresh interval for network errors', async () => {
+            const longDelay = 60 * 60 * 1000
+            const shortDelay = 7 * 1000
 
-            const uri = getTestURI({ repoName: 'whatever', filePath: 'foo/bar.ts' })
-            expect(await provider.isUriIgnored(uri)).toBe('no-access-token')
+            vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
+            const apiSpy = vi.spyOn(graphqlClient, 'fetchSourcegraphAPI')
+            apiSpy.mockResolvedValueOnce(apiResponseForFilters(null))
+            await provider.init(getRepoNamesFromWorkspaceUri)
+            expect(provider.timerStateForTest).toEqual({
+                delay: longDelay,
+                lifetime: 'durable',
+            })
+
+            // Start causing errors, check we flip to a short delay regime.
+            apiSpy.mockRejectedValueOnce(new Error('network error'))
+            await vi.runOnlyPendingTimersAsync()
+            expect(provider.timerStateForTest).toEqual({
+                delay: shortDelay,
+                lifetime: 'ephemeral',
+            })
+
+            // Errors continue, check we do exponential backoff.
+            apiSpy.mockRejectedValueOnce(new Error('network error'))
+            await vi.runOnlyPendingTimersAsync()
+            expect(provider.timerStateForTest.delay).toBeGreaterThan(shortDelay)
+
+            // Fetch successfully (a "no filters set" result). Should flip to large interval.
+            apiSpy.mockResolvedValueOnce(apiResponseForFilters(null))
+            await vi.runOnlyPendingTimersAsync()
+            expect(provider.timerStateForTest).toEqual({
+                delay: longDelay,
+                lifetime: 'durable',
+            })
+
+            // Check there's no back-off for the long interval successful results.
+            apiSpy.mockResolvedValueOnce(apiResponseForFilters(null))
+            vi.advanceTimersToNextTimer()
+            expect(provider.timerStateForTest).toEqual({
+                delay: longDelay,
+                lifetime: 'durable',
+            })
         })
 
         it('excludes everything on network errors', async () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockRejectedValue(new Error('network error'))
-            vi.spyOn(graphqlClient, 'hasAccessToken').mockReturnValue(true)
             vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
             await provider.init(getRepoNamesFromWorkspaceUri)
 
@@ -365,7 +398,6 @@ describe('ContextFiltersProvider', () => {
                 new Error('API error message')
             )
             vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
-            vi.spyOn(graphqlClient, 'hasAccessToken').mockReturnValue(true)
             await provider.init(getRepoNamesFromWorkspaceUri)
 
             const uri = getTestURI({ repoName: 'whatever', filePath: 'foo/bar.ts' })
@@ -380,7 +412,6 @@ describe('ContextFiltersProvider', () => {
                 new Error('API error message')
             )
             vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
-            vi.spyOn(graphqlClient, 'hasAccessToken').mockReturnValue(true)
             await provider.init(getRepoNamesFromWorkspaceUri)
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
