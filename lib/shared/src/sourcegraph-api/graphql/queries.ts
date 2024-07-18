@@ -203,8 +203,8 @@ query ChatIntent($query: String!, $interactionId: String!) {
 }`
 
 export const RECORD_CONTEXT_QUERY = `
-query RecordContext($interactionId: String!, $usedContextItems: [InputContextItem!]!, $discardedContextItems: [InputContextItem!]!) {
-    recordContext(interactionId: $interactionId, usedContextItems: $usedContextItems, discardedContextItems: $discardedContextItems) {
+query RecordContext($interactionId: String!, $usedContextItems: [InputContextItem!]!, $ignoredContextItems: [InputContextItem!]!) {
+    recordContext(interactionId: $interactionId, usedContextItems: $usedContextItems, ignoredContextItems: $ignoredContextItems) {
         alwaysNil
     }
 }`
@@ -214,7 +214,7 @@ query RankContext($interactionId: String!, $query: String!, $contextItems: [Inpu
     rankContext(interactionId: $interactionId, query:$query, contextItems: $contextItems) {
         ranker
         used
-        discarded
+        ignored
     }
 }`
 

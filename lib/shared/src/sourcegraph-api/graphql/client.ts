@@ -332,7 +332,7 @@ interface RankContextResponse {
     rankContext: {
         ranker: string
         used: number[]
-        discarded: number[]
+        ignored: number[]
     }
 }
 
@@ -897,14 +897,14 @@ export class SourcegraphGraphQLAPIClient {
     public async recordContext(
         interactionID: string,
         used: InputContextItem[],
-        unused: InputContextItem[]
+        ignored: InputContextItem[]
     ): Promise<RecordContextResponse | Error> {
         const response = await this.fetchSourcegraphAPI<APIResponse<RecordContextResponse>>(
             RECORD_CONTEXT_QUERY,
             {
                 interactionId: interactionID,
                 usedContextItems: used,
-                discardedContextItems: unused,
+                ignoredContextItems: ignored,
             }
         )
         return extractDataOrError(response, data => data)

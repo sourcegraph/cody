@@ -43,14 +43,14 @@ export class ContextAPIClient {
             logError('rankContext', 'ranking result', res)
             return res
         }
-        return { used: res.rankContext.used, unused: res.rankContext.discarded }
+        return { used: res.rankContext.used, ignored: res.rankContext.ignored }
     }
 
-    public async recordContext(interactionID: string, used: ContextItem[], unused: ContextItem[]) {
+    public async recordContext(interactionID: string, used: ContextItem[], ignored: ContextItem[]) {
         if (await !this.isServerSideContextAPIEnabled()) {
             return
         }
-        await this.apiClient.recordContext(interactionID, toInput(used), toInput(unused))
+        await this.apiClient.recordContext(interactionID, toInput(used), toInput(ignored))
     }
 
     private async isServerSideContextAPIEnabled() {
