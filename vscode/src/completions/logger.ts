@@ -14,7 +14,6 @@ import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemet
 
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
 import { splitSafeMetadata } from '../services/telemetry-v2'
-import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { type Span, trace } from '@opentelemetry/api'
 import { PersistenceTracker } from '../common/persistence-tracker'
@@ -29,9 +28,15 @@ import {
     type AutocompletePipelineCountedStage,
     autocompleteStageCounterLogger,
 } from '../services/autocomplete-stage-counter-logger'
+import { type CompletionIntent, CompletionIntentTelemetryMetadataMapping } from '../tree-sitter/queries'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
-import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
+import {
+    InlineCompletionsResultSource,
+    InlineCompletionsResultSourceTelemetryMetadataMapping,
+    TriggerKind,
+    TriggerKindTelemetryMetadataMapping,
+} from './get-inline-completions'
 import type { RequestParams } from './request-manager'
 import * as statistics from './statistics'
 import type {
@@ -398,6 +403,66 @@ function writeCompletionEvent<SubFeature extends string, Action extends string, 
         params.interactionID = legacyParams.id?.toString()
     }
     /**
+     * Helper function to convert privateMetadata string values to numerical based on 'telemetryMetadataMapping...' lookup. Enables data collection on `metadata`
+     */
+    function mapEnumToMetadata<
+        V extends Record<string, string>,
+        // Do not allow number keys in `telemetryMetadataMapping`
+        K extends keyof V extends string ? string : never,
+    >(
+        value: string | undefined,
+        valueEnum: V,
+        metadataMapping: Record<V[K], number>
+    ): number | undefined {
+        if (value === undefined) return undefined
+        const enumKey = Object.keys(valueEnum).find(key => valueEnum[key] === value)
+        if (!enumKey) return undefined
+        const mappingValue = metadataMapping[enumKey as V[K]]
+        return typeof mappingValue === 'number' ? mappingValue : undefined
+    }
+
+    if (params?.metadata) {
+        const mappedTriggerKind = mapEnumToMetadata(
+            params.privateMetadata?.triggerKind,
+            TriggerKind,
+            TriggerKindTelemetryMetadataMapping
+        )
+
+        if (mappedTriggerKind !== undefined) {
+            params.metadata.triggerKind = mappedTriggerKind
+        }
+
+        const mappedSource = mapEnumToMetadata(
+            params.privateMetadata?.source,
+            InlineCompletionsResultSource,
+            InlineCompletionsResultSourceTelemetryMetadataMapping
+        )
+        if (mappedSource !== undefined) {
+            params.metadata.source = mappedSource
+        }
+
+        // Need to convert since CompletionIntent only refers to a type
+        const CompletionIntentEnum: Record<CompletionIntent, CompletionIntent> = Object.keys(
+            CompletionIntentTelemetryMetadataMapping
+        ).reduce(
+            (acc, key) => {
+                acc[key as CompletionIntent] = key as CompletionIntent
+                return acc
+            },
+            {} as Record<CompletionIntent, CompletionIntent>
+        )
+
+        const mappedCompletionIntent = mapEnumToMetadata(
+            params.privateMetadata?.completionIntent,
+            CompletionIntentEnum,
+            CompletionIntentTelemetryMetadataMapping
+        )
+        if (mappedCompletionIntent !== undefined) {
+            params.metadata.completionIntent = mappedCompletionIntent
+        }
+    }
+
+    /**
      * New telemetry automatically adds extension context - we do not need to
      * include platform in the name of the event. However, we MUST prefix the
      * event with 'cody.' to have the event be categorized as a Cody event.
@@ -687,7 +752,11 @@ export function suggested(id: CompletionLogID, span?: Span): void {
 
             // We can assume that this completion will be marked as `read: true` because
             // READ_TIMEOUT_MS has passed without the completion being logged yet.
-            if (event.suggestedAt && !event.suggestionAnalyticsLoggedAt && !event.suggestionLoggedAt) {
+            if (
+                event.suggestedAt !== null &&
+                event.suggestionAnalyticsLoggedAt === null &&
+                event.suggestionLoggedAt === null
+            ) {
                 if (completionIdsMarkedAsSuggested.has(completionId)) {
                     return
                 }
@@ -865,7 +934,7 @@ function getInlineContextItemToLog(
     }
 }
 
-function logSuggestionEvents(isDotComUser: boolean): void {
+export function logSuggestionEvents(isDotComUser: boolean): void {
     const now = performance.now()
     // biome-ignore lint/complexity/noForEach: LRUCache#forEach has different typing than #entries, so just keeping it for now
     activeSuggestionRequests.forEach(completionEvent => {
@@ -882,7 +951,13 @@ function logSuggestionEvents(isDotComUser: boolean): void {
 
         // Only log suggestion events that were already shown to the user and
         // have not been logged yet.
-        if (!loadedAt || !startLoggedAt || !suggestedAt || suggestionLoggedAt || !params.id) {
+        if (
+            loadedAt === null ||
+            startLoggedAt === null ||
+            suggestedAt === null ||
+            suggestionLoggedAt !== null ||
+            params.id === null
+        ) {
             return
         }
         completionEvent.suggestionLoggedAt = now

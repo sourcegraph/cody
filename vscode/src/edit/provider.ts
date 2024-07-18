@@ -17,6 +17,10 @@ import type { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 import { isNetworkError } from '../services/AuthProvider'
 
+import {
+    DEFAULT_EVENT_SOURCE,
+    EventSourceTelemetryMetadataMapping,
+} from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { workspace } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
 import { CodyTaskState } from '../non-stop/utils'
@@ -26,6 +30,7 @@ import type { EditManagerOptions } from './manager'
 import { responseTransformer } from './output/response-transformer'
 import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
+import { EditIntentTelemetryMetadataMapping, EditModeTelemetryMetadataMapping } from './types'
 import { isStreamedIntent } from './utils/edit-intent'
 
 interface EditProviderOptions extends EditManagerOptions {
@@ -87,7 +92,6 @@ export class EditProvider {
                     return Promise.resolve()
                 },
             })
-
             if (this.config.task.intent === 'test') {
                 if (this.config.task.destinationFile) {
                     // We have already provided a destination file,
@@ -192,9 +196,11 @@ export class EditProvider {
         if (!isMessageInProgress) {
             const { task } = this.config
             const legacyMetadata = {
-                intent: task.intent,
-                mode: task.mode,
-                source: task.source,
+                intent: EditIntentTelemetryMetadataMapping[task.intent] || task.intent,
+                mode: EditModeTelemetryMetadataMapping[task.mode] || task.mode,
+                source:
+                    EventSourceTelemetryMetadataMapping[task.source || DEFAULT_EVENT_SOURCE] ||
+                    task.source,
                 ...countCode(response),
             }
             const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)

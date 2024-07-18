@@ -7,11 +7,14 @@ import {
     type Guardrails,
     type SourcegraphCompletionsClient,
     SourcegraphGuardrailsClient,
+    featureFlagProvider,
     graphqlClient,
     isError,
 } from '@sourcegraph/cody-shared'
 
+import { ContextAPIClient } from './chat/context/contextAPIClient'
 import { createClient as createCodeCompletionsClient } from './completions/client'
+import type { ConfigWatcher } from './configwatcher'
 import type { PlatformContext } from './extension.common'
 import type { ContextRankerConfig } from './local-context/context-ranking'
 import type { ContextRankingController } from './local-context/context-ranking'
@@ -28,6 +31,7 @@ interface ExternalServices {
     contextRanking: ContextRankingController | undefined
     localEmbeddings: LocalEmbeddingsController | undefined
     symfRunner: SymfRunner | undefined
+    contextAPIClient: ContextAPIClient | undefined
 
     /** Update configuration for all of the services in this interface. */
     onConfigurationChange: (newConfig: ExternalServicesConfiguration) => void
@@ -48,7 +52,7 @@ type ExternalServicesConfiguration = Pick<
 
 export async function configureExternalServices(
     context: vscode.ExtensionContext,
-    initialConfig: ExternalServicesConfiguration,
+    config: ConfigWatcher<ExternalServicesConfiguration>,
     platform: Pick<
         PlatformContext,
         | 'createLocalEmbeddingsController'
@@ -60,17 +64,13 @@ export async function configureExternalServices(
     >,
     authProvider: AuthProvider
 ): Promise<ExternalServices> {
+    const initialConfig = config.get()
     const sentryService = platform.createSentryService?.(initialConfig)
     const openTelemetryService = platform.createOpenTelemetryService?.(initialConfig)
     const completionsClient = platform.createCompletionsClient(initialConfig, logger)
     const codeCompletionsClient = createCodeCompletionsClient(initialConfig, logger)
 
-    const symfRunner = platform.createSymfRunner?.(
-        context,
-        initialConfig.serverEndpoint,
-        initialConfig.accessToken,
-        completionsClient
-    )
+    const symfRunner = platform.createSymfRunner?.(context, config, completionsClient)
 
     if (initialConfig.codebase && isError(await graphqlClient.getRepoId(initialConfig.codebase))) {
         logDebug(
@@ -89,6 +89,8 @@ export async function configureExternalServices(
 
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient)
 
+    const contextAPIClient = new ContextAPIClient(graphqlClient, featureFlagProvider)
+
     return {
         chatClient,
         completionsClient,
@@ -97,6 +99,7 @@ export async function configureExternalServices(
         localEmbeddings,
         contextRanking,
         symfRunner,
+        contextAPIClient,
         onConfigurationChange: newConfig => {
             sentryService?.onConfigurationChange(newConfig)
             openTelemetryService?.onConfigurationChange(newConfig)

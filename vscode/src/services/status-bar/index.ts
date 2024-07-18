@@ -5,7 +5,7 @@ import { isCodyIgnored } from '../../cody-ignore/utils'
 import type { AuthProvider } from '../AuthProvider'
 import { CodyStatusError } from './CodyStatusError'
 import type { CodyStatusBar, StatusBarErrorName } from './types'
-import { openStatusBarQuickPicks } from './utils'
+import { openCodySettingsQuickPicks } from './utils'
 
 const ICONS = {
     DEFAULT: '$(cody-logo-heavy)',
@@ -20,42 +20,19 @@ const TOOLTIPS = {
     NETWORK_ERROR: 'Resolve network issues for Cody to work again',
 }
 
+const COLORS = {
+    DEFAULT: new vscode.ThemeColor('statusBarItem.activeBackground'),
+    WARNING: new vscode.ThemeColor('statusBarItem.warningBackground'),
+    ERROR: new vscode.ThemeColor('statusBarItem.errorBackground'),
+}
+
+const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
+
+let loadingCount = 0
+
 export function createStatusBar(authProvider: AuthProvider): CodyStatusBar {
-    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
     statusBarItem.command = 'cody.status-bar.interacted'
-    statusBarItem.show()
-
-    let loadingCount = 0
-
-    const updateStatusBar = (newStatus?: AuthStatus) => {
-        if (loadingCount > 0) {
-            statusBarItem.text = ICONS.LOADING
-        }
-
-        const authStatus = newStatus ?? authProvider.getAuthStatus()
-        if (authStatus) {
-            if (authStatus.showNetworkError) {
-                statusBarItem.text = `${ICONS.DEFAULT} Connection Issues`
-                statusBarItem.tooltip = TOOLTIPS.NETWORK_ERROR
-                statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground')
-                return
-            }
-            if (!authStatus.isLoggedIn) {
-                statusBarItem.text = `${ICONS.DEFAULT} Sign In`
-                statusBarItem.tooltip = TOOLTIPS.SIGN_IN
-                statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
-                return
-            }
-        }
-
-        statusBarItem.backgroundColor = CodyStatusError.errors.length
-            ? new vscode.ThemeColor('statusBarItem.warningBackground')
-            : new vscode.ThemeColor('statusBarItem.activeBackground')
-
-        if (CodyStatusError.errors.length) {
-            statusBarItem.tooltip = CodyStatusError.errors[0].title
-        }
-    }
+    statusBarItem.text = ICONS.DEFAULT
 
     const command = vscode.commands.registerCommand('cody.status-bar.interacted', async () => {
         const authStatus = authProvider.getAuthStatus()
@@ -63,7 +40,7 @@ export function createStatusBar(authProvider: AuthProvider): CodyStatusBar {
             privateMetadata: { loggedIn: Boolean(authStatus?.isLoggedIn) },
         })
         return authStatus?.isLoggedIn
-            ? openStatusBarQuickPicks()
+            ? openCodySettingsQuickPicks()
             : vscode.commands.executeCommand('cody.chat.focus')
     })
 
@@ -77,16 +54,18 @@ export function createStatusBar(authProvider: AuthProvider): CodyStatusBar {
         await updateIgnoreStatus(editor?.document.uri)
     })
 
+    const authStatus = () => authProvider.getAuthStatus()
+
     return {
         startLoading(label: string, { timeoutMs }: { timeoutMs?: number } = {}) {
             loadingCount++
             statusBarItem.tooltip = label
-            updateStatusBar()
+            updateStatusBar(authStatus())
 
             const stopLoading = () => {
                 loadingCount--
                 updateIgnoreStatus(vscode.window.activeTextEditor?.document?.uri)
-                updateStatusBar()
+                updateStatusBar(authStatus())
             }
 
             if (timeoutMs) {
@@ -98,11 +77,53 @@ export function createStatusBar(authProvider: AuthProvider): CodyStatusBar {
         addError: CodyStatusError.add,
         hasError: (errorName: StatusBarErrorName) =>
             CodyStatusError.errors.some(e => e.errorType === errorName),
-        syncAuthStatus: (newStatus: AuthStatus) => updateStatusBar(newStatus),
+        setAuthStatus: (newStatus: AuthStatus) => updateStatusBar(newStatus),
         dispose: () => {
             statusBarItem.dispose()
             command.dispose()
             onDocumentChange.dispose()
         },
+    }
+}
+
+const updateStatusBar = (authStatus: AuthStatus) => {
+    if (loadingCount > 0) {
+        statusBarItem.text = ICONS.LOADING
+    }
+
+    if (authStatus) {
+        handleAuthStatusChange(authStatus)
+    }
+
+    if (CodyStatusError.errors.length) {
+        statusBarItem.tooltip = CodyStatusError.errors[0].title
+        statusBarItem.backgroundColor = COLORS.WARNING
+    } else {
+        statusBarItem.text = ICONS.DEFAULT
+        statusBarItem.backgroundColor = COLORS.DEFAULT
+    }
+
+    statusBarItem.show()
+}
+
+function handleAuthStatusChange(authStatus: AuthStatus) {
+    // Only show this if authStatus is present, otherwise you get a flash of
+    // yellow status bar icon when extension first loads but login hasn't
+    // initialized yet
+    if (authStatus.isOfflineMode) {
+        statusBarItem.text = `${ICONS.DEFAULT} Offline`
+        statusBarItem.tooltip = 'Cody is in offline mode'
+        statusBarItem.backgroundColor = COLORS.WARNING
+        CodyStatusError.add(
+            new CodyStatusError('Offline Mode', 'Cody is in offline mode', 'auth', false)
+        )
+    } else if (authStatus.showNetworkError) {
+        statusBarItem.text = `${ICONS.DEFAULT} Connection Issues`
+        statusBarItem.tooltip = TOOLTIPS.NETWORK_ERROR
+        statusBarItem.backgroundColor = COLORS.ERROR
+    } else if (!authStatus.isLoggedIn) {
+        statusBarItem.text = `${ICONS.DEFAULT} Sign In`
+        statusBarItem.tooltip = TOOLTIPS.SIGN_IN
+        statusBarItem.backgroundColor = COLORS.WARNING
     }
 }

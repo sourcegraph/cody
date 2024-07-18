@@ -51,6 +51,7 @@ export interface RequestManagerResult {
     completions: InlineCompletionItemWithAnalytics[]
     source: InlineCompletionsResultSource
     isFuzzyMatch: boolean
+    updatedLogId?: CompletionLogID
 }
 
 interface RequestsManagerParams {
@@ -58,6 +59,7 @@ interface RequestsManagerParams {
     provider: Provider
     context: AutocompleteContextSnippet[]
     isCacheEnabled: boolean
+    logId: CompletionLogID
     tracer?: CompletionProviderTracer
 }
 
@@ -94,7 +96,7 @@ export class RequestManager {
     public async request(params: RequestsManagerParams): Promise<RequestManagerResult> {
         this.latestRequestParams = params
 
-        const { requestParams, provider, context, tracer } = params
+        const { requestParams, provider, context, tracer, logId } = params
 
         addAutocompleteDebugEvent('RequestManager.request')
 
@@ -154,7 +156,11 @@ export class RequestManager {
 
                         request.lastCompletions = processedCompletions
 
-                        this.testIfResultCanBeRecycledForInflightRequests(request, processedCompletions)
+                        this.testIfResultCanBeRecycledForInflightRequests(
+                            request,
+                            processedCompletions,
+                            logId
+                        )
                     }
 
                     // Save hot streak completions for later use.
@@ -198,7 +204,8 @@ export class RequestManager {
      */
     private testIfResultCanBeRecycledForInflightRequests(
         resolvedRequest: InflightRequest,
-        items: InlineCompletionItemWithAnalytics[]
+        items: InlineCompletionItemWithAnalytics[],
+        logId: CompletionLogID
     ): void {
         const { document, position, docContext, selectedCompletionInfo } = resolvedRequest.params
         const lastCandidate: LastInlineCompletionCandidate = {
@@ -207,7 +214,7 @@ export class RequestManager {
             lastTriggerDocContext: docContext,
             lastTriggerSelectedCompletionInfo: selectedCompletionInfo,
             result: {
-                logId: '' as CompletionLogID,
+                logId,
                 source: InlineCompletionsResultSource.Network,
                 items,
             },
@@ -238,6 +245,8 @@ export class RequestManager {
                     completions: synthesizedItems,
                     source: InlineCompletionsResultSource.CacheAfterRequestStart,
                     isFuzzyMatch: false,
+                    // Re-use the logId, so we do not log this as a separate completion.
+                    updatedLogId: synthesizedCandidate.logId,
                 })
                 request.abortController.abort()
                 this.inflightRequests.delete(request)
@@ -338,7 +347,9 @@ class RequestCache {
     private toCacheKey(requestParams: Pick<RequestParams, 'docContext'>): CacheKey {
         const { prefix, currentLinePrefix, nextNonEmptyLine } = requestParams.docContext
 
-        const prefixWithoutCurrentLinePrefix = prefix.slice(0, -currentLinePrefix.length).trim()
+        const prefixWithoutCurrentLinePrefix = (
+            currentLinePrefix.length ? prefix.slice(0, -currentLinePrefix.length) : prefix
+        ).trim()
 
         const prevNonEmptyLines: string[] = []
         let remainingPrefix = prefixWithoutCurrentLinePrefix

@@ -5,6 +5,7 @@ import { createContext, useContext } from 'react'
 export interface ChatModelContext {
     chatModels?: Model[]
     onCurrentChatModelChange?: (model: Model) => void
+    serverSentModelsEnabled?: boolean
 }
 
 const context = createContext<ChatModelContext>({})
@@ -33,5 +34,5 @@ export function useChatModelByID(
 
 export function useCurrentChatModel(): Model | undefined {
     const { chatModels } = useChatModelContext()
-    return chatModels?.find(model => model.default) ?? chatModels?.[0]
+    return chatModels?.[0]
 }

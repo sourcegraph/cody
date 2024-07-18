@@ -1,11 +1,22 @@
 import * as vscode from 'vscode'
 import type { StatusBarErrorName } from './types'
 
+const ONE_HOUR = 60 * 60 * 1000
+
+/**
+ * It is used to create and manage status bar errors that can be displayed to the user.
+ * Represents a status bar error that can be displayed and managed.
+ *
+ * Each `CodyStatusError` instance has a title, description, error type, and options to control how the error is displayed and removed.
+ * The errors are stored in a static array and are automatically cleared after a certain time or when they are manually removed.
+ */
 export class CodyStatusError {
     private createdAt = Date.now()
 
-    public onDidChangeErrors
-    public _onDidChangeErrors
+    private static _errors: CodyStatusError[] = []
+
+    public onDidChangeErrors = new vscode.EventEmitter()
+    public _onDidChangeErrors = this.onDidChangeErrors.event
 
     constructor(
         public title: string,
@@ -15,9 +26,10 @@ export class CodyStatusError {
         public removeAfterEpoch?: number,
         public onShow?: () => void,
         public onSelect?: () => void
-    ) {
-        this.onDidChangeErrors = new vscode.EventEmitter()
-        this._onDidChangeErrors = this.onDidChangeErrors.event
+    ) {}
+
+    static get errors(): CodyStatusError[] {
+        return CodyStatusError._errors
     }
 
     // Clean up all errors after a certain time so they don't accumulate forever
@@ -36,27 +48,20 @@ export class CodyStatusError {
         // rerender()
     }
 
-    private static _errors: CodyStatusError[] = []
-
     static add(error: CodyStatusError) {
         CodyStatusError._errors.push(error)
 
-        if (error.removeAfterEpoch && error.removeAfterEpoch > error.createdAt) {
-            setTimeout(
-                CodyStatusError.clearOutdatedErrors,
-                Math.min(ONE_HOUR, error.removeAfterEpoch - error.createdAt)
-            )
-        } else {
-            setTimeout(CodyStatusError.clearOutdatedErrors, ONE_HOUR)
-        }
-
-        // rerender()
+        setTimeout(
+            CodyStatusError.clearOutdatedErrors,
+            error.removeAfterEpoch && error.removeAfterEpoch > error.createdAt
+                ? Math.min(ONE_HOUR, error.removeAfterEpoch - error.createdAt)
+                : ONE_HOUR
+        )
 
         return () => {
             const index = CodyStatusError._errors.indexOf(error)
             if (index !== -1) {
                 CodyStatusError._errors.splice(index, 1)
-                // rerender()
             }
         }
     }
@@ -68,10 +73,6 @@ export class CodyStatusError {
         }
     }
 
-    static get errors(): CodyStatusError[] {
-        return CodyStatusError._errors
-    }
-
     static dispose() {
         for (const error of CodyStatusError._errors) {
             error.onDidChangeErrors.dispose()
@@ -79,5 +80,3 @@ export class CodyStatusError {
         CodyStatusError._errors = []
     }
 }
-
-const ONE_HOUR = 60 * 60 * 1000

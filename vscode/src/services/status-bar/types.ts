@@ -22,11 +22,11 @@ export interface CodyStatusBar {
     ): () => void
     addError(error: StatusBarError): () => void
     hasError(error: StatusBarErrorName): boolean
-    syncAuthStatus(newStatus: AuthStatus): void
+    setAuthStatus(newStatus: AuthStatus): void
 }
 
 export interface StatusBarItem extends QuickPickItem {
     onSelect: () => Promise<void>
 }
 
-export type StatusBarErrorName = 'auth' | 'RateLimitError' | 'AutoCompleteDisabledByAdmin'
+export type StatusBarErrorName = 'auth' | 'RateLimitError' | 'AutoCompleteDisabledByAdmin' | 'info'
