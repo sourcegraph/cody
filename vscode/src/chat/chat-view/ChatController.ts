@@ -717,9 +717,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                   contextRanking: this.contextRanking,
                               })
                               // add a callback, but return the original context
-                              context.then(c =>
+                              context.then(c => {
+                                  console.log('# result', c)
                                   this.contextAPIClient?.rankContext(requestID, inputText.toString(), c)
-                              )
+                              })
                               return context
                           }
                         : undefined,

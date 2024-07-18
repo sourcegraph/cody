@@ -126,6 +126,7 @@ export class RemoteSearch implements ContextStatusProvider {
             return []
         }
         const rewritten = await rewriteKeywordQuery(this.completions, query)
+        console.log('# graphqlClient.contextSearch', repoIDs, rewritten)
         const result = await graphqlClient.contextSearch(repoIDs, rewritten)
         if (isError(result)) {
             throw result
