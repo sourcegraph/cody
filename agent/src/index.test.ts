@@ -102,11 +102,17 @@ describe('Agent', () => {
     // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
     const ignoredUri = workspace.file('src', 'isIgnored.ts')
 
-    it('extensionConfiguration/change (handle errors)', async () => {
+    it('extensionConfiguration/change & chat/models (handle errors)', async () => {
         // Send two config change notifications because this is what the
         // JetBrains client does and there was a bug where everything worked
         // fine as long as we didn't send the second unauthenticated config
         // change.
+        const initModelName = 'anthropic/claude-3-5-sonnet-20240620'
+        const {
+            models: [initModel],
+        } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+        expect(initModel.model).toStrictEqual(initModelName)
+
         const invalid = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
             anonymousUserID: 'abcde1234',
@@ -117,6 +123,9 @@ describe('Agent', () => {
             customHeaders: {},
         })
         expect(invalid?.isLoggedIn).toBeFalsy()
+        const invalidModels = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+        expect(invalidModels.models).toStrictEqual([])
+
         const valid = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
             anonymousUserID: 'abcde1234',
@@ -125,6 +134,12 @@ describe('Agent', () => {
             customHeaders: {},
         })
         expect(valid?.isLoggedIn).toBeTruthy()
+
+        const reauthenticatedModels = await client.request('chat/models', {
+            modelUsage: ModelUsage.Chat,
+        })
+        expect(reauthenticatedModels.models).not.toStrictEqual([])
+        expect(reauthenticatedModels.models[0].model).toStrictEqual(initModelName)
 
         // Please don't update the recordings to use a different account without consulting #team-cody-core.
         // When changing an account, you also need to update the REDACTED_ hash above.

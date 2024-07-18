@@ -164,7 +164,7 @@ export class CustomCommandsManager implements vscode.Disposable {
                 )
             }
         } catch (error) {
-            console.error('CustomCommandsProvider:build', 'failed', { verbose: error })
+            logError('CustomCommandsProvider:build', 'failed', { verbose: error })
         }
         return this.customCommandsMap
     }
