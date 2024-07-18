@@ -16,7 +16,11 @@ export const GenerateUnitTestsButton: React.FC<GenerateUnitTestsButtonProps> = (
 
     return (
         <div className="tw-mx-auto">
-            <VSCodeButton appearance="secondary" onClick={handleGenerateUnitTest}>
+            <VSCodeButton
+                appearance="secondary"
+                onClick={handleGenerateUnitTest}
+                title="(Sourcegraph Employee Only) Leave feedback in #wg-improve-generate-unit-tests"
+            >
                 Generate Unit Tests
                 <div className="tw-text-muted-foreground" style={{ marginLeft: '0.75em' }}>
                     EXPERIMENTAL
