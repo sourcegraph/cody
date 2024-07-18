@@ -8,7 +8,6 @@ import {
     type DefaultCodyCommands,
     type Guardrails,
     ModelsService,
-    PromptMixin,
     PromptString,
     contextFiltersProvider,
     featureFlagProvider,
@@ -287,30 +286,21 @@ async function initializeSingletons(
     // Allow the VS Code app's instance of ModelsService to use local storage to persist
     // user's model choices
     ModelsService.setStorage(localStorage)
-
     disposables.push(upstreamHealthProvider, contextFiltersProvider)
     setCommandController(platform.createCommandsProvider?.())
     repoNameResolver.init(authProvider)
     await configWatcher.onChange(
-        config => {
+        async config => {
             const promises: Promise<void>[] = []
 
             promises.push(localStorage.setConfig(config))
             graphqlClient.setConfig(config)
-            promises.push(
-                featureFlagProvider
-                    .refresh()
-                    .then(() =>
-                        PromptMixin.updateContextPreamble(
-                            isExtensionModeDevOrTest || isRunningInsideAgent()
-                        )
-                    )
-            )
+            promises.push(featureFlagProvider.refresh())
             promises.push(contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri))
             ModelsService.onConfigChange()
             upstreamHealthProvider.onConfigurationChange(config)
 
-            return Promise.all(promises).then()
+            await Promise.all(promises).then()
         },
         disposables,
         { runImmediately: true }
