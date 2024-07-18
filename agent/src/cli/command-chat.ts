@@ -125,11 +125,15 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         name: codyCliClientName,
         version: options.isTesting ? '6.0.0-SNAPSHOT' : packageJson.version,
         workspaceRootUri: workspaceRootUri.toString(),
+        capabilities: {
+            completions: 'none',
+        },
         extensionConfiguration: {
             serverEndpoint: options.endpoint,
             accessToken: options.accessToken,
             customHeaders: {},
             customConfiguration: {
+                'cody.internal.autocomplete.entirelyDisabled': true,
                 'cody.experimental.symf.enabled': false,
                 'cody.experimental.telemetry.enabled': options.isTesting ? false : undefined,
             },
@@ -138,6 +142,12 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     spinner.text = 'Initializing...'
     const { serverInfo, client, messageHandler } = await newEmbeddedAgentClient(clientInfo, activate)
     const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+
+    if (options.debug) {
+        messageHandler.registerNotification('debug/message', message => {
+            console.log(`${message.channel}: ${message.message}`)
+        })
+    }
 
     messageHandler.registerNotification('webview/postMessage', message => {
         if (message.message.type === 'transcript') {
