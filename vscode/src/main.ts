@@ -6,6 +6,7 @@ import {
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
     type DefaultCodyCommands,
+    FeatureFlag,
     type Guardrails,
     ModelsService,
     PromptString,
@@ -163,6 +164,12 @@ const register = async (
         isExtensionModeDevOrTest,
         disposables
     )
+
+    featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatInSidebar).then(chatInSidebar => {
+        if (chatInSidebar) {
+            vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', true)
+        }
+    })
 
     // Ensure Git API is available
     disposables.push(await initVSCodeGitApi())

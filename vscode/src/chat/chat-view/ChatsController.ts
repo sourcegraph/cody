@@ -7,6 +7,7 @@ import {
     type ChatClient,
     CodyIDE,
     DEFAULT_EVENT_SOURCE,
+    FeatureFlag,
     type Guardrails,
     ModelUsage,
     ModelsService,
@@ -28,6 +29,7 @@ import { getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import type { AuthProvider } from '../../services/AuthProvider'
+import { localStorage } from '../../services/LocalStorageProvider'
 import type { ContextAPIClient } from '../context/contextAPIClient'
 import {
     ChatController,
@@ -57,6 +59,10 @@ export class ChatsController implements vscode.Disposable {
     // View controller for the support panel
     public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
 
+    // Chat history view
+    public historyTreeViewProvider = new TreeViewProvider('chat', featureFlagProvider)
+    public historyTreeView: vscode.TreeView<vscode.TreeItem>
+
     // We keep track of the currently authenticated account and dispose open chats when it changes
     private currentAuthAccount: undefined | { endpoint: string; primaryEmail: string; username: string }
 
@@ -75,9 +81,21 @@ export class ChatsController implements vscode.Disposable {
     ) {
         logDebug('ChatsController:constructor', 'init')
         this.panel = this.createChatController()
+
         this.disposables.push(
             this.authProvider.onChange(authStatus => this.setAuthStatus(authStatus), {
                 runImmediately: true,
+            })
+        )
+
+        this.historyTreeView = vscode.window.createTreeView('cody.chat.tree.view', {
+            treeDataProvider: this.historyTreeViewProvider,
+        })
+        this.disposables.push(this.historyTreeViewProvider)
+        this.disposables.push(this.historyTreeView)
+        this.disposables.push(
+            chatHistory.onHistoryChanged(() => {
+                this.historyTreeViewProvider.refresh()
             })
         )
     }
@@ -99,6 +117,8 @@ export class ChatsController implements vscode.Disposable {
 
         this.supportTreeViewProvider.setAuthStatus(authStatus)
         this.panel.setAuthStatus(authStatus)
+
+        this.historyTreeViewProvider.updateTree(authStatus)
     }
 
     public async restoreToPanel(panel: vscode.WebviewPanel, chatID: string): Promise<void> {
@@ -153,16 +173,26 @@ export class ChatsController implements vscode.Disposable {
                 vscode.commands.executeCommand('cody.chat.focus')
             ),
             vscode.commands.registerCommand('cody.chat.newPanel', async () => {
-                await this.panel.clearAndRestartSession()
-                await vscode.commands.executeCommand('cody.chat.focus')
+                if (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatInSidebar)) {
+                    await this.panel.clearAndRestartSession()
+                    await vscode.commands.executeCommand('cody.chat.focus')
+                } else {
+                    this.getOrCreateEditorChatController()
+                }
             }),
             vscode.commands.registerCommand(
                 'cody.chat.toggle',
                 async (ops: { editorFocus: boolean }) => {
-                    if (ops.editorFocus) {
-                        await vscode.commands.executeCommand('cody.chat.focus')
+                    if (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatInSidebar)) {
+                        if (ops.editorFocus) {
+                            await vscode.commands.executeCommand('cody.chat.focus')
+                        } else {
+                            await vscode.commands.executeCommand(
+                                'workbench.action.focusActiveEditorGroup'
+                            )
+                        }
                     } else {
-                        await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup')
+                        this.getOrCreateEditorChatController()
                     }
                 }
             ),

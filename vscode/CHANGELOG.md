@@ -20,6 +20,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Autocomplete: Fixed the request manager cache keys computation. [pull/4902](https://github.com/sourcegraph/cody/pull/4902)
 - Autocomplete: Fixed the default model value for the Anthropic autocomplete provider. [pull/4803](https://github.com/sourcegraph/cody/pull/4803)
+- It is no longer possible to add a file to chat context by right clicking the file in the file explorer.
 
 ## 1.26.3
 
