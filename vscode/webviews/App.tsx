@@ -26,6 +26,7 @@ import { type ChatModelContext, ChatModelContextProvider } from './chat/models/c
 import { ClientStateContextProvider, useClientActionDispatcher } from './client/clientState'
 
 import { WithContextProviders } from './mentions/providers'
+import { AccountTab } from './tabs/AccountTab'
 import { CommandsTab } from './tabs/Commands'
 import { HistoryTab } from './tabs/History'
 import { TabsBar, View } from './tabs/TabsBar'
@@ -297,6 +298,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 )}
                 {view === 'history' && <HistoryTab userHistory={userHistory} />}
                 {view === 'commands' && <CommandsTab IDE={config.agentIDE} commands={commandList} />}
+                {view === 'account' && <AccountTab userInfo={userAccountInfo} />}
             </Tabs.Content>
         </Tabs.Root>
     )

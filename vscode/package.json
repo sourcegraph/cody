@@ -503,14 +503,6 @@
         "enablement": "cody.activated && cody.hasChatHistory"
       },
       {
-        "command": "cody.chat.history.panel",
-        "category": "Cody",
-        "title": "Chat History",
-        "group": "Cody",
-        "icon": "$(list-unordered)",
-        "enablement": "cody.activated && cody.hasChatHistory"
-      },
-      {
         "command": "cody.search.index-update",
         "category": "Cody",
         "group": "Cody",
@@ -901,21 +893,9 @@
           "visibility": "visible"
         },
         {
-          "command": "cody.chat.history.panel",
-          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated",
-          "group": "navigation@3",
-          "visibility": "visible"
-        },
-        {
           "command": "cody.chat.view.popOut",
           "when": "activeWebviewPanelId == cody.editorPanel && cody.activated && !isAuxiliaryEditorPart",
           "group": "navigation@4",
-          "visibility": "visible"
-        },
-        {
-          "command": "cody.settings.extension.chat",
-          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated",
-          "group": "navigation@5",
           "visibility": "visible"
         }
       ],

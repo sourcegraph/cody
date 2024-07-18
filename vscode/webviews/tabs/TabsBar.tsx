@@ -61,7 +61,7 @@ const tabItems: TabConfig[] = [
         ],
     },
     { view: View.Settings, Icon: SettingsIcon, command: 'cody.status-bar.interacted' },
-    { view: View.Account, Icon: CircleUserIcon, command: 'cody.auth.account' },
+    { view: View.Account, Icon: CircleUserIcon },
 ]
 
 interface TabButtonProps {

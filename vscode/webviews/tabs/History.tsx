@@ -2,6 +2,7 @@ import type { SerializedChatTranscript } from '@sourcegraph/cody-shared'
 import { MessageSquareTextIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { getRelativeChatPeriod } from '../../src/common/time-date'
+import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 interface HistoryTabProps {
@@ -23,35 +24,35 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
     )
 
     return (
-        <div className="tw-container tw-mx-auto tw-flex tw-flex-col tw-px-8 tw-pt-4">
+        <div className="tw-flex tw-flex-col tw-gap-4 tw-px-8">
             {Array.from(chatByPeriod, ([period, chats]) => (
-                <div key={period}>
-                    <p className="tw-mt-2 tw-text-muted-foreground">{period}</p>
-                    <div
-                        className="tw-container tw-mx-auto tw-flex tw-flex-col tw-truncate"
-                        key={period}
-                    >
+                <div className="tw-flex tw-flex-col tw-gap-2 tw-w-full" key={period}>
+                    <p className="tw-py-3 tw-text-muted-foreground">{period}</p>
+                    <div className="tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4 tw-bg-popover tw-border tw-border-border tw-rounded-lg tw-items-baseline">
                         {chats.map(({ interactions, id }) => {
                             const lastMessage =
                                 interactions[interactions.length - 1]?.humanMessage?.text?.trim()
                             return (
-                                <button
+                                <Button
                                     key={id}
+                                    variant="text"
+                                    size="none"
+                                    title={lastMessage}
                                     onClick={() =>
                                         getVSCodeAPI().postMessage({
                                             command: 'restoreHistory',
                                             chatID: id,
                                         })
                                     }
-                                    type="button"
-                                    className="tw-flex tw-text-foreground tw-border tw-border-border tw-bg-transparent hover:tw-text-muted-foreground tw-py-3 tw-items-end tw-border-none tw-transition-all tw-justify-start"
-                                    title={lastMessage}
+                                    className="tw-w-full"
                                 >
-                                    <span className="tw-truncate tw-text-sm">
+                                    <span className="tw-truncate tw-w-full">
                                         <MessageSquareTextIcon className="tw-inline-flex" size={13} />
-                                        <span className="tw-px-2">{lastMessage}</span>
+                                        <span className="tw-px-2 tw-truncate tw-w-full">
+                                            {lastMessage}
+                                        </span>
                                     </span>
-                                </button>
+                                </Button>
                             )
                         })}
                     </div>
