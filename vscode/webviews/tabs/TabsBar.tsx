@@ -56,9 +56,6 @@ const tabItems: TabConfig[] = [
     {
         view: View.Commands,
         Icon: ZapIcon,
-        SubIcons: [
-            { title: 'Commands Settings', Icon: SettingsIcon, command: 'cody.menu.commands-settings' },
-        ],
     },
     { view: View.Settings, Icon: SettingsIcon, command: 'cody.status-bar.interacted' },
     { view: View.Account, Icon: CircleUserIcon },

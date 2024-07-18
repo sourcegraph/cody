@@ -27,8 +27,8 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
         <div className="tw-flex tw-flex-col tw-gap-4 tw-px-8">
             {Array.from(chatByPeriod, ([period, chats]) => (
                 <div className="tw-flex tw-flex-col tw-gap-2 tw-w-full" key={period}>
-                    <p className="tw-py-3 tw-text-muted-foreground">{period}</p>
-                    <div className="tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4 tw-bg-popover tw-border tw-border-border tw-rounded-lg tw-items-baseline">
+                    <p className="tw-py-3">{period}</p>
+                    <div className="tw-p-4 tw-px-8 tw-flex tw-flex-col tw-gap-4 tw-bg-popover tw-border tw-border-border tw-rounded-lg tw-items-baseline">
                         {chats.map(({ interactions, id }) => {
                             const lastMessage =
                                 interactions[interactions.length - 1]?.humanMessage?.text?.trim()
@@ -44,14 +44,10 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
                                             chatID: id,
                                         })
                                     }
-                                    className="tw-w-full"
+                                    className="tw-truncate tw-px-2 hover:tw-bg-button-background-hover"
                                 >
-                                    <span className="tw-truncate tw-w-full">
-                                        <MessageSquareTextIcon className="tw-inline-flex" size={13} />
-                                        <span className="tw-px-2 tw-truncate tw-w-full">
-                                            {lastMessage}
-                                        </span>
-                                    </span>
+                                    <MessageSquareTextIcon className="tw-inline-flex" size={13} />
+                                    <span className="tw-px-2 tw-truncate tw-w-full">{lastMessage}</span>
                                 </Button>
                             )
                         })}

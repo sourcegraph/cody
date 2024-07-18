@@ -17,8 +17,8 @@ const buttonVariants = cva(
                 secondary:
                     'tw-bg-button-secondary-background tw-text-button-secondary-foreground hover:tw-bg-button-secondary-background-hover disabled:tw-opacity-75',
                 ghost: 'tw-opacity-80 hover:tw-opacity-100',
+                text: 'tw-text-foreground tw-bg-transparent tw-items-end tw-border-none tw-transition-all tw-items-center tw-px-0 tw-w-full tw-text-left',
                 link: 'tw-text-link tw-underline-offset-4 hover:tw-underline hover:tw-text-link-hover',
-                text: 'tw-bg-transparent  tw-items-end tw-border-none tw-transition-all tw-justify-start tw-text-foreground tw-justify-start tw-px-0',
                 primaryRoundedIcon: `${roundedIconStyles} tw-border tw-border-button-border tw-bg-button-background tw-text-button-foreground hover:tw-bg-button-background-hover disabled:tw-bg-current-25 disabled:tw-text-current`,
                 outlineRoundedIcon: `${roundedIconStyles} tw-border tw-border-border`,
                 ghostRoundedIcon: `${roundedIconStyles} tw-border-transparent`,

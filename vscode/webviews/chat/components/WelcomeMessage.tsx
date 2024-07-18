@@ -1,6 +1,13 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
-import { AtSignIcon, MessageSquarePlusIcon, SettingsIcon, TextIcon } from 'lucide-react'
+import {
+    AtSignIcon,
+    type LucideProps,
+    MessageSquarePlusIcon,
+    SettingsIcon,
+    TextIcon,
+} from 'lucide-react'
 import type { FunctionComponent } from 'react'
+import type React from 'react'
 import { Kbd } from '../../components/Kbd'
 import { DefaultCommandsList } from './DefaultCommandsList'
 
@@ -10,13 +17,21 @@ const MenuExample: FunctionComponent<{ children: React.ReactNode }> = ({ childre
     </span>
 )
 
+type FeatureRowIcon = React.ForwardRefExoticComponent<
+    Omit<LucideProps, 'ref'> & React.RefAttributes<SVGSVGElement>
+>
+
+const FeatureRowInlineIcon: FunctionComponent<{
+    Icon: FeatureRowIcon
+}> = ({ Icon }) => <Icon size={16} strokeWidth={1.25} className="tw-flex-none tw-inline-flex" />
+
 const FeatureRow: FunctionComponent<{
-    icon: React.ComponentType<React.ComponentProps<'svg'>>
+    icon: FeatureRowIcon
     children: React.ReactNode
-}> = ({ icon: Icon, children }) => (
-    <div className="tw-flex tw-flex-row tw-justify-start tw-gap-4">
-        <Icon strokeWidth={1.5} width={16} height={16} className="tw-mt-1" />
-        <div className="tw-flex-1">{children}</div>
+}> = ({ icon, children }) => (
+    <div className="tw-inline-flex tw-gap-2 tw-text-foreground tw-items-center">
+        <FeatureRowInlineIcon Icon={icon} />
+        <div className="tw-grow">{children}</div>
     </div>
 )
 
@@ -35,18 +50,11 @@ const ChatHelp: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => {
             </FeatureRow>
             <FeatureRow icon={MessageSquarePlusIcon}>
                 Start a new chat using <Kbd macOS="opt+/" linuxAndWindows="alt+/" /> or the{' '}
-                <MessageSquarePlusIcon
-                    strokeWidth={1.5}
-                    width={16}
-                    height={16}
-                    className="tw-inline-flex"
-                />{' '}
-                button in the top right of any file
+                <FeatureRowInlineIcon Icon={MessageSquarePlusIcon} /> button in the top right of any file
             </FeatureRow>
             <FeatureRow icon={SettingsIcon}>
-                Customize chat settings with the{' '}
-                <SettingsIcon strokeWidth={1.5} width={16} height={16} className="tw-inline-flex" />{' '}
-                button, or see the <a href="https://sourcegraph.com/docs/cody">documentation</a>
+                Customize chat settings with the <FeatureRowInlineIcon Icon={SettingsIcon} /> button, or
+                see the <a href="https://sourcegraph.com/docs/cody">documentation</a>
             </FeatureRow>
         </>
     )
