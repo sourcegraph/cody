@@ -119,7 +119,7 @@ export class JvmFormatter {
             parameterOrResultType.has_constant_type &&
             parameterOrResultType.constant_type.constant.has_int_constant
         ) {
-            return this.language === JvmLanguage.Kotlin ? 'Int' : 'Integer'
+            return 'Long'
         }
 
         if (parameterOrResultType.has_structural_type || parameterOrResultType.has_intersection_type) {
