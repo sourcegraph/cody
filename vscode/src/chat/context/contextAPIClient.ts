@@ -27,15 +27,15 @@ export class ContextAPIClient {
         private readonly featureFlagProvider: FeatureFlagProvider
     ) {}
 
-    public detectChatIntent(interactionID: string, query: string) {
-        if (!this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyServerSideContextAPI)) {
+    public async detectChatIntent(interactionID: string, query: string) {
+        if (await !this.isServerSideContextAPIEnabled()) {
             return
         }
         return this.apiClient.chatIntent(interactionID, query)
     }
 
     public async rankContext(interactionID: string, query: string, context: ContextItem[]) {
-        if (!this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyServerSideContextAPI)) {
+        if (await !this.isServerSideContextAPIEnabled()) {
             return
         }
         const res = await this.apiClient.rankContext(interactionID, query, toInput(context))
@@ -47,9 +47,13 @@ export class ContextAPIClient {
     }
 
     public async recordContext(interactionID: string, used: ContextItem[], unused: ContextItem[]) {
-        if (!this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyServerSideContextAPI)) {
+        if (await !this.isServerSideContextAPIEnabled()) {
             return
         }
         await this.apiClient.recordContext(interactionID, toInput(used), toInput(unused))
+    }
+
+    private async isServerSideContextAPIEnabled() {
+        return await this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyServerSideContextAPI)
     }
 }
