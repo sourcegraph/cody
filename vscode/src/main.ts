@@ -165,12 +165,6 @@ const register = async (
         disposables
     )
 
-    featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatInSidebar).then(chatInSidebar => {
-        if (chatInSidebar) {
-            vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', true)
-        }
-    })
-
     // Ensure Git API is available
     disposables.push(await initVSCodeGitApi())
 
@@ -315,6 +309,15 @@ async function initializeSingletons(
         },
         disposables,
         { runImmediately: true }
+    )
+    disposables.push(
+        authProvider.onChange(async () => {
+            vscode.commands.executeCommand(
+                'setContext',
+                'cody.chatInSidebar',
+                await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatInSidebar)
+            )
+        })
     )
 }
 
