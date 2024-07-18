@@ -13,7 +13,7 @@ interface AccountTabProps {
 
 // TODO: Implement the AccountTab component once the design is ready.
 export const AccountTab: React.FC<AccountTabProps> = ({ userInfo }) => {
-    const { user, isCodyProUser, isDotComUser, ide } = userInfo
+    const { user, isCodyProUser, isDotComUser } = userInfo
     const { displayName, username, primaryEmail, endpoint } = user
 
     // Open the native system pop-up for VS Code.
