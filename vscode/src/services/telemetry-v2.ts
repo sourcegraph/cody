@@ -119,10 +119,13 @@ export async function createOrUpdateTelemetryRecorderProvider(
         )
     }
 
+    const isCodyWeb = config.agentIDE === CodyIDE.Web
+
     /**
      * On first initialization, also record some initial events.
+     * Skip any init events for Cody Web use case.
      */
-    if (initialize) {
+    if (initialize && !isCodyWeb) {
         if (newAnonymousUser) {
             /**
              * New user

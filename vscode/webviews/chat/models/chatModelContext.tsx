@@ -5,6 +5,7 @@ import { createContext, useContext } from 'react'
 export interface ChatModelContext {
     chatModels?: Model[]
     onCurrentChatModelChange?: (model: Model) => void
+    serverSentModelsEnabled?: boolean
 }
 
 const context = createContext<ChatModelContext>({})

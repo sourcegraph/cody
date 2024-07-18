@@ -10,6 +10,27 @@ This is a log of all notable changes to the Cody command-line tool. [Unreleased]
 
 ### Changed
 
+## 5.5.10
+
+### Fixed
+
+- Running `cody chat` should no longer report errors related to autocomplete
+- Running `cody chat --context-repo REPO` now reports a helpful error if the provided repo does not exist on the instance.
+
+## 5.5.9
+
+### Added
+
+- New `cody chat --stdin` option to send a message to the Cody chat from stdin. Can be combined with `--message` like `git diff | cody chat --stdin -m 'Explain this diff'`.
+- Trailing arguments are now added to the chat message as space-separated words. Example: `cody chat explain react hooks`. When the trailing arguments are exactly the string `-`, the message is read from stdin (equivalent to `cody chat --stdin`).
+
+### Fixed
+
+- It's now possible to explicitly use the `--endpoint` and `--access-token` options.
+- The `--context-repo` option now works correctly when used with a Sourcegraph Enterprise account.
+- The `--context-repo` option now errors with a helpful explanation when not used with a Sourcegraph Enterprise account. Previously, it silently did the wrong thing for Sourcegraph.com accounts.
+- The CLI should work correctly for Enterprise instances that use context filters. Previously, the chat would fail with a cryptic error message about an invalid client name.
+
 ## 0.2.0
 
 ### Changed

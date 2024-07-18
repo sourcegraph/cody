@@ -196,6 +196,7 @@ export type ExtensionMessage =
           configFeatures: {
               chat: boolean
               attribution: boolean
+              serverSentModels: boolean
           }
       }
     | {

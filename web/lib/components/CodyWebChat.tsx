@@ -71,6 +71,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
     const [chatModels, setChatModels] = useState<Model[]>()
+    const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
 
     useLayoutEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -101,7 +102,6 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                     setUserAccountInfo({
                         isCodyProUser: !message.authStatus.userCanUpgrade,
                         isDotComUser: message.authStatus.isDotCom,
-                        isOldStyleEnterpriseUser: !message.authStatus.isDotCom,
                         user: message.authStatus,
                         ide: CodyIDE.Web,
                     })
@@ -109,6 +109,8 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                 case 'clientAction':
                     dispatchClientAction(message)
                     break
+                case 'setConfigFeatures':
+                    setServerSentModelsEnabled(!!message.configFeatures.serverSentModels)
             }
         })
     }, [vscodeAPI, dispatchClientAction])
@@ -152,8 +154,8 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
         [chatModels, vscodeAPI]
     )
     const chatModelContext = useMemo<ChatModelContext>(
-        () => ({ chatModels, onCurrentChatModelChange }),
-        [chatModels, onCurrentChatModelChange]
+        () => ({ chatModels, onCurrentChatModelChange, serverSentModelsEnabled }),
+        [chatModels, onCurrentChatModelChange, serverSentModelsEnabled]
     )
 
     const clientState: ClientStateForWebview = useMemo<ClientStateForWebview>(() => {

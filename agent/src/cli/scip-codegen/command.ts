@@ -72,7 +72,7 @@ const command = new Command('scip-codegen')
     .option(
         '--kotlin-package <value>',
         'what package name to use for the kotlin classes',
-        'com.sourcegraph.cody.protocol_generated'
+        'com.sourcegraph.cody.agent.protocol_generated'
     )
     .action(async (options: CodegenOptions) => {
         const codegen = await initializeCodegen(options)

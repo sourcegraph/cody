@@ -134,7 +134,9 @@ describe('syncModels from the server', () => {
         vi.restoreAllMocks()
     })
 
-    it('throws if no creds are available', async () => {
+    // Cody Web can be run without access token since it relies on cookie auth info
+    // skip this tests since these checks have been removed to make Cody Web working
+    it.skip('throws if no creds are available', async () => {
         await expect(async () => {
             const authStatus = {
                 ...defaultAuthStatus,

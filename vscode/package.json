@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.26.2",
+  "version": "1.26.4",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -422,13 +422,6 @@
         "enablement": "cody.activated && config.cody.autocomplete.experimental.multiModelCompletions && config.cody.autocomplete.enabled && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
       },
       {
-        "command": "cody.chat.focusView",
-        "category": "Cody",
-        "group": "Cody",
-        "title": "Focus on Chat View",
-        "enablement": "cody.activated"
-      },
-      {
         "command": "cody.chat.signIn",
         "category": "Cody",
         "group": "Cody",
@@ -607,8 +600,24 @@
       },
       {
         "command": "cody.chat.newPanel",
-        "key": "alt+l",
+        "key": "alt+shift+l",
         "when": "cody.activated"
+      },
+      {
+        "command": "cody.chat.toggle",
+        "key": "alt+l",
+        "when": "cody.activated && editorTextFocus",
+        "args": {
+          "editorFocus": true
+        }
+      },
+      {
+        "command": "cody.chat.toggle",
+        "key": "alt+l",
+        "when": "cody.activated && !editorTextFocus",
+        "args": {
+          "editorFocus": false
+        }
       },
       {
         "command": "cody.mention.selection",
