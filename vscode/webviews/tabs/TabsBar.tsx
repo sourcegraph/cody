@@ -36,27 +36,29 @@ interface TabConfig {
     Icon: IconComponent
     view: View
     command?: string
-    SubIcons?: { Icon: IconComponent; command: string }[]
+    SubIcons?: { title: string; Icon: IconComponent; command: string }[]
 }
 
 const tabItems: TabConfig[] = [
     {
         view: View.Chat,
         Icon: MessagesSquareIcon,
-        SubIcons: [{ Icon: MessageSquarePlusIcon, command: 'cody.chat.newPanel' }],
+        SubIcons: [{ title: 'New Chat', Icon: MessageSquarePlusIcon, command: 'cody.chat.newPanel' }],
     },
     {
         view: View.History,
         Icon: HistoryIcon,
         SubIcons: [
-            { Icon: DownloadIcon, command: 'cody.chat.history.export' },
-            { Icon: Trash2Icon, command: 'cody.chat.history.clear' },
+            { title: 'Export History', Icon: DownloadIcon, command: 'cody.chat.history.export' },
+            { title: 'Clear History', Icon: Trash2Icon, command: 'cody.chat.history.clear' },
         ],
     },
     {
         view: View.Commands,
         Icon: ZapIcon,
-        SubIcons: [{ Icon: SettingsIcon, command: 'cody.menu.commands-settings' }],
+        SubIcons: [
+            { title: 'Commands Settings', Icon: SettingsIcon, command: 'cody.menu.commands-settings' },
+        ],
     },
     { view: View.Settings, Icon: SettingsIcon, command: 'cody.status-bar.interacted' },
     { view: View.Account, Icon: CircleUserIcon, command: 'cody.auth.account' },
@@ -82,7 +84,7 @@ const TabButton: React.FC<TabButtonProps> = ({ Icon, isActive, onClick, isSecond
         onClick={onClick}
         className={clsx(baseClasses, isActive ? activeClasses : inactiveClasses)}
     >
-        <Icon size={isSecondary ? 13 : 16} strokeWidth={1.25} />
+        <Icon size={16} strokeWidth={1.25} />
     </button>
 )
 
@@ -113,7 +115,6 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView }) => {
                             command={command}
                             isActive={currentView === view}
                             onClick={() => handleClick(view, command)}
-                            isSecondary={false}
                         />
                     </Tabs.Trigger>
                 ))}
@@ -125,7 +126,6 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView }) => {
                         Icon={Icon}
                         command={command}
                         onClick={() => getVSCodeAPI().postMessage({ command: 'command', id: command })}
-                        isSecondary={true}
                     />
                 ))}
             </div>

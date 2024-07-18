@@ -296,7 +296,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     </ChatModelContextProvider>
                 )}
                 {view === 'history' && <HistoryTab userHistory={userHistory} />}
-                {view === 'commands' && <CommandsTab commands={commandList} />}
+                {view === 'commands' && <CommandsTab IDE={config.agentIDE} commands={commandList} />}
             </Tabs.Content>
         </Tabs.Root>
     )

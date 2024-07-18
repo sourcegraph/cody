@@ -1,9 +1,10 @@
-import type { CodyCommand } from '@sourcegraph/cody-shared'
+import { type CodyCommand, CodyIDE } from '@sourcegraph/cody-shared'
 import { ZapIcon } from 'lucide-react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 interface CommandsTabProps {
     commands: CodyCommand[]
+    IDE?: CodyIDE
 }
 
 const CommandButton: React.FC<CodyCommand> = ({ key, prompt, description }) => (
@@ -23,17 +24,20 @@ const CommandButton: React.FC<CodyCommand> = ({ key, prompt, description }) => (
     </button>
 )
 
-export const CommandsTab: React.FC<CommandsTabProps> = ({ commands }) => {
+export const CommandsTab: React.FC<CommandsTabProps> = ({ commands, IDE }) => {
     const defaultCommands = commands.filter(c => c.type === 'default')
     const customCommands = commands.filter(c => c.type !== 'default')
-
     return (
         <div className="tw-container tw-mx-auto tw-flex tw-flex-col tw-px-8 tw-pt-4">
             <p className="tw-text-muted-foreground tw-mt-2">Commands</p>
             <div className="tw-flex tw-flex-col tw-items-start">
                 {defaultCommands.map(CommandButton)}
-                <p className="tw-text-muted-foreground tw-mt-2">Custom Commands</p>
-                {customCommands.map(CommandButton)}
+                {IDE === CodyIDE.VSCode && (
+                    <div>
+                        <p className="tw-text-muted-foreground tw-mt-2">Custom Commands</p>
+                        {customCommands.map(CommandButton)}
+                    </div>
+                )}
             </div>
         </div>
     )
