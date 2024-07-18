@@ -1,6 +1,8 @@
+import dedent from 'dedent'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { nextTick } from '@sourcegraph/cody-shared'
+
 import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
@@ -14,7 +16,7 @@ import {
     type RequestParams,
     computeIfRequestStillRelevant,
 } from './request-manager'
-import { documentAndPosition } from './test-helpers'
+import { documentAndPosition, prefixAndSuffix } from './test-helpers'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
 class MockProvider extends Provider {
@@ -65,8 +67,8 @@ class MockProvider extends Provider {
     }
 }
 
-function createProvider(prefix: string) {
-    const { docContext, document, position } = docState(prefix)
+function createProvider(prefix: string, suffix?: string) {
+    const { docContext, document, position } = docState(prefix, suffix)
 
     return new MockProvider({
         id: 'mock-provider',
@@ -217,6 +219,31 @@ describe('RequestManager', () => {
             expect(isFuzzyMatch).toBe(false)
             expect(source).toBe(InlineCompletionsResultSource.Cache)
             expect(completions[0].insertText).toBe("'hello')")
+        })
+
+        it('does not match when the previous line is different and the current line suffix is an empty string', async () => {
+            const docState1 = prefixAndSuffix(dedent`
+                console.log(1)
+                █
+                console.log(3)
+            `)
+            const provider1 = createProvider(docState1.prefix, docState1.suffix)
+            setTimeout(() => provider1.yield(['console.log(2)']), 0)
+            await createRequest(docState1.prefix, provider1, docState1.suffix)
+
+            const cachedResult = checkCache(docState1.prefix, docState1.suffix)!
+
+            expect(cachedResult.isFuzzyMatch).toBe(false)
+            expect(cachedResult.source).toBe(InlineCompletionsResultSource.Cache)
+            expect(cachedResult.completions[0].insertText).toBe('console.log(2)')
+
+            const docState2 = prefixAndSuffix(dedent`
+                somethingElse(1)
+                █
+                console.log(3)
+            `)
+            const nullResult = checkCache(docState2.prefix, docState2.suffix)!
+            expect(nullResult).toBeNull()
         })
 
         describe('fuzzy matching with multiple previous lines', () => {

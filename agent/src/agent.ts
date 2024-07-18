@@ -1087,8 +1087,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            const providers = ModelsService.getModels(modelUsage, authStatus)
-            return { models: providers ?? [] }
+            const models = ModelsService.getModels(modelUsage, authStatus)
+            return { models }
         })
 
         this.registerAuthenticatedRequest('chat/export', async input => {
