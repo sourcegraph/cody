@@ -1,3 +1,6 @@
+// TODO(slimsag): self-hosted-models: deprecate and remove this once customers are upgraded
+// to non-experimental version
+
 import {
     type AuthStatus,
     type AutocompleteContextSnippet,

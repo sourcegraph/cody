@@ -27,7 +27,7 @@ import {
     createProviderConfig as createFireworksProviderConfig,
 } from './fireworks'
 import { createProviderConfig as createGeminiProviderConfig } from './google'
-import { createProviderConfig as createOpenAICompatibleProviderConfig } from './openaicompatible'
+import { createProviderConfig as createExperimentalOpenAICompatibleProviderConfig } from './expopenaicompatible'
 import type { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
@@ -62,7 +62,9 @@ export async function createProviderConfigFromVSCodeConfig(
             return createGeminiProviderConfig({ client, model })
         }
         case 'experimental-openaicompatible': {
-            return createOpenAICompatibleProviderConfig({
+            // TODO(slimsag): self-hosted-models: deprecate and remove this once customers are upgraded
+            // to non-experimental version
+            return createExperimentalOpenAICompatibleProviderConfig({
                 client,
                 model: config.autocompleteAdvancedModel ?? model ?? null,
                 timeouts: config.autocompleteTimeouts,
@@ -134,7 +136,9 @@ export async function createProviderConfig(
                 config,
             })
         case 'experimental-openaicompatible':
-            return createOpenAICompatibleProviderConfig({
+            // TODO(slimsag): self-hosted-models: deprecate and remove this once customers are upgraded
+            // to non-experimental version
+            return createExperimentalOpenAICompatibleProviderConfig({
                 client,
                 timeouts: config.autocompleteTimeouts,
                 model: modelId ?? null,
