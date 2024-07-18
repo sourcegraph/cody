@@ -1,5 +1,5 @@
 .template-input-node {
-    /* TODO this doesn't come close to matching the figmas due to not having the different levels of warnings colours mentioned */
+    background-color: color-mix(in lch, var(--vscode-editorWarning-foreground) 20%, transparent);
     border: 1px dashed var(--vscode-editorWarning-foreground);
     border-radius: 3px;
     white-space: normal;
@@ -15,5 +15,6 @@
 
     &.template-input-node--focused {
         outline-style: solid;
+        background-color: color-mix(in lch, var(--vscode-editorWarning-foreground) 30%, transparent);
     }
 }
