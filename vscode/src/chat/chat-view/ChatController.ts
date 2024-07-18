@@ -93,6 +93,7 @@ import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
 import { startClientStateBroadcaster } from '../clientStateBroadcaster'
 import { getChatContextItemsForMention } from '../context/chatContext'
+import type { ContextAPIClient } from '../context/contextAPIClient'
 import type {
     ChatSubmitType,
     ConfigurationSubsetForWebview,
@@ -122,6 +123,7 @@ interface ChatControllerOptions {
     models: Model[]
     guardrails: Guardrails
     startTokenReceiver?: typeof startTokenReceiver
+    contextAPIClient: ContextAPIClient | null
 }
 
 export interface ChatSession {
@@ -170,11 +172,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly remoteSearch: RemoteSearch | null
     private readonly repoPicker: RemoteRepoPicker | null
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
+    private readonly contextAPIClient: ContextAPIClient | null
 
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
     private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
 
     private disposables: vscode.Disposable[] = []
+
     public dispose(): void {
         vscode.Disposable.from(...this.disposables).dispose()
         this.disposables = []
@@ -192,6 +196,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         guardrails,
         enterpriseContext,
         startTokenReceiver,
+        contextAPIClient,
     }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
@@ -207,6 +212,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.guardrails = guardrails
         this.startTokenReceiver = startTokenReceiver
+        this.contextAPIClient = contextAPIClient
 
         if (TestSupport.instance) {
             TestSupport.instance.chatPanelProvider.set(this)
@@ -664,6 +670,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 abortSignal.throwIfAborted()
 
                 this.postEmptyMessageInProgress()
+                this.contextAPIClient?.detectChatIntent(requestID, inputText.toString())
 
                 // Add user's current selection as context for chat messages.
                 const selectionContext = source === 'chat' ? await getContextFileFromSelection() : []
@@ -706,8 +713,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                         chatModel: this.chatModel,
                                     })
                                   : inputText
-
-                              return getEnhancedContext({
+                              const context = getEnhancedContext({
                                   strategy: contextStrategy,
                                   editor: this.editor,
                                   input: { text: rewrite, mentions },
@@ -719,6 +725,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                   },
                                   contextRanking: this.contextRanking,
                               })
+                              // add a callback, but return the original context
+                              context.then(c =>
+                                  this.contextAPIClient?.rankContext(requestID, inputText.toString(), c)
+                              )
+                              return context
                           }
                         : undefined,
                     command !== undefined
@@ -752,7 +763,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }
 
                 try {
-                    const prompt = await this.buildPrompt(prompter, abortSignal, sendTelemetry)
+                    const prompt = await this.buildPrompt(
+                        prompter,
+                        abortSignal,
+                        requestID,
+                        sendTelemetry
+                    )
                     abortSignal.throwIfAborted()
                     this.streamAssistantResponse(requestID, prompt, span, firstTokenSpan, abortSignal)
                 } catch (error) {
@@ -1126,6 +1142,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async buildPrompt(
         prompter: DefaultPrompter,
         abortSignal: AbortSignal,
+        requestID: string,
         sendTelemetry?: (contextSummary: any, privateContextSummary?: any) => void
     ): Promise<Message[]> {
         const { prompt, context } = await prompter.makePrompt(
@@ -1137,6 +1154,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // Update UI based on prompt construction
         // Includes the excluded context items to display in the UI
         this.chatModel.setLastMessageContext([...context.used, ...context.ignored])
+        // this is not awaited, so we kick the call off but don't block on it returning
+        this.contextAPIClient?.recordContext(requestID, context.used, context.ignored)
 
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being

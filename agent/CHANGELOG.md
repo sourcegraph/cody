@@ -10,6 +10,13 @@ This is a log of all notable changes to the Cody command-line tool. [Unreleased]
 
 ### Changed
 
+## 5.5.10
+
+### Fixed
+
+- Running `cody chat` should no longer report errors related to autocomplete
+- Running `cody chat --context-repo REPO` now reports a helpful error if the provided repo does not exist on the instance.
+
 ## 5.5.9
 
 ### Added

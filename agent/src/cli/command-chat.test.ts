@@ -49,7 +49,8 @@ describe('cody chat', () => {
         const stdout = new StringBufferStream()
         const stderr = new StringBufferStream()
         options.streams = new Streams(stdout, stderr)
-        options.debug = true
+        // Uncomment below to see output channel logs from Cody
+        // options.debug = true
         const exitCode = await chatAction(options)
         if (exitCode !== (params.expectedExitCode ?? 0)) {
             const extraHint =

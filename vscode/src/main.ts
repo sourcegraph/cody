@@ -8,7 +8,6 @@ import {
     type DefaultCodyCommands,
     type Guardrails,
     ModelsService,
-    PromptMixin,
     PromptString,
     contextFiltersProvider,
     featureFlagProvider,
@@ -20,6 +19,7 @@ import {
 import type { CommandResult } from './CommandResult'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
+import type { ContextAPIClient } from './chat/context/contextAPIClient'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -179,6 +179,7 @@ const register = async (
         contextRanking,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
         symfRunner,
+        contextAPIClient,
     } = await configureExternalServices(context, configWatcher, platform, authProvider)
     configWatcher.onChange(async config => {
         externalServicesOnDidConfigurationChange(config)
@@ -196,6 +197,7 @@ const register = async (
     }, disposables)
 
     const editor = new VSCodeEditor()
+
     const { chatsController } = registerChat(
         {
             context,
@@ -208,6 +210,7 @@ const register = async (
             localEmbeddings,
             contextRanking,
             symfRunner,
+            contextAPIClient,
         },
         disposables
     )
@@ -286,30 +289,21 @@ async function initializeSingletons(
     // Allow the VS Code app's instance of ModelsService to use local storage to persist
     // user's model choices
     ModelsService.setStorage(localStorage)
-
     disposables.push(upstreamHealthProvider, contextFiltersProvider)
     setCommandController(platform.createCommandsProvider?.())
     repoNameResolver.init(authProvider)
     await configWatcher.onChange(
-        config => {
+        async config => {
             const promises: Promise<void>[] = []
 
             promises.push(localStorage.setConfig(config))
             graphqlClient.setConfig(config)
-            promises.push(
-                featureFlagProvider
-                    .refresh()
-                    .then(() =>
-                        PromptMixin.updateContextPreamble(
-                            isExtensionModeDevOrTest || isRunningInsideAgent()
-                        )
-                    )
-            )
+            promises.push(featureFlagProvider.refresh())
             promises.push(contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri))
             ModelsService.onConfigChange()
             upstreamHealthProvider.onConfigurationChange(config)
 
-            return Promise.all(promises).then()
+            await Promise.all(promises).then()
         },
         disposables,
         { runImmediately: true }
@@ -528,7 +522,7 @@ function registerUpgradeHandlers(
             if (ws.focused && authStatus.isDotCom && authStatus.isLoggedIn) {
                 const res = await graphqlClient.getCurrentUserCodyProEnabled()
                 if (res instanceof Error) {
-                    console.error(res)
+                    logError('onDidChangeWindowState', 'getCurrentUserCodyProEnabled', res)
                     return
                 }
                 // Re-auth if user's cody pro status has changed
@@ -634,7 +628,7 @@ function registerAutocomplete(
                     disposeAutocomplete()
                     if (
                         config.isRunningInsideAgent &&
-                        !process.env.CODY_SUPPRESS_AGENT_AUTOCOMPLETE_WARNING
+                        platform.extensionClient.capabilities?.completions !== 'none'
                     ) {
                         throw new Error(
                             'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
@@ -676,7 +670,7 @@ function registerAutocomplete(
                 )
             })
             .catch(error => {
-                console.error('Error creating inline completion item provider:', error)
+                logError('registerAutocomplete', 'Error creating inline completion item provider', error)
             })
         return setupAutocompleteQueue
     }
@@ -742,6 +736,7 @@ interface RegisterChatOptions {
     localEmbeddings?: LocalEmbeddingsController
     contextRanking?: ContextRankingController
     symfRunner?: SymfRunner
+    contextAPIClient?: ContextAPIClient
 }
 
 function registerChat(
@@ -756,6 +751,7 @@ function registerChat(
         localEmbeddings,
         contextRanking,
         symfRunner,
+        contextAPIClient,
     }: RegisterChatOptions,
     disposables: vscode.Disposable[]
 ): {
@@ -780,7 +776,8 @@ function registerChat(
         localEmbeddings || null,
         contextRanking || null,
         symfRunner || null,
-        guardrails
+        guardrails,
+        contextAPIClient || null
     )
     chatsController.registerViewsAndCommands()
 

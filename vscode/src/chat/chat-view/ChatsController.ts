@@ -28,6 +28,7 @@ import { getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import type { AuthProvider } from '../../services/AuthProvider'
+import type { ContextAPIClient } from '../context/contextAPIClient'
 import {
     ChatController,
     type ChatSession,
@@ -69,7 +70,8 @@ export class ChatsController implements vscode.Disposable {
         private readonly localEmbeddings: LocalEmbeddingsController | null,
         private readonly contextRanking: ContextRankingController | null,
         private readonly symf: SymfRunner | null,
-        private readonly guardrails: Guardrails
+        private readonly guardrails: Guardrails,
+        private readonly contextAPIClient: ContextAPIClient | null
     ) {
         logDebug('ChatsController:constructor', 'init')
         this.panel = this.createChatController()
@@ -440,6 +442,7 @@ export class ChatsController implements vscode.Disposable {
             models,
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,
+            contextAPIClient: this.contextAPIClient,
         })
     }
 

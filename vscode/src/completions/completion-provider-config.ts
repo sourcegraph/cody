@@ -88,17 +88,22 @@ class CompletionProviderConfig {
         // The rollout values to set:
         // - CodyAutocompleteLatencyExperimentBasedFeatureFlag 75%
         // - CodyAutocompleteHotStreak 33%
-        // - CodyAutocompleteSmartThrottle 66%
+        // - CodyAutocompleteSmartThrottle 100%
         // - CodyAutocompleteSmartThrottleExtended 50%
         if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteLatencyExperimentBasedFeatureFlag)) {
+            // 75% of users get here
             if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteHotStreak)) {
+                // 25% of remaining users get here (33% of 75%)
                 return 'hot-streak'
             }
 
             if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottle)) {
+                // 50% of remaining users get here (100% of 50%)
                 if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottleExtended)) {
+                    // 25% of remaining users get here (50% of 50%)
                     return 'smart-throttle-extended'
                 }
+                // Remaining 25% of users get here
                 return 'smart-throttle'
             }
         }
