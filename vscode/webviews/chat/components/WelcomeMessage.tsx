@@ -11,7 +11,7 @@ import {
     TextIcon,
     TextSearchIcon,
 } from 'lucide-react'
-import type { FunctionComponent } from 'react'
+import { type FunctionComponent, useMemo } from 'react'
 import { Kbd } from '../../components/Kbd'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 
@@ -44,12 +44,15 @@ const vscodeCommandList = [
 ]
 
 const Commands: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => {
-    const commandList = [...commonCommandList, ...(IDE === CodyIDE.VSCode ? vscodeCommandList : [])]
+    const commandList = useMemo(
+        () => [...commonCommandList, ...(IDE === CodyIDE.VSCode ? vscodeCommandList : [])],
+        [IDE]
+    )
 
     return (
         <div className="tw-flex tw-flex-col tw-gap-2 tw-self-stretch">
-            <p>Commands</p>
-            <div className="tw-p-8 tw-flex tw-flex-col tw-gap-4 tw-bg-popover tw-border tw-border-border tw-rounded-lg">
+            <p className="tw-py-3">Commands</p>
+            <div className="tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4 tw-bg-popover tw-border tw-border-border tw-rounded-lg">
                 {commandList.map(({ key, title, icon: Icon }) => (
                     <FeatureRow key={key} icon={Icon}>
                         <button
@@ -84,22 +87,22 @@ const ChatHelp: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => {
                     strokeWidth={1.5}
                     width={16}
                     height={16}
-                    className="tw-opacity-50 tw-mt-1 tw-inline-flex"
+                    className="tw-inline-flex"
                 />{' '}
                 button in the top right of any file
             </FeatureRow>
             <FeatureRow icon={SettingsIcon}>
                 Customize chat settings with the{' '}
-                <i className="codicon codicon-settings-gear tw-translate-y-[3px] tw-mx-1" /> button, or
-                see the <a href="https://sourcegraph.com/docs/cody">documentation</a>
+                <SettingsIcon strokeWidth={1.5} width={16} height={16} className="tw-inline-flex" />{' '}
+                button, or see the <a href="https://sourcegraph.com/docs/cody">documentation</a>
             </FeatureRow>
         </>
     )
 
     return (
-        <div className="tw-flex tw-flex-col tw-gap-2 tw-self-stretch">
-            <p>Chat Help</p>
-            <div className="tw-p-8 tw-flex tw-flex-col tw-gap-4 tw-bg-popover tw-border tw-border-border tw-rounded-lg">
+        <div className="tw-flex tw-flex-col tw-gap-3 tw-self-stretch">
+            <p className="tw-py-3">Chat Help</p>
+            <div className="tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4 tw-bg-popover tw-border tw-border-border tw-rounded-lg">
                 {commonFeatures}
                 {IDE === CodyIDE.VSCode && vscodeFeatures}
             </div>
@@ -114,7 +117,7 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => 
     localStorage.removeItem(localStorageKey)
 
     return (
-        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-p-8 tw-gap-4">
+        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-p-8 tw-gap-6">
             <Commands IDE={IDE} />
             <ChatHelp IDE={IDE} />
         </div>
