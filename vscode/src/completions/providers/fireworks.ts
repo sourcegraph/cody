@@ -549,6 +549,14 @@ class FireworksProvider extends Provider {
                 )
                 headers.set('Authorization', `Bearer ${self.fastPathAccessToken}`)
                 headers.set('X-Sourcegraph-Feature', 'code_completions')
+                headers.set(
+                    'X-Timeout-Ms',
+                    getCompletionParams({
+                        providerOptions: self.options,
+                        timeouts: self.timeouts,
+                        lineNumberDependentCompletionParams,
+                    }).timeoutMs.toString()
+                )
                 addTraceparent(headers)
 
                 logDebug('FireworksProvider', 'fetch', { verbose: { url, fireworksRequest } })
