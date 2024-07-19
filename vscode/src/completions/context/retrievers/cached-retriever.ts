@@ -172,6 +172,11 @@ export abstract class CachedRetriever implements ContextRetriever {
     }
 
     openTextDocument = (uri: vscode.Uri): Thenable<vscode.TextDocument> => {
+        // Returns undefined if the uri is not a file system uri, which includes untitled files.
+        // Trying to open a removed file will re-create the file and return a new document.
+        if (uri.scheme !== 'file') {
+            return new Promise(() => undefined)
+        }
         this.addDependency(uri.toString())
         return this.workspace.openTextDocument(uri)
     }
@@ -212,7 +217,10 @@ export abstract class CachedRetriever implements ContextRetriever {
      * When the cursor is moving into a new line, we want to fetch the context for the new line.
      */
     private onDidChangeTextEditorSelection = (event: vscode.TextEditorSelectionChangeEvent) => {
-        if (!this.isSupportedForLanguageId(event.textEditor.document.languageId)) {
+        if (
+            event.textEditor.document.uri.scheme !== 'file' ||
+            !this.isSupportedForLanguageId(event.textEditor.document.languageId)
+        ) {
             return
         }
         const document = event.textEditor.document
