@@ -281,10 +281,16 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     spinner.clear()
 
     if (options.showContext) {
-        const contextFiles = reply.contextFiles ?? []
+        const contextFiles = response.messages.flatMap(m => m.contextFiles ?? [])
         streams.log('> Context items:\n')
         for (const [i, item] of contextFiles.entries()) {
-            streams.log(`> ${i + 1}. ${item.uri.fsPath}\n`)
+            const uri = vscode.Uri.from(item.uri as any)
+            const endpoint = serverInfo.authStatus.endpoint ?? options.endpoint
+            // Workaround for strange URI authority resopnse, reported in
+            // https://sourcegraph.slack.com/archives/C05AGQYD528/p1721382757890889
+            const remoteURL = new URL(uri.path, endpoint).toString()
+            const displayText = uri.scheme === 'file' ? uri.fsPath : remoteURL
+            streams.log(`> ${i + 1}. ${displayText}\n`)
         }
         streams.log('\n')
     }
