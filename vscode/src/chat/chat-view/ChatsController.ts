@@ -121,9 +121,6 @@ export class ChatsController implements vscode.Disposable {
             username: authStatus.username,
         }
 
-        const isConsumer = authStatus.isLoggedIn && authStatus.isDotCom
-        vscode.commands.executeCommand('setContext', 'cody.isConsumer', isConsumer)
-
         this.panel.setAuthStatus(authStatus)
         this.supportTreeViewProvider.setAuthStatus(authStatus)
         this.historyTreeViewProvider.updateTree(authStatus)
