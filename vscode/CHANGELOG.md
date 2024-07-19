@@ -6,14 +6,17 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
-- Chat: Chat has been added back to the VS Code sidebar (after being removed about 6 months ago). By default, new chats open in the sidebar. New chats can still be opened in an editor panel with the `New Chat in Sidebar` command. Currently open chats can be moved from the sidebar into an editor panel and vice versa. [pull/4832](https://github.com/sourcegraph/cody/pull/4832)
+- Chat: Chat has been added back to the VS Code sidebar (after being removed about 6 months ago). By default, new chats open in the sidebar. New chats can still be opened in an editor panel with the `New Chat in Sidebar` command. Currently open chats can be moved from the sidebar into an editor panel and vice versa. Enterprise users are not affected. [pull/4832](https://github.com/sourcegraph/cody/pull/4832)
+- Chat: Chat History, commands, and settings are now accessible through the chat view for Non-Enterprise users. [pull/4900](https://github.com/sourcegraph/cody/pull/4900)
 
 ### Fixed
 
 - Command: The "Ask Cody to Explain" command for explaining terminal output has been removed from the command palette, as it is only callable from the terminal context menu. [pull/4860](https://github.com/sourcegraph/cody/pull/4860)
-- Autocomplete: Fixed the cached retriever from opening removed files. [pull/](https://github.com/sourcegraph/cody/pull/)
+- Autocomplete: Fixed an issue where the cached retriever was attempting to open removed files. [pull/4942](https://github.com/sourcegraph/cody/pull/4942)
 
 ### Changed
+
+- For non-Enterprise users, the sidebar for commands, chat history, and settings has been removed and replaced by the sidebar chat. [pull/4832](https://github.com/sourcegraph/cody/pull/4832)
 
 ## 1.26.4
 
