@@ -32,6 +32,7 @@ import {
     Typewriter,
     allMentionProvidersMetadata,
     hydrateAfterPostMessage,
+    inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
     isDefined,
     isError,
@@ -729,6 +730,14 @@ export class SimpleChatPanelProvider
                 const config = getConfiguration()
                 const contextStrategy = await getContextStrategy(config.useContext)
                 span.setAttribute('strategy', contextStrategy)
+
+                // Remove context chips (repo, @-mentions) from the input text for context retrieval.
+                const inputTextWithoutContextChips = editorState
+                    ? PromptString.unsafe_fromUserQuery(
+                          inputTextWithoutContextChipsFromPromptEditorState(editorState)
+                      )
+                    : inputText
+
                 const prompter = new DefaultPrompter(
                     userContextItems,
                     addEnhancedContext || hasCorpusMentions
@@ -746,7 +755,7 @@ export class SimpleChatPanelProvider
                                         chatClient: this.chatClient,
                                         chatModel: this.chatModel,
                                     })
-                                  : inputText
+                                  : inputTextWithoutContextChips
 
                               return getEnhancedContext({
                                   strategy: contextStrategy,
