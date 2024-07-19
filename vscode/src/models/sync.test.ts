@@ -122,9 +122,7 @@ describe('syncModels from the server', () => {
         // Attach our mock to the RestClient's prototype. So the class will get instantiated
         // like normal, but any instance will use our mock implementation.
         const getAvaialbleModelsSpy = vi.spyOn(RestClient.prototype, 'getAvailableModels')
-        getAvaialbleModelsSpy.mockImplementation(async (): Promise<Model[]> => {
-            return testServerSideModels
-        })
+        getAvaialbleModelsSpy.mockImplementation(() => Promise.resolve(undefined))
     })
     afterEach(() => {
         // SUPER IMPORTANT: We need to call restoreAllMocks (instead of resetAllMocks)

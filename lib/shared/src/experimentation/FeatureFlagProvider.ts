@@ -75,6 +75,9 @@ export enum FeatureFlag {
 
     /** Use embeddings to provide enhanced context. */
     CodyEnhancedContexUseEmbeddings = 'cody-enhanced-context-use-embeddings',
+
+    /** Whether to use server-side Context API. */
+    CodyServerSideContextAPI = 'cody-server-side-context-api-enabled',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

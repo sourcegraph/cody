@@ -320,7 +320,7 @@ describe('ContextFiltersProvider', () => {
             )
         })
 
-        it('returns `no-repo-found` if repo name is not found', async () => {
+        it('returns `no-repo-found` if repo name is not found (undefined)', async () => {
             await initProviderWithContextFilters({
                 include: [{ repoNamePattern: '^github\\.com/sourcegraph/cody' }],
                 exclude: [{ repoNamePattern: '^github\\.com/sourcegraph/sourcegraph' }],
@@ -331,47 +331,26 @@ describe('ContextFiltersProvider', () => {
             expect(await provider.isUriIgnored(uri)).toBe('no-repo-found')
         })
 
-        it('switches to a short refresh interval for network errors', async () => {
-            const longDelay = 60 * 60 * 1000
-            const shortDelay = 7 * 1000
-
-            vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
-            const apiSpy = vi.spyOn(graphqlClient, 'fetchSourcegraphAPI')
-            apiSpy.mockResolvedValueOnce(apiResponseForFilters(null))
-            await provider.init(getRepoNamesFromWorkspaceUri)
-            expect(provider.timerStateForTest).toEqual({
-                delay: longDelay,
-                lifetime: 'durable',
+        it('returns `no-repo-found` if repo name is not found (empty array)', async () => {
+            await initProviderWithContextFilters({
+                include: [{ repoNamePattern: '^github\\.com/sourcegraph/cody' }],
+                exclude: [{ repoNamePattern: '^github\\.com/sourcegraph/sourcegraph' }],
             })
 
-            // Start causing errors, check we flip to a short delay regime.
-            apiSpy.mockRejectedValueOnce(new Error('network error'))
-            await vi.runOnlyPendingTimersAsync()
-            expect(provider.timerStateForTest).toEqual({
-                delay: shortDelay,
-                lifetime: 'ephemeral',
+            const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
+            getRepoNamesFromWorkspaceUri.mockResolvedValue([])
+            expect(await provider.isUriIgnored(uri)).toBe('no-repo-found')
+        })
+
+        it('allows repos, even if the repo name is not found, when inclusive context filters are set', async () => {
+            await initProviderWithContextFilters({
+                include: [{ repoNamePattern: '.*' }],
+                exclude: null,
             })
 
-            // Errors continue, check we do exponential backoff.
-            apiSpy.mockRejectedValueOnce(new Error('network error'))
-            await vi.runOnlyPendingTimersAsync()
-            expect(provider.timerStateForTest.delay).toBeGreaterThan(shortDelay)
-
-            // Fetch successfully (a "no filters set" result). Should flip to large interval.
-            apiSpy.mockResolvedValueOnce(apiResponseForFilters(null))
-            await vi.runOnlyPendingTimersAsync()
-            expect(provider.timerStateForTest).toEqual({
-                delay: longDelay,
-                lifetime: 'durable',
-            })
-
-            // Check there's no back-off for the long interval successful results.
-            apiSpy.mockResolvedValueOnce(apiResponseForFilters(null))
-            vi.advanceTimersToNextTimer()
-            expect(provider.timerStateForTest).toEqual({
-                delay: longDelay,
-                lifetime: 'durable',
-            })
+            const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
+            getRepoNamesFromWorkspaceUri.mockResolvedValue([])
+            expect(await provider.isUriIgnored(uri)).toBe(false)
         })
 
         it('excludes everything on network errors', async () => {
@@ -438,6 +417,49 @@ describe('ContextFiltersProvider', () => {
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             expect(await provider.isUriIgnored(uri)).toBe(false)
+        })
+
+        it('switches to a short refresh interval for network errors', async () => {
+            const longDelay = 60 * 60 * 1000
+            const shortDelay = 7 * 1000
+
+            vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
+            const apiSpy = vi.spyOn(graphqlClient, 'fetchSourcegraphAPI')
+            apiSpy.mockResolvedValueOnce(apiResponseForFilters(null))
+            await provider.init(getRepoNamesFromWorkspaceUri)
+            expect(provider.timerStateForTest).toEqual({
+                delay: longDelay,
+                lifetime: 'durable',
+            })
+
+            // Start causing errors, check we flip to a short delay regime.
+            apiSpy.mockRejectedValueOnce(new Error('network error'))
+            await vi.runOnlyPendingTimersAsync()
+            expect(provider.timerStateForTest).toEqual({
+                delay: shortDelay,
+                lifetime: 'ephemeral',
+            })
+
+            // Errors continue, check we do exponential backoff.
+            apiSpy.mockRejectedValueOnce(new Error('network error'))
+            await vi.runOnlyPendingTimersAsync()
+            expect(provider.timerStateForTest.delay).toBeGreaterThan(shortDelay)
+
+            // Fetch successfully (a "no filters set" result). Should flip to large interval.
+            apiSpy.mockResolvedValueOnce(apiResponseForFilters(null))
+            await vi.runOnlyPendingTimersAsync()
+            expect(provider.timerStateForTest).toEqual({
+                delay: longDelay,
+                lifetime: 'durable',
+            })
+
+            // Check there's no back-off for the long interval successful results.
+            apiSpy.mockResolvedValueOnce(apiResponseForFilters(null))
+            vi.advanceTimersToNextTimer()
+            expect(provider.timerStateForTest).toEqual({
+                delay: longDelay,
+                lifetime: 'durable',
+            })
         })
 
         it('does not block remote context/http(s) URIs', async () => {

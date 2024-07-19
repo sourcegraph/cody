@@ -60,6 +60,18 @@ const allowedSchemes = new Set(['http', 'https'])
 
 type ResultLifetime = 'ephemeral' | 'durable'
 
+// hasAllowEverythingFilters, hasIgnoreEverythingFilters relies on === equality
+// for fast paths.
+function canonicalizeContextFilters(filters: ContextFilters): ContextFilters {
+    if (isEqual(filters, INCLUDE_EVERYTHING_CONTEXT_FILTERS)) {
+        return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+    }
+    if (isEqual(filters, EXCLUDE_EVERYTHING_CONTEXT_FILTERS)) {
+        return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
+    }
+    return filters
+}
+
 export class ContextFiltersProvider implements vscode.Disposable {
     /**
      * `null` value means that we failed to fetch context filters.
@@ -113,7 +125,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
 
         this.cache.clear()
         this.parsedContextFilters = null
-        this.lastContextFiltersResponse = contextFilters
+        this.lastContextFiltersResponse = canonicalizeContextFilters(contextFilters)
 
         // Disable logging for unit tests. Retain for manual debugging of enterprise issues.
         if (!process.env.VITEST) {
@@ -202,7 +214,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
             }
         )
 
-        if (!repoNames) {
+        if (!repoNames?.length) {
             return 'no-repo-found'
         }
 

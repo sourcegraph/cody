@@ -1322,6 +1322,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
         return this.clientInfo?.version || '0.0.0'
     }
 
+    get capabilities(): agent_protocol.ClientCapabilities | undefined {
+        return this.clientInfo?.capabilities ?? undefined
+    }
+
     /**
      * Gets provided extension objects. This may only be called after
      * registration is complete.
