@@ -32,6 +32,7 @@ import {
     Typewriter,
     allMentionProvidersMetadata,
     hydrateAfterPostMessage,
+    inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
     isDefined,
     isError,
@@ -44,7 +45,7 @@ import {
     telemetryRecorder,
     tracer,
     truncatePromptString,
-    webMentionProvidersMetadata, inputTextWithoutContextChipsFromPromptEditorState,
+    webMentionProvidersMetadata,
 } from '@sourcegraph/cody-shared'
 
 import type { Span } from '@opentelemetry/api'
