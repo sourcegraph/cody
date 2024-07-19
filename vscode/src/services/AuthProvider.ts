@@ -259,6 +259,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
             this.client.getCodyLLMConfiguration(),
             this.client.getCurrentUserInfo(),
         ])
+        logDebug('CodyLLMConfiguration', JSON.stringify(codyLLMConfiguration))
 
         const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
