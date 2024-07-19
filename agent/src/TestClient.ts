@@ -751,7 +751,6 @@ export class TestClient extends MessageHandler {
                 message: {
                     command: 'edit',
                     text,
-                    textWithoutContextChips: text,
                     index: params?.index,
                     contextFiles: params?.contextFiles ?? [],
                     addEnhancedContext: params?.addEnhancedContext ?? false,
@@ -807,7 +806,6 @@ export class TestClient extends MessageHandler {
                 message: {
                     command: 'submit',
                     text,
-                    textWithoutContextChips: text,
                     submitType: 'user',
                     addEnhancedContext: params?.addEnhancedContext ?? false,
                     contextFiles: params?.contextFiles,

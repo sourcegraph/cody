@@ -28,9 +28,6 @@ export interface SerializedPromptEditorValue {
     /** The editor's value as plain text. */
     text: string
 
-    /** The editor's value as plain text with all context chips excluded. Used for context queries. */
-    textWithoutContextChips: string
-
     /** The context items mentioned in the value. */
     contextItems: SerializedContextItem[]
 
@@ -42,7 +39,6 @@ export function toSerializedPromptEditorValue(editor: LexicalEditor): Serialized
     const editorState = toPromptEditorState(editor)
     return {
         text: editorStateToText(editor.getEditorState()),
-        textWithoutContextChips: editorStateToTextWithoutContextChips(editor.getEditorState()),
         contextItems: contextItemsFromPromptEditorValue(editorState),
         editorState,
     }
@@ -265,16 +261,6 @@ export function textContentFromSerializedLexicalNode(
 
 export function editorStateToText(editorState: EditorState): string {
     return editorState.read(() => $getRoot().getTextContent())
-}
-
-export function editorStateToTextWithoutContextChips(editorState: EditorState): string {
-    return editorState.read(() =>
-        $getRoot()
-            .getAllTextNodes()
-            .map(node => node.getTextContent())
-            .join('')
-            .trimStart()
-    )
 }
 
 interface EditorStateFromPromptStringOptions {

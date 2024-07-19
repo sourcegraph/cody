@@ -165,7 +165,6 @@ export async function showCommandMenu(
                     } else {
                         void executeChat({
                             text: value.trim(),
-                            textWithoutContextChips: value.trim(),
                             submitType: 'user-newchat',
                             source,
                         })
