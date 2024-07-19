@@ -200,6 +200,26 @@ export function contextItemsFromPromptEditorValue(
     return contextItems
 }
 
+export function inputTextWithoutContextChipsFromPromptEditorState(
+    state: SerializedPromptEditorState
+): string {
+    const editorState: typeof state.lexicalEditorState = JSON.parse(
+        JSON.stringify(state.lexicalEditorState)
+    )
+    const queue: SerializedLexicalNode[] = [editorState.root]
+    while (queue.length > 0) {
+        const node = queue.shift()
+        if (node && 'children' in node && Array.isArray(node.children)) {
+            node.children = node.children.filter(child => !isSerializedContextItemMentionNode(child))
+            for (const child of node.children as SerializedLexicalNode[]) {
+                queue.push(child)
+            }
+        }
+    }
+
+    return textContentFromSerializedLexicalNode(editorState.root).trimStart()
+}
+
 export function filterContextItemsFromPromptEditorValue(
     value: SerializedPromptEditorValue,
     keep: (item: SerializedContextItem) => boolean

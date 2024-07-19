@@ -33,6 +33,7 @@ import {
     allMentionProvidersMetadata,
     featureFlagProvider,
     hydrateAfterPostMessage,
+    inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
     isDefined,
     isError,
@@ -686,6 +687,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 const config = getConfiguration()
                 const contextStrategy = await getContextStrategy(config.useContext)
                 span.setAttribute('strategy', contextStrategy)
+
+                // Remove context chips (repo, @-mentions) from the input text for context retrieval.
+                const inputTextWithoutContextChips = editorState
+                    ? PromptString.unsafe_fromUserQuery(
+                          inputTextWithoutContextChipsFromPromptEditorState(editorState)
+                      )
+                    : inputText
+
                 const prompter = new DefaultPrompter(
                     userContextItems,
                     addEnhancedContext || hasCorpusMentions
@@ -703,7 +712,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                         chatClient: this.chatClient,
                                         chatModel: this.chatModel,
                                     })
-                                  : inputText
+                                  : inputTextWithoutContextChips
                               const context = getEnhancedContext({
                                   strategy: contextStrategy,
                                   editor: this.editor,
@@ -718,7 +727,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                               })
                               // add a callback, but return the original context
                               context.then(c =>
-                                  this.contextAPIClient?.rankContext(requestID, inputText.toString(), c)
+                                  this.contextAPIClient?.rankContext(
+                                      requestID,
+                                      inputTextWithoutContextChips.toString(),
+                                      c
+                                  )
                               )
                               return context
                           }
