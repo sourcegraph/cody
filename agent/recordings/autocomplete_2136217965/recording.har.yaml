@@ -88,11 +88,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 3e9e6584af7ba5fd1a0eff5fb5b7fa08
+    - _id: 9118f0ca128e7b0bee2f69725f58a619
       _order: 0
       cache: {}
       request:
-        bodySize: 313
+        bodySize: 296
         cookies: []
         headers:
           - _fromType: array
@@ -112,14 +112,17 @@ log:
             name: user-agent
             value: autocomplete / v1
           - _fromType: array
+            name: x-timeout-ms
+            value: "7000"
+          - _fromType: array
             name: accept
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "313"
+            value: "296"
           - name: host
             value: sourcegraph.com
-        headersSize: 376
+        headersSize: 396
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -141,7 +144,6 @@ log:
               - "\n\r\n"
             stream: true
             temperature: 0.2
-            timeoutMs: 7000
             topK: 0
         queryString:
           - name: client-name
@@ -164,7 +166,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 15 Jul 2024 18:39:55 GMT
+            value: Thu, 18 Jul 2024 12:00:45 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -193,7 +195,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-15T18:39:55.419Z
+      startedDateTime: 2024-07-18T12:00:45.227Z
       time: 0
       timings:
         blocked: -1
@@ -203,11 +205,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 8bff7f36fa03b00892ebe67465aaabe0
+    - _id: 9020708fd372a773be5e10325e67a1e9
       _order: 0
       cache: {}
       request:
-        bodySize: 446
+        bodySize: 429
         cookies: []
         headers:
           - _fromType: array
@@ -227,14 +229,17 @@ log:
             name: user-agent
             value: autocomplete / v1
           - _fromType: array
+            name: x-timeout-ms
+            value: "7000"
+          - _fromType: array
             name: accept
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "446"
+            value: "429"
           - name: host
             value: sourcegraph.com
-        headersSize: 376
+        headersSize: 396
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -269,7 +274,6 @@ log:
               - "\n\r\n"
             stream: true
             temperature: 0.2
-            timeoutMs: 7000
             topK: 0
         queryString:
           - name: client-name
@@ -278,14 +282,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
       response:
-        bodySize: 2796
+        bodySize: 3345
         content:
           mimeType: text/event-stream
-          size: 2796
+          size: 3345
           text: >+
             event: completion
 
-            data: {"completion":"for (let i = 0; i \u003c nums.length; i++) {\n        for (let j = i + 1; j \u003c nums.length; j++) {\n            if (nums[i] \u003e nums[j]) {\n                [nums[i], nums[j]] = [nums[j], nums[i]]\n            }\n        }\n    }","stopReason":"stop"}
+            data: {"completion":"for (let i = 0; i \u003c nums.length; i++) {\n        for (let j = 0; j \u003c nums.length - i - 1; j++) {\n            if (nums[j] \u003e nums[j + 1]) {\n                [nums[j], nums[j + 1]] = [nums[j + 1], nums[j]];\n            }\n        }\n    }","stopReason":"stop"}
 
 
             event: done
@@ -295,7 +299,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 15 Jul 2024 18:39:57 GMT
+            value: Thu, 18 Jul 2024 12:00:46 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -324,7 +328,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-15T18:39:56.035Z
+      startedDateTime: 2024-07-18T12:00:45.941Z
       time: 0
       timings:
         blocked: -1

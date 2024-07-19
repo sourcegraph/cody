@@ -1,0 +1,11 @@
+.tabs-container {
+    background-color: var(--vscode-sideBar-background);
+    display: inline-flex;
+    justify-content: space-between;
+}
+
+.active-tab {
+    border-color: var(--vscode-button-background);
+    color: var(--vscode-button-background);
+    border-width: 1.25px;
+}
