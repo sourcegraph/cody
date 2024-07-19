@@ -29,7 +29,7 @@ const getDefaultRangeItems = (
 
     const fullItem = {
         ...FULL_RANGE_ITEM,
-        range: new vscode.Range(0, 0, document.lineCount + 1, 0),
+        range: document.validateRange(new vscode.Range(0, 0, document.lineCount + 1, 0)),
     }
 
     if (initialExpandedRange) {
