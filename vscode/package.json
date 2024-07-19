@@ -239,15 +239,42 @@
           "type": "webview",
           "id": "cody.chat",
           "name": "Chat",
-          "when": "!cody.activated || isConsumer"
+          "when": "!cody.activated || (cody.activated && cody.isConsumer)"
         },
         {
           "id": "cody.support.tree.view",
           "name": "Settings & Support",
-          "when": "cody.activated && (!isConsumer || !cody.devOrTest)"
+          "when": "cody.activated && (!cody.isConsumer || !cody.devOrTest)"
+        },
+        {
+          "id": "cody.chat.tree.view",
+          "name": "Chats",
+          "when": "cody.activated && (!cody.isConsumer || !cody.devOrTest)"
+        },
+        {
+          "id": "cody.commands.tree.view",
+          "name": "Commands",
+          "when": "cody.activated && !cody.currentFileIgnored && (!cody.isConsumer || !cody.devOrTest)"
+        },
+        {
+          "id": "cody.commands.disabled.view",
+          "name": "Commands",
+          "when": "cody.activated && cody.currentFileIgnored && (!cody.isConsumer || !cody.devOrTest)"
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "cody.chat.tree.view",
+        "contents": "Chat alongside your code, attach files, add additional context, and try different chat models.\n[New Chat](command:cody.chat.newEditorPanel)",
+        "when": "cody.activated"
+      },
+      {
+        "view": "cody.commands.disabled.view",
+        "contents": "Commands are disabled for this file by an admin setting. Other Cody features are also disabled.\nMore info about [Cody Context Filters](https://sourcegraph.com/docs/cody/capabilities/ignore-context#cody-ignore)",
+        "when": "cody.activated && cody.currentFileIgnored"
+      }
+    ],
     "commands": [
       {
         "command": "cody.welcome",
@@ -457,7 +484,7 @@
         "command": "cody.chat.moveFromEditor",
         "category": "Cody",
         "title": "Move Chat from Editor to Main Cody Panel",
-        "enablement": "cody.activated",
+        "enablement": "cody.activated && view == cody.chat",
         "group": "Cody",
         "icon": "$(layout-sidebar-left)"
       },
@@ -514,7 +541,7 @@
         "title": "Chat History",
         "group": "Cody",
         "icon": "$(list-unordered)",
-        "enablement": "cody.activated && cody.hasChatHistory && !cody.devOrTest"
+        "enablement": "cody.activated && cody.hasChatHistory"
       },
       {
         "command": "cody.search.index-update",

@@ -48,11 +48,15 @@ export interface Options extends MessageProviderOptions {
 
 export class ChatsController implements vscode.Disposable {
     // Chat view in the panel (typically in the sidebar)
-    private panel: ChatController | undefined = undefined
+    private panel: ChatController
 
     // Chat views in editor panels
     private editors: ChatController[] = []
     private activeEditor: ChatController | undefined = undefined
+
+    // Chat history view
+    public historyTreeViewProvider = new TreeViewProvider('chat', featureFlagProvider)
+    public historyTreeView: vscode.TreeView<vscode.TreeItem>
 
     // View controller for the support panel
     public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
@@ -74,12 +78,24 @@ export class ChatsController implements vscode.Disposable {
         private readonly contextAPIClient: ContextAPIClient | null
     ) {
         logDebug('ChatsController:constructor', 'init')
+        this.panel = this.createChatController()
         this.disposables.push(
             this.authProvider.onChange(authStatus => this.setAuthStatus(authStatus), {
                 runImmediately: true,
             })
         )
-        this.setAuthStatus(authProvider.getAuthStatus())
+
+        this.historyTreeView = vscode.window.createTreeView('cody.chat.tree.view', {
+            treeDataProvider: this.historyTreeViewProvider,
+        })
+
+        this.disposables.push(
+            this.historyTreeViewProvider,
+            this.historyTreeView,
+            chatHistory.onHistoryChanged(() => {
+                this.historyTreeViewProvider.refresh()
+            })
+        )
     }
 
     private async setAuthStatus(authStatus: AuthStatus): Promise<void> {
@@ -97,27 +113,12 @@ export class ChatsController implements vscode.Disposable {
             username: authStatus.username,
         }
 
-        this.supportTreeViewProvider.setAuthStatus(authStatus)
-
         const isConsumer = authStatus.isLoggedIn && authStatus.isDotCom
-        vscode.commands.executeCommand('setContext', 'isConsumer', isConsumer)
-        this.registerSidebarPanel(authStatus)
-    }
+        vscode.commands.executeCommand('setContext', 'cody.isConsumer', isConsumer)
 
-    /**
-     * Register sidebar panel for chat for PLG users only.
-     * TODO: Remove this when Universal Chat is ready.
-     */
-    private registerSidebarPanel(authStatus: AuthStatus) {
-        if (authStatus.isDotCom && !this.panel) {
-            this.panel = this.createChatController()
-
-            this.disposables.push(
-                vscode.window.registerWebviewViewProvider('cody.chat', this.panel, {
-                    webviewOptions: { retainContextWhenHidden: true },
-                })
-            )
-        }
+        this.panel.setAuthStatus(authStatus)
+        this.supportTreeViewProvider.setAuthStatus(authStatus)
+        this.historyTreeViewProvider.updateTree(authStatus)
     }
 
     public async restoreToPanel(panel: vscode.WebviewPanel, chatID: string): Promise<void> {
@@ -137,9 +138,11 @@ export class ChatsController implements vscode.Disposable {
             vscode.window.registerTreeDataProvider(
                 'cody.support.tree.view',
                 this.supportTreeViewProvider
-            )
+            ),
+            vscode.window.registerWebviewViewProvider('cody.chat', this.panel, {
+                webviewOptions: { retainContextWhenHidden: true },
+            })
         )
-
         const restoreToEditor = async (
             chatID: string,
             chatQuestion?: string
@@ -169,8 +172,8 @@ export class ChatsController implements vscode.Disposable {
                 vscode.commands.executeCommand('cody.chat.focus')
             ),
             vscode.commands.registerCommand('cody.chat.newPanel', async () => {
-                await this.panel?.clearAndRestartSession()
-                this.panel && vscode.commands.executeCommand('cody.chat.focus')
+                await this.panel.clearAndRestartSession()
+                await vscode.commands.executeCommand('cody.chat.focus')
             }),
             vscode.commands.registerCommand(
                 'cody.chat.toggle',
@@ -204,16 +207,16 @@ export class ChatsController implements vscode.Disposable {
     }
 
     private async moveChatFromPanelToEditor(): Promise<void> {
-        const sessionID = this.panel?.sessionID
+        const sessionID = this.panel.sessionID
         await Promise.all([
             this.getOrCreateEditorChatController(sessionID),
-            this.panel?.clearAndRestartSession(),
+            this.panel.clearAndRestartSession(),
         ])
     }
 
     private async moveChatFromEditorToPanel(): Promise<void> {
         const sessionID = this.activeEditor?.sessionID
-        if (!this.panel || !sessionID) {
+        if (!sessionID) {
             return
         }
         await Promise.all([
@@ -248,7 +251,7 @@ export class ChatsController implements vscode.Disposable {
             }
             return this.activeEditor
         }
-        return this.panel ?? (await this.getOrCreateEditorChatController())
+        return this.panel
     }
 
     /**
@@ -499,7 +502,7 @@ export class ChatsController implements vscode.Disposable {
             editor.dispose()
         }
 
-        this.panel?.clearAndRestartSession()
+        this.panel.clearAndRestartSession()
     }
 
     public dispose(): void {

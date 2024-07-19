@@ -264,7 +264,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             orientation="vertical"
             className={styles.outerContainer}
         >
-            <TabsBar currentView={view} setView={setView} />
+            {/* NOTE: Display tabs to PLG users only until Universal Cody is ready. */}
+            {userAccountInfo.isDotComUser && <TabsBar currentView={view} setView={setView} />}
             {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
             <TabContainer value={view}>
                 {view === 'chat' && (

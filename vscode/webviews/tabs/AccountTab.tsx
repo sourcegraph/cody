@@ -17,9 +17,8 @@ export const AccountTab: React.FC<AccountTabProps> = ({ userInfo }) => {
     const { user, isCodyProUser, isDotComUser, ide } = userInfo
     const { displayName, username, primaryEmail, endpoint } = user
 
-    // Open the native system pop-up for VS Code.
+    // We open the native system pop-up for VS Code.
     if (ide === CodyIDE.VSCode) {
-        getVSCodeAPI().postMessage({ command: 'command', id: 'cody.auth.account' })
         return null
     }
 

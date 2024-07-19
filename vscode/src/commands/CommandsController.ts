@@ -31,6 +31,7 @@ class CommandsController implements vscode.Disposable {
     public init(provider?: CommandsProvider) {
         if (provider) {
             this.provider = provider
+            this.disposables.push(this.provider)
         }
     }
 
