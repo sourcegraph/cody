@@ -242,6 +242,16 @@
           "when": "!cody.activated || cody.isConsumer || cody.chatInSidebar"
         },
         {
+          "id": "cody.support.tree.view",
+          "name": "Settings & Support",
+          "when": "cody.activated && (!cody.isConsumer || !cody.devOrTest)"
+        },
+        {
+          "id": "cody.chat.tree.view",
+          "name": "Chats",
+          "when": "cody.activated && !cody.chatInSidebar"
+        },
+        {
           "id": "cody.commands.tree.view",
           "name": "Commands",
           "when": "cody.activated && !cody.currentFileIgnored && !cody.chatInSidebar"
@@ -250,31 +260,6 @@
           "id": "cody.commands.disabled.view",
           "name": "Commands",
           "when": "cody.activated && cody.currentFileIgnored && !cody.chatInSidebar"
-        },
-        {
-          "id": "cody.chat.tree.view",
-          "name": "Chats",
-          "when": "cody.activated && !cody.chatInSidebar"
-        },
-        {
-          "id": "cody.support.tree.view",
-          "name": "Settings & Support",
-          "when": "cody.activated && (!cody.isConsumer || !cody.devOrTest)"
-        },
-        {
-          "id": "cody.chat.tree.view",
-          "name": "Chats",
-          "when": "cody.activated && (!cody.isConsumer || !cody.devOrTest)"
-        },
-        {
-          "id": "cody.commands.tree.view",
-          "name": "Commands",
-          "when": "cody.activated && !cody.currentFileIgnored && (!cody.isConsumer || !cody.devOrTest)"
-        },
-        {
-          "id": "cody.commands.disabled.view",
-          "name": "Commands",
-          "when": "cody.activated && cody.currentFileIgnored && (!cody.isConsumer || !cody.devOrTest)"
         }
       ]
     },
