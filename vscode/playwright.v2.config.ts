@@ -1,4 +1,4 @@
-import os from 'node:os'
+import { homedir } from 'node:os'
 import { type ReporterDescription, defineConfig } from '@playwright/test'
 import { ulid } from 'ulidx'
 import type { SymlinkExtensions } from './e2e/utils/symlink-extensions.setup'
@@ -9,9 +9,7 @@ const isWin = process.platform.startsWith('win')
 const isCI = !!process.env.CI
 process.env.RUN_ID = process.env.RUN_ID || ulid()
 
-export default defineConfig<
-    WorkerOptions & TestOptions & TmpDirOptions & SymlinkExtensions & GlobalSetupOptions
->({
+export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions & SymlinkExtensions>({
     workers: '50%',
     retries: 0, // NO MORE FLAKE ALLOWED! It's a slippery slope.
     forbidOnly: isCI,
@@ -32,7 +30,7 @@ export default defineConfig<
         setupClearGlobalTmpParentDir: true,
         vscodeVersion: 'stable',
         vscodeTmpDir: '../.test/global/vscode',
-        vscodeExtensionCacheDir: `${os.homedir()}/.vscode-server/extensions`,
+        vscodeExtensionCacheDir: `${homedir()}/.vscode-server/extensions`,
         vscodeServerTmpDir: '../.test/global/vscode-server',
         binaryTmpDir: '../.test/global/bin',
         waitForExtensionHostDebugger: false,
