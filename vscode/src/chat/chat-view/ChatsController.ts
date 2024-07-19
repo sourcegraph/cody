@@ -10,9 +10,8 @@ import {
     type Guardrails,
     ModelUsage,
     ModelsService,
-    STATE_VERSION_CURRENT,
+    editorStateFromPromptString,
     featureFlagProvider,
-    lexicalEditorStateFromPromptString,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
@@ -28,6 +27,7 @@ import { getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import type { AuthProvider } from '../../services/AuthProvider'
+import type { ContextAPIClient } from '../context/contextAPIClient'
 import {
     ChatController,
     type ChatSession,
@@ -69,7 +69,8 @@ export class ChatsController implements vscode.Disposable {
         private readonly localEmbeddings: LocalEmbeddingsController | null,
         private readonly contextRanking: ContextRankingController | null,
         private readonly symf: SymfRunner | null,
-        private readonly guardrails: Guardrails
+        private readonly guardrails: Guardrails,
+        private readonly contextAPIClient: ContextAPIClient | null
     ) {
         logDebug('ChatsController:constructor', 'init')
         this.panel = this.createChatController()
@@ -271,18 +272,14 @@ export class ChatsController implements vscode.Disposable {
     }: ExecuteChatArguments): Promise<ChatSession | undefined> {
         const provider = await this.getOrCreateEditorChatController()
         const abortSignal = provider.startNewSubmitOrEditOperation()
-        const editorState = lexicalEditorStateFromPromptString(text)
+        const editorState = editorStateFromPromptString(text)
         await provider.handleUserMessageSubmission(
             uuid.v4(),
             text,
             textWithoutContextChips,
             submitType,
             contextFiles ?? [],
-            {
-                lexicalEditorState: editorState,
-                v: STATE_VERSION_CURRENT,
-                minReaderV: STATE_VERSION_CURRENT,
-            },
+            editorState,
             addEnhancedContext ?? true,
             abortSignal,
             source,
@@ -443,6 +440,7 @@ export class ChatsController implements vscode.Disposable {
             models,
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,
+            contextAPIClient: this.contextAPIClient,
         })
     }
 

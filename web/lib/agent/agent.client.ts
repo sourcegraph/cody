@@ -76,6 +76,9 @@ export async function createAgentClient({
         name: 'web',
         version: '0.0.1',
         workspaceRootUri,
+        capabilities: {
+            completions: 'none',
+        },
         extensionConfiguration: {
             accessToken,
             serverEndpoint,

@@ -7,7 +7,7 @@ import * as vscode from 'vscode'
 
 import { newAgentClient } from '../../agent'
 
-import { ModelsService, getDotComDefaultModels, graphqlClient } from '@sourcegraph/cody-shared'
+import { ModelsService, graphqlClient } from '@sourcegraph/cody-shared'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { dotcomCredentials } from '../../../../vscode/src/testutils/testing-credentials'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
@@ -328,7 +328,6 @@ export const benchCommand = new commander.Command('bench')
             recordingDirectory,
             keepUnusedRecordings: true,
         })
-        ModelsService.setModels(getDotComDefaultModels())
         try {
             await Promise.all(
                 workspacesToRun.map(workspace => evaluateWorkspace(workspace, recordingDirectory))
