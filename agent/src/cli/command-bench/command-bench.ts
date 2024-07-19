@@ -1,6 +1,6 @@
 import * as fspromises from 'node:fs/promises'
 import * as path from 'node:path'
-import glob from 'glob'
+import { glob } from 'glob'
 
 import * as commander from 'commander'
 import * as vscode from 'vscode'
