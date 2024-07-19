@@ -92,7 +92,6 @@ import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
 import { startClientStateBroadcaster } from '../clientStateBroadcaster'
 import { getChatContextItemsForMention } from '../context/chatContext'
-import type { ContextAPIClient } from '../context/contextAPIClient'
 import type {
     ChatSubmitType,
     ConfigurationSubsetForWebview,
