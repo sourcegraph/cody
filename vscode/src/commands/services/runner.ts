@@ -119,6 +119,7 @@ export class CommandRunner implements vscode.Disposable {
             type: 'chat',
             session: await executeChat({
                 text: prompt,
+                textWithoutContextChips: prompt,
                 submitType: 'user',
                 contextFiles,
                 addEnhancedContext: this.command.context?.codebase ?? false,

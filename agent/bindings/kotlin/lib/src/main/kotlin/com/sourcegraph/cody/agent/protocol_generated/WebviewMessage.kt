@@ -99,6 +99,7 @@ data class SubmitWebviewMessage(
   val addEnhancedContext: Boolean? = null,
   val contextFiles: List<ContextItem>? = null,
   val text: String,
+  val textWithoutContextChips: String,
   val submitType: ChatSubmitType, // Oneof: user, user-newchat
   val editorState: Any? = null,
 ) : WebviewMessage() {
@@ -219,6 +220,7 @@ data class EditWebviewMessage(
   val addEnhancedContext: Boolean? = null,
   val contextFiles: List<ContextItem>? = null,
   val text: String,
+  val textWithoutContextChips: String,
   val index: Long? = null,
   val editorState: Any? = null,
 ) : WebviewMessage() {
