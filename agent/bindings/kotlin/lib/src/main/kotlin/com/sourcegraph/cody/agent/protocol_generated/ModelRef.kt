@@ -1,5 +1,9 @@
 @file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.agent.protocol_generated;
 
-typealias ModelUsage = String // One of: chat, edit, autocomplete
+data class ModelRef(
+  val providerId: ProviderId,
+  val apiVersionId: ApiVersionId,
+  val modelId: ModelId,
+)
 

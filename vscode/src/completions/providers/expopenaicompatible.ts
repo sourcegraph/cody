@@ -1,3 +1,6 @@
+// TODO(slimsag): self-hosted-models: deprecate and remove this once customers are upgraded
+// to non-experimental version
+
 import {
     type AuthStatus,
     type AutocompleteContextSnippet,
@@ -6,9 +9,7 @@ import {
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
     type ConfigurationWithAccessToken,
-    type Model,
     PromptString,
-    charsToTokens,
     ps,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
@@ -23,7 +24,6 @@ import {
 } from '../text-processing'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
-import { logDebug } from '../../log'
 import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
@@ -42,7 +42,7 @@ import {
 } from './provider'
 
 interface OpenAICompatibleOptions {
-    model: Model
+    model: OpenAICompatibleModel
     maxContextTokens?: number
     client: CodeCompletionsClient
     timeouts: AutocompleteTimeouts
@@ -50,10 +50,61 @@ interface OpenAICompatibleOptions {
     authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
 }
 
-const PROVIDER_IDENTIFIER = 'openaicompatible'
+const PROVIDER_IDENTIFIER = 'experimental-openaicompatible'
+
+const EOT_STARCHAT = '<|end|>'
+const EOT_STARCODER = '<|endoftext|>'
+const EOT_LLAMA_CODE = ' <EOT>'
+
+// Model identifiers (we are the source/definition for these in case of the openaicompatible provider.)
+const MODEL_MAP = {
+    starchat: 'openaicompatible/starchat-16b-beta',
+    'starchat-16b-beta': 'openaicompatible/starchat-16b-beta',
+
+    starcoder: 'openaicompatible/starcoder',
+    'starcoder-16b': 'openaicompatible/starcoder-16b',
+    'starcoder-7b': 'openaicompatible/starcoder-7b',
+    'llama-code-7b': 'openaicompatible/llama-code-7b',
+    'llama-code-13b': 'openaicompatible/llama-code-13b',
+    'llama-code-13b-instruct': 'openaicompatible/llama-code-13b-instruct',
+    'mistral-7b-instruct-4k': 'openaicompatible/mistral-7b-instruct-4k',
+}
+
+type OpenAICompatibleModel =
+    | keyof typeof MODEL_MAP
+    // `starcoder-hybrid` uses the 16b model for multiline requests and the 7b model for single line
+    | 'starcoder-hybrid'
+
+function getMaxContextTokens(model: OpenAICompatibleModel): number {
+    switch (model) {
+        case 'starchat':
+        case 'starchat-16b-beta':
+        case 'starcoder':
+        case 'starcoder-hybrid':
+        case 'starcoder-16b':
+        case 'starcoder-7b': {
+            // StarCoder and StarChat support up to 8k tokens, we limit to ~6k so we do not hit token limits.
+            return 8192 - 2048
+        }
+        case 'llama-code-7b':
+        case 'llama-code-13b':
+        case 'llama-code-13b-instruct':
+            // Llama Code was trained on 16k context windows, we're constraining it here to better
+            return 16384 - 2048
+        case 'mistral-7b-instruct-4k':
+            return 4096 - 2048
+        default:
+            return 1200
+    }
+}
+
+const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
+    singlelineStopSequences: ['\n'],
+    multilineStopSequences: ['\n\n', '\n\r\n'],
+})
 
 class OpenAICompatibleProvider extends Provider {
-    private model: Model
+    private model: OpenAICompatibleModel
     private promptChars: number
     private client: CodeCompletionsClient
     private timeouts?: AutocompleteTimeouts
@@ -81,7 +132,7 @@ class OpenAICompatibleProvider extends Provider {
         const languageConfig = getLanguageConfig(this.options.document.languageId)
 
         // In StarCoder we have a special token to announce the path of the file
-        if (!isStarCoder(this.model)) {
+        if (!isStarCoderFamily(this.model)) {
             intro.push(ps`Path: ${PromptString.fromDisplayPath(this.options.document.uri)}`)
         }
 
@@ -138,16 +189,7 @@ class OpenAICompatibleProvider extends Provider {
         const partialRequestParams = getCompletionParams({
             providerOptions: this.options,
             timeouts: this.timeouts,
-            lineNumberDependentCompletionParams:
-                isStarChat(this.model) || isStarCoder(this.model)
-                    ? getLineNumberDependentCompletionParams({
-                          singlelineStopSequences: ['\n', '<|endoftext|>', '<file_sep>'],
-                          multilineStopSequences: ['\n\n', '\n\r\n', '<|endoftext|>', '<file_sep>'],
-                      })
-                    : getLineNumberDependentCompletionParams({
-                          singlelineStopSequences: ['\n'],
-                          multilineStopSequences: ['\n\n', '\n\r\n'],
-                      }),
+            lineNumberDependentCompletionParams,
         })
 
         const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
@@ -165,16 +207,22 @@ class OpenAICompatibleProvider extends Provider {
             languageId: this.options.document.languageId,
         }
 
-        const prompt = isStarChat(this.model)
-            ? promptString(promptProps, useInfill, this.model.model)
+        const prompt = this.model.startsWith('starchat')
+            ? promptString(promptProps, useInfill, this.model)
             : this.createPrompt(snippets)
 
+        const { multiline } = this.options
         const requestParams: CodeCompletionsParams = {
             ...partialRequestParams,
             messages: [{ speaker: 'human', text: prompt }],
             temperature: 0.2,
             topK: 0,
-            model: this.model.model,
+            model:
+                this.model === 'starcoder-hybrid'
+                    ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
+                    : this.model.startsWith('starchat')
+                      ? '' // starchat is not a supported backend model yet, use the default server-chosen model.
+                      : MODEL_MAP[this.model],
         }
 
         tracer?.params(requestParams)
@@ -220,12 +268,17 @@ class OpenAICompatibleProvider extends Provider {
         prefix: PromptString,
         suffix: PromptString
     ): PromptString {
-        if (isStarCoder(this.model) || isStarChat(this.model)) {
+        if (isStarCoderFamily(this.model) || isStarChatFamily(this.model)) {
             // c.f. https://huggingface.co/bigcode/starcoder#fill-in-the-middle
             // c.f. https://arxiv.org/pdf/2305.06161.pdf
             return ps`<filename>${filename}<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
         }
-        if (isMistral(this.model) || isMixtral(this.model)) {
+        if (isLlamaCode(this.model)) {
+            // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
+            return ps`<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
+        }
+        if (this.model === 'mistral-7b-instruct-4k') {
+            // This part is copied from the anthropic prompt but fitted into the Mistral instruction format
             const { head, tail } = getHeadAndTail(prefix)
             const infillBlock = tail.trimmed.toString().endsWith('{\n')
                 ? tail.trimmed.trimEnd()
@@ -240,16 +293,19 @@ ${intro}${infillPrefix ? infillPrefix : ''}${OPENING_CODE_TAG}${CLOSING_CODE_TAG
  ${OPENING_CODE_TAG}${infillBlock}`
         }
 
-        logDebug('OpenAICompatible', 'Could not generate infilling prompt for model', this.model.model)
+        console.error('Could not generate infilling prompt for', this.model)
         return ps`${intro}${prefix}`
     }
 
     private postProcess = (content: string): string => {
-        if (isStarCoder(this.model)) {
-            return content.replace('<|endoftext|>', '').replace('<file_sep>', '')
+        if (isStarCoderFamily(this.model)) {
+            return content.replace(EOT_STARCODER, '')
         }
-        if (isStarChat(this.model)) {
-            return content.replace('<|end|>', '')
+        if (isStarChatFamily(this.model)) {
+            return content.replace(EOT_STARCHAT, '')
+        }
+        if (isLlamaCode(this.model)) {
+            return content.replace(EOT_LLAMA_CODE, '')
         }
         return content
     }
@@ -266,16 +322,23 @@ export function createProviderConfig({
     model,
     timeouts,
     ...otherOptions
-}: Omit<OpenAICompatibleOptions, 'maxContextTokens'>): ProviderConfig {
-    logDebug('OpenAICompatible', 'autocomplete provider using model', JSON.stringify(model))
+}: Omit<OpenAICompatibleOptions, 'model' | 'maxContextTokens'> & {
+    model: string | null
+}): ProviderConfig {
+    const clientModel =
+        model === null || model === ''
+            ? 'starcoder-hybrid'
+            : model === 'starcoder-hybrid'
+              ? 'starcoder-hybrid'
+              : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
+                ? (model as keyof typeof MODEL_MAP)
+                : null
 
-    // TODO(slimsag): self-hosted-models: properly respect ClientSideConfig options in the future
-    logDebug('OpenAICompatible', 'note: not all clientSideConfig options are respected yet.')
+    if (clientModel === null) {
+        throw new Error(`Unknown model: \`${model}\``)
+    }
 
-    // TODO(slimsag): self-hosted-models: lift ClientSideConfig defaults to a standard centralized location
-    const maxContextTokens = charsToTokens(
-        model.clientSideConfig?.openAICompatible?.contextSizeHintTotalCharacters || 4096
-    )
+    const maxContextTokens = getMaxContextTokens(clientModel)
 
     return {
         create(options: ProviderOptions) {
@@ -285,7 +348,7 @@ export function createProviderConfig({
                     id: PROVIDER_IDENTIFIER,
                 },
                 {
-                    model: model,
+                    model: clientModel,
                     maxContextTokens,
                     timeouts,
                     ...otherOptions,
@@ -294,26 +357,20 @@ export function createProviderConfig({
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         identifier: PROVIDER_IDENTIFIER,
-        model: model.model,
+        model: clientModel,
     }
 }
 
-// TODO(slimsag): self-hosted-models: eliminate model-specific conditionals here entirely
-// by relying on ClientSideConfig appropriately.
-function isStarChat(model: Model): boolean {
-    return model.model.startsWith('starchat')
+function isStarChatFamily(model: string): boolean {
+    return model.startsWith('starchat')
 }
 
-function isStarCoder(model: Model): boolean {
-    return model.model.startsWith('starcoder')
+function isStarCoderFamily(model: string): boolean {
+    return model.startsWith('starcoder')
 }
 
-function isMistral(model: Model): boolean {
-    return model.model.startsWith('mistral')
-}
-
-function isMixtral(model: Model): boolean {
-    return model.model.startsWith('mixtral')
+function isLlamaCode(model: string): boolean {
+    return model.startsWith('llama-code')
 }
 
 interface Prompt {
@@ -344,6 +401,24 @@ function promptString(prompt: Prompt, infill: boolean, model: string): PromptStr
         ),
         ps`\n\n`
     )
+
     const currentFileNameComment = fileNameLine(prompt.uri, commentStart)
+
+    if (model.startsWith('codellama:') && infill) {
+        const infillPrefix = context.concat(currentFileNameComment, prompt.prefix)
+
+        /**
+         * The infilll prompt for Code Llama.
+         * Source: https://github.com/facebookresearch/codellama/blob/e66609cfbd73503ef25e597fd82c59084836155d/llama/generation.py#L418
+         *
+         * Why are there spaces left and right?
+         * > For instance, the model expects this format: `<PRE> {pre} <SUF>{suf} <MID>`.
+         * But you won’t get infilling if the last space isn’t added such as in `<PRE> {pre} <SUF>{suf}<MID>`
+         *
+         * Source: https://blog.fireworks.ai/simplifying-code-infilling-with-code-llama-and-fireworks-ai-92c9bb06e29c
+         */
+        return ps`<PRE> ${infillPrefix} <SUF>${prompt.suffix} <MID>`
+    }
+
     return context.concat(currentFileNameComment, prompt.prefix)
 }
