@@ -1,3 +1,4 @@
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import { useCallback } from 'react'
 import { URI } from 'vscode-uri'
 import { ACCOUNT_USAGE_URL } from '../../src/chat/protocol'
@@ -13,14 +14,14 @@ interface AccountTabProps {
 
 // TODO: Implement the AccountTab component once the design is ready.
 export const AccountTab: React.FC<AccountTabProps> = ({ userInfo }) => {
-    const { user, isCodyProUser, isDotComUser } = userInfo
+    const { user, isCodyProUser, isDotComUser, ide } = userInfo
     const { displayName, username, primaryEmail, endpoint } = user
 
     // Open the native system pop-up for VS Code.
-    // if (ide === CodyIDE.VSCode) {
-    //     getVSCodeAPI().postMessage({ command: 'command', id: 'cody.auth.account' })
-    //     return null
-    // }
+    if (ide === CodyIDE.VSCode) {
+        getVSCodeAPI().postMessage({ command: 'command', id: 'cody.auth.account' })
+        return null
+    }
 
     const actions = [
         {

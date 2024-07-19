@@ -238,7 +238,13 @@
         {
           "type": "webview",
           "id": "cody.chat",
-          "name": "Chat"
+          "name": "Chat",
+          "when": "!cody.activated || isConsumer"
+        },
+        {
+          "id": "cody.support.tree.view",
+          "name": "Settings & Support",
+          "when": "cody.activated && (!isConsumer || !cody.devOrTest)"
         }
       ]
     },
@@ -501,6 +507,14 @@
         "group": "Cody",
         "icon": "$(arrow-circle-down)",
         "enablement": "cody.activated && cody.hasChatHistory"
+      },
+      {
+        "command": "cody.chat.history.panel",
+        "category": "Cody",
+        "title": "Chat History",
+        "group": "Cody",
+        "icon": "$(list-unordered)",
+        "enablement": "cody.activated && cody.hasChatHistory && !cody.devOrTest"
       },
       {
         "command": "cody.search.index-update",
@@ -839,8 +853,18 @@
       "view/title": [
         {
           "command": "cody.menu.commands",
-          "when": "openEditorsFocus && cody.activated",
+          "when": "view == cody.chat && cody.activated",
           "group": "navigation@1"
+        },
+        {
+          "command": "cody.chat.newPanel",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation@2"
+        },
+        {
+          "command": "cody.chat.history.panel",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation@3"
         },
         {
           "command": "cody.chat.moveToEditor",
@@ -849,22 +873,22 @@
         },
         {
           "command": "cody.welcome",
-          "when": "view == cody.chat",
+          "when": "view == cody.support.tree.view",
           "group": "7_cody@0"
         },
         {
           "command": "cody.debug.export.logs",
-          "when": "view == cody.chat",
+          "when": "view == cody.support.tree.view",
           "group": "8_cody@1"
         },
         {
           "command": "cody.debug.enable.all",
-          "when": "view == cody.chat && !config.cody.debug.verbose",
+          "when": "view == cody.support.tree.view && !config.cody.debug.verbose",
           "group": "8_cody@0"
         },
         {
           "command": "cody.debug.outputChannel",
-          "when": "view == cody.chat",
+          "when": "view == cody.support.tree.view",
           "group": "8_cody@2"
         },
         {
@@ -893,10 +917,29 @@
           "visibility": "visible"
         },
         {
+          "command": "cody.chat.history.panel",
+          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated",
+          "group": "navigation@3",
+          "visibility": "visible"
+        },
+        {
           "command": "cody.chat.view.popOut",
           "when": "activeWebviewPanelId == cody.editorPanel && cody.activated && !isAuxiliaryEditorPart",
           "group": "navigation@4",
           "visibility": "visible"
+        },
+        {
+          "command": "cody.settings.extension.chat",
+          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated",
+          "group": "navigation@5",
+          "visibility": "visible"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "cody.copy.version",
+          "when": "view == cody.support.tree.view && viewItem == cody.version",
+          "group": "inline@1"
         }
       ],
       "terminal/context": [

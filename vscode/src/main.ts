@@ -68,6 +68,7 @@ import { repoNameResolver } from './repository/repo-name-resolver'
 import { AuthProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
+import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
 import { VSCodeSecretStorage, secretStorage } from './services/SecretStorageProvider'
 import { registerSidebarCommands } from './services/SidebarCommands'
@@ -459,6 +460,9 @@ function registerChatCommands(authProvider: AuthProvider, disposables: vscode.Di
         ),
         vscode.commands.registerCommand('cody.chat.view.popOut', async () => {
             vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow')
+        }),
+        vscode.commands.registerCommand('cody.chat.history.panel', async () => {
+            await displayHistoryQuickPick(authProvider.getAuthStatus())
         }),
         vscode.commands.registerCommand('cody.settings.extension.chat', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', {
