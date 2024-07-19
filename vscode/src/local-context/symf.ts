@@ -122,6 +122,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     }
 
     public getResults(userQuery: PromptString, scopeDirs: vscode.Uri[]): Promise<Promise<Result[]>[]> {
+        logDebug('fixquery.symf', userQuery.toString())
         const expandedQuery = rewriteKeywordQuery(this.completionsClient, userQuery)
         return Promise.resolve(
             scopeDirs
