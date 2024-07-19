@@ -319,7 +319,7 @@ describe('ContextFiltersProvider', () => {
             )
         })
 
-        it('returns `no-repo-found` if repo name is not found', async () => {
+        it('returns `no-repo-found` if repo name is not found (undefined)', async () => {
             await initProviderWithContextFilters({
                 include: [{ repoNamePattern: '^github\\.com/sourcegraph/cody' }],
                 exclude: [{ repoNamePattern: '^github\\.com/sourcegraph/sourcegraph' }],
@@ -327,6 +327,17 @@ describe('ContextFiltersProvider', () => {
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             getRepoNamesFromWorkspaceUri.mockResolvedValue(undefined)
+            expect(await provider.isUriIgnored(uri)).toBe('no-repo-found')
+        })
+
+        it('returns `no-repo-found` if repo name is not found (empty array)', async () => {
+            await initProviderWithContextFilters({
+                include: [{ repoNamePattern: '^github\\.com/sourcegraph/cody' }],
+                exclude: [{ repoNamePattern: '^github\\.com/sourcegraph/sourcegraph' }],
+            })
+
+            const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
+            getRepoNamesFromWorkspaceUri.mockResolvedValue([])
             expect(await provider.isUriIgnored(uri)).toBe('no-repo-found')
         })
 

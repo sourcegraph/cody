@@ -171,7 +171,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
             }
         )
 
-        if (!repoNames) {
+        if (!repoNames?.length) {
             return 'no-repo-found'
         }
 
