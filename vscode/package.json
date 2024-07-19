@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.26.4",
+  "version": "1.26.5",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -239,7 +239,7 @@
           "type": "webview",
           "id": "cody.chat",
           "name": "Chat",
-          "when": "!cody.activated || cody.chatInSidebar"
+          "when": "!cody.activated || cody.isConsumer || cody.chatInSidebar"
         },
         {
           "id": "cody.commands.tree.view",
@@ -259,7 +259,22 @@
         {
           "id": "cody.support.tree.view",
           "name": "Settings & Support",
-          "when": "cody.activated"
+          "when": "cody.activated && (!cody.isConsumer || !cody.devOrTest)"
+        },
+        {
+          "id": "cody.chat.tree.view",
+          "name": "Chats",
+          "when": "cody.activated && (!cody.isConsumer || !cody.devOrTest)"
+        },
+        {
+          "id": "cody.commands.tree.view",
+          "name": "Commands",
+          "when": "cody.activated && !cody.currentFileIgnored && (!cody.isConsumer || !cody.devOrTest)"
+        },
+        {
+          "id": "cody.commands.disabled.view",
+          "name": "Commands",
+          "when": "cody.activated && cody.currentFileIgnored && (!cody.isConsumer || !cody.devOrTest)"
         }
       ]
     },
@@ -484,7 +499,7 @@
         "command": "cody.chat.moveFromEditor",
         "category": "Cody",
         "title": "Move Chat from Editor to Main Cody Panel",
-        "enablement": "cody.activated && cody.chatInSidebar",
+        "enablement": "cody.activated && cody.chatInSidebar && view == cody.chat",
         "group": "Cody",
         "icon": "$(layout-sidebar-left)"
       },
@@ -634,7 +649,7 @@
       {
         "command": "cody.chat.toggle",
         "key": "alt+l",
-        "when": "cody.activated && editorTextFocus",
+        "when": "cody.activated && editorTextFocus && cody.isConsumer",
         "args": {
           "editorFocus": true
         }
@@ -642,9 +657,17 @@
       {
         "command": "cody.chat.toggle",
         "key": "alt+l",
-        "when": "cody.activated && !editorTextFocus",
+        "when": "cody.activated && !editorTextFocus && cody.isConsumer",
         "args": {
           "editorFocus": false
+        }
+      },
+      {
+        "command": "cody.chat.newEditorPanel",
+        "key": "alt+l",
+        "when": "cody.activated && editorTextFocus",
+        "args": {
+          "editorFocus": true
         }
       },
       {
@@ -941,7 +964,7 @@
         },
         {
           "command": "cody.debug.reportIssue",
-          "when": "view == cody.support.tree.view",
+          "when": "view == cody.chat",
           "group": "9_cody@1"
         }
       ],
@@ -1414,9 +1437,11 @@
     "@opentelemetry/sdk-trace-node": "^1.18.1",
     "@opentelemetry/semantic-conventions": "^1.18.1",
     "@radix-ui/react-accordion": "^1.2.0",
+    "@radix-ui/react-collapsible": "^1.1.0",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-popover": "^1.0.7",
     "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-tabs": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.0.7",
     "@sentry/browser": "^7.107.0",
     "@sentry/core": "^7.107.0",

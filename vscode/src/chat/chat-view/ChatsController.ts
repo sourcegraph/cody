@@ -11,9 +11,8 @@ import {
     type Guardrails,
     ModelUsage,
     ModelsService,
-    STATE_VERSION_CURRENT,
+    editorStateFromPromptString,
     featureFlagProvider,
-    lexicalEditorStateFromPromptString,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
@@ -29,7 +28,6 @@ import { getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import type { AuthProvider } from '../../services/AuthProvider'
-import { localStorage } from '../../services/LocalStorageProvider'
 import type { ContextAPIClient } from '../context/contextAPIClient'
 import {
     ChatController,
@@ -56,12 +54,12 @@ export class ChatsController implements vscode.Disposable {
     private editors: ChatController[] = []
     private activeEditor: ChatController | undefined = undefined
 
-    // View controller for the support panel
-    public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
-
     // Chat history view
     public historyTreeViewProvider = new TreeViewProvider('chat', featureFlagProvider)
     public historyTreeView: vscode.TreeView<vscode.TreeItem>
+
+    // View controller for the support panel
+    public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
 
     // We keep track of the currently authenticated account and dispose open chats when it changes
     private currentAuthAccount: undefined | { endpoint: string; primaryEmail: string; username: string }
@@ -123,9 +121,11 @@ export class ChatsController implements vscode.Disposable {
             username: authStatus.username,
         }
 
-        this.supportTreeViewProvider.setAuthStatus(authStatus)
-        this.panel.setAuthStatus(authStatus)
+        const isConsumer = authStatus.isLoggedIn && authStatus.isDotCom
+        vscode.commands.executeCommand('setContext', 'cody.isConsumer', isConsumer)
 
+        this.panel.setAuthStatus(authStatus)
+        this.supportTreeViewProvider.setAuthStatus(authStatus)
         this.historyTreeViewProvider.updateTree(authStatus)
     }
 
@@ -151,7 +151,6 @@ export class ChatsController implements vscode.Disposable {
                 webviewOptions: { retainContextWhenHidden: true },
             })
         )
-
         const restoreToEditor = async (
             chatID: string,
             chatQuestion?: string
@@ -310,17 +309,13 @@ export class ChatsController implements vscode.Disposable {
     }: ExecuteChatArguments): Promise<ChatSession | undefined> {
         const provider = await this.getOrCreateEditorChatController()
         const abortSignal = provider.startNewSubmitOrEditOperation()
-        const editorState = lexicalEditorStateFromPromptString(text)
+        const editorState = editorStateFromPromptString(text)
         await provider.handleUserMessageSubmission(
             uuid.v4(),
             text,
             submitType,
             contextFiles ?? [],
-            {
-                lexicalEditorState: editorState,
-                v: STATE_VERSION_CURRENT,
-                minReaderV: STATE_VERSION_CURRENT,
-            },
+            editorState,
             addEnhancedContext ?? true,
             abortSignal,
             source,
@@ -334,26 +329,29 @@ export class ChatsController implements vscode.Disposable {
      */
     private async exportHistory(): Promise<void> {
         telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
-        const historyJson = localStorage.getChatHistory(this.options.authProvider.getAuthStatus())?.chat
-        const exportPath = await vscode.window.showSaveDialog({
-            filters: { 'Chat History': ['json'] },
-        })
-        if (!exportPath || !historyJson) {
-            return
-        }
-        try {
-            const logContent = new TextEncoder().encode(JSON.stringify(historyJson))
-            await vscode.workspace.fs.writeFile(exportPath, logContent)
-            // Display message and ask if user wants to open file
-            void vscode.window
-                .showInformationMessage('Chat history exported successfully.', 'Open')
-                .then(choice => {
-                    if (choice === 'Open') {
-                        void vscode.commands.executeCommand('vscode.open', exportPath)
-                    }
+        const authStatus = this.options.authProvider.getAuthStatus()
+        if (authStatus.isLoggedIn) {
+            try {
+                const historyJson = chatHistory.getLocalHistory(authStatus)
+                const exportPath = await vscode.window.showSaveDialog({
+                    filters: { 'Chat History': ['json'] },
                 })
-        } catch (error) {
-            logError('ChatsController:exportHistory', 'Failed to export chat history', error)
+                if (!exportPath || !historyJson) {
+                    return
+                }
+                const logContent = new TextEncoder().encode(JSON.stringify(historyJson))
+                await vscode.workspace.fs.writeFile(exportPath, logContent)
+                // Display message and ask if user wants to open file
+                void vscode.window
+                    .showInformationMessage('Chat history exported successfully.', 'Open')
+                    .then(choice => {
+                        if (choice === 'Open') {
+                            void vscode.commands.executeCommand('vscode.open', exportPath)
+                        }
+                    })
+            } catch (error) {
+                logError('ChatsController:exportHistory', 'Failed to export chat history', error)
+            }
         }
     }
 
@@ -499,7 +497,7 @@ export class ChatsController implements vscode.Disposable {
             removedProvider.dispose()
         }
 
-        if (includePanel && chatID === this.panel.sessionID) {
+        if (includePanel && chatID === this.panel?.sessionID) {
             this.panel.clearAndRestartSession()
         }
     }

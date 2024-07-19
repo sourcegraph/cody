@@ -11,6 +11,20 @@ export interface GitIdentifiersForFile {
     commit?: string
 }
 
+export function fakeGitURLFromCodebase(codebaseName: string | undefined): string | undefined {
+    if (!codebaseName) {
+        return undefined
+    }
+    try {
+        return new URL(codebaseName).toString()
+    } catch (error) {
+        // Convert a codebase name like example.com/foo/bar to git@example.com:foo/bar
+        // Of course, this may not be the actual remote but it is the best we can do.
+        const slash = codebaseName.indexOf('/')
+        return `git@${codebaseName.slice(0, slash)}:${codebaseName.slice(slash + 1)}`
+    }
+}
+
 class GitMetadataForCurrentEditor {
     private gitIdentifiersForFile: GitIdentifiersForFile | undefined = undefined
 
@@ -31,10 +45,10 @@ class GitMetadataForCurrentEditor {
         const config = getConfiguration()
         const currentFile = getEditor()?.active?.document?.uri
         const remoteGitUrl =
-            config.codebase ||
+            fakeGitURLFromCodebase(config.codebase) ||
             (currentFile
                 ? (await repoNameResolver.getRepoRemoteUrlsFromWorkspaceUri(currentFile))[0]
-                : config.codebase)
+                : fakeGitURLFromCodebase(config.codebase))
 
         const gitUrl = remoteGitUrl
             ? convertGitCloneURLToCodebaseName(remoteGitUrl) || undefined

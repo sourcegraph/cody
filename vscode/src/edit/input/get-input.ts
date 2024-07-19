@@ -210,7 +210,7 @@ export const getInput = async (
                     return
                 }
 
-                ModelsService.setDefaultModel(ModelUsage.Edit, acceptedItem.model)
+                ModelsService.setSelectedModel(ModelUsage.Edit, acceptedItem.model)
                 activeModelItem = acceptedItem
                 activeModel = acceptedItem.model
                 activeModelContextWindow = getContextWindowOnModelChange(acceptedItem.model)
@@ -260,7 +260,7 @@ export const getInput = async (
                     document,
                     { ...initialValues, initialCursorPosition },
                     activeRange,
-                    symbolsPromise
+                    activeModelContextWindow
                 ),
             buttons: [vscode.QuickInputButtons.Back],
             onDidTriggerButton: () => editInput.render(editInput.input.value),

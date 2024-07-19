@@ -22,6 +22,8 @@ export const Image: Story = {
         user: {
             username: 'sqs',
             avatarURL: 'https://avatars.githubusercontent.com/u/1976',
+            endpoint: '',
+            primaryEmail: '',
         },
     },
 }
@@ -31,6 +33,8 @@ export const Text1Letter: Story = {
         user: {
             username: 'sqs',
             avatarURL: '',
+            endpoint: '',
+            primaryEmail: '',
         },
     },
 }
@@ -41,6 +45,8 @@ export const Text2Letters: Story = {
             username: 'sqs',
             displayName: 'Quinn Slack',
             avatarURL: '',
+            endpoint: '',
+            primaryEmail: '',
         },
     },
 }
