@@ -288,6 +288,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await this.handleUserMessageSubmission(
                     uuid.v4(),
                     PromptString.unsafe_fromUserQuery(message.text),
+                    PromptString.unsafe_fromUserQuery(message.textWithoutContextChips),
                     message.submitType,
                     message.contextFiles ?? [],
                     message.editorState as SerializedPromptEditorState,
@@ -301,6 +302,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await this.handleEdit(
                     uuid.v4(),
                     PromptString.unsafe_fromUserQuery(message.text),
+                    PromptString.unsafe_fromUserQuery(message.textWithoutContextChips),
                     message.index ?? undefined,
                     message.contextFiles ?? [],
                     message.editorState as SerializedPromptEditorState,
@@ -609,6 +611,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     public async handleUserMessageSubmission(
         requestID: string,
         inputText: PromptString,
+        inputTextWithoutContextChips: PromptString,
         submitType: ChatSubmitType,
         mentions: ContextItem[],
         editorState: SerializedPromptEditorState | null,
@@ -696,7 +699,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                         chatClient: this.chatClient,
                                         chatModel: this.chatModel,
                                     })
-                                  : inputText
+                                  : inputTextWithoutContextChips
 
                               return getEnhancedContext({
                                   strategy: contextStrategy,
@@ -788,6 +791,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async handleEdit(
         requestID: string,
         text: PromptString,
+        textWithoutContextChips: PromptString,
         index: number | undefined,
         contextFiles: ContextItem[],
         editorState: SerializedPromptEditorState | null,
@@ -806,6 +810,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return await this.handleUserMessageSubmission(
                 requestID,
                 text,
+                textWithoutContextChips,
                 'user',
                 contextFiles,
                 editorState,
