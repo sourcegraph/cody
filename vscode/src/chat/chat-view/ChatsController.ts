@@ -263,6 +263,7 @@ export class ChatsController implements vscode.Disposable {
      */
     private async submitChatInNewEditor({
         text,
+        textWithoutContextChips,
         submitType,
         contextFiles,
         addEnhancedContext,
@@ -275,6 +276,7 @@ export class ChatsController implements vscode.Disposable {
         await provider.handleUserMessageSubmission(
             uuid.v4(),
             text,
+            textWithoutContextChips,
             submitType,
             contextFiles ?? [],
             editorState,

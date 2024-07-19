@@ -35,6 +35,7 @@ suite('Chat', function () {
         await chatView.handleUserMessageSubmission(
             'test',
             getPs()`hello from the human`,
+            getPs()`hello from the human`,
             'user',
             [],
             null,
@@ -55,6 +56,7 @@ suite('Chat', function () {
         const chatView = await getChatViewProvider()
         await chatView.handleUserMessageSubmission(
             'test',
+            getPs()`hello from the human`,
             getPs()`hello from the human`,
             'user',
             [],

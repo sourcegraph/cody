@@ -245,6 +245,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
             command: 'submit',
             submitType: 'user',
             text: messageText,
+            textWithoutContextChips: messageText,
             contextFiles,
             addEnhancedContext,
         },
