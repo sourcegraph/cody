@@ -244,7 +244,7 @@
         {
           "id": "cody.support.tree.view",
           "name": "Settings & Support",
-          "when": "cody.activated && (!cody.isConsumer || !cody.devOrTest)"
+          "when": "cody.activated && !cody.chatInSidebar"
         },
         {
           "id": "cody.chat.tree.view",
