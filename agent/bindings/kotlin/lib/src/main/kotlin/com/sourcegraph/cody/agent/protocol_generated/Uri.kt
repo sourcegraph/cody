@@ -7,6 +7,8 @@ data class Uri(
   val path: String,
   val query: String,
   val fragment: String,
-  val fsPath: String,
+)
+
+al fsPath: String,
 )
 
