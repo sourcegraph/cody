@@ -112,7 +112,7 @@ test.extend<ExpectedV2Events>({
         'cody.auth:connected',
         'cody.command.explain:executed',
     ],
-}).only('Explain Command from Commands Tab', async ({ page, sidebar }) => {
+})('Explain Command from Commands Tab', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
