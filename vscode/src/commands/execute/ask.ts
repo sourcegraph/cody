@@ -11,7 +11,8 @@ import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/c
 import { showCodyIgnoreNotification } from '../../cody-ignore/notification'
 import { getEditor } from '../../editor/active-editor'
 
-export interface ExecuteChatArguments extends Omit<WebviewSubmitMessage, 'text' | 'textWithoutContextChips' | 'editorState'> {
+export interface ExecuteChatArguments
+    extends Omit<WebviewSubmitMessage, 'text' | 'textWithoutContextChips' | 'editorState'> {
     source?: EventSource
     command?: DefaultChatCommands
     text: PromptString
