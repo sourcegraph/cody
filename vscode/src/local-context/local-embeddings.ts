@@ -646,7 +646,6 @@ export class LocalEmbeddingsController
                     return []
                 }
                 const service = await this.getService()
-                logDebug('fixQuery.embeddings', query.toString())
                 const resp = await service.request('embeddings/query', {
                     repoName: lastRepo.repoName,
                     query: query.toString(),
