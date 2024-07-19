@@ -6,7 +6,6 @@ import {
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
     type DefaultCodyCommands,
-    FeatureFlag,
     type Guardrails,
     ModelsService,
     PromptString,
@@ -96,6 +95,11 @@ export async function start(
     context: vscode.ExtensionContext,
     platform: PlatformContext
 ): Promise<vscode.Disposable> {
+    // HACK to improve e2e test latency
+    if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.chatInSidebar')) {
+        await vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', true)
+    }
+
     // Set internal storage fields for storage provider singletons
     localStorage.setStorage(
         platform.createStorage ? await platform.createStorage() : context.globalState
@@ -310,14 +314,20 @@ async function initializeSingletons(
         disposables,
         { runImmediately: true }
     )
+
+    // Chat in sidebar (should be removed after the toggle is removed)
+    let currentChatInSidebarValue = false
     disposables.push(
-        authProvider.onChange(async () => {
-            vscode.commands.executeCommand(
-                'setContext',
-                'cody.chatInSidebar',
-                await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatInSidebar)
-            )
-        })
+        authProvider.onChange(
+            async () => {
+                const newValue = await ChatsController.isChatInSidebar()
+                if (newValue !== currentChatInSidebarValue) {
+                    currentChatInSidebarValue = newValue
+                    vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', newValue)
+                }
+            },
+            { runImmediately: true }
+        )
     )
 }
 

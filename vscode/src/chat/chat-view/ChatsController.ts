@@ -100,6 +100,14 @@ export class ChatsController implements vscode.Disposable {
         )
     }
 
+    public static async isChatInSidebar(): Promise<boolean> {
+        const val = vscode.workspace.getConfiguration().get<boolean>('cody.internal.chatInSidebar')
+        if (val !== undefined) {
+            return val
+        }
+        return await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatInSidebar)
+    }
+
     private async setAuthStatus(authStatus: AuthStatus): Promise<void> {
         const hasLoggedOut = !authStatus.isLoggedIn
         const hasSwitchedAccount =
@@ -173,7 +181,7 @@ export class ChatsController implements vscode.Disposable {
                 vscode.commands.executeCommand('cody.chat.focus')
             ),
             vscode.commands.registerCommand('cody.chat.newPanel', async () => {
-                if (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatInSidebar)) {
+                if (await ChatsController.isChatInSidebar()) {
                     await this.panel.clearAndRestartSession()
                     await vscode.commands.executeCommand('cody.chat.focus')
                 } else {
@@ -183,7 +191,7 @@ export class ChatsController implements vscode.Disposable {
             vscode.commands.registerCommand(
                 'cody.chat.toggle',
                 async (ops: { editorFocus: boolean }) => {
-                    if (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatInSidebar)) {
+                    if (await ChatsController.isChatInSidebar()) {
                         if (ops.editorFocus) {
                             await vscode.commands.executeCommand('cody.chat.focus')
                         } else {
