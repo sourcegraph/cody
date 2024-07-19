@@ -341,6 +341,17 @@ describe('ContextFiltersProvider', () => {
             expect(await provider.isUriIgnored(uri)).toBe('no-repo-found')
         })
 
+        it('allows repos, even if the repo name is not found, when inclusive context filters are set', async () => {
+            await initProviderWithContextFilters({
+                include: [{ repoNamePattern: '.*' }],
+                exclude: null,
+            })
+
+            const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
+            getRepoNamesFromWorkspaceUri.mockResolvedValue([])
+            expect(await provider.isUriIgnored(uri)).toBe(false)
+        })
+
         it('excludes everything on network errors', async () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockRejectedValue(new Error('network error'))
             vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
