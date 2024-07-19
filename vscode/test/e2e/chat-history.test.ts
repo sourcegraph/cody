@@ -42,6 +42,8 @@ test.extend<ExpectedV2Events>({
     await expect(await getHeyTreeItem()).toBeVisible()
 })
 
+// TODO: Re-enable this test once we have enabled sidebar chat by default for all users.
+// or update the test so that we can run tests in plg and enterprise mode.
 test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
     expectedV2Events: [
@@ -56,21 +58,22 @@ test.extend<ExpectedV2Events>({
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
     ],
-})('restore chat from sidebar history view', async ({ page, sidebar }) => {
-    await sidebarSignin(page, sidebar)
-
-    const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
-
-    // Ensure the chat view is ready before we start typing
-    await expect(chatPanelFrame.getByText('to add context to your chat')).toBeVisible()
-
-    await chatInput.fill('Hey')
-    await chatInput.press('Enter')
-
-    await focusSidebar(page)
-    await chatPanelFrame.locator('[id="radix-\\:r0\\:-trigger-history"]').getByRole('button').click()
-
-    const newHistoryItem = chatPanelFrame.getByRole('button', { name: 'Hey' })
-    await expect(newHistoryItem).toBeVisible()
-    await newHistoryItem.click()
 })
+    .skip('restore chat from sidebar history view - plg', async ({ page, sidebar }) => {
+        await sidebarSignin(page, sidebar)
+
+        const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
+
+        // Ensure the chat view is ready before we start typing
+        await expect(chatPanelFrame.getByText('to add context to your chat')).toBeVisible()
+
+        await chatInput.fill('Hey')
+        await chatInput.press('Enter')
+
+        await focusSidebar(page)
+        await chatPanelFrame.locator('[id="radix-\\:r0\\:-trigger-history"]').getByRole('button').click()
+
+        const newHistoryItem = chatPanelFrame.getByRole('button', { name: 'Hey' })
+        await expect(newHistoryItem).toBeVisible()
+        await newHistoryItem.click()
+    })

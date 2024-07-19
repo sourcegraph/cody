@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
-import { focusSidebar, sidebarExplorer, sidebarSignin } from './common'
+import { focusSidebar, getChatSidebarPanel, sidebarExplorer, sidebarSignin } from './common'
 import {
     type DotcomUrlOverride,
     type ExpectedV2Events,
@@ -123,9 +123,9 @@ test.extend<ExpectedV2Events>({
     // Execute the command from the Commands tab in Chat view
     await focusSidebar(page)
 
-    const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    const chatPanel = getChatSidebarPanel(page)
     // Click on the Commands view icon
     await chatPanel.locator('[id="radix-\\:r0\\:-trigger-commands"]').getByRole('button').click()
     await chatPanel.getByRole('button', { name: 'Explain code' }).click()
-    await chatPanel.getByText('hello from the assistant').hover()
+    await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
 })

@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 
-import { focusSidebar } from './common'
+import { focusSidebar, getChatSidebarPanel } from './common'
 import { type ExpectedV2Events, signOut, test } from './helpers'
 
 test.extend<ExpectedV2Events>({
@@ -44,7 +44,7 @@ test.extend<ExpectedV2Events>({
 
     // Makes sure the sign in page is loaded in the sidebar view with Cody: Chat as the heading
     // instead of the chat panel.
-    const sidebarFrame = page.frameLocator('iframe.webview').frameLocator('iframe').first()
+    const sidebarFrame = getChatSidebarPanel(page)
     await expect(
         sidebarFrame.getByRole('button', { name: 'Sign In to Your Enterprise Instance' })
     ).toBeVisible()

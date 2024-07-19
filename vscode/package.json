@@ -634,7 +634,7 @@
       {
         "command": "cody.chat.toggle",
         "key": "alt+l",
-        "when": "cody.activated && editorTextFocus",
+        "when": "cody.activated && editorTextFocus && cody.isConsumer",
         "args": {
           "editorFocus": true
         }
@@ -642,9 +642,17 @@
       {
         "command": "cody.chat.toggle",
         "key": "alt+l",
-        "when": "cody.activated && !editorTextFocus",
+        "when": "cody.activated && !editorTextFocus && cody.isConsumer",
         "args": {
           "editorFocus": false
+        }
+      },
+      {
+        "command": "cody.chat.newEditorPanel",
+        "key": "alt+l",
+        "when": "cody.activated && editorTextFocus",
+        "args": {
+          "editorFocus": true
         }
       },
       {
