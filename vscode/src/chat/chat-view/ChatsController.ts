@@ -10,9 +10,8 @@ import {
     type Guardrails,
     ModelUsage,
     ModelsService,
-    STATE_VERSION_CURRENT,
+    editorStateFromPromptString,
     featureFlagProvider,
-    lexicalEditorStateFromPromptString,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
@@ -272,17 +271,13 @@ export class ChatsController implements vscode.Disposable {
     }: ExecuteChatArguments): Promise<ChatSession | undefined> {
         const provider = await this.getOrCreateEditorChatController()
         const abortSignal = provider.startNewSubmitOrEditOperation()
-        const editorState = lexicalEditorStateFromPromptString(text)
+        const editorState = editorStateFromPromptString(text)
         await provider.handleUserMessageSubmission(
             uuid.v4(),
             text,
             submitType,
             contextFiles ?? [],
-            {
-                lexicalEditorState: editorState,
-                v: STATE_VERSION_CURRENT,
-                minReaderV: STATE_VERSION_CURRENT,
-            },
+            editorState,
             addEnhancedContext ?? true,
             abortSignal,
             source,
