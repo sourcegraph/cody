@@ -233,7 +233,6 @@ export function editHumanMessage(
         command: 'edit',
         index: messageIndexInTranscript,
         text: editorValue.text,
-        textWithoutContextChips: editorValue.textWithoutContextChips,
         editorState: editorValue.editorState,
         contextFiles: editorValue.contextItems.map(deserializeContextItem),
     })
@@ -245,7 +244,6 @@ function onFollowupSubmit(editorValue: SerializedPromptEditorValue): void {
         command: 'submit',
         submitType: 'user',
         text: editorValue.text,
-        textWithoutContextChips: editorValue.textWithoutContextChips,
         editorState: editorValue.editorState,
         contextFiles: editorValue.contextItems.map(deserializeContextItem),
     })

@@ -32,7 +32,6 @@ export class ExplainCodeAction implements vscode.CodeActionProvider {
             arguments: [
                 {
                     text: instruction,
-                    textWithoutContextChips: instruction,
                     source: 'code-action:explain',
                     submitType: 'user-newchat',
                 } satisfies ExecuteChatArguments,

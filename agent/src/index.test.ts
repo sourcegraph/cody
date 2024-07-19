@@ -230,7 +230,6 @@ describe('Agent', () => {
                     message: {
                         command: 'submit',
                         text: 'My name is Lars Monsen.',
-                        textWithoutContextChips: 'My name is Lars Monsen.',
                         submitType: 'user',
                         addEnhancedContext: false,
                     },
@@ -254,7 +253,6 @@ describe('Agent', () => {
                     message: {
                         command: 'submit',
                         text: 'What is my name?',
-                        textWithoutContextChips: 'What is my name?',
                         submitType: 'user',
                         addEnhancedContext: false,
                     },
@@ -275,7 +273,6 @@ describe('Agent', () => {
                     message: {
                         command: 'submit',
                         text: 'What model are you?',
-                        textWithoutContextChips: 'What model are you?',
                         submitType: 'user',
                         addEnhancedContext: false,
                     },
@@ -294,7 +291,6 @@ describe('Agent', () => {
                     message: {
                         command: 'submit',
                         text: 'What model are you?',
-                        textWithoutContextChips: 'What model are you?',
                         submitType: 'user',
                         addEnhancedContext: false,
                     },

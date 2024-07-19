@@ -54,7 +54,6 @@ export async function evaluateChatStrategy(
                 command: 'submit',
                 submitType: 'user',
                 text: task.question,
-                textWithoutContextChips: task.question,
                 contextFiles,
                 addEnhancedContext: false,
             },

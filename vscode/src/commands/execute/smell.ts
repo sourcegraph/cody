@@ -50,7 +50,6 @@ async function smellCommand(
 
     return {
         text: prompt,
-        textWithoutContextChips: prompt,
         submitType: 'user-newchat',
         contextFiles: contextItems,
         addEnhancedContext: false,

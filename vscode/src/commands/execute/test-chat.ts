@@ -48,7 +48,6 @@ async function unitTestCommand(
 
     return {
         text: prompt,
-        textWithoutContextChips: prompt,
         contextFiles,
         addEnhancedContext: false,
         source: args?.source,
