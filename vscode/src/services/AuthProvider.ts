@@ -363,7 +363,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
             // Set context for the extension to render views based on auth status.
             // isConsumer should be set before activated to avoid flickering.
             const isConsumer = authStatus.isLoggedIn && authStatus.isDotCom
-            await vscode.commands.executeCommand('setContext', 'cody.isConsumer', isConsumer)
+            await vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', isConsumer)
             await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
 
             // If the extension is authenticated on startup, it can't be a user's first
