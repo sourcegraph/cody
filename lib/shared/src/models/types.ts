@@ -30,7 +30,7 @@ export type EditModel =
 /**
  * Available providers for Edit.
  * This is either:
- * - one of the availble options (dotcom)
+ * - one of the available options (dotcom)
  * - an unknown `string` (enterprise)
  */
 export type EditProvider =
@@ -42,7 +42,7 @@ export type EditProvider =
 /**
  * Available models for Chat.
  * This is either:
- * - one of the availble options (dotcom)
+ * - one of the available options (dotcom)
  * - an unknown `string` (enterprise)
  */
 export type ChatModel =
@@ -54,7 +54,7 @@ export type ChatModel =
 /**
  * Available providers for Chat.
  * This is either:
- * - one of the availble options (dotcom)
+ * - one of the available options (dotcom)
  * - an unknown `string` (enterprise)
  */
 export type ChatProvider =
