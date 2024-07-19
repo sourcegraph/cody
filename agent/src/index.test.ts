@@ -4,14 +4,7 @@ import path from 'node:path'
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import {
-    type ContextItem,
-    DOTCOM_URL,
-    ModelUsage,
-    ModelsService,
-    getDotComDefaultModels,
-    isWindows,
-} from '@sourcegraph/cody-shared'
+import { type ContextItem, DOTCOM_URL, ModelUsage, isWindows } from '@sourcegraph/cody-shared'
 
 import { ResponseError } from 'vscode-jsonrpc'
 import { URI } from 'vscode-uri'
@@ -40,7 +33,6 @@ describe('Agent', () => {
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
-        ModelsService.setModels(getDotComDefaultModels())
         await workspace.beforeAll()
 
         // Init a repo in the workspace to make the parent-dirs repo-name resolver work for Cody Context Filters tests.

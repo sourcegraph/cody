@@ -88,8 +88,8 @@ const SERVER_MODELS: ServerModelConfiguration = {
         },
     ],
     defaultModels: {
-        chat: 'anthropic::unknown::amazon.titan-text-lite-v1',
-        fastChat: 'anthropic::unknown::anthropic.claude-3-opus-20240229-v1_0',
+        chat: 'anthropic::unknown::anthropic.claude-3-opus-20240229-v1_0',
+        fastChat: 'anthropic::unknown::amazon.titan-text-lite-v1',
         codeCompletion: 'anthropic::unknown::anthropic.claude-instant-v1',
     },
 }

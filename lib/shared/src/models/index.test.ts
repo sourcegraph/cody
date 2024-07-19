@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { type AuthStatus, defaultAuthStatus } from '../auth/types'
-import { Model, ModelsService } from '../models/index'
+import {
+    Model,
+    type ModelCategory,
+    type ModelTier,
+    ModelsService,
+    type ServerModel,
+    type ServerModelConfiguration,
+} from '../models/index'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import { getDotComDefaultModels } from './dotcom'
 import { ModelTag } from './tags'
@@ -103,7 +110,7 @@ describe('Model Provider', () => {
         })
     })
 
-    describe('default models', () => {
+    describe('Selected models', () => {
         const model1chat = new Model({
             model: 'model-1',
             usage: [ModelUsage.Chat],
@@ -126,15 +133,15 @@ describe('Model Provider', () => {
 
         it('allows setting default models per type', () => {
             ModelsService.setModels([model1chat, model2chat, model3all, model4edit])
-            ModelsService.setDefaultModel(ModelUsage.Chat, model2chat)
-            ModelsService.setDefaultModel(ModelUsage.Edit, model4edit)
+            ModelsService.setSelectedModel(ModelUsage.Chat, model2chat)
+            ModelsService.setSelectedModel(ModelUsage.Edit, model4edit)
             expect(ModelsService.getDefaultChatModel(codyProAuthStatus)).toBe(model2chat.model)
             expect(ModelsService.getDefaultEditModel(codyProAuthStatus)).toBe(model4edit.model)
         })
 
         it('only allows setting known models as default', async () => {
             // Set default before settings models is a no-op
-            await ModelsService.setDefaultModel(ModelUsage.Chat, model2chat.model)
+            await ModelsService.setSelectedModel(ModelUsage.Chat, model2chat.model)
             ModelsService.setModels([model1chat, model2chat])
             expect(ModelsService.getDefaultChatModel(codyProAuthStatus)).toBe(model1chat.model)
         })
@@ -142,15 +149,164 @@ describe('Model Provider', () => {
         it('only allows setting appropriate model types', () => {
             ModelsService.setModels([model1chat, model2chat, model3all, model4edit])
             expect(async () =>
-                ModelsService.setDefaultModel(ModelUsage.Chat, model4edit)
+                ModelsService.setSelectedModel(ModelUsage.Chat, model4edit)
             ).rejects.toThrow('Model "model-4" is not compatible with usage type "chat".')
             expect(async () =>
-                ModelsService.setDefaultModel(ModelUsage.Edit, model1chat)
+                ModelsService.setSelectedModel(ModelUsage.Edit, model1chat)
             ).rejects.toThrow('Model "model-1" is not compatible with usage type "edit"')
         })
     })
 
-    describe('canUserUseModel', () => {
+    describe('server sent models', () => {
+        const serverOpus: ServerModel = {
+            modelRef: 'anthropic::unknown::anthropic.claude-3-opus-20240229-v1_0',
+            displayName: 'Opus',
+            modelName: 'anthropic.claude-3-opus-20240229-v1_0',
+            capabilities: ['chat'],
+            category: 'balanced' as ModelCategory,
+            status: 'stable',
+            tier: 'enterprise' as ModelTier,
+            contextWindow: {
+                maxInputTokens: 9000,
+                maxOutputTokens: 4000,
+            },
+        }
+
+        const opus = Model.fromApi(serverOpus)
+
+        const serverClaude: ServerModel = {
+            modelRef: 'anthropic::unknown::anthropic.claude-instant-v1',
+            displayName: 'Instant',
+            modelName: 'anthropic.claude-instant-v1',
+            capabilities: ['autocomplete'],
+            category: 'balanced' as ModelCategory,
+            status: 'stable',
+            tier: 'enterprise' as ModelTier,
+            contextWindow: {
+                maxInputTokens: 9000,
+                maxOutputTokens: 4000,
+            },
+        }
+        const claude = Model.fromApi(serverClaude)
+
+        const serverTitan: ServerModel = {
+            modelRef: 'anthropic::unknown::amazon.titan-text-lite-v1',
+            displayName: 'Titan',
+            modelName: 'amazon.titan-text-lite-v1',
+            capabilities: ['autocomplete', 'chat'],
+            category: 'balanced' as ModelCategory,
+            status: 'stable',
+            tier: 'enterprise' as ModelTier,
+            contextWindow: {
+                maxInputTokens: 9000,
+                maxOutputTokens: 4000,
+            },
+        }
+
+        const titan = Model.fromApi(serverTitan)
+
+        const SERVER_MODELS: ServerModelConfiguration = {
+            schemaVersion: '1.0',
+            revision: '-',
+            providers: [],
+            models: [serverOpus, serverClaude, serverTitan],
+            defaultModels: {
+                chat: serverOpus.modelRef,
+                fastChat: serverTitan.modelRef,
+                codeCompletion: serverClaude.modelRef,
+            },
+        }
+
+        let storage: TestStorage
+
+        class TestStorage {
+            constructor(public data: Map<string, string> = new Map()) {}
+            get(key: string): string | null {
+                return this.data.get(key) ?? null
+            }
+
+            async set(key: string, value: string) {
+                await this.data.set(key, value)
+            }
+
+            async delete(key: string) {
+                this.data.delete(key)
+            }
+        }
+
+        beforeEach(async () => {
+            storage = new TestStorage()
+            ModelsService.setStorage(storage)
+            await ModelsService.setServerSentModels(SERVER_MODELS)
+        })
+
+        it('constructs from server models', () => {
+            expect(opus.model).toBe(serverOpus.modelName)
+            expect(opus.title).toBe(serverOpus.displayName)
+            expect(opus.provider).toBe('anthropic')
+            expect(opus.contextWindow).toEqual({ input: 9000, output: 4000 })
+            expect(Model.tier(opus)).toBe(ModelTag.Enterprise)
+        })
+
+        it("sets server models and default models if they're not already set", () => {
+            // expect all defaults to be set
+            expect(ModelsService.getDefaultChatModel(enterpriseAuthStatus)).toBe(opus.model)
+            expect(ModelsService.getDefaultEditModel(enterpriseAuthStatus)).toBe(opus.model)
+            expect(
+                ModelsService.getDefaultModel(ModelUsage.Autocomplete, enterpriseAuthStatus)
+            ).toStrictEqual(claude)
+
+            // // expect storage to be updated
+            expect(storage.get('defaultChatModel')).toBe(opus.model)
+            expect(storage.get('defaultAutocompleteModel')).toBe(claude.model)
+        })
+
+        it('allows updating the selected model', async () => {
+            await ModelsService.setSelectedModel(ModelUsage.Chat, titan)
+            expect(ModelsService.getDefaultChatModel(enterpriseAuthStatus)).toBe(titan.model)
+
+            //  however, the defaults are still as the server set
+            expect(storage.get('defaultChatModel')).toBe(opus.model)
+        })
+
+        it('uses new server defaults when provided', async () => {
+            await ModelsService.setSelectedModel(ModelUsage.Chat, titan)
+            expect(ModelsService.getDefaultChatModel(enterpriseAuthStatus)).toBe(titan.model)
+
+            // New server config updates the defaults for everything to titan
+            await ModelsService.setServerSentModels({
+                ...SERVER_MODELS,
+                defaultModels: {
+                    // Chat is not updated, while other models are
+                    chat: SERVER_MODELS.defaultModels.chat,
+                    fastChat: serverTitan.modelRef,
+                    codeCompletion: serverTitan.modelRef,
+                },
+            })
+
+            // User selection is preserved
+            expect(ModelsService.getDefaultChatModel(enterpriseAuthStatus)).toBe(titan.model)
+        })
+
+        it("doesn't drop the selected model if it's updated", async () => {
+            await ModelsService.setSelectedModel(ModelUsage.Chat, titan)
+            expect(ModelsService.getDefaultChatModel(enterpriseAuthStatus)).toBe(titan.model)
+
+            // New server config updates the defaults for everything to titan
+            await ModelsService.setServerSentModels({
+                ...SERVER_MODELS,
+                defaultModels: {
+                    chat: serverTitan.modelRef,
+                    fastChat: serverTitan.modelRef,
+                    codeCompletion: serverTitan.modelRef,
+                },
+            })
+
+            expect(ModelsService.getDefaultChatModel(enterpriseAuthStatus)).toBe(titan.model)
+        })
+    })
+
+    describe('isModelAvailableFor', () => {
         const enterpriseModel = new Model({
             model: 'enterprise-model',
             usage: [ModelUsage.Chat],
@@ -173,31 +329,31 @@ describe('Model Provider', () => {
         })
 
         it('returns false for unknown model', () => {
-            expect(ModelsService.canUserUseModel(codyProAuthStatus, 'unknown-model')).toBe(false)
+            expect(ModelsService.isModelAvailableFor('unknown-model', codyProAuthStatus)).toBe(false)
         })
 
         it('allows enterprise user to use any model', () => {
-            expect(ModelsService.canUserUseModel(enterpriseAuthStatus, enterpriseModel)).toBe(true)
-            expect(ModelsService.canUserUseModel(enterpriseAuthStatus, proModel)).toBe(true)
-            expect(ModelsService.canUserUseModel(enterpriseAuthStatus, freeModel)).toBe(true)
+            expect(ModelsService.isModelAvailableFor(enterpriseModel, enterpriseAuthStatus)).toBe(true)
+            expect(ModelsService.isModelAvailableFor(proModel, enterpriseAuthStatus)).toBe(true)
+            expect(ModelsService.isModelAvailableFor(freeModel, enterpriseAuthStatus)).toBe(true)
         })
 
         it('allows Cody Pro user to use Pro and Free models', () => {
-            expect(ModelsService.canUserUseModel(codyProAuthStatus, enterpriseModel)).toBe(false)
-            expect(ModelsService.canUserUseModel(codyProAuthStatus, proModel)).toBe(true)
-            expect(ModelsService.canUserUseModel(codyProAuthStatus, freeModel)).toBe(true)
+            expect(ModelsService.isModelAvailableFor(enterpriseModel, codyProAuthStatus)).toBe(false)
+            expect(ModelsService.isModelAvailableFor(proModel, codyProAuthStatus)).toBe(true)
+            expect(ModelsService.isModelAvailableFor(freeModel, codyProAuthStatus)).toBe(true)
         })
 
         it('allows free user to use only Free models', () => {
-            expect(ModelsService.canUserUseModel(freeUserAuthStatus, enterpriseModel)).toBe(false)
-            expect(ModelsService.canUserUseModel(freeUserAuthStatus, proModel)).toBe(false)
-            expect(ModelsService.canUserUseModel(freeUserAuthStatus, freeModel)).toBe(true)
+            expect(ModelsService.isModelAvailableFor(enterpriseModel, freeUserAuthStatus)).toBe(false)
+            expect(ModelsService.isModelAvailableFor(proModel, freeUserAuthStatus)).toBe(false)
+            expect(ModelsService.isModelAvailableFor(freeModel, freeUserAuthStatus)).toBe(true)
         })
 
         it('handles model passed as string', () => {
-            expect(ModelsService.canUserUseModel(freeUserAuthStatus, freeModel.model)).toBe(true)
-            expect(ModelsService.canUserUseModel(freeUserAuthStatus, proModel.model)).toBe(false)
-            expect(ModelsService.canUserUseModel(codyProAuthStatus, proModel.model)).toBe(true)
+            expect(ModelsService.isModelAvailableFor(freeModel.model, freeUserAuthStatus)).toBe(true)
+            expect(ModelsService.isModelAvailableFor(proModel.model, freeUserAuthStatus)).toBe(false)
+            expect(ModelsService.isModelAvailableFor(proModel.model, codyProAuthStatus)).toBe(true)
         })
     })
 })

@@ -1,0 +1,29 @@
+.template-input-node {
+    background-color: color-mix(in lch, var(--vscode-editorWarning-foreground) 20%, transparent);
+    border: 1px dashed var(--vscode-editorWarning-foreground);
+    border-radius: 3px;
+    white-space: normal;
+    padding: 0 3px;
+    display: inline-flex;
+    align-items: baseline;
+    outline-offset: -1px;
+    cursor: pointer;
+
+    & + .template-input-node {
+        margin-left: 2px;
+    }
+
+    &.template-input-node--focused {
+        outline-style: solid;
+        background-color: color-mix(in lch, var(--vscode-editorWarning-foreground) 30%, transparent);
+    }
+}
+
+body:is([data-vscode-theme-kind='vscode-high-contrast'], [data-vscode-theme-kind='vscode-high-contrast-light']) .template-input-node {
+    background-color: transparent;
+}
+
+/* color-mix is not supported on JetBrains webview */
+html[data-ide=JetBrains] .template-input-node {
+    background-color: transparent;
+}
