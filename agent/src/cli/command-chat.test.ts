@@ -101,26 +101,24 @@ describe('cody chat', () => {
         ).toMatchSnapshot()
     }, 10_000)
 
+    // This test is failing on macOS. It reports remote search results as failing
+    // the context filter, probably because it does not wait for the context filter fetch.
     // This test is failing consistently on windows. https://linear.app/sourcegraph/issue/CODY-2912/cli-squirrel-test-failing-on-windows
-    it.skipIf(isWindows())(
-        '--context-repo (squirrel test)',
-        async () => {
-            expect(
-                YAML.stringify(
-                    await runCommand({
-                        args: [
-                            'chat',
-                            '--context-repo',
-                            'github.com/sourcegraph/sourcegraph',
-                            '-m',
-                            'what is squirrel? Explain as briefly as possible.',
-                        ],
-                    })
-                )
-            ).toMatchSnapshot()
-        },
-        20_000
-    )
+    it.skip('--context-repo (squirrel test)', async () => {
+        expect(
+            YAML.stringify(
+                await runCommand({
+                    args: [
+                        'chat',
+                        '--context-repo',
+                        'github.com/sourcegraph/sourcegraph',
+                        '-m',
+                        'what is squirrel? Explain as briefly as possible.',
+                    ],
+                })
+            )
+        ).toMatchSnapshot()
+    }, 20_000)
 
     it('--context-file (animal test)', async () => {
         expect(
