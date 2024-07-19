@@ -38,7 +38,7 @@ import {
     type ENTERPRISE_TESTING_CREDENTIALS,
     TESTING_CREDENTIALS,
 } from '../../../src/testutils/testing-credentials'
-import { retry, stretchTimeout } from '../helpers'
+import { CODY_VSCODE_ROOT_DIR, retry, stretchTimeout } from '../helpers'
 import {
     MITM_AUTH_TOKEN_PLACEHOLDER,
     MITM_PROXY_AUTH_AVAILABLE_HEADER,
@@ -51,18 +51,17 @@ type Directory = string
 const DOWNLOAD_GRACE_TIME = 5 * 60 * 1000 //5 minutes
 
 // TODO(rnauta): finish all variable descriptions
+const zAbsPath = () => zod.string().transform(p => path.resolve(CODY_VSCODE_ROOT_DIR, p))
 const workerOptionsSchema = zod.object({
-    repoRootDir: zod
-        .string()
-        .describe(
-            'DEPRECATED: The .git root of this project. Might still get used for some path defaults so must be set'
-        ),
-    vscodeExtensionCacheDir: zod.string(),
-    globalTmpDir: zod.string(),
-    vscodeTmpDir: zod.string(),
-    vscodeServerTmpDir: zod.string(),
-    binaryTmpDir: zod.string(),
-    recordingDir: zod.string(),
+    repoRootDir: zAbsPath().describe(
+        'DEPRECATED: The .git root of this project. Might still get used for some path defaults so must be set'
+    ),
+    vscodeExtensionCacheDir: zAbsPath(),
+    globalTmpDir: zAbsPath(),
+    vscodeTmpDir: zAbsPath(),
+    vscodeServerTmpDir: zAbsPath(),
+    binaryTmpDir: zAbsPath(),
+    recordingDir: zAbsPath(),
     vscodeServerPortRange: zod.tuple([zod.number(), zod.number()]).default([33100, 33200]),
     mitmServerPortRange: zod.tuple([zod.number(), zod.number()]).default([34100, 34200]),
     keepRuntimeDirs: zod.enum(['all', 'failed', 'none']).default('none'),
@@ -73,7 +72,7 @@ const workerOptionsSchema = zod.object({
 const testOptionsSchema = zod.object({
     vscodeVersion: zod.string().default('stable'),
     vscodeExtensions: zod.array(zod.string().toLowerCase()).default([]),
-    templateWorkspaceDir: zod.string(),
+    templateWorkspaceDir: zAbsPath(),
     recordingMode: zod.enum([
         'passthrough',
         'record',
@@ -293,7 +292,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
         async ({ validOptions }, use, testInfo) => {
             const dir = await fs.mkdtemp(path.resolve(validOptions.globalTmpDir, 'test-workspace-'))
 
-            await copyExt(path.resolve(process.cwd(), validOptions.templateWorkspaceDir), dir, {
+            await copyExt(path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.templateWorkspaceDir), dir, {
                 overwrite: true,
                 preserveTimestamps: true,
                 dereference: true, // we can't risk the test modifying the symlink
@@ -455,7 +454,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
     polly: [
         async ({ validOptions }, use, testInfo) => {
             const relativeTestPath = path.relative(
-                path.resolve(process.cwd(), testInfo.project.testDir),
+                path.resolve(CODY_VSCODE_ROOT_DIR, testInfo.project.testDir),
                 testInfo.file
             )
             const polly = new Polly(`${testInfo.project.name}/${relativeTestPath}/${testInfo.title}`, {
@@ -525,7 +524,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 persisterOptions: {
                     keepUnusedRequests: validOptions.keepUnusedRecordings ?? true,
                     fs: {
-                        recordingsDir: path.resolve(process.cwd(), validOptions.recordingDir),
+                        recordingsDir: path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.recordingDir),
                     },
                 },
             })
@@ -667,9 +666,12 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
         async ({ validOptions, debugMode, serverRootDir, mitmProxy, page, polly }, use, testInfo) => {
             polly.pause()
 
-            const executableDir = path.resolve(process.cwd(), validOptions.vscodeTmpDir)
+            const executableDir = path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.vscodeTmpDir)
             await fs.mkdir(executableDir, { recursive: true })
-            const serverExecutableDir = path.resolve(process.cwd(), validOptions.vscodeServerTmpDir)
+            const serverExecutableDir = path.resolve(
+                CODY_VSCODE_ROOT_DIR,
+                validOptions.vscodeServerTmpDir
+            )
             await fs.mkdir(serverExecutableDir, { recursive: true })
             // We nullify the time it takes to download VSCode as it can vary wildly!
             const [_, codeTunnelCliPath] = await stretchTimeout(
@@ -715,7 +717,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
             if (validOptions.vscodeExtensions.length > 0) {
                 //TODO(rnauta): Add lockfile wrapper to avoid race conditions
                 const sharedExtensionsDir = path.resolve(
-                    process.cwd(),
+                    CODY_VSCODE_ROOT_DIR,
                     validOptions.vscodeExtensionCacheDir
                 )
                 if (!sharedExtensionsDir.endsWith(path.join('.vscode-server', 'extensions'))) {
@@ -785,8 +787,8 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                     ? `--inspect-brk=${extensionHostDebugPort}`
                     : `--inspect=${extensionHostDebugPort}`,
                 TESTING_DOTCOM_URL: mitmProxy.sourcegraph.dotcom.endpoint,
-                CODY_TESTING_BFG_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
-                CODY_TESTING_SYMF_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
+                CODY_TESTING_BFG_DIR: path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.binaryTmpDir),
+                CODY_TESTING_SYMF_DIR: path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.binaryTmpDir),
             }
             const config = {
                 url: `http://127.0.0.1:${serverPort}/`,
