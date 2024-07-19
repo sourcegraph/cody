@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { describe } from 'node:test'
 import type { Polly } from '@pollyjs/core'
-import { isWindows } from '@sourcegraph/cody-shared'
 import { afterAll, beforeAll, expect, it } from 'vitest'
 import YAML from 'yaml'
 import { startPollyRecording } from '../../../vscode/src/testutils/polly'
