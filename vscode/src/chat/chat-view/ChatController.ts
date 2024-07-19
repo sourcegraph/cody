@@ -55,12 +55,13 @@ import { isContextWindowLimitError } from '@sourcegraph/cody-shared/src/sourcegr
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { URI } from 'vscode-uri'
 import { version as VSCEVersion } from '../../../package.json'
-import type { View } from '../../../webviews/NavBar'
+import { View } from '../../../webviews/tabs/TabsBar'
 import {
     closeAuthProgressIndicator,
     startAuthProgressIndicator,
 } from '../../auth/auth-progress-indicator'
 import type { startTokenReceiver } from '../../auth/token-receiver'
+import { getCodyCommandList } from '../../commands/CommandsController'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
 import { experimentalUnitTestMessageSubmission } from '../../commands/execute/test-chat-experimental'
@@ -393,9 +394,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             case 'restoreHistory':
                 await this.restoreSession(message.chatID)
+                this.setWebviewView(View.Chat)
                 break
             case 'reset':
                 await this.clearAndRestartSession()
+                break
+            case 'command':
+                vscode.commands.executeCommand(message.id, message.arg)
                 break
             case 'event':
                 // no-op, legacy v1 telemetry has been removed. This should be removed as well.
@@ -565,6 +570,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
+        })
+        await this.postMessage({
+            type: 'commands',
+            commands: getCodyCommandList(),
         })
     }
 
@@ -1512,7 +1521,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         viewOrPanel: vscode.WebviewView | vscode.WebviewPanel
     ): Promise<vscode.WebviewView | vscode.WebviewPanel> {
         if (this.webviewPanelOrView) {
-            throw new Error('webview already created')
+            logDebug('ChatController:resolveWebviewViewOrPanel', 'webview already created')
         }
         this._webviewPanelOrView = viewOrPanel
 
@@ -1572,7 +1581,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             await vscode.commands.executeCommand('setContext', 'cody.activated', false)
             return
         }
-
         const viewOrPanel = this._webviewPanelOrView ?? (await this.createWebviewViewOrPanel())
 
         revealWebviewViewOrPanel(viewOrPanel)

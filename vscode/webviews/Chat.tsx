@@ -194,7 +194,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 export interface UserAccountInfo {
     isDotComUser: boolean
     isCodyProUser: boolean
-    user: Pick<AuthStatus, 'username' | 'displayName' | 'avatarURL'>
+    user: Pick<AuthStatus, 'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail'>
     ide: CodyIDE
 }
 
