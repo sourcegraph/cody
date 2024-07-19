@@ -15,6 +15,12 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## 1.26.5
+
+### Fixed
+
+- Chat context: Fixed an issue where querying context retrievers with context chips included in the query returned poor results. [pull/4936](https://github.com/sourcegraph/cody/pull/4936)
+
 ## 1.26.4
 
 ### Fixed
