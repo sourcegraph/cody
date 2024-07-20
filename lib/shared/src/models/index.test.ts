@@ -5,6 +5,7 @@ import {
     type ModelCategory,
     type ModelTier,
     ModelsService,
+    type PerSitePreferences,
     type ServerModel,
     type ServerModelConfiguration,
 } from '../models/index'
@@ -16,6 +17,7 @@ import { ModelUsage } from './types'
 describe('Model Provider', () => {
     const freeUserAuthStatus: AuthStatus = {
         ...defaultAuthStatus,
+        endpoint: 'https://sourcegraph.example.com',
         authenticated: true,
         isDotCom: true,
         userCanUpgrade: true,
@@ -28,6 +30,7 @@ describe('Model Provider', () => {
 
     const enterpriseAuthStatus: AuthStatus = {
         ...defaultAuthStatus,
+        endpoint: 'https://sourcegraph.example.com',
         authenticated: true,
         isDotCom: false,
     }
@@ -131,16 +134,22 @@ describe('Model Provider', () => {
             usage: [ModelUsage.Edit],
         })
 
-        it('allows setting default models per type', () => {
+        beforeEach(() => {
+            ModelsService.reset()
+            ModelsService.setAuthStatus(codyProAuthStatus)
             ModelsService.setModels([model1chat, model2chat, model3all, model4edit])
+        })
+
+        it('allows setting default models per type', () => {
             ModelsService.setSelectedModel(ModelUsage.Chat, model2chat)
             ModelsService.setSelectedModel(ModelUsage.Edit, model4edit)
-            expect(ModelsService.getDefaultChatModel(codyProAuthStatus)).toBe(model2chat.model)
             expect(ModelsService.getDefaultEditModel(codyProAuthStatus)).toBe(model4edit.model)
+            expect(ModelsService.getDefaultChatModel(codyProAuthStatus)).toBe(model2chat.model)
         })
 
         it('only allows setting known models as default', async () => {
             // Set default before settings models is a no-op
+            ModelsService.setModels([])
             await ModelsService.setSelectedModel(ModelUsage.Chat, model2chat.model)
             ModelsService.setModels([model1chat, model2chat])
             expect(ModelsService.getDefaultChatModel(codyProAuthStatus)).toBe(model1chat.model)
@@ -232,11 +241,21 @@ describe('Model Provider', () => {
             async delete(key: string) {
                 this.data.delete(key)
             }
+
+            parse(): PerSitePreferences | undefined {
+                const dumped = this.data.get('model-preferences')
+                console.log(dumped)
+                if (dumped) {
+                    return JSON.parse(dumped)
+                }
+                return undefined
+            }
         }
 
         beforeEach(async () => {
             storage = new TestStorage()
             ModelsService.setStorage(storage)
+            ModelsService.setAuthStatus(enterpriseAuthStatus)
             await ModelsService.setServerSentModels(SERVER_MODELS)
         })
 
@@ -256,9 +275,12 @@ describe('Model Provider', () => {
                 ModelsService.getDefaultModel(ModelUsage.Autocomplete, enterpriseAuthStatus)
             ).toStrictEqual(claude)
 
-            // // expect storage to be updated
-            expect(storage.get('defaultChatModel')).toBe(opus.model)
-            expect(storage.get('defaultAutocompleteModel')).toBe(claude.model)
+            // expect storage to be updated
+
+            const parsed = storage.parse()?.[enterpriseAuthStatus.endpoint].defaults
+            expect(parsed?.chat).toBe(opus.model)
+            expect(parsed?.edit).toBe(opus.model)
+            expect(parsed?.autocomplete).toBe(claude.model)
         })
 
         it('allows updating the selected model', async () => {
@@ -266,7 +288,7 @@ describe('Model Provider', () => {
             expect(ModelsService.getDefaultChatModel(enterpriseAuthStatus)).toBe(titan.model)
 
             //  however, the defaults are still as the server set
-            expect(storage.get('defaultChatModel')).toBe(opus.model)
+            expect(storage.parse()?.[enterpriseAuthStatus.endpoint].defaults.chat).toBe(opus.model)
         })
 
         it('uses new server defaults when provided', async () => {

@@ -293,6 +293,19 @@ interface ModelParams {
     title?: string
 }
 
+export interface PerSitePreferences {
+    [endpoint: string]: SitePreferences
+}
+
+interface SitePreferences {
+    defaults: {
+        [usage in ModelUsage]?: string
+    }
+    selected: {
+        [usage in ModelUsage]?: string
+    }
+}
+
 /**
  * ModelsService is the component responsible for keeping track of which models
  * are supported on the backend, which ones are available based on the user's
@@ -314,45 +327,59 @@ export class ModelsService {
     public static reset() {
         ModelsService.primaryModels = []
         ModelsService.localModels = []
-        ModelsService.defaultModels.clear()
-        ModelsService.selectedModels.clear()
+        ModelsService._preferences = {}
         ModelsService.storage = undefined
     }
 
-    /**
-     * Get all the providers currently available to the user
-     */
+    // Get all the providers currently available to the user
     private static get models(): Model[] {
         return ModelsService.primaryModels.concat(ModelsService.localModels)
     }
-    /**
-     * Models available on the user's Sourcegraph instance.
-     */
+
+    // Models available on the user's Sourcegraph instance.
     private static primaryModels: Model[] = []
-    /**
-     * Models available from user's local instances, e.g. Ollama.
-     */
+
+    // Models available from user's local instances, e.g. Ollama.
     private static localModels: Model[] = []
 
-    private static selectedModels: Map<ModelUsage, Model> = new Map()
-    private static defaultModels: Map<ModelUsage, Model> = new Map()
+    private static STORAGE_KEY = 'model-preferences'
 
+    // persistent storage to save user preferences and server defaults
     private static storage: Storage | undefined
 
-    private static selectedStorageKeys = {
-        [ModelUsage.Chat]: 'chat',
-        [ModelUsage.Edit]: 'editModel',
-        [ModelUsage.Autocomplete]: 'autocomplete',
-    }
+    // current system auth status
+    private static authStatus: AuthStatus | undefined
 
-    private static defaultStorageKeys = {
-        [ModelUsage.Chat]: 'defaultChatModel',
-        [ModelUsage.Edit]: 'defaultEditModel',
-        [ModelUsage.Autocomplete]: 'defaultAutocompleteModel',
-    }
+    // Cache of users preferences and defaults across each endpoint they have used
+    private static _preferences: PerSitePreferences | undefined
 
-    public static setStorage(storage: Storage): void {
-        ModelsService.storage = storage
+    // lazy loads the users preferences for the current endpoint into a local cache
+    // or initializes a new cache if one doesn't exist
+    private static get preferences(): SitePreferences {
+        const empty: SitePreferences = {
+            defaults: {},
+            selected: {},
+        }
+        const endpoint = ModelsService.authStatus?.endpoint
+        if (!endpoint) {
+            logError('ModelsService::preferences', 'No auth status set')
+            return empty
+        }
+        // If global cache is missing, try loading from storage
+        if (!ModelsService._preferences) {
+            const serialized = ModelsService.storage?.get('model-preferences')
+            ModelsService._preferences = (serialized ? JSON.parse(serialized) : {}) as PerSitePreferences
+        }
+
+        const current = ModelsService._preferences[endpoint]
+        if (current) {
+            // cache hit!
+            return current
+        }
+
+        // Else the endpoint cache is missing, so initialize it
+        ModelsService._preferences[endpoint] = empty
+        return empty
     }
 
     public static async onConfigChange(): Promise<void> {
@@ -363,8 +390,12 @@ export class ModelsService {
         }
     }
 
-    private static getModelsByType(usage: ModelUsage): Model[] {
-        return ModelsService.models.filter(model => model.usage.includes(usage))
+    public static async setAuthStatus(authStatus: AuthStatus) {
+        ModelsService.authStatus = authStatus
+    }
+
+    public static setStorage(storage: Storage): void {
+        ModelsService.storage = storage
     }
 
     /**
@@ -391,39 +422,26 @@ export class ModelsService {
 
     private static async setServerDefaultModel(usage: ModelUsage, newDefaultModelRef: ModelRefStr) {
         const ref = Model.parseModelRef(newDefaultModelRef)
-
-        // Model should exist as we just set them from the server. If not, something's broken
-        const newDefaultModel = ModelsService.resolveModel(newDefaultModelRef)
-        if (!newDefaultModel) {
-            logError(
-                'ModelsService::setServerDefaultModel',
-                'Failed to set default model',
-                'missing model definition',
-                usage,
-                newDefaultModelRef
-            )
-            return
-        }
+        const { preferences } = ModelsService
 
         // If our cached default model matches, nothing needed
-        const currentDefaultModel = ModelsService.defaultModels.get(usage)
-        if (currentDefaultModel?.model === newDefaultModel.model) {
-            return
-        }
-
-        // If our stored default model matches, we can update the cache and return
-        const storedDefaultModel = ModelsService.storage?.get(ModelsService.defaultStorageKeys[usage])
-        if (storedDefaultModel === ref.modelId) {
-            ModelsService.defaultModels.set(usage, newDefaultModel)
+        if (preferences.defaults[usage] === ref.modelId) {
             return
         }
 
         // Otherwise the model has updated so we should set it in the in-memory cache
         // as well as the on-disk cache if it exists, and drop any previously selected
         // models for this usage type
-        ModelsService.defaultModels.set(usage, newDefaultModel)
-        await ModelsService.storage?.set(ModelsService.defaultStorageKeys[usage], newDefaultModel.model)
-        ModelsService.selectedModels.delete(usage)
+        preferences.defaults[usage] = ref.modelId
+        delete preferences.selected[usage]
+        await ModelsService.flush()
+    }
+
+    private static async flush(): Promise<void> {
+        await ModelsService.storage?.set(
+            ModelsService.STORAGE_KEY,
+            JSON.stringify(ModelsService._preferences)
+        )
     }
 
     /**
@@ -435,6 +453,10 @@ export class ModelsService {
             set.add(provider)
         }
         ModelsService.primaryModels = Array.from(set)
+    }
+
+    private static getModelsByType(usage: ModelUsage): Model[] {
+        return ModelsService.models.filter(model => model.usage.includes(usage))
     }
 
     /**
@@ -458,18 +480,18 @@ export class ModelsService {
         const models = ModelsService.getModelsByType(type)
         const firstModelUserCanUse = models.find(m => ModelsService.isModelAvailableFor(m, status))
 
+        const { preferences } = ModelsService
+
         // Check to see if the user has a selected a default model for this
         // usage type and if not see if there is a server sent default type
-        const selected = ModelsService.selectedModels.get(type) ?? ModelsService.defaultModels.get(type)
+        const selected = ModelsService.resolveModel(
+            preferences.selected[type] ?? preferences.defaults[type]
+        )
         if (selected && ModelsService.isModelAvailableFor(selected, status)) {
             return selected
         }
 
-        // If this editor has local storage enabled, check to see if the
-        // user set a default model in a previous session.
-        const lastSelectedModelID = ModelsService.storage?.get(ModelsService.selectedStorageKeys[type])
-        // return either the last selected model or first model they can use if any
-        return models.find(m => m.model === lastSelectedModelID) || firstModelUserCanUse
+        return firstModelUserCanUse
     }
 
     public static getDefaultEditModel(status: AuthStatus): EditModel | undefined {
@@ -489,9 +511,8 @@ export class ModelsService {
             throw new Error(`Model "${resolved.model}" is not compatible with usage type "${type}".`)
         }
         logDebug('ModelsService', `Setting selected ${type} model to ${resolved.model}`)
-        ModelsService.selectedModels.set(type, resolved)
-        // If we have persistent storage set, write it there
-        await ModelsService.storage?.set(ModelsService.selectedStorageKeys[type], resolved.model)
+        ModelsService.preferences.selected[type] = resolved.model
+        await ModelsService.flush()
     }
 
     public static isModelAvailableFor(model: string | Model, status: AuthStatus): boolean {
@@ -518,7 +539,10 @@ export class ModelsService {
     // does an approximate match on the model id, seeing if there are any models in the
     // cache that are contained within the given model id. This allows passing a qualified,
     // unqualified or ModelRefStr in as the model id will be a substring
-    static resolveModel(modelID: Model | string): Model | undefined {
+    static resolveModel(modelID: Model | string | undefined): Model | undefined {
+        if (!modelID) {
+            return undefined
+        }
         if (typeof modelID !== 'string') {
             return modelID
         }
