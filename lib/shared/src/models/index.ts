@@ -367,7 +367,7 @@ export class ModelsService {
         }
         // If global cache is missing, try loading from storage
         if (!ModelsService._preferences) {
-            const serialized = ModelsService.storage?.get('model-preferences')
+            const serialized = ModelsService.storage?.get(ModelsService.STORAGE_KEY)
             ModelsService._preferences = (serialized ? JSON.parse(serialized) : {}) as PerSitePreferences
         }
 
