@@ -466,19 +466,19 @@ export class ModelsService {
      * @param authStatus - The authentication status of the user.
      * @returns An array of models, with the default model first.
      */
-    public static getModels(type: ModelUsage, authStatus: AuthStatus): Model[] {
+    public static getModels(type: ModelUsage): Model[] {
         const models = ModelsService.getModelsByType(type)
-        const currentModel = ModelsService.getDefaultModel(type, authStatus)
+        const currentModel = ModelsService.getDefaultModel(type)
         if (!currentModel) {
             return models
         }
         return [currentModel].concat(models.filter(m => m.model !== currentModel.model))
     }
 
-    public static getDefaultModel(type: ModelUsage, status: AuthStatus): Model | undefined {
+    public static getDefaultModel(type: ModelUsage): Model | undefined {
         // Free users can only use the default free model, so we just find the first model they can use
         const models = ModelsService.getModelsByType(type)
-        const firstModelUserCanUse = models.find(m => ModelsService.isModelAvailableFor(m, status))
+        const firstModelUserCanUse = models.find(m => ModelsService.isModelAvailable(m))
 
         const { preferences } = ModelsService
 
@@ -487,19 +487,19 @@ export class ModelsService {
         const selected = ModelsService.resolveModel(
             preferences.selected[type] ?? preferences.defaults[type]
         )
-        if (selected && ModelsService.isModelAvailableFor(selected, status)) {
+        if (selected && ModelsService.isModelAvailable(selected)) {
             return selected
         }
 
         return firstModelUserCanUse
     }
 
-    public static getDefaultEditModel(status: AuthStatus): EditModel | undefined {
-        return ModelsService.getDefaultModel(ModelUsage.Edit, status)?.model
+    public static getDefaultEditModel(): EditModel | undefined {
+        return ModelsService.getDefaultModel(ModelUsage.Edit)?.model
     }
 
-    public static getDefaultChatModel(status: AuthStatus): ChatModel | undefined {
-        return ModelsService.getDefaultModel(ModelUsage.Chat, status)?.model
+    public static getDefaultChatModel(): ChatModel | undefined {
+        return ModelsService.getDefaultModel(ModelUsage.Chat)?.model
     }
 
     public static async setSelectedModel(type: ModelUsage, model: Model | string): Promise<void> {
@@ -515,7 +515,11 @@ export class ModelsService {
         await ModelsService.flush()
     }
 
-    public static isModelAvailableFor(model: string | Model, status: AuthStatus): boolean {
+    public static isModelAvailable(model: string | Model): boolean {
+        const status = ModelsService.authStatus
+        if (!status) {
+            return false
+        }
         const resolved = ModelsService.resolveModel(model)
         if (!resolved) {
             return false
