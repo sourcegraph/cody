@@ -54,3 +54,9 @@ export const JetbrainsNightly: Story = {
         version: '6.5.4321-nightly',
     },
 }
+
+export const RestartButton: Story = {
+    args: {
+        showRestart: true,
+    },
+}

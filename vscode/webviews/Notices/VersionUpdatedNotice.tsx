@@ -5,6 +5,7 @@ import { getReleaseNotesURLByIDE, majorMinorVersion } from '../../src/release'
 import { Notice } from './Notice'
 
 import type { CodyIDE } from '@sourcegraph/cody-shared'
+import { Button } from '../components/shadcn/ui/button'
 import styles from './VersionUpdatedNotice.module.css'
 
 const key = 'notices.last-dismissed-version'
@@ -39,17 +40,37 @@ interface VersionUpdateNoticeProps {
     probablyNewInstall: boolean
     IDE: CodyIDE
     version: string
+    showRestart?: boolean
 }
 
 export const VersionUpdatedNotice: React.FunctionComponent<VersionUpdateNoticeProps> = ({
     IDE,
     version,
     probablyNewInstall,
+    showRestart = false,
 }) => {
     const [showNotice, setDismissed] = useShowNotice(majorMinorVersion(version), probablyNewInstall)
 
     if (!showNotice) {
         return undefined
+    }
+
+    if (showRestart) {
+        return (
+            <Notice
+                icon={<Icon />}
+                title="Reload Visual Studio Code to update Cody"
+                linkHref={getReleaseNotesURLByIDE(version, IDE)}
+                onDismiss={setDismissed}
+            >
+                <p className="tw-text-sm tw-text-muted tw-mb-2 -tw-mt-2">
+                    To update to the latest Cody extension, please reload Visual Studio Code
+                </p>
+                <Button className="tw-w-fit" onClick={() => window.location.reload()}>
+                    Reload Visual Studio Code
+                </Button>
+            </Notice>
+        )
     }
 
     return (

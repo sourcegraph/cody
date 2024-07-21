@@ -19,9 +19,10 @@
     display: none;
 }
 
-.notice h1,
-.notice p {
-    all: unset;
+.notice-heading,
+.notice-paragraph {
+    margin: 0;
+    font-size: inherit;
 }
 
 .notice-icon {

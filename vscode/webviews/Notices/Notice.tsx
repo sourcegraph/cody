@@ -15,6 +15,7 @@ interface NoticeProps {
     className?: string
     onDismiss?: () => void
     dismissKey?: string
+    children?: React.ReactNode
 }
 
 /**
@@ -32,6 +33,7 @@ export const Notice: React.FunctionComponent<React.PropsWithChildren<NoticeProps
     onDismiss,
     dismissKey,
     className,
+    children,
 }) => {
     const [dismissed, setDismissed] = useState<boolean>(
         (dismissKey && hasBeenDismissed(dismissKey)) || false
@@ -52,15 +54,16 @@ export const Notice: React.FunctionComponent<React.PropsWithChildren<NoticeProps
         <div className={clsx(styles.notice, className)}>
             <div className={styles.noticeIcon}>{icon}</div>
             <div className={styles.noticeText}>
-                <h1>{title}</h1>
-                {text && <p>{text}</p>}
+                <h1 className={styles.noticeHeading}>{title}</h1>
+                {text && <p className={styles.noticeParagraph}>{text}</p>}
                 {linkText && linkHref && (
-                    <p>
+                    <p className={styles.noticeParagraph}>
                         <VSCodeLink href={linkHref} target={linkTarget}>
                             {linkText}
                         </VSCodeLink>
                     </p>
                 )}
+                {children}
             </div>
             <div className={styles.noticeClose}>
                 <VSCodeButton appearance="icon" onClick={onDismiss || defaultOnDismiss}>
