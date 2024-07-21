@@ -70,7 +70,7 @@ export const CodyCommandMenuItems: MenuCommandAccessor[] = [
         description: 'Auto Edit (Experimental)',
         icon: 'surround-with',
         command: { command: 'cody.command.auto-edit' },
-        keybinding: `${osIcon}Tab`,
+        keybinding: '${osIcon}Tab',
     },
     {
         key: 'commit',
