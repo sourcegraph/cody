@@ -1520,11 +1520,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async resolveWebviewViewOrPanel(
         viewOrPanel: vscode.WebviewView | vscode.WebviewPanel
     ): Promise<vscode.WebviewView | vscode.WebviewPanel> {
-        if (this.webviewPanelOrView) {
-            logDebug('ChatController:resolveWebviewViewOrPanel', 'webview already created')
-        }
         this._webviewPanelOrView = viewOrPanel
-
         this.syncPanelTitle()
 
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')

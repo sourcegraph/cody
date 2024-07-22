@@ -7,6 +7,7 @@ import {
     type ChatClient,
     CodyIDE,
     DEFAULT_EVENT_SOURCE,
+    FeatureFlag,
     type Guardrails,
     ModelUsage,
     ModelsService,
@@ -78,6 +79,7 @@ export class ChatsController implements vscode.Disposable {
     ) {
         logDebug('ChatsController:constructor', 'init')
         this.panel = this.createChatController()
+
         this.disposables.push(
             this.authProvider.onChange(authStatus => this.setAuthStatus(authStatus), {
                 runImmediately: true,
@@ -87,14 +89,21 @@ export class ChatsController implements vscode.Disposable {
         this.historyTreeView = vscode.window.createTreeView('cody.chat.tree.view', {
             treeDataProvider: this.historyTreeViewProvider,
         })
-
+        this.disposables.push(this.historyTreeViewProvider)
+        this.disposables.push(this.historyTreeView)
         this.disposables.push(
-            this.historyTreeViewProvider,
-            this.historyTreeView,
             chatHistory.onHistoryChanged(() => {
                 this.historyTreeViewProvider.refresh()
             })
         )
+    }
+
+    public static async isChatInSidebar(): Promise<boolean> {
+        const val = vscode.workspace.getConfiguration().get<boolean>('cody.internal.chatInSidebar')
+        if (val !== undefined) {
+            return val
+        }
+        return await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatInSidebar)
     }
 
     private async setAuthStatus(authStatus: AuthStatus): Promise<void> {
@@ -171,16 +180,26 @@ export class ChatsController implements vscode.Disposable {
                 vscode.commands.executeCommand('cody.chat.focus')
             ),
             vscode.commands.registerCommand('cody.chat.newPanel', async () => {
-                await this.panel.clearAndRestartSession()
-                await vscode.commands.executeCommand('cody.chat.focus')
+                if (await ChatsController.isChatInSidebar()) {
+                    await this.panel.clearAndRestartSession()
+                    await vscode.commands.executeCommand('cody.chat.focus')
+                } else {
+                    this.getOrCreateEditorChatController()
+                }
             }),
             vscode.commands.registerCommand(
                 'cody.chat.toggle',
                 async (ops: { editorFocus: boolean }) => {
-                    if (ops.editorFocus) {
-                        await vscode.commands.executeCommand('cody.chat.focus')
+                    if (await ChatsController.isChatInSidebar()) {
+                        if (ops.editorFocus) {
+                            await vscode.commands.executeCommand('cody.chat.focus')
+                        } else {
+                            await vscode.commands.executeCommand(
+                                'workbench.action.focusActiveEditorGroup'
+                            )
+                        }
                     } else {
-                        await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup')
+                        this.getOrCreateEditorChatController()
                     }
                 }
             ),
