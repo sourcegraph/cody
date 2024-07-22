@@ -52,14 +52,17 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         return AuthProvider._instance
     }
 
-    public static create(config: AuthConfig): AuthProvider {
+    public static create(config: AuthConfig, isTesting: boolean): AuthProvider {
         if (!AuthProvider._instance) {
-            AuthProvider._instance = new AuthProvider(config)
+            AuthProvider._instance = new AuthProvider(config, isTesting)
         }
         return AuthProvider._instance
     }
 
-    private constructor(private config: AuthConfig) {
+    private constructor(
+        private config: AuthConfig,
+        private isTesting: boolean
+    ) {
         this.status.endpoint = 'init'
         this.loadEndpointHistory()
     }
@@ -343,7 +346,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
             // Set context for the extension to render views based on auth status.
             // isConsumer should be set before activated to avoid flickering.
-            const isConsumer = authStatus.isLoggedIn && authStatus.isDotCom
+            const isConsumer = authStatus.isLoggedIn && authStatus.isDotCom && !this.isTesting
             await vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', isConsumer)
             await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
 

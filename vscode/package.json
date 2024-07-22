@@ -823,7 +823,7 @@
         },
         {
           "command": "cody.chat.newEditorPanel",
-          "when": "cody.activated && cody.chatInSidebar"
+          "when": "cody.activated && !cody.chatInSidebar"
         }
       ],
       "editor/context": [

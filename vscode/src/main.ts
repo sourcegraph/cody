@@ -95,6 +95,10 @@ export async function start(
     context: vscode.ExtensionContext,
     platform: PlatformContext
 ): Promise<vscode.Disposable> {
+    const isExtensionTextMode = context.extensionMode === vscode.ExtensionMode.Test
+    const isExtensionModeDevOrTest =
+        context.extensionMode === vscode.ExtensionMode.Development || isExtensionTextMode
+
     // HACK to improve e2e test latency
     if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.chatInSidebar')) {
         await vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', true)
@@ -113,11 +117,8 @@ export async function start(
 
     const disposables: vscode.Disposable[] = []
 
-    const authProvider = AuthProvider.create(await getFullConfig())
+    const authProvider = AuthProvider.create(await getFullConfig(), isExtensionTextMode)
     const configWatcher = await BaseConfigWatcher.create(authProvider, disposables)
-    const isExtensionModeDevOrTest =
-        context.extensionMode === vscode.ExtensionMode.Development ||
-        context.extensionMode === vscode.ExtensionMode.Test
     await configWatcher.onChange(
         async config => {
             await configureEventsInfra(config, isExtensionModeDevOrTest, authProvider)
