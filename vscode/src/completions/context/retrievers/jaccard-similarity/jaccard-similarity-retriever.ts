@@ -198,7 +198,8 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
                     }
 
                     try {
-                        return [await this.openTextDocument(uri)]
+                        const doc = await this.openTextDocument(uri)
+                        return doc ? [doc] : []
                     } catch (error) {
                         console.error(error)
                         return []
@@ -221,7 +222,9 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
                 .map(async item => {
                     try {
                         const document = await this.openTextDocument(item.document.uri)
-                        addDocument(document)
+                        if (document) {
+                            addDocument(document)
+                        }
                     } catch (error) {
                         console.error(error)
                     }

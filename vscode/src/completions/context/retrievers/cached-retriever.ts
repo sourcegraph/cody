@@ -171,11 +171,11 @@ export abstract class CachedRetriever implements ContextRetriever {
         return this.window.tabGroups
     }
 
-    openTextDocument = (uri: vscode.Uri): Thenable<vscode.TextDocument> => {
+    openTextDocument = (uri: vscode.Uri): Thenable<vscode.TextDocument | undefined> => {
         // Returns undefined if the uri is not a file system uri, which includes untitled files.
         // Trying to open a removed file will re-create the file and return a new document.
         if (uri.scheme !== 'file') {
-            return new Promise(() => undefined)
+            return Promise.resolve(undefined)
         }
         this.addDependency(uri.toString())
         return this.workspace.openTextDocument(uri)
