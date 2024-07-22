@@ -183,7 +183,11 @@ export async function newAgentClient(
         const arg0 = clientInfo.codyAgentPath ?? process.argv[0]
         const args = clientInfo.codyAgentPath ? [] : nodeArguments
         const child = spawn(arg0, args, {
-            env: { ...clientInfo.extraEnvVariables, ENABLE_SENTRY: 'false', ...process.env },
+            env: {
+                ...clientInfo.extraEnvVariables,
+                ENABLE_SENTRY: 'false',
+                ...process.env,
+            },
         })
         child.on('error', error => reject?.(error))
         child.on('exit', code => {
@@ -572,7 +576,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 throw new Error(`codeActions/trigger: no arguments for ID ${id}`)
             }
             return this.createEditTask(
-                executeEdit(args).then<CommandResult | undefined>(task => ({ type: 'edit', task }))
+                executeEdit(args).then<CommandResult | undefined>(task => ({
+                    type: 'edit',
+                    task,
+                }))
             )
         })
 
