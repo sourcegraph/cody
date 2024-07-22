@@ -24,21 +24,11 @@ import { TestWorkspace } from './TestWorkspace'
 import { decodeURIs } from './decodeURIs'
 import { explainPollyError } from './explainPollyError'
 import type { NetworkRequest, Requests } from './protocol-alias'
-
+import { trimEndOfLine } from './trimEndOfLine'
 const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
 
 const mayRecord =
     process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
-
-function trimEndOfLine(text: string | undefined): string {
-    if (text === undefined) {
-        return ''
-    }
-    return text
-        .split('\n')
-        .map(line => line.trimEnd())
-        .join('\n')
-}
 
 function getTelemetryEvents(requests: NetworkRequest[]): {
     loggedTelemetryEventsV2: string[]
@@ -75,7 +65,6 @@ describe('Agent', () => {
         workspaceRootUri: workspace.rootUri,
         name: 'defaultClient',
         credentials: TESTING_CREDENTIALS.dotcom,
-        logEventMode: 'all',
         // set telemetryExporter to `graphql` to receive telemetryRecorder requests and determine whats events have been logged
         telemetryExporter: 'graphql',
     })
