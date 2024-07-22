@@ -6,6 +6,7 @@ import { Notice } from './Notice'
 
 import type { CodyIDE } from '@sourcegraph/cody-shared'
 import { Button } from '../components/shadcn/ui/button'
+import { getVSCodeAPI } from '../utils/VSCodeApi'
 import styles from './VersionUpdatedNotice.module.css'
 
 const key = 'notices.last-dismissed-version'
@@ -66,7 +67,15 @@ export const VersionUpdatedNotice: React.FunctionComponent<VersionUpdateNoticePr
                 <p className="tw-text-sm tw-text-muted tw-mb-2 -tw-mt-2">
                     To update to the latest Cody extension, please reload Visual Studio Code
                 </p>
-                <Button className="tw-w-fit" onClick={() => window.location.reload()}>
+                <Button
+                    className="tw-w-fit"
+                    onClick={() =>
+                        getVSCodeAPI().postMessage({
+                            command: 'command',
+                            id: 'workbench.action.reloadWindow',
+                        })
+                    }
+                >
                     Reload Visual Studio Code
                 </Button>
             </Notice>
