@@ -18,7 +18,7 @@ data class CodyApplicationSettings(
     var isCustomAutocompleteColorEnabled: Boolean = false,
     var customAutocompleteColor: Int? = null,
     var isLookupAutocompleteEnabled: Boolean = true,
-    var isCodyUIHintsEnabled: Boolean = true,
+    var isCodyUIHintsEnabled: Boolean = false,
     var blacklistedLanguageIds: List<String> = listOf(),
     var isOnboardingGuidanceDismissed: Boolean = false,
     var shouldAcceptNonTrustedCertificatesAutomatically: Boolean = false,
