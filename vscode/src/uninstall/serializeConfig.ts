@@ -1,7 +1,11 @@
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
-import type { AuthStatus, ConfigurationWithAccessToken, ExtensionDetails } from '@sourcegraph/cody-shared'
+import type {
+    AuthStatus,
+    ConfigurationWithAccessToken,
+    ExtensionDetails,
+} from '@sourcegraph/cody-shared'
 
 import { Platform, getOSArch } from '../os'
 
