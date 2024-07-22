@@ -224,6 +224,11 @@ interface ExtensionAttributionMessage {
     error?: string | undefined | null
 }
 
+/**
+ * ChatSubmitType represents the type of chat submission.
+ * - 'user': The user reuses the current chat panel.
+ * - 'user-newchat': The user starts a new chat panel.
+ */
 export type ChatSubmitType = 'user' | 'user-newchat'
 
 export interface WebviewSubmitMessage extends WebviewContextMessage {

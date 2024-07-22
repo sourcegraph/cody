@@ -299,11 +299,11 @@ export class ChatsController implements vscode.Disposable {
         addEnhancedContext,
         source = DEFAULT_EVENT_SOURCE,
         command,
-        forceNewPanel,
+        
     }: ExecuteChatArguments): Promise<ChatSession | undefined> {
         let provider: ChatController
         // If the sidebar panel is visible and empty, use it instead of creating a new panel
-        if (!forceNewPanel && this.panel.isVisible() && this.panel.isEmpty()) {
+        if (submitType === 'user' && this.panel.isVisible() && this.panel.isEmpty()) {
             provider = this.panel
         } else {
             provider = await this.getOrCreateEditorChatController()
