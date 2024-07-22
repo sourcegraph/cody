@@ -78,6 +78,7 @@ export interface Configuration {
     autocompleteExperimentalMultiModelCompletions?: MultimodelSingleModelConfig[]
     autocompleteExperimentalSmartThrottle?: boolean
     autocompleteExperimentalSmartThrottleExtended?: boolean
+    autocompleteExperimentalPreloadDebounceInterval?: number
 
     /**
      * Hidden settings

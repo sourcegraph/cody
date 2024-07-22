@@ -18,6 +18,10 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompleteSmartThrottle,
         FeatureFlag.CodyAutocompleteSmartThrottleExtended,
         FeatureFlag.CodyAutocompleteLatencyExperimentBasedFeatureFlag,
+        FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag,
+        FeatureFlag.CodyAutocompletePreloadingExperimentVariant1,
+        FeatureFlag.CodyAutocompletePreloadingExperimentVariant2,
+        FeatureFlag.CodyAutocompletePreloadingExperimentVariant3,
     ] as const
 
     private get config() {
@@ -71,6 +75,55 @@ class CompletionProviderConfig {
                 return this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextBfgMixed)
                     ? 'bfg-mixed'
                     : 'jaccard-similarity'
+        }
+    }
+
+    private getPreloadingExperimentGroup(): 'variant1' | 'variant2' | 'variant3' | 'control' {
+        // The desired distribution:
+        // - Variant-1 25%
+        // - Variant-2 25%
+        // - Variant-3 25%
+        // - Control group 25%
+        //
+        // The rollout values to set:
+        // - CodyAutocompletePreloadingExperimentBaseFeatureFlag 75%
+        // - CodyAutocompleteHotStreak 33%
+        // - CodyAutocompleteSmartThrottle 100%
+        // - CodyAutocompleteSmartThrottleExtended 50%
+        if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag)) {
+            if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompletePreloadingExperimentVariant1)) {
+                return 'variant1'
+            }
+
+            if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompletePreloadingExperimentVariant2)) {
+                if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompletePreloadingExperimentVariant3)) {
+                    return 'variant2'
+                }
+                return 'variant3'
+            }
+        }
+
+        return 'control'
+    }
+
+    public get autocompletePreloadDebounceInterval(): number {
+        const localInterval = this.config.autocompleteExperimentalPreloadDebounceInterval
+
+        if (localInterval !== undefined && localInterval > 0) {
+            return localInterval
+        }
+
+        const preloadingExperimentGroup = this.getPreloadingExperimentGroup()
+
+        switch (preloadingExperimentGroup) {
+            case 'variant1':
+                return 150
+            case 'variant2':
+                return 250
+            case 'variant3':
+                return 350
+            default:
+                return 0
         }
     }
 

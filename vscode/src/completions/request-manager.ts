@@ -60,6 +60,7 @@ interface RequestsManagerParams {
     context: AutocompleteContextSnippet[]
     isCacheEnabled: boolean
     logId: CompletionLogID
+    isPreloadRequest: boolean
     tracer?: CompletionProviderTracer
 }
 
@@ -94,7 +95,9 @@ export class RequestManager {
     }
 
     public async request(params: RequestsManagerParams): Promise<RequestManagerResult> {
-        this.latestRequestParams = params
+        if (!params.isPreloadRequest) {
+            this.latestRequestParams = params
+        }
 
         const { requestParams, provider, context, tracer, logId } = params
 
@@ -380,7 +383,7 @@ class RequestCache {
     private serializeCacheKey(key: CacheKey): string {
         return `${key.prefixWithoutLastNLines}\n${key.prevNonEmptyLines.join('\n')}\n${
             key.currentLinePrefix
-        }█${key.nextNonEmptyLine}`
+        }█\n${key.nextNonEmptyLine}`
     }
 
     private getDynamicThreshold(str: string): number {

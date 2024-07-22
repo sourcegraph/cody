@@ -174,6 +174,10 @@ export function getConfiguration(
             'autocomplete.experimental.smartThrottleExtended',
             false
         ),
+        autocompleteExperimentalPreloadDebounceInterval: getHiddenSetting(
+            'autocomplete.experimental.preloadDebounceInterval',
+            0
+        ),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
         // We currently use this flag for the agent to provide more helpful error messages

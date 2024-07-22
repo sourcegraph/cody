@@ -160,12 +160,16 @@ export enum TriggerKind {
 
     /** When the user uses the suggest widget to cycle through different completions. */
     SuggestWidget = 'SuggestWidget',
+
+    /** Completion pre-loading was triggered by our heuristics. This completions are not shown to the user. */
+    Preload = 'Preload',
 }
 export const TriggerKindTelemetryMetadataMapping: Record<TriggerKind, number> = {
     [TriggerKind.Hover]: 1,
     [TriggerKind.Automatic]: 2,
     [TriggerKind.Manual]: 3,
     [TriggerKind.SuggestWidget]: 4,
+    [TriggerKind.Preload]: 5,
 }
 
 export function allTriggerKinds(): TriggerKind[] {
@@ -243,31 +247,11 @@ async function doGetInlineCompletions(
         repoMetadataInstance.getRepoMetadataUsingGitUrl(gitIdentifiersForFile.gitUrl)
     }
 
-    // If we have a suffix in the same line as the cursor and the suffix contains any word
-    // characters, do not attempt to make a completion. This means we only make completions if
-    // we have a suffix in the same line for special characters like `)]}` etc.
-    //
-    // VS Code will attempt to merge the remainder of the current line by characters but for
-    // words this will easily get very confusing.
-    if (triggerKind !== TriggerKind.Manual && /\w/.test(currentLineSuffix)) {
-        return null
-    }
-
-    // Do not trigger when the last character is a closing symbol
-    if (triggerKind !== TriggerKind.Manual && /[);\]}]$/.test(currentLinePrefix.trim())) {
-        return null
-    }
-
-    // Do not trigger when cursor is at the start of the file ending line and the line above is empty
     if (
         triggerKind !== TriggerKind.Manual &&
-        position.line !== 0 &&
-        position.line === document.lineCount - 1
+        shouldCancelBasedOnCurrentLine({ position, document, currentLinePrefix, currentLineSuffix })
     ) {
-        const lineAbove = Math.max(position.line - 1, 0)
-        if (document.lineAt(lineAbove).isEmptyOrWhitespace && !position.character) {
-            return null
-        }
+        return null
     }
 
     // Do not trigger when the user just accepted a single-line completion
@@ -373,7 +357,11 @@ async function doGetInlineCompletions(
         stale = true
     }
 
-    if (smartThrottleService) {
+    if (
+        smartThrottleService &&
+        triggerKind !== TriggerKind.Manual &&
+        triggerKind !== TriggerKind.Preload
+    ) {
         // For the smart throttle to work correctly and preserve tail requests, we need full control
         // over the cancellation logic for each request.
         // Therefore we must stop listening for cancellation events originating from VS Code.
@@ -476,6 +464,7 @@ async function doGetInlineCompletions(
         provider: completionProvider,
         context: contextResult?.context ?? [],
         isCacheEnabled: triggerKind !== TriggerKind.Manual,
+        isPreloadRequest: triggerKind === TriggerKind.Preload,
         tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,
     })
 
@@ -520,4 +509,41 @@ function createCompletionProviderTracer(
             result: data => tracer({ completionProviderCallResult: data }),
         }
     )
+}
+
+interface ShouldCancelBasedOnCurrentLineParams {
+    currentLinePrefix: string
+    currentLineSuffix: string
+    position: vscode.Position
+    document: vscode.TextDocument
+}
+
+export function shouldCancelBasedOnCurrentLine(params: ShouldCancelBasedOnCurrentLineParams): boolean {
+    const { currentLinePrefix, currentLineSuffix, position, document } = params
+
+    // If we have a suffix in the same line as the cursor and the suffix contains any word
+    // characters, do not attempt to make a completion. This means we only make completions if
+    // we have a suffix in the same line for special characters like `)]}` etc.
+    //
+    // VS Code will attempt to merge the remainder of the current line by characters but for
+    // words this will easily get very confusing.
+    if (/\w/.test(currentLineSuffix)) {
+        return true
+    }
+
+    // Do not trigger when the last character is a closing symbol
+    if (/[);\]}]$/.test(currentLinePrefix.trim())) {
+        return true
+    }
+
+    // Do not trigger when cursor is at the start of the file ending line and the line above is empty
+    if (position.line !== 0 && position.line === document.lineCount - 1) {
+        const lineAbove = Math.max(position.line - 1, 0)
+
+        if (document.lineAt(lineAbove).isEmptyOrWhitespace && !position.character) {
+            return true
+        }
+    }
+
+    return false
 }

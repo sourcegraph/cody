@@ -213,7 +213,7 @@ export function params(
         }),
         isDotComUser,
         configuration,
-        stageRecorder: new AutocompleteStageRecorder(),
+        stageRecorder: new AutocompleteStageRecorder({ isPreloadRequest: false }),
         ...restParams,
 
         // Test-specific helpers
