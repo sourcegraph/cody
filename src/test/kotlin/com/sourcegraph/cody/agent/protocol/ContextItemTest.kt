@@ -21,6 +21,7 @@ class ContextItemTest : BasePlatformTestCase() {
           uri =
               URI(
                   "https://sourcegraph.sourcegraph.com//github.com/sourcegraph/jetbrains@8229d82c29fd52eda812f182741a3a0bfc1a547e/-/blob/TESTING.md?L49-56"),
+          title = "TESTING.md:49-56",
           repoName = "github.com/sourcegraph/jetbrains",
           revision = "8229d82c29fd52eda812f182741a3a0bfc1a547e",
           range = Range(Position(48, 0), Position(56, 0)),

@@ -83,11 +83,11 @@ data class ContextItemFile(
         if (isLocal()) {
           "@${uri.path.removePrefix(projectPath ?: "")}"
         } else {
-          val repoCommitFile = uri.path.split("@", "/-/blob/")
-          if (repoCommitFile.size == 3) {
-            val repo = repoCommitFile[0].split("/").lastOrNull()
-            "$repo ${repoCommitFile[2]}"
-          } else uri.path
+          val repo = repoName?.split("/")?.lastOrNull()
+          val file = title
+          return if (repo != null && title != null) {
+            "$repo $file"
+          } else return uri.path
         }
 
     return buildString {
