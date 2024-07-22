@@ -2,6 +2,7 @@ import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
 import {
+    type AutocompleteContextSnippet,
     type DocumentContext,
     getActiveTraceAndSpanId,
     isAbortError,
@@ -12,7 +13,10 @@ import { logError } from '../log'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { isValidTestFile } from '../commands/utils/test-commands'
-import { gitMetadataForCurrentEditor } from '../repository/git-metadata-for-editor'
+import {
+    type GitIdentifiersForFile,
+    gitMetadataForCurrentEditor,
+} from '../repository/git-metadata-for-editor'
 import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
 import type { ContextMixer } from './context/context-mixer'
 import { getCompletionProvider } from './get-completion-provider'
@@ -20,7 +24,7 @@ import { insertIntoDocContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
 import type { CompletionLogID } from './logger'
 import type { CompletionProviderTracer, ProviderConfig } from './providers/provider'
-import type { RequestManager, RequestParams } from './request-manager'
+import type { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import type { SmartThrottleService } from './smart-throttle'
 import type { AutocompleteItem } from './suggested-autocomplete-items-cache'
@@ -301,7 +305,7 @@ async function doGetInlineCompletions(
     // all.
     CompletionLogger.flushActiveSuggestionRequests(isDotComUser)
     const multiline = Boolean(multilineTrigger)
-    let logId = CompletionLogger.create({
+    const logId = CompletionLogger.create({
         multiline,
         triggerKind,
         providerIdentifier: providerConfig.identifier,
@@ -346,6 +350,23 @@ async function doGetInlineCompletions(
             items: completions,
             source,
         }
+    }
+
+    // If we have inflight request with the same request params, just use it here instead of doing additional work.
+    // Specifically relevant for completions preloading where we want to avoid doing work twice.
+    const matchingInflightRequest = requestManager.getMatchingInflightRequest({ requestParams })
+
+    if (matchingInflightRequest) {
+        const result = await matchingInflightRequest.promise
+
+        return processRequestManagerResult({
+            result,
+            logId,
+            gitIdentifiersForFile,
+            requestParams,
+            isDotComUser,
+            stale: false,
+        })
     }
 
     /**
@@ -458,8 +479,8 @@ async function doGetInlineCompletions(
     stageRecorder.record('preNetworkRequest')
 
     // Get the processed completions from providers
-    const { completions, source, updatedLogId } = await requestManager.request({
-        logId: logId,
+    const result = await requestManager.request({
+        logId,
         requestParams,
         provider: completionProvider,
         context: contextResult?.context ?? [],
@@ -467,6 +488,41 @@ async function doGetInlineCompletions(
         isPreloadRequest: triggerKind === TriggerKind.Preload,
         tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,
     })
+
+    return processRequestManagerResult({
+        result,
+        logId,
+        gitIdentifiersForFile,
+        requestParams,
+        isDotComUser,
+        stale,
+        context: contextResult?.context ?? [],
+    })
+}
+
+interface ProcessRequestManagerResultParams {
+    result: RequestManagerResult
+    logId: CompletionLogID
+    gitIdentifiersForFile: GitIdentifiersForFile | undefined
+    requestParams: RequestParams
+    isDotComUser: boolean
+    stale: boolean | undefined
+    context?: AutocompleteContextSnippet[]
+}
+
+function processRequestManagerResult(
+    params: ProcessRequestManagerResultParams
+): Awaited<ReturnType<typeof doGetInlineCompletions>> {
+    const {
+        result: { completions, source, updatedLogId },
+        gitIdentifiersForFile,
+        requestParams,
+        isDotComUser,
+        stale,
+        context,
+    } = params
+
+    let { logId } = params
 
     if (updatedLogId !== undefined) {
         // If we have a new `updatedLogId`, we need to use this.
@@ -477,11 +533,12 @@ async function doGetInlineCompletions(
     }
 
     const inlineContextParams = {
-        context: contextResult?.context,
+        context: context ?? [],
         filePath: gitIdentifiersForFile?.filePath,
         gitUrl: gitIdentifiersForFile?.gitUrl,
         commit: gitIdentifiersForFile?.commit,
     }
+
     CompletionLogger.loaded({
         logId,
         requestParams,

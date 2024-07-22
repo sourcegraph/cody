@@ -1,4 +1,4 @@
-import { partition } from 'lodash'
+import { isEqual, partition } from 'lodash'
 import { LRUCache } from 'lru-cache'
 import type * as vscode from 'vscode'
 
@@ -92,6 +92,28 @@ export class RequestManager {
             return cachedCompletions
         }
         return null
+    }
+
+    public getMatchingInflightRequest(
+        params: Pick<RequestsManagerParams, 'requestParams'>
+    ): InflightRequest | undefined {
+        const currentRequestParams = params.requestParams
+
+        for (const request of this.inflightRequests) {
+            const inflightParams = request.params
+
+            const isSameRequest =
+                isEqual(inflightParams.docContext, currentRequestParams.docContext) &&
+                inflightParams.document.uri.toString() ===
+                    currentRequestParams.document.uri.toString() &&
+                inflightParams.position.isEqual(currentRequestParams.position)
+
+            if (isSameRequest) {
+                return request
+            }
+        }
+
+        return undefined
     }
 
     public async request(params: RequestsManagerParams): Promise<RequestManagerResult> {
