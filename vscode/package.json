@@ -267,7 +267,7 @@
       {
         "view": "cody.chat.tree.view",
         "contents": "Chat alongside your code, attach files, add additional context, and try different chat models.\n[New Chat](command:cody.chat.newPanel)",
-        "when": "cody.activated && !cody.chatInSidebar"
+        "when": "cody.activated && !cody.chatInSidebar && !cody.currentFileIgnored"
       },
       {
         "view": "cody.commands.disabled.view",
@@ -650,7 +650,7 @@
       {
         "command": "cody.chat.newEditorPanel",
         "key": "alt+l",
-        "when": "cody.activated && editorTextFocus",
+        "when": "cody.activated && editorTextFocus && !cody.chatInSidebar",
         "args": {
           "editorFocus": true
         }
