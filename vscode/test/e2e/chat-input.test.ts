@@ -1,6 +1,13 @@
 import { type Locator, expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
-import { createEmptyChatPanel, focusChatInputAtEnd, sidebarExplorer, sidebarSignin } from './common'
+import {
+    createEmptyChatPanel,
+    focusChatInputAtEnd,
+    getChatInputs,
+    getChatSidebarPanel,
+    sidebarExplorer,
+    sidebarSignin,
+} from './common'
 import { type DotcomUrlOverride, type ExpectedV2Events, executeCommandInPalette, test } from './helpers'
 
 test.extend<ExpectedV2Events>({
@@ -95,7 +102,8 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
         await page.bringToFront()
 
         await sidebarSignin(page, sidebar)
-        const [chatPanel, lastChatInput] = await createEmptyChatPanel(page)
+        const chatPanel = getChatSidebarPanel(page)
+        const lastChatInput = getChatInputs(chatPanel).last()
 
         function nthHumanMessageRow(n: number): Locator {
             return chatPanel
@@ -187,7 +195,8 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
 
     await sidebarSignin(page, sidebar)
 
-    const [chatFrame, lastChatInput, firstChatInput] = await createEmptyChatPanel(page)
+    const chatFrame = getChatSidebarPanel(page)
+    const firstChatInput = getChatInputs(chatFrame).first()
 
     const modelSelect = chatFrame.getByRole('combobox', { name: 'Select a model' }).last()
 
@@ -208,6 +217,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     await modelSelect.click()
     const modelChoices = chatFrame.getByRole('listbox', { name: 'Suggestions' })
     await modelChoices.getByRole('option', { name: 'GPT-4o' }).click()
+    const lastChatInput = getChatInputs(chatFrame).last()
     await expect(lastChatInput).toBeFocused()
     await expect(modelSelect).toHaveText(/^GPT-4o/)
     await lastChatInput.fill('to model2')
