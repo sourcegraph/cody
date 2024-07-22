@@ -203,7 +203,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
         }
         // show diff view between the current document and replacement
         // Add replacement content to the temp document
-        
+
         if (!isRunningInsideAgent()) {
             // Note: For VS Code, we need to accept the task before showing it as a diff here, this is because
             // we have injected empty whitespace and decorations to the document.
@@ -222,7 +222,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
 
         // If there is more than one editor group, maximize the current group
         if (vscode.window.tabGroups.all.length > 1) {
-            await vscode.commands.executeCommand('workbench.action.toggleMaximizeEditorGroup');
+            await vscode.commands.executeCommand('workbench.action.toggleMaximizeEditorGroup')
         }
 
         // Show diff between current document and replacement content
