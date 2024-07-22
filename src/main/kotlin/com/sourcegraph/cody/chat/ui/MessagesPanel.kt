@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.chat.ui
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.util.concurrency.annotations.RequiresEdt
@@ -16,7 +17,14 @@ class MessagesPanel(private val project: Project, private val chatSession: ChatS
     JPanel(VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, true)) {
   init {
     val welcomeText = CodyBundle.getString("messages-panel.welcome-text")
-    addChatMessageAsComponent(ChatMessage(Speaker.ASSISTANT, welcomeText))
+    val regex = Regex("\\{action\\.([^}]+)}")
+    val matches = regex.findAll(welcomeText)
+    val shortcutKeys = matches.map { it.groups[1]?.value ?: "" }.toList()
+    val finalWelcomeText =
+        shortcutKeys.fold(welcomeText) { acc, shortcutKey ->
+          acc.replace("{action.$shortcutKey}", KeymapUtil.getShortcutText(shortcutKey))
+        }
+    addChatMessageAsComponent(ChatMessage(Speaker.ASSISTANT, finalWelcomeText))
   }
 
   @RequiresEdt
