@@ -49,6 +49,8 @@ describe('getConfiguration', () => {
                         return /.*/
                     case 'cody.telemetry.level':
                         return 'off'
+                    case 'cody.telemetry.clientName':
+                        return undefined
                     case 'cody.chat.preInstruction':
                         return 'My name is Jeff.'
                     case 'cody.edit.preInstruction':
