@@ -559,7 +559,7 @@ export class MockServer {
 const loggedTestRun: Record<string, boolean> = {}
 
 export async function logTestingData(data: string, type?: string, testName?: string, testRunID?: string ): Promise<void> {
-    if (process.env.NO_LOG_TESTING_TELEMETRY_CALLS) {
+    if (process.env.CI === undefined || process.env.NO_LOG_TESTING_TELEMETRY_CALLS) {
         return
     }
 
