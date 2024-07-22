@@ -1246,6 +1246,12 @@ export class SourcegraphGraphQLAPIClient {
     ): Promise<T | Error> {
         const headers = new Headers(this.config.customHeaders as HeadersInit)
         headers.set('Content-Type', 'application/json; charset=utf-8')
+
+        // Sourcegraph's servers set the relevant no caching controls for its
+        // APIs, but we have seen it misbehave. Just to make extra sure, lets
+        // also tell intermediatte proxy servers to not cache.
+        headers.set('Cache-Control', 'no-cache')
+
         if (this.config.accessToken) {
             headers.set('Authorization', `token ${this.config.accessToken}`)
         }
