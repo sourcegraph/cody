@@ -36,6 +36,7 @@ export const App: FC = () => {
         <CodyWebChatProvider
             accessToken={ACCESS_TOKEN}
             serverEndpoint="https://sourcegraph.com"
+            telemetryClientName="codydemo.testing"
             initialContext={MOCK_INITIAL_DOT_COM_CONTEXT}
         >
             <div className={styles.root}>

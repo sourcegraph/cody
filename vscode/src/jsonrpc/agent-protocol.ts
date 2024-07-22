@@ -529,6 +529,7 @@ export interface ExtensionConfiguration {
     autocompleteAdvancedModel?: string | undefined | null
     debug?: boolean | undefined | null
     verboseDebug?: boolean | undefined | null
+    telemetryClientName?: string
     codebase?: string | undefined | null
 
     /**
