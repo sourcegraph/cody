@@ -12,16 +12,7 @@ import {
     ZapIcon,
 } from 'lucide-react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-import styles from './TabsBar.module.css'
-
-export enum View {
-    Chat = 'chat',
-    Login = 'login',
-    History = 'history',
-    Account = 'account',
-    Commands = 'commands',
-    Settings = 'settings',
-}
+import { View } from './types'
 
 interface TabsBarProps {
     currentView: View
@@ -99,8 +90,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView }) => {
         <Tabs.List
             aria-label="cody-webview"
             className={clsx(
-                'tw-flex tw-justify-between tw-sticky tw-top-0 tw-z-50 tw-w-full tw-border-b tw-border-border tw-shadow-lg tw-shadow-border-500/50 tw-my-1 tw-px-4',
-                styles.tabsContainer
+                'tw-flex tw-justify-between tw-sticky tw-top-0 tw-z-50 tw-w-full tw-border-b tw-border-border tw-shadow-lg tw-shadow-border-500/50 tw-my-1 tw-px-4'
             )}
         >
             <div className="tw-flex tw-gap-4">

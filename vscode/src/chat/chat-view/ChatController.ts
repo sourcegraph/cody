@@ -55,7 +55,7 @@ import { isContextWindowLimitError } from '@sourcegraph/cody-shared/src/sourcegr
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { URI } from 'vscode-uri'
 import { version as VSCEVersion } from '../../../package.json'
-import { View } from '../../../webviews/tabs/TabsBar'
+import { View } from '../../../webviews/tabs/types'
 import {
     closeAuthProgressIndicator,
     startAuthProgressIndicator,
