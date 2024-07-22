@@ -8,8 +8,8 @@ import {
 } from 'lucide-react'
 import type { FunctionComponent } from 'react'
 import type React from 'react'
+import { ExpandableContainer } from '../../components/ExpandableContainer'
 import { Kbd } from '../../components/Kbd'
-import { Collapsible } from '../../components/shadcn/ui/collapsible'
 import { DefaultCommandsList } from './DefaultCommandsList'
 
 const MenuExample: FunctionComponent<{ children: React.ReactNode }> = ({ children }) => (
@@ -61,10 +61,10 @@ const ChatHelp: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => {
     )
 
     if (IDE === CodyIDE.VSCode) {
-        return <Collapsible title="Chat Help" items={[commonFeatures, vscodeFeatures]} />
+        return <ExpandableContainer title="Chat Help" items={[commonFeatures, vscodeFeatures]} />
     }
 
-    return <Collapsible title="Chat Help" items={commonFeatures} />
+    return <ExpandableContainer title="Chat Help" items={commonFeatures} />
 }
 
 export const localStorageKey = 'chat.welcome-message-dismissed'

@@ -2,8 +2,8 @@ import type { SerializedChatTranscript } from '@sourcegraph/cody-shared'
 import { MessageSquareTextIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { getRelativeChatPeriod } from '../../src/common/time-date'
+import { ExpandableContainer } from '../components/ExpandableContainer'
 import { Button } from '../components/shadcn/ui/button'
-import { Collapsible } from '../components/shadcn/ui/collapsible'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 interface HistoryTabProps {
@@ -27,7 +27,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
     return (
         <div className="tw-flex tw-flex-col tw-gap-4 tw-px-8">
             {Array.from(chatByPeriod, ([period, chats]) => (
-                <Collapsible
+                <ExpandableContainer
                     key={period}
                     title={period}
                     items={chats.map(({ interactions, id }) => {
