@@ -2,7 +2,7 @@ import { expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
 
-import { createEmptyChatPanel, sidebarSignin } from './common'
+import { getChatInputs, getChatSidebarPanel, sidebarSignin } from './common'
 import { type DotcomUrlOverride, type ExpectedV2Events, test as baseTest } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
@@ -28,7 +28,8 @@ test.extend<ExpectedV2Events>({
     })
 
     await sidebarSignin(page, sidebar)
-    const [chatFrame, chatInput] = await createEmptyChatPanel(page)
+    const chatFrame = getChatSidebarPanel(page)
+    const chatInput = getChatInputs(chatFrame).last()
     await chatInput.fill('test message')
     await chatInput.press('Enter')
 
@@ -56,7 +57,8 @@ test.extend<ExpectedV2Events>({
     })
 
     await sidebarSignin(page, sidebar)
-    const [chatFrame, chatInput] = await createEmptyChatPanel(page)
+    const chatFrame = getChatSidebarPanel(page)
+    const chatInput = getChatInputs(chatFrame).last()
     await chatInput.fill('test message')
     await chatInput.press('Enter')
 
@@ -84,7 +86,8 @@ test.extend<ExpectedV2Events>({
     })
 
     await sidebarSignin(page, sidebar)
-    const [chatFrame, chatInput] = await createEmptyChatPanel(page)
+    const chatFrame = getChatSidebarPanel(page)
+    const chatInput = getChatInputs(chatFrame).last()
     await chatInput.fill('test message')
     await chatInput.press('Enter')
 

@@ -14,7 +14,23 @@ import {
 import { wrapInActiveSpan } from '../tracing'
 import { createSubscriber } from '../utils'
 
-export const REFETCH_INTERVAL = 60 * 60 * 1000 // 1 hour
+// The policy for how often to re-fetch results. Changing configurations
+// triggers an immediate refetch. After that, successfully retrieving results
+// ("durable" results) we'll refetch after a long interval; encountering
+// network errors, etc. ("ephemeral" results) we'll refetch after a short
+// interval.
+//
+// Failures use an exponential backoff.
+export const REFETCH_INTERVAL_MAP = {
+    durable: {
+        initialInterval: 60 * 60 * 1000, // 1 hour
+        backoff: 1.0,
+    },
+    ephemeral: {
+        initialInterval: 7 * 1000, // 7 seconds
+        backoff: 1.5,
+    },
+}
 
 interface ParsedContextFilters {
     include: null | ParsedContextFilterItem[]
@@ -42,6 +58,20 @@ type IsRepoNameIgnored = boolean
 // the remote applies Cody Context Filters rules.
 const allowedSchemes = new Set(['http', 'https'])
 
+type ResultLifetime = 'ephemeral' | 'durable'
+
+// hasAllowEverythingFilters, hasIgnoreEverythingFilters relies on === equality
+// for fast paths.
+function canonicalizeContextFilters(filters: ContextFilters): ContextFilters {
+    if (isEqual(filters, INCLUDE_EVERYTHING_CONTEXT_FILTERS)) {
+        return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+    }
+    if (isEqual(filters, EXCLUDE_EVERYTHING_CONTEXT_FILTERS)) {
+        return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
+    }
+    return filters
+}
+
 export class ContextFiltersProvider implements vscode.Disposable {
     /**
      * `null` value means that we failed to fetch context filters.
@@ -53,7 +83,14 @@ export class ContextFiltersProvider implements vscode.Disposable {
     private cache = new LRUCache<RepoName, IsRepoNameIgnored>({ max: 128 })
     private getRepoNamesFromWorkspaceUri: GetRepoNamesFromWorkspaceUri | undefined = undefined
 
+    private lastFetchDelay = 0
+    private lastResultLifetime: ResultLifetime | undefined = undefined
     private fetchIntervalId: NodeJS.Timeout | undefined | number
+
+    // Visible for testing.
+    public get timerStateForTest() {
+        return { delay: this.lastFetchDelay, lifetime: this.lastResultLifetime }
+    }
 
     private readonly contextFiltersSubscriber = createSubscriber<ContextFilters>()
     public readonly onContextFiltersChanged = this.contextFiltersSubscriber.subscribe
@@ -61,18 +98,23 @@ export class ContextFiltersProvider implements vscode.Disposable {
     async init(getRepoNamesFromWorkspaceUri: GetRepoNamesFromWorkspaceUri) {
         this.getRepoNamesFromWorkspaceUri = getRepoNamesFromWorkspaceUri
         this.dispose()
-        await this.fetchContextFilters()
-        this.startRefetchTimer()
+        this.startRefetchTimer(await this.fetchContextFilters())
     }
 
-    private async fetchContextFilters(): Promise<void> {
+    // Fetches context filters and updates the cached filter results. Returns
+    // 'ephemeral' if the results should be re-queried sooner because they
+    // are transient results arising from, say, a network error; or 'durable'
+    // if the results can be cached for a while.
+    private async fetchContextFilters(): Promise<ResultLifetime> {
         try {
-            const response = await graphqlClient.contextFilters()
-            this.setContextFilters(response)
+            const { filters, transient } = await graphqlClient.contextFilters()
+            this.setContextFilters(filters)
+            return transient ? 'ephemeral' : 'durable'
         } catch (error) {
             logError('ContextFiltersProvider', 'fetchContextFilters', {
                 verbose: error,
             })
+            return 'ephemeral'
         }
     }
 
@@ -83,7 +125,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
 
         this.cache.clear()
         this.parsedContextFilters = null
-        this.lastContextFiltersResponse = contextFilters
+        this.lastContextFiltersResponse = canonicalizeContextFilters(contextFilters)
 
         // Disable logging for unit tests. Retain for manual debugging of enterprise issues.
         if (!process.env.VITEST) {
@@ -111,11 +153,16 @@ export class ContextFiltersProvider implements vscode.Disposable {
         }
     }
 
-    private startRefetchTimer(): void {
-        this.fetchIntervalId = setTimeout(() => {
-            this.fetchContextFilters()
-            this.startRefetchTimer()
-        }, REFETCH_INTERVAL)
+    private startRefetchTimer(intervalHint: ResultLifetime): void {
+        if (this.lastResultLifetime === intervalHint) {
+            this.lastFetchDelay *= REFETCH_INTERVAL_MAP[intervalHint].backoff
+        } else {
+            this.lastFetchDelay = REFETCH_INTERVAL_MAP[intervalHint].initialInterval
+            this.lastResultLifetime = intervalHint
+        }
+        this.fetchIntervalId = setTimeout(async () => {
+            this.startRefetchTimer(await this.fetchContextFilters())
+        }, this.lastFetchDelay)
     }
 
     public isRepoNameIgnored(repoName: string): boolean {
@@ -146,11 +193,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public async isUriIgnored(uri: vscode.Uri): Promise<IsIgnored> {
-        if (
-            allowedSchemes.has(uri.scheme) ||
-            (this.lastContextFiltersResponse === null && graphqlClient.isDotCom()) ||
-            this.hasAllowEverythingFilters()
-        ) {
+        if (allowedSchemes.has(uri.scheme) || this.hasAllowEverythingFilters()) {
             return false
         }
         if (this.hasIgnoreEverythingFilters()) {
@@ -171,7 +214,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
             }
         )
 
-        if (!repoNames) {
+        if (!repoNames?.length) {
             return 'no-repo-found'
         }
 
@@ -184,6 +227,11 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public dispose(): void {
+        this.lastFetchDelay = 0
+        this.lastResultLifetime = undefined
+        this.lastContextFiltersResponse = null
+        this.parsedContextFilters = null
+
         this.cache.clear()
 
         if (this.fetchIntervalId) {
@@ -192,7 +240,10 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     private hasAllowEverythingFilters() {
-        return this.lastContextFiltersResponse === INCLUDE_EVERYTHING_CONTEXT_FILTERS
+        return (
+            graphqlClient.isDotCom() ||
+            this.lastContextFiltersResponse === INCLUDE_EVERYTHING_CONTEXT_FILTERS
+        )
     }
 
     private hasIgnoreEverythingFilters() {

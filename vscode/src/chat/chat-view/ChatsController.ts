@@ -7,10 +7,12 @@ import {
     type ChatClient,
     CodyIDE,
     DEFAULT_EVENT_SOURCE,
+    FeatureFlag,
     type Guardrails,
-    STATE_VERSION_CURRENT,
+    ModelUsage,
+    ModelsService,
+    editorStateFromPromptString,
     featureFlagProvider,
-    lexicalEditorStateFromPromptString,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
@@ -52,6 +54,10 @@ export class ChatsController implements vscode.Disposable {
     private editors: ChatController[] = []
     private activeEditor: ChatController | undefined = undefined
 
+    // Chat history view
+    public historyTreeViewProvider = new TreeViewProvider('chat', featureFlagProvider)
+    public historyTreeView: vscode.TreeView<vscode.TreeItem>
+
     // View controller for the support panel
     public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
 
@@ -73,11 +79,31 @@ export class ChatsController implements vscode.Disposable {
     ) {
         logDebug('ChatsController:constructor', 'init')
         this.panel = this.createChatController()
+
         this.disposables.push(
             this.authProvider.onChange(authStatus => this.setAuthStatus(authStatus), {
                 runImmediately: true,
             })
         )
+
+        this.historyTreeView = vscode.window.createTreeView('cody.chat.tree.view', {
+            treeDataProvider: this.historyTreeViewProvider,
+        })
+        this.disposables.push(this.historyTreeViewProvider)
+        this.disposables.push(this.historyTreeView)
+        this.disposables.push(
+            chatHistory.onHistoryChanged(() => {
+                this.historyTreeViewProvider.refresh()
+            })
+        )
+    }
+
+    public static async isChatInSidebar(): Promise<boolean> {
+        const val = vscode.workspace.getConfiguration().get<boolean>('cody.internal.chatInSidebar')
+        if (val !== undefined) {
+            return val
+        }
+        return await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyChatInSidebar)
     }
 
     private async setAuthStatus(authStatus: AuthStatus): Promise<void> {
@@ -95,8 +121,9 @@ export class ChatsController implements vscode.Disposable {
             username: authStatus.username,
         }
 
-        this.supportTreeViewProvider.setAuthStatus(authStatus)
         this.panel.setAuthStatus(authStatus)
+        this.supportTreeViewProvider.setAuthStatus(authStatus)
+        this.historyTreeViewProvider.updateTree(authStatus)
     }
 
     public async restoreToPanel(panel: vscode.WebviewPanel, chatID: string): Promise<void> {
@@ -121,7 +148,6 @@ export class ChatsController implements vscode.Disposable {
                 webviewOptions: { retainContextWhenHidden: true },
             })
         )
-
         const restoreToEditor = async (
             chatID: string,
             chatQuestion?: string
@@ -149,16 +175,26 @@ export class ChatsController implements vscode.Disposable {
                 vscode.commands.executeCommand('cody.chat.focus')
             ),
             vscode.commands.registerCommand('cody.chat.newPanel', async () => {
-                await this.panel.clearAndRestartSession()
-                await vscode.commands.executeCommand('cody.chat.focus')
+                if (await ChatsController.isChatInSidebar()) {
+                    await this.panel.clearAndRestartSession()
+                    await vscode.commands.executeCommand('cody.chat.focus')
+                } else {
+                    this.getOrCreateEditorChatController()
+                }
             }),
             vscode.commands.registerCommand(
                 'cody.chat.toggle',
                 async (ops: { editorFocus: boolean }) => {
-                    if (ops.editorFocus) {
-                        await vscode.commands.executeCommand('cody.chat.focus')
+                    if (await ChatsController.isChatInSidebar()) {
+                        if (ops.editorFocus) {
+                            await vscode.commands.executeCommand('cody.chat.focus')
+                        } else {
+                            await vscode.commands.executeCommand(
+                                'workbench.action.focusActiveEditorGroup'
+                            )
+                        }
                     } else {
-                        await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup')
+                        this.getOrCreateEditorChatController()
                     }
                 }
             ),
@@ -275,17 +311,13 @@ export class ChatsController implements vscode.Disposable {
             provider = await this.getOrCreateEditorChatController()
         }
         const abortSignal = provider.startNewSubmitOrEditOperation()
-        const editorState = lexicalEditorStateFromPromptString(text)
+        const editorState = editorStateFromPromptString(text)
         await provider.handleUserMessageSubmission(
             uuid.v4(),
             text,
             submitType,
             contextFiles ?? [],
-            {
-                lexicalEditorState: editorState,
-                v: STATE_VERSION_CURRENT,
-                minReaderV: STATE_VERSION_CURRENT,
-            },
+            editorState,
             addEnhancedContext ?? true,
             abortSignal,
             source,
@@ -299,26 +331,29 @@ export class ChatsController implements vscode.Disposable {
      */
     private async exportHistory(): Promise<void> {
         telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
-        const historyJson = localStorage.getChatHistory(this.options.authProvider.getAuthStatus())?.chat
-        const exportPath = await vscode.window.showSaveDialog({
-            filters: { 'Chat History': ['json'] },
-        })
-        if (!exportPath || !historyJson) {
-            return
-        }
-        try {
-            const logContent = new TextEncoder().encode(JSON.stringify(historyJson))
-            await vscode.workspace.fs.writeFile(exportPath, logContent)
-            // Display message and ask if user wants to open file
-            void vscode.window
-                .showInformationMessage('Chat history exported successfully.', 'Open')
-                .then(choice => {
-                    if (choice === 'Open') {
-                        void vscode.commands.executeCommand('vscode.open', exportPath)
-                    }
+        const authStatus = this.options.authProvider.getAuthStatus()
+        if (authStatus.isLoggedIn) {
+            try {
+                const historyJson = chatHistory.getLocalHistory(authStatus)
+                const exportPath = await vscode.window.showSaveDialog({
+                    filters: { 'Chat History': ['json'] },
                 })
-        } catch (error) {
-            logError('ChatsController:exportHistory', 'Failed to export chat history', error)
+                if (!exportPath || !historyJson) {
+                    return
+                }
+                const logContent = new TextEncoder().encode(JSON.stringify(historyJson))
+                await vscode.workspace.fs.writeFile(exportPath, logContent)
+                // Display message and ask if user wants to open file
+                void vscode.window
+                    .showInformationMessage('Chat history exported successfully.', 'Open')
+                    .then(choice => {
+                        if (choice === 'Open') {
+                            void vscode.commands.executeCommand('vscode.open', exportPath)
+                        }
+                    })
+            } catch (error) {
+                logError('ChatsController:exportHistory', 'Failed to export chat history', error)
+            }
         }
     }
 
@@ -426,6 +461,7 @@ export class ChatsController implements vscode.Disposable {
     private createChatController(): ChatController {
         const authStatus = this.options.authProvider.getAuthStatus()
         const isConsumer = authStatus.isDotCom
+        const models = ModelsService.getModels(ModelUsage.Chat)
 
         // Enterprise context is used for remote repositories context fetching
         // in vs cody extension it should be always off if extension is connected
@@ -462,7 +498,7 @@ export class ChatsController implements vscode.Disposable {
             removedProvider.dispose()
         }
 
-        if (includePanel && chatID === this.panel.sessionID) {
+        if (includePanel && chatID === this.panel?.sessionID) {
             this.panel.clearAndRestartSession()
         }
     }

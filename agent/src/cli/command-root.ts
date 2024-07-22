@@ -10,7 +10,7 @@ import { version } from '../../package.json'
 
 export const rootCommand = new Command()
     .name('cody')
-    .version(version)
+    .version(version, '-v, --version')
     .description(
         'The Cody cli supports running Cody in headless mode and interacting with it via JSON-RPC. Run `cody chat -m "Hello" to get started.'
     )

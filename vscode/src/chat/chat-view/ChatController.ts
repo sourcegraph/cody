@@ -32,6 +32,7 @@ import {
     allMentionProvidersMetadata,
     featureFlagProvider,
     hydrateAfterPostMessage,
+    inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
     isDefined,
     isError,
@@ -53,12 +54,13 @@ import { isContextWindowLimitError } from '@sourcegraph/cody-shared/src/sourcegr
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { URI } from 'vscode-uri'
 import { version as VSCEVersion } from '../../../package.json'
-import type { View } from '../../../webviews/NavBar'
+import { View } from '../../../webviews/tabs/types'
 import {
     closeAuthProgressIndicator,
     startAuthProgressIndicator,
 } from '../../auth/auth-progress-indicator'
 import type { startTokenReceiver } from '../../auth/token-receiver'
+import { getCodyCommandList } from '../../commands/CommandsController'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
 import { experimentalUnitTestMessageSubmission } from '../../commands/execute/test-chat-experimental'
@@ -204,7 +206,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
 
-        this.chatModel = new ChatModel(getDefaultModelID(authProvider.getAuthStatus()))
+        this.chatModel = new ChatModel(getDefaultModelID())
 
         this.guardrails = guardrails
         this.startTokenReceiver = startTokenReceiver
@@ -317,7 +319,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'chatModel':
                 // Because this was a user action to change the model we will set that
                 // as a global default for chat
-                await ModelsService.setDefaultModel(ModelUsage.Chat, message.model)
+                await ModelsService.setSelectedModel(ModelUsage.Chat, message.model)
                 this.handleSetChatModel(message.model)
                 break
             case 'get-chat-models':
@@ -389,9 +391,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             case 'restoreHistory':
                 await this.restoreSession(message.chatID)
+                this.setWebviewView(View.Chat)
                 break
             case 'reset':
                 await this.clearAndRestartSession()
+                break
+            case 'command':
+                vscode.commands.executeCommand(message.id, message.arg)
                 break
             case 'event':
                 // no-op, legacy v1 telemetry has been removed. This should be removed as well.
@@ -532,13 +538,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // #region top-level view action handlers
     // =======================================================================
 
-    public setAuthStatus(authStatus: AuthStatus): void {
+    public setAuthStatus(_: AuthStatus): void {
         // Run this async because this method may be called during initialization
         // and awaiting on this.postMessage may result in a deadlock
         void this.sendConfig()
 
         // Get the latest model list available to the current user to update the ChatModel.
-        this.handleSetChatModel(getDefaultModelID(authStatus))
+        this.handleSetChatModel(getDefaultModelID())
     }
 
     // When the webview sends the 'ready' message, respond by posting the view config
@@ -561,6 +567,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
+        })
+        await this.postMessage({
+            type: 'commands',
+            commands: getCodyCommandList(),
         })
     }
 
@@ -683,6 +693,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 const config = getConfiguration()
                 const contextStrategy = await getContextStrategy(config.useContext)
                 span.setAttribute('strategy', contextStrategy)
+
+                // Remove context chips (repo, @-mentions) from the input text for context retrieval.
+                const inputTextWithoutContextChips = editorState
+                    ? PromptString.unsafe_fromUserQuery(
+                          inputTextWithoutContextChipsFromPromptEditorState(editorState)
+                      )
+                    : inputText
+
                 const prompter = new DefaultPrompter(
                     userContextItems,
                     addEnhancedContext || hasCorpusMentions
@@ -700,7 +718,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                         chatClient: this.chatClient,
                                         chatModel: this.chatModel,
                                     })
-                                  : inputText
+                                  : inputTextWithoutContextChips
                               const context = getEnhancedContext({
                                   strategy: contextStrategy,
                                   editor: this.editor,
@@ -715,7 +733,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                               })
                               // add a callback, but return the original context
                               context.then(c =>
-                                  this.contextAPIClient?.rankContext(requestID, inputText.toString(), c)
+                                  this.contextAPIClient?.rankContext(
+                                      requestID,
+                                      inputTextWithoutContextChips.toString(),
+                                      c
+                                  )
                               )
                               return context
                           }
@@ -1089,7 +1111,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (!authStatus?.isLoggedIn) {
             return
         }
-        const models = ModelsService.getModels(ModelUsage.Chat, authStatus)
+        const models = ModelsService.getModels(ModelUsage.Chat)
 
         void this.postMessage({
             type: 'chatModels',
@@ -1495,11 +1517,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async resolveWebviewViewOrPanel(
         viewOrPanel: vscode.WebviewView | vscode.WebviewPanel
     ): Promise<vscode.WebviewView | vscode.WebviewPanel> {
-        if (this.webviewPanelOrView) {
-            throw new Error('webview already created')
-        }
         this._webviewPanelOrView = viewOrPanel
-
         this.syncPanelTitle()
 
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
@@ -1556,7 +1574,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             await vscode.commands.executeCommand('setContext', 'cody.activated', false)
             return
         }
-
         const viewOrPanel = this._webviewPanelOrView ?? (await this.createWebviewViewOrPanel())
 
         revealWebviewViewOrPanel(viewOrPanel)
@@ -1708,10 +1725,10 @@ export function revealWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscod
     }
 }
 
-function getDefaultModelID(status: AuthStatus): string {
+function getDefaultModelID(): string {
     const pending = ''
     try {
-        return ModelsService.getDefaultChatModel(status) || pending
+        return ModelsService.getDefaultChatModel() || pending
     } catch {
         return pending
     }
