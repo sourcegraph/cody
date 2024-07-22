@@ -36,6 +36,10 @@ export class BaseContextFetcher implements vscode.Disposable {
         }
         return result?.flatMap(r => contextSearchResultToContextItem(r) ?? []) ?? []
     }
+
+    // public async fetchLegacyContext(query: ContextQuery): Promise<ContextItem[]> {
+
+    // }
 }
 
 // TODO(beyang): merge current PLG and enterprise LLM context into this class,
