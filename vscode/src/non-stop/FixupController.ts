@@ -121,7 +121,7 @@ export class FixupController
 
                     for (const task of tasksToAccept) {
                         // Finally accept all of the tasks
-                        this.accept(task)
+                        this.acceptAll(task)
                     }
                 })
             )
@@ -130,7 +130,42 @@ export class FixupController
 
     // FixupActor
 
-    public accept(task: FixupTask): void {
+    public async accept(task: FixupTask, range: vscode.Range): Promise<void> {
+        this.markBlockAsAccepted(task, range)
+        this.refreshCodeLenses(task)
+        this.controlApplicator.didUpdateTask(task);
+    }
+
+    public async reject(task: FixupTask, range: vscode.Range): Promise<void> {
+        // ToDo: Revert the code in this range to the original content
+
+
+        // Remove the edit from the task's diff
+        task.removeEditByRange(range);
+
+        this.refreshCodeLenses(task)
+        this.controlApplicator.didUpdateTask(task);
+    }
+
+    private refreshCodeLenses(task: FixupTask): void {
+        // Trigger a refresh of the code lenses
+        vscode.commands.executeCommand('vscode.executeCodeLensProvider', task.document.uri)
+    }
+
+    private markBlockAsAccepted(task: FixupTask, range: vscode.Range): void {
+        // Remove the edit from the task's diff
+        task.removeEditByRange(range)
+        
+        // Update the decorations
+        this.decorator.didApplyTask(task)
+
+        // If all blocks are accepted, mark the task as finished
+        if (!task.diff || task.diff.length === 0) {
+            this.acceptAll(task)
+        }
+    }
+
+    public acceptAll(task: FixupTask): void {
         if (!task || task.state !== CodyTaskState.Applied) {
             return
         }
@@ -147,7 +182,7 @@ export class FixupController
                 task.selectionRange.intersection(primaryTask.selectionRange) !== undefined
             ) {
                 await this.clearPlaceholderInsertions([task], task.fixupFile.uri)
-                this.accept(task)
+                this.acceptAll(task)
             }
         }
     }
@@ -1017,7 +1052,7 @@ export class FixupController
             // within the task range. This is a case where the user is more likely to want
             // to keep in the flow of writing their code, and would not benefit from editing
             // the "diff".
-            this.accept(task)
+            this.acceptAll(task)
             return
         }
 

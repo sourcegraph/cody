@@ -14,7 +14,7 @@ export class AgentFixupControls implements FixupControlApplicator {
     public accept(id: FixupTaskID): void {
         const task = this.fixups.taskForId(id)
         if (task) {
-            this.fixups.accept(task)
+            this.fixups.acceptAll(task)
         }
     }
 
