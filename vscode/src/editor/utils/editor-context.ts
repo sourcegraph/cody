@@ -25,6 +25,7 @@ import {
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
+import type { Annotation } from '@openctx/client'
 import { URI } from 'vscode-uri'
 import { getOpenTabsUris } from '.'
 import { toVSCodeRange } from '../../common/range'
@@ -443,9 +444,44 @@ async function resolveFileOrSymbolContextItem(
         contextItem.content ??
         (await editor.getTextEditorContentForFile(contextItem.uri, toVSCodeRange(contextItem.range)))
 
-    return {
+    const item = {
         ...contextItem,
         content,
         size: contextItem.size ?? TokenCounter.countTokens(content),
     }
+
+    if (contextItem.type === 'symbol') {
+        return item
+    }
+
+    const fileItem = {
+        ...item,
+        type: 'file' as const,
+    }
+
+    const { client: openCtxClient } = openCtx
+    if (!openCtxClient) {
+        return fileItem
+    }
+
+    const annotations: ContextItemFile['annotations'] = []
+    let openCtxAnnotations: Annotation[] = []
+
+    try {
+        openCtxAnnotations = await openCtxClient.annotations(
+            await vscode.workspace.openTextDocument(contextItem.uri)
+        )
+    } catch (e) {
+        logError('OpenCtx', `fetching annotations for ${contextItem.uri}: ${e}`)
+        return fileItem
+    }
+
+    openCtxAnnotations.map(ann => {
+        const aiContent = ann.item.ai?.content
+        if (!aiContent) {
+            return
+        }
+        annotations.push({ ...ann, title: ann.item.title, content: aiContent })
+    })
+    return { ...fileItem, annotations }
 }

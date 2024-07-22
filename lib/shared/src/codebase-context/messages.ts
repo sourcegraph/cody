@@ -1,5 +1,6 @@
 import type { URI } from 'vscode-uri'
 
+import type { AssistantInfo, Annotation as OpenCtxAnnotation } from '@openctx/client'
 import type { RangeData } from '../common/range'
 import type { Message } from '../sourcegraph-api'
 
@@ -153,6 +154,10 @@ export interface ContextItemOpenCtx extends ContextItemCommon {
     }
 }
 
+export interface Annotation extends Pick<OpenCtxAnnotation, 'uri' | 'range'>, Required<AssistantInfo> {
+    title: string
+}
+
 /**
  * A file (or a subset of a file given by a range) that is included as context in a chat message.
  */
@@ -164,6 +169,12 @@ export interface ContextItemFile extends ContextItemCommon {
      * that we need to resolve this context item mention via remote search file
      */
     remoteRepositoryName?: string
+
+    /**
+     * Annotations are provided by OpenCtx providers.
+     * They enrich the context for every @-mentioned file.
+     */
+    annotations?: Annotation[]
 }
 
 /**

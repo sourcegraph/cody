@@ -51,6 +51,30 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
                     .concat(content)
             } else {
                 messageText = populateCodeContextTemplate(content, uri, repoName)
+                if (
+                    contextItem.type === 'file' &&
+                    contextItem.annotations &&
+                    contextItem.annotations.length
+                ) {
+                    // TODO(dyma): move to a separate function
+                    let annotations = ps`\nAnnotations from OpenCtx providers:`
+                    for (const annotation of contextItem.annotations) {
+                        if (!annotation.content) {
+                            continue
+                        }
+                        const { title, content } = PromptString.fromAnnotation({
+                            ...annotation,
+                            content: annotation.content,
+                            uri: URI.file(annotation.uri),
+                        })
+                        annotations = annotations.concat(
+                            ps`\n{title}:\n{annotation}`
+                                .replace('{title}', title)
+                                .replace('{annotation}', content)
+                        )
+                    }
+                    messageText = messageText.concat(annotations)
+                }
             }
     }
 

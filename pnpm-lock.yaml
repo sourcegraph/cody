@@ -338,6 +338,9 @@ importers:
       '@microsoft/fetch-event-source':
         specifier: ^2.0.1
         version: 2.0.1
+      '@openctx/vscode-lib':
+        specifier: ^0.0.13
+        version: 0.0.13
       '@opentelemetry/api':
         specifier: ^1.7.0
         version: 1.7.0

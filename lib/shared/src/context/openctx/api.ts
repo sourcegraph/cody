@@ -1,7 +1,9 @@
-import type { Client } from '@openctx/client'
-import type * as vscode from 'vscode'
+import type { Controller } from '@openctx/vscode-lib/dist/controller'
 
-type OpenCtxClient = Pick<Client<vscode.Range>, 'meta' | 'mentions' | 'items'>
+// TODO(dyma): Signature for Controller['annotation'] doesn't make sense for all Cody clients,
+// e.g. Cody CLI cannot directly access VSCode's APIs. The {uri: Uri, getText(): string} interface
+// should be a common abstraction.
+type OpenCtxClient = Pick<Controller, 'meta' | 'mentions' | 'items' | 'annotations'>
 
 class OpenCtx {
     constructor(public client: OpenCtxClient | undefined) {}
