@@ -1,13 +1,7 @@
 import { expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
-import {
-    focusSidebar,
-    getChatEditorPanel,
-    getChatSidebarPanel,
-    sidebarExplorer,
-    sidebarSignin,
-} from './common'
+import { focusSidebar, getChatSidebarPanel, sidebarExplorer, sidebarSignin } from './common'
 import {
     type DotcomUrlOverride,
     type ExpectedV2Events,
@@ -135,9 +129,7 @@ test.extend<ExpectedV2Events>({
     await sidebarTabCommandIcon.getByRole('button').click()
     await sidebarChat.getByRole('button', { name: 'Explain code' }).click()
 
-    // Click on a command from the sidebar will start a new Editor window.
-    const editorChat = getChatEditorPanel(page)
-    await expect(editorChat.getByText('hello from the assistant')).toBeVisible()
-    // The sidebar remains open.
-    await expect(sidebarChat.getByRole('button', { name: 'Explain code' })).toBeVisible()
+    // Click on a command from the sidebar should not start a new Editor window when sidebar is empty.
+    await expect(sidebarChat.getByText('hello from the assistant')).toBeVisible()
+    await expect(sidebarChat.getByRole('button', { name: 'Explain code' })).not.toBeVisible()
 })
