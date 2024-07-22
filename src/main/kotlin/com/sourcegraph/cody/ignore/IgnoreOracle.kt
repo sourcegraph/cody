@@ -29,8 +29,9 @@ enum class IgnorePolicy(val value: String) {
  */
 @Service(Service.Level.PROJECT)
 class IgnoreOracle(private val project: Project) {
+  data class CacheEntry(val policy: IgnorePolicy, val timestampMsec: Long)
 
-  private val cache = SLRUMap<String, IgnorePolicy>(100, 100)
+  private val cache = SLRUMap<String, CacheEntry>(100, 100)
   @Volatile private var focusedPolicy: IgnorePolicy? = null
   @Volatile private var willFocusUri: String? = null
   private val fileListeners: MutableList<FocusedFileIgnorePolicyListener> = mutableListOf()
@@ -101,8 +102,9 @@ class IgnoreOracle(private val project: Project) {
   fun policyForUri(uri: String): CompletableFuture<IgnorePolicy> {
     val completable = CompletableFuture<IgnorePolicy>()
     val result = synchronized(cache) { cache[uri] }
-    if (result != null) {
-      completable.complete(result)
+    val cacheMaxAgeMsec = 60 * 1000
+    if (result != null && result.timestampMsec > System.currentTimeMillis() - cacheMaxAgeMsec) {
+      completable.complete(result.policy)
       return completable
     }
     CodyAgentService.withAgent(project) { agent ->
@@ -120,7 +122,9 @@ class IgnoreOracle(private val project: Project) {
             "use" -> IgnorePolicy.USE
             else -> throw IllegalStateException("invalid ignore policy value")
           }
-      synchronized(cache) { cache.put(uri, newPolicy) }
+      synchronized(cache) {
+        cache.put(uri, CacheEntry(policy = newPolicy, timestampMsec = System.currentTimeMillis()))
+      }
       newPolicy
     }
   }
@@ -133,21 +137,6 @@ class IgnoreOracle(private val project: Project) {
       completable.get(policyAwaitTimeoutMs, TimeUnit.MILLISECONDS)
     } catch (timedOut: TimeoutException) {
       null
-    }
-  }
-
-  /**
-   * Gets whether `uri` should be ignored for autocomplete, etc. If the result is not available
-   * quickly, returns null and invokes `orElse` on a pooled thread when the result is available.
-   */
-  @Suppress("unused")
-  fun policyForUriOrElse(uri: String, orElse: (policy: IgnorePolicy) -> Unit): IgnorePolicy? {
-    val completable = policyForUri(uri)
-    try {
-      return completable.get(16, TimeUnit.MILLISECONDS)
-    } catch (timedOut: TimeoutException) {
-      ApplicationManager.getApplication().executeOnPooledThread { orElse(completable.get()) }
-      return null
     }
   }
 

@@ -98,7 +98,7 @@ class FixupService(val project: Project) : Disposable {
     val policy = IgnoreOracle.getInstance(project).policyForEditor(editor)
     if (policy != IgnorePolicy.USE) {
       if (verbose) {
-        runInEdt { ActionInIgnoredFileNotification().notify(project) }
+        ActionInIgnoredFileNotification.maybeNotify(project)
         logger.warn("Ignoring file for inline edits: $editor, policy=$policy")
       }
       return false

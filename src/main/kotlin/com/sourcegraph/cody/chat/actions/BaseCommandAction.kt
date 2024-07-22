@@ -42,7 +42,7 @@ abstract class BaseCommandAction : BaseChatAction() {
               }
               else -> {
                 // This file is ignored. Display an error and stop.
-                ActionInIgnoredFileNotification().notify(project)
+                ActionInIgnoredFileNotification.maybeNotify(project)
               }
             }
           }

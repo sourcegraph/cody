@@ -51,13 +51,12 @@ class CodyStatusService(val project: Project) : Disposable {
 
       val token =
           CodyAuthenticationManager.getInstance(project).account?.let(service::findCredentials)
+      // Note, the order of these clauses is important because earlier clauses take precedence over
+      // later ones.
+      // Fundamental issues are tested first.
       status =
           if (!ConfigUtil.isCodyEnabled()) {
             CodyStatus.CodyDisabled
-          } else if (IgnoreOracle.getInstance(project).isEditingIgnoredFile) {
-            CodyStatus.InIgnoredFile
-          } else if (!ConfigUtil.isCodyAutocompleteEnabled()) {
-            CodyStatus.AutocompleteDisabled
           } else if (CodyAgentService.agentError.get() != null) {
             CodyStatus.AgentError
           } else if (!CodyAgentService.isConnected(project)) {
@@ -69,6 +68,10 @@ class CodyStatusService(val project: Project) : Disposable {
             CodyStatus.RateLimitError
           } else if (isTokenInvalid) {
             CodyStatus.CodyInvalidToken
+          } else if (IgnoreOracle.getInstance(project).isEditingIgnoredFile) {
+            CodyStatus.InIgnoredFile
+          } else if (!ConfigUtil.isCodyAutocompleteEnabled()) {
+            CodyStatus.AutocompleteDisabled
           } else {
             CodyStatus.Ready
           }

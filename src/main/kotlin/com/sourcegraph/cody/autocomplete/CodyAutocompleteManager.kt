@@ -5,7 +5,6 @@ import com.github.difflib.patch.DeltaType
 import com.github.difflib.patch.Patch
 import com.intellij.codeInsight.hint.HintManager
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.Service
@@ -247,7 +246,7 @@ class CodyAutocompleteManager {
       if (triggerKind == InlineCompletionTriggerKind.INVOKE &&
           IgnoreOracle.getInstance(project).policyForUri(virtualFile.url, agent).get() !=
               IgnorePolicy.USE) {
-        runInEdt { ActionInIgnoredFileNotification().notify(project) }
+        ActionInIgnoredFileNotification.maybeNotify(project)
         resetApplication(project)
         resultOuter.cancel(true)
       } else {
