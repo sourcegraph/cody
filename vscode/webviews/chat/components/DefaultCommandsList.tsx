@@ -34,7 +34,6 @@ export const DefaultCommandsList: FunctionComponent<{ IDE?: CodyIDE }> = ({ IDE 
         <Button
             key={key}
             variant="ghost"
-            size="default"
             onClick={() => getVSCodeAPI().postMessage({ command: 'command', id: key })}
         >
             <Icon className="tw-w-8 tw-h-8" size={16} strokeWidth="1.25" />
