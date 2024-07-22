@@ -298,7 +298,7 @@ interface AutocompleteModelInfo {
 }
 
 function getAutocompleteModelInfo(authStatus: AuthStatus): AutocompleteModelInfo | Error | undefined {
-    const model = ModelsService.getDefaultModel(ModelUsage.Autocomplete, authStatus)
+    const model = ModelsService.getDefaultModel(ModelUsage.Autocomplete)
     if (model) {
         let provider = model.provider
         if (model.clientSideConfig?.openAICompatible) {

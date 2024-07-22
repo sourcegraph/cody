@@ -511,13 +511,11 @@ function registerAuthCommands(authProvider: AuthProvider, disposables: vscode.Di
                 if (typeof accessToken !== 'string') {
                     throw new TypeError('accessToken is required')
                 }
-                return (
-                    await authProvider.auth({
-                        endpoint: serverEndpoint,
-                        token: accessToken,
-                        customHeaders,
-                    })
-                ).authStatus
+                return await authProvider.auth({
+                    endpoint: serverEndpoint,
+                    token: accessToken,
+                    customHeaders,
+                })
             }
         )
     )

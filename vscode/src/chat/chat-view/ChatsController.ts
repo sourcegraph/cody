@@ -456,7 +456,7 @@ export class ChatsController implements vscode.Disposable {
     private createChatController(): ChatController {
         const authStatus = this.options.authProvider.getAuthStatus()
         const isConsumer = authStatus.isDotCom
-        const models = ModelsService.getModels(ModelUsage.Chat, authStatus)
+        const models = ModelsService.getModels(ModelUsage.Chat)
 
         // Enterprise context is used for remote repositories context fetching
         // in vs cody extension it should be always off if extension is connected

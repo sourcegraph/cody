@@ -14,15 +14,6 @@ vi.mock('vscode', () => ({
 }))
 
 describe('TreeViewProvider', () => {
-    const siteVersion = ''
-    const verifiedEmail = true
-    const codyEnabled = true
-    const validUser = true
-    const username = 'someuser'
-    const primaryEmail = 'me@domain.test'
-    const displayName = 'Test Name'
-    const avatarURL = 'https://domain.test/avatar.png'
-
     let tree: TreeViewProvider
 
     /**
@@ -50,19 +41,19 @@ describe('TreeViewProvider', () => {
     }): Promise<void> {
         const nextUpdate = waitForTreeUpdate()
         tree.setAuthStatus(
-            newAuthStatus(
-                endpoint.toString(),
-                isDotCom(endpoint.toString()),
-                validUser,
-                verifiedEmail,
-                codyEnabled,
-                upgradeAvailable,
-                siteVersion,
-                avatarURL,
-                username,
-                displayName,
-                primaryEmail
-            )
+            newAuthStatus({
+                endpoint: endpoint.toString(),
+                isDotCom: isDotCom(endpoint.toString()),
+                authenticated: true,
+                hasVerifiedEmail: true,
+                siteHasCodyEnabled: true,
+                userCanUpgrade: upgradeAvailable,
+                siteVersion: '',
+                username: 'someuser',
+                primaryEmail: 'me@domain.test',
+                displayName: 'Test Name',
+                avatarURL: 'https://domain.test/avatar.png',
+            })
         )
         return nextUpdate
     }
