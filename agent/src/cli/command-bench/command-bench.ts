@@ -13,7 +13,6 @@ import { promisify } from 'node:util'
 import {
     type ConfigurationUseContext,
     ModelsService,
-    getDotComDefaultModels,
     graphqlClient,
     isDefined,
 } from '@sourcegraph/cody-shared'
@@ -339,7 +338,6 @@ export const benchCommand = new commander.Command('bench')
             recordingDirectory,
             keepUnusedRecordings: true,
         })
-        ModelsService.setModels(getDotComDefaultModels())
         try {
             await Promise.all(
                 workspacesToRun.map(workspace => evaluateWorkspace(workspace, recordingDirectory))
