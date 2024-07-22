@@ -302,7 +302,7 @@ export class ChatsController implements vscode.Disposable {
     }: ExecuteChatArguments): Promise<ChatSession | undefined> {
         let provider: ChatController
         // If the sidebar panel is visible and empty, use it instead of creating a new panel
-        if (submitType === 'user' && this.panel.isVisible() && this.panel.isEmpty()) {
+        if (submitType === 'user-newchat' && this.panel.isVisible() && this.panel.isEmpty()) {
             provider = this.panel
         } else {
             provider = await this.getOrCreateEditorChatController()

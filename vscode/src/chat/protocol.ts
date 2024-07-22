@@ -226,8 +226,8 @@ interface ExtensionAttributionMessage {
 
 /**
  * ChatSubmitType represents the type of chat submission.
- * - 'user': The user reuses the current chat panel.
- * - 'user-newchat': The user starts a new chat panel.
+ * - 'user': The user starts a new chat panel.
+ * - 'user-newchat': The user reuses the current chat panel.
  */
 export type ChatSubmitType = 'user' | 'user-newchat'
 
