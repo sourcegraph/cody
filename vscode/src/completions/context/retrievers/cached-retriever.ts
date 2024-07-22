@@ -177,6 +177,7 @@ export abstract class CachedRetriever implements ContextRetriever {
         if (uri.scheme !== 'file') {
             return Promise.resolve(undefined)
         }
+
         this.addDependency(uri.toString())
         return this.workspace.openTextDocument(uri)
     }

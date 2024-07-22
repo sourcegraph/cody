@@ -5,7 +5,7 @@ import { getContextRange } from '../../../doc-context-getters'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { type DocumentHistory, VSCodeDocumentHistory } from './history'
 
-import { FeatureFlag } from '@sourcegraph/cody-shared'
+import { FeatureFlag, isDefined } from '@sourcegraph/cody-shared'
 import { completionProviderConfig } from '../../../completion-provider-config'
 import { lastNLines } from '../../../text-processing'
 import { shouldBeUsedAsContext } from '../../utils'
@@ -162,9 +162,21 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
         // Use tabs API to get current docs instead of `vscode.workspace.textDocuments`.
         // See related discussion: https://github.com/microsoft/vscode/issues/15178
         // See more info about the API: https://code.visualstudio.com/api/references/vscode-api#Tab
+        //
+        // Use only file-URIs
         const allUris: vscode.Uri[] = this.tabGroups.all
-            .flatMap(({ tabs }) => tabs.map(tab => (tab.input as any)?.uri))
-            .filter(Boolean)
+            .flatMap(({ tabs }) =>
+                tabs.map(tab => {
+                    const maybeDoc = tab.input as vscode.TextDocument | undefined
+
+                    if (maybeDoc?.uri && maybeDoc?.uri.scheme === 'file') {
+                        return maybeDoc.uri
+                    }
+
+                    return undefined
+                })
+            )
+            .filter(isDefined)
 
         // To define an upper-bound for the number of files to take into consideration, we consider all
         // active editor tabs and the 5 tabs (7 when there are no split views) that are open around it
