@@ -52,6 +52,9 @@
 
         <applicationService
                 serviceImplementation="com.sourcegraph.cody.config.CodyPersistentAccounts"/>
+
+        <actionPromoter implementation="com.sourcegraph.cody.edit.CodyActionPromoter"/>
+
         <notificationGroup id="cody.auth" displayType="BALLOON"/>
         <notificationGroup id="Sourcegraph errors" displayType="BALLOON"/>
         <notificationGroup id="Sourcegraph: URL sharing" displayType="BALLOON"/>
@@ -283,6 +286,14 @@
                         text="Dismiss"
                         description="Dismisses the inline error message">
                     <override-text place="GoToAction" text="Cody: Dismiss"/>
+                </action>
+
+                <action id="cody.inlineEditEditCode"
+                        text="Edit Code"
+                        class="com.sourcegraph.cody.edit.InlineEditPromptEditCodeAction" >
+                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl ENTER" keymap="$default"/>
+                    <keyboard-shortcut replace-all="true" first-keystroke="meta ENTER" keymap="Mac OS X 10.5+"/>
+                    <override-text place="GoToAction" text="Cody: Edit Code"/>
                 </action>
 
                 <!-- also now dismisses error lens, if showing -->

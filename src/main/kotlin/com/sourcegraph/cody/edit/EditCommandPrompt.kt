@@ -2,7 +2,8 @@ package com.sourcegraph.cody.edit
 
 import com.intellij.ide.ui.UISettingsListener
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.KeyboardShortcut
+import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.DataProvider
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.diagnostic.Logger
@@ -19,7 +20,7 @@ import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.util.SystemInfo
+import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
@@ -46,10 +47,8 @@ import java.awt.Dimension
 import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.Point
-import java.awt.Toolkit
 import java.awt.event.FocusAdapter
 import java.awt.event.FocusEvent
-import java.awt.event.InputEvent
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
@@ -69,7 +68,6 @@ import javax.swing.JList
 import javax.swing.JPanel
 import javax.swing.JRootPane
 import javax.swing.JScrollPane
-import javax.swing.KeyStroke
 import javax.swing.ListCellRenderer
 import javax.swing.WindowConstants
 import javax.swing.event.CaretListener
@@ -80,7 +78,8 @@ class EditCommandPrompt(
     val editor: Editor,
     dialogTitle: String,
     instruction: String? = null
-) : JFrame(), Disposable, FixupService.ActiveFixupSessionStateListener {
+) : JFrame(), Disposable, FixupService.ActiveFixupSessionStateListener, DataProvider {
+
   private val logger = Logger.getInstance(EditCommandPrompt::class.java)
 
   private val offset = editor.caretModel.primaryCaret.offset
@@ -89,26 +88,11 @@ class EditCommandPrompt(
 
   private val isDisposed: AtomicBoolean = AtomicBoolean(false)
 
-  // Key for activating the OK button. It's not a globally registered action.
-  // We use a local action and just wire it up manually.
-  private val enterKeyStroke =
-      if (SystemInfo.isMac) {
-        // Mac: Command+Enter
-        KeyStroke.getKeyStroke(
-            KeyEvent.VK_ENTER, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx())
-      } else {
-        // Others: Control+Enter
-        KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK)
-      }
-
   private val okButton =
       namedButton("ok-button").apply {
         text = "Edit Code"
         foreground = boldLabelColor()
-
         addActionListener { performOKAction() }
-        registerKeyboardAction(
-            { performOKAction() }, enterKeyStroke, JComponent.WHEN_IN_FOCUSED_WINDOW)
       }
 
   private val okButtonGroup =
@@ -117,19 +101,23 @@ class EditCommandPrompt(
         isOpaque = false
         background = textFieldBackground()
         layout = BoxLayout(this, BoxLayout.X_AXIS)
+        val activeKeymapShortcuts = KeymapUtil.getActiveKeymapShortcuts("cody.inlineEditEditCode")
         val shortcutLabel =
-            namedLabel("ok-keyboard-shortcut-label").apply {
-              text = KeymapUtil.getShortcutText(KeyboardShortcut(enterKeyStroke, null))
-              // Spacing between key shortcut and button.
-              border = BorderFactory.createEmptyBorder(0, 0, 0, 12)
-            }
-        add(shortcutLabel)
+            if (activeKeymapShortcuts.shortcuts.isNotEmpty()) {
+              namedLabel("ok-keyboard-shortcut-label")
+                  .apply {
+                    text = KeymapUtil.getShortcutsText(activeKeymapShortcuts.shortcuts)
+                    // Spacing between key shortcut and button.
+                    border = BorderFactory.createEmptyBorder(0, 0, 0, 12)
+                  }
+                  .also(::add)
+            } else null
         add(okButton)
 
         this.addPropertyChangeListener { evt ->
           if (evt?.propertyName == "enabled") {
             okButton.isEnabled = evt.newValue as Boolean
-            shortcutLabel.isEnabled = evt.newValue as Boolean
+            shortcutLabel?.isEnabled = evt.newValue as Boolean
           }
         }
       }
@@ -291,7 +279,13 @@ class EditCommandPrompt(
     shape = makeCornerShape(width, height)
     updateDialogPosition()
     isVisible = true
+
+    val old = controller.project.getUserData(EDIT_COMMAND_PROMPT_KEY)
+    old?.dispose()
+    controller.project.putUserData(EDIT_COMMAND_PROMPT_KEY, this)
   }
+
+  fun isOkActionEnabled() = okButtonGroup.isEnabled
 
   private fun updateDialogPosition() {
     // Convert caret position to screen coordinates.
@@ -547,6 +541,7 @@ class EditCommandPrompt(
   }
 
   override fun dispose() {
+    controller.project.putUserData(EDIT_COMMAND_PROMPT_KEY, null)
     if (!isDisposed.get()) {
       try {
         unregisterListeners()
@@ -582,6 +577,8 @@ class EditCommandPrompt(
   }
 
   companion object {
+    val EDIT_COMMAND_PROMPT_KEY: Key<EditCommandPrompt?> = Key.create("EDIT_COMMAND_PROMPT_KEY")
+
     // This is a fallback for the rare case when the screen size computations fail.
     const val DEFAULT_TEXT_FIELD_WIDTH: Int = 700
 
@@ -633,5 +630,12 @@ class EditCommandPrompt(
 
   override fun fixupSessionStateChanged(isInProgress: Boolean) {
     runInEdt { okButtonGroup.isEnabled = !isInProgress }
+  }
+
+  override fun getData(dataId: String): Any? {
+    if (CommonDataKeys.PROJECT.`is`(dataId)) {
+      return controller.project
+    }
+    return null
   }
 }
