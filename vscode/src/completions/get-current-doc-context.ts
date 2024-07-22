@@ -40,9 +40,10 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
     // instead?
     let completePrefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
 
-    // For preloading completion we might have a position that is not in the document.
-    // For example, if we preload a completion of the next empty line and the current line is
-    // indented, the position for preloading would have the same indentation level.
+    // For preloading completions we might have a position that is not in the document.
+    // For example, if we preload a completion for the next empty line and the current line is
+    // indented, the position for preloaded completion would have the same indentation level.
+    //
     // But, because the document doesn't not current have whitespace there, the `document.getText(start, end)`
     // would use `end.character === 0` instead of end.character === indentationLevel` position.
     // We have to manually add required whitespace that will be used as a current line prefix in a cache key later.

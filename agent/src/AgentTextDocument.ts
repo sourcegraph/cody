@@ -137,6 +137,12 @@ export class AgentTextDocument implements vscode.TextDocument {
     }
 
     public validatePosition(position: vscode.Position): vscode.Position {
-        throw new Error('Method not implemented.')
+        const line = Math.max(0, Math.min(position.line, this.lineCount - 1))
+        const linePosition = new vscode_shim.Position(line, 0)
+        const character = Math.max(
+            0,
+            Math.min(position.character, this.lineAt(linePosition).text.length)
+        )
+        return new vscode_shim.Position(line, character)
     }
 }

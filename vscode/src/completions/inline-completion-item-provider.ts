@@ -227,6 +227,7 @@ export class InlineCompletionItemProvider
         | DebouncedFunc<typeof this.preloadCompletionOnSelectionChange>
         | undefined
 
+    // TODO: limit the maximum number of the inflight preload requests.
     private async preloadCompletionOnSelectionChange(
         event: vscode.TextEditorSelectionChangeEvent
     ): Promise<void> {
