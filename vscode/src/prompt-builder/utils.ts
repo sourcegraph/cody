@@ -10,6 +10,7 @@ import {
     populateCurrentSelectedCodeContextTemplate,
     ps,
 } from '@sourcegraph/cody-shared'
+import type { Annotation } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 import { URI } from 'vscode-uri'
 
@@ -43,7 +44,7 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
             messageText = content
             break
         default:
-            // title is a required field for ContextItemOpenctx, only checking for type safety here.
+            // title is a required field for ContextItemOpenCtx, only checking for type safety here.
             if (contextItem.type === 'openctx' && title) {
                 messageText = ps`Content for "{title}" from {displayPath}:\n"`
                     .replace('{title}', title)
@@ -56,29 +57,31 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
                     contextItem.annotations &&
                     contextItem.annotations.length
                 ) {
-                    // TODO(dyma): move to a separate function
-                    let annotations = ps`\nAnnotations from OpenCtx providers:`
-                    for (const annotation of contextItem.annotations) {
-                        if (!annotation.content) {
-                            continue
-                        }
-                        const { title, content } = PromptString.fromAnnotation({
-                            ...annotation,
-                            content: annotation.content,
-                            uri: URI.file(annotation.uri),
-                        })
-                        annotations = annotations.concat(
-                            ps`\n{title}:\n{annotation}`
-                                .replace('{title}', title)
-                                .replace('{annotation}', content)
-                        )
-                    }
-                    messageText = messageText.concat(annotations)
+                    messageText = addAnnotations(messageText, contextItem.annotations)
                 }
             }
     }
 
     return { speaker: 'human', text: messageText, file: contextItem }
+}
+
+function addAnnotations(message: PromptString, annotations: Annotation[]): PromptString {
+    let text = ps`\nAnnotations from OpenCtx providers:`
+
+    for (const annotation of annotations) {
+        if (!annotation.content) {
+            continue
+        }
+        const { title, content } = PromptString.fromAnnotation({
+            ...annotation,
+            content: annotation.content,
+            uri: URI.file(annotation.uri),
+        })
+        text = text.concat(
+            ps`\n{title}:\n{content}`.replace('{title}', title).replace('{content}', content)
+        )
+    }
+    return message.concat(text)
 }
 
 export function getContextItemTokenUsageType(item: ContextItem): ContextTokenUsageType {
