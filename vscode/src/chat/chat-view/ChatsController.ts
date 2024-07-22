@@ -38,7 +38,7 @@ import {
     webviewViewOrPanelViewColumn,
 } from './ChatController'
 import { chatHistory } from './ChatHistoryManager'
-import type { BaseContextFetcher } from './ContextFetcher'
+import type { ContextFetcher } from './ContextFetcher'
 
 export const CodyChatEditorViewType = 'cody.editorPanel'
 
@@ -77,7 +77,7 @@ export class ChatsController implements vscode.Disposable {
         private readonly contextRanking: ContextRankingController | null,
         private readonly symf: SymfRunner | null,
 
-        private readonly contextFetcher: BaseContextFetcher,
+        private readonly contextFetcher: ContextFetcher,
 
         private readonly guardrails: Guardrails,
         private readonly contextAPIClient: ContextAPIClient | null

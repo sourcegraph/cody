@@ -17,7 +17,7 @@ interface ContextQuery {
     repoIDs: string[]
 }
 
-export class BaseContextFetcher implements vscode.Disposable {
+export class ContextFetcher implements vscode.Disposable {
     constructor(
         private symf: SymfRunner | undefined,
         private llms: SourcegraphCompletionsClient
@@ -28,7 +28,6 @@ export class BaseContextFetcher implements vscode.Disposable {
     }
 
     public async fetchContext(query: ContextQuery): Promise<ContextItem[]> {
-        // TODO(beyang): replace with single server-side call
         const rewritten = await rewriteKeywordQuery(this.llms, query.userQuery)
         const result = await graphqlClient.contextSearch(query.repoIDs, rewritten)
         if (isError(result)) {
@@ -37,11 +36,6 @@ export class BaseContextFetcher implements vscode.Disposable {
         return result?.flatMap(r => contextSearchResultToContextItem(r) ?? []) ?? []
     }
 }
-
-// TODO(beyang): merge current PLG and enterprise LLM context into this class,
-// further simplifying ChatController
-// - toggle the new context on with a feature flag
-// - then revisit the server side
 
 function contextSearchResultToContextItem(result: ContextSearchResult): ContextItem | undefined {
     if (result.startLine < 0 || result.endLine < 0) {

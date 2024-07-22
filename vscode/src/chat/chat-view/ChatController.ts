@@ -108,12 +108,13 @@ import { chatHistory } from './ChatHistoryManager'
 import { ChatModel, prepareChatMessage } from './ChatModel'
 import { CodyChatEditorViewType } from './ChatsController'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
-import type { BaseContextFetcher } from './ContextFetcher'
+import type { ContextFetcher } from './ContextFetcher'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, openFile } from './chat-helpers'
 import {
     type HumanInput,
     getContextStrategy,
+    getEnhancedContext,
     remoteRepositoryIDsFromHumanInput,
     remoteRepositoryURIsForLocalTrees,
 } from './context'
@@ -129,7 +130,7 @@ interface ChatControllerOptions {
     symf: SymfRunner | null
     enterpriseContext: EnterpriseContextFactory | null
 
-    contextFetcher: BaseContextFetcher
+    contextFetcher: ContextFetcher
     contextAPIClient: ContextAPIClient | null
 
     editor: VSCodeEditor
@@ -181,7 +182,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly symf: SymfRunner | null
     private readonly remoteSearch: RemoteSearch | null
 
-    private readonly contextFetcher: BaseContextFetcher
+    private readonly contextFetcher: ContextFetcher
 
     private readonly contextStatusAggregator = new ContextStatusAggregator()
     private readonly editor: VSCodeEditor
@@ -710,17 +711,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
                 const hasCorpusMentions = corpusMentions.length > 0
 
-                const config = getConfiguration()
-                const contextStrategy = await getContextStrategy(config.useContext)
-                span.setAttribute('strategy', contextStrategy)
-
-                // Remove context chips (repo, @-mentions) from the input text for context retrieval.
-                const inputTextWithoutContextChips = editorState
-                    ? PromptString.unsafe_fromUserQuery(
-                          inputTextWithoutContextChipsFromPromptEditorState(editorState)
-                      )
-                    : inputText
-
                 const prompter = new DefaultPrompter(
                     userContextItems,
                     addEnhancedContext || hasCorpusMentions
@@ -731,38 +721,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                * The retrieval performance boost is not evaluated yet and thus
                                * it is only available when `experimentNoodle` is set to `true`.
                                */
-                              const rewrite = config.experimentalNoodle
-                                  ? await rewriteChatQuery({
-                                        query: inputText,
-                                        contextItems: userContextItems,
-                                        chatClient: this.chatClient,
-                                        chatModel: this.chatModel,
-                                    })
-                                  : inputTextWithoutContextChips
-
-                              const context = this.fetchContext({ text: rewrite, mentions })
-
-                              //   const context = getEnhancedContext({
-                              //       strategy: contextStrategy,
-                              //       editor: this.editor,
-                              //       input: { text: rewrite, mentions },
-                              //       addEnhancedContext,
-                              //       providers: {
-                              //           localEmbeddings: this.localEmbeddings,
-                              //           symf: this.symf,
-                              //           remoteSearch: this.remoteSearch,
-                              //       },
-                              //       contextRanking: this.contextRanking,
-                              //   })
-
-                              // add a callback, but return the original context
-                              context.then(c =>
-                                  this.contextAPIClient?.rankContext(
-                                      requestID,
-                                      inputTextWithoutContextChips.toString(),
-                                      c
-                                  )
+                              const context = this.fetchContext(
+                                  { text: inputText, mentions },
+                                  userContextItems,
+                                  requestID,
+                                  editorState,
+                                  addEnhancedContext,
+                                  span
                               )
+
                               return context
                           }
                         : undefined,
@@ -824,7 +791,56 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
     }
 
-    private async fetchContext({ text, mentions }: HumanInput): Promise<ContextItem[]> {
+    private async fetchContext(
+        { text, mentions }: HumanInput,
+        userContextItems: ContextItemWithContent[],
+        requestID: string,
+        editorState: SerializedPromptEditorState | null,
+        addEnhancedContext: boolean,
+        span: Span
+    ): Promise<ContextItem[]> {
+        if (!vscode.workspace.getConfiguration().get<boolean>('cody.internal.serverSideContext')) {
+            // Fetch using legacy context retrieval
+            const config = getConfiguration()
+            const contextStrategy = await getContextStrategy(config.useContext)
+            span.setAttribute('strategy', contextStrategy)
+
+            // Remove context chips (repo, @-mentions) from the input text for context retrieval.
+            const inputTextWithoutContextChips = editorState
+                ? PromptString.unsafe_fromUserQuery(
+                      inputTextWithoutContextChipsFromPromptEditorState(editorState)
+                  )
+                : text
+
+            const rewrite = config.experimentalNoodle
+                ? await rewriteChatQuery({
+                      query: text,
+                      contextItems: userContextItems,
+                      chatClient: this.chatClient,
+                      chatModel: this.chatModel,
+                  })
+                : inputTextWithoutContextChips
+
+            const context = getEnhancedContext({
+                strategy: contextStrategy,
+                editor: this.editor,
+                input: { text: rewrite, mentions },
+                addEnhancedContext,
+                providers: {
+                    localEmbeddings: this.localEmbeddings,
+                    symf: this.symf,
+                    remoteSearch: this.remoteSearch,
+                },
+                contextRanking: this.contextRanking,
+            })
+            // add a callback, but return the original context
+            context.then(c =>
+                this.contextAPIClient?.rankContext(requestID, inputTextWithoutContextChips.toString(), c)
+            )
+
+            return context
+        }
+
         const remoteRepoIDs = remoteRepositoryIDsFromHumanInput({ text, mentions })
 
         const localRepoURIs = await remoteRepositoryURIsForLocalTrees({ text, mentions })

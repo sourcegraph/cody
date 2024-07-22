@@ -19,7 +19,7 @@ import {
 import type { CommandResult } from './CommandResult'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
-import { BaseContextFetcher } from './chat/chat-view/ContextFetcher'
+import { ContextFetcher } from './chat/chat-view/ContextFetcher'
 import type { ContextAPIClient } from './chat/context/contextAPIClient'
 import {
     ACCOUNT_LIMITS_INFO_URL,
@@ -196,7 +196,7 @@ const register = async (
     if (symfRunner) {
         disposables.push(symfRunner)
     }
-    const contextFetcher = new BaseContextFetcher(symfRunner, completionsClient)
+    const contextFetcher = new ContextFetcher(symfRunner, completionsClient)
 
     // Initialize enterprise context
     const enterpriseContextFactory = new EnterpriseContextFactory(completionsClient)
@@ -748,7 +748,7 @@ interface RegisterChatOptions {
     contextRanking?: ContextRankingController
     symfRunner?: SymfRunner
     contextAPIClient?: ContextAPIClient
-    contextFetcher: BaseContextFetcher
+    contextFetcher: ContextFetcher
 }
 
 function registerChat(
