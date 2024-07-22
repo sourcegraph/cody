@@ -14,9 +14,6 @@ import { getEditor } from '../../editor/active-editor'
 export interface ExecuteChatArguments extends Omit<WebviewSubmitMessage, 'text' | 'editorState'> {
     source?: EventSource
     command?: DefaultChatCommands
-    // We default to running the chat in the main cody sidebar, if it's open and unused.
-    // If you wish to always run the chat in a new webview, set this to true.
-    forceNewPanel?: boolean
     text: PromptString
 }
 
