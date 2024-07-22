@@ -650,7 +650,7 @@
       {
         "command": "cody.chat.newEditorPanel",
         "key": "alt+l",
-        "when": "cody.activated && editorTextFocus && !cody.chatInSidebar",
+        "when": "cody.activated && editorTextFocus",
         "args": {
           "editorFocus": true
         }
@@ -823,7 +823,7 @@
         },
         {
           "command": "cody.chat.newEditorPanel",
-          "when": "cody.activated && !cody.chatInSidebar"
+          "when": "cody.activated"
         }
       ],
       "editor/context": [

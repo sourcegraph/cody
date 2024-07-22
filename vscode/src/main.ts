@@ -95,12 +95,12 @@ export async function start(
     context: vscode.ExtensionContext,
     platform: PlatformContext
 ): Promise<vscode.Disposable> {
-    const isExtensionTextMode = context.extensionMode === vscode.ExtensionMode.Test
+    const isExtensionTestMode = context.extensionMode === vscode.ExtensionMode.Test
     const isExtensionModeDevOrTest =
-        context.extensionMode === vscode.ExtensionMode.Development || isExtensionTextMode
+        context.extensionMode === vscode.ExtensionMode.Development || isExtensionTestMode
 
     // HACK to improve e2e test latency
-    if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.chatInSidebar')) {
+    if (!isExtensionTestMode) {
         await vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', true)
     }
 
@@ -117,7 +117,7 @@ export async function start(
 
     const disposables: vscode.Disposable[] = []
 
-    const authProvider = AuthProvider.create(await getFullConfig(), isExtensionTextMode)
+    const authProvider = AuthProvider.create(await getFullConfig(), isExtensionTestMode)
     const configWatcher = await BaseConfigWatcher.create(authProvider, disposables)
     await configWatcher.onChange(
         async config => {
@@ -314,21 +314,6 @@ async function initializeSingletons(
         },
         disposables,
         { runImmediately: true }
-    )
-
-    // Chat in sidebar (should be removed after the toggle is removed)
-    let currentChatInSidebarValue = false
-    disposables.push(
-        authProvider.onChange(
-            async () => {
-                const newValue = await ChatsController.isChatInSidebar()
-                if (newValue !== currentChatInSidebarValue) {
-                    currentChatInSidebarValue = newValue
-                    vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', newValue)
-                }
-            },
-            { runImmediately: true }
-        )
     )
 }
 
