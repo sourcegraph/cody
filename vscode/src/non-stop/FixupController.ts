@@ -10,11 +10,20 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { executeEdit } from '../edit/execute'
-import type { EditIntent, EditMode } from '../edit/types'
+import {
+    type EditIntent,
+    EditIntentTelemetryMetadataMapping,
+    type EditMode,
+    EditModeTelemetryMetadataMapping,
+} from '../edit/types'
 import { logDebug } from '../log'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 
+import {
+    DEFAULT_EVENT_SOURCE,
+    EventSourceTelemetryMetadataMapping,
+} from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
 import { getInput } from '../edit/input/get-input'
@@ -176,9 +185,10 @@ export class FixupController
         const editOk = await this.revertToOriginal(task, editor.edit)
 
         const legacyMetadata = {
-            intent: task.intent,
-            mode: task.mode,
-            source: task.source,
+            intent: EditIntentTelemetryMetadataMapping[task.intent] || task.intent,
+            mode: EditModeTelemetryMetadataMapping[task.mode] || task.mode,
+            source:
+                EventSourceTelemetryMetadataMapping[task.source || DEFAULT_EVENT_SOURCE] || task.source,
             ...this.countEditInsertions(task),
             ...task.telemetryMetadata,
         }
@@ -505,9 +515,10 @@ export class FixupController
 
     private logTaskCompletion(task: FixupTask, document: vscode.TextDocument, editOk: boolean): void {
         const legacyMetadata = {
-            intent: task.intent,
-            mode: task.mode,
-            source: task.source,
+            intent: EditIntentTelemetryMetadataMapping[task.intent] || task.intent,
+            mode: EditModeTelemetryMetadataMapping[task.mode] || task.mode,
+            source:
+                EventSourceTelemetryMetadataMapping[task.source || DEFAULT_EVENT_SOURCE] || task.source,
             model: task.model,
             ...this.countEditInsertions(task),
             ...task.telemetryMetadata,

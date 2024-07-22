@@ -81,7 +81,8 @@
       "**/.tsconfig.json",
       "**/tsconfig.json",
       ".vscode/*.json",
-      "**/fixtures/**"
+      "**/fixtures/**",
+      "vscode/.schema-cache/*.json"
     ]
   },
   "overrides": [

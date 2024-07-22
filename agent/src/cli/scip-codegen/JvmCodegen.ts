@@ -500,7 +500,7 @@ export class JvmCodegen extends BaseCodegen {
     ): Promise<void> {
         const { f, p, symtab } = this.startDocument()
         if (this.language === JvmLanguage.Kotlin) {
-            p.line('@file:Suppress("FunctionName", "ClassName")')
+            p.line('@file:Suppress("FunctionName", "ClassName", "RedundantNullable")')
         }
         p.line(`package ${this.options.kotlinPackage};`)
         p.line()

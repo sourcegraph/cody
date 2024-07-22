@@ -9,6 +9,7 @@ import {
     RestClient,
     getDotComDefaultModels,
 } from '@sourcegraph/cody-shared'
+import type { ServerModelConfiguration } from '@sourcegraph/cody-shared/src/models'
 import { ModelTag } from '@sourcegraph/cody-shared/src/models/tags'
 import * as vscode from 'vscode'
 import { logDebug } from '../log'
@@ -41,13 +42,16 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
     if (clientConfig?.modelsAPIEnabled) {
         logDebug('ModelsService', 'new models API enabled')
         const serverSideModels = await fetchServerSideModels(authStatus.endpoint || '')
-        ModelsService.setModels(serverSideModels)
-        // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't entirely make sense in
-        // a world where LLM models are managed server-side. However, this is how Cody can be extended
-        // to use locally running LLMs such as Ollama. (Though some more testing is needed.)
-        // See: https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
-        registerModelsFromVSCodeConfiguration()
-        return
+        // If the request failed, fall back to using the default models
+        if (serverSideModels) {
+            ModelsService.setServerSentModels(serverSideModels)
+            // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't entirely make sense in
+            // a world where LLM models are managed server-side. However, this is how Cody can be extended
+            // to use locally running LLMs such as Ollama. (Though some more testing is needed.)
+            // See: https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
+            registerModelsFromVSCodeConfiguration()
+            return
+        }
     }
 
     // If you are connecting to Sourcegraph.com, we use the Cody Pro set of models.
@@ -135,16 +139,13 @@ export function registerModelsFromVSCodeConfiguration() {
 // stored.
 //
 // Throws an exception on any errors.
-async function fetchServerSideModels(endpoint: string): Promise<Model[]> {
+async function fetchServerSideModels(endpoint: string): Promise<ServerModelConfiguration | undefined> {
     if (!endpoint) {
         throw new Error('authStatus has no endpoint available. Unable to fetch models.')
     }
 
     // Get the user's access token, assumed to be already saved in the secret store.
     const userAccessToken = await secretStorage.getToken(endpoint)
-    if (!userAccessToken) {
-        throw new Error('no userAccessToken available. Unable to fetch models.')
-    }
 
     // Fetch the data via REST API.
     // NOTE: We may end up exposing this data via GraphQL, it's still TBD.

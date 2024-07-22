@@ -17,7 +17,6 @@ import {
     graphqlClient,
     isDefined,
 } from '@sourcegraph/cody-shared'
-import { sleep } from '../../../../vscode/src/completions/utils'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { dotcomCredentials } from '../../../../vscode/src/testutils/testing-credentials'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'

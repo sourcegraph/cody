@@ -13,7 +13,7 @@ export function typescriptKeywordSyntax(language: JvmLanguage, symbol: string): 
         case 'scip-typescript npm typescript . boolean#':
             return 'Boolean'
         case 'scip-typescript npm typescript . number#':
-            return language === JvmLanguage.Kotlin ? 'Int' : 'Integer'
+            return 'Long'
         case 'scip-typescript npm typescript . any#':
         case 'scip-typescript npm typescript . unknown#':
             return language === JvmLanguage.Kotlin ? 'Any' : 'Object'

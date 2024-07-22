@@ -13,16 +13,16 @@ See [CHANGELOG.md](../agent/CHANGELOG.md).
 Run the following commands to get started with the Cody CLI:
 
 ```
-npm install -g @sourcegraph/cody
+npm install -g @sourcegraph/cody-agent
 
 # Authenticate with Sourcegraph by opening a browser window
-cody auth login --web
+cody-agent auth login --web
 
 # Ask Cody a question (with no context):
-cody chat -m 'what color is the sky?'
+cody-agent chat -m 'what color is the sky?'
 
 # Ask Cody a question (with Sourcegraph Enterprise repository context):
-cody chat --context-repo github.com/sourcegraph/{sourcegraph,cody} --show-context -m 'how is authentication handled in sourcegraph/cody?'
+cody-agent chat --context-repo github.com/sourcegraph/{sourcegraph,cody} --show-context -m 'how is authentication handled in sourcegraph/cody?'
 ```
 
 ## Development & feedback

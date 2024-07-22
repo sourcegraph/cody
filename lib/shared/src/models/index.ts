@@ -1,6 +1,6 @@
-import { type AuthStatus, isCodyProUser, isEnterpriseUser, isFreeUser } from '../auth/types'
+import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
-import { logDebug } from '../logger'
+import { logDebug, logError } from '../logger'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import { ModelTag } from './tags'
 import { type ChatModel, type EditModel, type ModelContextWindow, ModelUsage } from './types'
@@ -10,7 +10,12 @@ export type ModelId = string
 export type ApiVersionId = string
 export type ProviderId = string
 
-export type ModelRef = `${ProviderId}::${ApiVersionId}::${ModelId}`
+export type ModelRefStr = `${ProviderId}::${ApiVersionId}::${ModelId}`
+export interface ModelRef {
+    providerId: ProviderId
+    apiVersionId: ApiVersionId
+    modelId: ModelId
+}
 
 export type ModelCategory = ModelTag.Accuracy | ModelTag.Balanced | ModelTag.Speed
 export type ModelStatus = ModelTag.Experimental | ModelTag.Experimental | 'stable' | ModelTag.Deprecated
@@ -22,8 +27,96 @@ export interface ContextWindow {
     maxOutputTokens: number
 }
 
+interface ClientSideConfig {
+    /**
+     * The API key for the model
+     */
+    apiKey?: string
+    /**
+     * The API endpoint for the model
+     */
+    apiEndpoint?: string
+    /**
+     * if this model is compatible with OpenAI API provider
+     * allow the site admin to set configuration params
+     */
+    openAICompatible?: OpenAICompatible
+}
+
+interface OpenAICompatible {
+    // (optional) List of stop sequences to use for this model.
+    stopSequences?: string[]
+
+    // (optional) EndOfText identifier used by the model. e.g. "<|endoftext|>", "< EOT >"
+    endOfText?: string
+
+    // (optional) A hint the client should use when producing context to send to the LLM.
+    // The maximum length of all context (prefix + suffix + snippets), in characters.
+    contextSizeHintTotalCharacters?: number
+
+    // (optional) A hint the client should use when producing context to send to the LLM.
+    // The maximum length of the document prefix (text before the cursor) to include, in characters.
+    contextSizeHintPrefixCharacters?: number
+
+    // (optional) A hint the client should use when producing context to send to the LLM.
+    // The maximum length of the document suffix (text after the cursor) to include, in characters.
+    contextSizeHintSuffixCharacters?: number
+
+    // (optional) Custom instruction to be included at the start of all chat messages
+    // when using this model, e.g. "Answer all questions in Spanish."
+    //
+    // Note: similar to Cody client config option `cody.chat.preInstruction`; if user has
+    // configured that it will be used instead of this.
+    chatPreInstruction?: string
+
+    // (optional) Custom instruction to be included at the end of all edit commands
+    // when using this model, e.g. "Write all unit tests with Jest instead of detected framework."
+    //
+    // Note: similar to Cody client config option `cody.edit.preInstruction`; if user has
+    // configured that it will be respected instead of this.
+    editPostInstruction?: string
+
+    // (optional) How long the client should wait for autocomplete results to come back (milliseconds),
+    // before giving up and not displaying an autocomplete result at all.
+    //
+    // This applies on single-line completions, e.g. `var i = <completion>`
+    //
+    // Note: similar to hidden Cody client config option `cody.autocomplete.advanced.timeout.singleline`
+    // If user has configured that, it will be respected instead of this.
+    autocompleteSinglelineTimeout?: number
+
+    // (optional) How long the client should wait for autocomplete results to come back (milliseconds),
+    // before giving up and not displaying an autocomplete result at all.
+    //
+    // This applies on multi-line completions, which are based on intent-detection when e.g. a code block
+    // is being completed, e.g. `func parseURL(url string) {<completion>`
+    //
+    // Note: similar to hidden Cody client config option `cody.autocomplete.advanced.timeout.multiline`
+    // If user has configured that, it will be respected instead of this.
+    autocompleteMultilineTimeout?: number
+
+    // (optional) model parameters to use for the chat feature
+    chatTopK?: number
+    chatTopP?: number
+    chatTemperature?: number
+    chatMaxTokens?: number
+
+    // (optional) model parameters to use for the autocomplete feature
+    autoCompleteTopK?: number
+    autoCompleteTopP?: number
+    autoCompleteTemperature?: number
+    autoCompleteSinglelineMaxTokens?: number
+    autoCompleteMultilineMaxTokens?: number
+
+    // (optional) model parameters to use for the edit feature
+    editTopK?: number
+    editTopP?: number
+    editTemperature?: number
+    editMaxTokens?: number
+}
+
 export interface ServerModel {
-    modelRef: ModelRef
+    modelRef: ModelRefStr
     displayName: string
     modelName: string
     capabilities: ModelCapability[]
@@ -33,7 +126,7 @@ export interface ServerModel {
 
     contextWindow: ContextWindow
 
-    clientSideConfig?: unknown
+    clientSideConfig?: ClientSideConfig
 }
 
 interface Provider {
@@ -42,11 +135,15 @@ interface Provider {
 }
 
 interface DefaultModels {
-    chat: ModelRef
-    fastChat: ModelRef
-    codeCompletion: ModelRef
+    chat: ModelRefStr
+    fastChat: ModelRefStr
+    codeCompletion: ModelRefStr
 }
 
+// TODO(PRIME-323): Do a proper review of the data model we will use to describe
+// server-side configuration. Once complete, it should match the data types we
+// use in this repo exactly. Until then, we need to map the "server-side" model
+// types, to the `Model` types used by Cody clients.
 export interface ServerModelConfiguration {
     schemaVersion: string
     revision: string
@@ -63,7 +160,7 @@ export class Model {
      * The model id that includes the provider name & the model name,
      * e.g. "anthropic/claude-3-sonnet-20240229"
      *
-     * TODO(PRIME-282): Replace this with a `ModelRef` instance and introduce a separate
+     * TODO(PRIME-282): Replace this with a `ModelRefStr` instance and introduce a separate
      * "modelId" that is distinct from the "modelName". (e.g. "claude-3-sonnet" vs. "claude-3-sonnet-20240229")
      */
     public readonly model: string
@@ -80,16 +177,7 @@ export class Model {
     /**
      * The client-specific configuration for the model.
      */
-    public readonly clientSideConfig?: {
-        /**
-         * The API key for the model
-         */
-        apiKey?: string
-        /**
-         * The API endpoint for the model
-         */
-        apiEndpoint?: string
-    }
+    public readonly clientSideConfig?: ClientSideConfig
 
     // The name of the provider of the model, e.g. "Anthropic"
     public provider: string
@@ -100,8 +188,11 @@ export class Model {
      */
     public readonly tags: ModelTag[] = []
 
+    public readonly modelRef?: ModelRef
+
     constructor({
         model,
+        modelRef,
         usage,
         contextWindow = {
             input: CHAT_INPUT_TOKEN_BUDGET,
@@ -112,15 +203,28 @@ export class Model {
         provider,
         title,
     }: ModelParams) {
+        // Start by setting the model ref, by default using a new form but falling
+        // back to using the old-style of parsing the modelId or using provided fields
+        if (typeof modelRef === 'object') {
+            this.modelRef = modelRef
+        } else if (typeof modelRef === 'string') {
+            this.modelRef = Model.parseModelRef(modelRef)
+        } else {
+            const info = getModelInfo(model)
+            this.modelRef = {
+                providerId: provider ?? info.provider,
+                apiVersionId: 'unknown',
+                modelId: title ?? info.title,
+            }
+        }
         this.model = model
         this.usage = usage
         this.contextWindow = contextWindow
         this.clientSideConfig = clientSideConfig
         this.tags = tags
 
-        const info = getModelInfo(model)
-        this.provider = provider ?? info.provider
-        this.title = title ?? info.title
+        this.provider = this.modelRef.providerId
+        this.title = title ?? this.modelRef.modelId
     }
 
     static fromApi({
@@ -132,27 +236,20 @@ export class Model {
         clientSideConfig,
         contextWindow,
     }: ServerModel) {
-        // BUG: There is data loss here and the potential for ambiguity.
-        // BUG: We are assuming the modelRef is valid, but it might not be.
-        const [providerId, _, modelId] = modelRef.split('::', 3)
-
+        const ref = Model.parseModelRef(modelRef)
         return new Model({
-            model: modelId,
+            model: ref.modelId,
+            modelRef: ref,
             usage: capabilities.flatMap(capabilityToUsage),
             contextWindow: {
                 input: contextWindow.maxInputTokens,
                 output: contextWindow.maxOutputTokens,
             },
-            // @ts-ignore
             clientSideConfig: clientSideConfig,
             tags: [category, tier],
-            provider: providerId,
+            provider: ref.providerId,
             title: displayName,
         })
-    }
-
-    static isNewStyleEnterprise(model: Model): boolean {
-        return model.tags.includes(ModelTag.Enterprise)
     }
 
     static tier(model: Model): ModelTier {
@@ -163,16 +260,34 @@ export class Model {
     static isCodyPro(model?: Model): boolean {
         return Boolean(model?.tags.includes(ModelTag.Pro))
     }
+
+    static parseModelRef(ref: ModelRefStr): ModelRef {
+        // BUG: There is data loss here and the potential for ambiguity.
+        // BUG: We are assuming the modelRef is valid, but it might not be.
+        try {
+            const [providerId, apiVersionId, modelId] = ref.split('::', 3)
+            return {
+                providerId,
+                apiVersionId,
+                modelId,
+            }
+        } catch {
+            const [providerId, modelId] = ref.split('/', 2)
+            return {
+                providerId,
+                modelId,
+                apiVersionId: 'unknown',
+            }
+        }
+    }
 }
 
 interface ModelParams {
     model: string
+    modelRef?: ModelRefStr | ModelRef
     usage: ModelUsage[]
     contextWindow?: ModelContextWindow
-    clientSideConfig?: {
-        apiKey?: string
-        apiEndpoint?: string
-    }
+    clientSideConfig?: ClientSideConfig
     tags?: ModelTag[]
     provider?: string
     title?: string
@@ -200,6 +315,7 @@ export class ModelsService {
         ModelsService.primaryModels = []
         ModelsService.localModels = []
         ModelsService.defaultModels.clear()
+        ModelsService.selectedModels.clear()
         ModelsService.storage = undefined
     }
 
@@ -218,13 +334,21 @@ export class ModelsService {
      */
     private static localModels: Model[] = []
 
+    private static selectedModels: Map<ModelUsage, Model> = new Map()
     private static defaultModels: Map<ModelUsage, Model> = new Map()
 
     private static storage: Storage | undefined
 
-    private static storageKeys = {
+    private static selectedStorageKeys = {
         [ModelUsage.Chat]: 'chat',
         [ModelUsage.Edit]: 'editModel',
+        [ModelUsage.Autocomplete]: 'autocomplete',
+    }
+
+    private static defaultStorageKeys = {
+        [ModelUsage.Chat]: 'defaultChatModel',
+        [ModelUsage.Edit]: 'defaultEditModel',
+        [ModelUsage.Autocomplete]: 'defaultAutocompleteModel',
     }
 
     public static setStorage(storage: Storage): void {
@@ -245,11 +369,61 @@ export class ModelsService {
 
     /**
      * Sets the primary models available to the user.
-     * NOTE: private instances can only support 1 provider ATM.
      */
     public static setModels(models: Model[]): void {
-        logDebug('ModelsService', `Setting primary model: ${JSON.stringify(models.map(m => m.model))}`)
+        logDebug('ModelsService', `Setting primary models: ${JSON.stringify(models.map(m => m.model))}`)
         ModelsService.primaryModels = models
+    }
+
+    /**
+     * Sets the primary and default models from the server sent config
+     */
+    public static async setServerSentModels(config: ServerModelConfiguration): Promise<void> {
+        const models = config.models.map(Model.fromApi)
+        ModelsService.setModels(models)
+        await ModelsService.setServerDefaultModel(ModelUsage.Chat, config.defaultModels.chat)
+        await ModelsService.setServerDefaultModel(ModelUsage.Edit, config.defaultModels.chat)
+        await ModelsService.setServerDefaultModel(
+            ModelUsage.Autocomplete,
+            config.defaultModels.codeCompletion
+        )
+    }
+
+    private static async setServerDefaultModel(usage: ModelUsage, newDefaultModelRef: ModelRefStr) {
+        const ref = Model.parseModelRef(newDefaultModelRef)
+
+        // Model should exist as we just set them from the server. If not, something's broken
+        const newDefaultModel = ModelsService.resolveModel(newDefaultModelRef)
+        if (!newDefaultModel) {
+            logError(
+                'ModelsService::setServerDefaultModel',
+                'Failed to set default model',
+                'missing model definition',
+                usage,
+                newDefaultModelRef
+            )
+            return
+        }
+
+        // If our cached default model matches, nothing needed
+        const currentDefaultModel = ModelsService.defaultModels.get(usage)
+        if (currentDefaultModel?.model === newDefaultModel.model) {
+            return
+        }
+
+        // If our stored default model matches, we can update the cache and return
+        const storedDefaultModel = ModelsService.storage?.get(ModelsService.defaultStorageKeys[usage])
+        if (storedDefaultModel === ref.modelId) {
+            ModelsService.defaultModels.set(usage, newDefaultModel)
+            return
+        }
+
+        // Otherwise the model has updated so we should set it in the in-memory cache
+        // as well as the on-disk cache if it exists, and drop any previously selected
+        // models for this usage type
+        ModelsService.defaultModels.set(usage, newDefaultModel)
+        await ModelsService.storage?.set(ModelsService.defaultStorageKeys[usage], newDefaultModel.model)
+        ModelsService.selectedModels.delete(usage)
     }
 
     /**
@@ -279,34 +453,34 @@ export class ModelsService {
         return [currentModel].concat(models.filter(m => m.model !== currentModel.model))
     }
 
-    private static getDefaultModel(type: ModelUsage, authStatus: AuthStatus): Model | undefined {
+    public static getDefaultModel(type: ModelUsage, status: AuthStatus): Model | undefined {
         // Free users can only use the default free model, so we just find the first model they can use
         const models = ModelsService.getModelsByType(type)
-        const firstModelUserCanUse = models.find(m => ModelsService.canUserUseModel(authStatus, m))
-        if (!authStatus.authenticated || isFreeUser(authStatus)) {
-            return firstModelUserCanUse
-        }
-        const current = ModelsService.defaultModels.get(type)
-        if (current && ModelsService.canUserUseModel(authStatus, current)) {
-            return current
+        const firstModelUserCanUse = models.find(m => ModelsService.isModelAvailableFor(m, status))
+
+        // Check to see if the user has a selected a default model for this
+        // usage type and if not see if there is a server sent default type
+        const selected = ModelsService.selectedModels.get(type) ?? ModelsService.defaultModels.get(type)
+        if (selected && ModelsService.isModelAvailableFor(selected, status)) {
+            return selected
         }
 
         // If this editor has local storage enabled, check to see if the
         // user set a default model in a previous session.
-        const lastSelectedModelID = ModelsService.storage?.get(ModelsService.storageKeys[type])
+        const lastSelectedModelID = ModelsService.storage?.get(ModelsService.selectedStorageKeys[type])
         // return either the last selected model or first model they can use if any
         return models.find(m => m.model === lastSelectedModelID) || firstModelUserCanUse
     }
 
-    public static getDefaultEditModel(authStatus: AuthStatus): EditModel | undefined {
-        return ModelsService.getDefaultModel(ModelUsage.Edit, authStatus)?.model
+    public static getDefaultEditModel(status: AuthStatus): EditModel | undefined {
+        return ModelsService.getDefaultModel(ModelUsage.Edit, status)?.model
     }
 
-    public static getDefaultChatModel(authStatus: AuthStatus): ChatModel | undefined {
-        return ModelsService.getDefaultModel(ModelUsage.Chat, authStatus)?.model
+    public static getDefaultChatModel(status: AuthStatus): ChatModel | undefined {
+        return ModelsService.getDefaultModel(ModelUsage.Chat, status)?.model
     }
 
-    public static async setDefaultModel(type: ModelUsage, model: Model | string): Promise<void> {
+    public static async setSelectedModel(type: ModelUsage, model: Model | string): Promise<void> {
         const resolved = ModelsService.resolveModel(model)
         if (!resolved) {
             return
@@ -314,13 +488,13 @@ export class ModelsService {
         if (!resolved.usage.includes(type)) {
             throw new Error(`Model "${resolved.model}" is not compatible with usage type "${type}".`)
         }
-        logDebug('ModelsService', `Setting default ${type} model to ${resolved.model}`)
-        ModelsService.defaultModels.set(type, resolved)
+        logDebug('ModelsService', `Setting selected ${type} model to ${resolved.model}`)
+        ModelsService.selectedModels.set(type, resolved)
         // If we have persistent storage set, write it there
-        await ModelsService.storage?.set(ModelsService.storageKeys[type], resolved.model)
+        await ModelsService.storage?.set(ModelsService.selectedStorageKeys[type], resolved.model)
     }
 
-    public static canUserUseModel(status: AuthStatus, model: string | Model): boolean {
+    public static isModelAvailableFor(model: string | Model, status: AuthStatus): boolean {
         const resolved = ModelsService.resolveModel(model)
         if (!resolved) {
             return false
@@ -341,11 +515,15 @@ export class ModelsService {
         return tier === 'free'
     }
 
-    private static resolveModel(modelID: Model | string): Model | undefined {
+    // does an approximate match on the model id, seeing if there are any models in the
+    // cache that are contained within the given model id. This allows passing a qualified,
+    // unqualified or ModelRefStr in as the model id will be a substring
+    static resolveModel(modelID: Model | string): Model | undefined {
         if (typeof modelID !== 'string') {
             return modelID
         }
-        return ModelsService.models.find(m => m.model === modelID)
+
+        return ModelsService.models.find(m => modelID.includes(m.model))
     }
 
     /**
@@ -379,16 +557,16 @@ export class ModelsService {
         return model.tags.includes(modelTag)
     }
 }
-
 interface Storage {
     get(key: string): string | null
     set(key: string, value: string): Promise<void>
+    delete(key: string): Promise<void>
 }
 
 export function capabilityToUsage(capability: ModelCapability): ModelUsage[] {
     switch (capability) {
         case 'autocomplete':
-            return []
+            return [ModelUsage.Autocomplete]
         case 'chat':
             return [ModelUsage.Chat, ModelUsage.Edit]
     }

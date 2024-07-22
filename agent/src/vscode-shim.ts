@@ -176,7 +176,7 @@ export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments)
                 .includes(newWorkspaceDocuments.workspaceRootUri.toString())
         ) {
             workspaceFolders.push({
-                name: 'Workspace Root',
+                name: path.basename(newWorkspaceDocuments.workspaceRootUri.fsPath),
                 uri: newWorkspaceDocuments.workspaceRootUri,
                 index: 0,
             })

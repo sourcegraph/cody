@@ -14,6 +14,7 @@ import {
 import * as vscode from 'vscode'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import { EventSourceTelemetryMetadataMapping } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { GENERAL_HELP_LABEL, LARGE_FILE_WARNING_LABEL } from '../../chat/context/constants'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { executeDocCommand, executeTestEditCommand } from '../../commands/execute'
@@ -79,7 +80,12 @@ export const getInput = async (
         return null
     }
 
-    telemetryRecorder.recordEvent('cody.menu.edit', 'clicked', { privateMetadata: { source } })
+    telemetryRecorder.recordEvent('cody.menu.edit', 'clicked', {
+        metadata: {
+            source: EventSourceTelemetryMetadataMapping[source],
+        },
+        privateMetadata: { source },
+    })
 
     const initialCursorPosition = editor.selection.active
     let activeRange = initialValues.initialExpandedRange || initialValues.initialRange
@@ -204,7 +210,7 @@ export const getInput = async (
                     return
                 }
 
-                ModelsService.setDefaultModel(ModelUsage.Edit, acceptedItem.model)
+                ModelsService.setSelectedModel(ModelUsage.Edit, acceptedItem.model)
                 activeModelItem = acceptedItem
                 activeModel = acceptedItem.model
                 activeModelContextWindow = getContextWindowOnModelChange(acceptedItem.model)
@@ -254,7 +260,7 @@ export const getInput = async (
                     document,
                     { ...initialValues, initialCursorPosition },
                     activeRange,
-                    symbolsPromise
+                    activeModelContextWindow
                 ),
             buttons: [vscode.QuickInputButtons.Back],
             onDidTriggerButton: () => editInput.render(editInput.input.value),

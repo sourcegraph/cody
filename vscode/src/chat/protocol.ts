@@ -3,6 +3,7 @@ import type { URI } from 'vscode-uri'
 import type {
     AuthStatus,
     ClientStateForWebview,
+    CodyCommand,
     CodyIDE,
     ConfigurationWithAccessToken,
     ContextItem,
@@ -20,7 +21,7 @@ import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/s
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import type { Uri } from 'vscode'
-import type { View } from '../../webviews/NavBar'
+import type { View } from '../../webviews/tabs/TabsBar'
 import type { Repo } from '../context/repo-fetcher'
 
 /**
@@ -95,6 +96,7 @@ export type WebviewMessage =
           page: string
       }
     | { command: 'chatModel'; model: string }
+    | { command: 'command'; id: string; arg?: string | undefined | null }
     | { command: 'get-chat-models' }
     | {
           command: 'openFile'
@@ -175,6 +177,7 @@ export type ExtensionMessage =
     | { type: 'view'; view: View }
     | { type: 'errors'; errors: string }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
+    | { type: 'commands'; commands: CodyCommand[] }
     /**
      * Context files returned from a @-mention search
      */
@@ -184,6 +187,9 @@ export type ExtensionMessage =
       }
     | { type: 'clientState'; value: ClientStateForWebview }
     | { type: 'clientAction'; addContextItemsToLastHumanInput: ContextItem[] }
+    /**
+     * The current default model will always be the first one on the list.
+     */
     | { type: 'chatModels'; models: Model[] }
     | { type: 'enhanced-context'; enhancedContextStatus: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
@@ -193,6 +199,7 @@ export type ExtensionMessage =
           configFeatures: {
               chat: boolean
               attribution: boolean
+              serverSentModels: boolean
           }
       }
     | {

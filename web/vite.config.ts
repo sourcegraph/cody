@@ -14,7 +14,6 @@ const fakeProcessEnv: Record<string, string | boolean> = {
     NODE_ENV: 'production',
     NODE_DEBUG: false,
     TESTING_DOTCOM_URL: 'https://sourcegraph.com',
-    CODY_SUPPRESS_AGENT_AUTOCOMPLETE_WARNING: true,
     CODY_WEB_DONT_SET_SOME_HEADERS: true,
     LSP_LIGHT_LOGGING_ENABLED: false,
     LSP_LIGHT_CACHE_DISABLED: false,

@@ -33,6 +33,7 @@ import {
     allMentionProvidersMetadata,
     featureFlagProvider,
     hydrateAfterPostMessage,
+    inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
     isDefined,
     isError,
@@ -54,12 +55,13 @@ import { isContextWindowLimitError } from '@sourcegraph/cody-shared/src/sourcegr
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { URI } from 'vscode-uri'
 import { version as VSCEVersion } from '../../../package.json'
-import type { View } from '../../../webviews/NavBar'
+import { View } from '../../../webviews/tabs/TabsBar'
 import {
     closeAuthProgressIndicator,
     startAuthProgressIndicator,
 } from '../../auth/auth-progress-indicator'
 import type { startTokenReceiver } from '../../auth/token-receiver'
+import { getCodyCommandList } from '../../commands/CommandsController'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
 import { experimentalUnitTestMessageSubmission } from '../../commands/execute/test-chat-experimental'
@@ -92,6 +94,7 @@ import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
 import { startClientStateBroadcaster } from '../clientStateBroadcaster'
 import { getChatContextItemsForMention } from '../context/chatContext'
+import type { ContextAPIClient } from '../context/contextAPIClient'
 import type {
     ChatSubmitType,
     ConfigurationSubsetForWebview,
@@ -121,6 +124,7 @@ interface ChatControllerOptions {
     models: Model[]
     guardrails: Guardrails
     startTokenReceiver?: typeof startTokenReceiver
+    contextAPIClient: ContextAPIClient | null
 }
 
 export interface ChatSession {
@@ -169,11 +173,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly remoteSearch: RemoteSearch | null
     private readonly repoPicker: RemoteRepoPicker | null
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
+    private readonly contextAPIClient: ContextAPIClient | null
 
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
     private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
 
     private disposables: vscode.Disposable[] = []
+
     public dispose(): void {
         vscode.Disposable.from(...this.disposables).dispose()
         this.disposables = []
@@ -191,6 +197,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         guardrails,
         enterpriseContext,
         startTokenReceiver,
+        contextAPIClient,
     }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
@@ -206,6 +213,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.guardrails = guardrails
         this.startTokenReceiver = startTokenReceiver
+        this.contextAPIClient = contextAPIClient
 
         if (TestSupport.instance) {
             TestSupport.instance.chatPanelProvider.set(this)
@@ -314,7 +322,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'chatModel':
                 // Because this was a user action to change the model we will set that
                 // as a global default for chat
-                await ModelsService.setDefaultModel(ModelUsage.Chat, message.model)
+                await ModelsService.setSelectedModel(ModelUsage.Chat, message.model)
                 this.handleSetChatModel(message.model)
                 break
             case 'get-chat-models':
@@ -386,9 +394,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             case 'restoreHistory':
                 await this.restoreSession(message.chatID)
+                this.setWebviewView(View.Chat)
                 break
             case 'reset':
                 await this.clearAndRestartSession()
+                break
+            case 'command':
+                vscode.commands.executeCommand(message.id, message.arg)
                 break
             case 'event':
                 // no-op, legacy v1 telemetry has been removed. This should be removed as well.
@@ -535,7 +547,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         void this.sendConfig()
 
         // Get the latest model list available to the current user to update the ChatModel.
-        this.handleSetChatModel(getDefaultModelID(this.authProvider.getAuthStatus()))
+        this.handleSetChatModel(getDefaultModelID(authStatus))
     }
 
     // When the webview sends the 'ready' message, respond by posting the view config
@@ -558,6 +570,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
+        })
+        await this.postMessage({
+            type: 'commands',
+            commands: getCodyCommandList(),
         })
     }
 
@@ -629,64 +645,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 sessionID: this.chatModel.sessionID,
                 addEnhancedContext,
             }
-            const mentionsInInitialContext = mentions.filter(
-                item => item.source !== ContextItemSource.User
+            await this.recordChatQuestionTelemetryEvent(
+                authStatus,
+                addEnhancedContext,
+                mentions,
+                sharedProperties,
+                inputText
             )
-            const mentionsByUser = mentions.filter(item => item.source === ContextItemSource.User)
-            telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
-                metadata: {
-                    // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
-                    // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                    recordsPrivateMetadataTranscript: authStatus.endpoint && authStatus.isDotCom ? 1 : 0,
-                    addEnhancedContext: addEnhancedContext ? 1 : 0,
-
-                    // All mentions
-                    mentionsTotal: mentions.length,
-                    mentionsOfRepository: mentions.filter(item => item.type === 'repository').length,
-                    mentionsOfTree: mentions.filter(item => item.type === 'tree').length,
-                    mentionsOfWorkspaceRootTree: mentions.filter(
-                        item => item.type === 'tree' && item.isWorkspaceRoot
-                    ).length,
-                    mentionsOfFile: mentions.filter(item => item.type === 'file').length,
-
-                    // Initial context mentions
-                    mentionsInInitialContext: mentionsInInitialContext.length,
-                    mentionsInInitialContextOfRepository: mentionsInInitialContext.filter(
-                        item => item.type === 'repository'
-                    ).length,
-                    mentionsInInitialContextOfTree: mentionsInInitialContext.filter(
-                        item => item.type === 'tree'
-                    ).length,
-                    mentionsInInitialContextOfWorkspaceRootTree: mentionsInInitialContext.filter(
-                        item => item.type === 'tree' && item.isWorkspaceRoot
-                    ).length,
-                    mentionsInInitialContextOfFile: mentionsInInitialContext.filter(
-                        item => item.type === 'file'
-                    ).length,
-
-                    // Explicit mentions by user
-                    mentionsByUser: mentionsByUser.length,
-                    mentionsByUserOfRepository: mentionsByUser.filter(item => item.type === 'repository')
-                        .length,
-                    mentionsByUserOfTree: mentionsByUser.filter(item => item.type === 'tree').length,
-                    mentionsByUserOfWorkspaceRootTree: mentionsByUser.filter(
-                        item => item.type === 'tree' && item.isWorkspaceRoot
-                    ).length,
-                    mentionsByUserOfFile: mentionsByUser.filter(item => item.type === 'file').length,
-                },
-                privateMetadata: {
-                    ...sharedProperties,
-                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
-                    // V2 telemetry exports privateMetadata only for DotCom users
-                    // the condition below is an additional safeguard measure
-                    promptText:
-                        authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
-                    gitMetadata:
-                        authStatus.isDotCom && addEnhancedContext
-                            ? await this.getRepoMetadataIfPublic()
-                            : '',
-                },
-            })
 
             tracer.startActiveSpan('chat.submit.firstToken', async (firstTokenSpan): Promise<void> => {
                 if (inputText.toString().match(/^\/reset$/)) {
@@ -706,6 +671,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 abortSignal.throwIfAborted()
 
                 this.postEmptyMessageInProgress()
+                this.contextAPIClient?.detectChatIntent(requestID, inputText.toString())
 
                 // Add user's current selection as context for chat messages.
                 const selectionContext = source === 'chat' ? await getContextFileFromSelection() : []
@@ -730,6 +696,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 const config = getConfiguration()
                 const contextStrategy = await getContextStrategy(config.useContext)
                 span.setAttribute('strategy', contextStrategy)
+
+                // Remove context chips (repo, @-mentions) from the input text for context retrieval.
+                const inputTextWithoutContextChips = editorState
+                    ? PromptString.unsafe_fromUserQuery(
+                          inputTextWithoutContextChipsFromPromptEditorState(editorState)
+                      )
+                    : inputText
+
                 const prompter = new DefaultPrompter(
                     userContextItems,
                     addEnhancedContext || hasCorpusMentions
@@ -747,9 +721,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                         chatClient: this.chatClient,
                                         chatModel: this.chatModel,
                                     })
-                                  : inputText
-
-                              return getEnhancedContext({
+                                  : inputTextWithoutContextChips
+                              const context = getEnhancedContext({
                                   strategy: contextStrategy,
                                   editor: this.editor,
                                   input: { text: rewrite, mentions },
@@ -761,6 +734,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                   },
                                   contextRanking: this.contextRanking,
                               })
+                              // add a callback, but return the original context
+                              context.then(c =>
+                                  this.contextAPIClient?.rankContext(
+                                      requestID,
+                                      inputTextWithoutContextChips.toString(),
+                                      c
+                                  )
+                              )
+                              return context
                           }
                         : undefined,
                     command !== undefined
@@ -794,7 +776,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }
 
                 try {
-                    const prompt = await this.buildPrompt(prompter, abortSignal, sendTelemetry)
+                    const prompt = await this.buildPrompt(
+                        prompter,
+                        abortSignal,
+                        requestID,
+                        sendTelemetry
+                    )
                     abortSignal.throwIfAborted()
                     this.streamAssistantResponse(requestID, prompt, span, firstTokenSpan, abortSignal)
                 } catch (error) {
@@ -919,14 +906,24 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.contextFilesQueryCancellation = cancellation
 
         const source = 'chat'
+
+        // Use numerical mapping to send source values to metadata, making this data available on all instances.
+        const atMentionSourceTelemetryMetadataMapping: Record<typeof source, number> = {
+            chat: 1,
+        } as const
+
         const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
             empty: () => {
                 telemetryRecorder.recordEvent('cody.at-mention', 'executed', {
+                    metadata: {
+                        source: atMentionSourceTelemetryMetadataMapping[source],
+                    },
                     privateMetadata: { source },
                 })
             },
             withProvider: (provider, providerMetadata) => {
                 telemetryRecorder.recordEvent(`cody.at-mention.${provider}`, 'executed', {
+                    metadata: { source: atMentionSourceTelemetryMetadataMapping[source] },
                     privateMetadata: { source, providerMetadata },
                 })
             },
@@ -1158,6 +1155,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async buildPrompt(
         prompter: DefaultPrompter,
         abortSignal: AbortSignal,
+        requestID: string,
         sendTelemetry?: (contextSummary: any, privateContextSummary?: any) => void
     ): Promise<Message[]> {
         const { prompt, context } = await prompter.makePrompt(
@@ -1169,6 +1167,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // Update UI based on prompt construction
         // Includes the excluded context items to display in the UI
         this.chatModel.setLastMessageContext([...context.used, ...context.ignored])
+        // this is not awaited, so we kick the call off but don't block on it returning
+        this.contextAPIClient?.recordContext(requestID, context.used, context.ignored)
 
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being
@@ -1520,11 +1520,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async resolveWebviewViewOrPanel(
         viewOrPanel: vscode.WebviewView | vscode.WebviewPanel
     ): Promise<vscode.WebviewView | vscode.WebviewPanel> {
-        if (this.webviewPanelOrView) {
-            throw new Error('webview already created')
-        }
         this._webviewPanelOrView = viewOrPanel
-
         this.syncPanelTitle()
 
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
@@ -1565,6 +1561,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // to some default values:
                 chat: clientConfig?.chatEnabled ?? true,
                 attribution: clientConfig?.attributionEnabled ?? false,
+                serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
             },
         })
 
@@ -1580,7 +1577,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             await vscode.commands.executeCommand('setContext', 'cody.activated', false)
             return
         }
-
         const viewOrPanel = this._webviewPanelOrView ?? (await this.createWebviewViewOrPanel())
 
         revealWebviewViewOrPanel(viewOrPanel)
@@ -1599,6 +1595,71 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // Convenience function for tests
     public getViewTranscript(): readonly ChatMessage[] {
         return this.chatModel.getMessages().map(prepareChatMessage)
+    }
+
+    private async recordChatQuestionTelemetryEvent(
+        authStatus: AuthStatus,
+        addEnhancedContext: boolean,
+        mentions: ContextItem[],
+        sharedProperties: any,
+        inputText: PromptString
+    ): Promise<void> {
+        const mentionsInInitialContext = mentions.filter(item => item.source !== ContextItemSource.User)
+        const mentionsByUser = mentions.filter(item => item.source === ContextItemSource.User)
+        telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
+            metadata: {
+                // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
+                // See https://github.com/sourcegraph/sourcegraph/pull/59524
+                recordsPrivateMetadataTranscript: authStatus.endpoint && authStatus.isDotCom ? 1 : 0,
+                addEnhancedContext: addEnhancedContext ? 1 : 0,
+
+                // All mentions
+                mentionsTotal: mentions.length,
+                mentionsOfRepository: mentions.filter(item => item.type === 'repository').length,
+                mentionsOfTree: mentions.filter(item => item.type === 'tree').length,
+                mentionsOfWorkspaceRootTree: mentions.filter(
+                    item => item.type === 'tree' && item.isWorkspaceRoot
+                ).length,
+                mentionsOfFile: mentions.filter(item => item.type === 'file').length,
+
+                // Initial context mentions
+                mentionsInInitialContext: mentionsInInitialContext.length,
+                mentionsInInitialContextOfRepository: mentionsInInitialContext.filter(
+                    item => item.type === 'repository'
+                ).length,
+                mentionsInInitialContextOfTree: mentionsInInitialContext.filter(
+                    item => item.type === 'tree'
+                ).length,
+                mentionsInInitialContextOfWorkspaceRootTree: mentionsInInitialContext.filter(
+                    item => item.type === 'tree' && item.isWorkspaceRoot
+                ).length,
+                mentionsInInitialContextOfFile: mentionsInInitialContext.filter(
+                    item => item.type === 'file'
+                ).length,
+
+                // Explicit mentions by user
+                mentionsByUser: mentionsByUser.length,
+                mentionsByUserOfRepository: mentionsByUser.filter(item => item.type === 'repository')
+                    .length,
+                mentionsByUserOfTree: mentionsByUser.filter(item => item.type === 'tree').length,
+                mentionsByUserOfWorkspaceRootTree: mentionsByUser.filter(
+                    item => item.type === 'tree' && item.isWorkspaceRoot
+                ).length,
+                mentionsByUserOfFile: mentionsByUser.filter(item => item.type === 'file').length,
+            },
+            privateMetadata: {
+                ...sharedProperties,
+                // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                // V2 telemetry exports privateMetadata only for DotCom users
+                // the condition below is an additional safeguard measure
+                promptText:
+                    authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
+                gitMetadata:
+                    authStatus.isDotCom && addEnhancedContext
+                        ? await this.getRepoMetadataIfPublic()
+                        : '',
+            },
+        })
     }
 }
 

@@ -114,7 +114,7 @@ export interface InlineCompletionsResult {
 }
 
 /**
- * The source of the inline completions result.
+ * The source of the inline completions result. Using numerical values so telemetry can be recorded on `metadata`
  */
 export enum InlineCompletionsResultSource {
     Network = 'Network',
@@ -131,7 +131,19 @@ export enum InlineCompletionsResultSource {
      */
     LastCandidate = 'LastCandidate',
 }
-
+/**
+ * Create a mapping of all inline completion sources to numerical values, so telemetry can be recorded on `metadata`.
+ */
+export const InlineCompletionsResultSourceTelemetryMetadataMapping: Record<
+    InlineCompletionsResultSource,
+    number
+> = {
+    [InlineCompletionsResultSource.Network]: 1,
+    [InlineCompletionsResultSource.Cache]: 2,
+    [InlineCompletionsResultSource.HotStreak]: 3,
+    [InlineCompletionsResultSource.CacheAfterRequestStart]: 4,
+    [InlineCompletionsResultSource.LastCandidate]: 5,
+}
 /**
  * Extends the default VS Code trigger kind to distinguish between manually invoking a completion
  * via the keyboard shortcut and invoking a completion via hovering over ghost text.
@@ -148,6 +160,12 @@ export enum TriggerKind {
 
     /** When the user uses the suggest widget to cycle through different completions. */
     SuggestWidget = 'SuggestWidget',
+}
+export const TriggerKindTelemetryMetadataMapping: Record<TriggerKind, number> = {
+    [TriggerKind.Hover]: 1,
+    [TriggerKind.Automatic]: 2,
+    [TriggerKind.Manual]: 3,
+    [TriggerKind.SuggestWidget]: 4,
 }
 
 export function allTriggerKinds(): TriggerKind[] {
@@ -299,7 +317,7 @@ async function doGetInlineCompletions(
     // all.
     CompletionLogger.flushActiveSuggestionRequests(isDotComUser)
     const multiline = Boolean(multilineTrigger)
-    const logId = CompletionLogger.create({
+    let logId = CompletionLogger.create({
         multiline,
         triggerKind,
         providerIdentifier: providerConfig.identifier,
@@ -452,13 +470,22 @@ async function doGetInlineCompletions(
     stageRecorder.record('preNetworkRequest')
 
     // Get the processed completions from providers
-    const { completions, source } = await requestManager.request({
+    const { completions, source, updatedLogId } = await requestManager.request({
+        logId: logId,
         requestParams,
         provider: completionProvider,
         context: contextResult?.context ?? [],
         isCacheEnabled: triggerKind !== TriggerKind.Manual,
         tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,
     })
+
+    if (updatedLogId !== undefined) {
+        // If we have a new `updatedLogId`, we need to use this.
+        // This will usually be because we have determine that we want to re-use an existing result
+        // from the request manager. For example, if a result is recycled for this in-flight request,
+        // we will use the logId of the recycled result, ensuring that we do not have duplicate logging.
+        logId = updatedLogId
+    }
 
     const inlineContextParams = {
         context: contextResult?.context,

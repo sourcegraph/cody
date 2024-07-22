@@ -98,6 +98,7 @@ export enum CodyIDE {
     Neovim = 'Neovim',
     Emacs = 'Emacs',
     Web = 'Web',
+    VisualStudio = 'VisualStudio',
 }
 
 export interface AutocompleteTimeouts {

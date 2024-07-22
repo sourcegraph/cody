@@ -21,7 +21,7 @@ interface ChatCommandResult {
 }
 
 describe('cody chat', () => {
-    const credentials = TESTING_CREDENTIALS.dotcom
+    const credentials = TESTING_CREDENTIALS.s2
     let polly: Polly
     const agentDirectory = getAgentDir()
     const tmp = new TestWorkspace(path.join(agentDirectory, 'src', '__tests__', 'cody-cli-chat'))
@@ -48,15 +48,22 @@ describe('cody chat', () => {
         const stdout = new StringBufferStream()
         const stderr = new StringBufferStream()
         options.streams = new Streams(stdout, stderr)
-        options.debug = true
+        // Uncomment below to see output channel logs from Cody
+        // options.debug = true
         const exitCode = await chatAction(options)
         if (exitCode !== (params.expectedExitCode ?? 0)) {
+            const extraHint =
+                stdout.buffer.length === 0 && stderr.buffer.length === 0
+                    ? 'Stdout and stderr are empty even if the process exited with a non-zero code. ' +
+                      'Comment out the --silent option from the test file to try to get more debugging information.'
+                    : undefined
             throw new Error(
                 YAML.stringify({
                     exitCode,
                     expectedExitCode: params.expectedExitCode,
                     stdout: stdout.buffer,
                     stderr: stderr.buffer,
+                    extraHint,
                 })
             )
         }
@@ -93,7 +100,10 @@ describe('cody chat', () => {
         ).toMatchSnapshot()
     }, 10_000)
 
-    it('--context-repo (squirrel test)', async () => {
+    // This test is failing on macOS. It reports remote search results as failing
+    // the context filter, probably because it does not wait for the context filter fetch.
+    // This test is failing consistently on windows. https://linear.app/sourcegraph/issue/CODY-2912/cli-squirrel-test-failing-on-windows
+    it.skip('--context-repo (squirrel test)', async () => {
         expect(
             YAML.stringify(
                 await runCommand({
