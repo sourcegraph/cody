@@ -32,6 +32,7 @@ import {
     Typewriter,
     allMentionProvidersMetadata,
     featureFlagProvider,
+    graphqlClient,
     hydrateAfterPostMessage,
     inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
@@ -107,24 +108,34 @@ import { chatHistory } from './ChatHistoryManager'
 import { ChatModel, prepareChatMessage } from './ChatModel'
 import { CodyChatEditorViewType } from './ChatsController'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
+import type { BaseContextFetcher } from './ContextFetcher'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, openFile } from './chat-helpers'
-import { getContextStrategy, getEnhancedContext } from './context'
+import {
+    type HumanInput,
+    getContextStrategy,
+    remoteRepositoryIDsFromHumanInput,
+    remoteRepositoryURIsForLocalTrees,
+} from './context'
 import { DefaultPrompter } from './prompt'
 
 interface ChatControllerOptions {
     extensionUri: vscode.Uri
     authProvider: AuthProvider
     chatClient: ChatClient
+
     localEmbeddings: LocalEmbeddingsController | null
     contextRanking: ContextRankingController | null
     symf: SymfRunner | null
     enterpriseContext: EnterpriseContextFactory | null
+
+    contextFetcher: BaseContextFetcher
+    contextAPIClient: ContextAPIClient | null
+
     editor: VSCodeEditor
     models: Model[]
     guardrails: Guardrails
     startTokenReceiver?: typeof startTokenReceiver
-    contextAPIClient: ContextAPIClient | null
 }
 
 export interface ChatSession {
@@ -164,13 +175,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly authProvider: AuthProvider
     private readonly chatClient: ChatClient
     private readonly codebaseStatusProvider: CodebaseStatusProvider
+
     private readonly localEmbeddings: LocalEmbeddingsController | null
     private readonly contextRanking: ContextRankingController | null
     private readonly symf: SymfRunner | null
+    private readonly remoteSearch: RemoteSearch | null
+
+    private readonly contextFetcher: BaseContextFetcher
+
     private readonly contextStatusAggregator = new ContextStatusAggregator()
     private readonly editor: VSCodeEditor
     private readonly guardrails: Guardrails
-    private readonly remoteSearch: RemoteSearch | null
     private readonly repoPicker: RemoteRepoPicker | null
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
     private readonly contextAPIClient: ContextAPIClient | null
@@ -193,11 +208,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         contextRanking,
         symf,
         editor,
-        models,
         guardrails,
         enterpriseContext,
         startTokenReceiver,
         contextAPIClient,
+        contextFetcher,
     }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
@@ -208,6 +223,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.repoPicker = enterpriseContext?.repoPicker || null
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
+
+        this.contextFetcher = contextFetcher
 
         this.chatModel = new ChatModel(getDefaultModelID())
 
@@ -722,18 +739,22 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                         chatModel: this.chatModel,
                                     })
                                   : inputTextWithoutContextChips
-                              const context = getEnhancedContext({
-                                  strategy: contextStrategy,
-                                  editor: this.editor,
-                                  input: { text: rewrite, mentions },
-                                  addEnhancedContext,
-                                  providers: {
-                                      localEmbeddings: this.localEmbeddings,
-                                      symf: this.symf,
-                                      remoteSearch: this.remoteSearch,
-                                  },
-                                  contextRanking: this.contextRanking,
-                              })
+
+                              const context = this.fetchContext({ text: rewrite, mentions })
+
+                              //   const context = getEnhancedContext({
+                              //       strategy: contextStrategy,
+                              //       editor: this.editor,
+                              //       input: { text: rewrite, mentions },
+                              //       addEnhancedContext,
+                              //       providers: {
+                              //           localEmbeddings: this.localEmbeddings,
+                              //           symf: this.symf,
+                              //           remoteSearch: this.remoteSearch,
+                              //       },
+                              //       contextRanking: this.contextRanking,
+                              //   })
+
                               // add a callback, but return the original context
                               context.then(c =>
                                   this.contextAPIClient?.rankContext(
@@ -801,6 +822,31 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }
             })
         })
+    }
+
+    private async fetchContext({ text, mentions }: HumanInput): Promise<ContextItem[]> {
+        const remoteRepoIDs = remoteRepositoryIDsFromHumanInput({ text, mentions })
+
+        const localRepoURIs = await remoteRepositoryURIsForLocalTrees({ text, mentions })
+        if (localRepoURIs.length === 0) {
+            // early return is necessary because getRepoIds will return all repos when invoked
+            // with an empty list
+            return []
+        }
+
+        const localRepoUriIds = await graphqlClient.getRepoIds(localRepoURIs, localRepoURIs.length)
+        if (isError(localRepoUriIds)) {
+            throw localRepoUriIds
+        }
+
+        const localRepoIDs = localRepoUriIds.map(r => r.id)
+        const repoIDs = remoteRepoIDs.concat(localRepoIDs)
+        const context = this.contextFetcher.fetchContext({
+            userQuery: text,
+            repoIDs,
+        })
+
+        return await context
     }
 
     private submitOrEditOperation: AbortController | undefined
