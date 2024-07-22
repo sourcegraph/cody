@@ -13,15 +13,42 @@ our [issue tracker](https://github.com/sourcegraph/cody/issues/new/choose).
 
 ### Prerequisites
 
-- Java 11: we recommend installing via SDKMAN! https://sdkman.io. Once you have SDKMAN! installed,
-  run `sdk use java 11.0.15-tem`.
-  Confirm that you have Java 11 installed with `java -version`.
-- Set up the Cody agent dev environment.
-    - Clone `https://github.com/sourcegraph/cody` in a sibling directory.
-    - Install its dependencies. The easiest way
+**Java 11:** we recommend installing via SDKMAN! https://sdkman.io. Once you have SDKMAN! installed,
+run `sdk use java 11.0.15-tem`. Confirm that you have Java 11 installed with `java -version`.
+
+> 🤞 On Windows, SDKMAN requires some Linux tools. If you don't have WSL, use the git bash environment and then:
+>
+> ```
+> winget install -e --id GnuWin32.Zip
+> mkdir ~/bin
+> cp /usr/bin/unzip ~/bin/zip  # Yes, unzip and zip are the same binary
+> curl -s "https://beta.sdkman.io" | bash
+> source "${HOME}/.sdkman/bin/sdkman-init.sh"
+> sdk selfupdate force
+> sdk use java 11.0.15-tem
+> ```
+  
+**Set up the Cody agent dev environment:**
+
+- Clone `https://github.com/sourcegraph/cody` in a sibling directory.
+- Install its dependencies. The easiest way
       is [with `asdf`](https://github.com/sourcegraph/cody/blob/main/doc/dev/index.md). If not using `asdf`, you just
       need to install the dependency versions listed in the `.tool-versions` file in that repository.
-    - From the root directory of the repository, `cd ./agent && pnpm install && pnpm build`
+- From the root directory of the repository, `cd ./agent && pnpm install && pnpm build`
+
+> 🤞 On Windows ARM64:
+> - There's no Chromium aarch64 binary (installed by Puppeteer)
+> - There's no sentry-cli aarch64 binary (Sentry.)
+>
+> To skip fetching these binaries, run:
+> 
+> ```
+> $env:PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
+> $env:SENTRYCLI_SKIP_DOWNLOAD=1
+> pnpm install
+> ```
+>
+> From this point, YMMV, but you should be able to build agent!
 
 ### Running
 
@@ -38,6 +65,12 @@ our [issue tracker](https://github.com/sourcegraph/cody/issues/new/choose).
 | Build deployable plugin                                                                                                             | `./gradlew buildPlugin` (artifact is generated in `build/distributions`) |
 | Reformat Java and Kotlin sources                                                                                                    | `./gradlew spotlessApply`                                                |
 | Debug agent JSON-RPC communication                                                                                                  | `tail -f build/sourcegraph/cody-agent-trace.json`                        |
+
+> 🤞 On Windows (ARM64 specific?), there's some problem with codesearch's svelte packages. Skip the code search build by setting this environment variable:
+>
+> ```
+> $env:SKIP_CODE_SEARCH_BUILD="true"
+> ```
 
 ### Editor config
 
