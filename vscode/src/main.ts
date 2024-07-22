@@ -117,7 +117,7 @@ export async function start(
 
     const disposables: vscode.Disposable[] = []
 
-    const authProvider = AuthProvider.create(await getFullConfig(), isExtensionModeDevOrTest)
+    const authProvider = AuthProvider.create(await getFullConfig())
     const configWatcher = await BaseConfigWatcher.create(authProvider, disposables)
     await configWatcher.onChange(
         async config => {
