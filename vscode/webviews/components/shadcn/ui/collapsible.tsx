@@ -25,7 +25,7 @@ const Collapsible: React.FC<CollapsibleProps> = ({ title, items, className, clos
             className={clsx('tw-w-full tw-flex tw-flex-col tw-gap-2 tw-self-stretch', className)}
         >
             <CollapsibleTitle title={title} />
-            <CollapsibleMenu content={items} />
+            {isOpen && <CollapsibleMenu content={items} />}
         </_Collapsible>
     )
 }
