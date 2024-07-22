@@ -17,7 +17,21 @@ export interface FixupActor {
      * tasks in the "applied" state. Sets the task state to "finished" and
      * discards the task.
      */
-    accept(task: FixupTask): void
+    accept(task: FixupTask, range: vscode.Range): Promise<void>
+
+    /**
+     * Mark a task as accepted and stop tracking the task. Only applicable to
+     * tasks in the "applied" state. Sets the task state to "finished" and
+     * discards the task.
+     */
+    acceptAll(task: FixupTask): void
+
+    /**
+     * Mark a task as rejected and stop tracking the task. Only applicable to
+     * tasks in the "applied" state. Sets the task state to "finished" and
+     * discards the task.
+     */
+    reject(task: FixupTask, range: vscode.Range): Promise<void>
 
     /**
      * Undo a task's edits and stop tracking the task. Only applicable to

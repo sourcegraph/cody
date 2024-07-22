@@ -77,7 +77,9 @@ export class FixupTask {
         public readonly telemetryMetadata: FixupTelemetryMetadata = {}
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
+
         this.instruction = instruction.replace(/^\/(edit|fix)/, ps``).trim()
+
         // We always expand the range to encompass all characters from the selection lines
         // This is so we can calculate an optimal diff, and the LLM has the best chance at understanding
         // the indentation in the returned code.
@@ -99,6 +101,12 @@ export class FixupTask {
         }
         this.state_ = state
         this.stateChanges.fire(state)
+    }
+
+    public removeEditByRange(range: vscode.Range): void {
+        if (this.diff) {
+            this.diff = this.diff.filter(edit => !edit.range.intersection(range))
+        }
     }
 
     /**
