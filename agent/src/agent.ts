@@ -1073,7 +1073,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            modelID ??= ModelsService.getDefaultChatModel(authStatus) ?? ''
+            modelID ??= ModelsService.getDefaultChatModel() ?? ''
             const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
             const chatModel = new ChatModel(modelID, chatID, chatMessages)
             await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
@@ -1086,8 +1086,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
-            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            const models = ModelsService.getModels(modelUsage, authStatus)
+            const models = ModelsService.getModels(modelUsage)
             return { models }
         })
 

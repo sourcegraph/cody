@@ -290,16 +290,6 @@ export interface LocalEnv {
     uiKindIsWeb: boolean
 }
 
-export function isLoggedIn(authStatus: AuthStatus): boolean {
-    if (!authStatus.siteHasCodyEnabled) {
-        return false
-    }
-    return (
-        authStatus.authenticated &&
-        (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
-    )
-}
-
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
 
 // Provide backward compatibility for the old token regex
