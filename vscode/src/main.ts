@@ -100,7 +100,7 @@ export async function start(
         context.extensionMode === vscode.ExtensionMode.Development || isExtensionTestMode
 
     // HACK to improve e2e test latency
-    if (!isExtensionTestMode) {
+    if (isExtensionTestMode) {
         await vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', true)
     }
 
