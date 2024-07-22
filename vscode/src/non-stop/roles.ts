@@ -69,11 +69,60 @@ export interface FixupFileCollection {
     maybeFileForUri(uri: vscode.Uri): FixupFile | undefined
 }
 
-/**
- * Sink for notifications that text related to the fixup task--either the text
- * in the file, or the text provided by Cody--has changed.
- */
 export interface FixupTextChanged {
     textDidChange(task: FixupTask): void
     rangeDidChange(task: FixupTask): void
 }
+
+/**
+ * 1. This is a comment.
+ * 2. This is another comment.
+ * 3. Yet another comment.
+ * 4. Comments are useful for documenting code.
+ * 5. They help explain what the code does.
+ * 6. Comments can also be used to temporarily disable code.
+ * 7. This is done by using block comments.
+ * 8. Block comments start with /* and end with */.
+ * 9. Anything between /* and */ is ignored by the compiler.
+ * 10. This can be useful for debugging.
+ * 11. You can comment out code that is causing problems.
+ * 12. Then you can narrow down where the problem is.
+ * 13. Comments can also be used to generate documentation.
+ * 14. There are tools that can generate docs from comments.
+ * 15. This can be very helpful for large projects.
+ * 16. It ensures the docs are always up to date with the code.
+ * 17. Comments should be clear and concise.
+ * 18. They should explain what the code does, not how it does it.
+ * 19. The code itself should be self-explanatory.
+ * 20. If the code is complex, that's when comments are needed.
+ * 21. But don't go overboard with comments.
+ * 22. Too many comments can actually make the code harder to read.
+ * 23. It's a fine balance.
+ * 24. Comments should also be kept up to date.
+ * 25. If the code changes, the comments should be updated too.
+ * 26. Outdated comments can be very misleading.
+ * 27. So it's important to keep them current.
+ * 28. Some common tags used in comments are @param, @return, @throws.
+ * 29. These are used by documentation generators.
+ * 30. @param is used to document function parameters.
+ * 31. It explains what the parameter is for.
+ * 32. @return is used to document the return value of a function.
+ * 33. It explains what the function returns.
+ * 34. @throws is used to document exceptions that a function may throw.
+ * 35. This lets the caller know what to expect.
+ * 36. There are many other tags like @see, @author, @version, etc.
+ * 37. The specific tags depend on the documentation tool being used.
+ * 38. Comments can also include TODO items.
+ * 39. These are notes about things that need to be done in the future.
+ * 40. For example: // TODO: Refactor this code to be more efficient.
+ * 41. TODOs are useful for keeping track of tasks.
+ * 42. But they should be resolved in a timely manner.
+ * 43. Otherwise the codebase can become littered with old TODOs.
+ * 44. Comments are a fundamental part of programming.
+ * 45. They are used in every language.
+ * 46. The syntax may differ, but the concept is the same.
+ * 47. Well-commented code is a sign of a good developer.
+ * 48. It shows they care about maintainability and collaboration.
+ * 49. So use comments judiciously and keep them up to date.
+ * 50. Your future self and other developers will thank you!
+ */

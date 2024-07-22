@@ -91,6 +91,8 @@ export function reuseLastCandidate({
         return null
     }
 
+    console.log('CAN REUSE!!')
+
     // The currentLinePrefix might have an injected prefix. This is usually expected, since we want
     // to use eventual suggest widget state to guide the completion, but ofr the last candidate
     // logic we need to get the line prefix as it appears in the document and there, the prefix is
@@ -123,6 +125,9 @@ export function reuseLastCandidate({
             const isTypingAsSuggested =
                 lastCompletion.startsWith(currentLinePrefix) &&
                 position.isAfterOrEqual(lastTriggerPosition)
+
+            console.log(lastCompletion.startsWith(currentLinePrefix), 'as suggestrd')
+            console.log({ position, lastTriggerPosition, lastCompletion })
 
             if (isTypingAsSuggested) {
                 const remaining = lastCompletion.slice(currentLinePrefix.length)

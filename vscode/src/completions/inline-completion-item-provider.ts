@@ -352,6 +352,17 @@ export class InlineCompletionItemProvider
                 let position: vscode.Position = invokedPosition
                 let context: vscode.InlineCompletionContext | undefined = invokedContext
 
+                console.log(
+                    'CALLING',
+                    document.getText(
+                        new vscode.Range(
+                            invokedPosition.line,
+                            0,
+                            invokedPosition.line,
+                            Number.MAX_SAFE_INTEGER
+                        )
+                    )
+                )
                 const result = await this.getInlineCompletions({
                     document,
                     position,
@@ -382,6 +393,8 @@ export class InlineCompletionItemProvider
                     isDotComUser: this.config.isDotComUser,
                     stageRecorder,
                 })
+
+                console.log('GOT RESULT', result)
 
                 // Do not increment the `preFinalCancellationCheck` counter if the result is empty.
                 // We don't have an opportunity to show a completion if it's empty.
@@ -521,6 +534,7 @@ export class InlineCompletionItemProvider
                 }
 
                 if (!this.config.isRunningInsideAgent) {
+                    console.log('IS VISIBLE')
                     // Since VS Code has no callback as to when a completion is shown, we assume
                     // that if we pass the above visibility tests, the completion is going to be
                     // rendered in the UI

@@ -979,6 +979,7 @@ export function logSuggestionEvents(isDotComUser: boolean): void {
             }
         }
 
+        console.log('UMPOX: SUGGESTED:', completionEvent.items[0].insertText)
         logCompletionSuggestedEvent(isDotComUser, inlineCompletionItemContext, {
             ...getSharedParams(completionEvent),
             latency,

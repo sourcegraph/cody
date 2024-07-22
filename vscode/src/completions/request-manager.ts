@@ -113,6 +113,8 @@ export class RequestManager {
         const request = new InflightRequest(requestParams, abortController)
         this.inflightRequests.add(request)
 
+        console.log('Inflight requests:', this.inflightRequests.size)
+
         const generateCompletions = async (): Promise<void> => {
             try {
                 for await (const fetchCompletionResults of provider.generateCompletions(
@@ -120,6 +122,7 @@ export class RequestManager {
                     context,
                     tracer
                 )) {
+                    console.log('GOT RESULT COMPLETION')
                     const [hotStreakCompletions, currentCompletions] = partition(
                         fetchCompletionResults.filter(isDefined),
                         result => result.completion.stopReason === STOP_REASON_HOT_STREAK
