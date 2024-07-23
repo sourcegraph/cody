@@ -994,6 +994,9 @@ const _env: Partial<typeof vscode.env> = {
         readText: () => Promise.resolve(''),
         writeText: () => Promise.resolve(),
     },
+    openExternal: (uri: vscode.Uri): Thenable<boolean> => {
+        return agent?.request('env/openExternal', { uri: uri.toString() }) ?? Promise.resolve(false)
+    },
 }
 export const env = _env as typeof vscode.env
 
