@@ -73,7 +73,7 @@ export interface MultiModelCompletionsResults {
 interface CompletionRequest {
     document: vscode.TextDocument
     position: vscode.Position
-    context: vscode.InlineCompletionContext
+    context: vscode.InlineCompletionContext | undefined
 }
 export class InlineCompletionItemProvider
     implements vscode.InlineCompletionItemProvider, vscode.Disposable
@@ -525,7 +525,7 @@ export class InlineCompletionItemProvider
                     // Since VS Code has no callback as to when a completion is shown, we assume
                     // that if we pass the above visibility tests, the completion is going to be
                     // rendered in the UI
-                    this.unstable_handleDidShowCompletionItem(visibleItems[0], invokedContext)
+                    this.unstable_handleDidShowCompletionItem(visibleItems[0])
                 }
 
                 recordExposedExperimentsToSpan(span)
@@ -615,19 +615,13 @@ export class InlineCompletionItemProvider
      * same name, it's prefixed with `unstable_` to avoid a clash when the new API goes GA.
      */
     public unstable_handleDidShowCompletionItem(
-        completionOrItemId: AutocompleteItem | CompletionItemID,
-        invokedContext?: vscode.InlineCompletionContext,
-        takeSuggestWidgetSelectionIntoAccount = false
+        completionOrItemId: AutocompleteItem | CompletionItemID
     ): void {
         const completion = suggestedAutocompleteItemsCache.get(completionOrItemId)
         if (!completion) {
             return
         }
-        this.markCompletionAsSuggestedAfterDelay(
-            completion,
-            invokedContext,
-            takeSuggestWidgetSelectionIntoAccount
-        )
+        this.markCompletionAsSuggestedAfterDelay(completion)
     }
 
     /**
@@ -641,11 +635,7 @@ export class InlineCompletionItemProvider
      *
      * Will confirm that the completion is _still_ visible before firing the event.
      */
-    private markCompletionAsSuggestedAfterDelay(
-        completion: AutocompleteItem,
-        invokedContext?: vscode.InlineCompletionContext,
-        takeSuggestWidgetSelectionIntoAccount = false
-    ): void {
+    private markCompletionAsSuggestedAfterDelay(completion: AutocompleteItem): void {
         const suggestionEvent = CompletionLogger.prepareSuggestionEvent(
             completion.logId,
             completion.span
@@ -656,8 +646,12 @@ export class InlineCompletionItemProvider
 
         setTimeout(() => {
             const activeEditor = vscode.window.activeTextEditor
-            if (!activeEditor) {
-                // User is no longer in the same document, completion cannot be visible
+
+            if (
+                !activeEditor ||
+                activeEditor.document.uri.toString() !== completion.requestParams.document.uri.toString()
+            ) {
+                // User is no longer in the same document as the completion
                 return
             }
 
@@ -666,8 +660,15 @@ export class InlineCompletionItemProvider
             // If the cursor position is the same as the position of the completion request, we should use
             // the provided context. This allows us to re-use useful information such as `selectedCompletionInfo`
             const latestContext = latestCursorPosition.isEqual(completion.requestParams.position)
-                ? invokedContext
+                ? completion.context
                 : undefined
+
+            const takeSuggestWidgetSelectionIntoAccount =
+                this.shouldTakeSuggestWidgetSelectionIntoAccount(this.lastCompletionRequest, {
+                    document: activeEditor.document,
+                    position: latestCursorPosition,
+                    context: completion.context,
+                })
 
             const isStillVisible = isCompletionVisible(
                 completion,
