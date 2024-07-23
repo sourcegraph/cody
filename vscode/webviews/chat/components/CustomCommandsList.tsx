@@ -1,7 +1,7 @@
 import { type CodyCommand, CodyIDE, CustomCommandType } from '@sourcegraph/cody-shared'
 import { PencilRulerIcon } from 'lucide-react'
 import type { FunctionComponent } from 'react'
-import { ExpandableContainer } from '../../components/ExpandableContainer'
+import { CollapsiblePanel } from '../../components/CollapsiblePanel'
 import { Button } from '../../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 
@@ -32,5 +32,5 @@ export const CustomCommandsList: FunctionComponent<{ commands: CodyCommand[]; ID
         </Button>
     ))
 
-    return <ExpandableContainer title="Custom Commands" items={customCommands} />
+    return <CollapsiblePanel title="Custom Commands" items={customCommands} />
 }

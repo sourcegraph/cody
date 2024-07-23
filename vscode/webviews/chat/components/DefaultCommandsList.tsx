@@ -8,7 +8,7 @@ import {
     TextSearchIcon,
 } from 'lucide-react'
 import { type FunctionComponent, useMemo } from 'react'
-import { ExpandableContainer } from '../../components/ExpandableContainer'
+import { CollapsiblePanel } from '../../components/CollapsiblePanel'
 import { Button } from '../../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 
@@ -42,5 +42,5 @@ export const DefaultCommandsList: FunctionComponent<{ IDE?: CodyIDE }> = ({ IDE 
         </Button>
     ))
 
-    return <ExpandableContainer title="Commands" items={commands} />
+    return <CollapsiblePanel title="Commands" items={commands} />
 }

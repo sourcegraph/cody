@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import type { FunctionComponent } from 'react'
 import type React from 'react'
-import { ExpandableContainer } from '../../components/ExpandableContainer'
+import { CollapsiblePanel } from '../../components/CollapsiblePanel'
 import { Kbd } from '../../components/Kbd'
 import { DefaultCommandsList } from './DefaultCommandsList'
 
@@ -61,10 +61,10 @@ const ChatHelp: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => {
     )
 
     if (IDE === CodyIDE.VSCode) {
-        return <ExpandableContainer title="Chat Help" items={[commonFeatures, vscodeFeatures]} />
+        return <CollapsiblePanel title="Chat Help" items={[commonFeatures, vscodeFeatures]} />
     }
 
-    return <ExpandableContainer title="Chat Help" items={commonFeatures} />
+    return <CollapsiblePanel title="Chat Help" items={commonFeatures} />
 }
 
 export const localStorageKey = 'chat.welcome-message-dismissed'

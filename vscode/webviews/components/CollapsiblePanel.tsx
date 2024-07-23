@@ -4,14 +4,14 @@ import React from 'react'
 import { Button } from './shadcn/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './shadcn/ui/collapsible'
 
-interface ExpandableContainerProps {
+interface CollapsiblePanelProps {
     title: string
     items: React.ReactNode
     className?: string
     closeByDefault?: boolean
 }
 
-const ExpandableContainer: React.FC<ExpandableContainerProps> = ({
+const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
     title,
     items,
     className,
@@ -44,4 +44,4 @@ const ExpandableContainer: React.FC<ExpandableContainerProps> = ({
     )
 }
 
-export { ExpandableContainer }
+export { CollapsiblePanel }
