@@ -6,7 +6,10 @@ import { TelemetryRecorderContext } from './utils/telemetry'
 
 export const AppWrapper: FunctionComponent<{ children: ReactNode }> = ({ children }) => {
     return (
-        <TooltipProvider disableHoverableContent={true} delayDuration={700} skipDelayDuration={1000}>
+        // (tim): The default delayDuration of 300 felt a little low to go from
+        // the left to the right of the panel. I increased it to 600, but any
+        // higher feels too "sticky"
+        <TooltipProvider disableHoverableContent={true} delayDuration={600}>
             <ClientActionListenersContextProvider>{children}</ClientActionListenersContextProvider>
         </TooltipProvider>
     )
