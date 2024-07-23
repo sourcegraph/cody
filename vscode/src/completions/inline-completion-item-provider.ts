@@ -73,12 +73,11 @@ export interface MultiModelCompletionsResults {
 interface CompletionRequest {
     document: vscode.TextDocument
     position: vscode.Position
-    context: vscode.InlineCompletionContext | undefined
+    context: vscode.InlineCompletionContext
 }
 export class InlineCompletionItemProvider
     implements vscode.InlineCompletionItemProvider, vscode.Disposable
 {
-    private lastCompletionRequest: CompletionRequest | null = null
     private latestCompletionRequest: CompletionRequest | null = null
     // This field is going to be set if you use the keyboard shortcut to manually trigger a
     // completion. Since VS Code does not provide a way to distinguish manual vs automatic
@@ -228,7 +227,7 @@ export class InlineCompletionItemProvider
             }
 
             // Update the last request
-            this.lastCompletionRequest = this.latestCompletionRequest
+            const lastCompletionRequest = this.latestCompletionRequest
             const completionRequest: CompletionRequest = {
                 document,
                 position: invokedPosition,
@@ -293,7 +292,7 @@ export class InlineCompletionItemProvider
 
             const takeSuggestWidgetSelectionIntoAccount =
                 this.shouldTakeSuggestWidgetSelectionIntoAccount(
-                    this.lastCompletionRequest,
+                    lastCompletionRequest,
                     completionRequest
                 )
             const triggerKind = isManualCompletion
@@ -403,6 +402,16 @@ export class InlineCompletionItemProvider
                     return null
                 }
 
+                const autocompleteItems = analyticsItemToAutocompleteItem(
+                    result.logId,
+                    document,
+                    docContext,
+                    position,
+                    result.items,
+                    context,
+                    span
+                )
+
                 const latestCursorPosition = vscode.window.activeTextEditor?.selection.active
                 if (
                     latestCursorPosition !== undefined &&
@@ -424,16 +433,6 @@ export class InlineCompletionItemProvider
                         takeSuggestWidgetSelectionIntoAccount
                     )
                 }
-
-                const autocompleteItems = analyticsItemToAutocompleteItem(
-                    result.logId,
-                    document,
-                    docContext,
-                    position,
-                    result.items,
-                    context,
-                    span
-                )
 
                 // Checks if the current line prefix length is less than or equal to the last triggered prefix length
                 // If true, that means user has backspaced/deleted characters to trigger a new completion request,
@@ -524,6 +523,7 @@ export class InlineCompletionItemProvider
 
                 recordExposedExperimentsToSpan(span)
 
+                console.log('UMPOX: RESOLVED COMPLETION', autocompleteResult.items[0].insertText)
                 return autocompleteResult
             } catch (error) {
                 this.onError(error as Error)
@@ -629,7 +629,7 @@ export class InlineCompletionItemProvider
      *
      * Will confirm that the completion is _still_ visible before firing the event.
      */
-    private markCompletionAsSuggestedAfterDelay(completion: AutocompleteItem): void {
+    public markCompletionAsSuggestedAfterDelay(completion: AutocompleteItem): void {
         const suggestionEvent = CompletionLogger.prepareSuggestionEvent(
             completion.logId,
             completion.span
@@ -692,6 +692,7 @@ export class InlineCompletionItemProvider
             )
 
             if (isStillVisible) {
+                console.log('UMPOX: SUGGESTED COMPLETION:', completion.insertText)
                 suggestionEvent.fire()
             }
         }, this.COMPLETION_VISIBLE_DELAY_MS)
@@ -957,12 +958,12 @@ function onlyCompletionWidgetSelectionChanged(
         return false
     }
 
-    if (prev.context?.triggerKind !== next.context?.triggerKind) {
+    if (prev.context.triggerKind !== next.context.triggerKind) {
         return false
     }
 
-    const prevSelectedCompletionInfo = prev.context?.selectedCompletionInfo
-    const nextSelectedCompletionInfo = next.context?.selectedCompletionInfo
+    const prevSelectedCompletionInfo = prev.context.selectedCompletionInfo
+    const nextSelectedCompletionInfo = next.context.selectedCompletionInfo
 
     if (!prevSelectedCompletionInfo || !nextSelectedCompletionInfo) {
         return false
