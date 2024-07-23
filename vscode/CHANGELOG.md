@@ -19,6 +19,12 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - For non-Enterprise users, the sidebar for commands, chat history, and settings has been removed and replaced by the sidebar chat. [pull/4832](https://github.com/sourcegraph/cody/pull/4832)
 
+## 1.26.8
+
+### Fixed
+
+- Autocomplete: Set the default Anthropic model only for certain cases. [pull/4982](https://github.com/sourcegraph/cody/pull/4982)
+
 ## 1.26.7
 
 ### Fixed
