@@ -523,7 +523,6 @@ export class InlineCompletionItemProvider
 
                 recordExposedExperimentsToSpan(span)
 
-                console.log('UMPOX: RESOLVED COMPLETION', autocompleteResult.items[0].insertText)
                 return autocompleteResult
             } catch (error) {
                 this.onError(error as Error)
@@ -692,7 +691,6 @@ export class InlineCompletionItemProvider
             )
 
             if (isStillVisible) {
-                console.log('UMPOX: SUGGESTED COMPLETION:', completion.insertText)
                 suggestionEvent.fire()
             }
         }, this.COMPLETION_VISIBLE_DELAY_MS)
