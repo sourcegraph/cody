@@ -8,8 +8,8 @@ import {
 } from 'lucide-react'
 import type { FunctionComponent } from 'react'
 import type React from 'react'
+import { CollapsiblePanel } from '../../components/CollapsiblePanel'
 import { Kbd } from '../../components/Kbd'
-import { Collapsible } from '../../components/shadcn/ui/collapsible'
 import { DefaultCommandsList } from './DefaultCommandsList'
 
 const MenuExample: FunctionComponent<{ children: React.ReactNode }> = ({ children }) => (
@@ -24,48 +24,19 @@ type FeatureRowIcon = React.ForwardRefExoticComponent<
 
 const FeatureRowInlineIcon: FunctionComponent<{
     Icon: FeatureRowIcon
-}> = ({ Icon }) => <Icon size={16} strokeWidth={1.25} className="tw-flex-none tw-inline-flex" />
+}> = ({ Icon }) => (
+    <Icon size={16} strokeWidth={1.25} className="tw-flex-none tw-inline-flex tw-mt-1 tw-opacity-80" />
+)
 
 const FeatureRow: FunctionComponent<{
     icon: FeatureRowIcon
     children: React.ReactNode
 }> = ({ icon, children }) => (
-    <div className="tw-inline-flex tw-gap-2 tw-text-foreground tw-items-center">
+    <div className="tw-py-2 tw-px-4 tw-inline-flex tw-gap-3 tw-text-foreground tw-items-start">
         <FeatureRowInlineIcon Icon={icon} />
         <div className="tw-grow">{children}</div>
     </div>
 )
-
-const ChatHelp: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => {
-    const commonFeatures = (
-        <FeatureRow icon={AtSignIcon}>
-            Type <Kbd macOS="@" linuxAndWindows="@" /> to add context to your chat
-        </FeatureRow>
-    )
-
-    const vscodeFeatures = (
-        <>
-            <FeatureRow icon={TextIcon}>
-                To add code context from an editor, or the file explorer, right click and use{' '}
-                <MenuExample>Add to Cody Chat</MenuExample>
-            </FeatureRow>
-            <FeatureRow icon={MessageSquarePlusIcon}>
-                Start a new chat using <Kbd macOS="opt+/" linuxAndWindows="alt+/" /> or the{' '}
-                <FeatureRowInlineIcon Icon={MessageSquarePlusIcon} /> button in the top right of any file
-            </FeatureRow>
-            <FeatureRow icon={SettingsIcon}>
-                Customize chat settings with the <FeatureRowInlineIcon Icon={SettingsIcon} /> button, or
-                see the <a href="https://sourcegraph.com/docs/cody">documentation</a>
-            </FeatureRow>
-        </>
-    )
-
-    if (IDE === CodyIDE.VSCode) {
-        return <Collapsible title="Chat Help" items={[commonFeatures, vscodeFeatures]} />
-    }
-
-    return <Collapsible title="Chat Help" items={commonFeatures} />
-}
 
 export const localStorageKey = 'chat.welcome-message-dismissed'
 
@@ -74,9 +45,31 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => 
     localStorage.removeItem(localStorageKey)
 
     return (
-        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-p-8 tw-gap-6">
+        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-pt-4 tw-px-8 tw-gap-10 sm:tw-pl-21 tw-transition-all">
             <DefaultCommandsList IDE={IDE} />
-            <ChatHelp IDE={IDE} />
+            <CollapsiblePanel title="Chat Help">
+                <FeatureRow icon={AtSignIcon}>
+                    Type <Kbd macOS="@" linuxAndWindows="@" /> to add context to your chat
+                </FeatureRow>
+                {IDE === CodyIDE.VSCode && (
+                    <>
+                        <FeatureRow icon={TextIcon}>
+                            To add code context from an editor, or the file explorer, right click and use{' '}
+                            <MenuExample>Add to Cody Chat</MenuExample>
+                        </FeatureRow>
+                        <FeatureRow icon={MessageSquarePlusIcon}>
+                            Start a new chat using <Kbd macOS="opt+/" linuxAndWindows="alt+/" /> or the{' '}
+                            <FeatureRowInlineIcon Icon={MessageSquarePlusIcon} /> button in the top right
+                            of any file
+                        </FeatureRow>
+                        <FeatureRow icon={SettingsIcon}>
+                            Customize chat settings with the <FeatureRowInlineIcon Icon={SettingsIcon} />{' '}
+                            button, or see the{' '}
+                            <a href="https://sourcegraph.com/docs/cody">documentation</a>
+                        </FeatureRow>
+                    </>
+                )}
+            </CollapsiblePanel>
         </div>
     )
 }
