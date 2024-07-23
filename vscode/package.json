@@ -914,12 +914,12 @@
         },
         {
           "command": "cody.chat.newPanel",
-          "when": "view == cody.chat && cody.activated",
+          "when": "(cody.chatInSidebar && view != cody.chat && cody.activated) || (!cody.chatInSidebar && view == cody.chat && cody.activated)",
           "group": "navigation@2"
         },
         {
           "command": "cody.chat.history.panel",
-          "when": "view == cody.chat && cody.activated",
+          "when": "(cody.chatInSidebar && view != cody.chat && cody.activated) || (!cody.chatInSidebar && view == cody.chat && cody.activated)",
           "group": "navigation@3"
         },
         {

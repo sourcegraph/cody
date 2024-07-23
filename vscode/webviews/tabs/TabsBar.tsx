@@ -14,11 +14,14 @@ import {
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
+import { CodyIDE } from '@sourcegraph/cody-shared'
+import { useCallback, useMemo } from 'react'
 import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import styles from './TabsBar.module.css'
 
 interface TabsBarProps {
+    IDE: CodyIDE
     currentView: View
     setView: (view?: View) => void
 }
@@ -36,7 +39,38 @@ interface TabConfig {
     changesView?: boolean
 }
 
-const tabItems: TabConfig[] = [
+interface TabButtonProps {
+    Icon: IconComponent
+    view?: View
+    command?: string
+    isActive?: boolean
+    onClick: () => void
+    prominent?: boolean
+    tooltip: React.ReactNode
+}
+
+const TabButton: React.FC<TabButtonProps> = ({ Icon, isActive, onClick, tooltip, prominent }) => (
+    <Tooltip>
+        <TooltipTrigger asChild>
+            <button
+                type="button"
+                onClick={onClick}
+                className={clsx(
+                    'tw-py-3 tw-px-2 tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
+                    {
+                        '!tw-opacity-100 !tw-border-[var(--vscode-tab-activeBorderTop)]': isActive,
+                        '!tw-opacity-100': prominent,
+                    }
+                )}
+            >
+                <Icon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
+            </button>
+        </TooltipTrigger>
+        <TooltipContent>{tooltip}</TooltipContent>
+    </Tooltip>
+)
+
+const BASE_TAB_ITEMS: TabConfig[] = [
     {
         view: View.Chat,
         tooltip: 'Chat',
@@ -84,48 +118,28 @@ const tabItems: TabConfig[] = [
     },
 ]
 
-interface TabButtonProps {
-    Icon: IconComponent
-    view?: View
-    command?: string
-    isActive?: boolean
-    onClick: () => void
-    prominent?: boolean
-    tooltip: React.ReactNode
-}
+const getTabItemsByIDE = (IDE: CodyIDE): TabConfig[] =>
+    IDE !== CodyIDE.VSCode
+        ? BASE_TAB_ITEMS.map(item =>
+              item.view === View.Account ? { ...item, changesView: true } : item
+          )
+        : BASE_TAB_ITEMS
 
-const TabButton: React.FC<TabButtonProps> = ({ Icon, isActive, onClick, tooltip, prominent }) => (
-    <Tooltip>
-        <TooltipTrigger asChild>
-            <button
-                type="button"
-                onClick={onClick}
-                className={clsx(
-                    'tw-py-3 tw-px-2 tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
-                    {
-                        '!tw-opacity-100 !tw-border-[var(--vscode-tab-activeBorderTop)]': isActive,
-                        '!tw-opacity-100': prominent,
-                    }
-                )}
-            >
-                <Icon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
-            </button>
-        </TooltipTrigger>
-        <TooltipContent>{tooltip}</TooltipContent>
-    </Tooltip>
-)
-
-export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView }) => {
-    const handleClick = (view: View, command?: string, changesView?: boolean) => {
-        if (command) {
-            getVSCodeAPI().postMessage({ command: 'command', id: command })
-        }
-        if (changesView) {
-            setView(view)
-        }
-    }
-
+export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) => {
+    const tabItems = useMemo(() => getTabItemsByIDE(IDE), [IDE])
     const currentViewSubIcons = tabItems.find(tab => tab.view === currentView)?.SubIcons
+
+    const handleClick = useCallback(
+        (view: View, command?: string, changesView?: boolean) => {
+            if (command) {
+                getVSCodeAPI().postMessage({ command: 'command', id: command })
+            }
+            if (changesView) {
+                setView(view)
+            }
+        },
+        [setView]
+    )
 
     return (
         <Tabs.List
