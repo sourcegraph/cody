@@ -45,7 +45,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
                                 className="tw-text-left tw-truncate"
                             >
                                 <MessageSquareTextIcon
-                                    className="tw-w-8 tw-h-8"
+                                    className="tw-w-8 tw-h-8 tw-opacity-80"
                                     size={16}
                                     strokeWidth="1.25"
                                 />

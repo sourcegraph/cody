@@ -24,7 +24,9 @@ type FeatureRowIcon = React.ForwardRefExoticComponent<
 
 const FeatureRowInlineIcon: FunctionComponent<{
     Icon: FeatureRowIcon
-}> = ({ Icon }) => <Icon size={16} strokeWidth={1.25} className="tw-flex-none tw-inline-flex tw-mt-1" />
+}> = ({ Icon }) => (
+    <Icon size={16} strokeWidth={1.25} className="tw-flex-none tw-inline-flex tw-mt-1 tw-opacity-80" />
+)
 
 const FeatureRow: FunctionComponent<{
     icon: FeatureRowIcon

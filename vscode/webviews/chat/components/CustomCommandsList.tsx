@@ -33,7 +33,11 @@ export const CustomCommandsList: FunctionComponent<{ commands: CodyCommand[]; ID
                     className="tw-text-left"
                     title={description ?? prompt}
                 >
-                    <PencilRulerIcon className="tw-w-8 tw-h-8" size={16} strokeWidth="1.25" />
+                    <PencilRulerIcon
+                        className="tw-w-8 tw-h-8 tw-opacity-80"
+                        size={16}
+                        strokeWidth="1.25"
+                    />
                     <span className="tw-truncate tw-w-full">{key}</span>
                 </Button>
             ))}
