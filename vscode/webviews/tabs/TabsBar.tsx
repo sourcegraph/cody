@@ -120,8 +120,8 @@ const BASE_TAB_ITEMS: TabConfig[] = [
 
 const getTabItemsByIDE = (IDE: CodyIDE): TabConfig[] =>
     IDE !== CodyIDE.VSCode
-        ? BASE_TAB_ITEMS.map((item, index) =>
-              index === BASE_TAB_ITEMS.length - 1 ? { ...item, changesView: true } : item
+        ? BASE_TAB_ITEMS.map(item =>
+              item.view === View.Account ? { ...item, changesView: true } : item
           )
         : BASE_TAB_ITEMS
 
