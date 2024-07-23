@@ -70,8 +70,9 @@ export const AccountTab: React.FC<AccountTabProps> = ({ userInfo }) => {
                 <Button
                     key={a.text}
                     variant="secondary"
-                    className="tw-w-full tw-bg-popover"
+                    className="tw-w-full tw-bg-popover tw-border tw-border-border"
                     onClick={a.onClick}
+                    title={a.text}
                 >
                     {a.text}
                 </Button>

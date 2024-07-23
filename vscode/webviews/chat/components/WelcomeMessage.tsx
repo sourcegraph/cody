@@ -54,7 +54,7 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => 
                 {IDE === CodyIDE.VSCode && (
                     <>
                         <FeatureRow icon={TextIcon}>
-                            To add code context from an editor, or the file explorer, right click and use{' '}
+                            To add code context from an editor, right click and use{' '}
                             <MenuExample>Add to Cody Chat</MenuExample>
                         </FeatureRow>
                         <FeatureRow icon={MessageSquarePlusIcon}>
