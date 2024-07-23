@@ -57,6 +57,7 @@ export type ClientRequests = {
     // Primary is used only in cody web client
     'chat/delete': [{ chatId: string }, ChatExportResult[]]
 
+    // TODO: JetBrains no longer uses this, consider deleting it.
     // Similar to `chat/new` except it starts a new chat session from an
     // existing transcript. The chatID matches the `chatID` property of the
     // `type: 'transcript'` ExtensionMessage that is sent via
