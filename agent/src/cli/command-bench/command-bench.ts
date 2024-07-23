@@ -1,16 +1,26 @@
 import * as fspromises from 'node:fs/promises'
 import * as path from 'node:path'
-import glob from 'glob'
+import { glob } from 'glob'
 
 import * as commander from 'commander'
 import * as vscode from 'vscode'
 
 import { newAgentClient } from '../../agent'
 
-import { ModelsService, graphqlClient } from '@sourcegraph/cody-shared'
+import { exec } from 'node:child_process'
+import fs from 'node:fs'
+import { promisify } from 'node:util'
+import {
+    type ConfigurationUseContext,
+    ModelsService,
+    graphqlClient,
+    isDefined,
+} from '@sourcegraph/cody-shared'
+import { sleep } from '../../../../vscode/src/completions/utils'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { dotcomCredentials } from '../../../../vscode/src/testutils/testing-credentials'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
+import { codyPaths } from '../../codyPaths'
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateAutocompleteStrategy } from './strategy-autocomplete'
@@ -57,6 +67,7 @@ export interface CodyBenchOptions {
     testCommand?: string
     gitLogFilter?: string
     fixture: EvaluationFixture
+    context: { sourcesDir: string; strategy: ConfigurationUseContext }
 
     verbose: boolean
 }
@@ -353,6 +364,10 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
         baseGlobalState.editModel = provider.model
     }
 
+    if (isDefined(options.context)) {
+        await gitInitContextSourcesDir(options)
+    }
+
     const { client } = await newAgentClient({
         name: 'cody-bench',
         version: '0.1.0',
@@ -362,7 +377,13 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             serverEndpoint: options.srcEndpoint,
             customHeaders: {},
             customConfiguration: {
-                'cody.experimental.symf.enabled': false, // fixes errors in Polly.js related to fetchin the symf binary
+                'cody.experimental.symf.enabled': ['keyword', 'blended'].includes(
+                    options.context?.strategy
+                ), // disabling fixes errors in Polly.js related to fetching the symf binary
+                'cody.experimental.localEmbeddings.disabled': !['embeddings', 'blended'].includes(
+                    options.context?.strategy
+                ),
+                'cody.useContext': options.context?.strategy,
                 'cody.experimental.telemetry.enabled': false,
                 ...options.fixture.customConfiguration,
             },
@@ -380,6 +401,9 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             CODY_DISABLE_FASTPATH: 'true',
         },
     })
+    if (isDefined(options.context)) {
+        await indexContextSourcesDir(options)
+    }
     try {
         if (options.fixture.strategy === BenchStrategy.Autocomplete) {
             await evaluateAutocompleteStrategy(client, options)
@@ -438,4 +462,44 @@ function expandWorkspaces(
                 }
             })
     })
+}
+
+async function gitInitContextSourcesDir(options: CodyBenchOptions): Promise<void> {
+    // If this is our first run, we need to git init the context sources dir so symf & embeddings pick it up
+    if (fs.existsSync(path.join(options.workspace, '.git'))) {
+        return
+    }
+
+    await promisify(exec)(
+        `
+        git init &&
+        git add ${options.context.sourcesDir} &&
+        git commit -m "initial commit" &&
+        git remote add origin https://github.com/sgtest/cody-bench.git`,
+        { cwd: options.workspace }
+    )
+}
+
+async function indexContextSourcesDir(options: CodyBenchOptions): Promise<void> {
+    // If this is our first run, we need to index the context sources dir so symf & embeddings can retrieve results
+    // The agent has started symf by this point - we need to wait until the symf index has been created
+    // TODO: for embeddings, we don't have access to do it the same way
+
+    const symfIndex = path.join(codyPaths().data, 'symf/indexroot', options.workspace)
+
+    // Allow max 10 min for the index to be ready
+    const maxWaitTime = 10 * 60 * 1000
+    const sleepTime = 5000
+    let waitTime = 0
+    while (waitTime < maxWaitTime) {
+        if (fs.existsSync(symfIndex)) {
+            console.log('Symf index ready')
+            return
+        }
+        console.log('Symf index not ready, waiting...')
+        waitTime += sleepTime
+        await sleep(sleepTime)
+    }
+
+    throw new Error(`Symf index not ready after ${maxWaitTime / 60 / 1000} min, exiting`)
 }

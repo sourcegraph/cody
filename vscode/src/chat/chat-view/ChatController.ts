@@ -55,7 +55,7 @@ import { isContextWindowLimitError } from '@sourcegraph/cody-shared/src/sourcegr
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { URI } from 'vscode-uri'
 import { version as VSCEVersion } from '../../../package.json'
-import { View } from '../../../webviews/tabs/TabsBar'
+import { View } from '../../../webviews/tabs/types'
 import {
     closeAuthProgressIndicator,
     startAuthProgressIndicator,
@@ -209,7 +209,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
 
-        this.chatModel = new ChatModel(getDefaultModelID(authProvider.getAuthStatus()))
+        this.chatModel = new ChatModel(getDefaultModelID())
 
         this.guardrails = guardrails
         this.startTokenReceiver = startTokenReceiver
@@ -541,13 +541,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // #region top-level view action handlers
     // =======================================================================
 
-    public setAuthStatus(authStatus: AuthStatus): void {
+    public setAuthStatus(_: AuthStatus): void {
         // Run this async because this method may be called during initialization
         // and awaiting on this.postMessage may result in a deadlock
         void this.sendConfig()
 
         // Get the latest model list available to the current user to update the ChatModel.
-        this.handleSetChatModel(getDefaultModelID(authStatus))
+        this.handleSetChatModel(getDefaultModelID())
     }
 
     // When the webview sends the 'ready' message, respond by posting the view config
@@ -1114,7 +1114,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (!authStatus?.isLoggedIn) {
             return
         }
-        const models = ModelsService.getModels(ModelUsage.Chat, authStatus)
+        const models = ModelsService.getModels(ModelUsage.Chat)
 
         void this.postMessage({
             type: 'chatModels',
@@ -1520,11 +1520,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async resolveWebviewViewOrPanel(
         viewOrPanel: vscode.WebviewView | vscode.WebviewPanel
     ): Promise<vscode.WebviewView | vscode.WebviewPanel> {
-        if (this.webviewPanelOrView) {
-            logDebug('ChatController:resolveWebviewViewOrPanel', 'webview already created')
-        }
         this._webviewPanelOrView = viewOrPanel
-
         this.syncPanelTitle()
 
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
@@ -1724,10 +1720,10 @@ export function revealWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscod
     }
 }
 
-function getDefaultModelID(status: AuthStatus): string {
+function getDefaultModelID(): string {
     const pending = ''
     try {
-        return ModelsService.getDefaultChatModel(status) || pending
+        return ModelsService.getDefaultChatModel() || pending
     } catch {
         return pending
     }

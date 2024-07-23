@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.26.5",
+  "version": "1.26.7",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -239,40 +239,40 @@
           "type": "webview",
           "id": "cody.chat",
           "name": "Chat",
-          "when": "!cody.activated || (cody.activated && cody.isConsumer)"
+          "when": "!cody.activated || cody.chatInSidebar"
         },
         {
           "id": "cody.support.tree.view",
           "name": "Settings & Support",
-          "when": "cody.activated && (!cody.isConsumer || !cody.devOrTest)"
+          "when": "cody.activated && !cody.chatInSidebar"
         },
         {
           "id": "cody.chat.tree.view",
           "name": "Chats",
-          "when": "cody.activated && (!cody.isConsumer || !cody.devOrTest)"
+          "when": "cody.activated && !cody.chatInSidebar"
         },
         {
           "id": "cody.commands.tree.view",
           "name": "Commands",
-          "when": "cody.activated && !cody.currentFileIgnored && (!cody.isConsumer || !cody.devOrTest)"
+          "when": "cody.activated && !cody.currentFileIgnored && !cody.chatInSidebar"
         },
         {
           "id": "cody.commands.disabled.view",
           "name": "Commands",
-          "when": "cody.activated && cody.currentFileIgnored && (!cody.isConsumer || !cody.devOrTest)"
+          "when": "cody.activated && cody.currentFileIgnored && !cody.chatInSidebar"
         }
       ]
     },
     "viewsWelcome": [
       {
         "view": "cody.chat.tree.view",
-        "contents": "Chat alongside your code, attach files, add additional context, and try different chat models.\n[New Chat](command:cody.chat.newEditorPanel)",
-        "when": "cody.activated"
+        "contents": "Chat alongside your code, attach files, add additional context, and try different chat models.\n[New Chat](command:cody.chat.newPanel)",
+        "when": "cody.activated && !cody.chatInSidebar && !cody.currentFileIgnored"
       },
       {
         "view": "cody.commands.disabled.view",
         "contents": "Commands are disabled for this file by an admin setting. Other Cody features are also disabled.\nMore info about [Cody Context Filters](https://sourcegraph.com/docs/cody/capabilities/ignore-context#cody-ignore)",
-        "when": "cody.activated && cody.currentFileIgnored"
+        "when": "cody.activated && cody.currentFileIgnored && !cody.chatInSidebar"
       }
     ],
     "commands": [
@@ -476,7 +476,7 @@
         "command": "cody.chat.moveToEditor",
         "category": "Cody",
         "title": "Move Chat to Editor Panel",
-        "enablement": "cody.activated",
+        "enablement": "cody.activated && cody.chatInSidebar",
         "group": "Cody",
         "icon": "$(layout-sidebar-left-off)"
       },
@@ -484,7 +484,7 @@
         "command": "cody.chat.moveFromEditor",
         "category": "Cody",
         "title": "Move Chat from Editor to Main Cody Panel",
-        "enablement": "cody.activated && view == cody.chat",
+        "enablement": "cody.activated && cody.chatInSidebar && view == cody.chat",
         "group": "Cody",
         "icon": "$(layout-sidebar-left)"
       },
@@ -634,7 +634,7 @@
       {
         "command": "cody.chat.toggle",
         "key": "alt+l",
-        "when": "cody.activated && editorTextFocus && cody.isConsumer",
+        "when": "cody.activated && editorTextFocus && cody.chatInSidebar",
         "args": {
           "editorFocus": true
         }
@@ -642,7 +642,7 @@
       {
         "command": "cody.chat.toggle",
         "key": "alt+l",
-        "when": "cody.activated && !editorTextFocus && cody.isConsumer",
+        "when": "cody.activated && !editorTextFocus && cody.chatInSidebar",
         "args": {
           "editorFocus": false
         }
@@ -820,6 +820,10 @@
         {
           "command": "cody.command.explain-output",
           "when": "false"
+        },
+        {
+          "command": "cody.chat.newEditorPanel",
+          "when": "cody.activated"
         }
       ],
       "editor/context": [
@@ -887,6 +891,23 @@
       ],
       "view/title": [
         {
+          "command": "cody.chat.newPanel",
+          "when": "view == cody.chat.tree.view && cody.activated",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cody.chat.history.clear",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "enablement": "cody.hasChatHistory",
+          "group": "navigation@2"
+        },
+        {
+          "command": "cody.chat.history.export",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "enablement": "cody.hasChatHistory",
+          "group": "navigation@3"
+        },
+        {
           "command": "cody.menu.commands",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation@1"
@@ -941,7 +962,7 @@
         },
         {
           "command": "cody.chat.moveFromEditor",
-          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated",
+          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated && cody.chatInSidebar",
           "group": "navigation@1",
           "visibility": "visible"
         },
@@ -972,8 +993,23 @@
       ],
       "view/item/context": [
         {
+          "command": "cody.chat.history.delete",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
+          "group": "inline@2"
+        },
+        {
+          "command": "cody.menu.commands-settings",
+          "when": "view == cody.commands.tree.view && viewItem == cody.sidebar.custom-commands",
+          "group": "inline@1"
+        },
+        {
           "command": "cody.copy.version",
           "when": "view == cody.support.tree.view && viewItem == cody.version",
+          "group": "inline@1"
+        },
+        {
+          "command": "cody.menu.commands-settings",
+          "when": "view == cody.commands.tree.view && viewItem == cody.sidebar.custom-commands",
           "group": "inline@1"
         }
       ],

@@ -20,6 +20,18 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - For non-Enterprise users, the sidebar for commands, chat history, and settings has been removed and replaced by the sidebar chat. [pull/4832](https://github.com/sourcegraph/cody/pull/4832)
 
+## 1.26.7
+
+### Fixed
+
+- Autocomplete: Fixed an issue where autocomplete context requests were never resolved. [pull/4961](https://github.com/sourcegraph/cody/pull/4961)
+
+## 1.26.6
+
+### Fixed
+
+- Autocomplete: Fixed an issue where the cached retriever was attempting to open removed files. [pull/4942](https://github.com/sourcegraph/cody/pull/4942)
+
 ## 1.26.5
 
 ### Fixed
@@ -32,6 +44,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Autocomplete: Fixed the request manager cache keys computation. [pull/4902](https://github.com/sourcegraph/cody/pull/4902)
 - Autocomplete: Fixed the default model value for the Anthropic autocomplete provider. [pull/4803](https://github.com/sourcegraph/cody/pull/4803)
+- It is no longer possible to add a file to chat context by right clicking the file in the file explorer.
 
 ## 1.26.3
 
