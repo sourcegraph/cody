@@ -534,7 +534,6 @@ export class InlineCompletionItemProvider
                 }
 
                 if (!this.config.isRunningInsideAgent) {
-                    console.log('IS VISIBLE')
                     // Since VS Code has no callback as to when a completion is shown, we assume
                     // that if we pass the above visibility tests, the completion is going to be
                     // rendered in the UI

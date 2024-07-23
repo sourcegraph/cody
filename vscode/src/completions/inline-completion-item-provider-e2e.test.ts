@@ -3,8 +3,9 @@ import {
     type GraphQLAPIClientConfig,
     contextFiltersProvider,
     graphqlClient,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { type MockInstance, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 import { localStorage } from '../services/LocalStorageProvider'
 import { DEFAULT_VSCODE_SETTINGS, vsCodeMocks } from '../testutils/mocks'
@@ -26,7 +27,6 @@ vi.mock('vscode', () => ({
     ...vsCodeMocks,
     workspace: {
         ...vsCodeMocks.workspace,
-
         onDidChangeTextDocument() {
             return null
         },
@@ -59,6 +59,10 @@ const DUMMY_AUTH_STATUS: AuthStatus = {
 
 graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
 
+const getAnalyticEventCalls = (mockInstance: MockInstance) => {
+    return mockInstance.mock.calls.map(args => args.slice(0, 2))
+}
+
 class MockRequestProvider extends Provider {
     public didFinishNetworkRequest = false
     public didAbort = false
@@ -90,7 +94,6 @@ class MockRequestProvider extends Provider {
             this.didAbort = true
         })
 
-        //  generateMockedCompletions(this: MockProvider) {
         while (!(this.didFinishNetworkRequest && this.responseQueue.length === 0)) {
             while (this.responseQueue.length > 0) {
                 yield this.responseQueue.shift()!
@@ -122,7 +125,7 @@ function getInlineCompletionProvider(
 }
 
 function createNetworkProvider(params: RequestParams): MockRequestProvider {
-    const provider = new MockRequestProvider({
+    return new MockRequestProvider({
         id: 'mock-provider',
         docContext: params.docContext,
         document: params.document,
@@ -133,14 +136,36 @@ function createNetworkProvider(params: RequestParams): MockRequestProvider {
         triggerKind: TriggerKind.Automatic,
         completionLogId: 'mock-log-id' as CompletionLogger.CompletionLogID,
     })
-    return provider
+}
+
+function setupTest(textWithCursor: string) {
+    const { document, position } = documentAndPosition(textWithCursor)
+    const docContext = getCurrentDocContext({
+        document,
+        position,
+        maxPrefixLength: 1000,
+        maxSuffixLength: 1000,
+        context: undefined,
+    })
+
+    const mockRequestProvider = createNetworkProvider({
+        document,
+        position,
+        docContext,
+    } as RequestParams)
+
+    return {
+        document,
+        position,
+        mockRequestProvider,
+    }
 }
 
 describe('InlineCompletionItemProvider E2E', () => {
+    let getCompletionProviderSpy: MockInstance
+
     beforeAll(async () => {
         await initCompletionProviderConfig({ autocompleteExperimentalSmartThrottle: true })
-
-        // Dummy noop implementation of localStorage.
         localStorage.setStorage({
             get: () => null,
             update: () => {},
@@ -149,101 +174,43 @@ describe('InlineCompletionItemProvider E2E', () => {
 
     beforeEach(() => {
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+        getCompletionProviderSpy = vi.spyOn(CompletionProvider, 'getCompletionProvider')
     })
 
     describe('logger', () => {
-        const createCompletion = (provider: InlineCompletionItemProvider, textWithCursor: string) => {
-            const { document, position } = documentAndPosition(textWithCursor)
-            const docContext = getCurrentDocContext({
-                document,
-                position,
-                maxPrefixLength: 1000,
-                maxSuffixLength: 1000,
-                context: undefined,
-            })
-
-            const mockRequestProvider = createNetworkProvider({
-                document,
-                position,
-                docContext,
-            } as RequestParams)
-
-            vi.spyOn(CompletionProvider, 'getCompletionProvider').mockReturnValueOnce(
-                mockRequestProvider
-            )
-
-            const resultPromise = provider.provideInlineCompletionItems(
-                document,
-                position,
-                DUMMY_CONTEXT
-            )
-
-            return {
-                resultPromise,
-                resolve: (completion: string) => mockRequestProvider.yield([completion]),
-            }
-        }
-
         it('logs two in-flight completions as shown', async () => {
-            const logSpy = vi.spyOn(CompletionLogger, 'suggested')
+            vi.useFakeTimers()
+            const logSpy: MockInstance = vi.spyOn(telemetryRecorder, 'recordEvent')
 
             const provider = getInlineCompletionProvider()
 
-            const first = documentAndPosition('console.█')
-            const firstDocContext = getCurrentDocContext({
-                document: first.document,
-                position: first.position,
-                maxPrefixLength: 1000,
-                maxSuffixLength: 1000,
-                context: undefined,
-            })
-            const firstNetworkProvider = createNetworkProvider({
-                document: first.document,
-                position: first.position,
-                docContext: firstDocContext,
-                selectedCompletionInfo: undefined,
-            })
+            const {
+                document: doc1,
+                position: pos1,
+                mockRequestProvider: provider1,
+            } = setupTest('console.█')
+            const {
+                document: doc2,
+                position: pos2,
+                mockRequestProvider: provider2,
+            } = setupTest('console.log(█')
 
-            const second = documentAndPosition('console.log(█')
-            const secondDocContext = getCurrentDocContext({
-                document: second.document,
-                position: second.position,
-                maxPrefixLength: 1000,
-                maxSuffixLength: 1000,
-                context: undefined,
-            })
-            const secondNetworkProvider = createNetworkProvider({
-                document: second.document,
-                position: second.position,
-                docContext: secondDocContext,
-                selectedCompletionInfo: undefined,
-            })
-
-            vi.spyOn(CompletionProvider, 'getCompletionProvider')
-                .mockReturnValueOnce(firstNetworkProvider)
-                .mockReturnValueOnce(secondNetworkProvider)
+            getCompletionProviderSpy.mockReturnValueOnce(provider1).mockReturnValueOnce(provider2)
 
             const [result1, result2] = await Promise.all([
                 (async () => {
-                    const promise = provider.provideInlineCompletionItems(
-                        first.document,
-                        first.position,
-                        DUMMY_CONTEXT
-                    )
+                    const promise = provider.provideInlineCompletionItems(doc1, pos1, DUMMY_CONTEXT)
                     await sleep(100)
-                    firstNetworkProvider.yield(["log('hello')"])
+                    provider1.yield(["log('hello')"])
                     return promise
                 })(),
                 (async () => {
-                    const promise = provider.provideInlineCompletionItems(
-                        second.document,
-                        second.position,
-                        DUMMY_CONTEXT
-                    )
+                    const promise = provider.provideInlineCompletionItems(doc2, pos2, DUMMY_CONTEXT)
                     await sleep(150)
-                    secondNetworkProvider.yield(["'hello')"])
+                    provider2.yield(["'hello')"])
                     return promise
                 })(),
+                vi.advanceTimersByTimeAsync(150), // Enough for both to be shown
             ])
 
             // Result 1 is marked as stale
@@ -251,7 +218,22 @@ describe('InlineCompletionItemProvider E2E', () => {
             // Result 2 is used
             expect(result2).toBeDefined()
 
-            expect(logSpy).toHaveBeenCalledTimes(1)
+            // Enough for completion events to be logged
+            vi.advanceTimersByTime(1000)
+            CompletionLogger.logSuggestionEvents(true)
+
+            expect(getAnalyticEventCalls(logSpy)).toMatchInlineSnapshot(`
+              [
+                [
+                  "cody.completion",
+                  "synthesizedFromParallelRequest",
+                ],
+                [
+                  "cody.completion",
+                  "suggested",
+                ],
+              ]
+            `)
         })
     })
 })
