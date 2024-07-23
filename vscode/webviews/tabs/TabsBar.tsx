@@ -14,6 +14,7 @@ import {
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
+import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import styles from './TabsBar.module.css'
 
@@ -29,9 +30,9 @@ type IconComponent = React.ForwardRefExoticComponent<
 interface TabConfig {
     Icon: IconComponent
     view: View
-    tooltip: string
+    tooltip: React.ReactNode
     command?: string
-    SubIcons?: { tooltip: string; Icon: IconComponent; command: string }[]
+    SubIcons?: { tooltip: React.ReactNode; Icon: IconComponent; command: string }[]
     changesView?: boolean
 }
 
@@ -40,7 +41,17 @@ const tabItems: TabConfig[] = [
         view: View.Chat,
         tooltip: 'Chat',
         Icon: MessagesSquareIcon,
-        SubIcons: [{ tooltip: 'New Chat', Icon: MessageSquarePlusIcon, command: 'cody.chat.newPanel' }],
+        SubIcons: [
+            {
+                tooltip: (
+                    <>
+                        New Chat <Kbd macOS="opt+/" linuxAndWindows="alt+/" />
+                    </>
+                ),
+                Icon: MessageSquarePlusIcon,
+                command: 'cody.chat.newPanel',
+            },
+        ],
         changesView: true,
     },
     {
@@ -80,7 +91,7 @@ interface TabButtonProps {
     isActive?: boolean
     onClick: () => void
     prominent?: boolean
-    tooltip: string
+    tooltip: React.ReactNode
 }
 
 const TabButton: React.FC<TabButtonProps> = ({ Icon, isActive, onClick, tooltip, prominent }) => (
