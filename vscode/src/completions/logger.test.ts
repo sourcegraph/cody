@@ -76,7 +76,7 @@ describe('logger', () => {
         suggestionEvent?.fire()
         CompletionLogger.accepted(id, document, item, range(0, 0, 0, 0), false)
 
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'prepareSuggestionEvent', {
+        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', {
             version: 0,
             interactionID: expect.any(String),
             metadata: expect.anything(),
@@ -130,11 +130,11 @@ describe('logger', () => {
         const loggerItem2 = CompletionLogger.getCompletionEvent(id2)
         expect(loggerItem2?.params.id).toBe(completionId)
 
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion', ', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', expect.anything())
 
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'prepareSuggestionEvent', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', expect.anything())
 
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'prepareSuggestionEvent', expect.anything())
+        expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', expect.anything())
 
         // After accepting the completion, the ID won't be reused a third time
         const id3 = CompletionLogger.create(defaultArgs)
