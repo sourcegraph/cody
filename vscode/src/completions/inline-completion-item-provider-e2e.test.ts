@@ -138,7 +138,7 @@ function createNetworkProvider(params: RequestParams): MockRequestProvider {
     })
 }
 
-function setupTest(textWithCursor: string) {
+function createCompletion(textWithCursor: string, provider: InlineCompletionItemProvider) {
     const { document, position } = documentAndPosition(textWithCursor)
     const docContext = getCurrentDocContext({
         document,
@@ -155,61 +155,109 @@ function setupTest(textWithCursor: string) {
     } as RequestParams)
 
     return {
-        document,
-        position,
         mockRequestProvider,
+        resolve: async (completion: string, { duration }: { duration: number }) => {
+            const promise = provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
+            await sleep(duration)
+            mockRequestProvider.yield([completion])
+            return promise
+        },
     }
 }
 
 describe('InlineCompletionItemProvider E2E', () => {
-    let getCompletionProviderSpy: MockInstance
+    describe('smart throttle in-flight requests', () => {
+        let getCompletionProviderSpy: MockInstance
 
-    beforeAll(async () => {
-        await initCompletionProviderConfig({ autocompleteExperimentalSmartThrottle: true })
-        localStorage.setStorage({
-            get: () => null,
-            update: () => {},
-        } as any as vscode.Memento)
-    })
+        beforeAll(async () => {
+            await initCompletionProviderConfig({ autocompleteExperimentalSmartThrottle: true })
+            localStorage.setStorage({
+                get: () => null,
+                update: () => {},
+            } as any as vscode.Memento)
+        })
 
-    beforeEach(() => {
-        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
-        getCompletionProviderSpy = vi.spyOn(CompletionProvider, 'getCompletionProvider')
-    })
+        beforeEach(() => {
+            vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+            getCompletionProviderSpy = vi.spyOn(CompletionProvider, 'getCompletionProvider')
+        })
 
-    describe('logger', () => {
-        it('logs two in-flight completions as shown', async () => {
-            vi.useFakeTimers()
+        /**
+         * Scenario:
+         * R1--------
+         *          ^Suggested
+         *             R2-------- (different prefix)
+         *                       ^Suggested
+         */
+        it('handles subsequent requests, that are not parallel', async () => {
             const logSpy: MockInstance = vi.spyOn(telemetryRecorder, 'recordEvent')
-
             const provider = getInlineCompletionProvider()
 
-            const {
-                document: doc1,
-                position: pos1,
-                mockRequestProvider: provider1,
-            } = setupTest('console.█')
-            const {
-                document: doc2,
-                position: pos2,
-                mockRequestProvider: provider2,
-            } = setupTest('console.log(█')
+            const { mockRequestProvider: provider1, resolve: resolve1 } = createCompletion(
+                'console.█',
+                provider
+            )
+            const { mockRequestProvider: provider2, resolve: resolve2 } = createCompletion(
+                'console.log(█',
+                provider
+            )
+
+            getCompletionProviderSpy.mockReturnValueOnce(provider1).mockReturnValueOnce(provider2)
+
+            // Let the first completion resolve first
+            const result1 = await resolve1("error('hello')", { duration: 0 })
+
+            // Now let the second completion resolve
+            const result2 = await resolve2("'hello')", { duration: 0 })
+
+            // Result 1 is used
+            expect(result1).toBeDefined()
+            // Result 2 is used
+            expect(result2).toBeDefined()
+
+            CompletionLogger.logSuggestionEvents(true)
+
+            expect(getAnalyticEventCalls(logSpy)).toMatchInlineSnapshot(`
+              [
+                [
+                  "cody.completion",
+                  "suggested",
+                ],
+                [
+                  "cody.completion",
+                  "suggested",
+                ],
+              ]
+            `)
+        })
+
+        /**
+         * Scenario:
+         * R1----------
+         *     ^Stale (not suggested)
+         *     R2------
+         *            ^Synthesised from R1 result
+         *            ^Suggested
+         */
+        it('handles parallel requests, by marking the old one as stale and only suggesting the final one', async () => {
+            vi.useFakeTimers()
+            const logSpy: MockInstance = vi.spyOn(telemetryRecorder, 'recordEvent')
+            const provider = getInlineCompletionProvider()
+
+            const { mockRequestProvider: provider1, resolve: resolve1 } = createCompletion(
+                'console.█',
+                provider
+            )
+            const { mockRequestProvider: provider2, resolve: resolve2 } = createCompletion(
+                'console.log(█',
+                provider
+            )
 
             getCompletionProviderSpy.mockReturnValueOnce(provider1).mockReturnValueOnce(provider2)
 
             const [result1, result2] = await Promise.all([
-                (async () => {
-                    const promise = provider.provideInlineCompletionItems(doc1, pos1, DUMMY_CONTEXT)
-                    await sleep(100)
-                    provider1.yield(["log('hello')"])
-                    return promise
-                })(),
-                (async () => {
-                    const promise = provider.provideInlineCompletionItems(doc2, pos2, DUMMY_CONTEXT)
-                    await sleep(150)
-                    provider2.yield(["'hello')"])
-                    return promise
-                })(),
+                resolve1("log('hello')", { duration: 100 }),
+                resolve2("'hello')", { duration: 150 }),
                 vi.advanceTimersByTimeAsync(150), // Enough for both to be shown
             ])
 
