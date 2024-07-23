@@ -89,6 +89,7 @@ object Constants {
   const val assistant = "assistant"
   const val system = "system"
   const val isChatErrorGuard = "isChatErrorGuard"
+  const val sidebar = "sidebar"
   const val Idle = "Idle"
   const val Working = "Working"
   const val Inserting = "Inserting"
