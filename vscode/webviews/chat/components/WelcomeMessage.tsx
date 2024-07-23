@@ -24,13 +24,13 @@ type FeatureRowIcon = React.ForwardRefExoticComponent<
 
 const FeatureRowInlineIcon: FunctionComponent<{
     Icon: FeatureRowIcon
-}> = ({ Icon }) => <Icon size={16} strokeWidth={1.25} className="tw-flex-none tw-inline-flex" />
+}> = ({ Icon }) => <Icon size={16} strokeWidth={1.25} className="tw-flex-none tw-inline-flex tw-mt-1" />
 
 const FeatureRow: FunctionComponent<{
     icon: FeatureRowIcon
     children: React.ReactNode
 }> = ({ icon, children }) => (
-    <div className="tw-inline-flex tw-gap-2 tw-text-foreground tw-items-center">
+    <div className="tw-py-2 tw-px-4 tw-inline-flex tw-gap-3 tw-text-foreground tw-items-start">
         <FeatureRowInlineIcon Icon={icon} />
         <div className="tw-grow">{children}</div>
     </div>
@@ -74,7 +74,7 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => 
     localStorage.removeItem(localStorageKey)
 
     return (
-        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-p-8 tw-gap-6">
+        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-8 tw-gap-10 md:tw-pl-21 tw-transition-all">
             <DefaultCommandsList IDE={IDE} />
             <ChatHelp IDE={IDE} />
         </div>

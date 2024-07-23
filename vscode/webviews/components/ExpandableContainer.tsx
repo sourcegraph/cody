@@ -26,7 +26,7 @@ const ExpandableContainer: React.FC<ExpandableContainerProps> = ({
             className={clsx('tw-w-full tw-flex tw-flex-col tw-gap-3', className)}
         >
             <div className="tw-flex tw-justify-between">
-                <h4 className="tw-text">{title}</h4>
+                <h4 className="tw-text tw-font-medium tw-text-muted-foreground">{title}</h4>
                 <CollapsibleTrigger asChild>
                     <Button variant="ghost" size="icon">
                         <ChevronsUpDownIcon

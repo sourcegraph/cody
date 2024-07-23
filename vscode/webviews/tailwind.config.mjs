@@ -33,6 +33,9 @@ export default {
                 12: '24px',
                 14: '28px',
                 16: '32px',
+                18: '36px',
+                20: '40px',
+                21: '44px',
             },
             border: {
                 DEFAULT: '1px',
