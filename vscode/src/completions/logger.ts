@@ -509,6 +509,9 @@ export interface CompletionBookkeepingEvent {
     items: CompletionItemInfo[]
     // Already logged partially accepted length
     loggedPartialAcceptedLength: number
+    // If the completion was explictly marked as "read", this is if the completion
+    // was visible for at least a set amount of time
+    read: boolean
 }
 
 export interface ItemPostProcessingInfo {
@@ -544,8 +547,6 @@ export interface CompletionItemInfo extends ItemPostProcessingInfo {
     insertText?: string
     stopReason?: string
 }
-
-const READ_TIMEOUT_MS = 750
 
 // Maintain a cache of active suggestion requests
 const activeSuggestionRequests = new LRUCache<CompletionLogID, CompletionBookkeepingEvent>({
@@ -598,6 +599,7 @@ export function create(
         acceptedAt: null,
         items: [],
         loggedPartialAcceptedLength: 0,
+        read: false,
     })
 
     return id
@@ -762,6 +764,7 @@ export function prepareSuggestionEvent(id: CompletionLogID, span?: Span): { fire
                         return
                     }
 
+                    event.read = true
                     statistics.logSuggested()
                     completionIdsMarkedAsSuggested.set(completionId, true)
                     event.suggestionAnalyticsLoggedAt = performance.now()
@@ -969,9 +972,8 @@ export function logSuggestionEvents(isDotComUser: boolean): void {
 
         const latency = loadedAt - startedAt
         const displayDuration = now - suggestedAt
-        const seen = displayDuration >= READ_TIMEOUT_MS
         const accepted = acceptedAt !== null
-        const read = accepted || seen
+        const read = accepted || completionEvent.read
         const inlineCompletionItemContext = getInlineContextItemToLog(
             completionEvent.params.inlineCompletionItemContext
         )
