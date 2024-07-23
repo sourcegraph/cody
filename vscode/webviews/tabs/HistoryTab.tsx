@@ -25,7 +25,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
     )
 
     return (
-        <div className="tw-flex tw-flex-col tw-gap-8 tw-p-8">
+        <div className="tw-flex tw-flex-col tw-gap-8 tw-px-8 tw-py-6">
             {Array.from(chatByPeriod, ([period, chats]) => (
                 <CollapsiblePanel key={period} title={period}>
                     {chats.map(({ interactions, id }) => {
