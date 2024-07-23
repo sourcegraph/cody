@@ -329,8 +329,9 @@ export type ServerRequests = {
     ]
     'workspace/edit': [WorkspaceEditParams, boolean]
 
-    // TODO: Add VSCode support for registerWebviewViewProvider and views.
     // TODO: Add VSCode support for registerWebviewPanelSerializer.
+
+    'env/openExternal': [{ uri: string }, boolean]
 }
 
 // The JSON-RPC notifications of the Cody Agent protocol. Notifications are
