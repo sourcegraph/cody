@@ -269,7 +269,7 @@ describe('InlineCompletionItemProvider', () => {
 
     describe('logger', () => {
         it('logs a completion as shown', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'suggested')
+            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('const foo = █', [completion`bar`])
             const provider = new MockableInlineCompletionItemProvider(() =>
@@ -285,7 +285,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not log a completion when the abort handler was triggered after a network fetch', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'suggested')
+            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
 
             let onCancel = () => {}
             const token: vscode.CancellationToken = {
@@ -316,7 +316,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not log a completion if it does not overlap the completion popup', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'suggested')
+            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('console.█', [completion`log()`])
             const provider = new MockableInlineCompletionItemProvider(() =>
@@ -335,7 +335,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('log a completion if the suffix is inside the completion', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'suggested')
+            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('const a = [1, █];', [completion`2] ;`])
             const provider = new MockableInlineCompletionItemProvider(() =>
@@ -351,7 +351,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('log a completion if the suffix is inside the completion in CRLF format', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'suggested')
+            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('const a = [1, █];\r\nconsol.log(1234);\r\n', [
                 completion`2] ;`,
@@ -369,7 +369,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not log a completion if the suffix does not match', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'suggested')
+            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('const a = [1, █)(123);', [completion`2];`])
             const provider = new MockableInlineCompletionItemProvider(() =>
@@ -385,7 +385,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not log a completion if it is marked as stale', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'suggested')
+            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('const foo = █', [completion`bar`])
             const provider = new MockableInlineCompletionItemProvider(async () => {
@@ -406,7 +406,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not log a completion if the prefix no longer matches due to a cursor change', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'suggested')
+            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
 
             // Ensure the mock returns a completion item that requires the original
             // prefix to be present.
