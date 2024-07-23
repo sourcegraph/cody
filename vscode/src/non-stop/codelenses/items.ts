@@ -33,7 +33,6 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             const acceptAll = getAcceptAllLens(codeLensRange, task.id)
             const acceptLenses = getAcceptLenses(task, codeLensRange, task.id)
             const rejectLenses = getRejectLens(task, codeLensRange, task.id)
-            console.log("JM: acceptLenses length: ", acceptLenses.length)
             const retry = getRetryLens(codeLensRange, task.id)
             const undo = getUndoLens(codeLensRange, task.id)
             if (isTest) {
@@ -177,27 +176,6 @@ function getUndoLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     }
     return lens
 }
-
-// function getBlockRanges(task: FixupTask): vscode.Range[] {
-//     const decorations = computeAppliedDecorations(task)
-//     if (!decorations) {
-//         return []
-//     }
-
-//     const blockRanges: vscode.Range[] = []
-
-//     // Add ranges for added lines
-//     for (const decoration of decorations.linesAdded) {
-//         blockRanges.push(decoration.range)
-//     }
-
-//     // Add ranges for removed lines
-//     for (const decoration of decorations.linesRemoved) {
-//         blockRanges.push(decoration.range)
-//     }
-
-//     return blockRanges
-// }
 
 function getRejectLens(task: FixupTask, codeLensRange: vscode.Range, id: string): vscode.CodeLens[] {
     const lenses = []
