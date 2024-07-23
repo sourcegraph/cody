@@ -30,17 +30,19 @@ export const DefaultCommandsList: FunctionComponent<{ IDE?: CodyIDE }> = ({ IDE 
         [IDE]
     )
 
-    const commands = commandList.map(({ key, title, icon: Icon }) => (
-        <Button
-            key={key}
-            variant="ghost"
-            className="tw-text-left"
-            onClick={() => getVSCodeAPI().postMessage({ command: 'command', id: key })}
-        >
-            <Icon className="tw-w-8 tw-h-8" size={16} strokeWidth="1.25" />
-            <span className="tw-truncate tw-w-full">{title}</span>
-        </Button>
-    ))
-
-    return <CollapsiblePanel title="Commands" items={commands} />
+    return (
+        <CollapsiblePanel title="Commands">
+            {commandList.map(({ key, title, icon: Icon }) => (
+                <Button
+                    key={key}
+                    variant="ghost"
+                    className="tw-text-left"
+                    onClick={() => getVSCodeAPI().postMessage({ command: 'command', id: key })}
+                >
+                    <Icon className="tw-w-8 tw-h-8" size={16} strokeWidth="1.25" />
+                    <span className="tw-truncate tw-w-full">{title}</span>
+                </Button>
+            ))}
+        </CollapsiblePanel>
+    )
 }

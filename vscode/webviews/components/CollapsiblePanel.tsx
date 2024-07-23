@@ -6,14 +6,14 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './shadcn/ui
 
 interface CollapsiblePanelProps {
     title: string
-    items: React.ReactNode
+    children: React.ReactNode
     className?: string
     closeByDefault?: boolean
 }
 
 const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
     title,
-    items,
+    children,
     className,
     closeByDefault,
 }) => {
@@ -37,7 +37,7 @@ const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
             </div>
             <CollapsibleContent>
                 <div className="tw-px-2 tw-py-2 tw-flex tw-flex-col tw-bg-popover tw-border tw-border-border tw-rounded-lg">
-                    {items}
+                    {children}
                 </div>
             </CollapsibleContent>
         </Collapsible>

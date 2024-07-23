@@ -17,20 +17,26 @@ export const CustomCommandsList: FunctionComponent<{ commands: CodyCommand[]; ID
         return null
     }
 
-    const customCommands = customCommandsList.map(({ key, prompt, description }) => (
-        <Button
-            key={key}
-            variant="ghost"
-            onClick={() =>
-                getVSCodeAPI().postMessage({ command: 'command', id: 'cody.action.command', arg: key })
-            }
-            className="tw-text-left"
-            title={description ?? prompt}
-        >
-            <PencilRulerIcon className="tw-w-8 tw-h-8" size={16} strokeWidth="1.25" />
-            <span className="tw-truncate tw-w-full">{key}</span>
-        </Button>
-    ))
-
-    return <CollapsiblePanel title="Custom Commands" items={customCommands} />
+    return (
+        <CollapsiblePanel title="Custom Commands">
+            {customCommandsList.map(({ key, prompt, description }) => (
+                <Button
+                    key={key}
+                    variant="ghost"
+                    onClick={() =>
+                        getVSCodeAPI().postMessage({
+                            command: 'command',
+                            id: 'cody.action.command',
+                            arg: key,
+                        })
+                    }
+                    className="tw-text-left"
+                    title={description ?? prompt}
+                >
+                    <PencilRulerIcon className="tw-w-8 tw-h-8" size={16} strokeWidth="1.25" />
+                    <span className="tw-truncate tw-w-full">{key}</span>
+                </Button>
+            ))}
+        </CollapsiblePanel>
+    )
 }

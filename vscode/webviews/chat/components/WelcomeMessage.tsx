@@ -36,37 +36,6 @@ const FeatureRow: FunctionComponent<{
     </div>
 )
 
-const ChatHelp: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => {
-    const commonFeatures = (
-        <FeatureRow icon={AtSignIcon}>
-            Type <Kbd macOS="@" linuxAndWindows="@" /> to add context to your chat
-        </FeatureRow>
-    )
-
-    const vscodeFeatures = (
-        <>
-            <FeatureRow icon={TextIcon}>
-                To add code context from an editor, or the file explorer, right click and use{' '}
-                <MenuExample>Add to Cody Chat</MenuExample>
-            </FeatureRow>
-            <FeatureRow icon={MessageSquarePlusIcon}>
-                Start a new chat using <Kbd macOS="opt+/" linuxAndWindows="alt+/" /> or the{' '}
-                <FeatureRowInlineIcon Icon={MessageSquarePlusIcon} /> button in the top right of any file
-            </FeatureRow>
-            <FeatureRow icon={SettingsIcon}>
-                Customize chat settings with the <FeatureRowInlineIcon Icon={SettingsIcon} /> button, or
-                see the <a href="https://sourcegraph.com/docs/cody">documentation</a>
-            </FeatureRow>
-        </>
-    )
-
-    if (IDE === CodyIDE.VSCode) {
-        return <CollapsiblePanel title="Chat Help" items={[commonFeatures, vscodeFeatures]} />
-    }
-
-    return <CollapsiblePanel title="Chat Help" items={commonFeatures} />
-}
-
 export const localStorageKey = 'chat.welcome-message-dismissed'
 
 export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => {
@@ -76,7 +45,29 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => 
     return (
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-8 tw-gap-10 md:tw-pl-21 tw-transition-all">
             <DefaultCommandsList IDE={IDE} />
-            <ChatHelp IDE={IDE} />
+            <CollapsiblePanel title="Chat Help">
+                <FeatureRow icon={AtSignIcon}>
+                    Type <Kbd macOS="@" linuxAndWindows="@" /> to add context to your chat
+                </FeatureRow>
+                {IDE === CodyIDE.VSCode && (
+                    <>
+                        <FeatureRow icon={TextIcon}>
+                            To add code context from an editor, or the file explorer, right click and use{' '}
+                            <MenuExample>Add to Cody Chat</MenuExample>
+                        </FeatureRow>
+                        <FeatureRow icon={MessageSquarePlusIcon}>
+                            Start a new chat using <Kbd macOS="opt+/" linuxAndWindows="alt+/" /> or the{' '}
+                            <FeatureRowInlineIcon Icon={MessageSquarePlusIcon} /> button in the top right
+                            of any file
+                        </FeatureRow>
+                        <FeatureRow icon={SettingsIcon}>
+                            Customize chat settings with the <FeatureRowInlineIcon Icon={SettingsIcon} />{' '}
+                            button, or see the{' '}
+                            <a href="https://sourcegraph.com/docs/cody">documentation</a>
+                        </FeatureRow>
+                    </>
+                )}
+            </CollapsiblePanel>
         </div>
     )
 }
