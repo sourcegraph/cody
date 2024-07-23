@@ -20,16 +20,15 @@ export const CustomCommandsList: FunctionComponent<{ commands: CodyCommand[]; ID
     const customCommands = customCommandsList.map(({ key, prompt, description }) => (
         <Button
             key={key}
-            variant="text"
-            size="none"
+            variant="ghost"
             onClick={() =>
                 getVSCodeAPI().postMessage({ command: 'command', id: 'cody.action.command', arg: key })
             }
-            className="tw-px-2 hover:tw-bg-button-background-hover"
+            className="tw-text-left"
             title={description ?? prompt}
         >
-            <PencilRulerIcon className="tw-inline-flex" size={13} />
-            <span className="tw-px-4 tw-truncate tw-w-full">{key}</span>
+            <PencilRulerIcon className="tw-w-8 tw-h-8" size={16} strokeWidth="1.25" />
+            <span className="tw-truncate tw-w-full">{key}</span>
         </Button>
     ))
 

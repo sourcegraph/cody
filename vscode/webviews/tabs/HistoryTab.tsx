@@ -1,4 +1,5 @@
 import type { SerializedChatTranscript } from '@sourcegraph/cody-shared'
+import { MessageSquareTextIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { getRelativeChatPeriod } from '../../src/common/time-date'
 import { ExpandableContainer } from '../components/ExpandableContainer'
@@ -45,7 +46,12 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
                                 }
                                 className="tw-text-left tw-truncate"
                             >
-                                <span className="tw-px-2 tw-truncate tw-w-full">{lastMessage}</span>
+                                <MessageSquareTextIcon
+                                    className="tw-w-8 tw-h-8"
+                                    size={16}
+                                    strokeWidth="1.25"
+                                />
+                                <span className="tw-truncate tw-w-full">{lastMessage}</span>
                             </Button>
                         )
                     })}
