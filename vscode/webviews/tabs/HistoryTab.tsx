@@ -1,5 +1,4 @@
 import type { SerializedChatTranscript } from '@sourcegraph/cody-shared'
-import { MessageSquareTextIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { getRelativeChatPeriod } from '../../src/common/time-date'
 import { ExpandableContainer } from '../components/ExpandableContainer'
@@ -25,7 +24,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
     )
 
     return (
-        <div className="tw-flex tw-flex-col tw-gap-4 tw-px-8">
+        <div className="tw-flex tw-flex-col tw-gap-8 tw-px-8">
             {Array.from(chatByPeriod, ([period, chats]) => (
                 <ExpandableContainer
                     key={period}
@@ -36,8 +35,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
                         return (
                             <Button
                                 key={id}
-                                variant="text"
-                                size="none"
+                                variant="ghost"
                                 title={lastMessage}
                                 onClick={() =>
                                     getVSCodeAPI().postMessage({
@@ -45,9 +43,8 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
                                         chatID: id,
                                     })
                                 }
-                                className="tw-truncate tw-px-2 hover:tw-bg-button-background-hover"
+                                className="tw-text-left tw-truncate"
                             >
-                                <MessageSquareTextIcon className="tw-inline-flex" size={13} />
                                 <span className="tw-px-2 tw-truncate tw-w-full">{lastMessage}</span>
                             </Button>
                         )
