@@ -267,7 +267,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             {/* NOTE: Display tabs to PLG users only until Universal Cody is ready. */}
             {/* Shows tab bar for sidebar chats only. */}
             {userAccountInfo.isDotComUser && config.webviewType !== 'editor' && (
-                <TabsBar currentView={view} setView={setView} />
+                <TabsBar currentView={view} setView={setView} IDE={config.agentIDE || CodyIDE.VSCode} />
             )}
             {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
             <TabContainer value={view}>
