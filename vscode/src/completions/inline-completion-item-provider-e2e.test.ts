@@ -189,9 +189,11 @@ describe('InlineCompletionItemProvider E2E', () => {
         /**
          * Scenario:
          * R1--------
-         *          ^Suggested
+         *          ^Marked for suggestion
+         *          ^Suggested (when `logSuggestionEvents` is eventually called)
          *             R2-------- (different prefix)
-         *                       ^Suggested
+         *                       ^Marked for suggestion
+         *                       ^Suggested (when `logSuggestionEvents` is eventually called)
          */
         it('handles subsequent requests, that are not parallel', async () => {
             const logSpy: MockInstance = vi.spyOn(telemetryRecorder, 'recordEvent')
@@ -209,10 +211,10 @@ describe('InlineCompletionItemProvider E2E', () => {
             getCompletionProviderSpy.mockReturnValueOnce(provider1).mockReturnValueOnce(provider2)
 
             // Let the first completion resolve first
-            const result1 = await resolve1("error('hello')", { duration: 0 })
+            const result1 = await resolve1("error('hello')", { duration: 0, delay: 0 })
 
             // Now let the second completion resolve
-            const result2 = await resolve2("'hello')", { duration: 0 })
+            const result2 = await resolve2("'hello')", { duration: 0, delay: 0 })
 
             // Result 1 is used
             expect(result1).toBeDefined()
@@ -241,7 +243,8 @@ describe('InlineCompletionItemProvider E2E', () => {
          *     ^Stale (not suggested)
          *     R2------
          *            ^Synthesised from R1 result
-         *            ^Suggested
+         *            ^Marked for suggestion (with matching logId)
+         *                     ^Suggested (when `logSuggestionEvents` is eventually called)
          */
         it('handles two parallel requests, by marking the old one as stale and only suggesting the final one', async () => {
             vi.useFakeTimers()
@@ -260,8 +263,8 @@ describe('InlineCompletionItemProvider E2E', () => {
             getCompletionProviderSpy.mockReturnValueOnce(provider1).mockReturnValueOnce(provider2)
 
             const [result1, result2] = await Promise.all([
-                resolve1("log('hello')", { duration: 100 }),
-                resolve2("'hello')", { duration: 150 }),
+                resolve1("log('hello')", { duration: 100, delay: 0 }),
+                resolve2("'hello')", { duration: 150, delay: 0 }),
                 vi.advanceTimersByTimeAsync(150), // Enough for both to be shown
             ])
 
@@ -295,10 +298,10 @@ describe('InlineCompletionItemProvider E2E', () => {
          *            R2------
          *                   ^Synthesised from R1 result
          *                   ^Marked for suggestion (with matching logId)
-         *                   ^Suggested
+         *                         ^Suggested (when `logSuggestionEvents` is eventually called)
          *               R3---
          *                   ^Synthesised from R1 result
-         *                   ^Marked for suggestion (with matching logId). Will not be sugested as R2 will be suggested first.
+         *                   ^Marked for suggestion (with matching logId). Will not be suggested as R2 will be suggested first.
          */
         it('handles multiple parallel requests, by marking the old one as stale and only suggesting one of the remaining ones', async () => {
             vi.useFakeTimers()
