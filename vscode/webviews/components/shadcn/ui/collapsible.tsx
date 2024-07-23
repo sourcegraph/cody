@@ -7,7 +7,8 @@ const Collapsible = CollapsiblePrimitive.Root
 const CollapsibleTrigger = CollapsiblePrimitive.CollapsibleTrigger
 
 // Same as the standard shadcn/ui CollapsibleContent, but adds the required
-// animation classes so it animates up and down like the accordian
+// animation classes so it animates up and down like the accordian. This would
+// make a great pull request to shadcn/ui if one does not already exist.
 const CollapsibleContent = (props: ComponentProps<typeof CollapsiblePrimitive.CollapsibleContent>) => (
     <CollapsiblePrimitive.CollapsibleContent
         className={clsx(
