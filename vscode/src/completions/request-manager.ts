@@ -113,8 +113,6 @@ export class RequestManager {
         const request = new InflightRequest(requestParams, abortController)
         this.inflightRequests.add(request)
 
-        console.log('Inflight requests:', this.inflightRequests.size)
-
         const generateCompletions = async (): Promise<void> => {
             try {
                 for await (const fetchCompletionResults of provider.generateCompletions(
