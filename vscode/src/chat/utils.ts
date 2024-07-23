@@ -1,76 +1,64 @@
 import semver from 'semver'
 
-import {
-    type AuthStatus,
-    defaultAuthStatus,
-    offlineModeAuthStatus,
-    unauthenticatedStatus,
-} from '@sourcegraph/cody-shared'
+import { type AuthStatus, offlineModeAuthStatus, unauthenticatedStatus } from '@sourcegraph/cody-shared'
 import type { CurrentUserInfo } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
-/**
- * Checks a user's authentication status.
- * @param endpoint The server endpoint.
- * @param isDotCom Whether the user is connected to the dotcom instance.
- * @param user Whether the user is logged in.
- * @param isEmailVerified Whether the user has verified their email. Default to true for non-enterprise instances.
- * @param isCodyEnabled Whether Cody is enabled on the Sourcegraph instance. Default to true for non-enterprise instances.
- * @param userCanUpgrade Whether the user can upgrade their plan.
- * @param version The Sourcegraph instance version.
- * @param avatarURL The user's avatar URL, or '' if not set.
- * @param username The user's username.
- * @param displayName The user's display name, or '' if not set.
- * @param primaryEmail The user's primary email, or '' if not set.
- * @param organizations The user's organizations array.
- * @returns The user's authentication status. It's for frontend to display when instance is on unsupported version if siteHasCodyEnabled is false
- */
-export function newAuthStatus(
-    endpoint: string,
-    isDotCom: boolean,
-    user: boolean,
-    isEmailVerified: boolean,
-    isCodyEnabled: boolean,
-    userCanUpgrade: boolean,
-    version: string,
-    avatarURL: string,
-    username: string,
-    displayName?: string,
-    primaryEmail?: string,
-    configOverwrites?: AuthStatus['configOverwrites'],
-    userOrganizations?: CurrentUserInfo['organizations'],
-    isOfflineMode?: boolean
-): AuthStatus {
+export type NewAuthStatusOptions = Omit<
+    AuthStatus,
+    | 'isLoggedIn'
+    | 'isFireworksTracingEnabled'
+    | 'codyApiVersion'
+    | 'showInvalidAccessToken'
+    | 'showInvalidAccessTokenError'
+    | 'requiresVerifiedEmail'
+    | 'primaryEmail'
+> & {
+    userOrganizations?: CurrentUserInfo['organizations']
+    primaryEmail?:
+        | string
+        | {
+              email: string
+          }
+        | null
+}
+
+export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
+    const {
+        isOfflineMode,
+        endpoint,
+        siteHasCodyEnabled,
+        username,
+        authenticated,
+        isDotCom,
+        siteVersion,
+        userOrganizations,
+    } = options
+
     if (isOfflineMode) {
         return { ...offlineModeAuthStatus, endpoint, username }
     }
-    if (!user) {
+    if (!authenticated) {
         return { ...unauthenticatedStatus, endpoint }
     }
-    const authStatus: AuthStatus = { ...defaultAuthStatus, endpoint }
-    // Set values and return early
-    authStatus.authenticated = user
-    authStatus.showInvalidAccessTokenError = !user
-    authStatus.requiresVerifiedEmail = isDotCom
-    authStatus.hasVerifiedEmail = isDotCom && isEmailVerified
-    authStatus.siteHasCodyEnabled = isCodyEnabled
-    authStatus.userCanUpgrade = userCanUpgrade
-    authStatus.siteVersion = version
-    authStatus.avatarURL = avatarURL
-    authStatus.primaryEmail = primaryEmail || ''
-    authStatus.displayName = displayName || ''
-    authStatus.username = username
-    if (configOverwrites) {
-        authStatus.configOverwrites = configOverwrites
+    const primaryEmail =
+        typeof options.primaryEmail === 'string'
+            ? options.primaryEmail
+            : options.primaryEmail?.email || ''
+    const requiresVerifiedEmail = isDotCom
+    const hasVerifiedEmail = requiresVerifiedEmail && options.hasVerifiedEmail
+    const isAllowed = !requiresVerifiedEmail || hasVerifiedEmail
+    return {
+        ...options,
+        showInvalidAccessTokenError: false,
+        endpoint,
+        primaryEmail,
+        requiresVerifiedEmail,
+        hasVerifiedEmail,
+        isLoggedIn: siteHasCodyEnabled && authenticated && isAllowed,
+        codyApiVersion: inferCodyApiVersion(siteVersion, isDotCom),
+        isFireworksTracingEnabled:
+            isDotCom && !!userOrganizations?.nodes.find(org => org.name === 'sourcegraph'),
     }
-    const isLoggedIn = authStatus.siteHasCodyEnabled && authStatus.authenticated
-    const isAllowed = authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true
-    authStatus.isLoggedIn = isLoggedIn && isAllowed
-    authStatus.isDotCom = isDotCom
-    authStatus.codyApiVersion = inferCodyApiVersion(version, isDotCom)
-    authStatus.isFireworksTracingEnabled =
-        isDotCom && Boolean(userOrganizations?.nodes.find(org => org.name === 'sourcegraph'))
-
-    return authStatus
 }
 
 /**

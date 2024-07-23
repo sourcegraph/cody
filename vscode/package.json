@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.26.6",
+  "version": "1.26.7",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -239,7 +239,7 @@
           "type": "webview",
           "id": "cody.chat",
           "name": "Chat",
-          "when": "!cody.activated || cody.isConsumer || cody.chatInSidebar"
+          "when": "!cody.activated || cody.chatInSidebar"
         },
         {
           "id": "cody.support.tree.view",
@@ -267,7 +267,7 @@
       {
         "view": "cody.chat.tree.view",
         "contents": "Chat alongside your code, attach files, add additional context, and try different chat models.\n[New Chat](command:cody.chat.newPanel)",
-        "when": "cody.activated && !cody.chatInSidebar"
+        "when": "cody.activated && !cody.chatInSidebar && !cody.currentFileIgnored"
       },
       {
         "view": "cody.commands.disabled.view",
@@ -634,7 +634,7 @@
       {
         "command": "cody.chat.toggle",
         "key": "alt+l",
-        "when": "cody.activated && editorTextFocus && cody.isConsumer",
+        "when": "cody.activated && editorTextFocus && cody.chatInSidebar",
         "args": {
           "editorFocus": true
         }
@@ -642,7 +642,7 @@
       {
         "command": "cody.chat.toggle",
         "key": "alt+l",
-        "when": "cody.activated && !editorTextFocus && cody.isConsumer",
+        "when": "cody.activated && !editorTextFocus && cody.chatInSidebar",
         "args": {
           "editorFocus": false
         }
@@ -823,7 +823,7 @@
         },
         {
           "command": "cody.chat.newEditorPanel",
-          "when": "cody.activated && cody.chatInSidebar"
+          "when": "cody.activated"
         }
       ],
       "editor/context": [

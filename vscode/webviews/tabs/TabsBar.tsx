@@ -12,16 +12,9 @@ import {
     ZapIcon,
 } from 'lucide-react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-import styles from './TabsBar.module.css'
+import { View } from './types'
 
-export enum View {
-    Chat = 'chat',
-    Login = 'login',
-    History = 'history',
-    Account = 'account',
-    Commands = 'commands',
-    Settings = 'settings',
-}
+import styles from './TabsBar.module.css'
 
 interface TabsBarProps {
     currentView: View

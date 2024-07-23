@@ -22,7 +22,9 @@ export const CustomCommandsList: FunctionComponent<{ commands: CodyCommand[]; ID
             key={key}
             variant="text"
             size="none"
-            onClick={() => getVSCodeAPI().postMessage({ command: 'command', id: key })}
+            onClick={() =>
+                getVSCodeAPI().postMessage({ command: 'command', id: 'cody.action.command', arg: key })
+            }
             className="tw-px-2 hover:tw-bg-button-background-hover"
             title={description ?? prompt}
         >

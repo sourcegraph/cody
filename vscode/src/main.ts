@@ -95,6 +95,10 @@ export async function start(
     context: vscode.ExtensionContext,
     platform: PlatformContext
 ): Promise<vscode.Disposable> {
+    const isExtensionModeDevOrTest =
+        context.extensionMode === vscode.ExtensionMode.Development ||
+        context.extensionMode === vscode.ExtensionMode.Test
+
     // HACK to improve e2e test latency
     if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.chatInSidebar')) {
         await vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', true)
@@ -115,9 +119,6 @@ export async function start(
 
     const authProvider = AuthProvider.create(await getFullConfig())
     const configWatcher = await BaseConfigWatcher.create(authProvider, disposables)
-    const isExtensionModeDevOrTest =
-        context.extensionMode === vscode.ExtensionMode.Development ||
-        context.extensionMode === vscode.ExtensionMode.Test
     await configWatcher.onChange(
         async config => {
             await configureEventsInfra(config, isExtensionModeDevOrTest, authProvider)
@@ -314,21 +315,6 @@ async function initializeSingletons(
         disposables,
         { runImmediately: true }
     )
-
-    // Chat in sidebar (should be removed after the toggle is removed)
-    let currentChatInSidebarValue = false
-    disposables.push(
-        authProvider.onChange(
-            async () => {
-                const newValue = await ChatsController.isChatInSidebar()
-                if (newValue !== currentChatInSidebarValue) {
-                    currentChatInSidebarValue = newValue
-                    vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', newValue)
-                }
-            },
-            { runImmediately: true }
-        )
-    )
 }
 
 // Registers listeners to trigger parsing of visible documents
@@ -511,13 +497,11 @@ function registerAuthCommands(authProvider: AuthProvider, disposables: vscode.Di
                 if (typeof accessToken !== 'string') {
                     throw new TypeError('accessToken is required')
                 }
-                return (
-                    await authProvider.auth({
-                        endpoint: serverEndpoint,
-                        token: accessToken,
-                        customHeaders,
-                    })
-                ).authStatus
+                return await authProvider.auth({
+                    endpoint: serverEndpoint,
+                    token: accessToken,
+                    customHeaders,
+                })
             }
         )
     )

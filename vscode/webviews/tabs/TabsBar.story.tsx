@@ -1,7 +1,8 @@
 import * as Tabs from '@radix-ui/react-tabs'
 import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
-import { TabsBar, View } from './TabsBar'
+import { TabsBar } from './TabsBar'
+import { View } from './types'
 
 const meta: Meta<typeof TabsBar> = {
     title: 'cody/TabsBar',

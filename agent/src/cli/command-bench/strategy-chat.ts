@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { type ContextItem, ModelsService, PromptString } from '@sourcegraph/cody-shared'
+import { type ContextItem, ModelsService, PromptString, isDefined } from '@sourcegraph/cody-shared'
 import { glob } from 'glob'
 import * as vscode from 'vscode'
 import YAML from 'yaml'
@@ -34,7 +34,7 @@ export async function evaluateChatStrategy(
     const scores: LlmJudgeScore[] = []
     const model = ModelsService.getModelByIDSubstringOrError(chatModel).model
     const files = absoluteFiles.map(file => path.relative(options.workspace, file))
-    const yamlFiles = files.filter(file => file.endsWith('.yaml'))
+    const yamlFiles = files.filter(file => file.endsWith('question.yaml'))
     await evaluateEachFile(yamlFiles, options, async params => {
         const document = EvaluationDocument.from(params, options)
         const task: ChatTask = YAML.parse(params.content)
@@ -55,20 +55,28 @@ export async function evaluateChatStrategy(
                 submitType: 'user',
                 text: task.question,
                 contextFiles,
-                addEnhancedContext: false,
+                addEnhancedContext: isDefined(options.context),
             },
         })
         const range = new vscode.Range(0, 0, 0, 0)
         if (response.type === 'transcript') {
+            const query = response.messages.at(0)
             const reply = response.messages.at(-1)
             if (reply?.text) {
-                const response = PromptString.unsafe_fromLLMResponse(reply.text)
-                const score = await llm.judge(helpfulnessPrompt({ response }))
-                const concisenessScore = await llm.judge(concisenessPrompt({ response }))
+                const llmResponse = PromptString.unsafe_fromLLMResponse(reply.text)
+                const score = await llm.judge(helpfulnessPrompt({ response: llmResponse }))
+                const concisenessScore = await llm.judge(concisenessPrompt({ response: llmResponse }))
+                const contextItems = query?.contextFiles?.map(i => ({
+                    source: i.source,
+                    file: i.uri.path + `:${i.range?.start.line}-${i.range?.end.line}`,
+                    content: i.content,
+                }))
+
                 document.pushItem({
                     range,
                     chatReply: reply.text,
                     chatQuestion: task.question,
+                    contextItems: contextItems,
                     questionClass: task.class,
                     llmJudgeScore: score.scoreNumeric,
                     concisenessScore: concisenessScore.scoreNumeric,
@@ -98,7 +106,8 @@ export async function evaluateChatStrategy(
 
 const apologyCheck = /sorry|apologize|unfortunately/i
 const accessCheck =
-    /I (don't|do not) (actually )?have (direct )?access|your actual codebase|can't browse external repositories|not able to access external information|unable to browse through|directly access|direct access|snippet you provided is incomplete|I can't review/i
+    /I (don't|do not) (actually )?have (direct )?access|your actual codebase|can't browse external repositories|not able to access external information|unable to browse through|directly access|direct access|snippet you provided is incomplete|I can't review|don't see any information|no specific information/i
+
 function checkHedging(reply: string): boolean {
     return apologyCheck.test(reply) || accessCheck.test(reply)
 }
