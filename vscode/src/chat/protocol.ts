@@ -56,6 +56,11 @@ interface TelemetryEventProperties {
 }
 
 /**
+ * The location of where the webview is displayed.
+ */
+export type WebviewType = 'sidebar' | 'editor'
+
+/**
  * A message sent from the webview to the extension host.
  */
 export type WebviewMessage =
@@ -262,6 +267,7 @@ export interface ConfigurationSubsetForWebview
         'experimentalNoodle' | 'serverEndpoint' | 'agentIDE' | 'agentExtensionVersion'
     > {
     experimentalUnitTest: boolean
+    webviewType?: WebviewType | undefined | null
 }
 
 /**

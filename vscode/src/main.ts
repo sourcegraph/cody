@@ -103,12 +103,12 @@ export async function start(
         await vscode.commands.executeCommand('workbench.action.reloadWindow')
     }
 
-    const isExtensionTestMode = context.extensionMode === vscode.ExtensionMode.Test
     const isExtensionModeDevOrTest =
-        context.extensionMode === vscode.ExtensionMode.Development || isExtensionTestMode
+        context.extensionMode === vscode.ExtensionMode.Development ||
+        context.extensionMode === vscode.ExtensionMode.Test
 
     // HACK to improve e2e test latency
-    if (!isExtensionTestMode) {
+    if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.chatInSidebar')) {
         await vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', true)
     }
 
@@ -125,7 +125,7 @@ export async function start(
 
     const disposables: vscode.Disposable[] = []
 
-    const authProvider = AuthProvider.create(await getFullConfig(), isExtensionTestMode)
+    const authProvider = AuthProvider.create(await getFullConfig())
     const configWatcher = await BaseConfigWatcher.create(authProvider, disposables)
     await configWatcher.onChange(
         async config => {

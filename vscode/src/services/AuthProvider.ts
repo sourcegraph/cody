@@ -52,17 +52,14 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         return AuthProvider._instance
     }
 
-    public static create(config: AuthConfig, isTesting: boolean): AuthProvider {
+    public static create(config: AuthConfig): AuthProvider {
         if (!AuthProvider._instance) {
-            AuthProvider._instance = new AuthProvider(config, isTesting)
+            AuthProvider._instance = new AuthProvider(config)
         }
         return AuthProvider._instance
     }
 
-    private constructor(
-        private config: AuthConfig,
-        private isTesting: boolean
-    ) {
+    private constructor(private config: AuthConfig) {
         this.status.endpoint = 'init'
         this.loadEndpointHistory()
     }
@@ -346,7 +343,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
             // Set context for the extension to render views based on auth status.
             // isConsumer should be set before activated to avoid flickering.
-            const isConsumer = this.isTesting || (authStatus.isLoggedIn && authStatus.isDotCom)
+            const isConsumer = authStatus.isLoggedIn && authStatus.isDotCom
             await vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', isConsumer)
             await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
 
@@ -520,7 +517,8 @@ export function isNetworkError(error: Error): boolean {
         message.includes('ENOTFOUND') ||
         message.includes('ECONNREFUSED') ||
         message.includes('ECONNRESET') ||
-        message.includes('EHOSTUNREACH')
+        message.includes('EHOSTUNREACH') ||
+        message.includes('ETIMEDOUT')
     )
 }
 

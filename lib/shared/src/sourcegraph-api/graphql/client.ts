@@ -1207,12 +1207,16 @@ export class SourcegraphGraphQLAPIClient {
         return initialDataOrError
     }
 
-    public async searchAttribution(snippet: string): Promise<SearchAttributionResults | Error> {
+    public async searchAttribution(
+        snippet: string,
+        timeoutMs: number
+    ): Promise<SearchAttributionResults | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SearchAttributionResponse>>(
             SEARCH_ATTRIBUTION_QUERY,
             {
                 snippet,
-            }
+            },
+            timeoutMs
         ).then(response => extractDataOrError(response, data => data.snippetAttribution))
     }
 
@@ -1284,7 +1288,7 @@ export class SourcegraphGraphQLAPIClient {
                 .then(response => response.json() as T)
                 .catch(error => {
                     if (error.name === 'AbortError') {
-                        return new Error(`EHOSTUNREACH: Request timed out after ${timeout}ms (${url})`)
+                        return new Error(`ETIMEDOUT: Request timed out after ${timeout}ms (${url})`)
                     }
                     return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
                 })
@@ -1378,7 +1382,7 @@ export class SourcegraphGraphQLAPIClient {
                 .then(response => response.json() as T)
                 .catch(error => {
                     if (error.name === 'AbortError') {
-                        return new Error(`EHOSTUNREACH: Request timed out after ${timeout}ms (${url})`)
+                        return new Error(`ETIMEDOUT: Request timed out after ${timeout}ms (${url})`)
                     }
                     return new Error(`accessing Sourcegraph HTTP API: ${error} (${url})`)
                 })
