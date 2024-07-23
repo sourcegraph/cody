@@ -60,14 +60,10 @@ interface TabButtonProps {
     command?: string
     isActive?: boolean
     onClick: () => void
+    prominent?: boolean
 }
 
-// const baseClasses =
-//     'tw-rounded-none tw-bg-transparent tw-border-solid tw-border-b tw-px-2 tw-py-4 tw-transition-all hover:tw-text-button-background-hover'
-// const activeClasses = 'tw-border-button-background-hover tw-text-button-background-hover'
-// const inactiveClasses = 'tw-border-transparent'
-
-const TabButton: React.FC<TabButtonProps> = ({ Icon, isActive, onClick, view }) => (
+const TabButton: React.FC<TabButtonProps> = ({ Icon, isActive, onClick, view, prominent }) => (
     <button
         type="button"
         onClick={onClick}
@@ -75,6 +71,7 @@ const TabButton: React.FC<TabButtonProps> = ({ Icon, isActive, onClick, view }) 
             'tw-py-3 tw-px-2 tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
             {
                 '!tw-opacity-100 !tw-border-[var(--vscode-tab-activeBorderTop)]': isActive,
+                '!tw-opacity-100': prominent,
             }
         )}
     >
@@ -120,6 +117,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView }) => {
                         Icon={Icon}
                         command={command}
                         onClick={() => getVSCodeAPI().postMessage({ command: 'command', id: command })}
+                        prominent
                     />
                 ))}
             </div>
