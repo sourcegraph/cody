@@ -290,16 +290,17 @@ describe('InlineCompletionItemProvider E2E', () => {
 
         /**
          * Scenario:
-         * R1----------
-         *     ^Stale (not suggested)
-         *     R2------
-         *            ^Synthesised from R1 result
-         *            ^Suggested
-         *        R3---
-         *            ^Synthesised from R1 result
-         *            ^Suggested
+         * R1-----------------
+         *            ^Stale (not suggested)
+         *            R2------
+         *                   ^Synthesised from R1 result
+         *                   ^Marked for suggestion (with matching logId)
+         *                   ^Suggested
+         *               R3---
+         *                   ^Synthesised from R1 result
+         *                   ^Marked for suggestion (with matching logId). Will not be sugested as R2 will be suggested first.
          */
-        it.only('handles multiple parallel requests, by marking the old one as stale and only suggesting one of the remaining ones', async () => {
+        it('handles multiple parallel requests, by marking the old one as stale and only suggesting one of the remaining ones', async () => {
             vi.useFakeTimers()
             const logSpy: MockInstance = vi.spyOn(telemetryRecorder, 'recordEvent')
             const provider = getInlineCompletionProvider()
