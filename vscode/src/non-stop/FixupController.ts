@@ -137,8 +137,19 @@ export class FixupController
     }
 
     public async reject(task: FixupTask, range: vscode.Range): Promise<void> {
-        // ToDo: Revert the code in this range to the original content
+        // Check if the range corresponds to an addition or deletion block
+        const edit = task.diff?.find(edit => edit.range.isEqual(range));
+        if (!edit) {
+            return;
+        }
 
+        if (edit.type === 'insertion') {
+            // Remove the added code
+            this.removeAddedCode(task, range);
+        } else if (edit.type === 'decoratedReplacement') {
+            // Re-add the original code
+            this.reAddOriginalCode(task, range, edit.oldText);
+        }
 
         // Remove the edit from the task's diff
         task.removeEditByRange(range);
@@ -150,6 +161,32 @@ export class FixupController
     private refreshCodeLenses(task: FixupTask): void {
         // Trigger a refresh of the code lenses
         vscode.commands.executeCommand('vscode.executeCodeLensProvider', task.document.uri)
+    }
+
+    private removeAddedCode(task: FixupTask, range: vscode.Range): void {
+        const editor = vscode.window.visibleTextEditors.find(
+            editor => editor.document.uri.toString() === task.fixupFile.uri.toString()
+        );
+        if (!editor) {
+            return;
+        }
+    
+        editor.edit(editBuilder => {
+            editBuilder.delete(range);
+        });
+    }
+
+    private reAddOriginalCode(task: FixupTask, range: vscode.Range, originalText: string): void {
+        const editor = vscode.window.visibleTextEditors.find(
+            editor => editor.document.uri.toString() === task.fixupFile.uri.toString()
+        );
+        if (!editor) {
+            return;
+        }
+    
+        editor.edit(editBuilder => {
+            editBuilder.replace(range, originalText);
+        });
     }
 
     private markBlockAsAccepted(task: FixupTask, range: vscode.Range): void {

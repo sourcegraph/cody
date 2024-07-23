@@ -54,7 +54,6 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
                 telemetryRecorder.recordEvent('cody.fixup.codeLens', 'accept')
                 const task = this.controller.taskForId(id)
                 if (task) {
-                    console.log("JM: Accepting task", task)
                     this.controller.accept(task, range)
                 }
             }),
@@ -62,7 +61,6 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
                 telemetryRecorder.recordEvent('cody.fixup.codeLens', 'acceptAll')
                 const task = this.controller.taskForId(id)
                 if (task) {
-                    console.log("JM: Accepting All task", task)
                     this.controller.acceptAll(task)
                 }
             }),

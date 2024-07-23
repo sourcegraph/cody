@@ -105,7 +105,7 @@ export class FixupTask {
 
     public removeEditByRange(range: vscode.Range): void {
         if (this.diff) {
-            this.diff = this.diff.filter(edit => !edit.range.intersection(range))
+            this.diff = this.diff.filter(edit => !edit.range.isEqual(range));
         }
     }
 
