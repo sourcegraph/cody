@@ -32,6 +32,7 @@ interface TabConfig {
     tooltip: string
     command?: string
     SubIcons?: { tooltip: string; Icon: IconComponent; command: string }[]
+    changesView?: boolean
 }
 
 const tabItems: TabConfig[] = [
@@ -40,6 +41,7 @@ const tabItems: TabConfig[] = [
         tooltip: 'Chat',
         Icon: MessagesSquareIcon,
         SubIcons: [{ tooltip: 'New Chat', Icon: MessageSquarePlusIcon, command: 'cody.chat.newPanel' }],
+        changesView: true,
     },
     {
         view: View.History,
@@ -49,11 +51,13 @@ const tabItems: TabConfig[] = [
             { tooltip: 'Export History', Icon: DownloadIcon, command: 'cody.chat.history.export' },
             { tooltip: 'Clear History', Icon: Trash2Icon, command: 'cody.chat.history.clear' },
         ],
+        changesView: true,
     },
     {
         view: View.Commands,
         tooltip: 'Commands',
         Icon: ZapIcon,
+        changesView: true,
     },
     {
         view: View.Settings,
@@ -61,7 +65,12 @@ const tabItems: TabConfig[] = [
         Icon: SettingsIcon,
         command: 'cody.status-bar.interacted',
     },
-    { view: View.Account, tooltip: 'Account', Icon: CircleUserIcon, command: 'cody.auth.account' },
+    {
+        view: View.Account,
+        tooltip: 'Account',
+        Icon: CircleUserIcon,
+        command: 'cody.auth.account',
+    },
 ]
 
 interface TabButtonProps {
@@ -96,11 +105,13 @@ const TabButton: React.FC<TabButtonProps> = ({ Icon, isActive, onClick, tooltip,
 )
 
 export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView }) => {
-    const handleClick = (view: View, command?: string) => {
+    const handleClick = (view: View, command?: string, changesView?: boolean) => {
         if (command) {
             getVSCodeAPI().postMessage({ command: 'command', id: command })
         }
-        setView(view)
+        if (changesView) {
+            setView(view)
+        }
     }
 
     const currentViewSubIcons = tabItems.find(tab => tab.view === currentView)?.SubIcons
@@ -114,7 +125,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView }) => {
             )}
         >
             <div className="tw-flex tw-gap-1">
-                {tabItems.map(({ Icon, view, command, tooltip }) => (
+                {tabItems.map(({ Icon, view, command, tooltip, changesView }) => (
                     <Tabs.Trigger key={view} value={view}>
                         <TabButton
                             Icon={Icon}
@@ -122,7 +133,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView }) => {
                             tooltip={tooltip}
                             command={command}
                             isActive={currentView === view}
-                            onClick={() => handleClick(view, command)}
+                            onClick={() => handleClick(view, command, changesView)}
                         />
                     </Tabs.Trigger>
                 ))}
