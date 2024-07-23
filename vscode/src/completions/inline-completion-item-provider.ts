@@ -291,10 +291,11 @@ export class InlineCompletionItemProvider
                 return null
             }
 
-            let takeSuggestWidgetSelectionIntoAccount = this.shouldTakeSuggestWidgetSelectionIntoAccount(
-                this.lastCompletionRequest,
-                completionRequest
-            )
+            const takeSuggestWidgetSelectionIntoAccount =
+                this.shouldTakeSuggestWidgetSelectionIntoAccount(
+                    this.lastCompletionRequest,
+                    completionRequest
+                )
             const triggerKind = isManualCompletion
                 ? TriggerKind.Manual
                 : invokedContext.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
@@ -401,13 +402,6 @@ export class InlineCompletionItemProvider
                     // for a single position, so we do nothing here.
                     return null
                 }
-
-                // Re-compute takeSuggestWidgetSelectionIntoAccount as the `lastCompletionRequest` may have changed
-                // since this `completionRequest` was started.
-                takeSuggestWidgetSelectionIntoAccount = this.shouldTakeSuggestWidgetSelectionIntoAccount(
-                    this.lastCompletionRequest,
-                    completionRequest
-                )
 
                 const latestCursorPosition = vscode.window.activeTextEditor?.selection.active
                 if (
@@ -647,9 +641,11 @@ export class InlineCompletionItemProvider
         setTimeout(() => {
             const activeEditor = vscode.window.activeTextEditor
 
+            const { document: invokedDocument, position: invokedPosition } = completion.requestParams
+
             if (
                 !activeEditor ||
-                activeEditor.document.uri.toString() !== completion.requestParams.document.uri.toString()
+                activeEditor.document.uri.toString() !== invokedDocument.uri.toString()
             ) {
                 // User is no longer in the same document as the completion
                 return
@@ -659,29 +655,36 @@ export class InlineCompletionItemProvider
 
             // If the cursor position is the same as the position of the completion request, we should use
             // the provided context. This allows us to re-use useful information such as `selectedCompletionInfo`
-            const latestContext = latestCursorPosition.isEqual(completion.requestParams.position)
+            const latestContext = latestCursorPosition.isEqual(invokedPosition)
                 ? completion.context
                 : undefined
 
             const takeSuggestWidgetSelectionIntoAccount =
-                this.shouldTakeSuggestWidgetSelectionIntoAccount(this.lastCompletionRequest, {
-                    document: activeEditor.document,
-                    position: latestCursorPosition,
-                    context: completion.context,
-                })
+                this.shouldTakeSuggestWidgetSelectionIntoAccount(
+                    {
+                        document: invokedDocument,
+                        position: invokedPosition,
+                        context: completion.context,
+                    },
+                    {
+                        document: activeEditor.document,
+                        position: latestCursorPosition,
+                        context: completion.context,
+                    }
+                )
 
             const isStillVisible = isCompletionVisible(
                 completion,
                 activeEditor.document,
                 {
-                    invokedPosition: completion.requestParams.position,
+                    invokedPosition,
                     latestPosition: activeEditor.selection.active,
                 },
                 this.getDocContext(
                     activeEditor.document,
                     activeEditor.selection.active,
                     latestContext,
-                    takeSuggestWidgetSelectionIntoAccount || false
+                    takeSuggestWidgetSelectionIntoAccount
                 ),
                 latestContext,
                 takeSuggestWidgetSelectionIntoAccount,
