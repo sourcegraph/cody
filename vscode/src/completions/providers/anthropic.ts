@@ -288,7 +288,7 @@ export function createProviderConfig({
     providerOptions,
     ...otherOptions
 }: AnthropicOptions & { providerOptions?: Partial<ProviderOptions> }): ProviderConfig {
-    const defaultClientModel = model ?? 'anthropic/claude-instant-1.2'
+    const clientModel = model ?? 'claude-instant-1.2'
     return {
         create(options: ProviderOptions) {
             return new AnthropicProvider(
@@ -297,12 +297,12 @@ export function createProviderConfig({
                     ...providerOptions,
                     id: PROVIDER_IDENTIFIER,
                 },
-                { maxContextTokens, model: model ?? defaultClientModel, ...otherOptions }
+                { maxContextTokens, model: clientModel, ...otherOptions }
             )
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         identifier: PROVIDER_IDENTIFIER,
-        model: model ?? defaultClientModel,
+        model: clientModel,
     }
 }
 
