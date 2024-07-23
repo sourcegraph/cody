@@ -78,6 +78,7 @@ interface CompletionRequest {
 export class InlineCompletionItemProvider
     implements vscode.InlineCompletionItemProvider, vscode.Disposable
 {
+    private lastCompletionRequest: CompletionRequest | null = null
     private latestCompletionRequest: CompletionRequest | null = null
     // This field is going to be set if you use the keyboard shortcut to manually trigger a
     // completion. Since VS Code does not provide a way to distinguish manual vs automatic
@@ -290,17 +291,10 @@ export class InlineCompletionItemProvider
                 return null
             }
 
-            let takeSuggestWidgetSelectionIntoAccount = false
-            // Only take the completion widget selection into account if the selection was actively changed
-            // by the user
-            if (
-                this.config.completeSuggestWidgetSelection &&
-                lastCompletionRequest &&
-                onlyCompletionWidgetSelectionChanged(lastCompletionRequest, completionRequest)
-            ) {
-                takeSuggestWidgetSelectionIntoAccount = true
-            }
-
+            let takeSuggestWidgetSelectionIntoAccount = this.shouldTakeSuggestWidgetSelectionIntoAccount(
+                lastCompletionRequest,
+                completionRequest
+            )
             const triggerKind = isManualCompletion
                 ? TriggerKind.Manual
                 : invokedContext.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
@@ -418,6 +412,13 @@ export class InlineCompletionItemProvider
                     span
                 )
 
+                // Re-compute takeSuggestWidgetSelectionIntoAccount as the `lastCompletionRequest` may have changed
+                // since this `completionRequest` was started.
+                takeSuggestWidgetSelectionIntoAccount = this.shouldTakeSuggestWidgetSelectionIntoAccount(
+                    this.lastCompletionRequest,
+                    completionRequest
+                )
+
                 const latestCursorPosition = vscode.window.activeTextEditor?.selection.active
                 if (
                     latestCursorPosition !== undefined &&
@@ -524,11 +525,7 @@ export class InlineCompletionItemProvider
                     // Since VS Code has no callback as to when a completion is shown, we assume
                     // that if we pass the above visibility tests, the completion is going to be
                     // rendered in the UI
-                    this.unstable_handleDidShowCompletionItem(
-                        visibleItems[0],
-                        invokedContext,
-                        takeSuggestWidgetSelectionIntoAccount
-                    )
+                    this.unstable_handleDidShowCompletionItem(visibleItems[0], invokedContext)
                 }
 
                 recordExposedExperimentsToSpan(span)
@@ -626,7 +623,29 @@ export class InlineCompletionItemProvider
         if (!completion) {
             return
         }
+        this.markCompletionAsSuggestedAfterDelay(
+            completion,
+            invokedContext,
+            takeSuggestWidgetSelectionIntoAccount
+        )
+    }
 
+    /**
+     * The amount of time before we consider a completion to be "visible" to the user.
+     */
+    private COMPLETION_VISIBLE_DELAY_MS = 750
+
+    /**
+     * Given a completion, fire a suggestion event after a short delay to give the user time to
+     * read the completion and decide whether to accept it.
+     *
+     * Will confirm that the completion is _still_ visible before firing the event.
+     */
+    private markCompletionAsSuggestedAfterDelay(
+        completion: AutocompleteItem,
+        invokedContext?: vscode.InlineCompletionContext,
+        takeSuggestWidgetSelectionIntoAccount = false
+    ): void {
         const suggestionEvent = CompletionLogger.prepareSuggestionEvent(
             completion.logId,
             completion.span
@@ -634,11 +653,6 @@ export class InlineCompletionItemProvider
         if (!suggestionEvent) {
             return
         }
-
-        /**
-         * The amount of time before we consider a completion to be "visible" to the user.
-         */
-        const READ_TIMEOUT_MS = 750
 
         setTimeout(() => {
             const activeEditor = vscode.window.activeTextEditor
@@ -676,7 +690,21 @@ export class InlineCompletionItemProvider
             if (isStillVisible) {
                 suggestionEvent.fire()
             }
-        }, READ_TIMEOUT_MS)
+        }, this.COMPLETION_VISIBLE_DELAY_MS)
+    }
+
+    /**
+     * Only take the completion widget selection into account if the selection was actively changed by the user
+     */
+    private shouldTakeSuggestWidgetSelectionIntoAccount(
+        lastRequest: CompletionRequest | null,
+        latestRequest: CompletionRequest
+    ): boolean {
+        return Boolean(
+            this.config.completeSuggestWidgetSelection &&
+                lastRequest &&
+                onlyCompletionWidgetSelectionChanged(lastRequest, latestRequest)
+        )
     }
 
     /**
