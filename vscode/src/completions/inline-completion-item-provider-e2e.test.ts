@@ -156,7 +156,11 @@ function createCompletion(textWithCursor: string, provider: InlineCompletionItem
 
     return {
         mockRequestProvider,
-        resolve: async (completion: string, { duration }: { duration: number }) => {
+        resolve: async (
+            completion: string,
+            { delay = 0, duration = 0 }: { delay: number; duration: number }
+        ) => {
+            await sleep(delay)
             const promise = provider.provideInlineCompletionItems(document, position, DUMMY_CONTEXT)
             await sleep(duration)
             mockRequestProvider.yield([completion])
@@ -239,7 +243,7 @@ describe('InlineCompletionItemProvider E2E', () => {
          *            ^Synthesised from R1 result
          *            ^Suggested
          */
-        it('handles parallel requests, by marking the old one as stale and only suggesting the final one', async () => {
+        it('handles two parallel requests, by marking the old one as stale and only suggesting the final one', async () => {
             vi.useFakeTimers()
             const logSpy: MockInstance = vi.spyOn(telemetryRecorder, 'recordEvent')
             const provider = getInlineCompletionProvider()
@@ -272,6 +276,89 @@ describe('InlineCompletionItemProvider E2E', () => {
 
             expect(getAnalyticEventCalls(logSpy)).toMatchInlineSnapshot(`
               [
+                [
+                  "cody.completion",
+                  "synthesizedFromParallelRequest",
+                ],
+                [
+                  "cody.completion",
+                  "suggested",
+                ],
+              ]
+            `)
+        })
+
+        /**
+         * Scenario:
+         * R1----------
+         *     ^Stale (not suggested)
+         *     R2------
+         *            ^Synthesised from R1 result
+         *            ^Suggested
+         *        R3---
+         *            ^Synthesised from R1 result
+         *            ^Suggested
+         */
+        it.only('handles multiple parallel requests, by marking the old one as stale and only suggesting one of the remaining ones', async () => {
+            vi.useFakeTimers()
+            const logSpy: MockInstance = vi.spyOn(telemetryRecorder, 'recordEvent')
+            const provider = getInlineCompletionProvider()
+
+            const { mockRequestProvider: provider1, resolve: resolve1 } = createCompletion(
+                'console.█',
+                provider
+            )
+            const { mockRequestProvider: provider2, resolve: resolve2 } = createCompletion(
+                'console.log(█',
+                provider
+            )
+            const { mockRequestProvider: provider3, resolve: resolve3 } = createCompletion(
+                "console.log('h█",
+                provider
+            )
+
+            getCompletionProviderSpy
+                .mockReturnValueOnce(provider1)
+                .mockReturnValueOnce(provider2)
+                .mockReturnValueOnce(provider3)
+
+            const [result1, result2, result3] = await Promise.all([
+                // The first completion will be triggered immediately, but takes a while to resolve
+                resolve1("log('hello')", {
+                    delay: 0,
+                    duration: 800, // Ensure that this request is still in-flight when the next one starts
+                }),
+                // The second completion will be triggered before the first completion resolves, but also takes a while to resolve
+                resolve2("'hello')", {
+                    delay: 300, // Ensure that this request is made in-flight, as it bypasses the smart-throttle timeout
+                    duration: 800,
+                }),
+                // The third completion will be triggered before both the first and second completions resolve.
+                // It should be the only one that is suggested.
+                resolve3("ello')", {
+                    delay: 400, // Ensure that this request is made in-flight, as it bypasses the smart-throttle timeout
+                    duration: 800,
+                }),
+                vi.advanceTimersByTimeAsync(2000), // Enough for all to be shown
+            ])
+
+            // Result 1 is marked as stale
+            expect(result1).toBeNull()
+            // Result 2 is used
+            expect(result2).toBeDefined()
+            // Result 3 is used
+            expect(result3).toBeDefined()
+
+            // Enough for completion events to be logged
+            vi.advanceTimersByTime(1000)
+            CompletionLogger.logSuggestionEvents(true)
+
+            expect(getAnalyticEventCalls(logSpy)).toMatchInlineSnapshot(`
+              [
+                [
+                  "cody.completion",
+                  "synthesizedFromParallelRequest",
+                ],
                 [
                   "cody.completion",
                   "synthesizedFromParallelRequest",

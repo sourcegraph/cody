@@ -124,9 +124,6 @@ export function reuseLastCandidate({
                 lastCompletion.startsWith(currentLinePrefix) &&
                 position.isAfterOrEqual(lastTriggerPosition)
 
-            console.log(lastCompletion.startsWith(currentLinePrefix), 'as suggestrd')
-            console.log({ position, lastTriggerPosition, lastCompletion })
-
             if (isTypingAsSuggested) {
                 const remaining = lastCompletion.slice(currentLinePrefix.length)
                 const alreadyInsertedText = item.insertText.slice(0, -remaining.length)
