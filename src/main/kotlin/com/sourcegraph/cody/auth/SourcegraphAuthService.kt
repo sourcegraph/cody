@@ -31,17 +31,17 @@ internal class SourcegraphAuthService : AuthServiceBase() {
         when (authMethod) {
           SsoAuthMethod.GITHUB -> {
             val end =
-                ".auth/openidconnect/login?prompt_auth=github&pc=sams&redirect=/post-sign-up?returnTo=/user/settings/tokens/new/callback?requestFrom=JETBRAINS-$port"
+                ".auth/openidconnect/login?prompt_auth=github&pc=sams&redirect=/user/settings/tokens/new/callback?requestFrom=JETBRAINS-$port"
             Urls.newFromEncoded(ConfigUtil.DOTCOM_URL + end)
           }
           SsoAuthMethod.GITLAB -> {
             val end =
-                ".auth/openidconnect/login?prompt_auth=gitlab&pc=sams&redirect=/post-sign-up?returnTo=/user/settings/tokens/new/callback?requestFrom=JETBRAINS-$port"
+                ".auth/openidconnect/login?prompt_auth=gitlab&pc=sams&redirect=/user/settings/tokens/new/callback?requestFrom=JETBRAINS-$port"
             Urls.newFromEncoded(ConfigUtil.DOTCOM_URL + end)
           }
           SsoAuthMethod.GOOGLE -> {
             val end =
-                ".auth/openidconnect/login?prompt_auth=google&pc=sams&redirect=/post-sign-up?returnTo=/user/settings/tokens/new/callback?requestFrom=JETBRAINS-$port"
+                ".auth/openidconnect/login?prompt_auth=google&pc=sams&redirect=/user/settings/tokens/new/callback?requestFrom=JETBRAINS-$port"
             Urls.newFromEncoded(ConfigUtil.DOTCOM_URL + end)
           }
           else ->
