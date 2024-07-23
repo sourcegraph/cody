@@ -138,7 +138,7 @@ function createNetworkProvider(params: RequestParams): MockRequestProvider {
 
 describe('InlineCompletionItemProvider E2E', () => {
     beforeAll(async () => {
-        await initCompletionProviderConfig({})
+        await initCompletionProviderConfig({ autocompleteExperimentalSmartThrottle: true })
 
         // Dummy noop implementation of localStorage.
         localStorage.setStorage({
@@ -184,25 +184,72 @@ describe('InlineCompletionItemProvider E2E', () => {
             }
         }
 
-        it('logs two in-flight completion as shown', async () => {
+        it('logs two in-flight completions as shown', async () => {
             const logSpy = vi.spyOn(CompletionLogger, 'suggested')
 
             const provider = getInlineCompletionProvider()
-            const firstCompletion = createCompletion(provider, 'const foo = █')
-            const secondCompletion = createCompletion(provider, 'const foo = a█')
 
-            await Promise.all([
-                firstCompletion.resultPromise,
-                secondCompletion.resultPromise,
+            const first = documentAndPosition('console.█')
+            const firstDocContext = getCurrentDocContext({
+                document: first.document,
+                position: first.position,
+                maxPrefixLength: 1000,
+                maxSuffixLength: 1000,
+                context: undefined,
+            })
+            const firstNetworkProvider = createNetworkProvider({
+                document: first.document,
+                position: first.position,
+                docContext: firstDocContext,
+                selectedCompletionInfo: undefined,
+            })
+
+            const second = documentAndPosition('console.log(█')
+            const secondDocContext = getCurrentDocContext({
+                document: second.document,
+                position: second.position,
+                maxPrefixLength: 1000,
+                maxSuffixLength: 1000,
+                context: undefined,
+            })
+            const secondNetworkProvider = createNetworkProvider({
+                document: second.document,
+                position: second.position,
+                docContext: secondDocContext,
+                selectedCompletionInfo: undefined,
+            })
+
+            vi.spyOn(CompletionProvider, 'getCompletionProvider')
+                .mockReturnValueOnce(firstNetworkProvider)
+                .mockReturnValueOnce(secondNetworkProvider)
+
+            const [result1, result2] = await Promise.all([
                 (async () => {
+                    const promise = provider.provideInlineCompletionItems(
+                        first.document,
+                        first.position,
+                        DUMMY_CONTEXT
+                    )
                     await sleep(100)
-                    firstCompletion.resolve('barry')
+                    firstNetworkProvider.yield(["log('hello')"])
+                    return promise
                 })(),
                 (async () => {
+                    const promise = provider.provideInlineCompletionItems(
+                        second.document,
+                        second.position,
+                        DUMMY_CONTEXT
+                    )
                     await sleep(150)
-                    secondCompletion.resolve('adam')
+                    secondNetworkProvider.yield(["'hello')"])
+                    return promise
                 })(),
             ])
+
+            // Result 1 is marked as stale
+            expect(result1).toBeNull()
+            // Result 2 is used
+            expect(result2).toBeDefined()
 
             expect(logSpy).toHaveBeenCalledTimes(1)
         })

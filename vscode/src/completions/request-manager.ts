@@ -122,7 +122,7 @@ export class RequestManager {
                     context,
                     tracer
                 )) {
-                    console.log('GOT RESULT COMPLETION')
+                    console.log('GOT RESULT', request.params.position, fetchCompletionResults)
                     const [hotStreakCompletions, currentCompletions] = partition(
                         fetchCompletionResults.filter(isDefined),
                         result => result.completion.stopReason === STOP_REASON_HOT_STREAK
@@ -222,6 +222,8 @@ export class RequestManager {
                 items,
             },
         }
+
+        console.log('REQUEST THAT JUST FINISHED:', resolvedRequest.params.position, items[0].insertText)
 
         for (const request of this.inflightRequests) {
             if (request === resolvedRequest) {
