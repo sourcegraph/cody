@@ -183,7 +183,7 @@ function getRejectLens(task: FixupTask, codeLensRange: vscode.Range, id: string)
         for (const edit of task.diff) {
             const acceptBlockLens = new vscode.CodeLens(edit.range)
             acceptBlockLens.command = {
-                title: `$(cody-logo) Reject`,
+                title: `Reject`,
                 command: 'cody.fixup.codelens.reject',
                 arguments: [id, edit.range],
             }
@@ -208,7 +208,6 @@ function getAcceptLenses(task: FixupTask, codeLensRange: vscode.Range, id: strin
     }
     return lenses
 }
-
 
 function getAcceptAllLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
