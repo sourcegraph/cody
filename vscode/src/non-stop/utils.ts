@@ -50,6 +50,9 @@ export enum CodyTaskState {
     Pending = 'Pending',
 }
 
+/**
+ * Calculates the minimum distance from the given position to the start or end of the provided range.
+ */
 export function getMinimumDistanceToRangeBoundary(
     position: vscode.Position,
     range: vscode.Range
@@ -63,30 +66,13 @@ export function getMinimumDistanceToRangeBoundary(
  * Given some `insertedText`, adjusts the provided `range` to account for the
  * additional lines and characters that were inserted.
  */
-/**
- * Given some `insertedText`, adjusts the provided `range` to account for the
- * additional lines and characters that were inserted.
- * @param range The original range before the text was inserted
- * @param insertedText The text that was inserted into the document
- * @returns A new range that encompasses the original range plus the inserted text
- */
 export function expandRangeToInsertedText(range: vscode.Range, insertedText: string): vscode.Range {
-    // Split the inserted text into lines
     const insertedLines = insertedText.split(/\r\n|\r|\n/m)
-    // Get the length of the last line of the inserted text
     const lastLineLength = insertedLines.at(-1)?.length || 0
-    // Return a new range
     return new vscode.Range(
         range.start,
-        // If the inserted text is only one line, just translate the end position by the length of the line
         insertedLines.length === 1
             ? range.start.translate(0, lastLineLength)
-            : // Otherwise, create a new end position at the last line of the inserted text
-              new vscode.Position(range.start.line + insertedLines.length - 1, lastLineLength)
+            : new vscode.Position(range.start.line + insertedLines.length - 1, lastLineLength)
     )
 }
-
-// edit 1 triggers
-// edit 2 triggers, edit 1 stays active
-// edit 1 completes, we show diff, codelens etc
-// edit 2 completes, we automatically accept edit 1, show diff, codelens for edit 2

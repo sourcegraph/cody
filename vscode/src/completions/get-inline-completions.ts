@@ -180,7 +180,6 @@ export async function getInlineCompletions(
         params.tracer?.({ result })
         return result
     } catch (unknownError: unknown) {
-        console.log('ERROR?')
         const error = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
 
         params.tracer?.({ error: error.toString() })
@@ -234,7 +233,6 @@ async function doGetInlineCompletions(
         stageRecorder,
     } = params
 
-    console.log('INSIDE DO GET')
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
 
     const gitIdentifiersForFile =
@@ -458,7 +456,6 @@ async function doGetInlineCompletions(
         completionLogId: logId,
         gitContext,
     })
-    console.log('Got completion provider', position)
 
     tracer?.({
         completers: [
@@ -473,7 +470,6 @@ async function doGetInlineCompletions(
     stageRecorder.record('preNetworkRequest')
 
     // Get the processed completions from providers
-    console.log('calling request manager')
     const { completions, source, updatedLogId } = await requestManager.request({
         logId: logId,
         requestParams,
