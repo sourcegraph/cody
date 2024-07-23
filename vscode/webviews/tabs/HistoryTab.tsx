@@ -27,10 +27,8 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
     return (
         <div className="tw-flex tw-flex-col tw-gap-8 tw-px-8">
             {Array.from(chatByPeriod, ([period, chats]) => (
-                <CollapsiblePanel
-                    key={period}
-                    title={period}
-                    items={chats.map(({ interactions, id }) => {
+                <CollapsiblePanel key={period} title={period}>
+                    {chats.map(({ interactions, id }) => {
                         const lastMessage =
                             interactions[interactions.length - 1]?.humanMessage?.text?.trim()
                         return (
@@ -55,7 +53,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
                             </Button>
                         )
                     })}
-                />
+                </CollapsiblePanel>
             ))}
         </div>
     )
