@@ -4,6 +4,11 @@ import { isError } from '../utils'
 import type { Attribution, Guardrails } from '.'
 import { ClientConfigSingleton } from '../sourcegraph-api/graphql/client'
 
+// 10s timeout is enough to serve most attribution requests.
+// It's a better user experience for chat attribution to wait
+// a few seconds more and get attribution result.
+const timeout = 10000
+
 export class SourcegraphGuardrailsClient implements Guardrails {
     constructor(private client: SourcegraphGraphQLAPIClient) {}
 
@@ -13,7 +18,7 @@ export class SourcegraphGuardrailsClient implements Guardrails {
         if (!clientConfig?.attributionEnabled) {
             return new Error('Attribution search is turned off.')
         }
-        const result = await this.client.searchAttribution(snippet)
+        const result = await this.client.searchAttribution(snippet, timeout)
 
         if (isError(result)) {
             return result

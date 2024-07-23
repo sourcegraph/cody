@@ -1207,12 +1207,16 @@ export class SourcegraphGraphQLAPIClient {
         return initialDataOrError
     }
 
-    public async searchAttribution(snippet: string): Promise<SearchAttributionResults | Error> {
+    public async searchAttribution(
+        snippet: string,
+        timeoutMs: number
+    ): Promise<SearchAttributionResults | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SearchAttributionResponse>>(
             SEARCH_ATTRIBUTION_QUERY,
             {
                 snippet,
-            }
+            },
+            timeoutMs
         ).then(response => extractDataOrError(response, data => data.snippetAttribution))
     }
 
