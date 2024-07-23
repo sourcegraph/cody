@@ -21,7 +21,7 @@ import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/s
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import type { Uri } from 'vscode'
-import type { View } from '../../webviews/tabs/TabsBar'
+import type { View } from '../../webviews/tabs/types'
 import type { Repo } from '../context/repo-fetcher'
 
 /**
@@ -288,16 +288,6 @@ export const ACCOUNT_LIMITS_INFO_URL = new URL(
 export interface LocalEnv {
     /** Whether the extension is running in VS Code Web (as opposed to VS Code Desktop). */
     uiKindIsWeb: boolean
-}
-
-export function isLoggedIn(authStatus: AuthStatus): boolean {
-    if (!authStatus.siteHasCodyEnabled) {
-        return false
-    }
-    return (
-        authStatus.authenticated &&
-        (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
-    )
 }
 
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
