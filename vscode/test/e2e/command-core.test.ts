@@ -129,6 +129,10 @@ test.extend<ExpectedV2Events>({
     await sidebarTabCommandIcon.getByRole('button').click()
     await sidebarChat.getByRole('button', { name: 'Explain code' }).click()
 
+    // Click on the Chat view icon to switch back to the chat view.
+    const sidebarChatCommandIcon = sidebarChat.locator('[id="radix-\\:r0\\:-trigger-chat"]')
+    await sidebarChatCommandIcon.getByRole('button').click()
+
     // Click on a command from the sidebar should not start a new Editor window when sidebar is empty.
     await expect(sidebarChat.getByText('hello from the assistant')).toBeVisible()
     await expect(sidebarChat.getByRole('button', { name: 'Explain code' })).not.toBeVisible()
