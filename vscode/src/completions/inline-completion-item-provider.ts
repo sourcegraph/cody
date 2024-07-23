@@ -228,7 +228,7 @@ export class InlineCompletionItemProvider
             }
 
             // Update the last request
-            const lastCompletionRequest = this.latestCompletionRequest
+            this.lastCompletionRequest = this.latestCompletionRequest
             const completionRequest: CompletionRequest = {
                 document,
                 position: invokedPosition,
@@ -292,7 +292,7 @@ export class InlineCompletionItemProvider
             }
 
             let takeSuggestWidgetSelectionIntoAccount = this.shouldTakeSuggestWidgetSelectionIntoAccount(
-                lastCompletionRequest,
+                this.lastCompletionRequest,
                 completionRequest
             )
             const triggerKind = isManualCompletion
@@ -402,16 +402,6 @@ export class InlineCompletionItemProvider
                     return null
                 }
 
-                const autocompleteItems = analyticsItemToAutocompleteItem(
-                    result.logId,
-                    document,
-                    docContext,
-                    position,
-                    result.items,
-                    context,
-                    span
-                )
-
                 // Re-compute takeSuggestWidgetSelectionIntoAccount as the `lastCompletionRequest` may have changed
                 // since this `completionRequest` was started.
                 takeSuggestWidgetSelectionIntoAccount = this.shouldTakeSuggestWidgetSelectionIntoAccount(
@@ -440,6 +430,16 @@ export class InlineCompletionItemProvider
                         takeSuggestWidgetSelectionIntoAccount
                     )
                 }
+
+                const autocompleteItems = analyticsItemToAutocompleteItem(
+                    result.logId,
+                    document,
+                    docContext,
+                    position,
+                    result.items,
+                    context,
+                    span
+                )
 
                 // Checks if the current line prefix length is less than or equal to the last triggered prefix length
                 // If true, that means user has backspaced/deleted characters to trigger a new completion request,
@@ -954,12 +954,12 @@ function onlyCompletionWidgetSelectionChanged(
         return false
     }
 
-    if (prev.context.triggerKind !== next.context.triggerKind) {
+    if (prev.context?.triggerKind !== next.context?.triggerKind) {
         return false
     }
 
-    const prevSelectedCompletionInfo = prev.context.selectedCompletionInfo
-    const nextSelectedCompletionInfo = next.context.selectedCompletionInfo
+    const prevSelectedCompletionInfo = prev.context?.selectedCompletionInfo
+    const nextSelectedCompletionInfo = next.context?.selectedCompletionInfo
 
     if (!prevSelectedCompletionInfo || !nextSelectedCompletionInfo) {
         return false
