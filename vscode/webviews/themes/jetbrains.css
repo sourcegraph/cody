@@ -273,10 +273,10 @@ html[data-ide='JetBrains'] {
     --vscode-inputValidation-warningBorder: var(--jetbrains-InputValidation-warningBorder);
     --vscode-interactive-activeCodeBorder: var(--jetbrains-Interactive-activeCodeBorder);
     --vscode-interactive-inactiveCodeBorder: var(--jetbrains-Interactive-inactiveCodeBorder);
-    --vscode-keybindingLabel-background: var(--jetbrains-KeybindingLabel-background);
-    --vscode-keybindingLabel-border: var(--jetbrains-KeybindingLabel-border);
-    --vscode-keybindingLabel-bottomBorder: var(--jetbrains-KeybindingLabel-bottomBorder);
-    --vscode-keybindingLabel-foreground: var(--jetbrains-KeybindingLabel-foreground);
+    --vscode-keybindingLabel-background: var(--jetbrains-TextField-background);
+    --vscode-keybindingLabel-border: var(--jetbrains-TextField-background);
+    --vscode-keybindingLabel-bottomBorder: var(--jetbrains-TextField-background);
+    --vscode-keybindingLabel-foreground: var(--jetbrains-TextField-foreground);
     --vscode-list-deemphasizedForeground: var(--jetbrains-MenuItem-disabledForeground);
     --vscode-list-filterMatchBorder: var(--jetbrains-MenuItem-acceleratorForeground);
     --vscode-list-focusHighlightForeground: var(--jetbrains-MenuItem-selectionForeground);
