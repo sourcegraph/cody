@@ -95,11 +95,11 @@ export async function start(
     context: vscode.ExtensionContext,
     platform: PlatformContext
 ): Promise<vscode.Disposable> {
-    // NOTE: Hack to ensure the window is reloaded when extension is activiated for the first time on restart extensions click.
-    // TODO: Can be removed after 1.28.0 is released.
-    if (version === '1.28.0' && !context.globalState.get('1_28_isReloaded', false)) {
+    // NOTE: Hack to ensure the window is reloaded when extension is restarted after upgrade
+    //  to get the updated sidebar chat UI. Can be removed after the next release (1.28).
+    if (!context.globalState.get('newSidebarChatUI_isReloaded', false)) {
         // First activation, set the flag and then reload the window
-        await context.globalState.update('1_28_isReloaded', true)
+        await context.globalState.update('newSidebarChatUI_isReloaded', true)
         await vscode.commands.executeCommand('workbench.action.reloadWindow')
     }
 
