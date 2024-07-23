@@ -37,7 +37,7 @@ const ExpandableContainer: React.FC<ExpandableContainerProps> = ({
                     </Button>
                 </CollapsibleTrigger>
             </div>
-            <CollapsibleContent className="tw-overflow-hidden tw-transition-all data-[state=closed]:tw-animate-collapsible-up data-[state=open]:tw-animate-collapsible-down">
+            <CollapsibleContent>
                 <div className="tw-px-2 tw-py-2 tw-flex tw-flex-col tw-bg-popover tw-border tw-border-border tw-rounded-lg">
                     {items}
                 </div>

@@ -34,10 +34,11 @@ export const DefaultCommandsList: FunctionComponent<{ IDE?: CodyIDE }> = ({ IDE 
         <Button
             key={key}
             variant="ghost"
+            className="tw-text-left"
             onClick={() => getVSCodeAPI().postMessage({ command: 'command', id: key })}
         >
             <Icon className="tw-w-8 tw-h-8" size={16} strokeWidth="1.25" />
-            <span className="tw-text-left tw-truncate tw-w-full">{title}</span>
+            <span className="tw-truncate tw-w-full">{title}</span>
         </Button>
     ))
 
