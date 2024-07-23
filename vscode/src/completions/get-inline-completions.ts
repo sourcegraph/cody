@@ -14,7 +14,6 @@ import type { CompletionIntent } from '../tree-sitter/query-sdk'
 import { isValidTestFile } from '../commands/utils/test-commands'
 import { gitMetadataForCurrentEditor } from '../repository/git-metadata-for-editor'
 import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
-import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-counter-logger'
 import type { ContextMixer } from './context/context-mixer'
 import { getCompletionProvider } from './get-completion-provider'
 import { insertIntoDocContext } from './get-current-doc-context'
@@ -46,6 +45,7 @@ export interface InlineCompletionsParams {
     requestManager: RequestManager
     contextMixer: ContextMixer
     smartThrottleService: SmartThrottleService | null
+    stageRecorder: CompletionLogger.AutocompleteStageRecorder
 
     // UI state
     isDotComUser: boolean
@@ -105,10 +105,16 @@ export interface InlineCompletionsResult {
 
     /** The completions. */
     items: InlineCompletionItemWithAnalytics[]
+
+    /**
+     * If the request has become stale.
+     * This will be the case if it is left in-flight but superseded by a newer request.
+     */
+    stale?: boolean
 }
 
 /**
- * The source of the inline completions result.
+ * The source of the inline completions result. Using numerical values so telemetry can be recorded on `metadata`
  */
 export enum InlineCompletionsResultSource {
     Network = 'Network',
@@ -125,7 +131,19 @@ export enum InlineCompletionsResultSource {
      */
     LastCandidate = 'LastCandidate',
 }
-
+/**
+ * Create a mapping of all inline completion sources to numerical values, so telemetry can be recorded on `metadata`.
+ */
+export const InlineCompletionsResultSourceTelemetryMetadataMapping: Record<
+    InlineCompletionsResultSource,
+    number
+> = {
+    [InlineCompletionsResultSource.Network]: 1,
+    [InlineCompletionsResultSource.Cache]: 2,
+    [InlineCompletionsResultSource.HotStreak]: 3,
+    [InlineCompletionsResultSource.CacheAfterRequestStart]: 4,
+    [InlineCompletionsResultSource.LastCandidate]: 5,
+}
 /**
  * Extends the default VS Code trigger kind to distinguish between manually invoking a completion
  * via the keyboard shortcut and invoking a completion via hovering over ghost text.
@@ -142,6 +160,12 @@ export enum TriggerKind {
 
     /** When the user uses the suggest widget to cycle through different completions. */
     SuggestWidget = 'SuggestWidget',
+}
+export const TriggerKindTelemetryMetadataMapping: Record<TriggerKind, number> = {
+    [TriggerKind.Hover]: 1,
+    [TriggerKind.Automatic]: 2,
+    [TriggerKind.Manual]: 3,
+    [TriggerKind.SuggestWidget]: 4,
 }
 
 export function allTriggerKinds(): TriggerKind[] {
@@ -206,6 +230,7 @@ async function doGetInlineCompletions(
         completionIntent,
         lastAcceptedCompletionItem,
         isDotComUser,
+        stageRecorder,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
@@ -266,7 +291,7 @@ async function doGetInlineCompletions(
         }
     }
 
-    autocompleteStageCounterLogger.record('preLastCandidate')
+    stageRecorder.record('preLastCandidate')
 
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
     // ghost text in the editor), and reuse it if it is still valid.
@@ -292,7 +317,7 @@ async function doGetInlineCompletions(
     // all.
     CompletionLogger.flushActiveSuggestionRequests(isDotComUser)
     const multiline = Boolean(multilineTrigger)
-    const logId = CompletionLogger.create({
+    let logId = CompletionLogger.create({
         multiline,
         triggerKind,
         providerIdentifier: providerConfig.identifier,
@@ -302,7 +327,9 @@ async function doGetInlineCompletions(
         completionIntent,
         artificialDelay,
         traceId: getActiveTraceAndSpanId()?.traceId,
+        stageTimings: stageRecorder.stageTimings,
     })
+    stageRecorder.setLogId(logId)
 
     let requestParams: RequestParams = {
         document,
@@ -312,16 +339,23 @@ async function doGetInlineCompletions(
         abortSignal,
     }
 
-    autocompleteStageCounterLogger.record('preCache')
+    stageRecorder.record('preCache')
     const cachedResult = requestManager.checkCache({
         requestParams,
         isCacheEnabled: triggerKind !== TriggerKind.Manual,
     })
     if (cachedResult) {
-        const { completions, source } = cachedResult
+        const { completions, source, isFuzzyMatch } = cachedResult
 
         CompletionLogger.start(logId)
-        CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser)
+        CompletionLogger.loaded({
+            logId,
+            requestParams,
+            completions,
+            source,
+            isFuzzyMatch,
+            isDotComUser,
+        })
 
         return {
             logId,
@@ -330,14 +364,27 @@ async function doGetInlineCompletions(
         }
     }
 
+    /**
+     * A request becomes stale if it is left in-flight but superseded by another request.
+     * This only applies to the smart throttle.
+     */
+    let stale: boolean | undefined
+    const markRequestAsStale = () => {
+        stale = true
+    }
+
     if (smartThrottleService) {
         // For the smart throttle to work correctly and preserve tail requests, we need full control
         // over the cancellation logic for each request.
         // Therefore we must stop listening for cancellation events originating from VS Code.
         cancellationListener?.dispose()
 
-        autocompleteStageCounterLogger.record('preSmartThrottle')
-        const throttledRequest = await smartThrottleService.throttle(requestParams, triggerKind)
+        stageRecorder.record('preSmartThrottle')
+        const throttledRequest = await smartThrottleService.throttle(
+            requestParams,
+            triggerKind,
+            markRequestAsStale
+        )
         if (throttledRequest === null) {
             return null
         }
@@ -345,7 +392,7 @@ async function doGetInlineCompletions(
         requestParams = throttledRequest
     }
 
-    autocompleteStageCounterLogger.record('preDebounce')
+    stageRecorder.record('preDebounce')
     const debounceTime = smartThrottleService
         ? 0
         : triggerKind !== TriggerKind.Automatic
@@ -367,7 +414,7 @@ async function doGetInlineCompletions(
 
     setIsLoading?.(true)
     CompletionLogger.start(logId)
-    autocompleteStageCounterLogger.record('preContextRetrieval')
+    stageRecorder.record('preContextRetrieval')
 
     // Fetch context and apply remaining debounce time
     const [contextResult] = await Promise.all([
@@ -420,10 +467,11 @@ async function doGetInlineCompletions(
     })
 
     CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
-    autocompleteStageCounterLogger.record('preNetworkRequest')
+    stageRecorder.record('preNetworkRequest')
 
     // Get the processed completions from providers
-    const { completions, source } = await requestManager.request({
+    const { completions, source, updatedLogId } = await requestManager.request({
+        logId: logId,
         requestParams,
         provider: completionProvider,
         context: contextResult?.context ?? [],
@@ -431,18 +479,35 @@ async function doGetInlineCompletions(
         tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,
     })
 
+    if (updatedLogId !== undefined) {
+        // If we have a new `updatedLogId`, we need to use this.
+        // This will usually be because we have determine that we want to re-use an existing result
+        // from the request manager. For example, if a result is recycled for this in-flight request,
+        // we will use the logId of the recycled result, ensuring that we do not have duplicate logging.
+        logId = updatedLogId
+    }
+
     const inlineContextParams = {
         context: contextResult?.context,
         filePath: gitIdentifiersForFile?.filePath,
         gitUrl: gitIdentifiersForFile?.gitUrl,
         commit: gitIdentifiersForFile?.commit,
     }
-    CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser, inlineContextParams)
+    CompletionLogger.loaded({
+        logId,
+        requestParams,
+        completions,
+        source,
+        isDotComUser,
+        inlineContextParams,
+        isFuzzyMatch: false,
+    })
 
     return {
         logId,
         items: completions,
         source,
+        stale,
     }
 }
 

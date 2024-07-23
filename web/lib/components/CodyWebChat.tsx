@@ -71,6 +71,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
     const [chatModels, setChatModels] = useState<Model[]>()
+    const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
 
     useLayoutEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -94,6 +95,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                     setIsTranscriptError(message.isTranscriptError)
                     break
                 case 'chatModels':
+                    // The default model will always be the first one on the list.
                     setChatModels(message.models)
                     break
                 case 'config':
@@ -107,6 +109,8 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                 case 'clientAction':
                     dispatchClientAction(message)
                     break
+                case 'setConfigFeatures':
+                    setServerSentModelsEnabled(!!message.configFeatures.serverSentModels)
             }
         })
     }, [vscodeAPI, dispatchClientAction])
@@ -140,20 +144,18 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
             if (!chatModels || !setChatModels) {
                 return
             }
+            // Notify the host about the manual change,
+            // and the host will return the updated change models via onMessage.
             vscodeAPI.postMessage({
                 command: 'chatModel',
                 model: selected.model,
             })
-            const updatedChatModels = chatModels.map(m =>
-                m.model === selected.model ? { ...m, default: true } : { ...m, default: false }
-            )
-            setChatModels(updatedChatModels)
         },
         [chatModels, vscodeAPI]
     )
     const chatModelContext = useMemo<ChatModelContext>(
-        () => ({ chatModels, onCurrentChatModelChange }),
-        [chatModels, onCurrentChatModelChange]
+        () => ({ chatModels, onCurrentChatModelChange, serverSentModelsEnabled }),
+        [chatModels, onCurrentChatModelChange, serverSentModelsEnabled]
     )
 
     const clientState: ClientStateForWebview = useMemo<ClientStateForWebview>(() => {

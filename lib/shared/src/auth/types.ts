@@ -6,7 +6,7 @@ import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client
  */
 export interface AuthStatus {
     username: string
-    endpoint: string | null
+    endpoint: string
     isDotCom: boolean
     isLoggedIn: boolean
     /**
@@ -118,3 +118,15 @@ export const offlineModeAuthStatus = {
     avatarURL: '',
     codyApiVersion: 0,
 } satisfies AuthStatus
+
+export function isCodyProUser(authStatus: AuthStatus): boolean {
+    return authStatus.isDotCom && !authStatus.userCanUpgrade
+}
+
+export function isFreeUser(authStatus: AuthStatus): boolean {
+    return authStatus.isDotCom && authStatus.userCanUpgrade
+}
+
+export function isEnterpriseUser(authStatus: AuthStatus): boolean {
+    return !authStatus.isDotCom
+}

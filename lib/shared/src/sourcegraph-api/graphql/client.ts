@@ -13,6 +13,7 @@ import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
 import {
+    CHAT_INTENT_QUERY,
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
@@ -37,6 +38,8 @@ import {
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
     PACKAGE_LIST_QUERY,
+    RANK_CONTEXT_QUERY,
+    RECORD_CONTEXT_QUERY,
     RECORD_TELEMETRY_EVENTS_MUTATION,
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
@@ -316,6 +319,23 @@ interface SearchAttributionResponse {
 
 type LogEventResponse = unknown
 
+interface ChatIntentResponse {
+    chatIntent: {
+        intent: string
+        score: number
+    }
+}
+
+type RecordContextResponse = unknown
+
+interface RankContextResponse {
+    rankContext: {
+        ranker: string
+        used: number[]
+        ignored: number[]
+    }
+}
+
 interface ContextSearchResponse {
     getCodyContext: {
         blob: {
@@ -342,6 +362,20 @@ export interface EmbeddingsSearchResult {
     startLine: number
     endLine: number
     content: string
+}
+
+export interface ChatIntentResult {
+    intent: string
+    score: number
+}
+
+/**
+ * Experimental API.
+ */
+export interface InputContextItem {
+    content: string
+    retriever: string
+    score?: number
 }
 
 export interface ContextSearchResult {
@@ -510,7 +544,7 @@ export class SourcegraphGraphQLAPIClient {
         this._config = config
     }
 
-    public onConfigurationChange(newConfig: GraphQLAPIClientConfig): void {
+    public setConfig(newConfig: GraphQLAPIClientConfig): void {
         this._config = newConfig
     }
 
@@ -847,6 +881,52 @@ export class SourcegraphGraphQLAPIClient {
         return isError(result) ? null : result
     }
 
+    /** Experimental API */
+    public async chatIntent(interactionID: string, query: string): Promise<ChatIntentResult | Error> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<ChatIntentResponse>>(
+            CHAT_INTENT_QUERY,
+            {
+                query: query,
+                interactionId: interactionID,
+            }
+        )
+        return extractDataOrError(response, data => data.chatIntent)
+    }
+
+    /** Experimental API */
+    public async recordContext(
+        interactionID: string,
+        used: InputContextItem[],
+        ignored: InputContextItem[]
+    ): Promise<RecordContextResponse | Error> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<RecordContextResponse>>(
+            RECORD_CONTEXT_QUERY,
+            {
+                interactionId: interactionID,
+                usedContextItems: used,
+                ignoredContextItems: ignored,
+            }
+        )
+        return extractDataOrError(response, data => data)
+    }
+
+    /** Experimental API */
+    public async rankContext(
+        interactionID: string,
+        query: string,
+        context: InputContextItem[]
+    ): Promise<RankContextResponse | Error> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<RankContextResponse>>(
+            RANK_CONTEXT_QUERY,
+            {
+                interactionId: interactionID,
+                query,
+                contextItems: context,
+            }
+        )
+        return extractDataOrError(response, data => data)
+    }
+
     public async contextSearch(
         repoIDs: string[],
         query: string
@@ -875,14 +955,14 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async contextFilters(): Promise<ContextFilters> {
+    public async contextFilters(): Promise<{ filters: ContextFilters; transient: boolean }> {
         // CONTEXT FILTERS are only available on Sourcegraph 5.3.3 and later.
         const minimumVersion = '5.3.3'
         const { enabled, version } = await this.isCodyEnabled()
         const insiderBuild = version.length > 12 || version.includes('dev')
         const isValidVersion = insiderBuild || semver.gte(version, minimumVersion)
         if (!enabled || !isValidVersion) {
-            return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+            return { filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: false }
         }
 
         const response =
@@ -892,26 +972,26 @@ export class SourcegraphGraphQLAPIClient {
 
         const result = extractDataOrError(response, data => {
             if (data?.site?.codyContextFilters?.raw === null) {
-                return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+                return { filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: false }
             }
 
             if (data?.site?.codyContextFilters?.raw) {
-                return data.site.codyContextFilters.raw
+                return { filters: data.site.codyContextFilters.raw, transient: false }
             }
 
             // Exclude everything in case of an unexpected response structure.
-            return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
+            return { filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: true }
         })
 
         if (result instanceof Error) {
             // Ignore errors caused by outdated Sourcegraph API instances.
             if (hasOutdatedAPIErrorMessages(result)) {
-                return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+                return { filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: false }
             }
 
             logError('SourcegraphGraphQLAPIClient', 'contextFilters', result.message)
             // Exclude everything in case of an unexpected error.
-            return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
+            return { filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: true }
         }
 
         return result
@@ -1342,7 +1422,7 @@ export class ClientConfigSingleton {
         return ClientConfigSingleton.instance
     }
 
-    public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
+    public async setAuthStatus(authStatus: AuthStatus): Promise<void> {
         this.isSignedIn = authStatus.authenticated && authStatus.isLoggedIn
         if (this.isSignedIn) {
             await this.refreshConfig()
@@ -1353,14 +1433,18 @@ export class ClientConfigSingleton {
     }
 
     public async getConfig(): Promise<CodyClientConfig | undefined> {
-        switch (this.shouldFetch()) {
-            case 'sync':
-                return this.refreshConfig()
-            // biome-ignore lint/suspicious/noFallthroughSwitchClause: This is intentional
-            case 'async':
-                this.refreshConfig()
-            case false:
-                return this.cachedClientConfig
+        try {
+            switch (this.shouldFetch()) {
+                case 'sync':
+                    return this.refreshConfig()
+                // biome-ignore lint/suspicious/noFallthroughSwitchClause: This is intentional
+                case 'async':
+                    this.refreshConfig()
+                case false:
+                    return this.cachedClientConfig
+            }
+        } catch {
+            return
         }
     }
 
@@ -1427,11 +1511,6 @@ export class ClientConfigSingleton {
                     return this.fetchClientConfigLegacy()
                 }
 
-                // Otherwise we use our centralized client config endpoint.
-                if (!graphqlClient.hasAccessToken())
-                    throw new Error(
-                        'unable to fetch /.api/client-config, client is not authenticated yet'
-                    )
                 return graphqlClient
                     .fetchHTTP<CodyClientConfig>('client-config', 'GET', '/.api/client-config')
                     .then(clientConfig => {

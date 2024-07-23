@@ -1,8 +1,7 @@
-import { Model } from '../../models/index'
+import type { ServerModelConfiguration } from '../../models/index'
 
 import { fetch } from '../../fetch'
-
-import { type ModelContextWindow, ModelUsage } from '../../models/types'
+import { logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { addCustomUserAgent, verifyResponseCode } from '../graphql/client'
 
@@ -24,14 +23,16 @@ export class RestClient {
      */
     constructor(
         private endpointUrl: string,
-        private accessToken: string
+        private accessToken?: string
     ) {}
 
     // Make an authenticated HTTP request to the Sourcegraph instance.
     // "name" is a developer-friendly term to label the request's trace span.
     private getRequest<T>(name: string, urlSuffix: string): Promise<T | Error> {
         const headers = new Headers()
-        headers.set('Authorization', `token ${this.accessToken}`)
+        if (this.accessToken) {
+            headers.set('Authorization', `token ${this.accessToken}`)
+        }
         addCustomUserAgent(headers)
         addTraceparent(headers)
 
@@ -55,7 +56,7 @@ export class RestClient {
      * IMPORTANT: The list may include models that the current Cody client does not know
      * how to operate.
      */
-    public async getAvailableModels(): Promise<Model[]> {
+    public async getAvailableModels(): Promise<ServerModelConfiguration | undefined> {
         // Fetch the server-side configuration data. This will be in the form of a JSON blob
         // matching the schema defined in the `sourcegraph/llm-model' repo
         //
@@ -64,38 +65,17 @@ export class RestClient {
         //
         // NOTE: This API endpoint hasn't shippeted yet, and probably won't work for you.
         // Also, the URL definitely will change.
-        const serverSideConfig = await this.getRequest<any>(
+        const serverSideConfig = await this.getRequest<ServerModelConfiguration>(
             'getAvailableModels',
             '/.api/modelconfig/supported-models.json'
         )
-
-        // TODO(PRIME-323): Do a proper review of the data model we will use to describe
-        // server-side configuration. Once complete, it should match the data types we
-        // use in this repo exactly. Until then, we need to map the "server-side" model
-        // types, to the `Model` types used by Cody clients.
-        const availableModels: Model[] = []
-        const serverModels = serverSideConfig.models as any[]
-        for (const serverModel of serverModels) {
-            const serverContextWindow = serverModel.contextWindow
-            const convertedContextWindow: ModelContextWindow = {
-                input: serverContextWindow.maxInputTokens,
-                output: serverContextWindow.maxOutputTokens,
-                context: undefined, // Not yet captured in in the schema.
-            }
-
-            const convertedModel = new Model(
-                // The Model type expects the `model` field to contain both the provider
-                // and model name, whereas the server-side schema has a more nuanced view.
-                // See PRIME-282.
-                `${serverModel.provider}/${serverModel.model}`,
-                [ModelUsage.Chat, ModelUsage.Edit],
-                convertedContextWindow,
-                // client-side config not captured in the schema yet.
-                undefined
-            )
-            availableModels.push(convertedModel)
+        if (serverSideConfig instanceof Error) {
+            logError('RestClient::getAvailableModels', 'failed to fetch available models', {
+                verbose: serverSideConfig,
+            })
+            return
         }
 
-        return availableModels
+        return serverSideConfig
     }
 }

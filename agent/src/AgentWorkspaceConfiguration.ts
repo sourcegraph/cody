@@ -42,6 +42,8 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                 return CodyIDE.Neovim
             case 'web':
                 return CodyIDE.Web
+            case 'visualstudio':
+                return CodyIDE.VisualStudio
             default:
                 return undefined
         }

@@ -26,7 +26,7 @@ describe('FeatureFlagProvider', () => {
         }
 
         const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
-        await provider.syncAuthStatus()
+        await provider.refresh()
 
         // Wait for the async initialization
         await nextTick()
@@ -64,7 +64,7 @@ describe('FeatureFlagProvider', () => {
             [FeatureFlag.TestFlagDoNotUse]: false,
         })
 
-        await provider.syncAuthStatus()
+        await provider.refresh()
 
         // Wait for the async reload
         await nextTick()
@@ -84,7 +84,7 @@ describe('FeatureFlagProvider', () => {
             }
 
             const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
-            await provider.syncAuthStatus()
+            await provider.refresh()
 
             // Wait for the async initialization
             await nextTick()

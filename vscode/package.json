@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.26.0",
+  "version": "1.26.7",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -107,7 +107,7 @@
   },
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
-  "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.chatPanel"],
+  "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.editorPanel"],
   "contributes": {
     "walkthroughs": [
       {
@@ -238,15 +238,43 @@
         {
           "type": "webview",
           "id": "cody.chat",
-          "name": "Chat"
+          "name": "Chat",
+          "when": "!cody.activated || cody.chatInSidebar"
         },
         {
           "id": "cody.support.tree.view",
           "name": "Settings & Support",
-          "when": "cody.activated"
+          "when": "cody.activated && !cody.chatInSidebar"
+        },
+        {
+          "id": "cody.chat.tree.view",
+          "name": "Chats",
+          "when": "cody.activated && !cody.chatInSidebar"
+        },
+        {
+          "id": "cody.commands.tree.view",
+          "name": "Commands",
+          "when": "cody.activated && !cody.currentFileIgnored && !cody.chatInSidebar"
+        },
+        {
+          "id": "cody.commands.disabled.view",
+          "name": "Commands",
+          "when": "cody.activated && cody.currentFileIgnored && !cody.chatInSidebar"
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "cody.chat.tree.view",
+        "contents": "Chat alongside your code, attach files, add additional context, and try different chat models.\n[New Chat](command:cody.chat.newPanel)",
+        "when": "cody.activated && !cody.chatInSidebar && !cody.currentFileIgnored"
+      },
+      {
+        "view": "cody.commands.disabled.view",
+        "contents": "Commands are disabled for this file by an admin setting. Other Cody features are also disabled.\nMore info about [Cody Context Filters](https://sourcegraph.com/docs/cody/capabilities/ignore-context#cody-ignore)",
+        "when": "cody.activated && cody.currentFileIgnored && !cody.chatInSidebar"
+      }
+    ],
     "commands": [
       {
         "command": "cody.welcome",
@@ -266,7 +294,8 @@
         "command": "cody.command.explain-output",
         "title": "Ask Cody to Explain",
         "category": "Cody Command",
-        "icon": "$(cody-logo)"
+        "icon": "$(cody-logo)",
+        "enablement": "cody.activated && terminalTabsSingularSelection"
       },
       {
         "command": "cody.command.edit-code",
@@ -338,6 +367,14 @@
         "title": "Stop Generating",
         "icon": "$(debug-stop)",
         "when": "cody.activated && cody.isGeneratingCommit"
+      },
+      {
+        "command": "cody.command.auto-edit",
+        "category": "Cody Command",
+        "group": "Cody Command",
+        "title": "Auto Edit Code at Cursor",
+        "icon": "$(surround-with)",
+        "enablement": "cody.activated && config.cody.internal.unstable"
       },
       {
         "command": "cody.auth.signout",
@@ -413,13 +450,6 @@
         "enablement": "cody.activated && config.cody.autocomplete.experimental.multiModelCompletions && config.cody.autocomplete.enabled && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
       },
       {
-        "command": "cody.chat.focusView",
-        "category": "Cody",
-        "group": "Cody",
-        "title": "Focus on Chat View",
-        "enablement": "cody.activated"
-      },
-      {
         "command": "cody.chat.signIn",
         "category": "Cody",
         "group": "Cody",
@@ -446,7 +476,7 @@
         "command": "cody.chat.moveToEditor",
         "category": "Cody",
         "title": "Move Chat to Editor Panel",
-        "enablement": "cody.activated",
+        "enablement": "cody.activated && cody.chatInSidebar",
         "group": "Cody",
         "icon": "$(layout-sidebar-left-off)"
       },
@@ -454,7 +484,7 @@
         "command": "cody.chat.moveFromEditor",
         "category": "Cody",
         "title": "Move Chat from Editor to Main Cody Panel",
-        "enablement": "cody.activated",
+        "enablement": "cody.activated && cody.chatInSidebar && view == cody.chat",
         "group": "Cody",
         "icon": "$(layout-sidebar-left)"
       },
@@ -598,8 +628,32 @@
       },
       {
         "command": "cody.chat.newPanel",
-        "key": "alt+l",
+        "key": "alt+shift+l",
         "when": "cody.activated"
+      },
+      {
+        "command": "cody.chat.toggle",
+        "key": "alt+l",
+        "when": "cody.activated && editorTextFocus && cody.chatInSidebar",
+        "args": {
+          "editorFocus": true
+        }
+      },
+      {
+        "command": "cody.chat.toggle",
+        "key": "alt+l",
+        "when": "cody.activated && !editorTextFocus && cody.chatInSidebar",
+        "args": {
+          "editorFocus": false
+        }
+      },
+      {
+        "command": "cody.chat.newEditorPanel",
+        "key": "alt+l",
+        "when": "cody.activated && editorTextFocus",
+        "args": {
+          "editorFocus": true
+        }
       },
       {
         "command": "cody.mention.selection",
@@ -620,6 +674,11 @@
         "command": "cody.command.edit-code",
         "key": "alt+k",
         "when": "cody.activated && !editorReadonly"
+      },
+      {
+        "command": "cody.command.auto-edit",
+        "key": "alt+tab",
+        "when": "cody.activated && !editorReadonly && config.cody.internal.unstable"
       },
       {
         "command": "cody.tutorial.edit",
@@ -757,6 +816,14 @@
           "command": "cody.chat.view.popOut",
           "when": "false",
           "_comment": "Hidden because it is only a wrapper around the workspace pop out command and would place any editor tab (not just Cody chat) in a new window."
+        },
+        {
+          "command": "cody.command.explain-output",
+          "when": "false"
+        },
+        {
+          "command": "cody.chat.newEditorPanel",
+          "when": "cody.activated"
         }
       ],
       "editor/context": [
@@ -824,6 +891,23 @@
       ],
       "view/title": [
         {
+          "command": "cody.chat.newPanel",
+          "when": "view == cody.chat.tree.view && cody.activated",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cody.chat.history.clear",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "enablement": "cody.hasChatHistory",
+          "group": "navigation@2"
+        },
+        {
+          "command": "cody.chat.history.export",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
+          "enablement": "cody.hasChatHistory",
+          "group": "navigation@3"
+        },
+        {
           "command": "cody.menu.commands",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation@1"
@@ -865,52 +949,67 @@
         },
         {
           "command": "cody.debug.reportIssue",
-          "when": "view == cody.support.tree.view",
+          "when": "view == cody.chat",
           "group": "9_cody@1"
         }
       ],
       "editor/title": [
         {
           "command": "cody.menu.commands",
-          "when": "cody.activated && !editorReadonly && (resourceScheme == file || activeWebviewPanelId == cody.chatPanel)",
+          "when": "cody.activated && !editorReadonly && (resourceScheme == file || activeWebviewPanelId == cody.editorPanel)",
           "group": "navigation",
           "visibility": "visible"
         },
         {
           "command": "cody.chat.moveFromEditor",
-          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated && cody.chatInSidebar",
           "group": "navigation@1",
           "visibility": "visible"
         },
         {
           "command": "cody.chat.newEditorPanel",
-          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated",
           "group": "navigation@2",
           "visibility": "visible"
         },
         {
           "command": "cody.chat.history.panel",
-          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated",
           "group": "navigation@3",
           "visibility": "visible"
         },
         {
           "command": "cody.chat.view.popOut",
-          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated && !isAuxiliaryEditorPart",
+          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated && !isAuxiliaryEditorPart",
           "group": "navigation@4",
           "visibility": "visible"
         },
         {
           "command": "cody.settings.extension.chat",
-          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated",
           "group": "navigation@5",
           "visibility": "visible"
         }
       ],
       "view/item/context": [
         {
+          "command": "cody.chat.history.delete",
+          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
+          "group": "inline@2"
+        },
+        {
+          "command": "cody.menu.commands-settings",
+          "when": "view == cody.commands.tree.view && viewItem == cody.sidebar.custom-commands",
+          "group": "inline@1"
+        },
+        {
           "command": "cody.copy.version",
           "when": "view == cody.support.tree.view && viewItem == cody.version",
+          "group": "inline@1"
+        },
+        {
+          "command": "cody.menu.commands-settings",
+          "when": "view == cody.commands.tree.view && viewItem == cody.sidebar.custom-commands",
           "group": "inline@1"
         }
       ],
@@ -1199,6 +1298,11 @@
           "default": false,
           "markdownDescription": "Changes the debounce time for autocomplete requests based on the amount of time since the last request."
         },
+        "cody.autocomplete.experimental.smartThrottleExtended": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Changes the (extended) debounce time for autocomplete requests based on the amount of time since the last request."
+        },
         "openctx.enable": {
           "type": "boolean",
           "markdownDescription": "Enable OpenCtx providers for Cody.",
@@ -1318,9 +1422,11 @@
     "@opentelemetry/sdk-trace-node": "^1.18.1",
     "@opentelemetry/semantic-conventions": "^1.18.1",
     "@radix-ui/react-accordion": "^1.2.0",
+    "@radix-ui/react-collapsible": "^1.1.0",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-popover": "^1.0.7",
     "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-tabs": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.0.7",
     "@sentry/browser": "^7.107.0",
     "@sentry/core": "^7.107.0",

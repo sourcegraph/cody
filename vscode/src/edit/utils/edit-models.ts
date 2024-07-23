@@ -1,15 +1,5 @@
-import {
-    type AuthStatus,
-    type EditModel,
-    type Model,
-    ModelUsage,
-    ModelsService,
-} from '@sourcegraph/cody-shared'
+import type { AuthStatus, EditModel } from '@sourcegraph/cody-shared'
 import type { EditIntent } from '../types'
-
-export function getEditModelsForUser(authStatus: AuthStatus): Model[] {
-    return ModelsService.getModels(ModelUsage.Edit, !authStatus.userCanUpgrade)
-}
 
 export function getOverridenModelForIntent(
     intent: EditIntent,

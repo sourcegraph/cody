@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
+    CodyIDE,
     type Configuration,
     contextFiltersProvider,
     isCodyIgnoredFile,
@@ -12,6 +13,8 @@ import { getConfiguration } from '../configuration'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import type { CodyIgnoreType } from '../cody-ignore/notification'
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
+import { getReleaseNotesURLByIDE } from '../release'
+import { version } from '../version'
 import { FeedbackOptionItems, SupportOptionItems } from './FeedbackOptions'
 import { enableVerboseDebugMode } from './utils/export-logs'
 
@@ -36,7 +39,7 @@ export interface CodyStatusBar {
     ): () => void
     addError(error: StatusBarError): () => void
     hasError(error: StatusBarErrorName): boolean
-    syncAuthStatus(newStatus: AuthStatus): void
+    setAuthStatus(newStatus: AuthStatus): void
 }
 
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
@@ -237,9 +240,28 @@ export function createStatusBar(): CodyStatusBar {
                     await vscode.commands.executeCommand('cody.menu.commands-settings')
                 },
             },
+            {
+                label: '$(keyboard) Keyboard Shortcuts',
+                async onSelect(): Promise<void> {
+                    await vscode.commands.executeCommand(
+                        'workbench.action.openGlobalKeybindings',
+                        '@ext:sourcegraph.cody-ai'
+                    )
+                },
+            },
             { label: 'feedback & support', kind: vscode.QuickPickItemKind.Separator },
             ...SupportOptionItems,
             ...FeedbackOptionItems,
+            { label: `v${version}`, kind: vscode.QuickPickItemKind.Separator },
+            {
+                label: '$(cody-logo) Cody Release Blog',
+                async onSelect(): Promise<void> {
+                    await vscode.commands.executeCommand(
+                        'vscode.open',
+                        getReleaseNotesURLByIDE(version, CodyIDE.VSCode)
+                    )
+                },
+            },
         ].filter(Boolean)
         quickPick.title = 'Cody Settings'
         quickPick.placeholder = 'Choose an option'
@@ -381,7 +403,7 @@ export function createStatusBar(): CodyStatusBar {
         hasError(errorName: StatusBarErrorName): boolean {
             return errors.some(e => e.error.errorType === errorName)
         },
-        syncAuthStatus(newStatus: AuthStatus) {
+        setAuthStatus(newStatus: AuthStatus) {
             authStatus = newStatus
             rerender()
         },

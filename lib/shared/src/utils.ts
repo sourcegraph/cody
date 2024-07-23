@@ -14,9 +14,14 @@ export function convertGitCloneURLToCodebaseName(cloneURL: string): string | nul
     if (isError(result)) {
         if (result.message) {
             if (result.cause) {
-                logError('convertGitCloneURLToCodebaseName', result.message, result.cause)
+                logError(
+                    'convertGitCloneURLToCodebaseName',
+                    result.message,
+                    result.cause,
+                    result.stack?.concat('\n')
+                )
             } else {
-                logError('convertGitCloneURLToCodebaseName', result.message)
+                logError('convertGitCloneURLToCodebaseName', result.message, result.stack?.concat('\n'))
             }
         }
         return null

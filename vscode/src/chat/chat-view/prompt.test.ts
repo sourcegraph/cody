@@ -8,7 +8,7 @@ import {
 import { type Message, ps } from '@sourcegraph/cody-shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
-import { SimpleChatModel } from './SimpleChatModel'
+import { ChatModel } from './ChatModel'
 import { DefaultPrompter } from './prompt'
 
 describe('DefaultPrompter', () => {
@@ -21,9 +21,13 @@ describe('DefaultPrompter', () => {
 
     it('constructs a prompt with no context', async () => {
         ModelsService.setModels([
-            new Model('a-model-id', [ModelUsage.Chat], { input: 100000, output: 100 }),
+            new Model({
+                model: 'a-model-id',
+                usage: [ModelUsage.Chat],
+                contextWindow: { input: 100000, output: 100 },
+            }),
         ])
-        const chat = new SimpleChatModel('a-model-id')
+        const chat = new ChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
         const { prompt, context } = await new DefaultPrompter([]).makePrompt(chat, 0)
@@ -56,9 +60,13 @@ describe('DefaultPrompter', () => {
         }))
 
         ModelsService.setModels([
-            new Model('a-model-id', [ModelUsage.Chat], { input: 100000, output: 100 }),
+            new Model({
+                model: 'a-model-id',
+                usage: [ModelUsage.Chat],
+                contextWindow: { input: 100000, output: 100 },
+            }),
         ])
-        const chat = new SimpleChatModel('a-model-id')
+        const chat = new ChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
         const { prompt, context } = await new DefaultPrompter([]).makePrompt(chat, 0)
@@ -83,9 +91,13 @@ describe('DefaultPrompter', () => {
 
     it('prefers latest enhanced context', async () => {
         ModelsService.setModels([
-            new Model('a-model-id', [ModelUsage.Chat], { input: 100000, output: 100 }),
+            new Model({
+                model: 'a-model-id',
+                usage: [ModelUsage.Chat],
+                contextWindow: { input: 100000, output: 100 },
+            }),
         ])
-        const chat = new SimpleChatModel('a-model-id')
+        const chat = new ChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello, world!` })
 
         // First chat message

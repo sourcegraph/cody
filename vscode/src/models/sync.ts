@@ -4,12 +4,13 @@ import {
     CHAT_INPUT_TOKEN_BUDGET,
     ClientConfigSingleton,
     Model,
-    ModelUIGroup,
     ModelUsage,
     ModelsService,
     RestClient,
     getDotComDefaultModels,
 } from '@sourcegraph/cody-shared'
+import type { ServerModelConfiguration } from '@sourcegraph/cody-shared/src/models'
+import { ModelTag } from '@sourcegraph/cody-shared/src/models/tags'
 import * as vscode from 'vscode'
 import { logDebug } from '../log'
 import { secretStorage } from '../services/SecretStorageProvider'
@@ -24,6 +25,7 @@ import { getEnterpriseContextWindow } from './utils'
  */
 export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // Offline mode only support Ollama models, which would be synced seperately.
+    ModelsService.setAuthStatus(authStatus)
     if (authStatus.isOfflineMode) {
         ModelsService.setModels([])
         return
@@ -41,13 +43,16 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
     if (clientConfig?.modelsAPIEnabled) {
         logDebug('ModelsService', 'new models API enabled')
         const serverSideModels = await fetchServerSideModels(authStatus.endpoint || '')
-        ModelsService.setModels(serverSideModels)
-        // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't entirely make sense in
-        // a world where LLM models are managed server-side. However, this is how Cody can be extended
-        // to use locally running LLMs such as Ollama. (Though some more testing is needed.)
-        // See: https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
-        registerModelsFromVSCodeConfiguration()
-        return
+        // If the request failed, fall back to using the default models
+        if (serverSideModels) {
+            ModelsService.setServerSentModels(serverSideModels)
+            // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't entirely make sense in
+            // a world where LLM models are managed server-side. However, this is how Cody can be extended
+            // to use locally running LLMs such as Ollama. (Though some more testing is needed.)
+            // See: https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
+            registerModelsFromVSCodeConfiguration()
+            return
+        }
     }
 
     // If you are connecting to Sourcegraph.com, we use the Cody Pro set of models.
@@ -69,17 +74,16 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // automatically fallback to use the default model configured on the instance.
     if (authStatus?.configOverwrites?.chatModel) {
         ModelsService.setModels([
-            new Model(
-                authStatus.configOverwrites.chatModel,
+            new Model({
+                model: authStatus.configOverwrites.chatModel,
                 // TODO (umpox) Add configOverwrites.editModel for separate edit support
-                [ModelUsage.Chat, ModelUsage.Edit],
-                getEnterpriseContextWindow(
+                usage: [ModelUsage.Chat, ModelUsage.Edit],
+                contextWindow: getEnterpriseContextWindow(
                     authStatus?.configOverwrites?.chatModel,
                     authStatus?.configOverwrites
                 ),
-                undefined,
-                ModelUIGroup.Enterprise
-            ),
+                tags: [ModelTag.Enterprise],
+            }),
         ])
     } else {
         // If the enterprise instance didn't have any configuration data for Cody,
@@ -114,18 +118,21 @@ export function registerModelsFromVSCodeConfiguration() {
         return
     }
 
-    const models: Model[] = []
-    for (const m of modelsConfig) {
-        const provider = new Model(
-            `${m.provider}/${m.model}`,
-            [ModelUsage.Chat, ModelUsage.Edit],
-            { input: m.inputTokens ?? CHAT_INPUT_TOKEN_BUDGET, output: m.outputTokens ?? ANSWER_TOKENS },
-            { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint }
+    ModelsService.addModels(
+        modelsConfig.map(
+            m =>
+                new Model({
+                    model: `${m.provider}/${m.model}`,
+                    usage: [ModelUsage.Chat, ModelUsage.Edit],
+                    contextWindow: {
+                        input: m.inputTokens ?? CHAT_INPUT_TOKEN_BUDGET,
+                        output: m.outputTokens ?? ANSWER_TOKENS,
+                    },
+                    clientSideConfig: { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint },
+                    tags: [ModelTag.Local, ModelTag.BYOK, ModelTag.Experimental],
+                })
         )
-        models.push(provider)
-    }
-
-    ModelsService.addModels(models)
+    )
 }
 
 // fetchServerSideModels contacts the Sourcegraph endpoint, and fetches the LLM models it
@@ -133,16 +140,13 @@ export function registerModelsFromVSCodeConfiguration() {
 // stored.
 //
 // Throws an exception on any errors.
-async function fetchServerSideModels(endpoint: string): Promise<Model[]> {
+async function fetchServerSideModels(endpoint: string): Promise<ServerModelConfiguration | undefined> {
     if (!endpoint) {
         throw new Error('authStatus has no endpoint available. Unable to fetch models.')
     }
 
     // Get the user's access token, assumed to be already saved in the secret store.
     const userAccessToken = await secretStorage.getToken(endpoint)
-    if (!userAccessToken) {
-        throw new Error('no userAccessToken available. Unable to fetch models.')
-    }
 
     // Fetch the data via REST API.
     // NOTE: We may end up exposing this data via GraphQL, it's still TBD.

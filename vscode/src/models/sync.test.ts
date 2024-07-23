@@ -1,7 +1,7 @@
 import {
     ClientConfigSingleton,
     Model,
-    ModelUIGroup,
+    ModelTag,
     ModelUsage,
     ModelsService,
     RestClient,
@@ -73,13 +73,12 @@ describe('syncModels', () => {
         // i.e. this gets the one and only chat model from the Sourcegraph instance.
         expect(setModelsSpy).not.toHaveBeenCalledWith(getDotComDefaultModels())
         expect(setModelsSpy).toHaveBeenCalledWith([
-            new Model(
-                authStatus.configOverwrites.chatModel,
-                [ModelUsage.Chat, ModelUsage.Edit],
-                getEnterpriseContextWindow(chatModel, authStatus.configOverwrites),
-                undefined,
-                ModelUIGroup.Enterprise
-            ),
+            new Model({
+                model: authStatus.configOverwrites.chatModel,
+                usage: [ModelUsage.Chat, ModelUsage.Edit],
+                contextWindow: getEnterpriseContextWindow(chatModel, authStatus.configOverwrites),
+                tags: [ModelTag.Enterprise],
+            }),
         ])
     })
 })
@@ -123,9 +122,7 @@ describe('syncModels from the server', () => {
         // Attach our mock to the RestClient's prototype. So the class will get instantiated
         // like normal, but any instance will use our mock implementation.
         const getAvaialbleModelsSpy = vi.spyOn(RestClient.prototype, 'getAvailableModels')
-        getAvaialbleModelsSpy.mockImplementation(async (): Promise<Model[]> => {
-            return testServerSideModels
-        })
+        getAvaialbleModelsSpy.mockImplementation(() => Promise.resolve(undefined))
     })
     afterEach(() => {
         // SUPER IMPORTANT: We need to call restoreAllMocks (instead of resetAllMocks)
@@ -135,7 +132,9 @@ describe('syncModels from the server', () => {
         vi.restoreAllMocks()
     })
 
-    it('throws if no creds are available', async () => {
+    // Cody Web can be run without access token since it relies on cookie auth info
+    // skip this tests since these checks have been removed to make Cody Web working
+    it.skip('throws if no creds are available', async () => {
         await expect(async () => {
             const authStatus = {
                 ...defaultAuthStatus,
