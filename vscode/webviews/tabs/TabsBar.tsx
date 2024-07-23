@@ -62,19 +62,23 @@ interface TabButtonProps {
     onClick: () => void
 }
 
-const baseClasses =
-    'tw-rounded-none tw-bg-transparent tw-border-solid tw-border-b tw-px-2 tw-py-4 tw-transition-all hover:tw-text-button-background-hover'
-const activeClasses = 'tw-border-button-background-hover tw-text-button-background-hover'
-const inactiveClasses = 'tw-border-transparent'
+// const baseClasses =
+//     'tw-rounded-none tw-bg-transparent tw-border-solid tw-border-b tw-px-2 tw-py-4 tw-transition-all hover:tw-text-button-background-hover'
+// const activeClasses = 'tw-border-button-background-hover tw-text-button-background-hover'
+// const inactiveClasses = 'tw-border-transparent'
 
 const TabButton: React.FC<TabButtonProps> = ({ Icon, isActive, onClick, view }) => (
     <button
-        title={view}
         type="button"
         onClick={onClick}
-        className={clsx(baseClasses, isActive ? activeClasses : inactiveClasses)}
+        className={clsx(
+            'tw-py-3 tw-px-2 tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
+            {
+                '!tw-opacity-100 !tw-border-[var(--vscode-tab-activeBorderTop)]': isActive,
+            }
+        )}
     >
-        <Icon size={16} strokeWidth={1.25} />
+        <Icon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
     </button>
 )
 
@@ -92,11 +96,11 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView }) => {
         <Tabs.List
             aria-label="cody-webview"
             className={clsx(
-                'tw-flex tw-justify-between tw-sticky tw-top-0 tw-z-50 tw-w-full tw-border-b tw-border-border tw-shadow-lg tw-shadow-border-500/50 tw-my-1 tw-px-4',
+                'tw-flex tw-justify-between tw-sticky tw-top-0 tw-z-50 tw-w-full tw-border-b tw-border-border tw-pl-[15px] tw-pr-4',
                 styles.tabsContainer
             )}
         >
-            <div className="tw-flex tw-gap-4">
+            <div className="tw-flex tw-gap-1">
                 {tabItems.map(({ Icon, view, command }) => (
                     <Tabs.Trigger key={view} value={view}>
                         <TabButton
