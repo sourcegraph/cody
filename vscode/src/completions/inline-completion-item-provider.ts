@@ -524,7 +524,11 @@ export class InlineCompletionItemProvider
                     // Since VS Code has no callback as to when a completion is shown, we assume
                     // that if we pass the above visibility tests, the completion is going to be
                     // rendered in the UI
-                    this.unstable_handleDidShowCompletionItem(visibleItems[0])
+                    this.unstable_handleDidShowCompletionItem(
+                        visibleItems[0],
+                        invokedContext,
+                        takeSuggestWidgetSelectionIntoAccount
+                    )
                 }
 
                 recordExposedExperimentsToSpan(span)
@@ -614,13 +618,65 @@ export class InlineCompletionItemProvider
      * same name, it's prefixed with `unstable_` to avoid a clash when the new API goes GA.
      */
     public unstable_handleDidShowCompletionItem(
-        completionOrItemId: Pick<AutocompleteItem, 'logId' | 'analyticsItem' | 'span'> | CompletionItemID
+        completionOrItemId: AutocompleteItem | CompletionItemID,
+        invokedContext?: vscode.InlineCompletionContext,
+        takeSuggestWidgetSelectionIntoAccount = false
     ): void {
         const completion = suggestedAutocompleteItemsCache.get(completionOrItemId)
         if (!completion) {
             return
         }
-        CompletionLogger.suggested(completion.logId, completion.span)
+
+        const suggestionEvent = CompletionLogger.prepareSuggestionEvent(
+            completion.logId,
+            completion.span
+        )
+        if (!suggestionEvent) {
+            return
+        }
+
+        /**
+         * The amount of time before we consider a completion to be "visible" to the user.
+         */
+        const READ_TIMEOUT_MS = 750
+
+        setTimeout(() => {
+            const activeEditor = vscode.window.activeTextEditor
+            if (!activeEditor) {
+                // User is no longer in the same document, completion cannot be visible
+                return
+            }
+
+            const latestCursorPosition = activeEditor.selection.active
+
+            // If the cursor position is the same as the position of the completion request, we should use
+            // the provided context. This allows us to re-use useful information such as `selectedCompletionInfo`
+            const latestContext = latestCursorPosition.isEqual(completion.requestParams.position)
+                ? invokedContext
+                : undefined
+
+            const isStillVisible = isCompletionVisible(
+                completion,
+                activeEditor.document,
+                {
+                    invokedPosition: completion.requestParams.position,
+                    latestPosition: activeEditor.selection.active,
+                },
+                this.getDocContext(
+                    activeEditor.document,
+                    activeEditor.selection.active,
+                    latestContext,
+                    takeSuggestWidgetSelectionIntoAccount || false
+                ),
+                latestContext,
+                takeSuggestWidgetSelectionIntoAccount,
+                undefined
+            )
+
+            if (isStillVisible) {
+                suggestionEvent.fire()
+            }
+        }, READ_TIMEOUT_MS)
     }
 
     /**

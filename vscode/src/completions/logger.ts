@@ -718,10 +718,10 @@ export function loaded(params: LoadedParams): void {
 //
 // For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
 // suggested completion count as soon as we count it as such.
-export function suggested(id: CompletionLogID, span?: Span): void {
+export function prepareSuggestionEvent(id: CompletionLogID, span?: Span): { fire: () => void } | null {
     const event = activeSuggestionRequests.get(id)
     if (!event) {
-        return
+        return null
     }
 
     const completionId = event.params.id
@@ -744,28 +744,33 @@ export function suggested(id: CompletionLogID, span?: Span): void {
             span.setAttribute('sampled', true)
         }
 
-        setTimeout(() => {
-            const event = activeSuggestionRequests.get(id)
-            if (!event) {
-                return
-            }
-
-            // We can assume that this completion will be marked as `read: true` because
-            // READ_TIMEOUT_MS has passed without the completion being logged yet.
-            if (
-                event.suggestedAt !== null &&
-                event.suggestionAnalyticsLoggedAt === null &&
-                event.suggestionLoggedAt === null
-            ) {
-                if (completionIdsMarkedAsSuggested.has(completionId)) {
+        return {
+            fire: () => {
+                const event = activeSuggestionRequests.get(id)
+                if (!event) {
                     return
                 }
-                statistics.logSuggested()
-                completionIdsMarkedAsSuggested.set(completionId, true)
-                event.suggestionAnalyticsLoggedAt = performance.now()
-            }
-        }, READ_TIMEOUT_MS)
+
+                // We can assume that this completion will be marked as `read: true` because
+                // we have fired this event without the completion being logged yet.
+                if (
+                    event.suggestedAt !== null &&
+                    event.suggestionAnalyticsLoggedAt === null &&
+                    event.suggestionLoggedAt === null
+                ) {
+                    if (completionIdsMarkedAsSuggested.has(completionId)) {
+                        return
+                    }
+
+                    statistics.logSuggested()
+                    completionIdsMarkedAsSuggested.set(completionId, true)
+                    event.suggestionAnalyticsLoggedAt = performance.now()
+                }
+            },
+        }
     }
+
+    return null
 }
 
 export function accepted(
