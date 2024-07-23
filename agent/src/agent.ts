@@ -1151,6 +1151,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { panelId: 'TODO-remove-panel-id', chatId: 'TODO-remove-chat-id' }
         })
 
+        // TODO: JetBrains no longer uses this, consider deleting it.
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             modelID ??= ModelsService.getDefaultChatModel() ?? ''
