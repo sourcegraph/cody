@@ -45,7 +45,7 @@ export const Transcript: React.FunctionComponent<{
     )
 
     return (
-        <div className="tw-px-8 tw-pt-8 tw-pb-14 tw-flex tw-flex-col tw-gap-10">
+        <div className="tw-p-8 tw-flex tw-flex-col tw-gap-10">
             {interactions.map((interaction, i) => (
                 <TranscriptInteraction
                     chatID={chatID}

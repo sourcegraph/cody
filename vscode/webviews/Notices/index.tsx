@@ -9,10 +9,11 @@ interface NoticesProps {
     version?: string
 }
 
-export const Notices: React.FunctionComponent<NoticesProps> = ({ probablyNewInstall, IDE, version }) => (
-    <div className={styles.notices}>
-        {probablyNewInstall !== undefined && IDE !== undefined && version !== undefined && (
+export const Notices: React.FunctionComponent<NoticesProps> = ({ probablyNewInstall, IDE, version }) =>
+    probablyNewInstall !== undefined &&
+    IDE !== undefined &&
+    version !== undefined && (
+        <div className={styles.notices}>
             <VersionUpdatedNotice probablyNewInstall={probablyNewInstall} IDE={IDE} version={version} />
-        )}
-    </div>
-)
+        </div>
+    )

@@ -43,7 +43,7 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => 
     localStorage.removeItem(localStorageKey)
 
     return (
-        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-8 tw-gap-10 md:tw-pl-21 tw-transition-all">
+        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-pt-8 tw-px-8 tw-gap-10 md:tw-pl-21 tw-transition-all">
             <DefaultCommandsList IDE={IDE} />
             <CollapsiblePanel title="Chat Help">
                 <FeatureRow icon={AtSignIcon}>
