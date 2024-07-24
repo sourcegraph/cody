@@ -33,12 +33,13 @@ import { onExit } from 'signal-exit'
 import zod from 'zod'
 import { waitForLock } from '../../../src/lockfile'
 import { CodyPersister, redactAuthorizationHeader } from '../../../src/testutils/CodyPersisterV2'
-import {
-    type DOTCOM_TESTING_CREDENTIALS,
-    type ENTERPRISE_TESTING_CREDENTIALS,
-    TESTING_CREDENTIALS,
+import type {
+    DOTCOM_TESTING_CREDENTIALS,
+    ENTERPRISE_TESTING_CREDENTIALS,
 } from '../../../src/testutils/testing-credentials'
+import { TESTING_CREDENTIALS } from '../../../src/testutils/testing-credentials'
 import { CODY_VSCODE_ROOT_DIR, retry, stretchTimeout } from '../helpers'
+
 import {
     MITM_AUTH_TOKEN_PLACEHOLDER,
     MITM_PROXY_AUTH_AVAILABLE_HEADER,
