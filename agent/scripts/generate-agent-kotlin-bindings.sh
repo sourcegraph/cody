@@ -17,4 +17,4 @@ pnpm install
 pnpm build
 # TODO: invoke @sourcegraph/scip-typescript npm package instead
 pnpm dlx ts-node $INDEXER_DIR/src/main.ts index --emit-signatures --emit-external-symbols
-pnpm dlx ts-node agent/src/cli/scip-codegen/command.ts --output agent/bindings/kotlin/lib/src/main/kotlin/com/sourcegraph/cody/protocol_generated
+pnpm dlx ts-node agent/src/cli/scip-codegen/command.ts --output agent/bindings/kotlin/lib/src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated

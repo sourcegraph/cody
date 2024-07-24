@@ -3,6 +3,7 @@ import type { URI } from 'vscode-uri'
 import type {
     AuthStatus,
     ClientStateForWebview,
+    CodyCommand,
     CodyIDE,
     ConfigurationWithAccessToken,
     ContextItem,
@@ -20,7 +21,7 @@ import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/s
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import type { Uri } from 'vscode'
-import type { View } from '../../webviews/NavBar'
+import type { View } from '../../webviews/tabs/types'
 import type { Repo } from '../context/repo-fetcher'
 
 /**
@@ -53,6 +54,11 @@ interface TelemetryEventProperties {
         | TelemetryEventProperties[]
         | TelemetryEventProperties
 }
+
+/**
+ * The location of where the webview is displayed.
+ */
+export type WebviewType = 'sidebar' | 'editor'
 
 /**
  * A message sent from the webview to the extension host.
@@ -95,6 +101,7 @@ export type WebviewMessage =
           page: string
       }
     | { command: 'chatModel'; model: string }
+    | { command: 'command'; id: string; arg?: string | undefined | null }
     | { command: 'get-chat-models' }
     | {
           command: 'openFile'
@@ -175,6 +182,7 @@ export type ExtensionMessage =
     | { type: 'view'; view: View }
     | { type: 'errors'; errors: string }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
+    | { type: 'commands'; commands: CodyCommand[] }
     /**
      * Context files returned from a @-mention search
      */
@@ -221,6 +229,11 @@ interface ExtensionAttributionMessage {
     error?: string | undefined | null
 }
 
+/**
+ * ChatSubmitType represents the type of chat submission.
+ * - 'user': The user starts a new chat panel.
+ * - 'user-newchat': The user reuses the current chat panel.
+ */
 export type ChatSubmitType = 'user' | 'user-newchat'
 
 export interface WebviewSubmitMessage extends WebviewContextMessage {
@@ -259,6 +272,7 @@ export interface ConfigurationSubsetForWebview
         'experimentalNoodle' | 'serverEndpoint' | 'agentIDE' | 'agentExtensionVersion'
     > {
     experimentalUnitTest: boolean
+    webviewType?: WebviewType | undefined | null
 }
 
 /**
@@ -285,16 +299,6 @@ export const ACCOUNT_LIMITS_INFO_URL = new URL(
 export interface LocalEnv {
     /** Whether the extension is running in VS Code Web (as opposed to VS Code Desktop). */
     uiKindIsWeb: boolean
-}
-
-export function isLoggedIn(authStatus: AuthStatus): boolean {
-    if (!authStatus.siteHasCodyEnabled) {
-        return false
-    }
-    return (
-        authStatus.authenticated &&
-        (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
-    )
 }
 
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'

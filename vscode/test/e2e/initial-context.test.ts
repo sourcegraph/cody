@@ -5,6 +5,8 @@ import {
     chatInputMentions,
     clickEditorTab,
     createEmptyChatPanel,
+    getChatInputs,
+    getChatSidebarPanel,
     openFileInEditorTab,
     selectLineRangeInEditorTab,
     sidebarSignin,
@@ -15,7 +17,8 @@ testWithGitRemote.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }
     'initial context - self-serve repo',
     async ({ page, sidebar }) => {
         await sidebarSignin(page, sidebar)
-        const [, lastChatInput] = await createEmptyChatPanel(page)
+        const chatFrame = getChatSidebarPanel(page)
+        const lastChatInput = getChatInputs(chatFrame).last()
 
         // The current repository should be initially present in the chat input.
         await expect(chatInputMentions(lastChatInput)).toHaveText(['myrepo'])
@@ -67,7 +70,8 @@ testWithGitRemote.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }
         await sidebarSignin(page, sidebar)
         await openFileInEditorTab(page, 'main.c')
 
-        const [chatPanel, , firstChatInput] = await createEmptyChatPanel(page)
+        const chatPanel = getChatSidebarPanel(page)
+        const firstChatInput = getChatInputs(chatPanel).first()
         await expect(chatInputMentions(firstChatInput)).toHaveText(['myrepo', 'main.c'])
         await firstChatInput.pressSequentially('xyz')
         await firstChatInput.press('Enter')

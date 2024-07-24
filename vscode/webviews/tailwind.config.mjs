@@ -33,6 +33,9 @@ export default {
                 12: '24px',
                 14: '28px',
                 16: '32px',
+                18: '36px',
+                20: '40px',
+                21: '44px',
             },
             border: {
                 DEFAULT: '1px',
@@ -60,7 +63,7 @@ export default {
                 },
                 muted: {
                     DEFAULT: 'var(--vscode-input-background)',
-                    transparent: 'color-mix(in lch, var(--vscode-input-background) 25%, transparent)',
+                    transparent: 'color-mix(in lch, currentColor 10%, transparent)',
                     foreground: 'var(--vscode-input-placeholderForeground)',
                 },
                 accent: {
@@ -99,10 +102,20 @@ export default {
                     from: { height: 'var(--radix-accordion-content-height)' },
                     to: { height: '0' },
                 },
+                'collapsible-down': {
+                    from: { height: '0' },
+                    to: { height: 'var(--radix-collapsible-content-height)' },
+                },
+                'collapsible-up': {
+                    from: { height: 'var(--radix-collapsible-content-height)' },
+                    to: { height: '0' },
+                },
             },
             animation: {
                 'accordion-down': 'accordion-down 0.15s ease-out',
                 'accordion-up': 'accordion-up 0.15s ease-out',
+                'collapsible-down': 'collapsible-down 0.15s ease-out',
+                'collapsible-up': 'collapsible-up 0.15s ease-out',
             },
         },
     },

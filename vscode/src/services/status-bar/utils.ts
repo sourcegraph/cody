@@ -1,9 +1,11 @@
 import * as vscode from 'vscode'
 
-import type { Configuration } from '@sourcegraph/cody-shared'
+import { CodyIDE, type Configuration } from '@sourcegraph/cody-shared'
 import { isCurrentFileIgnored } from '../../cody-ignore/utils'
 import { getGhostHintEnablement } from '../../commands/GhostHintDecorator'
 import { getConfiguration } from '../../configuration'
+import { getReleaseNotesURLByIDE } from '../../release'
+import { version } from '../../version'
 import { FeedbackOptionItems, SupportOptionItems } from '../FeedbackOptions'
 import { enableVerboseDebugMode } from '../utils/export-logs'
 import { CodyStatusError } from './CodyStatusError'
@@ -114,6 +116,27 @@ export async function openCodySettingsQuickPicks(): Promise<void> {
             label: '$(symbol-namespace) Custom Commands Settings',
             onSelect: () => vscode.commands.executeCommand('cody.menu.commands-settings'),
         },
+        {
+            label: '$(keyboard) Keyboard Shortcuts',
+            async onSelect(): Promise<void> {
+                await vscode.commands.executeCommand(
+                    'workbench.action.openGlobalKeybindings',
+                    '@ext:sourcegraph.cody-ai'
+                )
+            },
+        },
+    ]
+
+    const versionItems = [
+        {
+            label: '$(cody-logo) Cody Release Blog',
+            async onSelect(): Promise<void> {
+                await vscode.commands.executeCommand(
+                    'vscode.open',
+                    getReleaseNotesURLByIDE(version, CodyIDE.VSCode)
+                )
+            },
+        },
     ]
 
     quickPick.title = 'Cody Settings'
@@ -132,6 +155,8 @@ export async function openCodySettingsQuickPicks(): Promise<void> {
         { label: 'feedback & support', kind: vscode.QuickPickItemKind.Separator },
         ...SupportOptionItems,
         ...FeedbackOptionItems,
+        { label: `v${version}`, kind: vscode.QuickPickItemKind.Separator },
+        ...versionItems,
     ].filter(Boolean) as StatusBarItem[]
 
     quickPick.show()

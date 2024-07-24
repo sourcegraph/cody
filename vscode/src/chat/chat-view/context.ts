@@ -5,6 +5,7 @@ import {
     type ContextItem,
     type ContextItemRepository,
     ContextItemSource,
+    type ContextItemTree,
     FeatureFlag,
     MAX_BYTES_PER_FILE,
     NUM_CODE_RESULTS,
@@ -24,16 +25,28 @@ import type { ContextRankingController } from '../../local-context/context-ranki
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
+import { repoNameResolver } from '../../repository/repo-name-resolver'
 
-interface HumanInput {
+export interface HumanInput {
     text: PromptString
     mentions: ContextItem[]
 }
 
-function remoteRepositoryIDsFromHumanInput(input: HumanInput): string[] {
+export function remoteRepositoryIDsFromHumanInput(input: HumanInput): string[] {
     return input.mentions
         .filter((item): item is ContextItemRepository => item.type === 'repository')
-        .map(item => item.repoID)
+        .map(repo => repo.repoID)
+}
+
+export async function remoteRepositoryURIsForLocalTrees(input: HumanInput): Promise<string[]> {
+    const trees: ContextItemTree[] = input.mentions.filter(
+        (item): item is ContextItemTree => item.type === 'tree'
+    )
+
+    const groups = await Promise.all(
+        trees.map(tree => repoNameResolver.getRepoNamesFromWorkspaceUri(tree.uri))
+    )
+    return Array.from(new Set(groups.flat()))
 }
 
 function shouldSearchInLocalWorkspace(input: HumanInput): boolean {

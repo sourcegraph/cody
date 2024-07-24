@@ -6,6 +6,7 @@ import {
     type AuthStatus,
     type ChatMessage,
     type ClientStateForWebview,
+    type CodyCommand,
     CodyIDE,
     GuardrailsPost,
     type Model,
@@ -13,19 +14,19 @@ import {
     type SerializedChatTranscript,
     isCodyProUser,
 } from '@sourcegraph/cody-shared'
-import type { UserAccountInfo } from './Chat'
-
 import type { AuthMethod, ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
-
+import type { UserAccountInfo } from './Chat'
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
-import type { View } from './NavBar'
 import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
 import { ConnectionIssuesPage } from './Troubleshooting'
 import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
 import { ClientStateContextProvider, useClientActionDispatcher } from './client/clientState'
+
+import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
 import { WithContextProviders } from './mentions/providers'
+import { AccountTab, CommandsTab, HistoryTab, SettingsTab, TabsBar, View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
@@ -50,6 +51,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const [chatEnabled, setChatEnabled] = useState<boolean>(true)
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
+    const [commandList, setCommandList] = useState<CodyCommand[]>([])
     const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
 
     const [clientState, setClientState] = useState<ClientStateForWebview>({
@@ -105,9 +107,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
                             isDotComUser: message.authStatus.isDotCom,
                             user: message.authStatus,
-                            ide: message.config.agentIDE || CodyIDE.VSCode,
+                            ide: message.config.agentIDE ?? CodyIDE.VSCode,
                         })
-                        setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
+                        setView(message.authStatus.isLoggedIn ? View.Chat : View.Login)
                         updateDisplayPathEnvInfoForWebview(message.workspaceFolderUris)
                         // Get chat models
                         if (message.authStatus.isLoggedIn) {
@@ -136,6 +138,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'transcript-errors':
                         setIsTranscriptError(message.isTranscriptError)
+                        break
+                    case 'commands':
+                        setCommandList(message.commands)
                         break
                     case 'chatModels':
                         setChatModels(message.models)
@@ -182,6 +187,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     useEffect(() => {
         if (!view) {
             vscodeAPI.postMessage({ command: 'initialized' })
+            return
         }
     }, [view, vscodeAPI])
 
@@ -220,7 +226,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 
     // Wait for all the data to be loaded before rendering Chat View
-    if (!view || !authStatus || !config) {
+    if (!view || !authStatus || !config || !userHistory) {
         return <LoadingPage />
     }
 
@@ -252,37 +258,53 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     }
 
     return (
-        <div className={styles.outerContainer}>
-            {userHistory && (
-                <Notices
-                    probablyNewInstall={isNewInstall}
-                    IDE={config.agentIDE}
-                    version={config.agentExtensionVersion}
-                />
+        <TabRoot
+            defaultValue={View.Chat}
+            value={view}
+            orientation="vertical"
+            className={styles.outerContainer}
+        >
+            {/* NOTE: Display tabs to PLG users only until Universal Cody is ready. */}
+            {/* Shows tab bar for sidebar chats only. */}
+            {userAccountInfo.isDotComUser && config.webviewType !== 'editor' && (
+                <TabsBar currentView={view} setView={setView} IDE={config.agentIDE || CodyIDE.VSCode} />
             )}
             {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
-            {view === 'chat' && userHistory && (
-                <ChatModelContextProvider value={chatModelContext}>
-                    <WithContextProviders>
-                        <TelemetryRecorderContext.Provider value={telemetryRecorder}>
-                            <ClientStateContextProvider value={clientState}>
-                                <Chat
-                                    chatID={chatID}
-                                    chatEnabled={chatEnabled}
-                                    userInfo={userAccountInfo}
-                                    messageInProgress={messageInProgress}
-                                    transcript={transcript}
-                                    vscodeAPI={vscodeAPI}
-                                    isTranscriptError={isTranscriptError}
-                                    guardrails={attributionEnabled ? guardrails : undefined}
-                                    experimentalUnitTestEnabled={config.experimentalUnitTest}
-                                />
-                            </ClientStateContextProvider>
-                        </TelemetryRecorderContext.Provider>
-                    </WithContextProviders>
-                </ChatModelContextProvider>
-            )}
-        </div>
+            <TabContainer value={view}>
+                {view === 'chat' && (
+                    <ChatModelContextProvider value={chatModelContext}>
+                        <WithContextProviders>
+                            <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                                <ClientStateContextProvider value={clientState}>
+                                    <Notices
+                                        probablyNewInstall={isNewInstall}
+                                        IDE={config.agentIDE}
+                                        version={config.agentExtensionVersion}
+                                    />
+                                    <Chat
+                                        chatID={chatID}
+                                        chatEnabled={chatEnabled}
+                                        userInfo={userAccountInfo}
+                                        messageInProgress={messageInProgress}
+                                        transcript={transcript}
+                                        vscodeAPI={vscodeAPI}
+                                        isTranscriptError={isTranscriptError}
+                                        guardrails={attributionEnabled ? guardrails : undefined}
+                                        experimentalUnitTestEnabled={config.experimentalUnitTest}
+                                    />
+                                </ClientStateContextProvider>
+                            </TelemetryRecorderContext.Provider>
+                        </WithContextProviders>
+                    </ChatModelContextProvider>
+                )}
+                {view === 'history' && <HistoryTab userHistory={userHistory} />}
+                {view === 'commands' && (
+                    <CommandsTab setView={setView} IDE={config.agentIDE} commands={commandList} />
+                )}
+                {view === 'account' && <AccountTab userInfo={userAccountInfo} />}
+                {view === 'settings' && <SettingsTab userInfo={userAccountInfo} />}
+            </TabContainer>
+        </TabRoot>
     )
 }
 

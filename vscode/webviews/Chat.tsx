@@ -9,9 +9,9 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
+import { GenerateUnitTestsButton } from './chat/components/GenerateUnitTestsButton'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
-import { Button } from './components/shadcn/ui/button'
 import { useContextProviders } from './mentions/providers'
 import { useTelemetryRecorder } from './utils/telemetry'
 
@@ -161,11 +161,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     useEffect(() => {
         reloadMentionProviders()
     }, [userInfo.isDotComUser, reloadMentionProviders])
-    const handleGenerateUnitTest = useCallback(() => {
-        postMessage({
-            command: 'experimental-unit-test-prompt',
-        })
-    }, [postMessage])
+
+    const showUnitTestsButton = experimentalUnitTestEnabled && transcript.length === 0
 
     return (
         <div className={clsx(styles.container, className, 'tw-relative')}>
@@ -187,11 +184,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 postMessage={postMessage}
                 guardrails={guardrails}
             />
-            {experimentalUnitTestEnabled && transcript.length === 0 && (
-                <div className="tw-mx-auto tw-text-center">
-                    <Button onClick={handleGenerateUnitTest}>Generate Unit Tests (Experimental)</Button>
-                </div>
-            )}
+            {showUnitTestsButton && <GenerateUnitTestsButton postMessage={postMessage} />}
             {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage IDE={userInfo.ide} />}
             <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
         </div>
@@ -201,7 +194,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 export interface UserAccountInfo {
     isDotComUser: boolean
     isCodyProUser: boolean
-    user: Pick<AuthStatus, 'username' | 'displayName' | 'avatarURL'>
+    user: Pick<AuthStatus, 'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail'>
     ide: CodyIDE
 }
 

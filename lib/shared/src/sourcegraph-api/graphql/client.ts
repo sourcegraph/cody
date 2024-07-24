@@ -955,14 +955,14 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async contextFilters(): Promise<ContextFilters> {
+    public async contextFilters(): Promise<{ filters: ContextFilters; transient: boolean }> {
         // CONTEXT FILTERS are only available on Sourcegraph 5.3.3 and later.
         const minimumVersion = '5.3.3'
         const { enabled, version } = await this.isCodyEnabled()
         const insiderBuild = version.length > 12 || version.includes('dev')
         const isValidVersion = insiderBuild || semver.gte(version, minimumVersion)
         if (!enabled || !isValidVersion) {
-            return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+            return { filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: false }
         }
 
         const response =
@@ -972,26 +972,26 @@ export class SourcegraphGraphQLAPIClient {
 
         const result = extractDataOrError(response, data => {
             if (data?.site?.codyContextFilters?.raw === null) {
-                return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+                return { filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: false }
             }
 
             if (data?.site?.codyContextFilters?.raw) {
-                return data.site.codyContextFilters.raw
+                return { filters: data.site.codyContextFilters.raw, transient: false }
             }
 
             // Exclude everything in case of an unexpected response structure.
-            return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
+            return { filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: true }
         })
 
         if (result instanceof Error) {
             // Ignore errors caused by outdated Sourcegraph API instances.
             if (hasOutdatedAPIErrorMessages(result)) {
-                return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+                return { filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: false }
             }
 
             logError('SourcegraphGraphQLAPIClient', 'contextFilters', result.message)
             // Exclude everything in case of an unexpected error.
-            return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
+            return { filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: true }
         }
 
         return result
@@ -1207,12 +1207,16 @@ export class SourcegraphGraphQLAPIClient {
         return initialDataOrError
     }
 
-    public async searchAttribution(snippet: string): Promise<SearchAttributionResults | Error> {
+    public async searchAttribution(
+        snippet: string,
+        timeoutMs: number
+    ): Promise<SearchAttributionResults | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SearchAttributionResponse>>(
             SEARCH_ATTRIBUTION_QUERY,
             {
                 snippet,
-            }
+            },
+            timeoutMs
         ).then(response => extractDataOrError(response, data => data.snippetAttribution))
     }
 
@@ -1284,7 +1288,7 @@ export class SourcegraphGraphQLAPIClient {
                 .then(response => response.json() as T)
                 .catch(error => {
                     if (error.name === 'AbortError') {
-                        return new Error(`EHOSTUNREACH: Request timed out after ${timeout}ms (${url})`)
+                        return new Error(`ETIMEDOUT: Request timed out after ${timeout}ms (${url})`)
                     }
                     return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
                 })
@@ -1378,7 +1382,7 @@ export class SourcegraphGraphQLAPIClient {
                 .then(response => response.json() as T)
                 .catch(error => {
                     if (error.name === 'AbortError') {
-                        return new Error(`EHOSTUNREACH: Request timed out after ${timeout}ms (${url})`)
+                        return new Error(`ETIMEDOUT: Request timed out after ${timeout}ms (${url})`)
                     }
                     return new Error(`accessing Sourcegraph HTTP API: ${error} (${url})`)
                 })
