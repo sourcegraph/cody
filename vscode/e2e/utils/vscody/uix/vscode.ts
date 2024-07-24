@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises'
 import path from 'node:path'
 import { test as t } from '@playwright/test'
 import type { UIXContextFnContext } from '.'
@@ -40,12 +41,43 @@ export class Sidebar {
     }
 }
 
-export function startSession({
+export async function startSession({
     page,
     vscodeUI,
     executeCommand,
     workspaceDir,
 }: Pick<UIXContextFnContext, 'page' | 'vscodeUI' | 'executeCommand' | 'workspaceDir'>) {
+    // If we have a debugger then we show some user instructions
+    const { extensionHostDebugPort } = vscodeUI
+    if (extensionHostDebugPort) {
+        await t.step('Show Debug Instructions', async () => {
+            // load a landing page before the session is initialized
+            const placeholderDir = path.join(__dirname, '../resources/vscode-placeholder')
+            await page.route('http://vscode-pending.local/**', async (route, request) => {
+                // serve local modified HTML or any of the resources requested
+                if (request.url() === 'http://vscode-pending.local/') {
+                    route.fulfill({
+                        body: (
+                            await fs.readFile(path.join(placeholderDir, 'index.html'), 'utf-8')
+                        ).replaceAll('{{DEBUG_PORT}}', extensionHostDebugPort.toString()),
+                        headers: {
+                            'Content-Type': 'text/html',
+                        },
+                        status: 200,
+                    })
+                } else {
+                    const pathParts = request
+                        .url()
+                        .replace('http://vscode-pending.local/', '')
+                        .split('/')
+                    route.fulfill({
+                        path: path.join(placeholderDir, ...pathParts),
+                    })
+                }
+            })
+            await page.goto('http://vscode-pending.local/')
+        })
+    }
     return t.step('Start VSCode Session', async () => {
         // we dummy route here so that we can modify the state etc. Which would
         // otherwise be protected by the browser to match the domain

@@ -9,6 +9,7 @@ import 'node:https'
 import type { Server as HTTPServer } from 'node:http'
 import path from 'node:path'
 import { EventEmitter } from 'node:stream'
+import { setTimeout } from 'node:timers/promises'
 import pspawn from '@npmcli/promise-spawn'
 import { test as _test, expect, mergeTests } from '@playwright/test'
 import NodeHttpAdapter from '@pollyjs/adapter-node-http'
@@ -24,12 +25,12 @@ import { downloadAndUnzipVSCode } from '@vscode/test-electron/out/download'
 import express from 'express'
 import jsonStableStringify from 'fast-json-stable-stringify'
 import { copy as copyExt } from 'fs-extra'
+import glob from 'glob'
 import { createProxyMiddleware, proxyEventsPlugin } from 'http-proxy-middleware'
 import type { OnProxyEvent } from 'http-proxy-middleware/dist/types'
 import killSync from 'kill-sync'
 import { onExit } from 'signal-exit'
 import zod from 'zod'
-
 import { waitForLock } from '../../../src/lockfile'
 import { CodyPersister, redactAuthorizationHeader } from '../../../src/testutils/CodyPersisterV2'
 import {
@@ -66,6 +67,7 @@ const workerOptionsSchema = zod.object({
     mitmServerPortRange: zod.tuple([zod.number(), zod.number()]).default([34100, 34200]),
     keepRuntimeDirs: zod.enum(['all', 'failed', 'none']).default('none'),
     allowGlobalVSCodeModification: zod.boolean().default(false),
+    waitForExtensionHostDebugger: zod.boolean().default(false),
 })
 
 const testOptionsSchema = zod.object({
@@ -106,11 +108,14 @@ interface MitMProxyConfig {
 
 export interface WorkerContext {
     validWorkerOptions: WorkerOptions
+    debugMode: boolean
 }
+
 export interface TestContext {
     vscodeUI: {
         url: string
         token: string
+        extensionHostDebugPort: number | null
     }
     serverRootDir: Directory
     validOptions: TestOptions & WorkerOptions
@@ -166,6 +171,7 @@ const optionsFixture: ReturnType<
                 vscodeServerPortRange,
                 mitmServerPortRange,
                 allowGlobalVSCodeModification,
+                waitForExtensionHostDebugger,
             },
             use
         ) => {
@@ -182,6 +188,7 @@ const optionsFixture: ReturnType<
                     vscodeServerPortRange,
                     mitmServerPortRange,
                     allowGlobalVSCodeModification,
+                    waitForExtensionHostDebugger,
                 } satisfies { [key in keyof WorkerOptions]-?: WorkerOptions[key] },
                 {}
             )
@@ -238,6 +245,15 @@ const optionsFixture: ReturnType<
             use({ ...validOptionsWithDefaults.data, ...validWorkerOptions })
         },
         { scope: 'test', auto: true },
+    ],
+})
+
+const debugFixture = _test.extend<TestContext, WorkerContext>({
+    debugMode: [
+        async ({ browser }, use, testInfo) => {
+            use(!!process.env.PWDEBUG)
+        },
+        { scope: 'worker' },
     ],
 })
 
@@ -355,8 +371,6 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                     console.error('Error inside MitM proxy', err.message)
                 }
                 throw err
-                // process.nextTick(() => {
-                // })
             })
 
             const proxyReqHandlers = [
@@ -650,7 +664,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
     ],
     //#region vscode agent
     vscodeUI: [
-        async ({ validOptions, serverRootDir, mitmProxy, page, polly }, use, testInfo) => {
+        async ({ validOptions, debugMode, serverRootDir, mitmProxy, page, polly }, use, testInfo) => {
             polly.pause()
 
             const executableDir = path.resolve(process.cwd(), validOptions.vscodeTmpDir)
@@ -745,7 +759,10 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
 
             // We can now start the server
             const connectionToken = '0000-0000'
-            const serverPort = rangeOffset(testInfo.parallelIndex, validOptions.vscodeServerPortRange)
+            const [serverPort, reservedExtensionHostDebugPort] = rangeOffset(
+                [testInfo.parallelIndex * 2, 2],
+                validOptions.vscodeServerPortRange
+            )
             const args = [
                 'serve-web',
                 `--user-data-dir=${userDataDir}`,
@@ -757,27 +774,40 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 `--extensions-dir=${extensionsDir}`, // cli doesn't handle quotes properly so just escape spaces,
             ]
 
+            const extensionHostDebugPort = debugMode ? reservedExtensionHostDebugPort : null
             const env = {
                 ...process.env,
                 ...(['stable', 'insiders'].includes(validOptions.vscodeVersion)
                     ? { VSCODE_CLI_QUALITY: validOptions.vscodeVersion }
                     : { VSCODE_CLI_COMMIT: validOptions.vscodeVersion }),
+                // This environment variable is read inside the patched server.main.js of VSCode server
+                EXTENSION_HOST_INSPECT_ENV: validOptions.waitForExtensionHostDebugger
+                    ? `--inspect-brk=${extensionHostDebugPort}`
+                    : `--inspect=${extensionHostDebugPort}`,
                 TESTING_DOTCOM_URL: mitmProxy.sourcegraph.dotcom.endpoint,
                 CODY_TESTING_BFG_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
                 CODY_TESTING_SYMF_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
             }
-            const codeProcess = spawn(codeTunnelCliPath, args, {
-                env,
-                stdio: ['inherit', 'ignore', 'inherit'],
-                detached: false,
-            })
-            SPAWNED_PIDS.add(codeProcess.pid)
+            const config = {
+                url: `http://127.0.0.1:${serverPort}/`,
+                token: connectionToken,
+                extensionHostDebugPort,
+            }
 
-            const config = { url: `http://127.0.0.1:${serverPort}/`, token: connectionToken }
-            await stretchTimeout(() => waitForVSCodeServer({ url: config.url, serverExecutableDir }), {
-                max: DOWNLOAD_GRACE_TIME,
-                testInfo,
-            })
+            const codeProcess = await stretchTimeout(
+                () =>
+                    waitForPatchedVSCodeServer({
+                        codeTunnelCliPath,
+                        args,
+                        env,
+                        url: config.url,
+                        serverExecutableDir,
+                    }),
+                {
+                    max: DOWNLOAD_GRACE_TIME,
+                    testInfo,
+                }
+            )
 
             polly.play()
 
@@ -837,7 +867,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
     ],
 })
 
-export const fixture = mergeTests(optionsFixture, implFixture) as ReturnType<
+export const fixture = mergeTests(optionsFixture, debugFixture, implFixture) as ReturnType<
     typeof _test.extend<TestContext & TestOptions, WorkerContext & WorkerOptions>
 >
 
@@ -850,40 +880,116 @@ fixture.beforeAll(async () => {
 })
 
 /**
- * Waits for server components to be downloaded and that the server is ready to
- * accept connections
+ * Waits for server components to be downloaded, patched (so that we can control
+ * the debug port) and that the server is ready to accept connections
  */
-async function waitForVSCodeServer(config: {
+async function waitForPatchedVSCodeServer(config: {
     url: string
+    codeTunnelCliPath: string
+    args: string[]
+    env: Record<string, string>
     serverExecutableDir: string
     maxConnectionRetries?: number
 }) {
     const releaseServerDownloadLock = await waitForLock(config.serverExecutableDir, {
-        delay: 1000,
+        delay: 100,
         lockfilePath: path.join(config.serverExecutableDir, '.lock'),
     })
     try {
-        let connectionIssueTries = config.maxConnectionRetries ?? 5
         while (true) {
-            try {
-                const res = await fetch(config.url)
-                if (res.status === 202) {
-                    // we are still downloading here
-                } else if (res.status === 200 || res.status === 403) {
-                    // 403 simply means we haven't supplied the token
-                    // 200 probably means we didn't require a token
-                    // either way we are ready to accept connections
-                    return
-                } else {
-                    console.error(`Unexpected status code ${res.status}`)
+            const filesToPatch = glob.sync(
+                path.join(
+                    config.serverExecutableDir,
+                    'serve-web',
+                    '*',
+                    'out',
+                    'vs',
+                    'server',
+                    'node',
+                    'server.main.js'
+                )
+            )
+            // We patch the server.main.js file to accept a environment variable
+            // (EXTENSION_HOST_INSPECT_ENV) that allows us to control the debug port
+            // of specifically the extension host. There is currently no offical
+            // mechanism to do so in the serve-web command.
+            let requiresPatching = false
+            for (const file of filesToPatch) {
+                const contents = await fs.readFile(file, 'utf-8')
+                if (contents.includes('process.env.EXTENSION_HOST_INSPECT_ENV')) {
+                    //this file is assumed already patched
+                    continue
                 }
-            } catch (err) {
-                connectionIssueTries--
-                if (connectionIssueTries <= 0) {
-                    throw err
+                requiresPatching = true
+                // this is a bit tricky to understand, but essentially we find
+                // `C.execArgv.unshift("--dns-result-order=ipv4first")` which is the
+                // insertion point. The `C` here might change depending on the
+                // minifier so we capture this variable and then re-use it in our
+                // injected statement.
+                // process.env.EXTENSION_HOST_INSPECT_ENV ? C.execArgv.push(process.env.EXTENSION_HOST_INSPECT_ENV) : null;C.execArgv.unshift("--dns-result-order=ipv4first")
+                const insertionPoint =
+                    /(?<varname>[A-Z]+)\.execArgv\.unshift\("--dns-result-order=ipv4first"\)/.exec(
+                        contents
+                    )
+                if (!insertionPoint) {
+                    throw new Error(`Could not find insertion point for patching ${file}`)
                 }
+                const varname = insertionPoint?.groups?.varname
+                if (!varname) {
+                    throw new Error(
+                        `Could not find variable name for insertion point for patching ${file}`
+                    )
+                }
+                //we split at the insertion point
+                const newContent =
+                    contents.slice(0, insertionPoint.index) +
+                    `process.env.EXTENSION_HOST_INSPECT_ENV ? ${varname}.execArgv.push(process.env.EXTENSION_HOST_INSPECT_ENV) : null;` +
+                    contents.slice(insertionPoint.index)
+                await fs.writeFile(file, newContent, 'utf-8')
             }
-            await new Promise(resolve => setTimeout(resolve, 1000))
+            if (requiresPatching) {
+                // we retry even before starting the server. This is because if the patch changes we might need to re-patch already existing server downloads
+                continue
+            }
+            const codeProcess = spawn(config.codeTunnelCliPath, config.args, {
+                env: config.env,
+                stdio: ['inherit', 'ignore', 'inherit'],
+                detached: false,
+            })
+            SPAWNED_PIDS.add(codeProcess.pid)
+
+            let connectionIssueTries = config.maxConnectionRetries ?? 5
+            while (true) {
+                try {
+                    const res = await fetch(config.url)
+                    if (res.status === 202) {
+                        requiresPatching = true
+                        // we are still downloading here
+                    } else if (res.status === 200 || res.status === 403) {
+                        // 403 simply means we haven't supplied the token
+                        // 200 probably means we didn't require a token
+                        // either way we are ready to accept connections
+                        break
+                    } else {
+                        console.error(`Unexpected status code ${res.status}`)
+                    }
+                } catch (err) {
+                    connectionIssueTries--
+                    if (connectionIssueTries <= 0) {
+                        throw err
+                    }
+                }
+                await setTimeout(1000)
+            }
+            if (requiresPatching) {
+                // We need to patch and restart the server so we kill this one and try again
+                if (codeProcess.pid) {
+                    killSync(codeProcess.pid, 'SIGTERM', true)
+                    SPAWNED_PIDS.delete(codeProcess.pid)
+                }
+            } else {
+                return codeProcess
+            }
         }
     } finally {
         releaseServerDownloadLock()
