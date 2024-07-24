@@ -196,42 +196,23 @@ export function contextItemsFromPromptEditorValue(
 export function inputTextWithoutContextChipsFromPromptEditorState(
     state: SerializedPromptEditorState
 ): string {
-    const editorState: typeof state.lexicalEditorState = JSON.parse(
-        JSON.stringify(state.lexicalEditorState)
-    )
+    state = filterLexicalNodes(state, node => !isSerializedContextItemMentionNode(node))
 
-    forEachPreOrder(editorState.root, node => {
-        if (node && 'children' in node && Array.isArray(node.children)) {
-            node.children = node.children.filter(child => !isSerializedContextItemMentionNode(child))
-        }
-    })
-
-    return textContentFromSerializedLexicalNode(editorState.root).trimStart()
+    return textContentFromSerializedLexicalNode(state.lexicalEditorState.root).trimStart()
 }
 
 export function filterContextItemsFromPromptEditorValue(
     value: SerializedPromptEditorValue,
     keep: (item: SerializedContextItem) => boolean
 ): SerializedPromptEditorValue {
-    const editorState: typeof value.editorState.lexicalEditorState = JSON.parse(
-        JSON.stringify(value.editorState.lexicalEditorState)
+    const editorState = filterLexicalNodes(value.editorState, node =>
+        isSerializedContextItemMentionNode(node) ? keep(node.contextItem) : true
     )
-
-    forEachPreOrder(editorState.root, node => {
-        if (node && 'children' in node && Array.isArray(node.children)) {
-            node.children = node.children.filter(child =>
-                isSerializedContextItemMentionNode(child) ? keep(child.contextItem) : true
-            )
-        }
-    })
 
     return {
         ...value,
-        editorState: {
-            ...value.editorState,
-            lexicalEditorState: editorState,
-        },
-        text: textContentFromSerializedLexicalNode(editorState.root),
+        editorState,
+        text: textContentFromSerializedLexicalNode(editorState.lexicalEditorState.root),
         contextItems: value.contextItems.filter(item => keep(serializeContextItem(item))),
     }
 }
@@ -401,6 +382,30 @@ function forEachPreOrder(
         for (const child of node.children) {
             forEachPreOrder(child, callbackfn)
         }
+    }
+}
+
+/**
+ * returns a copy of editorState with only nodes which return true from
+ * predicate.
+ */
+function filterLexicalNodes(
+    editorState: SerializedPromptEditorState,
+    predicate: (node: SerializedLexicalNode) => boolean
+): SerializedPromptEditorState {
+    const copy: typeof editorState.lexicalEditorState = JSON.parse(
+        JSON.stringify(editorState.lexicalEditorState)
+    )
+
+    forEachPreOrder(copy.root, node => {
+        if (node && 'children' in node && Array.isArray(node.children)) {
+            node.children = node.children.filter(child => predicate(child))
+        }
+    })
+
+    return {
+        ...editorState,
+        lexicalEditorState: copy,
     }
 }
 
