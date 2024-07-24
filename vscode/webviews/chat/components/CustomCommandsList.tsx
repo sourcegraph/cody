@@ -3,12 +3,14 @@ import { PencilRulerIcon } from 'lucide-react'
 import type { FunctionComponent } from 'react'
 import { Button } from '../../components/shadcn/ui/button'
 import { Collapsible } from '../../components/shadcn/ui/collapsible'
+import { View } from '../../tabs/types'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 
-export const CustomCommandsList: FunctionComponent<{ commands: CodyCommand[]; IDE?: CodyIDE }> = ({
-    commands,
-    IDE,
-}) => {
+export const CustomCommandsList: FunctionComponent<{
+    commands: CodyCommand[]
+    IDE?: CodyIDE
+    setView: (view: View) => void
+}> = ({ commands, IDE, setView }) => {
     const customCommandsList = commands.filter(
         c => c.type === CustomCommandType.Workspace || c.type === CustomCommandType.User
     )
@@ -22,9 +24,10 @@ export const CustomCommandsList: FunctionComponent<{ commands: CodyCommand[]; ID
             key={key}
             variant="text"
             size="none"
-            onClick={() =>
+            onClick={() => {
                 getVSCodeAPI().postMessage({ command: 'command', id: 'cody.action.command', arg: key })
-            }
+                setView(View.Chat)
+            }}
             className="tw-px-2 hover:tw-bg-button-background-hover"
             title={description ?? prompt}
         >
