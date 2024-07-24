@@ -49,6 +49,13 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase() {
           logger.warn("Error shutting down session", x)
         }
       }
+      CodyAgentService.getInstance(myFixture.project).apply {
+        try {
+          stopAgent(project)
+        } catch (x: Exception) {
+          logger.warn("Error shutting down agent", x)
+        }
+      }
     } finally {
       super.tearDown()
     }
