@@ -667,3 +667,15 @@ html[data-ide='JetBrains'] .model-selector-popover::-webkit-scrollbar-thumb {
     border-radius: 100px;
     border: 1px solid var(--vscode-sideBar-background);
 }
+
+/* color-mix is not supported on JetBrains webview */
+html[data-ide=JetBrains] .context-item-mention-node {
+    color: var(--vscode-inputOption-activeForeground);
+    background-color: var(--vscode-badge-background);
+    gap: 0.2rem;
+
+    .icon {
+        width: 1rem;
+        height: 1rem;
+    }
+}
