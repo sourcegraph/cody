@@ -290,17 +290,11 @@ export class InlineCompletionItemProvider
                 return null
             }
 
-            let takeSuggestWidgetSelectionIntoAccount = false
-            // Only take the completion widget selection into account if the selection was actively changed
-            // by the user
-            if (
-                this.config.completeSuggestWidgetSelection &&
-                lastCompletionRequest &&
-                onlyCompletionWidgetSelectionChanged(lastCompletionRequest, completionRequest)
-            ) {
-                takeSuggestWidgetSelectionIntoAccount = true
-            }
-
+            const takeSuggestWidgetSelectionIntoAccount =
+                this.shouldTakeSuggestWidgetSelectionIntoAccount(
+                    lastCompletionRequest,
+                    completionRequest
+                )
             const triggerKind = isManualCompletion
                 ? TriggerKind.Manual
                 : invokedContext.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
@@ -614,13 +608,130 @@ export class InlineCompletionItemProvider
      * same name, it's prefixed with `unstable_` to avoid a clash when the new API goes GA.
      */
     public unstable_handleDidShowCompletionItem(
-        completionOrItemId: Pick<AutocompleteItem, 'logId' | 'analyticsItem' | 'span'> | CompletionItemID
+        completionOrItemId: AutocompleteItem | CompletionItemID
     ): void {
         const completion = suggestedAutocompleteItemsCache.get(completionOrItemId)
         if (!completion) {
             return
         }
-        CompletionLogger.suggested(completion.logId, completion.span)
+        this.markCompletionAsSuggestedAfterDelay(completion)
+    }
+
+    /**
+     * The amount of time before we consider a completion to be "visible" to the user.
+     */
+    private COMPLETION_VISIBLE_DELAY_MS = 750
+    private completionSuggestedTimeoutId: NodeJS.Timeout | undefined
+
+    /**
+     * Given a completion, fire a suggestion event after a short delay to give the user time to
+     * read the completion and decide whether to accept it.
+     *
+     * Will confirm that the completion is _still_ visible before firing the event.
+     */
+    public markCompletionAsSuggestedAfterDelay(completion: AutocompleteItem): void {
+        const suggestionEvent = CompletionLogger.prepareSuggestionEvent(
+            completion.logId,
+            completion.span
+        )
+        if (!suggestionEvent) {
+            return
+        }
+
+        // Clear any existing timeouts, only one completion can be shown at a time
+        clearTimeout(this.completionSuggestedTimeoutId)
+
+        this.completionSuggestedTimeoutId = setTimeout(() => {
+            const event = suggestionEvent.getEvent()
+            if (!event) {
+                return
+            }
+
+            if (
+                event.suggestedAt === null ||
+                event.suggestionAnalyticsLoggedAt !== null ||
+                event.suggestionLoggedAt !== null
+            ) {
+                // Completion was already logged, we do not need to mark it as read
+                return
+            }
+
+            const activeEditor = vscode.window.activeTextEditor
+
+            const { document: invokedDocument, position: invokedPosition } = completion.requestParams
+
+            if (
+                !activeEditor ||
+                activeEditor.document.uri.toString() !== invokedDocument.uri.toString()
+            ) {
+                // User is no longer in the same document as the completion
+                return
+            }
+
+            const latestCursorPosition = activeEditor.selection.active
+
+            // If the cursor position is the same as the position of the completion request, re-use the
+            // completion context. This ensures that we still use the suggestion widget to determine if the
+            // completion is still visible.
+            // We don't have a way of determining the contents of the suggestion widget if the cursor position is different,
+            // as this is only provided with `provideInlineCompletionItems` is called.
+            const latestContext = latestCursorPosition.isEqual(invokedPosition)
+                ? completion.context
+                : undefined
+
+            const takeSuggestWidgetSelectionIntoAccount = latestContext
+                ? this.shouldTakeSuggestWidgetSelectionIntoAccount(
+                      {
+                          document: invokedDocument,
+                          position: invokedPosition,
+                          context: completion.context,
+                      },
+                      {
+                          document: activeEditor.document,
+                          position: latestCursorPosition,
+                          context: latestContext,
+                      }
+                  )
+                : false
+
+            // Confirm that the completion is still visible for the user given the latest
+            // cursor position, document and associated values.
+            const isStillVisible = isCompletionVisible(
+                completion,
+                activeEditor.document,
+                {
+                    invokedPosition,
+                    latestPosition: activeEditor.selection.active,
+                },
+                this.getDocContext(
+                    activeEditor.document,
+                    activeEditor.selection.active,
+                    latestContext,
+                    takeSuggestWidgetSelectionIntoAccount
+                ),
+                latestContext,
+                takeSuggestWidgetSelectionIntoAccount,
+                undefined
+            )
+
+            if (isStillVisible) {
+                suggestionEvent.markAsRead()
+            }
+        }, this.COMPLETION_VISIBLE_DELAY_MS)
+    }
+
+    /**
+     * Only take the completion widget selection into account if the selection was actively changed by the user
+     */
+    private shouldTakeSuggestWidgetSelectionIntoAccount(
+        lastRequest: CompletionRequest | null,
+        latestRequest: CompletionRequest
+    ): boolean {
+        return Boolean(
+            this.config.completeSuggestWidgetSelection &&
+                lastRequest &&
+                onlyCompletionWidgetSelectionChanged(lastRequest, latestRequest)
+        )
     }
 
     /**
