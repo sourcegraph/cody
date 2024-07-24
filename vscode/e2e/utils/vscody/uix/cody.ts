@@ -44,10 +44,9 @@ export class WebView {
     ) {
         return t.step('Cody.WebView.all', async () => {
             const excludedIds = opts.ignoring?.map(id => (typeof id === 'string' ? id : id.id)) ?? []
-            const nots = excludedIds.map(id => `:not([name="${id}"`).join('')
-            const validOptions = ctx.page.locator(
-                `iframe.webview[src*="extensionId=sourcegraph.cody-ai"]${nots}`
-            )
+            const nots = excludedIds.map(id => `:not([name="${id}"])`).join('')
+            const selectorString = `iframe.webview[src*="extensionId=sourcegraph.cody-ai"]${nots}`
+            const validOptions = ctx.page.locator(selectorString)
 
             if (opts.atLeast) {
                 await expect(validOptions.nth(opts.atLeast - 1)).toBeAttached({ timeout: opts.timeout })
@@ -69,7 +68,19 @@ export async function waitForBinaryDownloads() {}
 
 export async function waitForIndexing() {}
 
-export async function waitForStartup() {
+export async function waitForStartup(ctx: Pick<UIXContextFnContext, 'page'>) {
+    //TODO: There seems to be some weird page reload after extensions are installed
+    /**
+     *  page.on('framenavigated', frame => {
+            if (frame === page.mainFrame()) {
+                console.log('Page reloaded or navigated to a new URL')
+            }
+        })
+     */
+    await ctx.page.waitForSelector('.statusbar-item[id="sourcegraph\\.cody-ai"]', {
+        strict: true,
+        state: 'visible',
+    })
     //TODO: Implement this
     //TODO: make sure we can shift the timeout
     await Promise.all([waitForBinaryDownloads(), waitForIndexing()])
