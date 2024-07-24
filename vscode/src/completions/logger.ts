@@ -720,7 +720,10 @@ export function loaded(params: LoadedParams): void {
 //
 // For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
 // suggested completion count as soon as we count it as such.
-export function prepareSuggestionEvent(id: CompletionLogID, span?: Span): { fire: () => void } | null {
+export function prepareSuggestionEvent(
+    id: CompletionLogID,
+    span?: Span
+): { markAsRead: () => void } | null {
     const event = activeSuggestionRequests.get(id)
     if (!event) {
         return null
@@ -747,13 +750,13 @@ export function prepareSuggestionEvent(id: CompletionLogID, span?: Span): { fire
         }
 
         return {
-            fire: () => {
+            markAsRead: () => {
                 const event = activeSuggestionRequests.get(id)
                 if (!event) {
                     return
                 }
 
-                // We can assume that this completion will be marked as `read: true` because
+                // We can assume that this completion is safe to be marked as `read` because
                 // we have fired this event without the completion being logged yet.
                 if (
                     event.suggestedAt !== null &&

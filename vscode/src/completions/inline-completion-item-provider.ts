@@ -691,7 +691,7 @@ export class InlineCompletionItemProvider
             )
 
             if (isStillVisible) {
-                suggestionEvent.fire()
+                suggestionEvent.markAsRead()
             }
         }, this.COMPLETION_VISIBLE_DELAY_MS)
     }
