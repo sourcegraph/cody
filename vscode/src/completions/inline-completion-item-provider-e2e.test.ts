@@ -60,7 +60,24 @@ const DUMMY_AUTH_STATUS: AuthStatus = {
 graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
 
 const getAnalyticEventCalls = (mockInstance: MockInstance) => {
-    return mockInstance.mock.calls.map(args => args.slice(0, 2))
+    return mockInstance.mock.calls.map(args => {
+        const events = args.slice(0, 2)
+
+        const isSuggestion = events.at(1) === 'suggested'
+        if (isSuggestion) {
+            const metadata = args.at(2)?.metadata
+            if (!metadata || metadata.read === undefined) {
+                throw new Error(
+                    'Unable to extract metadata from analytics calls. Did we change how we log events?'
+                )
+            }
+
+            events.push({ read: Boolean(metadata.read) })
+            return events
+        }
+
+        return events
+    })
 }
 
 class MockRequestProvider extends Provider {
@@ -196,6 +213,7 @@ describe('InlineCompletionItemProvider E2E', () => {
          *                       ^Suggested (when `logSuggestionEvents` is eventually called)
          */
         it('handles subsequent requests, that are not parallel', async () => {
+            vi.useFakeTimers()
             const logSpy: MockInstance = vi.spyOn(telemetryRecorder, 'recordEvent')
             const provider = getInlineCompletionProvider()
 
@@ -210,17 +228,19 @@ describe('InlineCompletionItemProvider E2E', () => {
 
             getCompletionProviderSpy.mockReturnValueOnce(provider1).mockReturnValueOnce(provider2)
 
-            // Let the first completion resolve first
-            const result1 = await resolve1("error('hello')", { duration: 0, delay: 0 })
-
-            // Now let the second completion resolve
-            const result2 = await resolve2("'hello')", { duration: 0, delay: 0 })
+            const [result1, result2] = await Promise.all([
+                resolve1("error('hello')", { duration: 100, delay: 0 }),
+                resolve2("'hello')", { duration: 100, delay: 120 }), // Ensure this is triggered after the first one is resolved
+                vi.advanceTimersByTimeAsync(400), // Enough for both to be shown
+            ])
 
             // Result 1 is used
             expect(result1).toBeDefined()
             // Result 2 is used
             expect(result2).toBeDefined()
 
+            // Enough for completion events to be logged
+            vi.advanceTimersByTime(1000)
             CompletionLogger.logSuggestionEvents(true)
 
             expect(getAnalyticEventCalls(logSpy)).toMatchInlineSnapshot(`
@@ -228,10 +248,16 @@ describe('InlineCompletionItemProvider E2E', () => {
                 [
                   "cody.completion",
                   "suggested",
+                  {
+                    "read": false,
+                  },
                 ],
                 [
                   "cody.completion",
                   "suggested",
+                  {
+                    "read": true,
+                  },
                 ],
               ]
             `)
@@ -286,6 +312,9 @@ describe('InlineCompletionItemProvider E2E', () => {
                 [
                   "cody.completion",
                   "suggested",
+                  {
+                    "read": true,
+                  },
                 ],
               ]
             `)
@@ -370,6 +399,9 @@ describe('InlineCompletionItemProvider E2E', () => {
                 [
                   "cody.completion",
                   "suggested",
+                  {
+                    "read": true,
+                  },
                 ],
               ]
             `)
