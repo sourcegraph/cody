@@ -288,7 +288,6 @@ export function createProviderConfig({
     providerOptions,
     ...otherOptions
 }: AnthropicOptions & { providerOptions?: Partial<ProviderOptions> }): ProviderConfig {
-    const defaultClientModel = model ?? 'anthropic/claude-instant-1.2'
     return {
         create(options: ProviderOptions) {
             return new AnthropicProvider(
@@ -297,14 +296,16 @@ export function createProviderConfig({
                     ...providerOptions,
                     id: PROVIDER_IDENTIFIER,
                 },
-                { maxContextTokens, model: model ?? defaultClientModel, ...otherOptions }
+                { maxContextTokens, model, ...otherOptions }
             )
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         identifier: PROVIDER_IDENTIFIER,
-        model: model ?? defaultClientModel,
+        model: model ?? DEFAULT_PLG_ANTHROPIC_MODEL,
     }
 }
+
+export const DEFAULT_PLG_ANTHROPIC_MODEL = 'anthropic/claude-instant-1.2'
 
 // All the Anthropic version identifiers that are allowlisted as being able to be passed as the
 // model identifier on a Sourcegraph Server

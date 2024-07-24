@@ -517,7 +517,8 @@ export function isNetworkError(error: Error): boolean {
         message.includes('ENOTFOUND') ||
         message.includes('ECONNREFUSED') ||
         message.includes('ECONNRESET') ||
-        message.includes('EHOSTUNREACH')
+        message.includes('EHOSTUNREACH') ||
+        message.includes('ETIMEDOUT')
     )
 }
 

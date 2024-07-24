@@ -8,8 +8,8 @@ import {
     TextSearchIcon,
 } from 'lucide-react'
 import { type FunctionComponent, useMemo } from 'react'
+import { CollapsiblePanel } from '../../components/CollapsiblePanel'
 import { Button } from '../../components/shadcn/ui/button'
-import { Collapsible } from '../../components/shadcn/ui/collapsible'
 import { View } from '../../tabs/types'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 
@@ -18,7 +18,7 @@ const commonCommandList = [
     { key: 'cody.command.document-code', title: 'Document Code', icon: BookIcon },
     { key: 'cody.command.explain-code', title: 'Explain Code', icon: FileQuestionIcon },
     { key: 'cody.command.unit-tests', title: 'Generate Unit Tests', icon: GavelIcon },
-    { key: 'cody.command.smell-code', title: 'Find Code Smell', icon: TextSearchIcon },
+    { key: 'cody.command.smell-code', title: 'Find Code Smells', icon: TextSearchIcon },
 ]
 
 const vscodeCommandList = [
@@ -32,21 +32,22 @@ export const DefaultCommandsList: FunctionComponent<{ IDE?: CodyIDE; setView?: (
             [IDE]
         )
 
-        const commands = commandList.map(({ key, title, icon: Icon }) => (
-            <Button
-                key={key}
-                variant="text"
-                size="none"
-                className="tw-px-2 hover:tw-bg-button-background-hover"
-                onClick={() => {
-                    getVSCodeAPI().postMessage({ command: 'command', id: key })
-                    setView?.(View.Chat)
-                }}
-            >
-                <Icon className="tw-inline-flex" size={13} />
-                <span className="tw-px-4 tw-truncate tw-w-full">{title}</span>
-            </Button>
-        ))
-
-        return <Collapsible title="Commands" items={commands} />
+        return (
+            <CollapsiblePanel title="Commands">
+                {commandList.map(({ key, title, icon: Icon }) => (
+                    <Button
+                        key={key}
+                        variant="ghost"
+                        className="tw-text-left"
+                        onClick={() => {
+                            getVSCodeAPI().postMessage({ command: 'command', id: key })
+                            setView?.(View.Chat)
+                        }}
+                    >
+                        <Icon className="tw-w-8 tw-h-8 tw-opacity-80" size={16} strokeWidth="1.25" />
+                        <span className="tw-truncate tw-w-full">{title}</span>
+                    </Button>
+                ))}
+            </CollapsiblePanel>
+        )
     }

@@ -13,8 +13,6 @@ import {
 import { TemplateInputComponent } from './TemplateInputComponent'
 import styles from './TemplateInputNode.module.css'
 
-export type TemplateInputState = 'unset' | 'focused' | 'set'
-
 export class TemplateInputNode extends DecoratorNode<JSX.Element> {
     static getType(): typeof TEMPLATE_INPUT_NODE_TYPE {
         return TEMPLATE_INPUT_NODE_TYPE
@@ -44,9 +42,10 @@ export class TemplateInputNode extends DecoratorNode<JSX.Element> {
         return this.templateInput.placeholder
     }
 
-    decorate(_editor: LexicalEditor, _config: EditorConfig): JSX.Element {
+    decorate(editor: LexicalEditor, _config: EditorConfig): JSX.Element {
         return (
             <TemplateInputComponent
+                editor={editor}
                 nodeKey={this.getKey()}
                 node={this}
                 className={`${styles.templateInputNode}`}
