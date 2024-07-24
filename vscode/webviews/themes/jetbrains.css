@@ -95,7 +95,7 @@ html[data-ide='JetBrains'] {
     --vscode-diffEditor-unchangedRegionShadow: var(--jetbrains-ScrollBar-thumbDarkShadow);
     --vscode-disabledForeground: var(--jetbrains-CheckBoxMenuItem-disabledForeground);
     --vscode-dropdown-background: var(--jetbrains-ComboBox-background);
-    --vscode-dropdown-border: var(--jetbrains-Component-borderColor);
+    --vscode-dropdown-border: var(--jetbrains-Component-disabledBorderColor);
     --vscode-dropdown-foreground: var(--jetbrains-ComboBox-foreground);
     --vscode-dropdown-listBackground: var(--jetbrains-ComboBox-buttonBackground);
     --vscode-editor-background: var(--jetbrains-EditorPane-background);
@@ -272,10 +272,10 @@ html[data-ide='JetBrains'] {
     --vscode-inputValidation-warningBorder: var(--jetbrains-Notification-ToolWindow-warningBorderColor);
     --vscode-interactive-activeCodeBorder: var(--jetbrains-Interactive-activeCodeBorder);
     --vscode-interactive-inactiveCodeBorder: var(--jetbrains-Interactive-inactiveCodeBorder);
-    --vscode-keybindingLabel-background: var(--jetbrains-KeybindingLabel-background);
-    --vscode-keybindingLabel-border: var(--jetbrains-KeybindingLabel-border);
-    --vscode-keybindingLabel-bottomBorder: var(--jetbrains-KeybindingLabel-bottomBorder);
-    --vscode-keybindingLabel-foreground: var(--jetbrains-KeybindingLabel-foreground);
+    --vscode-keybindingLabel-background: var(--jetbrains-Menu-background);
+    --vscode-keybindingLabel-border: var(--jetbrains-Menu-borderColor);
+    --vscode-keybindingLabel-bottomBorder: var(--jetbrains-Menu-borderColor);
+    --vscode-keybindingLabel-foreground: var(--jetbrains-Menu-foreground);
     --vscode-list-deemphasizedForeground: var(--jetbrains-MenuItem-disabledForeground);
     --vscode-list-filterMatchBorder: var(--jetbrains-MenuItem-acceleratorForeground);
     --vscode-list-focusHighlightForeground: var(--jetbrains-MenuItem-selectionForeground);
@@ -682,4 +682,8 @@ html[data-ide=JetBrains] .context-item-mention-node {
 
 html[data-ide=JetBrains] .container {
     background-color: var(--vscode-input-background);
+}
+
+html[data-ide=JetBrains] .hover\:tw-bg-muted-transparent:hover {
+    background-color: var(--jetbrains-ActionButton-hoverBackground);
 }
