@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="utf-8">
+    <title>VSCode Placeholder</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link href="./css/vendors/aos.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/vendors/swiper-bundle.min.css" />
+    <link href="./style.css" rel="stylesheet">
+</head>
+
+<body class="antialiased tracking-tight font-inter bg-slate-900 text-slate-100">
+
+    <!-- Page wrapper -->
+    <div class="flex flex-col min-h-screen overflow-hidden supports-[overflow:clip]:overflow-clip">
+
+        <!-- Page content -->
+        <main class="grow">
+
+            <!-- Hero -->
+            <section class="relative">
+
+                <!-- Radial gradient -->
+                <div class="absolute flex items-center justify-center top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 pointer-events-none -z-10 w-[800px] aspect-square"
+                    aria-hidden="true">
+                    <div class="absolute inset-0 translate-z-0 bg-blue-500 rounded-full blur-[120px] opacity-30"></div>
+                    <div class="absolute w-64 h-64 translate-z-0 bg-blue-400 rounded-full blur-[80px] opacity-70"></div>
+                </div>
+
+                <!-- Particles animation -->
+                <div class="absolute inset-0 h-96 -z-10" aria-hidden="true">
+                    <canvas data-particle-animation data-particle-quantity="15"></canvas>
+                </div>
+
+                <!-- Illustration -->
+                <div class="absolute -mt-16 -translate-x-1/2 pointer-events-none md:block left-1/2 blur-2xl opacity-90 -z-10"
+                    aria-hidden="true">
+                    <img src="./images/page-illustration.svg" class="max-w-none" width="1440" height="427"
+                        alt="Page Illustration">
+                </div>
+
+                <div class="max-w-6xl px-4 mx-auto sm:px-6">
+                    <div class="pt-32 pb-10 md:pt-40">
+
+                        <!-- Hero content -->
+                        <div class="text-center">
+                            <div class="flex-col pb-12 text-center md:pb-20">
+                                <h1
+                                    class="pb-2 text-transparent h1 bg-clip-text bg-gradient-to-r from-blue-500 to-blue-200">
+                                    VSCode Initialized</h1>
+                                <h3
+                                    class="pb-4 text-transparent h3 bg-clip-text bg-gradient-to-r from-slate-200/60 via-slate-200 to-slate-200/60">
+                                    Continue your test to start a session.</h3>
+                                <div class="max-w-md mx-auto space-y-4 drop-shadow-md">
+                                    <p class="text-white">Extension host will run on debug port <span
+                                            class="font-mono font-bold">{{DEBUG_PORT}}</span></p>
+                                    <p class="text-sm text-slate-200">You can
+                                        optionally set the <span
+                                            class="font-mono font-bold">waitForExtensionHostDebugger</span>
+                                        flag to wait for a debugger to attach.</p>
+                                    <p class="text-sm italic text-slate-200">
+                                        devtools://devtools/bundled/inspector.html?ws=localhost:{{DEBUG_PORT}}</p>
+                                </div>
+                                <!-- Rings illustration -->
+                                <div class="relative inline-flex items-center justify-center -mt-48 -z-10">
+                                    <!-- Particles animation -->
+                                    <div class="absolute inset-0 -z-10" aria-hidden="true">
+                                        <canvas data-particle-animation data-particle-quantity="10"></canvas>
+                                    </div>
+                                    <div
+                                        class="inline-flex [mask-image:_radial-gradient(circle_at_bottom,transparent_15%,black_70%)]">
+                                        <img src="./images/about-illustration.svg" width="446" height="446"
+                                            alt="About illustration" />
+                                    </div>
+                                    <img class="absolute mt-[30%] drop-shadow-lg animate-float"
+                                        src="./images/vscode.svg" width="72" height="72" alt="About icon" />
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+            </section>
+        </main>
+    </div>
+    <!-- <script>
+        document.getElementById('devtools-url').addEventListener('click', function (e) {
+            e.preventDefault()
+            console.error("HERE")
+            // The URL to be copied
+            const devToolsUrl = 'devtools://devtools/bundled/inspector.html?experiments=true&ws=localhost:{{DEBUG_PORT}}';
+
+            var textArea = document.createElement("textarea");
+            textArea.value = devToolsUrl;
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                var successful = document.execCommand('copy');
+                if (successful) {
+                    alert("BLEH")
+                    document.getElementById('copied-notification').classList.remove('invisible')
+                } else {
+                    console.error('Unable to copy text');
+                }
+            } catch (err) {
+                console.error('Unable to copy text', err);
+            }
+            document.body.removeChild(textArea);
+        })
+    </script> -->
+    <script src="./js/vendors/alpine-clipboard.min.js" defer></script>
+    <script src="./js/vendors/alpinejs.min.js" defer></script>
+    <script src="./js/vendors/aos.js"></script>
+    <script src="./js/vendors/swiper-bundle.min.js"></script>
+    <script src="./js/main.js"></script>
+
+</body>
+
+</html>

@@ -35,6 +35,7 @@ export default defineConfig<
         vscodeExtensionCacheDir: `${os.homedir()}/.vscode-server/extensions`,
         vscodeServerTmpDir: '../.test/global/vscode-server',
         binaryTmpDir: '../.test/global/bin',
+        waitForExtensionHostDebugger: false,
         recordIfMissing:
             typeof process.env.CODY_RECORD_IF_MISSING === 'string'
                 ? process.env.CODY_RECORD_IF_MISSING === 'true'
