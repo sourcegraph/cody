@@ -83,7 +83,8 @@
       ".vscode/*.json",
       "**/fixtures/**",
       "!vscode/test/fixtures/mock-server.ts",
-      "vscode/.schema-cache/*.json"
+      "vscode/.schema-cache/*.json",
+      "vscode/e2e/utils/vscody/resources/**/*"
     ]
   },
   "overrides": [
