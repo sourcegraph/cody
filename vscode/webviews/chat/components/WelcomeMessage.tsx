@@ -54,6 +54,54 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE; setView: (view: V
 
     return (
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-pt-4 tw-px-8 sm:tw-pl-21 tw-transition-all">
+            <CollapsiblePanel title="&#x1F6A7; This is an Experimental UI Build">
+                We relish &#x1F32D;&nbsp;your feedback. Known issues:
+                <p>
+                    <b>Chat</b>
+                    <ul className="tw-space-y-2">
+                        <li>Old chats are not shown (CODY-2271)</li>
+                        <li>New chats are not saved (CODY-2273)</li>
+                        <li>New chats may be blank (CODY-3015)</li>
+                        <li>Chats are not restored when reopening the editor (CODY-2283)</li>
+                        <li>Saving code output to a new file doesn't work (CODY-2801)</li>
+                        <li>Exporting a chat doesn't work (CODY-2801)</li>
+                        <li>
+                            Changing accounts does not close previous account's chat panels (CODY-3045)
+                        </li>
+                    </ul>
+                </p>
+                <p>
+                    <b>Context</b>
+                    <ul className="tw-space-y-2">
+                        <li>Chat context links to local files don't work (CODY-2799)</li>
+                        <li>Default context may mention "Dummy.txt:1" (CODY-2841)</li>
+                        <li>Symbol context (@#) does not work/displays errors (CODY-2913, CODY-3047)</li>
+                        <li>
+                            New window, new chat may display default context from first window
+                            (CODY-2916)
+                        </li>
+                    </ul>
+                </p>
+                <p>
+                    <b>UI</b>
+                    <ul className="tw-space-y-2">
+                        <li>There's no tab strip (chat, history, etc.) for Enterprise accounts</li>
+                        <li>Editor tab, sidebar does not display an icon (CODY-3049)</li>
+                        <li>
+                            Switching to the high contrast theme does not work but new chats are OK
+                            (CODY-3016)
+                        </li>
+                        <li>Multiple chats may repaint rapidly, layout thrash (CODY-2842)</li>
+                        <li>Splitting chats leaves an empty chat tab behind (CODY-2483)</li>
+                        <li>Command palette buttons lack mouseover highlight (CODY-3011)</li>
+                        <li>There are no move-to-panel, move-to-sidebar buttons (CODY-2836)</li>
+                        <li>Tooltips, etc. display the wrong keyboard shortcuts (CODY-3046)</li>
+                        <li>
+                            Fonts do not match editor choices, code font is not monospaced (CODY-2797)
+                        </li>
+                    </ul>
+                </p>
+            </CollapsiblePanel>
             <CollapsiblePanel
                 storageKey="prompts"
                 title="Prompts & Commands"
