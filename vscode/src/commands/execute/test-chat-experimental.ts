@@ -40,7 +40,7 @@ async function chatMessageTemplate(): Promise<ChatMessage | undefined> {
     const prompt = ps`Your task is to generate a suit of multiple unit tests for the functions defined inside the ${selectedCodePromptWithExtraFiles(
         contextFile,
         []
-    )} file. Use the {{mention the testing framework}} framework to generate the unit tests. Follow the example tests from the {{mention an example test file}} test file. Include unit tests for the following cases: {{list test cases}}. Ensure that the unit tests cover all the edge cases and validate the expected functionality of the functions`
+    )} file.\n\nUse the {{mention the testing framework}} framework to generate the unit tests. Follow the example tests from the {{mention an example test file}} test file. Include unit tests for the following cases: {{list test cases}}.\n\nEnsure that the unit tests cover all the edge cases and validate the expected functionality of the functions`
 
     return {
         speaker: 'human',
