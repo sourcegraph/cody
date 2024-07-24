@@ -679,3 +679,7 @@ html[data-ide=JetBrains] .context-item-mention-node {
         height: 1rem;
     }
 }
+
+html[data-ide=JetBrains] .container {
+    background-color: var(--vscode-input-background);
+}
