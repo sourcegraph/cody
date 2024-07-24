@@ -35,14 +35,12 @@ export enum FeatureFlag {
     // Enable latency adjustments based on accept/reject streaks
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
 
-    // Used to run multiple latency experiments in parallel
-    CodyAutocompleteLatencyExperimentBasedFeatureFlag = 'cody-autocomplete-latency-experiment-flag',
-    // Continue generations after a single-line completion and use the response to see the next line
-    // if the first completion is accepted.
-    CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
-    // Enable smart-throttling for more aggressive request cancellation and lower initial latencies
-    CodyAutocompleteSmartThrottle = 'cody-autocomplete-smart-throttle',
-    CodyAutocompleteSmartThrottleExtended = 'cody-autocomplete-smart-throttle-extended',
+    // - Hot Streak:
+    //              Continue generations after a single-line completion and use the response to see the next line
+    //              if the first completion is accepted.
+    // - Smart Throttle:
+    //              Enable smart-throttling for more aggressive request cancellation and lower initial latencies
+    CodyAutocompleteHotStreakAndSmartThrottle = 'cody-autocomplete-hot-streak-and-smart-throttle',
 
     // When enabled, it will extend the number of languages considered for context (e.g. React files
     // will be able to use CSS files as context).

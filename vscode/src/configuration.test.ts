@@ -67,8 +67,6 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.autocomplete.disableInsideComments':
                         return false
-                    case 'cody.autocomplete.experimental.hotStreak':
-                        return false
                     case 'cody.autocomplete.experimental.fireworksOptions':
                         return undefined
                     case 'cody.autocomplete.experimental.multiModelCompletions':
@@ -100,9 +98,7 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'cody.autocomplete.advanced.timeout.firstCompletion':
                         return 1500
-                    case 'cody.autocomplete.experimental.smartThrottle':
-                        return false
-                    case 'cody.autocomplete.experimental.smartThrottleExtended':
+                    case 'cody.autocomplete.experimental.hotStreakAndSmartThrottle':
                         return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
@@ -143,7 +139,6 @@ describe('getConfiguration', () => {
             autocompleteFormatOnAccept: true,
             autocompleteDisableInsideComments: false,
             autocompleteExperimentalFireworksOptions: undefined,
-            autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: 'bfg',
             autocompleteExperimentalOllamaOptions: {
                 model: 'codellama:7b-code',
@@ -154,8 +149,7 @@ describe('getConfiguration', () => {
                 singleline: undefined,
             },
             autocompleteFirstCompletionTimeout: 1500,
-            autocompleteExperimentalSmartThrottle: false,
-            autocompleteExperimentalSmartThrottleExtended: false,
+            autocompleteExperimentalHotStreakAndSmartThrottle: false,
             testingModelConfig: undefined,
             experimentalChatContextRanker: false,
         } satisfies Configuration)

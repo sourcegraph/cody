@@ -71,13 +71,11 @@ export interface Configuration {
     /**
      * Experimental autocomplete
      */
-    autocompleteExperimentalHotStreak?: boolean
     autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | 'tsc' | 'tsc-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: FireworksOptions
     autocompleteExperimentalMultiModelCompletions?: MultimodelSingleModelConfig[]
-    autocompleteExperimentalSmartThrottle?: boolean
-    autocompleteExperimentalSmartThrottleExtended?: boolean
+    autocompleteExperimentalHotStreakAndSmartThrottle?: boolean
 
     /**
      * Hidden settings
