@@ -1288,7 +1288,7 @@
             }
           }
         },
-        "cody.autocomplete.experimental.hotStreakAndsmartThrottle": {
+        "cody.autocomplete.experimental.hotStreakAndSmartThrottle": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "Changes the debounce time for autocomplete requests based on the amount of time since the last request."
