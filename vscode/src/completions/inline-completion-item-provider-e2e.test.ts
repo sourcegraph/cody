@@ -193,7 +193,9 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
         let getCompletionProviderSpy: MockInstance
 
         beforeAll(async () => {
-            await initCompletionProviderConfig({ autocompleteExperimentalSmartThrottle: true })
+            await initCompletionProviderConfig({
+                autocompleteExperimentalHotStreakAndSmartThrottle: true,
+            })
             localStorage.setStorage({
                 get: () => null,
                 update: () => {},

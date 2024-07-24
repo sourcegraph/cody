@@ -1210,11 +1210,6 @@
           "markdownDescription": "Determines the algorithm Cody uses to detect folding ranges. Cody uses folding ranges for several features like the 'Document code' command",
           "default": "all"
         },
-        "cody.autocomplete.experimental.hotStreak": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Preload follow-up completions"
-        },
         "cody.autocomplete.experimental.graphContext": {
           "type": "string",
           "default": null,
@@ -1293,15 +1288,10 @@
             }
           }
         },
-        "cody.autocomplete.experimental.smartThrottle": {
+        "cody.autocomplete.experimental.hotStreakAndsmartThrottle": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "Changes the debounce time for autocomplete requests based on the amount of time since the last request."
-        },
-        "cody.autocomplete.experimental.smartThrottleExtended": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Changes the (extended) debounce time for autocomplete requests based on the amount of time since the last request."
         },
         "openctx.enable": {
           "type": "boolean",

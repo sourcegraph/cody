@@ -11,13 +11,10 @@ class CompletionProviderConfig {
 
     private flagsToResolve = [
         FeatureFlag.CodyAutocompleteContextBfgMixed,
-        FeatureFlag.CodyAutocompleteHotStreak,
         FeatureFlag.CodyAutocompleteUserLatency,
         FeatureFlag.CodyAutocompleteTracing,
         FeatureFlag.CodyAutocompleteContextExtendLanguagePool,
-        FeatureFlag.CodyAutocompleteSmartThrottle,
-        FeatureFlag.CodyAutocompleteSmartThrottleExtended,
-        FeatureFlag.CodyAutocompleteLatencyExperimentBasedFeatureFlag,
+        FeatureFlag.CodyAutocompleteHotStreakAndSmartThrottle,
     ] as const
 
     private get config() {
@@ -74,38 +71,15 @@ class CompletionProviderConfig {
         }
     }
 
-    private getLatencyExperimentGroup():
-        | 'hot-streak'
-        | 'smart-throttle'
-        | 'smart-throttle-extended'
-        | 'control' {
+    private getLatencyExperimentGroup(): 'hot-streak-and-smart-throttle' | 'control' {
         // The desired distribution:
-        // - Hot-streak 25%
-        // - Smart-throttle 25%
-        // - Smart-throttle-extended 25%
-        // - Control group 25%
+        // - Hot-streak + Smart-throttle 50%
+        // - Control group 50%
         //
         // The rollout values to set:
-        // - CodyAutocompleteLatencyExperimentBasedFeatureFlag 75%
-        // - CodyAutocompleteHotStreak 33%
-        // - CodyAutocompleteSmartThrottle 100%
-        // - CodyAutocompleteSmartThrottleExtended 50%
-        if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteLatencyExperimentBasedFeatureFlag)) {
-            // 75% of users get here
-            if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteHotStreak)) {
-                // 25% of remaining users get here (33% of 75%)
-                return 'hot-streak'
-            }
-
-            if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottle)) {
-                // 50% of remaining users get here (100% of 50%)
-                if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottleExtended)) {
-                    // 25% of remaining users get here (50% of 50%)
-                    return 'smart-throttle-extended'
-                }
-                // Remaining 25% of users get here
-                return 'smart-throttle'
-            }
+        // - CodyAutocompleteHotStreakAndSmartThrottle 50%
+        if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteHotStreakAndSmartThrottle)) {
+            return 'hot-streak-and-smart-throttle'
         }
 
         return 'control'
@@ -113,22 +87,15 @@ class CompletionProviderConfig {
 
     public get hotStreak(): boolean {
         return (
-            this.config.autocompleteExperimentalHotStreak ||
-            this.getLatencyExperimentGroup() === 'hot-streak'
+            this.config.autocompleteExperimentalHotStreakAndSmartThrottle ||
+            this.getLatencyExperimentGroup() === 'hot-streak-and-smart-throttle'
         )
     }
 
     public get smartThrottle(): boolean {
         return (
-            this.config.autocompleteExperimentalSmartThrottle ||
-            this.getLatencyExperimentGroup() === 'smart-throttle'
-        )
-    }
-
-    public get smartThrottleExtended(): boolean {
-        return (
-            this.config.autocompleteExperimentalSmartThrottleExtended ||
-            this.getLatencyExperimentGroup() === 'smart-throttle-extended'
+            this.config.autocompleteExperimentalHotStreakAndSmartThrottle ||
+            this.getLatencyExperimentGroup() === 'hot-streak-and-smart-throttle'
         )
     }
 }
