@@ -55,14 +55,18 @@ test.extend<ExpectedV2Events>({
         .filter({ hasText: /^Submit$/ })
         .click() // Submit via Submit button
 
-    const acceptLens = page.getByRole('button', { name: 'Accept' })
+    const acceptAllLens = page.getByRole('button', { name: 'Accept All' })
     const retryLens = page.getByRole('button', { name: 'Edit & Retry' })
     const undoLens = page.getByRole('button', { name: 'Undo' })
+    const acceptLens = page.getByRole('button', { name: 'Accept' })
+    const rejectLens = page.getByRole('button', { name: 'Reject' })
 
     // Code Lenses should appear
-    await expect(acceptLens).toBeVisible()
+    await expect(acceptAllLens).toBeVisible()
     await expect(retryLens).toBeVisible()
     await expect(undoLens).toBeVisible()
+    await expect(acceptLens).toBeVisible()
+    await expect(rejectLens).toBeVisible()
 
     // The text in the doc should be replaced
     await nap()
@@ -82,7 +86,29 @@ test.extend<ExpectedV2Events>({
     await inputBox.focus()
     await inputBox.fill(instruction)
     await page.keyboard.press('Enter')
+    await nap()
+    await expect(page.getByText('appleName')).not.toBeVisible()
+    await expect(page.getByText('bananaName')).toBeVisible()
 
+    // Reject: remove all the changes made by edit
+    await rejectLens.click()
+    await nap()
+    await expect(page.getByText('appleName')).toBeVisible()
+    await expect(page.getByText('bananaName')).not.toBeVisible()
+
+    // create another edit using shortcut
+    await page.getByText('appleName').click()
+    await page.keyboard.press('Alt+K')
+    await expect(page.getByText(inputTitle)).toBeVisible()
+    await inputBox.focus()
+    await inputBox.fill(instruction)
+    await page.keyboard.press('Enter')
+    await nap()
+    await expect(page.getByText('appleName')).not.toBeVisible()
+    await expect(page.getByText('bananaName')).toBeVisible()
+
+    // Accept: remove all the changes made by edit
+    await acceptLens.click()
     await nap()
     await expect(page.getByText('appleName')).not.toBeVisible()
     await expect(page.getByText('bananaName')).toBeVisible()
