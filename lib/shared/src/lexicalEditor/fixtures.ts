@@ -164,7 +164,7 @@ export const GENERATE_UNIT_TEST_EDITOR_STATE_FIXTURE: SerializedPromptEditorStat
                             style: '',
                             type: 'text',
                             version: 1,
-                            text: ' file. Use the ',
+                            text: ' file.\n\nUse the ',
                         },
                         {
                             type: 'templateInput',
@@ -212,7 +212,7 @@ export const GENERATE_UNIT_TEST_EDITOR_STATE_FIXTURE: SerializedPromptEditorStat
                             style: '',
                             type: 'text',
                             version: 1,
-                            text: '. Ensure that the unit tests cover all the edge cases and validate the expected functionality of the functions',
+                            text: '.\n\nEnsure that the unit tests cover all the edge cases and validate the expected functionality of the functions',
                         },
                     ],
                 } as SerializedLexicalNode,
