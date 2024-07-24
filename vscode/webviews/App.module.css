@@ -1,9 +1,9 @@
 .outer-container {
     background-color: var(--vscode-sideBar-background);
     display: flex;
-    height: 100%;
     flex-direction: column;
     box-sizing: border-box;
+    min-height: 100%;
 }
 
 .error-container {

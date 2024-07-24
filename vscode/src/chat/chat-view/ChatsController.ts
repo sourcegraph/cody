@@ -38,6 +38,7 @@ import {
     webviewViewOrPanelViewColumn,
 } from './ChatController'
 import { chatHistory } from './ChatHistoryManager'
+import type { ContextFetcher } from './ContextFetcher'
 
 export const CodyChatEditorViewType = 'cody.editorPanel'
 
@@ -70,10 +71,14 @@ export class ChatsController implements vscode.Disposable {
         private options: Options,
         private chatClient: ChatClient,
         private authProvider: AuthProvider,
+
         private readonly enterpriseContext: EnterpriseContextFactory,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
         private readonly contextRanking: ContextRankingController | null,
         private readonly symf: SymfRunner | null,
+
+        private readonly contextFetcher: ContextFetcher,
+
         private readonly guardrails: Guardrails,
         private readonly contextAPIClient: ContextAPIClient | null
     ) {
@@ -477,6 +482,7 @@ export class ChatsController implements vscode.Disposable {
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,
             contextAPIClient: this.contextAPIClient,
+            contextFetcher: this.contextFetcher,
         })
     }
 

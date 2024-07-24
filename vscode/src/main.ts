@@ -19,6 +19,7 @@ import {
 import type { CommandResult } from './CommandResult'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
+import { ContextFetcher } from './chat/chat-view/ContextFetcher'
 import type { ContextAPIClient } from './chat/context/contextAPIClient'
 import {
     ACCOUNT_LIMITS_INFO_URL,
@@ -95,6 +96,17 @@ export async function start(
     context: vscode.ExtensionContext,
     platform: PlatformContext
 ): Promise<vscode.Disposable> {
+    // NOTE: Hack to ensure the window is reloaded when extension is restarted after upgrade
+    //  to get the updated sidebar chat UI. Can be removed after the next release (1.28).
+    if (
+        !context.globalState.get('newSidebarChatUI_isReloaded', false) &&
+        process.env.CODY_TESTING !== 'true'
+    ) {
+        // First activation, set the flag and then reload the window
+        await context.globalState.update('newSidebarChatUI_isReloaded', true)
+        await vscode.commands.executeCommand('workbench.action.reloadWindow')
+    }
+
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
@@ -195,6 +207,7 @@ const register = async (
     if (symfRunner) {
         disposables.push(symfRunner)
     }
+    const contextFetcher = new ContextFetcher(symfRunner, completionsClient)
 
     // Initialize enterprise context
     const enterpriseContextFactory = new EnterpriseContextFactory(completionsClient)
@@ -218,6 +231,7 @@ const register = async (
             contextRanking,
             symfRunner,
             contextAPIClient,
+            contextFetcher,
         },
         disposables
     )
@@ -745,6 +759,7 @@ interface RegisterChatOptions {
     contextRanking?: ContextRankingController
     symfRunner?: SymfRunner
     contextAPIClient?: ContextAPIClient
+    contextFetcher: ContextFetcher
 }
 
 function registerChat(
@@ -760,6 +775,7 @@ function registerChat(
         contextRanking,
         symfRunner,
         contextAPIClient,
+        contextFetcher,
     }: RegisterChatOptions,
     disposables: vscode.Disposable[]
 ): {
@@ -784,6 +800,7 @@ function registerChat(
         localEmbeddings || null,
         contextRanking || null,
         symfRunner || null,
+        contextFetcher,
         guardrails,
         contextAPIClient || null
     )
