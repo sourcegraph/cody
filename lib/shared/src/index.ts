@@ -247,6 +247,7 @@ export {
     NoOpTelemetryRecorderProvider,
     TelemetryRecorderProvider,
     noOpTelemetryRecorder,
+    type ExtensionDetails,
 } from './telemetry-v2/TelemetryRecorderProvider'
 export type { TelemetryRecorder } from './telemetry-v2/TelemetryRecorderProvider'
 export * from './telemetry-v2/singleton'

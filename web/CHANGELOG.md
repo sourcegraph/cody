@@ -1,3 +1,6 @@
+## 0.2.8
+- Adds new prop to set custom client telemetry name (telemetryClientName)
+
 ## 0.2.7
 - Provide api to set custom headers for any network request in Cody Web (agent worker thread)
 
