@@ -183,18 +183,11 @@ export function contextItemsFromPromptEditorValue(
     const contextItems: SerializedContextItem[] = []
 
     if (state.lexicalEditorState) {
-        const queue: SerializedLexicalNode[] = [state.lexicalEditorState.root]
-        while (queue.length > 0) {
-            const node = queue.shift()
-            if (node && 'children' in node && Array.isArray(node.children)) {
-                for (const child of node.children as SerializedLexicalNode[]) {
-                    if (isSerializedContextItemMentionNode(child)) {
-                        contextItems.push(child.contextItem)
-                    }
-                    queue.push(child)
-                }
+        forEachPreOrder(state.lexicalEditorState.root, node => {
+            if (isSerializedContextItemMentionNode(node)) {
+                contextItems.push(node.contextItem)
             }
-        }
+        })
     }
 
     return contextItems
@@ -206,16 +199,12 @@ export function inputTextWithoutContextChipsFromPromptEditorState(
     const editorState: typeof state.lexicalEditorState = JSON.parse(
         JSON.stringify(state.lexicalEditorState)
     )
-    const queue: SerializedLexicalNode[] = [editorState.root]
-    while (queue.length > 0) {
-        const node = queue.shift()
+
+    forEachPreOrder(editorState.root, node => {
         if (node && 'children' in node && Array.isArray(node.children)) {
             node.children = node.children.filter(child => !isSerializedContextItemMentionNode(child))
-            for (const child of node.children as SerializedLexicalNode[]) {
-                queue.push(child)
-            }
         }
-    }
+    })
 
     return textContentFromSerializedLexicalNode(editorState.root).trimStart()
 }
@@ -227,18 +216,14 @@ export function filterContextItemsFromPromptEditorValue(
     const editorState: typeof value.editorState.lexicalEditorState = JSON.parse(
         JSON.stringify(value.editorState.lexicalEditorState)
     )
-    const queue: SerializedLexicalNode[] = [editorState.root]
-    while (queue.length > 0) {
-        const node = queue.shift()
+
+    forEachPreOrder(editorState.root, node => {
         if (node && 'children' in node && Array.isArray(node.children)) {
             node.children = node.children.filter(child =>
                 isSerializedContextItemMentionNode(child) ? keep(child.contextItem) : true
             )
-            for (const child of node.children as SerializedLexicalNode[]) {
-                queue.push(child)
-            }
         }
-    }
+    })
 
     return {
         ...value,
@@ -256,9 +241,7 @@ export function textContentFromSerializedLexicalNode(
     __testing_wrapText?: (text: string) => string | undefined
 ): string {
     const text: string[] = []
-    const queue: SerializedLexicalNode[] = [root]
-    while (queue.length > 0) {
-        const node = queue.shift()!
+    forEachPreOrder(root, node => {
         if ('type' in node && node.type === CONTEXT_ITEM_MENTION_NODE_TYPE) {
             const nodeText = contextItemMentionNodeDisplayText(
                 (node as SerializedContextItemMentionNode).contextItem
@@ -270,12 +253,7 @@ export function textContentFromSerializedLexicalNode(
         } else if ('text' in node && typeof node.text === 'string') {
             text.push(node.text)
         }
-        if (node && 'children' in node && Array.isArray(node.children)) {
-            for (const child of node.children as SerializedLexicalNode[]) {
-                queue.push(child)
-            }
-        }
-    }
+    })
     return text.join('')
 }
 
@@ -311,18 +289,11 @@ export function editorStateFromPromptString(
 function minimumReaderVersion(editorState: SerializedEditorState): StateVersion {
     let hasTemplateInput = false
 
-    // We visit all nodes (via BFS) to look for a template input.
-    const queue: SerializedLexicalNode[] = [editorState.root]
-    while (queue.length > 0) {
-        const node = queue.shift()!
+    forEachPreOrder(editorState.root, node => {
         if ('type' in node && node.type === TEMPLATE_INPUT_NODE_TYPE) {
             hasTemplateInput = true
-            break
         }
-        if (node && 'children' in node && Array.isArray(node.children)) {
-            queue.push(...(node.children as SerializedLexicalNode[]))
-        }
-    }
+    })
 
     /* Only if there are templateInputs do we need a newer parser */
     if (hasTemplateInput) {
@@ -414,6 +385,22 @@ function lexicalEditorStateFromPromptString(
                 } as SerializedLexicalNode,
             ],
         },
+    }
+}
+
+/**
+ * walks the tree calling callbackfn for each node. callbackfn is called in
+ * "pre-order". IE a parent is called before its children are called in order.
+ */
+function forEachPreOrder(
+    node: SerializedLexicalNode,
+    callbackfn: (node: SerializedLexicalNode) => void
+) {
+    callbackfn(node)
+    if (node && 'children' in node && Array.isArray(node.children)) {
+        for (const child of node.children) {
+            forEachPreOrder(child, callbackfn)
+        }
     }
 }
 
