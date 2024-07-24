@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="446" height="446">
+  <defs>
+    <filter id="b" width="119.2%" height="119.2%" x="-9.6%" y="-9.6%" filterUnits="objectBoundingBox">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="8"/>
+    </filter>
+    <filter id="c" width="114.9%" height="114.9%" x="-7.5%" y="-7.5%" filterUnits="objectBoundingBox">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="8"/>
+    </filter>
+    <filter id="e" width="118.4%" height="118.4%" x="-9.2%" y="-9.2%" filterUnits="objectBoundingBox">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="12"/>
+    </filter>
+    <filter id="f" width="123.7%" height="123.7%" x="-11.9%" y="-11.9%" filterUnits="objectBoundingBox">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="7"/>
+    </filter>
+    <linearGradient id="a" x1="50%" x2="50%" y1="7.644%" y2="100%">
+      <stop offset="0%" stop-color="#5cbca6"/>
+      <stop offset="31.441%" stop-color="#509eeb"/>
+      <stop offset="100%" stop-color="#3478c6"/>
+    </linearGradient>
+    <linearGradient id="d" x1="50%" x2="50%" y1="7.644%" y2="97.631%">
+      <stop offset="0%" stop-color="#5cbca6"/>
+      <stop offset="31.441%" stop-color="#509eeb"/>
+      <stop offset="100%" stop-color="#3478c6"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" fill-rule="nonzero">
+    <path fill="url(#a)" fill-opacity=".64" d="M224 110.243c-62.274 0-112.757 50.483-112.757 112.757 0 62.274 50.483 112.757 112.757 112.757 62.274 0 112.757-50.483 112.757-112.757 0-62.274-50.483-112.757-112.757-112.757Zm0-12c68.901 0 124.757 55.856 124.757 124.757 0 68.901-55.856 124.757-124.757 124.757-68.901 0-124.757-55.856-124.757-124.757C99.243 154.099 155.1 98.243 224 98.243Z" filter="url(#b)"/>
+    <path fill="url(#a)" fill-opacity=".48" d="M224 74c-82.29 0-149 66.71-149 149s66.71 149 149 149 149-66.71 149-149S306.29 74 224 74Zm0-12c88.918 0 161 72.082 161 161s-72.082 161-161 161S63 311.918 63 223 135.082 62 224 62Z" filter="url(#c)"/>
+    <path fill="url(#d)" fill-opacity=".24" d="M223 39C121.38 39 39 121.38 39 223s82.38 184 184 184 184-82.38 184-184S324.62 39 223 39Zm0-12c108.248 0 196 87.752 196 196s-87.752 196-196 196S27 331.248 27 223 114.752 27 223 27Z" filter="url(#e)"/>
+    <path fill="url(#a)" d="M224 146.486c-42.257 0-76.514 34.257-76.514 76.514s34.257 76.514 76.514 76.514 76.514-34.257 76.514-76.514-34.257-76.514-76.514-76.514Zm0-12c48.885 0 88.514 39.63 88.514 88.514 0 48.885-39.63 88.514-88.514 88.514-48.885 0-88.514-39.63-88.514-88.514 0-48.885 39.63-88.514 88.514-88.514Z" filter="url(#f)"/>
+  </g>
+</svg>
