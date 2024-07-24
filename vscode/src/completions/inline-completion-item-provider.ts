@@ -676,6 +676,8 @@ export class InlineCompletionItemProvider
                   )
                 : false
 
+            // Confirm that the completion is still visible for the user given the latest
+            // cursor position, document and associated values.
             const isStillVisible = isCompletionVisible(
                 completion,
                 activeEditor.document,
