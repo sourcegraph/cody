@@ -652,25 +652,29 @@ export class InlineCompletionItemProvider
 
             const latestCursorPosition = activeEditor.selection.active
 
-            // If the cursor position is the same as the position of the completion request, we should use
-            // the provided context. This allows us to re-use useful information such as `selectedCompletionInfo`
+            // If the cursor position is the same as the position of the completion request, re-use the
+            // completion context. This ensures that we still use the suggestion widget to determine if the
+            // completion is still visible.
+            // We don't have a way of determining the contents of the suggestion widget if the cursor position is different,
+            // as this is only provided with `provideInlineCompletionItems` is called.
             const latestContext = latestCursorPosition.isEqual(invokedPosition)
                 ? completion.context
                 : undefined
 
-            const takeSuggestWidgetSelectionIntoAccount =
-                this.shouldTakeSuggestWidgetSelectionIntoAccount(
-                    {
-                        document: invokedDocument,
-                        position: invokedPosition,
-                        context: completion.context,
-                    },
-                    {
-                        document: activeEditor.document,
-                        position: latestCursorPosition,
-                        context: completion.context,
-                    }
-                )
+            const takeSuggestWidgetSelectionIntoAccount = latestContext
+                ? this.shouldTakeSuggestWidgetSelectionIntoAccount(
+                      {
+                          document: invokedDocument,
+                          position: invokedPosition,
+                          context: completion.context,
+                      },
+                      {
+                          document: activeEditor.document,
+                          position: latestCursorPosition,
+                          context: latestContext,
+                      }
+                  )
+                : false
 
             const isStillVisible = isCompletionVisible(
                 completion,

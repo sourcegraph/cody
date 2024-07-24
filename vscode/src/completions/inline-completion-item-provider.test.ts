@@ -92,11 +92,9 @@ describe('InlineCompletionItemProvider', () => {
     beforeEach(() => {
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
         CompletionLogger.reset_testOnly()
-        vi.clearAllMocks()
     })
 
     afterEach(() => {
-        vi.useRealTimers()
         vi.restoreAllMocks()
     })
 
@@ -460,7 +458,7 @@ describe('InlineCompletionItemProvider', () => {
                 vi.advanceTimersByTime(500)
                 expect(spy).toHaveBeenCalledTimes(0) // Not waited long enough
 
-                vi.advanceTimersByTime(500 + 250) // 750ms (time until completion is considered visible)
+                vi.advanceTimersByTime(250) // 500 + 250 = 750ms (time until completion is considered visible)
                 CompletionLogger.logSuggestionEvents(true)
                 expect(spy).toHaveBeenCalledTimes(1)
                 expect(spy).toHaveBeenCalledWith(
@@ -495,7 +493,7 @@ describe('InlineCompletionItemProvider', () => {
                     },
                 } as any)
 
-                vi.advanceTimersByTime(500 + 250) // 750ms (time until completion is considered visible)
+                vi.advanceTimersByTime(250) // 500 + 250 = 750ms (time until completion is considered visible)
                 CompletionLogger.logSuggestionEvents(true)
                 expect(spy).toHaveBeenCalledTimes(1)
                 expect(spy).toHaveBeenCalledWith(
@@ -530,7 +528,7 @@ describe('InlineCompletionItemProvider', () => {
                     },
                 } as any)
 
-                vi.advanceTimersByTime(500 + 250) // 750ms (time until completion is considered visible)
+                vi.advanceTimersByTime(250) // 500 + 250 = 750ms (time until completion is considered visible)
                 CompletionLogger.logSuggestionEvents(true)
                 expect(spy).toHaveBeenCalledTimes(1)
                 expect(spy).toHaveBeenCalledWith(
