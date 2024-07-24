@@ -27,6 +27,7 @@ export interface Configuration {
     debugFilter: RegExp | null
     debugVerbose: boolean
     telemetryLevel: 'all' | 'off' | 'agent'
+    telemetryClientName?: string
     useContext: ConfigurationUseContext
     customHeaders: Record<string, string>
     chatPreInstruction: PromptString

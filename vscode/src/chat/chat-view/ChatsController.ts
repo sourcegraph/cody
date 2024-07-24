@@ -9,8 +9,6 @@ import {
     DEFAULT_EVENT_SOURCE,
     FeatureFlag,
     type Guardrails,
-    ModelUsage,
-    ModelsService,
     editorStateFromPromptString,
     featureFlagProvider,
     telemetryRecorder,
@@ -175,9 +173,7 @@ export class ChatsController implements vscode.Disposable {
                 'cody.chat.moveFromEditor',
                 async () => await this.moveChatFromEditorToPanel()
             ),
-            vscode.commands.registerCommand('cody.action.chat', args =>
-                this.submitChatInNewEditor(args)
-            ),
+            vscode.commands.registerCommand('cody.action.chat', args => this.submitChat(args)),
             vscode.commands.registerCommand('cody.chat.signIn', () =>
                 vscode.commands.executeCommand('cody.chat.focus')
             ),
@@ -299,9 +295,9 @@ export class ChatsController implements vscode.Disposable {
     }
 
     /**
-     * Execute a chat request in a new chat panel
+     * Execute a chat request in a new chat panel or the sidebar chat panel.
      */
-    private async submitChatInNewEditor({
+    private async submitChat({
         text,
         submitType,
         contextFiles,
@@ -309,7 +305,13 @@ export class ChatsController implements vscode.Disposable {
         source = DEFAULT_EVENT_SOURCE,
         command,
     }: ExecuteChatArguments): Promise<ChatSession | undefined> {
-        const provider = await this.getOrCreateEditorChatController()
+        let provider: ChatController
+        // If the sidebar panel is visible and empty, use it instead of creating a new panel
+        if (submitType === 'user-newchat' && this.panel.isVisible() && this.panel.isEmpty()) {
+            provider = this.panel
+        } else {
+            provider = await this.getOrCreateEditorChatController()
+        }
         const abortSignal = provider.startNewSubmitOrEditOperation()
         const editorState = editorStateFromPromptString(text)
         await provider.handleUserMessageSubmission(
@@ -461,7 +463,6 @@ export class ChatsController implements vscode.Disposable {
     private createChatController(): ChatController {
         const authStatus = this.options.authProvider.getAuthStatus()
         const isConsumer = authStatus.isDotCom
-        const models = ModelsService.getModels(ModelUsage.Chat)
 
         // Enterprise context is used for remote repositories context fetching
         // in vs cody extension it should be always off if extension is connected
@@ -478,7 +479,6 @@ export class ChatsController implements vscode.Disposable {
             contextRanking: isConsumer ? this.contextRanking : null,
             symf: isConsumer ? this.symf : null,
             enterpriseContext: allowRemoteContext ? this.enterpriseContext : null,
-            models,
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,
             contextAPIClient: this.contextAPIClient,

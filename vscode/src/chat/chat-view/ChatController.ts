@@ -21,7 +21,6 @@ import {
     type Guardrails,
     type MentionQuery,
     type Message,
-    type Model,
     ModelUsage,
     ModelsService,
     PromptString,
@@ -134,7 +133,6 @@ interface ChatControllerOptions {
     contextAPIClient: ContextAPIClient | null
 
     editor: VSCodeEditor
-    models: Model[]
     guardrails: Guardrails
     startTokenReceiver?: typeof startTokenReceiver
 }
@@ -1658,6 +1656,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // Convenience function for tests
     public getViewTranscript(): readonly ChatMessage[] {
         return this.chatModel.getMessages().map(prepareChatMessage)
+    }
+
+    public isEmpty(): boolean {
+        return this.chatModel.isEmpty()
+    }
+
+    public isVisible(): boolean {
+        return this.webviewPanelOrView?.visible ?? false
     }
 
     private async recordChatQuestionTelemetryEvent(

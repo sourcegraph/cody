@@ -10,6 +10,7 @@ import {
 import { type FunctionComponent, useMemo } from 'react'
 import { CollapsiblePanel } from '../../components/CollapsiblePanel'
 import { Button } from '../../components/shadcn/ui/button'
+import { View } from '../../tabs/types'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 
 const commonCommandList = [
@@ -24,25 +25,29 @@ const vscodeCommandList = [
     { key: 'cody.menu.custom-commands', title: 'Custom Commands', icon: PencilRulerIcon },
 ]
 
-export const DefaultCommandsList: FunctionComponent<{ IDE?: CodyIDE }> = ({ IDE }) => {
-    const commandList = useMemo(
-        () => [...commonCommandList, ...(IDE === CodyIDE.VSCode ? vscodeCommandList : [])],
-        [IDE]
-    )
+export const DefaultCommandsList: FunctionComponent<{ IDE?: CodyIDE; setView?: (view: View) => void }> =
+    ({ IDE, setView }) => {
+        const commandList = useMemo(
+            () => [...commonCommandList, ...(IDE === CodyIDE.VSCode ? vscodeCommandList : [])],
+            [IDE]
+        )
 
-    return (
-        <CollapsiblePanel title="Commands">
-            {commandList.map(({ key, title, icon: Icon }) => (
-                <Button
-                    key={key}
-                    variant="ghost"
-                    className="tw-text-left"
-                    onClick={() => getVSCodeAPI().postMessage({ command: 'command', id: key })}
-                >
-                    <Icon className="tw-w-8 tw-h-8 tw-opacity-80" size={16} strokeWidth="1.25" />
-                    <span className="tw-truncate tw-w-full">{title}</span>
-                </Button>
-            ))}
-        </CollapsiblePanel>
-    )
-}
+        return (
+            <CollapsiblePanel title="Commands">
+                {commandList.map(({ key, title, icon: Icon }) => (
+                    <Button
+                        key={key}
+                        variant="ghost"
+                        className="tw-text-left"
+                        onClick={() => {
+                            getVSCodeAPI().postMessage({ command: 'command', id: key })
+                            setView?.(View.Chat)
+                        }}
+                    >
+                        <Icon className="tw-w-8 tw-h-8 tw-opacity-80" size={16} strokeWidth="1.25" />
+                        <span className="tw-truncate tw-w-full">{title}</span>
+                    </Button>
+                ))}
+            </CollapsiblePanel>
+        )
+    }

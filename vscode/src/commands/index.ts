@@ -71,6 +71,7 @@ export const CodyCommandMenuItems: MenuCommandAccessor[] = [
         icon: 'surround-with',
         command: { command: 'cody.command.auto-edit' },
         keybinding: `${osIcon}Tab`,
+        requires: { setting: 'cody.internal.unstable' },
     },
     {
         key: 'commit',

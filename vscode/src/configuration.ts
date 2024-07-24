@@ -189,6 +189,8 @@ export function getConfiguration(
             'autocomplete.advanced.timeout.firstCompletion',
             3_500
         ),
+
+        telemetryClientName: getHiddenSetting<string | undefined>('telemetry.clientName'),
         testingModelConfig:
             isTesting && hasValidLocalEmbeddingsConfig()
                 ? {
