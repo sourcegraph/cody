@@ -621,6 +621,7 @@ export class InlineCompletionItemProvider
      * The amount of time before we consider a completion to be "visible" to the user.
      */
     private COMPLETION_VISIBLE_DELAY_MS = 750
+    private completionSuggestedTimeoutId: NodeJS.Timeout | undefined
 
     /**
      * Given a completion, fire a suggestion event after a short delay to give the user time to
@@ -637,7 +638,24 @@ export class InlineCompletionItemProvider
             return
         }
 
-        setTimeout(() => {
+        // Clear any existing timeouts, only one completion can be shown at a time
+        clearTimeout(this.completionSuggestedTimeoutId)
+
+        this.completionSuggestedTimeoutId = setTimeout(() => {
+            const event = suggestionEvent.getEvent()
+            if (!event) {
+                return
+            }
+
+            if (
+                event.suggestedAt === null ||
+                event.suggestionAnalyticsLoggedAt !== null ||
+                event.suggestionLoggedAt !== null
+            ) {
+                // Completion was already logged, we do not need to mark it as read
+                return
+            }
+
             const activeEditor = vscode.window.activeTextEditor
 
             const { document: invokedDocument, position: invokedPosition } = completion.requestParams

@@ -723,7 +723,7 @@ export function loaded(params: LoadedParams): void {
 export function prepareSuggestionEvent(
     id: CompletionLogID,
     span?: Span
-): { markAsRead: () => void } | null {
+): { getEvent: () => CompletionBookkeepingEvent | undefined; markAsRead: () => void } | null {
     const event = activeSuggestionRequests.get(id)
     if (!event) {
         return null
@@ -750,28 +750,16 @@ export function prepareSuggestionEvent(
         }
 
         return {
+            getEvent: () => activeSuggestionRequests.get(id),
             markAsRead: () => {
-                const event = activeSuggestionRequests.get(id)
-                if (!event) {
+                if (completionIdsMarkedAsSuggested.has(completionId)) {
                     return
                 }
 
-                // We can assume that this completion is safe to be marked as `read` because
-                // we have fired this event without the completion being logged yet.
-                if (
-                    event.suggestedAt !== null &&
-                    event.suggestionAnalyticsLoggedAt === null &&
-                    event.suggestionLoggedAt === null
-                ) {
-                    if (completionIdsMarkedAsSuggested.has(completionId)) {
-                        return
-                    }
-
-                    event.read = true
-                    statistics.logSuggested()
-                    completionIdsMarkedAsSuggested.set(completionId, true)
-                    event.suggestionAnalyticsLoggedAt = performance.now()
-                }
+                event.read = true
+                statistics.logSuggested()
+                completionIdsMarkedAsSuggested.set(completionId, true)
+                event.suggestionAnalyticsLoggedAt = performance.now()
             },
         }
     }
