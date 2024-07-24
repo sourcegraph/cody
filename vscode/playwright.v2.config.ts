@@ -1,10 +1,18 @@
 import { homedir } from 'node:os'
+import * as path from 'node:path'
 import { type ReporterDescription, defineConfig } from '@playwright/test'
+import * as dotenv from 'dotenv'
 import { ulid } from 'ulidx'
+import { CREDENTIALS_ENVFILE_PATH } from './e2e/utils/credentials-envfile'
+import { CODY_VSCODE_ROOT_DIR } from './e2e/utils/helpers'
 import type { SymlinkExtensions } from './e2e/utils/symlink-extensions.setup'
 import type { TmpDirOptions } from './e2e/utils/tmpdir.setup'
 import type { TestOptions, WorkerOptions } from './e2e/utils/vscody'
 
+// Using dotenv files makes it work nicely in VSCode without having to restart the editor
+// to load new environment variables.
+dotenv.config({ path: path.resolve(CODY_VSCODE_ROOT_DIR, '.env') })
+dotenv.config({ path: CREDENTIALS_ENVFILE_PATH })
 const isWin = process.platform.startsWith('win')
 const isCI = !!process.env.CI
 process.env.RUN_ID = process.env.RUN_ID || ulid()
@@ -72,6 +80,11 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions & Symlin
             testMatch: ['symlink-extensions.setup.ts'],
         },
         {
+            name: 'credentials',
+            testDir: './e2e/utils',
+            testMatch: ['credentials.setup.ts'],
+        },
+        {
             name: 'utils',
             testDir: './e2e/utils',
             testMatch: ['**/*.test.ts'],
@@ -82,7 +95,7 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions & Symlin
             testDir: './e2e',
             testMatch: ['**/*.test.ts'],
             testIgnore: ['issues/**/*', 'utils/**/*'],
-            dependencies: ['tmpdir', 'symlink-extensions'],
+            dependencies: ['tmpdir', 'symlink-extensions', ...(isCI ? [] : ['credentials'])],
             use: {
                 // recordIfMissing: true, //uncomment for quick manual override
             },
@@ -92,7 +105,7 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions & Symlin
             testDir: './e2e/issues',
             retries: 0,
             testMatch: ['**/*.test.ts'],
-            dependencies: ['tmpdir', 'symlink-extensions'],
+            dependencies: ['tmpdir', 'symlink-extensions', ...(isCI ? [] : ['credentials'])],
             use: {
                 // recordIfMissing: true, //uncomment for quick manual override
             },
