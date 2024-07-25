@@ -353,7 +353,9 @@ async function doGetInlineCompletions(
     }
 
     // If we have inflight request with the same request params, just use it here instead of doing additional work.
-    // Specifically relevant for completions preloading where we want to avoid doing work twice.
+    // Specifically relevant for completions preloading where we want to avoid doing work twice:
+    // - We have preloaded a line, and then the user triggers a request for the exact same preloaded inflight request.
+    // - We may trigger a 2nd preloaded request if the user moves their cursor to the next empty line.
     const matchingInflightRequest = requestManager.getMatchingInflightRequest({ requestParams })
 
     if (matchingInflightRequest) {
@@ -378,16 +380,22 @@ async function doGetInlineCompletions(
         stale = true
     }
 
-    if (
-        smartThrottleService &&
-        triggerKind !== TriggerKind.Manual &&
-        triggerKind !== TriggerKind.Preload
-    ) {
+    if (smartThrottleService || triggerKind === TriggerKind.Preload) {
         // For the smart throttle to work correctly and preserve tail requests, we need full control
         // over the cancellation logic for each request.
         // Therefore we must stop listening for cancellation events originating from VS Code.
+        //
+        // And we do not want to cancel preload requests if a user continues typing forward.
         cancellationListener?.dispose()
+    }
 
+    if (
+        smartThrottleService &&
+        // Do not apply additional throttling to manually triggered suggestions.
+        triggerKind !== TriggerKind.Manual &&
+        /// Do no apply additional throttling to preload requests.
+        triggerKind !== TriggerKind.Preload
+    ) {
         stageRecorder.record('preSmartThrottle')
         const throttledRequest = await smartThrottleService.throttle(
             requestParams,
