@@ -394,6 +394,12 @@ export type ClientNotifications = {
     // User requested to cancel this progress bar. Only supported for progress
     // bars with `cancelable: true`.
     'progress/cancel': [{ id: string }]
+
+    // Native webviews use handles that are an implementation detail of Agent's
+    // vscode shim, unrelated to the application-level IDs from chat/new.
+    // Consequently they have their own dispose notification. c.f.
+    // webview/dispose client request.
+    'webview/didDisposeNative': [{ handle: string }]
 }
 
 // ================

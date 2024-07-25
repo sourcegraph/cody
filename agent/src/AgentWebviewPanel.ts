@@ -12,7 +12,10 @@ import { EventEmitter, defaultWebviewPanel } from './vscode-shim'
 export class AgentWebviewPanels {
     public panels = new Map<string, AgentWebviewPanel>()
     // TODO: If we don't create AgentWebviewPanels when using native webviews, untangle nativePanels from this type.
-    public readonly nativePanels = new Map<string, { didReceiveMessage: (message: any) => void }>()
+    public readonly nativePanels = new Map<
+        string,
+        { didReceiveMessage: (message: any) => void; didDispose: () => void }
+    >()
     public add(panel: AgentWebviewPanel): void {
         this.panels.set(panel.panelID, panel)
     }
