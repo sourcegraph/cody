@@ -231,7 +231,7 @@ export class InlineCompletionItemProvider
         const lastSelection = event.selections.at(-1)
         const { document } = event.textEditor
 
-        if (lastSelection?.start.isEqual(lastSelection?.end) && document.uri.scheme === 'file') {
+        if (lastSelection?.isEmpty && document.uri.scheme === 'file') {
             const currentLine = document.lineAt(lastSelection.end.line)
             const currentLinePrefix = currentLine.text.slice(0, lastSelection.end.character)
             const currentLineSuffix = currentLine.text.slice(lastSelection.end.character)
