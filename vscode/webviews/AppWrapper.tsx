@@ -5,6 +5,7 @@ import { ChatContextClientProviderForTestsOnly } from './promptEditor/plugins/at
 import { dummyChatContextClient } from './promptEditor/plugins/atMentions/fixtures'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
 import { TelemetryRecorderContext } from './utils/telemetry'
+import { ConfigProvider } from './utils/useConfig'
 
 export const AppWrapper: FunctionComponent<{ children: ReactNode }> = ({ children }) => (
     <ComposedWrappers wrappers={COMMON_WRAPPERS}>{children}</ComposedWrappers>
@@ -31,6 +32,10 @@ export const TestAppWrapper: FunctionComponent<{ children: ReactNode }> = ({ chi
                 provider: ChatContextClientProviderForTestsOnly,
                 value: dummyChatContextClient,
             } satisfies Wrapper<ComponentProps<typeof ChatContextClientProviderForTestsOnly>['value']>,
+            {
+                component: ConfigProvider,
+                props: { value: { authStatus: {} as any, config: {} as any } },
+            } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,
         ],
         []
     )

@@ -33,6 +33,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
+import { type Config, ConfigProvider } from './utils/useConfig'
 import { FeatureFlagsProvider } from './utils/useFeatureFlags'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
@@ -238,9 +239,18 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 telemetryRecorder,
                 chatModelContext,
                 clientState,
-                exportedFeatureFlags
+                exportedFeatureFlags,
+                config && authStatus ? { config, authStatus } : undefined
             ),
-        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, exportedFeatureFlags]
+        [
+            vscodeAPI,
+            telemetryRecorder,
+            chatModelContext,
+            clientState,
+            exportedFeatureFlags,
+            config,
+            authStatus,
+        ]
     )
 
     // Wait for all the data to be loaded before rendering Chat View
@@ -261,7 +271,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 <div className={styles.outerContainer}>
                     <LoginSimplified
                         simplifiedLoginRedirect={loginRedirect}
-                        uiKindIsWeb={config?.uiKindIsWeb}
+                        uiKindIsWeb={config.uiKindIsWeb}
                         vscodeAPI={vscodeAPI}
                     />
                 </div>
@@ -346,7 +356,8 @@ export function getAppWrappers(
     telemetryRecorder: TelemetryRecorder,
     chatModelContext: ChatModelContext,
     clientState: ClientStateForWebview,
-    exportedFeatureFlags: Record<string, boolean> | undefined
+    exportedFeatureFlags: Record<string, boolean> | undefined,
+    config: Config | undefined
 ): Wrapper[] {
     return [
         {
@@ -370,5 +381,9 @@ export function getAppWrappers(
             component: FeatureFlagsProvider,
             props: { value: exportedFeatureFlags },
         } satisfies Wrapper<any, ComponentProps<typeof FeatureFlagsProvider>>,
+        {
+            component: ConfigProvider,
+            props: { value: config },
+        } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,
     ]
 }
