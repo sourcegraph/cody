@@ -1,3 +1,5 @@
+@file:Suppress("FunctionName")
+
 package com.sourcegraph.cody.agent
 
 import com.sourcegraph.cody.agent.protocol.AttributionSearchParams
@@ -37,13 +39,30 @@ import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 
+interface CodyAgentServer : _LegacyAgentServer, _SubsetGeneratedCodyAgentServer
+
+// This is subset of the generated protocol bindings.
+// This is only temporary until all legacy bindings are made redundant.
+// Make sure to copy from the generated bindings verbatim!
+interface _SubsetGeneratedCodyAgentServer {
+  // ========
+  // Requests
+  // ========
+
+  // =============
+  // Notifications
+  // =============
+}
+
+// TODO: Requests waiting to be migrated & tested for compatibility. Avoid placing new protocol
+// messages here.
 /**
  * Interface for the server-part of the Cody agent protocol. The implementation of this interface is
  * written in TypeScript in the file "cody/agent/src/agent.ts". The Eclipse LSP4J bindings create a
  * Java implementation of this interface by using a JVM-reflection feature called "Proxy", which
  * works similar to JavaScript Proxy.
  */
-interface CodyAgentServer {
+interface _LegacyAgentServer {
   // Requests
   @JsonRequest("initialize") fun initialize(clientInfo: ClientInfo): CompletableFuture<ServerInfo>
 

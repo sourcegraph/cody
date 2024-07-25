@@ -12,8 +12,10 @@ import java.util.EnumSet
 import java.util.jar.JarFile
 import java.util.zip.ZipFile
 import org.jetbrains.changelog.markdownToHTML
+import org.jetbrains.intellij.or
 import org.jetbrains.intellij.tasks.RunPluginVerifierTask.FailureLevel
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.incremental.deleteDirectoryContents
 
 fun properties(key: String) = project.findProperty(key).toString()
 
@@ -22,6 +24,7 @@ val isForceAgentBuild =
     isForceBuild ||
         properties("forceCodyBuild") == "true" ||
         properties("forceAgentBuild") == "true"
+val isForceProtocolCopy = properties("forceProtocolCopy") == "true"
 val isForceCodeSearchBuild = isForceBuild || properties("forceCodeSearchBuild") == "true"
 
 // As https://www.jetbrains.com/updates/updates.xml adds a new "IntelliJ IDEA" YYYY.N version, add
@@ -110,6 +113,7 @@ spotless {
     ktfmt()
     trimTrailingWhitespace()
     target("src/**/*.kt")
+    targetExclude("src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated/**/*.kt")
     toggleOffOn()
   }
 }
@@ -341,6 +345,57 @@ tasks {
     return buildCodyDir
   }
 
+  fun copyProtocol(): Unit {
+    // This is just a temporary solution to make it easier to use certain generated protocol
+    // messages.
+    // Ultimately this should entirely be replaced by use of the generated protocol.
+    if (!isForceProtocolCopy) {
+      return
+    }
+    val codyDir = downloadCody()
+    val sourceDir =
+        codyDir.resolve(
+            Paths.get(
+                    "agent",
+                    "bindings",
+                    "kotlin",
+                    "lib",
+                    "src",
+                    "main",
+                    "kotlin",
+                    "com",
+                    "sourcegraph",
+                    "cody",
+                    "agent",
+                    "protocol_generated")
+                .toString())
+    val targetDir =
+        layout.projectDirectory.asFile.resolve(
+            "src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated")
+
+    targetDir.deleteDirectoryContents()
+    sourceDir.copyRecursively(targetDir, overwrite = true)
+    // in each file replace the package name
+    for (file in targetDir.walkTopDown()) {
+      if (file.isFile && file.extension == "kt") {
+        val content = file.readText()
+        // This is only a temporary solution to inject the notice.
+        // I've kept here so that it's clear where the files are modified.
+        val newContent =
+            """
+        |/*
+        | * Generated file - DO NOT EDIT MANUALLY
+        | * They are copied from the cody agent project using the copyProtocol gradle task.
+        | * This is only a temporary solution before we fully migrate to generated protocol messages.
+        | */
+        |
+    """
+                .trimMargin() + content
+        file.writeText(newContent)
+      }
+    }
+  }
+
   // System properties that are used for testing purposes. These properties
   // should be consistently set in different local dev environments, like `./gradlew :runIde`,
   // `./gradlew test` or when testing inside IntelliJ
@@ -363,6 +418,7 @@ tasks {
     return ideaDir.walk().find { it.name == "ideaIC-$ideaVersion" }
   }
 
+  register("copyProtocol") { copyProtocol() }
   register("buildCodeSearch") { buildCodeSearch() }
   register("buildCody") { buildCody() }
 
