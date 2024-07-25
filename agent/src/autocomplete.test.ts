@@ -1,6 +1,4 @@
 import path from 'node:path'
-
-import { delay } from 'lodash'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { sleep } from '../../vscode/src/completions/utils'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
