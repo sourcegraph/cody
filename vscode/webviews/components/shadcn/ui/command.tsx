@@ -42,7 +42,7 @@ const CommandInput = React.forwardRef<
         <CommandPrimitive.Input
             ref={ref}
             className={cn(
-                'tw-flex tw-w-full tw-border-solid tw-border tw-border-transparent tw-bg-transparent tw-p-3 tw-pt-4 tw-text-md tw-leading-none placeholder:tw-text-muted-foreground disabled:tw-cursor-not-allowed disabled:tw-opacity-50 focus:tw-outline-none',
+                'tw-flex tw-w-full tw-border-solid tw-border tw-border-transparent tw-bg-transparent tw-pt-4 tw-pb-3 tw-px-2 tw-text-md tw-leading-none placeholder:tw-text-muted-foreground disabled:tw-cursor-not-allowed disabled:tw-opacity-50 focus:tw-outline-none',
                 className
             )}
             inputMode="search"
@@ -72,7 +72,7 @@ const CommandEmpty = React.forwardRef<
 >((props, ref) => (
     <CommandPrimitive.Empty
         ref={ref}
-        className="tw-pt-3 tw-pb-0 tw-px-2 tw-text-muted-foreground tw-font-medium tw-text-xs"
+        className="tw-py-3 tw-px-2 tw-text-muted-foreground tw-font-medium tw-text-xs"
         {...props}
     />
 ))
@@ -85,7 +85,7 @@ const CommandLoading = React.forwardRef<
 >((props, ref) => (
     <CommandPrimitive.Loading
         ref={ref}
-        className="tw-pt-3 tw-pb-0 tw-px-2 tw-text-muted-foreground tw-font-medium tw-text-xs"
+        className="tw-py-3 tw-px-2 tw-text-muted-foreground tw-font-medium tw-text-xs"
         {...props}
     />
 ))

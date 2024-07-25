@@ -249,6 +249,31 @@ query ContextFilters {
     }
 }`
 
+export const PROMPTS_QUERY = `
+query ViewerPrompts($query: String!) {
+    prompts(query: $query, first: 100, viewerIsAffiliated: true, orderBy: PROMPT_NAME_WITH_OWNER) {
+        nodes {
+            id
+            name
+            nameWithOwner
+            owner {
+                namespaceName
+            }
+            description
+            draft
+            definition {
+                text
+            }
+            url
+        }
+        totalCount
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+    }
+}`
+
 export const REPO_NAME_QUERY = `
 query ResolveRepoName($cloneURL: String!) {
     repository(cloneURL: $cloneURL) {

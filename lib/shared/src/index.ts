@@ -237,6 +237,7 @@ export type {
     CodyLLMSiteConfiguration,
     ContextSearchResult,
     EmbeddingsSearchResult,
+    Prompt,
     event,
 } from './sourcegraph-api/graphql/client'
 export { RestClient } from './sourcegraph-api/rest/client'

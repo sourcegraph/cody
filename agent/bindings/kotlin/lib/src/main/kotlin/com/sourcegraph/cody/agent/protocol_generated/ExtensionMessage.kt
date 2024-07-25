@@ -31,6 +31,7 @@ sealed class ExtensionMessage {
           "setConfigFeatures" -> context.deserialize<SetConfigFeaturesExtensionMessage>(element, SetConfigFeaturesExtensionMessage::class.java)
           "allMentionProvidersMetadata" -> context.deserialize<AllMentionProvidersMetadataExtensionMessage>(element, AllMentionProvidersMetadataExtensionMessage::class.java)
           "updateEditorState" -> context.deserialize<UpdateEditorStateExtensionMessage>(element, UpdateEditorStateExtensionMessage::class.java)
+          "queryPrompts/response" -> context.deserialize<QueryPrompts_responseExtensionMessage>(element, QueryPrompts_responseExtensionMessage::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -222,6 +223,17 @@ data class UpdateEditorStateExtensionMessage(
 
   enum class TypeEnum {
     @SerializedName("updateEditorState") UpdateEditorState,
+  }
+}
+
+data class QueryPrompts_responseExtensionMessage(
+  val type: TypeEnum, // Oneof: queryPrompts/response
+  val result: List<Prompt>? = null,
+  val error: String? = null,
+) : ExtensionMessage() {
+
+  enum class TypeEnum {
+    @SerializedName("queryPrompts/response") QueryPrompts_response,
   }
 }
 

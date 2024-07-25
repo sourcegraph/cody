@@ -25,6 +25,7 @@ import { ConnectionIssuesPage } from './Troubleshooting'
 import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
 import { ClientStateContextProvider, useClientActionDispatcher } from './client/clientState'
 
+import { PromptsClientProviderFromVSCodeAPI } from './components/promptSelectField/promptsClient'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
 import { WithContextProviders } from './mentions/providers'
 import { ChatContextClientProviderFromVSCodeAPI } from './promptEditor/plugins/atMentions/chatContextClient'
@@ -385,5 +386,9 @@ export function getAppWrappers(
             component: ConfigProvider,
             props: { value: config },
         } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,
+        {
+            component: PromptsClientProviderFromVSCodeAPI,
+            props: { vscodeAPI },
+        } satisfies Wrapper<any, ComponentProps<typeof PromptsClientProviderFromVSCodeAPI>>,
     ]
 }
