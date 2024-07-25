@@ -1,6 +1,5 @@
 import type { URI } from 'vscode-uri'
 
-import type { AssistantInfo, Annotation as OpenCtxAnnotation } from '@openctx/client'
 import type { RangeData } from '../common/range'
 import type { Message } from '../sourcegraph-api'
 
@@ -144,6 +143,7 @@ export interface ContextItemTree extends ContextItemCommon {
 export interface ContextItemOpenCtx extends ContextItemCommon {
     type: 'openctx'
     provider: 'openctx'
+    kind: 'item' | 'annotation'
     title: string
     uri: URI
     providerUri: string
@@ -152,10 +152,6 @@ export interface ContextItemOpenCtx extends ContextItemCommon {
         data?: any
         description?: string
     }
-}
-
-export interface Annotation extends Pick<OpenCtxAnnotation, 'uri' | 'range'>, Required<AssistantInfo> {
-    title: string
 }
 
 /**
@@ -169,12 +165,6 @@ export interface ContextItemFile extends ContextItemCommon {
      * that we need to resolve this context item mention via remote search file
      */
     remoteRepositoryName?: string
-
-    /**
-     * Annotations are provided by OpenCtx providers.
-     * They enrich the context for every @-mentioned file.
-     */
-    annotations?: Annotation[]
 }
 
 /**

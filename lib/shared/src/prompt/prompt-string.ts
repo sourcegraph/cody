@@ -1,8 +1,7 @@
 import dedent from 'dedent'
 import type * as vscode from 'vscode'
-import type { URI } from 'vscode-uri'
 import type { ChatMessage, SerializedChatMessage } from '../chat/transcript/messages'
-import type { Annotation, ContextItem } from '../codebase-context/messages'
+import type { ContextItem } from '../codebase-context/messages'
 import type { ContextFiltersProvider } from '../cody-ignore/context-filters-provider'
 import type { TerminalOutputArguments } from '../commands/types'
 import { markdownCodeBlockLanguageIDForFilename } from '../common/languages'
@@ -360,14 +359,6 @@ export class PromptString {
                 ? internal_createPromptString(contextItem.repoName, ref)
                 : undefined,
             title: contextItem.title ? internal_createPromptString(contextItem.title, ref) : undefined,
-        }
-    }
-
-    public static fromAnnotation(annotation: Omit<Annotation, 'uri'> & { uri: URI }) {
-        const ref = [annotation.uri]
-        return {
-            content: internal_createPromptString(annotation.content, ref),
-            title: internal_createPromptString(annotation.title, ref),
         }
     }
 

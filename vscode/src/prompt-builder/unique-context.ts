@@ -74,6 +74,8 @@ export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: Context
             if (itemToAddRange && itemRange) {
                 if (
                     rangesOnSameLines(itemRange, itemToAddRange) ||
+                    // FIXME(dyma): annotation items should be allowed to overlap
+                    // with other annotations, as long as they're not from the same provider.
                     rangeContainsLines(itemRange, itemToAddRange)
                 ) {
                     return false

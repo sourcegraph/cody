@@ -100,6 +100,7 @@ export function contextItemMentionFromOpenCtxItem(
           } satisfies ContextItemRepository)
         : ({
               type: 'openctx',
+              kind: 'item',
               uri: URI.parse(item.uri),
               isIgnored,
               title: item.title,

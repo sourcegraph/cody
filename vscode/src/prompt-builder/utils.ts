@@ -10,7 +10,6 @@ import {
     populateCurrentSelectedCodeContextTemplate,
     ps,
 } from '@sourcegraph/cody-shared'
-import type { Annotation } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 
 import { URI } from 'vscode-uri'
 
@@ -46,42 +45,24 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
         default:
             // title is a required field for ContextItemOpenCtx, only checking for type safety here.
             if (contextItem.type === 'openctx' && title) {
-                messageText = ps`Content for "{title}" from {displayPath}:\n"`
-                    .replace('{title}', title)
+                switch (contextItem.kind) {
+                    case 'item':
+                        messageText = ps`Content for "{title}" from {displayPath}:\n`
+                        break
+                    case 'annotation':
+                        messageText = ps`Annotation for {displayPath}:\n"{title}"\n`
+                        break
+                }
+                messageText = messageText
                     .replace('{displayPath}', PromptString.fromDisplayPath(uri))
+                    .replace('{title}', title)
                     .concat(content)
             } else {
                 messageText = populateCodeContextTemplate(content, uri, repoName)
-                if (
-                    contextItem.type === 'file' &&
-                    contextItem.annotations &&
-                    contextItem.annotations.length
-                ) {
-                    messageText = addAnnotations(messageText, contextItem.annotations)
-                }
             }
     }
 
     return { speaker: 'human', text: messageText, file: contextItem }
-}
-
-function addAnnotations(message: PromptString, annotations: Annotation[]): PromptString {
-    let text = ps`\nAnnotations from OpenCtx providers:`
-
-    for (const annotation of annotations) {
-        if (!annotation.content) {
-            continue
-        }
-        const { title, content } = PromptString.fromAnnotation({
-            ...annotation,
-            content: annotation.content,
-            uri: URI.file(annotation.uri),
-        })
-        text = text.concat(
-            ps`\n{title}:\n{content}`.replace('{title}', title).replace('{content}', content)
-        )
-    }
-    return message.concat(text)
 }
 
 export function getContextItemTokenUsageType(item: ContextItem): ContextTokenUsageType {

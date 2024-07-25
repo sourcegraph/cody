@@ -1,19 +1,25 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import {
     type ContextItem,
     type ContextItemFile,
+    type ContextItemOpenCtx,
     EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
     type Editor,
+    type RangeData,
+    TokenCounter,
     contextFiltersProvider,
     ignores,
+    openCtx,
     ps,
+    setOpenCtxClient,
     testFileUri,
     uriBasename,
 } from '@sourcegraph/cody-shared'
 
+import type { OpenCtxClient } from '@sourcegraph/cody-shared/src/context/openctx/api'
 import { filterContextItemFiles, getFileContextFiles, resolveContextItems } from './editor-context'
 
 vi.mock('lodash/throttle', () => ({ default: vi.fn(fn => fn) }))
@@ -181,6 +187,26 @@ describe('filterContextItemFiles', () => {
 })
 
 describe('resolveContextItems', () => {
+    type OpenCtxAnnotation = Awaited<ReturnType<OpenCtxClient['annotations']>>[number]
+
+    const openCtxClient = openCtx.client
+    const mockOpenCtxClient: { [K in keyof OpenCtxClient]: Mock } = {
+        meta: vi.fn(),
+        mentions: vi.fn(),
+        items: vi.fn(),
+        annotations: vi.fn(),
+    }
+
+    afterEach(() => {
+        if (openCtxClient) {
+            setOpenCtxClient(openCtxClient)
+        }
+    })
+
+    function isAnnotationItem(item: ContextItem): item is ContextItemOpenCtx {
+        return item.type === 'openctx' && item.kind === 'annotation'
+    }
+
     it('omits files that could not be read', async () => {
         // Fixes https://github.com/sourcegraph/cody/issues/2390.
         const mockEditor: Partial<Editor> = {
@@ -213,5 +239,131 @@ describe('resolveContextItems', () => {
                 size: 1,
             },
         ])
+    })
+
+    it('file-mentions produce annotations', async () => {
+        // Arrange
+        const fileUri = 'file:///a.txt'
+        const providerUri = 'http://example-provider.com'
+        const mockEditor: Partial<Editor> = {
+            getTextEditorContentForFile(uri: URI, range?: RangeData) {
+                return Promise.resolve('file content')
+            },
+        }
+
+        const validAnnotation: OpenCtxAnnotation = {
+            uri: fileUri,
+            providerUri,
+            item: { title: 'Annotation 1', ai: { content: 'abcd' } },
+            range: { start: { line: 1, character: 5 }, end: { line: 1, character: 50 } } as vscode.Range,
+        }
+
+        mockOpenCtxClient.annotations.mockResolvedValueOnce([
+            validAnnotation,
+            {
+                ...validAnnotation,
+                item: { title: 'Annotation 2' }, // No assistant info, should be dropped
+            },
+        ] as OpenCtxAnnotation[])
+        setOpenCtxClient(mockOpenCtxClient)
+
+        // Act
+        const contextItems = await resolveContextItems(
+            mockEditor as Editor,
+            [
+                {
+                    type: 'file',
+                    uri: URI.parse(fileUri),
+                    range: {
+                        start: { line: 0, character: 0 },
+                        end: { line: 9, character: 80 },
+                    },
+                },
+            ],
+            ps``
+        )
+
+        // Assert
+        const annotations: ContextItemOpenCtx[] = contextItems
+            .filter(isAnnotationItem)
+            // TS doesn't yet narrow this down even with a type guard:
+            // https://stackoverflow.com/a/70763406/14726116
+            .map(x => x as ContextItemOpenCtx)
+
+        expect(annotations).toEqual<ContextItemOpenCtx[]>([
+            {
+                type: 'openctx',
+                kind: 'annotation',
+                provider: 'openctx',
+                providerUri,
+                title: 'Annotation 1',
+                uri: URI.parse(fileUri),
+                content: 'abcd',
+                range: { start: { line: 1, character: 5 }, end: { line: 1, character: 50 } },
+                size: TokenCounter.countTokens('abcd'),
+            },
+        ])
+    })
+
+    it('filters annotations by selected range', async () => {
+        // Arrange
+        const fileUri = 'file:///a.txt'
+        const providerUri = 'http://example-provider.com'
+
+        const FULL_FILE = 'full file content'
+        const LIMITED_FILE = 'file content limited by Range'
+        const mockEditor: Partial<Editor> = {
+            getTextEditorContentForFile(uri: URI, range?: RangeData) {
+                const content = range ? LIMITED_FILE : FULL_FILE
+                return Promise.resolve(content)
+            },
+        }
+
+        const selection: vscode.Range = {
+            start: { line: 0, character: 0 },
+            end: { line: 3, character: 80 },
+        } as vscode.Range
+
+        mockOpenCtxClient.annotations.mockImplementationOnce((doc: { uri: URI; getText(): string }) => {
+            // This annotation is within the selection range
+            const keep: OpenCtxAnnotation = {
+                uri: fileUri,
+                providerUri,
+                item: { title: 'Annotation', ai: { content: 'abcd' } },
+                range: {
+                    start: { line: 1, character: 5 },
+                    end: { line: 1, character: 10 },
+                } as vscode.Range,
+            }
+
+            // This annotation is outside of the selection range
+            const drop: OpenCtxAnnotation = {
+                ...keep,
+                range: {
+                    start: { line: selection.end.line + 1, character: 0 },
+                    end: { line: selection.end.line + 10, character: 0 },
+                } as vscode.Range,
+            }
+
+            // We should only read / fetch annotations for the selected part of the file.
+            expect(doc.getText()).toEqual(LIMITED_FILE)
+
+            return Promise.resolve([keep, drop])
+        })
+        setOpenCtxClient(mockOpenCtxClient)
+
+        // Act
+        const contextItems = await resolveContextItems(
+            mockEditor as Editor,
+            [{ type: 'file', uri: URI.parse(fileUri), range: selection }],
+            ps``
+        )
+
+        const annotations: ContextItemOpenCtx[] = contextItems
+            .filter(isAnnotationItem)
+            .map(x => x as ContextItemOpenCtx)
+
+        // Assert
+        expect(annotations).toHaveLength(1)
     })
 })
