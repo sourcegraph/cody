@@ -475,10 +475,8 @@ export class TestClient extends MessageHandler {
         const task = await this.request('editCommands/document', null)
         await this.taskHasReachedAppliedPhase(task)
         const lenses = this.codeLenses.get(uri.toString()) ?? []
-        if (lenses.length > 0) {
-            throw new Error(
-                `Code lenses are not supported in this mode ${JSON.stringify(lenses, null, 2)}`
-            )
+        if (lenses.length !== 2) {
+            throw new Error(`Expected accept code lenses for ${uri}, but found ${lenses.length}`)
         }
 
         await this.request('editTask/accept', { id: task.id })
@@ -497,10 +495,8 @@ export class TestClient extends MessageHandler {
         const task = await this.request('editCommands/test', null)
         await this.taskHasReachedAppliedPhase(task)
         const lenses = this.codeLenses.get(uri.toString()) ?? []
-        if (lenses.length > 0) {
-            throw new Error(
-                `Code lenses are not supported in this mode ${JSON.stringify(lenses, null, 2)}`
-            )
+        if (lenses.length !== 2) {
+            throw new Error(`Expected accept code lenses for ${uri}, but found ${lenses.length}`)
         }
 
         await this.request('editTask/accept', { id: task.id })
@@ -722,8 +718,8 @@ export class TestClient extends MessageHandler {
     public async acceptEditTask(uri: vscode.Uri, task: EditTask): Promise<void> {
         await this.taskHasReachedAppliedPhase(task)
         const lenses = this.codeLenses.get(uri.toString()) ?? []
-        if (lenses.length !== 0) {
-            throw new Error(`Expected no code lenses for ${uri}, but found ${lenses.length}`)
+        if (lenses.length !== 2) {
+            throw new Error(`Expected accept code lenses for ${uri}, but found ${lenses.length}`)
         }
         await this.request('editTask/accept', { id: task.id })
     }

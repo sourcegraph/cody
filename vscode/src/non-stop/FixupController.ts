@@ -221,16 +221,6 @@ export class FixupController
      * meaning any associated UI and behaviour is updated.
      */
     public registerDiscardOnRestoreListener(task: FixupTask): void {
-        // Triggering an auto-discard or auto-accept can lead to race conditions in the Agent, as the
-        // Agent doesn't get notified when the Accept lens is displayed, so it doesn't actually know when it
-        // is safe to discard/accept.
-        // Fixing it properly will require us to send some sort of notification back to the Agent after we finish
-        // applying the changes. https://github.com/sourcegraph/cody-issues/issues/315 is one example of a bug
-        // caused by auto-accepting here, but there were others as well.
-        if (isRunningInsideAgent()) {
-            return
-        }
-
         const listener = vscode.workspace.onDidChangeTextDocument(async event => {
             if (task.state !== CodyTaskState.Applied) {
                 // Task is not in the applied state, this is likely due to it
@@ -1012,7 +1002,7 @@ export class FixupController
 
     // Handles changes to the source document in the fixup selection
     public textDidChange(task: FixupTask): void {
-        if (task.state === CodyTaskState.Applied && task.mode === 'insert' && !isRunningInsideAgent()) {
+        if (task.state === CodyTaskState.Applied && task.mode === 'insert') {
             // For insertion tasks we accept as soon as the user makes a change
             // within the task range. This is a case where the user is more likely to want
             // to keep in the flow of writing their code, and would not benefit from editing

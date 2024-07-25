@@ -1,15 +1,17 @@
 import type { FixupFile } from '../../vscode/src/non-stop/FixupFile'
 import type { FixupTask, FixupTaskID } from '../../vscode/src/non-stop/FixupTask'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
-import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { type Agent, errorToCodyError } from './agent'
 import type { EditTask } from './protocol-alias'
+import {FixupCodeLenses} from "../../vscode/src/non-stop/codelenses/provider";
 
-export class AgentFixupControls implements FixupControlApplicator {
+export class AgentFixupControls extends FixupCodeLenses {
     constructor(
         private readonly fixups: FixupActor & FixupFileCollection,
         private readonly notify: typeof Agent.prototype.notify
-    ) {}
+    ) {
+        super(fixups)
+    }
 
     public accept(id: FixupTaskID): void {
         const task = this.fixups.taskForId(id)
@@ -35,9 +37,11 @@ export class AgentFixupControls implements FixupControlApplicator {
     // FixupControlApplicator
 
     didUpdateTask(task: FixupTask): void {
+        super.didUpdateTask(task)
         this.notify('editTask/didUpdate', AgentFixupControls.serialize(task))
     }
     didDeleteTask(task: FixupTask): void {
+        super.didDeleteTask(task)
         this.notify('editTask/didDelete', AgentFixupControls.serialize(task))
     }
 
