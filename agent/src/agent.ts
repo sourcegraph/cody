@@ -768,6 +768,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return (commands as CodyCommand[]) ?? []
         })
 
+        this.registerAuthenticatedRequest('testing/autocomplete/completionEvent', async params => {
+            const provider = await vscode_shim.completionProvider()
+
+            return provider.getTestingCompletionEvent(params.completionID as CompletionItemID)
+        })
+
         this.registerAuthenticatedRequest('autocomplete/execute', async (params, token) => {
             const provider = await vscode_shim.completionProvider()
             if (!provider) {

@@ -207,6 +207,11 @@ export type ClientRequests = {
     // if the agent server. For example, closes all open documents.
     'testing/reset': [null, null]
 
+    'testing/autocomplete/completionEvent': [
+        CompletionItemParams,
+        CompletionBookkeepingEvent | undefined | null,
+    ]
+
     // Updates the extension configuration and returns the new
     // authentication status, which indicates whether the provided credentials are
     // valid or not. The agent can't support autocomplete or chat if the credentials
@@ -320,7 +325,7 @@ export type Notifications = ClientNotifications & ServerNotifications
 // Client -> Server
 // ================
 export type ClientNotifications = {
-    // The 'initalized' notification must be sent after receiving the 'initialize' response.
+    // The 'initialized' notification must be sent after receiving the 'initialize' response.
     initialized: [null]
     // The 'exit' notification must be sent after the client receives the 'shutdown' response.
     exit: [null]
