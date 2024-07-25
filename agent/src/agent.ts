@@ -1213,6 +1213,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
             await this.resolveWebviewView(params)
             return null
         })
+        this.registerNotification('webview/didDisposeNative', async ({ handle }) => {
+            await this.didDisposeNativeWebview(handle)
+        })
         this.registerAuthenticatedRequest('webview/receiveMessage', async ({ id, message }) => {
             await this.receiveWebviewMessage(id, message)
             return null
@@ -1562,6 +1565,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return
         }
         await resolveWebviewView(provider, viewId, webviewHandle)
+    }
+
+    private async didDisposeNativeWebview(handle: string) {
+        this.webPanels.nativePanels.get(handle)?.didDispose()
     }
 
     private async receiveWebviewMessage(id: string, message: WebviewMessage): Promise<void> {

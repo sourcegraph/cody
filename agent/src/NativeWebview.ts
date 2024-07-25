@@ -29,11 +29,12 @@ interface WebviewProtocolDelegate {
 
     // Used by both panels and views.
 
-    // Registers the sink for client -> host postMessage events.
+    // Registers the sink for client -> host events: postMessage, didDispose
     registerWebview(
         handle: NativeWebviewHandle,
-        postMessageSink: {
+        sink: {
             didReceiveMessage: (message: any) => void
+            didDispose: () => void
         }
     ): void
     setTitle(handle: NativeWebviewHandle, title: string): void
@@ -72,6 +73,9 @@ export function resolveWebviewView(
     webviewProtocolDelegate!.registerWebview(webviewHandle, {
         didReceiveMessage(message: any) {
             ;(view.webview as NativeWebview).didReceiveMessageEmitter.fire(message)
+        },
+        didDispose() {
+            view.didDispose()
         },
     })
     return provider.resolveWebviewView(
@@ -151,8 +155,8 @@ export function registerNativeWebviewHandlers(
             })
             return Promise.resolve(true)
         },
-        registerWebview: (handle, postMessageSink) => {
-            agent.webPanels.nativePanels.set(handle, postMessageSink)
+        registerWebview: (handle, clientToHostSink) => {
+            agent.webPanels.nativePanels.set(handle, clientToHostSink)
         },
     }
     vscode_shim.setCreateWebviewPanel((viewType, title, showOptions, options) => {
@@ -199,6 +203,9 @@ export function registerNativeWebviewHandlers(
         webviewProtocolDelegate!.registerWebview(panel.handle, {
             didReceiveMessage(message: any) {
                 ;(panel.webview as NativeWebview).didReceiveMessageEmitter.fire(message)
+            },
+            didDispose() {
+                panel.didDispose()
             },
         })
         return panel
@@ -366,6 +373,11 @@ class NativeWebviewPanel implements vscode.WebviewPanel {
     dispose(): any {
         this.delegate.dispose(this.handle)
     }
+
+    // Called when the client disposes the webview.
+    didDispose() {
+        this.disposeEmitter.fire()
+    }
 }
 
 /**
@@ -424,5 +436,9 @@ class NativeWebviewView implements vscode.WebviewView {
     public get visible(): boolean {
         console.warn('Agent "native" webview does not support WebviewView.visible')
         return this._visible
+    }
+
+    public didDispose() {
+        this.disposeEmitter.fire()
     }
 }
