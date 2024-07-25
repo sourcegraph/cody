@@ -232,9 +232,9 @@ export class InlineCompletionItemProvider
         const { document } = event.textEditor
 
         if (lastSelection?.isEmpty && document.uri.scheme === 'file') {
-            const currentLine = document.lineAt(lastSelection.end.line)
-            const currentLinePrefix = currentLine.text.slice(0, lastSelection.end.character)
-            const currentLineSuffix = currentLine.text.slice(lastSelection.end.character)
+            const currentLine = document.lineAt(lastSelection.active.line)
+            const currentLinePrefix = currentLine.text.slice(0, lastSelection.active.character)
+            const currentLineSuffix = currentLine.text.slice(lastSelection.active.character)
 
             if (
                 currentLineSuffix.trim() === '' &&
@@ -242,16 +242,16 @@ export class InlineCompletionItemProvider
                     currentLinePrefix,
                     currentLineSuffix,
                     document,
-                    position: lastSelection.end,
+                    position: lastSelection.active,
                 })
             ) {
-                this.provideInlineCompletionItems(document, lastSelection.end, {
+                this.provideInlineCompletionItems(document, lastSelection.active, {
                     isPreload: true,
                     triggerKind: 1,
                     selectedCompletionInfo: undefined,
                 })
             } else {
-                const nextLineNumber = lastSelection.end.line + 1
+                const nextLineNumber = lastSelection.active.line + 1
                 const nextLine = document.lineAt(nextLineNumber)
                 const nextLinePosition = new vscode.Position(
                     nextLineNumber,
