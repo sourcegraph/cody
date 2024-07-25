@@ -183,7 +183,11 @@ export async function newAgentClient(
         const arg0 = clientInfo.codyAgentPath ?? process.argv[0]
         const args = clientInfo.codyAgentPath ? [] : nodeArguments
         const child = spawn(arg0, args, {
-            env: { ...clientInfo.extraEnvVariables, ENABLE_SENTRY: 'false', ...process.env },
+            env: {
+                ...clientInfo.extraEnvVariables,
+                ENABLE_SENTRY: 'false',
+                ...process.env,
+            },
         })
         child.on('error', error => reject?.(error))
         child.on('exit', code => {
@@ -572,7 +576,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 throw new Error(`codeActions/trigger: no arguments for ID ${id}`)
             }
             return this.createEditTask(
-                executeEdit(args).then<CommandResult | undefined>(task => ({ type: 'edit', task }))
+                executeEdit(args).then<CommandResult | undefined>(task => ({
+                    type: 'edit',
+                    task,
+                }))
             )
         })
 
@@ -759,6 +766,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('customCommands/list', async () => {
             const commands = await vscode.commands.executeCommand('cody.commands.get-custom-commands')
             return (commands as CodyCommand[]) ?? []
+        })
+
+        this.registerAuthenticatedRequest('testing/autocomplete/completionEvent', async params => {
+            const provider = await vscode_shim.completionProvider()
+
+            return provider.getTestingCompletionEvent(params.completionID as CompletionItemID)
         })
 
         this.registerAuthenticatedRequest('autocomplete/execute', async (params, token) => {
@@ -1073,7 +1086,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            modelID ??= ModelsService.getDefaultChatModel(authStatus) ?? ''
+            modelID ??= ModelsService.getDefaultChatModel() ?? ''
             const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
             const chatModel = new ChatModel(modelID, chatID, chatMessages)
             await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
@@ -1086,8 +1099,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
-            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            const models = ModelsService.getModels(modelUsage, authStatus)
+            const models = ModelsService.getModels(modelUsage)
             return { models }
         })
 

@@ -23,12 +23,32 @@ import type { BillingCategory, BillingProduct } from '.'
 import type { AuthStatusProvider } from '../auth/types'
 import { getTier } from './cody-tier'
 
-interface ExtensionDetails {
+export interface ExtensionDetails {
     ide: CodyIDE
-    ideExtensionType: 'Cody' | 'CodeSearch'
+
+    /**
+     * Platform name, possible values 'linux', 'macos', 'windows',
+     * (see vscode os.ts for Platform enum)
+     */
+    platform: string
 
     /** Version number for the extension. */
     version: string
+
+    /**
+     * If this is provided event recorder will use this name as a client name
+     * in telemetry events, primary is used for having different client name for
+     * CodyWeb in dotcom/enterprise instances.
+     *
+     * If it isn't provided we will fall back on ide+ideExtensionType client name
+     */
+    telemetryClientName: string | undefined
+
+    /**
+     * Architecture name, possible values 'arm64', 'aarch64', 'x86_64', 'x64', 'x86'
+     * (see vscode os.ts for Arch enum)
+     */
+    arch?: string
 }
 
 /**
@@ -49,11 +69,13 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
         legacyBackcompatLogEventMode: LogEventMode
     ) {
         const client = new SourcegraphGraphQLAPIClient(config)
+        const clientName = extensionDetails.telemetryClientName
+            ? extensionDetails.telemetryClientName
+            : `${extensionDetails.ide || 'unknown'}.Cody`
+
         super(
             {
-                client: `${extensionDetails.ide || 'unknown'}${
-                    extensionDetails.ideExtensionType ? `.${extensionDetails.ideExtensionType}` : ''
-                }`,
+                client: clientName,
                 clientVersion: extensionDetails.version,
             },
             process.env.CODY_TELEMETRY_EXPORTER === 'testing'
@@ -110,7 +132,7 @@ export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderPr
     ) {
         super(
             {
-                client: `${extensionDetails.ide}.${extensionDetails.ideExtensionType}`,
+                client: `${extensionDetails.ide}.Cody`,
                 clientVersion: extensionDetails.version,
             },
             new MockServerTelemetryExporter(anonymousUserID),

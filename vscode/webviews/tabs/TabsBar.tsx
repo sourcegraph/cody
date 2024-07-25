@@ -12,18 +12,16 @@ import {
     ZapIcon,
 } from 'lucide-react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
+import { View } from './types'
+
+import { CodyIDE } from '@sourcegraph/cody-shared'
+import { useCallback, useMemo } from 'react'
+import { Kbd } from '../components/Kbd'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import styles from './TabsBar.module.css'
 
-export enum View {
-    Chat = 'chat',
-    Login = 'login',
-    History = 'history',
-    Account = 'account',
-    Commands = 'commands',
-    Settings = 'settings',
-}
-
 interface TabsBarProps {
+    IDE: CodyIDE
     currentView: View
     setView: (view?: View) => void
 }
@@ -35,31 +33,11 @@ type IconComponent = React.ForwardRefExoticComponent<
 interface TabConfig {
     Icon: IconComponent
     view: View
+    tooltip: React.ReactNode
     command?: string
-    SubIcons?: { title: string; Icon: IconComponent; command: string }[]
+    SubIcons?: { tooltip: React.ReactNode; Icon: IconComponent; command: string }[]
+    changesView?: boolean
 }
-
-const tabItems: TabConfig[] = [
-    {
-        view: View.Chat,
-        Icon: MessagesSquareIcon,
-        SubIcons: [{ title: 'New Chat', Icon: MessageSquarePlusIcon, command: 'cody.chat.newPanel' }],
-    },
-    {
-        view: View.History,
-        Icon: HistoryIcon,
-        SubIcons: [
-            { title: 'Export History', Icon: DownloadIcon, command: 'cody.chat.history.export' },
-            { title: 'Clear History', Icon: Trash2Icon, command: 'cody.chat.history.clear' },
-        ],
-    },
-    {
-        view: View.Commands,
-        Icon: ZapIcon,
-    },
-    { view: View.Settings, Icon: SettingsIcon, command: 'cody.status-bar.interacted' },
-    { view: View.Account, Icon: CircleUserIcon, command: 'cody.auth.account' },
-]
 
 interface TabButtonProps {
     Icon: IconComponent
@@ -67,62 +45,133 @@ interface TabButtonProps {
     command?: string
     isActive?: boolean
     onClick: () => void
+    prominent?: boolean
+    tooltip: React.ReactNode
 }
 
-const baseClasses =
-    'tw-rounded-none tw-bg-transparent tw-border-solid tw-border-b tw-px-2 tw-py-4 tw-transition-all hover:tw-text-button-background-hover'
-const activeClasses = 'tw-border-button-background-hover tw-text-button-background-hover'
-const inactiveClasses = 'tw-border-transparent'
-
-const TabButton: React.FC<TabButtonProps> = ({ Icon, isActive, onClick, view }) => (
-    <button
-        title={view}
-        type="button"
-        onClick={onClick}
-        className={clsx(baseClasses, isActive ? activeClasses : inactiveClasses)}
-    >
-        <Icon size={16} strokeWidth={1.25} />
-    </button>
+const TabButton: React.FC<TabButtonProps> = ({ Icon, isActive, onClick, tooltip, prominent }) => (
+    <Tooltip>
+        <TooltipTrigger asChild>
+            <button
+                type="button"
+                onClick={onClick}
+                className={clsx(
+                    'tw-py-3 tw-px-2 tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
+                    {
+                        '!tw-opacity-100 !tw-border-[var(--vscode-tab-activeBorderTop)]': isActive,
+                        '!tw-opacity-100': prominent,
+                    }
+                )}
+            >
+                <Icon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
+            </button>
+        </TooltipTrigger>
+        <TooltipContent>{tooltip}</TooltipContent>
+    </Tooltip>
 )
 
-export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView }) => {
-    const handleClick = (view: View, command?: string) => {
-        if (command) {
-            getVSCodeAPI().postMessage({ command: 'command', id: command })
-        }
-        setView(view)
-    }
+const BASE_TAB_ITEMS: TabConfig[] = [
+    {
+        view: View.Chat,
+        tooltip: 'Chat',
+        Icon: MessagesSquareIcon,
+        SubIcons: [
+            {
+                tooltip: (
+                    <>
+                        New Chat <Kbd macOS="opt+/" linuxAndWindows="alt+/" />
+                    </>
+                ),
+                Icon: MessageSquarePlusIcon,
+                command: 'cody.chat.newPanel',
+            },
+        ],
+        changesView: true,
+    },
+    {
+        view: View.History,
+        tooltip: 'Chat History',
+        Icon: HistoryIcon,
+        SubIcons: [
+            { tooltip: 'Export History', Icon: DownloadIcon, command: 'cody.chat.history.export' },
+            { tooltip: 'Clear History', Icon: Trash2Icon, command: 'cody.chat.history.clear' },
+        ],
+        changesView: true,
+    },
+    {
+        view: View.Commands,
+        tooltip: 'Commands',
+        Icon: ZapIcon,
+        changesView: true,
+    },
+    {
+        view: View.Settings,
+        tooltip: 'Settings',
+        Icon: SettingsIcon,
+        command: 'cody.status-bar.interacted',
+    },
+    {
+        view: View.Account,
+        tooltip: 'Account',
+        Icon: CircleUserIcon,
+        command: 'cody.auth.account',
+    },
+]
 
+const getTabItemsByIDE = (IDE: CodyIDE): TabConfig[] =>
+    IDE !== CodyIDE.VSCode
+        ? BASE_TAB_ITEMS.map(item =>
+              item.view === View.Account ? { ...item, changesView: true } : item
+          )
+        : BASE_TAB_ITEMS
+
+export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) => {
+    const tabItems = useMemo(() => getTabItemsByIDE(IDE), [IDE])
     const currentViewSubIcons = tabItems.find(tab => tab.view === currentView)?.SubIcons
+
+    const handleClick = useCallback(
+        (view: View, command?: string, changesView?: boolean) => {
+            if (command) {
+                getVSCodeAPI().postMessage({ command: 'command', id: command })
+            }
+            if (changesView) {
+                setView(view)
+            }
+        },
+        [setView]
+    )
 
     return (
         <Tabs.List
             aria-label="cody-webview"
             className={clsx(
-                'tw-flex tw-justify-between tw-sticky tw-top-0 tw-z-50 tw-w-full tw-border-b tw-border-border tw-shadow-lg tw-shadow-border-500/50 tw-my-1 tw-px-4',
+                'tw-flex tw-justify-between tw-sticky tw-top-0 tw-z-50 tw-w-full tw-border-b tw-border-border tw-pl-[15px] tw-pr-4',
                 styles.tabsContainer
             )}
         >
-            <div className="tw-flex tw-gap-4">
-                {tabItems.map(({ Icon, view, command }) => (
+            <div className="tw-flex tw-gap-1">
+                {tabItems.map(({ Icon, view, command, tooltip, changesView }) => (
                     <Tabs.Trigger key={view} value={view}>
                         <TabButton
                             Icon={Icon}
                             view={view}
+                            tooltip={tooltip}
                             command={command}
                             isActive={currentView === view}
-                            onClick={() => handleClick(view, command)}
+                            onClick={() => handleClick(view, command, changesView)}
                         />
                     </Tabs.Trigger>
                 ))}
             </div>
             <div className="tw-flex tw-gap-4">
-                {currentViewSubIcons?.map(({ Icon, command }) => (
+                {currentViewSubIcons?.map(({ Icon, command, tooltip }) => (
                     <TabButton
                         key={command}
                         Icon={Icon}
+                        tooltip={tooltip}
                         command={command}
                         onClick={() => getVSCodeAPI().postMessage({ command: 'command', id: command })}
+                        prominent
                     />
                 ))}
             </div>

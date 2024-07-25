@@ -13,6 +13,7 @@ import * as vscode from 'vscode'
 import { logError } from '../../log'
 import {
     type AnthropicOptions,
+    DEFAULT_PLG_ANTHROPIC_MODEL,
     createProviderConfig as createAnthropicProviderConfig,
 } from './anthropic'
 import { createProviderConfig as createExperimentalOllamaProviderConfig } from './experimental-ollama'
@@ -56,7 +57,10 @@ export async function createProviderConfigFromVSCodeConfig(
             })
         }
         case 'anthropic': {
-            return createAnthropicProviderConfig({ client, model })
+            return createAnthropicProviderConfig({
+                client,
+                model: model ?? authStatus.isDotCom ? DEFAULT_PLG_ANTHROPIC_MODEL : undefined,
+            })
         }
         case 'gemini':
         case 'unstable-gemini': {
@@ -298,7 +302,7 @@ interface AutocompleteModelInfo {
 }
 
 function getAutocompleteModelInfo(authStatus: AuthStatus): AutocompleteModelInfo | Error | undefined {
-    const model = ModelsService.getDefaultModel(ModelUsage.Autocomplete, authStatus)
+    const model = ModelsService.getDefaultModel(ModelUsage.Autocomplete)
     if (model) {
         let provider = model.provider
         if (model.clientSideConfig?.openAICompatible) {

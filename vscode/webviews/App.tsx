@@ -265,7 +265,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             className={styles.outerContainer}
         >
             {/* NOTE: Display tabs to PLG users only until Universal Cody is ready. */}
-            {userAccountInfo.isDotComUser && <TabsBar currentView={view} setView={setView} />}
+            {/* Shows tab bar for sidebar chats only. */}
+            {userAccountInfo.isDotComUser && config.webviewType !== 'editor' && (
+                <TabsBar currentView={view} setView={setView} IDE={config.agentIDE || CodyIDE.VSCode} />
+            )}
             {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
             <TabContainer value={view}>
                 {view === 'chat' && (
@@ -295,7 +298,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     </ChatModelContextProvider>
                 )}
                 {view === 'history' && <HistoryTab userHistory={userHistory} />}
-                {view === 'commands' && <CommandsTab IDE={config.agentIDE} commands={commandList} />}
+                {view === 'commands' && (
+                    <CommandsTab setView={setView} IDE={config.agentIDE} commands={commandList} />
+                )}
                 {view === 'account' && <AccountTab userInfo={userAccountInfo} />}
                 {view === 'settings' && <SettingsTab userInfo={userAccountInfo} />}
             </TabContainer>

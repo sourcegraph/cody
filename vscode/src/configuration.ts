@@ -147,10 +147,6 @@ export function getConfiguration(
 
         experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
 
-        autocompleteExperimentalHotStreak: getHiddenSetting(
-            'autocomplete.experimental.hotStreak',
-            false
-        ),
         autocompleteExperimentalOllamaOptions: getHiddenSetting(
             'autocomplete.experimental.ollamaOptions',
             {
@@ -166,12 +162,8 @@ export function getConfiguration(
             'autocomplete.experimental.multiModelCompletions',
             undefined
         ),
-        autocompleteExperimentalSmartThrottle: getHiddenSetting(
-            'autocomplete.experimental.smartThrottle',
-            false
-        ),
-        autocompleteExperimentalSmartThrottleExtended: getHiddenSetting(
-            'autocomplete.experimental.smartThrottleExtended',
+        autocompleteExperimentalHotStreakAndSmartThrottle: getHiddenSetting(
+            'autocomplete.experimental.hotStreakAndSmartThrottle',
             false
         ),
         autocompleteExperimentalPreloadDebounceInterval: getHiddenSetting(
@@ -201,6 +193,8 @@ export function getConfiguration(
             'autocomplete.advanced.timeout.firstCompletion',
             3_500
         ),
+
+        telemetryClientName: getHiddenSetting<string | undefined>('telemetry.clientName'),
         testingModelConfig:
             isTesting && hasValidLocalEmbeddingsConfig()
                 ? {

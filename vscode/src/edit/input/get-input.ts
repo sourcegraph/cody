@@ -23,7 +23,6 @@ import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/trac
 import type { AuthProvider } from '../../services/AuthProvider'
 import type { EditIntent, EditMode } from '../types'
 import { isGenerateIntent } from '../utils/edit-intent'
-import { getEditModelsForUser } from '../utils/edit-models'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
 import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
 import { getModelInputItems, getModelOptionItems } from './get-items/model'
@@ -98,7 +97,7 @@ export const getInput = async (
 
     const authStatus = authProvider.getAuthStatus()
     const isCodyPro = !authStatus.userCanUpgrade
-    const modelOptions = getEditModelsForUser(authStatus)
+    const modelOptions = ModelsService.getModels(ModelUsage.Edit)
     const modelItems = getModelOptionItems(modelOptions, isCodyPro)
     const showModelSelector = modelOptions.length > 1 && authStatus.isDotCom
 

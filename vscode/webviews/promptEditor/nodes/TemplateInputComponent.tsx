@@ -1,4 +1,3 @@
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { useLexicalNodeSelection } from '@lexical/react/useLexicalNodeSelection'
 import { mergeRegister } from '@lexical/utils'
 import {
@@ -6,6 +5,7 @@ import {
     CLICK_COMMAND,
     COMMAND_PRIORITY_LOW,
     KEY_DOWN_COMMAND,
+    type LexicalEditor,
     type NodeKey,
 } from 'lexical'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
@@ -14,12 +14,12 @@ import { $isTemplateInputNode, type TemplateInputNode } from './TemplateInputNod
 import { useIsFocused } from './mentionUtils'
 
 export const TemplateInputComponent: React.FC<{
+    editor: LexicalEditor
     nodeKey: NodeKey
     node: TemplateInputNode
     className: string
     focusedClassName: string
-}> = ({ nodeKey, node, className, focusedClassName }) => {
-    const [editor] = useLexicalComposerContext()
+}> = ({ editor, nodeKey, node, className, focusedClassName }) => {
     const isEditorFocused = useIsFocused()
     const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(nodeKey)
     const ref = useRef<HTMLSpanElement>(null)
