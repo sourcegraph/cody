@@ -99,7 +99,7 @@ function getWorkingLens(codeLensRange: vscode.Range, id: string): vscode.CodeLen
     lens.command = {
         title: '$(sync~spin) Cody is working...',
         command: 'cody.chat.focus',
-        arguments: [id]
+        arguments: [id],
     }
     return lens
 }
@@ -109,7 +109,7 @@ function getInsertingLens(codeLensRange: vscode.Range, id: string): vscode.CodeL
     lens.command = {
         title: '$(sync~spin) Inserting...',
         command: 'cody.chat.focus',
-        arguments: [id]
+        arguments: [id],
     }
     return lens
 }
@@ -119,7 +119,7 @@ function getApplyingLens(codeLensRange: vscode.Range, id: string): vscode.CodeLe
     lens.command = {
         title: '$(sync~spin) Applying...',
         command: 'cody.chat.focus',
-        arguments: [id]
+        arguments: [id],
     }
     return lens
 }
@@ -188,12 +188,12 @@ function getAcceptLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens
     return lens
 }
 
-function getUnitTestLens(codeLensRange: vscode.Range,  id: string): vscode.CodeLens {
+function getUnitTestLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: '$(sync~spin) Generating tests...',
         command: 'cody.chat.focus',
-        arguments: [id]
+        arguments: [id],
     }
     return lens
 }

@@ -1,9 +1,10 @@
+import type { QuickPickInput } from '../../vscode/src/edit/input/get-input'
 import type { FixupFile } from '../../vscode/src/non-stop/FixupFile'
 import type { FixupTask, FixupTaskID } from '../../vscode/src/non-stop/FixupTask'
+import { FixupCodeLenses } from '../../vscode/src/non-stop/codelenses/provider'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import { type Agent, errorToCodyError } from './agent'
 import type { EditTask } from './protocol-alias'
-import {FixupCodeLenses} from "../../vscode/src/non-stop/codelenses/provider";
 
 export class AgentFixupControls extends FixupCodeLenses {
     constructor(
@@ -34,6 +35,14 @@ export class AgentFixupControls extends FixupCodeLenses {
         }
     }
 
+    public retry(id: FixupTaskID, previousInput: QuickPickInput): Promise<FixupTask | undefined> {
+        const task = this.fixups.taskForId(id)
+        if (task) {
+            return this.fixups.retry(task, 'code-lens', previousInput)
+        }
+        return Promise.resolve(undefined)
+    }
+
     // FixupControlApplicator
 
     didUpdateTask(task: FixupTask): void {
@@ -56,6 +65,7 @@ export class AgentFixupControls extends FixupCodeLenses {
             error: errorToCodyError(task.error),
             selectionRange: task.selectionRange,
             instruction: task.instruction?.toString().trim(),
+            model: task.model.toString().trim(),
         }
     }
 }

@@ -26,7 +26,7 @@ import {
 } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
-import { getInput } from '../edit/input/get-input'
+import { type QuickPickInput, getInput } from '../edit/input/get-input'
 import { isStreamedIntent } from '../edit/utils/edit-intent'
 import { getOverridenModelForIntent } from '../edit/utils/edit-models'
 import type { ExtensionClient } from '../extension-client'
@@ -279,21 +279,27 @@ export class FixupController
 
     // Undo the specified task, then prompt for a new set of instructions near
     // the same region and start a new task.
-    public async retry(task: FixupTask, source: EventSource): Promise<FixupTask | undefined> {
+    public async retry(
+        task: FixupTask,
+        source: EventSource,
+        previousInput?: QuickPickInput
+    ): Promise<FixupTask | undefined> {
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
         // Prompt the user for a new instruction, and create a new fixup
-        const input = await getInput(
-            document,
-            this.authProvider,
-            {
-                initialInputValue: task.instruction,
-                initialRange: task.selectionRange,
-                initialSelectedContextItems: task.userContextItems,
-                initialModel: task.model,
-                initialIntent: task.intent,
-            },
-            source
-        )
+        const input =
+            previousInput ??
+            (await getInput(
+                document,
+                this.authProvider,
+                {
+                    initialInputValue: task.instruction,
+                    initialRange: task.selectionRange,
+                    initialSelectedContextItems: task.userContextItems,
+                    initialModel: task.model,
+                    initialIntent: task.intent,
+                },
+                source
+            ))
         if (!input) {
             return
         }

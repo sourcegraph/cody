@@ -104,6 +104,7 @@ export type ClientRequests = {
             instruction: string
             model?: string | undefined | null
             mode?: 'edit' | 'insert' | undefined | null
+            range?: Range | undefined | null
         },
         EditTask,
     ]
@@ -117,6 +118,16 @@ export type ClientRequests = {
     'editTask/undo': [{ id: FixupTaskID }, null]
     // Discards the task. Applicable to tasks in any state.
     'editTask/cancel': [{ id: FixupTaskID }, null]
+    'editTask/retry': [
+        {
+            id: FixupTaskID
+            instruction: string
+            model: string
+            mode: 'edit' | 'insert'
+            range: Range
+        },
+        EditTask,
+    ]
 
     // Utility for clients that don't have language-neutral folding-range support.
     // Provides a list of all the computed folding ranges in the specified document.
@@ -803,6 +814,7 @@ export interface EditTask {
     error?: CodyError | undefined | null
     selectionRange: Range
     instruction?: string | undefined | null
+    model?: string | undefined | null
 }
 
 export interface CodyError {
