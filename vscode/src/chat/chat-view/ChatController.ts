@@ -261,6 +261,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         )
         this.disposables.push(this.contextStatusAggregator.addProvider(this.codebaseStatusProvider))
 
+        // Keep feature flags updated.
+        this.disposables.push({
+            dispose: featureFlagProvider.onFeatureFlagChanged('', () => {
+                void this.postConfigFeatures()
+            }),
+        })
+
         if (this.remoteSearch) {
             this.disposables.push(
                 // Display enhanced context status from the remote search provider
@@ -1625,8 +1632,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             )
         )
 
-        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
+        await this.postConfigFeatures()
 
+        return viewOrPanel
+    }
+
+    private async postConfigFeatures(): Promise<void> {
+        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
         void this.postMessage({
             type: 'setConfigFeatures',
             configFeatures: {
@@ -1638,9 +1650,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 attribution: clientConfig?.attributionEnabled ?? false,
                 serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
             },
+            exportedFeatureFlags: featureFlagProvider.getExposedExperiments(),
         })
-
-        return viewOrPanel
     }
 
     public async setWebviewView(view: View): Promise<void> {

@@ -197,6 +197,7 @@ data class `context_remote-reposExtensionMessage`(
 data class SetConfigFeaturesExtensionMessage(
   val type: TypeEnum, // Oneof: setConfigFeatures
   val configFeatures: ConfigFeaturesParams,
+  val exportedFeatureFlags: Map<String, Boolean>,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {

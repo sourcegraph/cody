@@ -325,10 +325,10 @@ query SiteIdentification {
 
 export const GET_FEATURE_FLAGS_QUERY = `
     query FeatureFlags {
-        evaluatedFeatureFlags() {
+        evaluatedFeatureFlags {
             name
             value
-          }
+        }
     }
 `
 

@@ -206,6 +206,7 @@ export type ExtensionMessage =
               attribution: boolean
               serverSentModels: boolean
           }
+          exportedFeatureFlags: Record<string, boolean>
       }
     | {
           type: 'allMentionProvidersMetadata'
