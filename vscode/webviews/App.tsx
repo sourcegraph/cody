@@ -33,6 +33,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
+import { FeatureFlagsProvider } from './utils/useFeatureFlags'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
@@ -56,6 +57,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
     const [commandList, setCommandList] = useState<CodyCommand[]>([])
     const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
+    const [exportedFeatureFlags, setExportedFeatureFlags] = useState<Record<string, boolean>>()
 
     const [clientState, setClientState] = useState<ClientStateForWebview>({
         initialContext: [],
@@ -120,6 +122,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         }
                         break
                     case 'setConfigFeatures':
+                        setExportedFeatureFlags(message.exportedFeatureFlags)
                         setChatEnabled(message.configFeatures.chat)
                         setAttributionEnabled(message.configFeatures.attribution)
                         setServerSentModelsEnabled(message.configFeatures.serverSentModels)
@@ -229,8 +232,15 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers(vscodeAPI, telemetryRecorder, chatModelContext, clientState),
-        [vscodeAPI, telemetryRecorder, chatModelContext, clientState]
+        () =>
+            getAppWrappers(
+                vscodeAPI,
+                telemetryRecorder,
+                chatModelContext,
+                clientState,
+                exportedFeatureFlags
+            ),
+        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, exportedFeatureFlags]
     )
 
     // Wait for all the data to be loaded before rendering Chat View
@@ -335,7 +345,8 @@ export function getAppWrappers(
     vscodeAPI: VSCodeWrapper,
     telemetryRecorder: TelemetryRecorder,
     chatModelContext: ChatModelContext,
-    clientState: ClientStateForWebview
+    clientState: ClientStateForWebview,
+    exportedFeatureFlags: Record<string, boolean> | undefined
 ): Wrapper[] {
     return [
         {
@@ -355,5 +366,9 @@ export function getAppWrappers(
             provider: ClientStateContextProvider,
             value: clientState,
         } satisfies Wrapper<ComponentProps<typeof ClientStateContextProvider>['value']>,
+        {
+            component: FeatureFlagsProvider,
+            props: { value: exportedFeatureFlags },
+        } satisfies Wrapper<any, ComponentProps<typeof FeatureFlagsProvider>>,
     ]
 }

@@ -64,6 +64,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
     const [chatModels, setChatModels] = useState<Model[]>()
     const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
+    const [exportedFeatureFlags, setExportedFeatureFlags] = useState<Record<string, boolean>>()
 
     useLayoutEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -102,6 +103,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                     dispatchClientAction(message)
                     break
                 case 'setConfigFeatures':
+                    setExportedFeatureFlags(message.exportedFeatureFlags)
                     setServerSentModelsEnabled(!!message.configFeatures.serverSentModels)
                     break
             }
@@ -188,8 +190,15 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     const envVars = useMemo(() => ({ clientType: CodyIDE.Web }), [])
 
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers(vscodeAPI, telemetryRecorder, chatModelContext, clientState),
-        [vscodeAPI, telemetryRecorder, chatModelContext, clientState]
+        () =>
+            getAppWrappers(
+                vscodeAPI,
+                telemetryRecorder,
+                chatModelContext,
+                clientState,
+                exportedFeatureFlags
+            ),
+        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, exportedFeatureFlags]
     )
 
     return (
