@@ -13,24 +13,26 @@ import type { ChatContextClient } from './chatContextClient'
  * @internal
  */
 export const dummyChatContextClient: ChatContextClient = {
-    async getChatContextItems(query) {
+    async getChatContextItems({ query }) {
         await new Promise<void>(resolve => setTimeout(resolve, 250))
 
         const queryTextLower = query.text.toLowerCase()
-        return query.provider === SYMBOL_CONTEXT_MENTION_PROVIDER.id
-            ? DUMMY_SYMBOLS.filter(
-                  f =>
-                      f.symbolName.toLowerCase().includes(queryTextLower) ||
-                      f.uri.path.includes(queryTextLower)
-              )
-            : query.provider === null || query.provider === FILE_CONTEXT_MENTION_PROVIDER.id
-              ? DUMMY_FILES.filter(f => f.uri.path.includes(queryTextLower))
-              : [
-                    {
-                        type: 'file',
-                        uri: URI.file(`sample-${query.provider}-result`),
-                    } satisfies ContextItem,
-                ].filter(f => f.uri.path.includes(queryTextLower))
+        const results =
+            query.provider === SYMBOL_CONTEXT_MENTION_PROVIDER.id
+                ? DUMMY_SYMBOLS.filter(
+                      f =>
+                          f.symbolName.toLowerCase().includes(queryTextLower) ||
+                          f.uri.path.includes(queryTextLower)
+                  )
+                : query.provider === null || query.provider === FILE_CONTEXT_MENTION_PROVIDER.id
+                  ? DUMMY_FILES.filter(f => f.uri.path.includes(queryTextLower))
+                  : [
+                        {
+                            type: 'file',
+                            uri: URI.file(`sample-${query.provider}-result`),
+                        } satisfies ContextItem,
+                    ].filter(f => f.uri.path.includes(queryTextLower))
+        return { userContextFiles: results }
     },
 }
 

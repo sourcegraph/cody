@@ -8,10 +8,12 @@ import './index.css'
 import { AppWrapper } from './AppWrapper'
 import { getVSCodeAPI } from './utils/VSCodeApi'
 
+const vscodeAPI = getVSCodeAPI()
+
 ReactDOM.createRoot(document.querySelector('#root') as HTMLElement).render(
     <React.StrictMode>
-        <AppWrapper>
-            <App vscodeAPI={getVSCodeAPI()} />
+        <AppWrapper vscodeAPI={vscodeAPI}>
+            <App vscodeAPI={vscodeAPI} />
         </AppWrapper>
     </React.StrictMode>
 )

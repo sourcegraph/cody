@@ -297,7 +297,7 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
     )
 
     return (
-        <AppWrapper>
+        <AppWrapper vscodeAPI={vscodeAPI}>
             <CodyWebChatContext.Provider
                 value={{
                     client,
