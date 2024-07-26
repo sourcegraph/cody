@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import dedent from 'dedent'
-import { CODY_VSCODE_ROOT_DIR } from './helpers'
+import { CODY_VSCODE_ROOT_DIR } from '../helpers'
 
 const existingRegex = /^([^=]+)=(.*)$/m
 export const CREDENTIALS_ENVFILE_PATH = path.join(CODY_VSCODE_ROOT_DIR, '.credentials.env')
@@ -64,13 +64,15 @@ export function updateEnvFile(): boolean {
     const values = withMissingValues(existingValues)
 
     let hasChanges = false
-    for (const [name, value] of values) {
-        if (existingValues.get(name) !== value) {
+    for (const name of Array.from(values.keys())) {
+        if (existingValues.get(name) !== values.get(name)) {
+            console.log(`Updating ${name}`, values.get(name), existingValues.get(name))
             hasChanges = true
         }
     }
+
     if (!hasChanges) {
-        false
+        return false
     }
 
     const content = dedent(`
