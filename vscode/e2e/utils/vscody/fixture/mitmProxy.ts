@@ -1,14 +1,13 @@
-// TODO/WARNING/APOLOGY: I know that this is an unreasonably large file right
-// now. I'll refactor and cut it down this down once everything is working
-// first.
 import { test as _test } from '@playwright/test'
-import express from 'express'
+import express, { type RequestHandler } from 'express'
 import { createProxyMiddleware, proxyEventsPlugin } from 'http-proxy-middleware'
 import type { OnProxyEvent } from 'http-proxy-middleware/dist/types'
 import 'node:http'
-import type { Server as HTTPServer } from 'node:http'
+import type { Server as HTTPServer, IncomingMessage, ServerResponse } from 'node:http'
 import 'node:https'
 import { EventEmitter } from 'node:stream'
+import { setTimeout as setPromiseTimeout } from 'node:timers/promises'
+import onHeaders from 'on-headers'
 import type { TestContext, WorkerContext } from '.'
 import type {
     DOTCOM_TESTING_CREDENTIALS,
@@ -24,7 +23,13 @@ import {
 } from '../constants'
 import { getFirstOrValue, rangeOffset } from './util'
 
-type ProxyReqHandler = (...args: Parameters<Exclude<OnProxyEvent['proxyReq'], undefined>>) => boolean
+/**
+ * So many UI interactions require some minimal delay in request responses that
+ * by ensuring a consistent floor we can reduce flake between local/CI and
+ * polly vs. real requests. At the same time it won't really slow most tests down to have
+ * a floor either as requests often run in the background.
+ */
+const DEFAULT_FLOOR_RESPONSE_TIME = 10 //ms
 
 export interface MitMProxy {
     sourcegraph: {
@@ -39,7 +44,12 @@ export interface MitMProxy {
             authName: keyof typeof ENTERPRISE_TESTING_CREDENTIALS
         }
     }
+    options: {
+        responseDelay?: ResponseDelayFn
+    }
 }
+
+type ProxyReqHandler = (...args: Parameters<Exclude<OnProxyEvent['proxyReq'], undefined>>) => boolean
 
 export const mitmProxyFixture = _test.extend<TestContext, WorkerContext>({
     mitmProxy: [
@@ -56,7 +66,8 @@ export const mitmProxyFixture = _test.extend<TestContext, WorkerContext>({
                 validWorkerOptions.mitmServerPortRange
             )
             const [sgDotComPort, sgEnterprisePort] = allocatedPorts
-            //TODO: we can provide additional endpoints here
+
+            //TODO: cleanup as class
             const state: {
                 authName: {
                     enterprise: MitMProxy['sourcegraph']['enterprise']['authName']
@@ -90,6 +101,9 @@ export const mitmProxyFixture = _test.extend<TestContext, WorkerContext>({
                             return TESTING_CREDENTIALS[state.authName.enterprise].serverEndpoint
                         },
                     },
+                },
+                options: {
+                    responseDelay: floorResponseDelayFn(DEFAULT_FLOOR_RESPONSE_TIME),
                 },
             }
 
@@ -155,7 +169,8 @@ export const mitmProxyFixture = _test.extend<TestContext, WorkerContext>({
                     },
                 },
             })
-            app.use(proxyMiddleware)
+
+            app.use(delayMiddleware(config), proxyMiddleware)
             const servers: HTTPServer<any, any>[] = []
             const serverPromises = []
             for (const port of allocatedPorts) {
@@ -191,6 +206,87 @@ export const mitmProxyFixture = _test.extend<TestContext, WorkerContext>({
         { scope: 'test' },
     ],
 })
+
+/**
+ * This delay middleware applies a configurable delay to proxied requests. It
+ * handles both server sent events and normal requests. TODO: Once we refactor
+ * this as a class this could simply be a method
+ */
+function delayMiddleware(proxy: MitMProxy): RequestHandler {
+    return (req, res, next) => {
+        // we save the delayFn here so that we use the one that was set at the
+        // time the request was made
+
+        const delayFn = proxy.options.responseDelay
+        if (!delayFn) {
+            // if there's no response delay configured we have nothing to do
+            next()
+            return
+        }
+
+        // We keep track of the headers that might indicate if this is a
+        // streaming response or not as we need to handle them slightly
+        // differently.
+        let isStreaming = false
+
+        // Use onHeaders to check final headers just before they're sent
+        onHeaders(res, function () {
+            isStreaming =
+                this.getHeader('content-type') === 'text/event-stream' ||
+                this.getHeader('transfer-encoding') === 'chunked'
+        })
+
+        const originalSetHeader = res.setHeader
+        //@ts-ignore
+        res.setHeader = (...args) => {
+            const [key, value] = args
+            if (key.toLowerCase() === 'content-type' && value === 'text/event-stream') {
+                isStreaming = true
+            }
+            if (key.toLowerCase() === 'transfer-encoding' && value === 'chunked') {
+                isStreaming = true
+            }
+            originalSetHeader.apply(res, args as any)
+        }
+
+        // Here we apply the delayFn. For streaming we delay the writes (as the
+        // "effects" happen for each write, not as the request ends). For normal
+        // requests we simply delay the end. Additionally we need to ensure that
+        // there's no delayed pending writes when we call end.
+
+        // we stack pending writes so that the final promise can be awaited in the end-handler
+        let pendingWrites = Promise.resolve()
+        let startTime = Date.now()
+        const originalWrite = res.write
+        //@ts-ignore
+        res.write = (...args) => {
+            if (!isStreaming) {
+                originalWrite.apply(res, args as any)
+                return
+            }
+
+            pendingWrites = pendingWrites.then(async () => {
+                const now = Date.now()
+                await delayFn(now - startTime, req, res)
+                startTime = now // we update the start time so that we consistently apply delays for every partial response
+                originalWrite.apply(res, args as any)
+            })
+        }
+
+        const originalEnd = res.end
+        //@ts-ignore
+        res.end = (...args) => {
+            void pendingWrites.then(async () => {
+                if (!isStreaming) {
+                    await delayFn(Date.now() - startTime, req, res)
+                }
+                originalEnd.apply(res, args as any)
+            })
+        }
+
+        next()
+    }
+}
 
 function sourcegraphProxyReqHandler(
     variant: 'enterprise' | 'dotcom',
@@ -229,3 +325,20 @@ function sourcegraphProxyReqHandler(
         return false
     }
 }
+
+/**
+ * Any function that resolves once the delay is over. Compatible with @pollyjs/core Timing
+ */
+export type ResponseDelayFn = (
+    currentResponseTime: number,
+    req: IncomingMessage,
+    res: ServerResponse<IncomingMessage>
+) => Promise<void>
+
+export const floorResponseDelayFn =
+    (floor: number) => async (currentResponseTime: number, req: IncomingMessage) => {
+        if (currentResponseTime < floor) {
+            await setPromiseTimeout(floor - currentResponseTime)
+        }
+    }
+// TODO: fuzzy/random responseDelayFn

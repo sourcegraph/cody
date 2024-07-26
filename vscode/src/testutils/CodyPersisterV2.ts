@@ -113,17 +113,13 @@ export class CodyPersister extends FSPersister {
             entry.response.cookies.length = 0
             entry.response.content.text = postProcessResponseText(entry)
 
-            // And other misc fields.
-            entry.time = 0
-            entry.timings = {
-                blocked: -1,
-                connect: -1,
-                dns: -1,
-                receive: 0,
-                send: 0,
-                ssl: -1,
-                wait: 0,
-            }
+            // Compared to V1 we don't nullify time fields as instead they can be configured on
+            // playback with adjustable speed. This makes it much easier to play
+            // back a test at the original recorded speed.
+
+            // entry.time = 0
+            // entry.timings = {}
+
             const responseContent = entry.response.content
             if (
                 responseContent?.encoding === 'base64' &&
