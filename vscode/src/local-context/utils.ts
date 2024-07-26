@@ -54,6 +54,11 @@ export async function downloadFile(
     await new Promise((resolve, reject) => {
         stream.on('finish', resolve)
         stream.on('error', reject)
+        stream.on('close', () => {
+            if (!stream.writableFinished) {
+                reject(new Error('Stream closed before finishing'))
+            }
+        })
     })
 }
 
