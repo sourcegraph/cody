@@ -18,3 +18,17 @@ test.describe('UIX', () => {
         expect(await sidebar.activeView).toBe(uix.vscode.Sidebar.CODY_VIEW_ID)
     })
 })
+test.describe('Workspace', () => {
+    test.use({
+        templateWorkspaceDir: 'test/fixtures/workspace',
+    })
+
+    test('It can initialize a git repository', async ({ workspaceDir }) => {
+        await uix.workspace.gitInit(
+            {
+                origin: 'https://github.com/sourcegraph/cody',
+            },
+            { workspaceDir }
+        )
+    })
+})
