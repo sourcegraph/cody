@@ -15,7 +15,7 @@ describe('Unique Context Items', () => {
         content: 'foobar',
     }
 
-    const baseAnnotation: ContextItemOpenCtx = {
+    const baseAnnotation: ContextItemOpenCtx<'annotation'> = {
         type: 'openctx',
         kind: 'annotation',
         provider: 'openctx',

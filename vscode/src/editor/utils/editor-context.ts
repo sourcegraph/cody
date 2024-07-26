@@ -466,7 +466,7 @@ async function resolveFileOrSymbolContextItem(
         return items
     }
 
-    const annotations: (ContextItemOpenCtx & { content: string })[] = []
+    const annotations: (ContextItemOpenCtx<'annotation'> & { content: string })[] = []
     let openCtxAnnotations: Awaited<ReturnType<OpenCtxClient['annotations']>> = []
 
     try {

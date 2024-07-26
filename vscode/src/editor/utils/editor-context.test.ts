@@ -203,7 +203,7 @@ describe('resolveContextItems', () => {
         }
     })
 
-    function isAnnotationItem(item: ContextItem): item is ContextItemOpenCtx {
+    function isAnnotationItem(item: ContextItem): item is ContextItemOpenCtx<'annotation'> {
         return item.type === 'openctx' && item.kind === 'annotation'
     }
 
@@ -284,13 +284,13 @@ describe('resolveContextItems', () => {
         )
 
         // Assert
-        const annotations: ContextItemOpenCtx[] = contextItems
+        const annotations: ContextItemOpenCtx<'annotation'>[] = contextItems
             .filter(isAnnotationItem)
             // TS doesn't yet narrow this down even with a type guard:
             // https://stackoverflow.com/a/70763406/14726116
-            .map(x => x as ContextItemOpenCtx)
+            .map(x => x as ContextItemOpenCtx<'annotation'>)
 
-        expect(annotations).toEqual<ContextItemOpenCtx[]>([
+        expect(annotations).toEqual<ContextItemOpenCtx<'annotation'>[]>([
             {
                 type: 'openctx',
                 kind: 'annotation',
@@ -359,9 +359,9 @@ describe('resolveContextItems', () => {
             ps``
         )
 
-        const annotations: ContextItemOpenCtx[] = contextItems
+        const annotations: ContextItemOpenCtx<'annotation'>[] = contextItems
             .filter(isAnnotationItem)
-            .map(x => x as ContextItemOpenCtx)
+            .map(x => x as ContextItemOpenCtx<'annotation'>)
 
         // Assert
         expect(annotations).toHaveLength(1)
