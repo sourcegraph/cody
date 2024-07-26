@@ -636,6 +636,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
     }
 
+    private async handleMultiStepSubmission(inputText: PromptString): Promise<void> {
+        // Plan:
+        // - Restate
+        // - Gather context
+        // - Write plan
+
+        console.log('# HERE')
+    }
+
     /**
      * Handles user input text for both new and edit submissions
      */
@@ -688,7 +697,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 abortSignal.throwIfAborted()
 
                 this.postEmptyMessageInProgress()
+
                 this.contextAPIClient?.detectChatIntent(requestID, inputText.toString())
+
+                if (inputText.includes('$plan')) {
+                    await this.handleMultiStepSubmission(inputText)
+                    return
+                }
+
+                // console.log('# intent', intent)
 
                 // Add user's current selection as context for chat messages.
                 const selectionContext = source === 'chat' ? await getContextFileFromSelection() : []
