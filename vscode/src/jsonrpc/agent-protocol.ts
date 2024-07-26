@@ -111,7 +111,11 @@ export type ClientRequests = {
     'editCommands/document': [null, EditTask]
 
     // If the task is "applied", discards the task.
-    'editTask/accept': [{ id: FixupTaskID }, null]
+    'editTask/acceptAll': [{ id: FixupTaskID }, null]
+    // If the task is "applied", discards task for specific block
+    'editTask/accept': [{ id: FixupTaskID, range: Range }, null]
+    // If the task is "applied", discards task for specific block
+    'editTask/reject': [{ id: FixupTaskID, range: Range }, null]
     // If the task is "applied", attempts to revert the task's edit, then
     // discards the task.
     'editTask/undo': [{ id: FixupTaskID }, null]
@@ -416,6 +420,18 @@ export type ServerNotifications = {
     // complete, or errored, the results from remoteRepo/list will not change.
     // When configuration changes, repo fetching may re-start.
     'remoteRepo/didChangeState': [RemoteRepoFetchState]
+}
+
+// Define generic Position type
+export interface Position {
+    line: number
+    character: number
+}
+
+// Define generic Range type
+export interface Range {
+    start: Position
+    end: Position
 }
 
 interface CancelParams {

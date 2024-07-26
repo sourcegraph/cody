@@ -50,6 +50,10 @@ interface CodyAgentServer {
   fun editCommands_document(params: Null?): CompletableFuture<EditTask>
   @JsonRequest("editTask/accept")
   fun editTask_accept(params: EditTask_AcceptParams): CompletableFuture<Null?>
+  @JsonRequest("editTask/acceptAll")
+  fun editTask_acceptAll(params: EditTask_AcceptAllParams): CompletableFuture<Null?>
+  @JsonRequest("editTask/reject")
+  fun editTask_reject(params: EditTask_rejectParams): CompletableFuture<Null?>
   @JsonRequest("editTask/undo")
   fun editTask_undo(params: EditTask_UndoParams): CompletableFuture<Null?>
   @JsonRequest("editTask/cancel")

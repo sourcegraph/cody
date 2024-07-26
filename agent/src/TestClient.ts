@@ -481,7 +481,7 @@ export class TestClient extends MessageHandler {
             )
         }
 
-        await this.request('editTask/accept', { id: task.id })
+        await this.request('editTask/acceptAll', { id: task.id })
         return this.workspace.getDocument(uri)?.content ?? ''
     }
 
@@ -503,7 +503,7 @@ export class TestClient extends MessageHandler {
             )
         }
 
-        await this.request('editTask/accept', { id: task.id })
+        await this.request('editTask/acceptAll', { id: task.id })
         return this.getTestEdit()
     }
 
@@ -725,7 +725,7 @@ export class TestClient extends MessageHandler {
         if (lenses.length !== 0) {
             throw new Error(`Expected no code lenses for ${uri}, but found ${lenses.length}`)
         }
-        await this.request('editTask/accept', { id: task.id })
+        await this.request('editTask/acceptAll', { id: task.id })
     }
 
     public documentText(uri: vscode.Uri): string {

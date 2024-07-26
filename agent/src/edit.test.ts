@@ -6,6 +6,8 @@ import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 import { explainPollyError } from './explainPollyError'
 import { trimEndOfLine } from './trimEndOfLine'
+import * as vscode from 'vscode'
+
 
 describe('Edit', () => {
     const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'edit-code'))
@@ -27,7 +29,7 @@ describe('Edit', () => {
         await client.afterAll()
     })
 
-    it('editCommands/code (basic function)', async () => {
+    it('editCommands/code (basic function) - AcceptAll', async () => {
         const uri = workspace.file('src', 'sum.ts')
         await client.openFile(uri, { removeCursor: false })
         const task = await client.request('editCommands/code', {
@@ -36,11 +38,67 @@ describe('Edit', () => {
         await client.taskHasReachedAppliedPhase(task)
         const lenses = client.codeLenses.get(uri.toString()) ?? []
         expect(lenses).toHaveLength(0)
-        await client.request('editTask/accept', { id: task.id })
+        await client.request('editTask/acceptAll', {id: task.id})
         const newContent = client.workspace.getDocument(uri)?.content
         expect(trimEndOfLine(newContent)).toMatchInlineSnapshot(
             `
                     "export function sum(c: number, b: number): number {
+                        /* CURSOR */
+                    }
+                    "
+                    `,
+            explainPollyError
+        )
+    })
+
+    it('editCommands/code (basic function) - Accept', async () => {
+        const uri = workspace.file('src', 'sum.ts')
+        await client.openFile(uri, { removeCursor: false })
+        const task = await client.request('editCommands/code', {
+            instruction: 'Rename `a` parameter to `c`',
+        })
+        await client.taskHasReachedAppliedPhase(task)
+        const lenses = client.codeLenses.get(uri.toString()) ?? []
+        expect(lenses).toHaveLength(0)
+        await client.request('editTask/accept', {
+            id: task.id,
+            range: new vscode.Range(
+                new vscode.Position(0, 0),
+                new vscode.Position(1, 0)
+            )
+        })
+        const newContent = client.workspace.getDocument(uri)?.content
+        expect(trimEndOfLine(newContent)).toMatchInlineSnapshot(
+            `
+                    "export function sum(c: number, b: number): number {
+                        /* CURSOR */
+                    }
+                    "
+                    `,
+            explainPollyError
+        )
+    })
+
+    it('editCommands/code (basic function) - Reject', async () => {
+        const uri = workspace.file('src', 'sum.ts')
+        await client.openFile(uri, { removeCursor: false })
+        const task = await client.request('editCommands/code', {
+            instruction: 'Rename `a` parameter to `c`',
+        })
+        await client.taskHasReachedAppliedPhase(task)
+        const lenses = client.codeLenses.get(uri.toString()) ?? []
+        expect(lenses).toHaveLength(0)
+        await client.request('editTask/reject', {
+            id: task.id,
+            range: new vscode.Range(
+                new vscode.Position(0, 0),
+                new vscode.Position(1, 0)
+            )
+        })
+        const newContent = client.workspace.getDocument(uri)?.content
+        expect(trimEndOfLine(newContent)).toMatchInlineSnapshot(
+            `
+                    "export function sum(a: number, b: number): number {
                         /* CURSOR */
                     }
                     "

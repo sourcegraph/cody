@@ -982,8 +982,27 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
-        this.registerAuthenticatedRequest('editTask/accept', async ({ id }) => {
-            this.fixups?.accept(id)
+        this.registerAuthenticatedRequest('editTask/accept', async (params: any) => {
+            const { id, range } = params
+            if (!id || !range) {
+                throw new Error('editTask/accept: missing required parameters')
+            }
+            this.fixups?.accept(id, range)           
+            return null
+        })
+
+        this.registerAuthenticatedRequest('editTask/acceptAll', async ({ id }) => {
+            this.fixups?.acceptAll(id)
+            return null
+        })
+
+
+        this.registerAuthenticatedRequest('editTask/reject', async (params: any) => {
+            const { id, range } = params
+            if (!id || !range) {
+                throw new Error('editTask/reject: missing required parameters')
+            }
+            this.fixups?.reject(id, range)
             return null
         })
 
