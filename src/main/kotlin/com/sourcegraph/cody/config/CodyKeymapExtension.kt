@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.config
 
 import com.intellij.openapi.actionSystem.ActionGroup
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.keymap.KeymapExtension
 import com.intellij.openapi.keymap.KeymapGroup
@@ -17,7 +18,7 @@ class CodyKeymapExtension : KeymapExtension {
     val actions = ActionsTreeUtil.getActions("Cody.AllActions").toList()
     actions.filterIsInstance<ActionGroup>().forEach { actionGroup ->
       val keymapGroup = KeymapGroupFactory.getInstance().createGroup(actionGroup.templateText)
-      actionGroup.getChildren(null).forEach {
+      ActionsTreeUtil.getActions(ActionManager.getInstance().getId(actionGroup)).forEach {
         ActionsTreeUtil.addAction(keymapGroup, it, filtered, true)
       }
       result.addGroup(keymapGroup)
