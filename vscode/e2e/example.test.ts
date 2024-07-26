@@ -27,7 +27,7 @@ test.describe('Demonstrations', () => {
             { workspaceDir }
         )
         await uix.vscode.startSession({ page, vscodeUI, executeCommand, workspaceDir })
-        await uix.cody.waitForStartup()
+        await uix.cody.waitForStartup({ page })
 
         await executeCommand('workbench.action.closeAllEditors')
         await executeCommand('workbench.action.showRuntimeExtensions')
