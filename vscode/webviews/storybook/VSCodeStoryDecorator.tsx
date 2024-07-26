@@ -13,8 +13,6 @@ import '../../node_modules/@vscode/codicons/dist/codicon.css'
 import { TestAppWrapper } from '../AppWrapper'
 import { type ChatModelContext, ChatModelContextProvider } from '../chat/models/chatModelContext'
 import { WithContextProviders } from '../mentions/providers'
-import { ChatContextClientProviderForTestsOnly } from '../promptEditor/plugins/atMentions/chatContextClient'
-import { dummyChatContextClient } from '../promptEditor/plugins/atMentions/fixtures'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from '../utils/telemetry'
 import styles from './VSCodeStoryDecorator.module.css'
 
@@ -87,13 +85,11 @@ export function VSCodeDecorator(className: string | undefined, style?: CSSProper
         return (
             <div className={clsx(styles.container, className)} style={style}>
                 <TestAppWrapper>
-                    <ChatContextClientProviderForTestsOnly value={dummyChatContextClient}>
-                        <ChatModelContextProvider value={useDummyChatModelContext()}>
-                            <TelemetryRecorderContext.Provider value={telemetryRecorder}>
-                                {story()}
-                            </TelemetryRecorderContext.Provider>
-                        </ChatModelContextProvider>
-                    </ChatContextClientProviderForTestsOnly>
+                    <ChatModelContextProvider value={useDummyChatModelContext()}>
+                        <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                            {story()}
+                        </TelemetryRecorderContext.Provider>
+                    </ChatModelContextProvider>
                 </TestAppWrapper>
             </div>
         )
