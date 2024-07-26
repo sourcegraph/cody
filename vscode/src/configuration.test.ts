@@ -102,6 +102,8 @@ describe('getConfiguration', () => {
                         return 1500
                     case 'cody.autocomplete.experimental.hotStreakAndSmartThrottle':
                         return false
+                    case 'cody.experimental.guardrailsTimeoutSeconds':
+                        return undefined
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -154,6 +156,7 @@ describe('getConfiguration', () => {
             autocompleteExperimentalHotStreakAndSmartThrottle: false,
             testingModelConfig: undefined,
             experimentalChatContextRanker: false,
+            experimentalGuardrailsTimeoutSeconds: undefined,
         } satisfies Configuration)
     })
 })
