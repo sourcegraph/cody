@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import URL from 'node:url'
 import { test as t } from '@playwright/test'
 import type { UIXContextFnContext } from '.'
 
@@ -44,18 +45,19 @@ export class Sidebar {
 export async function startSession({
     page,
     vscodeUI,
-    executeCommand,
     workspaceDir,
 }: Pick<UIXContextFnContext, 'page' | 'vscodeUI' | 'executeCommand' | 'workspaceDir'>) {
     // If we have a debugger then we show some user instructions
     const { extensionHostDebugPort } = vscodeUI
+
+    const interceptRouteURL = `${URL.resolve(vscodeUI.url, '/**')}`
     if (extensionHostDebugPort) {
         await t.step('Show Debug Instructions', async () => {
             // load a landing page before the session is initialized
             const placeholderDir = path.join(__dirname, '../resources/vscode-placeholder')
-            await page.route('http://vscode-pending.local/**', async (route, request) => {
+            await page.route(interceptRouteURL, async (route, request) => {
                 // serve local modified HTML or any of the resources requested
-                if (request.url() === 'http://vscode-pending.local/') {
+                if (request.url() === URL.resolve(vscodeUI.url, '/')) {
                     route.fulfill({
                         body: (
                             await fs.readFile(path.join(placeholderDir, 'index.html'), 'utf-8')
@@ -66,32 +68,26 @@ export async function startSession({
                         status: 200,
                     })
                 } else {
-                    const pathParts = request
-                        .url()
-                        .replace('http://vscode-pending.local/', '')
-                        .split('/')
+                    const pathParts = request.url().replace(vscodeUI.url, '').split('/')
                     route.fulfill({
                         path: path.join(placeholderDir, ...pathParts),
                     })
                 }
             })
-            await page.goto('http://vscode-pending.local/')
+            await page.goto(vscodeUI.url)
         })
     }
     return t.step('Start VSCode Session', async () => {
-        // we dummy route here so that we can modify the state etc. Which would
-        // otherwise be protected by the browser to match the domain
-        await page.route(
-            vscodeUI.url,
-            route => {
+        if (page.url() !== vscodeUI.url) {
+            await page.route(interceptRouteURL, route => {
                 route.fulfill({
                     status: 200,
                     body: '',
                 })
-            },
-            { times: 1 }
-        )
-        await page.goto(vscodeUI.url)
+            })
+            await page.goto(vscodeUI.url)
+        }
+
         // User settings are stored in IndexDB though so we need to get a bit
         // clever. Normal "user settings" are better stored in Machine settings
         // so that they can be easily edited as a normal file. Machine settings
@@ -158,6 +154,9 @@ export async function startSession({
         if (!userSettingsOk) {
             throw new Error('Failed to initialize VSCode User Settings')
         }
+
+        // we remove any mock handlers so that we can load the real deal
+        page.unroute(interceptRouteURL)
 
         // We also make sure that on page loads we expose the VSCodeAPI
         await page.addInitScript(async () => {
