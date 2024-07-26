@@ -7,8 +7,7 @@ import { type DotcomUrlOverride, test as baseTest } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
-// TODO: Currently TIMEOUT - to be fixed by @keegancsmith in pull/4964
-test.skip('attribution search enabled in chat', async ({ page, sidebar }) => {
+test('attribution search enabled in chat', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/attribution/enable`, { method: 'POST' })
     await sidebarSignin(page, sidebar)
     const chatFrame = getChatSidebarPanel(page)

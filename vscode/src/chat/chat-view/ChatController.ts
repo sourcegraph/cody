@@ -567,6 +567,21 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         // Get the latest model list available to the current user to update the ChatModel.
         this.handleSetChatModel(getDefaultModelID())
+
+        // Get the latest feature config and send to webview.
+        ClientConfigSingleton.getInstance()
+            .getConfig()
+            .then(
+                async clientConfig =>
+                    await this.postMessage({
+                        type: 'setConfigFeatures',
+                        configFeatures: {
+                            chat: !!clientConfig?.chatEnabled,
+                            attribution: !!clientConfig?.attributionEnabled,
+                            serverSentModels: !!clientConfig?.modelsAPIEnabled,
+                        },
+                    })
+            )
     }
 
     // When the webview sends the 'ready' message, respond by posting the view config
