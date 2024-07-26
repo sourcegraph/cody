@@ -76,7 +76,7 @@ export enum ContextItemSource {
     /** From embeddings search */
     Embeddings = 'embeddings',
 
-    /** Explicitly @-mentioned by the user in chat */
+    /** Explicitly `@`-mentioned by the user in chat */
     User = 'user',
 
     /** From the current editor state and open tabs/documents */

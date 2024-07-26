@@ -22,7 +22,7 @@ export const ENHANCED_CONTEXT_ALLOCATION = 0.6
 /**
  * NOTE: Reserved for models with large context windows and good recall.
  *
- * The total context window reserved for user added context (@-mention, right-click, etc.)
+ * The total context window reserved for user added context (`@`-mention, right-click, etc.)
  */
 export const EXTENDED_USER_CONTEXT_TOKEN_BUDGET = 30000
 

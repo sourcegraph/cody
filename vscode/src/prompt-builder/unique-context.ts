@@ -111,7 +111,7 @@ function rangesOnSameLines(range1: RangeData, range2: RangeData): boolean {
 
 /**
  * If the context item is a user-added item:
- * - `user` - The item was added by the user through `@-mentions` or other user input.
+ * - `user` - The item was added by the user through `@`-mentions or other user input.
  * - `selection` - The item was added by the user through a selection.
  */
 function isUserAddedItem(item: ContextItem): boolean {

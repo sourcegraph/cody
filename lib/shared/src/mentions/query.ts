@@ -7,7 +7,7 @@ import {
 } from './api'
 
 /**
- * The parsed representation of a user's (partial or complete) input of an @-mention query.
+ * The parsed representation of a user's (partial or complete) input of an `@`-mention query.
  */
 export interface MentionQuery {
     /**
@@ -41,9 +41,9 @@ export interface MentionQuery {
 }
 
 /**
- * Parse an @-mention query. The {@link query} value is whatever the UI determines is the query
+ * Parse an `@`-mention query. The {@link query} value is whatever the UI determines is the query
  * based on the current text input; it is not the full value of a message that may or may not
- * contain an @-mention.
+ * contain an `@`-mention.
  *
  * The {@link query} MUST be stripped of the trigger character (usually `@`). The only valid case
  * where {@link query} may begin with `@` is if the user is searching for context items that contain

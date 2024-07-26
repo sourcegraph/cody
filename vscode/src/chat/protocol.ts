@@ -189,7 +189,7 @@ export type ExtensionMessage =
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     | { type: 'commands'; commands: CodyCommand[] }
     /**
-     * Context files returned from a @-mention search
+     * Context files returned from a `@`-mention search
      */
     | {
           type: 'userContextFiles'
