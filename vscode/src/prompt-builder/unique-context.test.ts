@@ -1,4 +1,9 @@
-import { type ContextItem, ContextItemSource, type RangeData } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    type ContextItemOpenCtx,
+    ContextItemSource,
+    type RangeData,
+} from '@sourcegraph/cody-shared'
 import { describe, expect, it } from 'vitest'
 import { URI } from 'vscode-uri'
 import { getUniqueContextItems, isUniqueContextItem } from './unique-context'
@@ -8,6 +13,16 @@ describe('Unique Context Items', () => {
         type: 'file',
         uri: URI.file('/foo/bar.js'),
         content: 'foobar',
+    }
+
+    const baseAnnotation: ContextItemOpenCtx = {
+        type: 'openctx',
+        kind: 'annotation',
+        provider: 'openctx',
+        providerUri: 'http://base-provider.com',
+        uri: baseFile.uri,
+        title: 'TITLE',
+        content: 'CONTENT',
     }
 
     describe('getUniqueContextItems', () => {
@@ -305,13 +320,33 @@ describe('Unique Context Items', () => {
             expect(getUniqueContextItems([inner, noRange])).toStrictEqual([noRange])
             expect(getUniqueContextItems([inner, noRange, inner, inner])).toStrictEqual([noRange])
         })
+
+        it('should allow annotations to overlap with non-annotation items', () => {
+            const file: ContextItem = {
+                ...baseFile,
+                range: {
+                    start: { line: 0, character: 0 },
+                    end: { line: 12, character: 0 },
+                },
+            }
+
+            const annotation: ContextItem = {
+                ...baseAnnotation,
+                range: {
+                    start: { line: 3, character: 0 },
+                    end: { line: 3, character: 15 },
+                },
+            }
+
+            expect(getUniqueContextItems([file, annotation])).toStrictEqual([file, annotation])
+        })
     })
 
     describe('isUniqueContextItem', () => {
         const contentLines = [...Array(20).keys()].map(i => `line ${i + 1}`)
 
-        /** returns the file with content respecting range */
-        const baseFile = (range?: RangeData): ContextItem => {
+        /** Returns the file with content respecting range. */
+        const baseFileFn = (range?: RangeData): ContextItem => {
             let content = contentLines.join('\n')
             if (range) {
                 // sliceing below depends on character being 0
@@ -321,15 +356,14 @@ describe('Unique Context Items', () => {
                 content = contentLines.slice(range.start.line, range.end.line).join('\n')
             }
             return {
-                type: 'file',
-                uri: URI.file('/foo/bar'),
+                ...baseFile,
                 content,
                 range,
             }
         }
 
         it('returns false when the new item is a duplicate with the same display path and range', () => {
-            const item = baseFile({
+            const item = baseFileFn({
                 start: { line: 0, character: 0 },
                 end: { line: 5, character: 0 },
             })
@@ -338,11 +372,11 @@ describe('Unique Context Items', () => {
         })
 
         it('returns true when the new item has a different range (unique)', () => {
-            const item1: ContextItem = baseFile({
+            const item1: ContextItem = baseFileFn({
                 start: { line: 0, character: 0 },
                 end: { line: 10, character: 0 },
             })
-            const item2: ContextItem = baseFile({
+            const item2: ContextItem = baseFileFn({
                 start: { line: 11, character: 0 },
                 end: { line: 20, character: 0 },
             })
@@ -351,11 +385,11 @@ describe('Unique Context Items', () => {
         })
 
         it('returns true when the new item has no range and not duplicate', () => {
-            const item1: ContextItem = baseFile({
+            const item1: ContextItem = baseFileFn({
                 start: { line: 0, character: 0 },
                 end: { line: 10, character: 0 },
             })
-            const item2: ContextItem = baseFile(undefined)
+            const item2: ContextItem = baseFileFn(undefined)
 
             expect(isUniqueContextItem(item2, [item1])).toBeTruthy()
 
@@ -366,21 +400,21 @@ describe('Unique Context Items', () => {
         })
 
         it('returns false when the new item has no range and an earlier item has whole file range', () => {
-            const item1: ContextItem = baseFile({
+            const item1: ContextItem = baseFileFn({
                 start: { line: 0, character: 0 },
                 end: { line: contentLines.length, character: 0 },
             })
-            const item2: ContextItem = baseFile(undefined)
+            const item2: ContextItem = baseFileFn(undefined)
 
             expect(isUniqueContextItem(item2, [item1])).toBeFalsy()
         })
 
         it('returns false when the new item is a duplicate with a larger range', () => {
-            const inner: ContextItem = baseFile({
+            const inner: ContextItem = baseFileFn({
                 start: { line: 0, character: 0 },
                 end: { line: 5, character: 0 },
             })
-            const outter: ContextItem = baseFile({
+            const outter: ContextItem = baseFileFn({
                 start: { line: 0, character: 0 },
                 end: { line: 10, character: 0 },
             })
@@ -389,11 +423,11 @@ describe('Unique Context Items', () => {
         })
 
         it('returns false when the new item is a duplicate with a smaller range', () => {
-            const outter: ContextItem = baseFile({
+            const outter: ContextItem = baseFileFn({
                 start: { line: 0, character: 0 },
                 end: { line: 10, character: 0 },
             })
-            const inner: ContextItem = baseFile({
+            const inner: ContextItem = baseFileFn({
                 start: { line: 2, character: 0 },
                 end: { line: 5, character: 0 },
             })
@@ -402,20 +436,81 @@ describe('Unique Context Items', () => {
         })
 
         it('returns false when the new item is a duplicate with a 2nd smaller range', () => {
-            const noOverlapFirst: ContextItem = baseFile({
+            const noOverlapFirst: ContextItem = baseFileFn({
                 start: { line: 11, character: 0 },
                 end: { line: 15, character: 0 },
             })
-            const outer: ContextItem = baseFile({
+            const outer: ContextItem = baseFileFn({
                 start: { line: 0, character: 0 },
                 end: { line: 10, character: 0 },
             })
-            const inner: ContextItem = baseFile({
+            const inner: ContextItem = baseFileFn({
                 start: { line: 2, character: 0 },
                 end: { line: 5, character: 0 },
             })
 
             expect(isUniqueContextItem(inner, [noOverlapFirst, outer])).toBeFalsy()
+        })
+
+        it('returns true when an annotation overlaps with another non-annotation item', () => {
+            const file: ContextItem = baseFileFn({
+                start: { line: 0, character: 0 },
+                end: { line: 12, character: 0 },
+            })
+
+            const annotation: ContextItem = {
+                ...baseAnnotation,
+                range: {
+                    start: { line: 3, character: 0 },
+                    end: { line: 3, character: 15 },
+                },
+            }
+
+            expect(isUniqueContextItem(annotation, [file])).toBeTruthy()
+        })
+
+        it('returns true when an annotation overlaps with an annotation from a different provider', () => {
+            const file: ContextItem = baseFileFn({
+                start: { line: 0, character: 0 },
+                end: { line: 12, character: 0 },
+            })
+
+            const annotation: ContextItem = {
+                ...baseAnnotation,
+                range: {
+                    start: { line: 3, character: 0 },
+                    end: { line: 3, character: 15 },
+                },
+            }
+
+            const annotationDifferent: ContextItem = {
+                ...annotation,
+                providerUri: 'http://different-provider.com',
+            }
+
+            expect(isUniqueContextItem(annotation, [file, annotationDifferent])).toBeTruthy()
+        })
+
+        it('returns false when an annotation overlaps with another annotation from the same provider', () => {
+            const file: ContextItem = baseFileFn({
+                start: { line: 0, character: 0 },
+                end: { line: 12, character: 0 },
+            })
+
+            const annotation: ContextItem = {
+                ...baseAnnotation,
+                range: {
+                    start: { line: 3, character: 0 },
+                    end: { line: 3, character: 15 },
+                },
+            }
+
+            const annotationSameProvider: ContextItem = {
+                ...annotation,
+                content: 'DIFFERENT CONTENT',
+            }
+
+            expect(isUniqueContextItem(annotation, [annotationSameProvider, file])).toBeFalsy()
         })
     })
 })

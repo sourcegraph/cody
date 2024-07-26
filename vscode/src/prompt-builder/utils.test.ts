@@ -4,12 +4,12 @@ import { URI } from 'vscode-uri'
 import { renderContextItem } from './utils'
 
 setDisplayPathEnvInfo({
-    workspaceFolders: [URI.parse('file:///')],
+    workspaceFolders: [URI.file('/')],
     isWindows: false,
 })
 
 describe('renderContextItem', () => {
-    const fileUri = URI.parse('file:///file.go')
+    const fileUri = URI.file('file.go')
     const providerUri = 'http://provider.com'
 
     test.each<{ item: ContextItem; name?: string; want: string | null }>([
