@@ -712,6 +712,9 @@ importers:
       '@types/npmcli__promise-spawn':
         specifier: ^6.0.3
         version: 6.0.3
+      '@types/on-headers':
+        specifier: ^1.0.3
+        version: 1.0.3
       '@types/pako':
         specifier: ^2.0.3
         version: 2.0.3
@@ -781,6 +784,9 @@ importers:
       node-fetch:
         specifier: ^2.6.4
         version: 2.7.0
+      on-headers:
+        specifier: ^1.0.2
+        version: 1.0.2
       ovsx:
         specifier: ^0.8.2
         version: 0.8.2
@@ -6583,6 +6589,12 @@ packages:
 
   /@types/npmcli__promise-spawn@6.0.3:
     resolution: {integrity: sha512-4EQlesp5HtYHPXMXd4uuI+Q9hELEU0eVg/HBRLkqGC5U2ohwXZduCottmzPpb4tWCB+w4kQ3XNPlHIdXvCTyFw==}
+    dependencies:
+      '@types/node': 20.12.7
+    dev: true
+
+  /@types/on-headers@1.0.3:
+    resolution: {integrity: sha512-jvGNvFo8uOL6fiBGvD4Ul4lT8mZoJ57l3h0ZN/a1oHziTTXUV3slaRcYm2K1wvvLX1fhIg9AvKykxKFt3mM+Xg==}
     dependencies:
       '@types/node': 20.12.7
     dev: true
