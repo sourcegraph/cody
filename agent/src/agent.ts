@@ -1005,6 +1005,15 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return null
         })
 
+        this.registerAuthenticatedRequest('editTask/getTaskDetails', async ({ id }) => {
+            const task = this.fixups?.getTask(id)
+            if (task) {
+                return AgentFixupControls.serialize(task)
+            }
+
+            return Promise.reject('No task with id' + id)
+        })
+
         this.registerAuthenticatedRequest('editTask/retry', params => {
             const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
             const models = getModelOptionItems(ModelsService.getModels(ModelUsage.Edit), true)

@@ -43,7 +43,9 @@ export class AgentFixupControls extends FixupCodeLenses {
         return Promise.resolve(undefined)
     }
 
-    // FixupControlApplicator
+    public getTask(id: FixupTaskID): FixupTask | undefined {
+        return this.fixups.taskForId(id)
+    }
 
     didUpdateTask(task: FixupTask): void {
         super.didUpdateTask(task)
@@ -66,6 +68,7 @@ export class AgentFixupControls extends FixupCodeLenses {
             selectionRange: task.selectionRange,
             instruction: task.instruction?.toString().trim(),
             model: task.model.toString().trim(),
+            originalText: task.original,
         }
     }
 }

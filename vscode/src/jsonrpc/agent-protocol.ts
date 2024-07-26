@@ -128,6 +128,7 @@ export type ClientRequests = {
         },
         EditTask,
     ]
+    'editTask/getTaskDetails': [{ id: FixupTaskID }, EditTask]
 
     // Utility for clients that don't have language-neutral folding-range support.
     // Provides a list of all the computed folding ranges in the specified document.
@@ -815,6 +816,7 @@ export interface EditTask {
     selectionRange: Range
     instruction?: string | undefined | null
     model?: string | undefined | null
+    originalText?: string | undefined | null
 }
 
 export interface CodyError {
