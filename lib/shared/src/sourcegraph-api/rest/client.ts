@@ -20,16 +20,19 @@ export class RestClient {
     /**
      * @param endpointUrl URL to the sourcegraph instance, e.g. "https://sourcegraph.acme.com".
      * @param accessToken User access token to contact the sourcegraph instance.
+     * @param customHeaders Custom headers (primary is used by Cody Web case when Sourcegraph client
+     * providers set of custom headers to make sure that auth flow will work properly
      */
     constructor(
         private endpointUrl: string,
-        private accessToken?: string
+        private accessToken: string | undefined,
+        private customHeaders: Record<string, string>
     ) {}
 
     // Make an authenticated HTTP request to the Sourcegraph instance.
     // "name" is a developer-friendly term to label the request's trace span.
     private getRequest<T>(name: string, urlSuffix: string): Promise<T | Error> {
-        const headers = new Headers()
+        const headers = new Headers(this.customHeaders as HeadersInit)
         if (this.accessToken) {
             headers.set('Authorization', `token ${this.accessToken}`)
         }

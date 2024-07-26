@@ -1,3 +1,7 @@
+## 0.2.9 
+- Add support for custom headers in Rest API service
+(fixes problem with fetching remote LLM models for Cody Web) 
+
 ## 0.2.8
 - Adds new prop to set custom client telemetry name (telemetryClientName)
 
