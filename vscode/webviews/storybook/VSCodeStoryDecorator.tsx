@@ -10,11 +10,10 @@ import { clsx } from 'clsx'
 import { type CSSProperties, useState } from 'react'
 import { URI } from 'vscode-uri'
 import '../../node_modules/@vscode/codicons/dist/codicon.css'
-import { AppWrapper } from '../AppWrapper'
+import { TestAppWrapper } from '../AppWrapper'
 import { type ChatModelContext, ChatModelContextProvider } from '../chat/models/chatModelContext'
-import { ClientStateContextProvider } from '../client/clientState'
 import { WithContextProviders } from '../mentions/providers'
-import { WithChatContextClient } from '../promptEditor/plugins/atMentions/chatContextClient'
+import { ChatContextClientProviderForTestsOnly } from '../promptEditor/plugins/atMentions/chatContextClient'
 import { dummyChatContextClient } from '../promptEditor/plugins/atMentions/fixtures'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from '../utils/telemetry'
 import styles from './VSCodeStoryDecorator.module.css'
@@ -87,17 +86,15 @@ export function VSCodeDecorator(className: string | undefined, style?: CSSProper
 
         return (
             <div className={clsx(styles.container, className)} style={style}>
-                <AppWrapper>
-                    <WithChatContextClient value={dummyChatContextClient}>
+                <TestAppWrapper>
+                    <ChatContextClientProviderForTestsOnly value={dummyChatContextClient}>
                         <ChatModelContextProvider value={useDummyChatModelContext()}>
                             <TelemetryRecorderContext.Provider value={telemetryRecorder}>
-                                <ClientStateContextProvider value={{ initialContext: [] }}>
-                                    {story()}
-                                </ClientStateContextProvider>
+                                {story()}
                             </TelemetryRecorderContext.Provider>
                         </ChatModelContextProvider>
-                    </WithChatContextClient>
-                </AppWrapper>
+                    </ChatContextClientProviderForTestsOnly>
+                </TestAppWrapper>
             </div>
         )
     }

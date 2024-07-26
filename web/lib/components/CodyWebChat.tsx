@@ -111,6 +111,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                     break
                 case 'setConfigFeatures':
                     setServerSentModelsEnabled(!!message.configFeatures.serverSentModels)
+                    break
             }
         })
     }, [vscodeAPI, dispatchClientAction])

@@ -1,5 +1,4 @@
 import type { ContextItem, MentionQuery } from '@sourcegraph/cody-shared'
-import * as vscode from 'vscode'
 
 import { getChatContextItemsForMention } from '../../chat/context/chatContext'
 import { getLabelForContextItem } from './utils'
@@ -13,8 +12,7 @@ interface FixupMatchingContext {
 }
 
 export async function getMatchingContext(mentionQuery: MentionQuery): Promise<FixupMatchingContext[]> {
-    const token = new vscode.CancellationTokenSource()?.token
-    const results = await getChatContextItemsForMention(mentionQuery, token)
+    const results = await getChatContextItemsForMention(mentionQuery, new AbortController().signal)
     return results.map(result => {
         return {
             key: getLabelForContextItem(result),

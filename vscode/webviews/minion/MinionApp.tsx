@@ -7,11 +7,11 @@ import type {
     PlanStepsStatus,
     Step,
 } from '../../src/minion/action'
-import type { GenericVSCodeWrapper } from '../utils/VSCodeApi'
 
 import './MinionApp.css'
 import {
     type ClientStateForWebview,
+    type GenericVSCodeWrapper,
     type RangeData,
     type SerializedPromptEditorValue,
     markdownCodeBlockLanguageIDForFilename,
