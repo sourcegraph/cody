@@ -1,8 +1,8 @@
+import type { GenericVSCodeWrapper } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
 import { URI } from 'vscode-uri'
 import type { MinionTranscriptItem } from '../../src/minion/action'
 import { VSCodeWebview } from '../storybook/VSCodeStoryDecorator'
-import type { GenericVSCodeWrapper } from '../utils/VSCodeApi'
 import { MinionApp } from './MinionApp'
 import type { MinionExtensionMessage, MinionWebviewMessage } from './webview_protocol'
 

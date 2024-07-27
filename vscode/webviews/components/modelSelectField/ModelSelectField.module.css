@@ -4,6 +4,7 @@
     align-items: center;
     gap: 0.375rem;
     line-height: 16px;
+
     &:is(a) {
         outline: none !important;
     }
@@ -31,26 +32,12 @@
     margin-left: auto;
 }
 
-.badge  {
-    margin-left: auto;
-    line-height: 16px;
-    font-size: 11px;
-    border-radius: 2px;
-    padding: 0 5px;
-    border: 1px solid var(--vscode-contrastBorder);
-    background: var(--vscode-badge-background);
-    color: var(--vscode-badge-foreground);
-}
-
-.badge-pro {
-    opacity: 0.75;
-}
-
 /* Show minimal form in the button. */
 button > .model-title-with-icon {
     .model-name {
         font-weight: normal;
     }
+
     .model-icon, .model-provider, .badge {
         display: none;
     }

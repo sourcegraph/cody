@@ -145,7 +145,7 @@ export {
 } from './experimentation/FeatureFlagProvider'
 export { GuardrailsPost, summariseAttribution } from './guardrails'
 export type { Attribution, Guardrails } from './guardrails'
-export { SourcegraphGuardrailsClient } from './guardrails/client'
+export { SourcegraphGuardrailsClient, GuardrailsClientConfig } from './guardrails/client'
 export {
     CompletionStopReason,
     type CodeCompletionsClient,
@@ -305,3 +305,9 @@ export {
     UNKNOWN_NODES_EDITOR_STATE_FIXTURE,
 } from './lexicalEditor/fixtures'
 export { getSerializedParams } from './sourcegraph-api/completions/utils'
+export {
+    type GenericVSCodeWrapper,
+    type GenericWebviewAPIWrapper,
+    createExtensionAPIProxyInWebview,
+    handleExtensionAPICallFromWebview,
+} from './misc/rpc/proxy'

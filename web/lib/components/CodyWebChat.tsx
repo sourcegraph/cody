@@ -14,30 +14,22 @@ import {
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
 
+import { getAppWrappers } from 'cody-ai/webviews/App'
 import { Chat, type UserAccountInfo } from 'cody-ai/webviews/Chat'
 import { ChatEnvironmentContext } from 'cody-ai/webviews/chat/ChatEnvironmentContext'
-import {
-    type ChatModelContext,
-    ChatModelContextProvider,
-} from 'cody-ai/webviews/chat/models/chatModelContext'
-import {
-    ClientStateContextProvider,
-    useClientActionDispatcher,
-} from 'cody-ai/webviews/client/clientState'
-import { WithContextProviders } from 'cody-ai/webviews/mentions/providers'
+import type { ChatModelContext } from 'cody-ai/webviews/chat/models/chatModelContext'
+import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
 import {
     ChatMentionContext,
     type ChatMentionsSettings,
 } from 'cody-ai/webviews/promptEditor/plugins/atMentions/chatContextClient'
-import {
-    TelemetryRecorderContext,
-    createWebviewTelemetryRecorder,
-} from 'cody-ai/webviews/utils/telemetry'
+import { createWebviewTelemetryRecorder } from 'cody-ai/webviews/utils/telemetry'
 
 import { useWebAgentClient } from './CodyWebChatProvider'
 
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
+import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
 import styles from './CodyWebChat.module.css'
 
 const CONTEXT_MENTIONS_SETTINGS: ChatMentionsSettings = {
@@ -111,6 +103,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                     break
                 case 'setConfigFeatures':
                     setServerSentModelsEnabled(!!message.configFeatures.serverSentModels)
+                    break
             }
         })
     }, [vscodeAPI, dispatchClientAction])
@@ -194,6 +187,11 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
 
     const envVars = useMemo(() => ({ clientType: CodyIDE.Web }), [])
 
+    const wrappers = useMemo<Wrapper[]>(
+        () => getAppWrappers(vscodeAPI, telemetryRecorder, chatModelContext, clientState),
+        [vscodeAPI, telemetryRecorder, chatModelContext, clientState]
+    )
+
     return (
         <div className={className} data-cody-web-chat={true} ref={setRootElement}>
             {client &&
@@ -206,27 +204,21 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                 ) : (
                     <ChatEnvironmentContext.Provider value={envVars}>
                         <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
-                            <TelemetryRecorderContext.Provider value={telemetryRecorder}>
-                                <ChatModelContextProvider value={chatModelContext}>
-                                    <ClientStateContextProvider value={clientState}>
-                                        <WithContextProviders>
-                                            <Chat
-                                                chatID={activeChatID}
-                                                chatEnabled={true}
-                                                showWelcomeMessage={false}
-                                                showIDESnippetActions={false}
-                                                userInfo={userAccountInfo}
-                                                messageInProgress={messageInProgress}
-                                                transcript={transcript}
-                                                vscodeAPI={vscodeAPI}
-                                                isTranscriptError={isTranscriptError}
-                                                scrollableParent={rootElement}
-                                                className={styles.chat}
-                                            />
-                                        </WithContextProviders>
-                                    </ClientStateContextProvider>
-                                </ChatModelContextProvider>
-                            </TelemetryRecorderContext.Provider>
+                            <ComposedWrappers wrappers={wrappers}>
+                                <Chat
+                                    chatID={activeChatID}
+                                    chatEnabled={true}
+                                    showWelcomeMessage={false}
+                                    showIDESnippetActions={false}
+                                    userInfo={userAccountInfo}
+                                    messageInProgress={messageInProgress}
+                                    transcript={transcript}
+                                    vscodeAPI={vscodeAPI}
+                                    isTranscriptError={isTranscriptError}
+                                    scrollableParent={rootElement}
+                                    className={styles.chat}
+                                />
+                            </ComposedWrappers>
                         </ChatMentionContext.Provider>
                     </ChatEnvironmentContext.Provider>
                 )

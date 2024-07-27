@@ -18,6 +18,7 @@ import {
     type DefaultChatCommands,
     type EventSource,
     FeatureFlag,
+    type GenericWebviewAPIWrapper,
     type Guardrails,
     type MentionQuery,
     type Message,
@@ -32,6 +33,7 @@ import {
     allMentionProvidersMetadata,
     featureFlagProvider,
     graphqlClient,
+    handleExtensionAPICallFromWebview,
     hydrateAfterPostMessage,
     inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
@@ -51,7 +53,10 @@ import {
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import { isContextWindowLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import {
+    isAbortError,
+    isContextWindowLimitError,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { URI } from 'vscode-uri'
 import { version as VSCEVersion } from '../../../package.json'
@@ -189,7 +194,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
     private readonly contextAPIClient: ContextAPIClient | null
 
-    private contextFilesQueryCancellation?: vscode.CancellationTokenSource
+    private contextFilesQueryAbortController?: AbortController
     private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
 
     private disposables: vscode.Disposable[] = []
@@ -345,13 +350,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.postChatModels()
                 break
             case 'getUserContext':
-                await this.handleGetUserContextFilesCandidates(parseMentionQuery(message.query, null))
+                await this.handleGetUserContextFilesCandidates({
+                    query: parseMentionQuery(message.query, null),
+                })
                 break
             case 'getAllMentionProvidersMetadata':
                 await this.handleGetAllMentionProvidersMetadata()
-                break
-            case 'queryContextItems':
-                await this.handleGetUserContextFilesCandidates(message.query)
                 break
             case 'insert':
                 await handleCodeFromInsertAtCursor(message.text)
@@ -530,8 +534,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await this.experimentalSetUnitTestPrompt()
                 break
             }
-            default:
-                this.postError(new Error(`Invalid request type from Webview Panel: ${message.command}`))
         }
     }
 
@@ -565,6 +567,21 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         // Get the latest model list available to the current user to update the ChatModel.
         this.handleSetChatModel(getDefaultModelID())
+
+        // Get the latest feature config and send to webview.
+        ClientConfigSingleton.getInstance()
+            .getConfig()
+            .then(
+                async clientConfig =>
+                    await this.postMessage({
+                        type: 'setConfigFeatures',
+                        configFeatures: {
+                            chat: !!clientConfig?.chatEnabled,
+                            attribution: !!clientConfig?.attributionEnabled,
+                            serverSentModels: !!clientConfig?.modelsAPIEnabled,
+                        },
+                    })
+            )
     }
 
     // When the webview sends the 'ready' message, respond by posting the view config
@@ -960,11 +977,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
     }
 
-    private async handleGetUserContextFilesCandidates(query: MentionQuery): Promise<void> {
+    private async handleGetUserContextFilesCandidates({
+        query,
+    }: { query: MentionQuery }): Promise<
+        Omit<Extract<ExtensionMessage, { type: 'userContextFiles' }>, 'type'>
+    > {
         // Cancel previously in-flight query.
-        const cancellation = new vscode.CancellationTokenSource()
-        this.contextFilesQueryCancellation?.cancel()
-        this.contextFilesQueryCancellation = cancellation
+        const abortController = new AbortController()
+        this.contextFilesQueryAbortController?.abort()
+        this.contextFilesQueryAbortController = abortController
 
         const source = 'chat'
 
@@ -993,7 +1014,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         try {
             const items = await getChatContextItemsForMention(
                 query,
-                cancellation.token,
+                abortController.signal,
                 scopedTelemetryRecorder,
                 // Pass possible remote repository context in order to resolve files
                 // for this remote repositories and not for local one, Cody Web case
@@ -1002,27 +1023,19 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     ? this.remoteSearch?.getRepos('all')?.map(repo => repo.name)
                     : undefined
             )
+            abortController.signal.throwIfAborted()
 
-            if (cancellation.token.isCancellationRequested) {
-                return
-            }
             const { input, context } = this.chatModel.contextWindow
             const userContextFiles = items.map(f => ({
                 ...f,
                 isTooLarge: f.size ? f.size > (context?.user || input) : undefined,
             }))
-            void this.postMessage({
-                type: 'userContextFiles',
-                userContextFiles,
-            })
+            return { userContextFiles }
         } catch (error) {
-            if (cancellation.token.isCancellationRequested) {
-                return
+            if (isAbortError(error)) {
+                throw error // rethrow as-is so it gets ignored by our caller
             }
-            cancellation.cancel()
-            this.postError(new Error(`Error retrieving context files: ${error}`))
-        } finally {
-            cancellation.dispose()
+            throw new Error(`Error retrieving context files: ${error}`)
         }
     }
 
@@ -1608,6 +1621,22 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.onDidReceiveMessage(
                     hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any))
                 )
+            )
+        )
+        const webviewAPIWrapper: GenericWebviewAPIWrapper<WebviewMessage, ExtensionMessage> = {
+            postMessage: this.postMessage.bind(this),
+            postError: this.postError.bind(this),
+            onMessage: callback => {
+                const disposable = viewOrPanel.webview.onDidReceiveMessage(callback)
+                return () => disposable.dispose()
+            },
+        }
+        this.disposables.push(
+            handleExtensionAPICallFromWebview(
+                webviewAPIWrapper,
+                'queryContextItems',
+                'userContextFiles',
+                this.handleGetUserContextFilesCandidates.bind(this)
             )
         )
 

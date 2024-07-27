@@ -3,7 +3,11 @@ import { renderHook } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, test } from 'vitest'
 import { URI } from 'vscode-uri'
-import { type ChatContextClient, WithChatContextClient, useChatContextItems } from './chatContextClient'
+import {
+    type ChatContextClient,
+    ChatContextClientProviderForTestsOnly,
+    useChatContextItems,
+} from './chatContextClient'
 
 describe('useChatContextItems', () => {
     test('returns filtered providers and items based on query', async () => {
@@ -14,12 +18,12 @@ describe('useChatContextItems', () => {
             resolve = resolve_
         })
         const client: ChatContextClient = {
-            getChatContextItems: () => itemsPromise,
+            getChatContextItems: async () => ({ userContextFiles: await itemsPromise }),
         }
 
         const { result } = renderHook(() => useChatContextItems('q', null), {
             wrapper: ({ children }) =>
-                React.createElement(WithChatContextClient, { value: client }, children),
+                React.createElement(ChatContextClientProviderForTestsOnly, { value: client }, children),
         })
 
         expect(result.current).toBe(undefined)

@@ -20,7 +20,7 @@ import {
 
 export async function getChatContextItemsForMention(
     mentionQuery: MentionQuery,
-    cancellationToken: vscode.CancellationToken,
+    signal: AbortSignal,
     // Logging: log when the at-mention starts, and then log when we know the type (after the 1st
     // character is typed). Don't log otherwise because we would be logging prefixes of the same
     // query repeatedly, which is not needed.

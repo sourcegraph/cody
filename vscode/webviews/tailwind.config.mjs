@@ -87,6 +87,11 @@ export default {
                     DEFAULT: 'currentColor',
                     25: 'color-mix(in lch, currentColor 25%, transparent)',
                 },
+                badge: {
+                    border: 'var(--vscode-contrastBorder)',
+                    foreground: 'var(--vscode-badge-foreground)',
+                    background: 'var(--vscode-badge-background)',
+                },
             },
             borderRadius: {
                 lg: '6px',

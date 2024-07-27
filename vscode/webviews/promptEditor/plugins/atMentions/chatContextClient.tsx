@@ -3,11 +3,13 @@ import {
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
+    createExtensionAPIProxyInWebview,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { LRUCache } from 'lru-cache'
 import {
     type FunctionComponent,
+    type ReactNode,
     createContext,
     useContext,
     useEffect,
@@ -15,7 +17,8 @@ import {
     useRef,
     useState,
 } from 'react'
-import { getVSCodeAPI } from '../../../utils/VSCodeApi'
+import type { ExtensionMessage } from '../../../../src/chat/protocol'
+import type { VSCodeWrapper } from '../../../utils/VSCodeApi'
 
 export interface ChatMentionsSettings {
     resolutionMode: 'remote' | 'local'
@@ -26,48 +29,41 @@ export const ChatMentionContext = createContext<ChatMentionsSettings>({
 })
 
 export interface ChatContextClient {
-    getChatContextItems(query: MentionQuery): Promise<ContextItem[]>
+    getChatContextItems(params: { query: MentionQuery }): Promise<{
+        userContextFiles?: ContextItem[] | null | undefined
+    }>
 }
 
-const ChatContextClientContext: React.Context<ChatContextClient> = createContext({
-    getChatContextItems(query: MentionQuery): Promise<ContextItem[]> {
-        // Adapt the VS Code webview messaging API to be RPC-like for ease of use by our callers.
-        return new Promise<ContextItem[]>((resolve, reject) => {
-            const vscodeApi = getVSCodeAPI()
-            vscodeApi.postMessage({ command: 'queryContextItems', query })
+const ChatContextClientContext = createContext<ChatContextClient | undefined>(undefined)
 
-            const RESPONSE_MESSAGE_TYPE = 'userContextFiles' as const
+export const ChatContextClientProviderFromVSCodeAPI: FunctionComponent<{
+    vscodeAPI: VSCodeWrapper | null
+    children: ReactNode
+}> = ({ vscodeAPI, children }) => {
+    const value = useMemo<ChatContextClient | null>(
+        () =>
+            vscodeAPI
+                ? {
+                      getChatContextItems: createExtensionAPIProxyInWebview(
+                          vscodeAPI,
+                          'queryContextItems',
+                          'userContextFiles'
+                      ),
+                  }
+                : null,
+        [vscodeAPI]
+    )
+    return value ? (
+        <ChatContextClientContext.Provider value={value}>{children}</ChatContextClientContext.Provider>
+    ) : (
+        <>{children}</>
+    )
+}
 
-            // Clean up after a while to avoid resource exhaustion in case there is a bug
-            // somewhere.
-            const MAX_WAIT_SECONDS = 15
-            const rejectTimeout = !query.includeRemoteRepositories
-                ? setTimeout(() => {
-                      reject(
-                          new Error(`no ${RESPONSE_MESSAGE_TYPE} response after ${MAX_WAIT_SECONDS}s`)
-                      )
-                      dispose()
-                  }, MAX_WAIT_SECONDS * 1000)
-                : ''
-
-            // Wait for the response. We assume the first message of the right type is the response to
-            // our call.
-            const dispose = vscodeApi.onMessage(message => {
-                if (message.type === RESPONSE_MESSAGE_TYPE) {
-                    resolve(message.userContextFiles ?? [])
-                    dispose()
-                    clearTimeout(rejectTimeout)
-                }
-            })
-        })
-    },
-})
-
-export const WithChatContextClient: FunctionComponent<
-    React.PropsWithChildren<{ value: ChatContextClient }>
-> = ({ value, children }) => (
-    <ChatContextClientContext.Provider value={value}>{children}</ChatContextClientContext.Provider>
-)
+/**
+ * @internal Used in tests only.
+ */
+export const ChatContextClientProviderForTestsOnly = ChatContextClientContext.Provider
 
 /** Hook to get the chat context items for the given query. */
 export function useChatContextItems(
@@ -76,6 +72,11 @@ export function useChatContextItems(
 ): ContextItem[] | undefined {
     const mentionSettings = useContext(ChatMentionContext)
     const unmemoizedClient = useContext(ChatContextClientContext)
+    if (!unmemoizedClient) {
+        throw new Error(
+            'useChatContextItems must be used within a ChatContextClientProvider or ChatContextClientProviderFromVSCodeAPI'
+        )
+    }
 
     const chatContextClient = useMemo(
         () =>
@@ -121,15 +122,15 @@ export function useChatContextItems(
 
         if (chatContextClient) {
             chatContextClient
-                .getChatContextItems(mentionQuery)
-                .then(mentions => {
+                .getChatContextItems({ query: mentionQuery })
+                .then(result => {
                     // Since remote mention search debounce and batches all mention
                     // search requests we shouldn't invalidate any old responses like
                     // we do for local search.
                     if (invalidated && !mentionQuery.includeRemoteRepositories) {
                         return
                     }
-                    setResults(mentions)
+                    setResults(result.userContextFiles ?? [])
                 })
                 .catch(error => {
                     setResults(undefined)
@@ -145,16 +146,19 @@ export function useChatContextItems(
 }
 
 function memoizeChatContextClient(client: ChatContextClient): ChatContextClient {
-    const cache = new LRUCache<string, ContextItem[]>({ max: 10 })
+    const cache = new LRUCache<
+        string,
+        Omit<Extract<ExtensionMessage, { type: 'userContextFiles' }>, 'type'>
+    >({ max: 10 })
     return {
-        async getChatContextItems(query: MentionQuery): Promise<ContextItem[]> {
-            const key = JSON.stringify(query)
+        async getChatContextItems(params) {
+            const key = JSON.stringify(params)
             const cached = cache.get(key)
             if (cached !== undefined) {
                 return cached
             }
 
-            const result = await client.getChatContextItems(query)
+            const result = await client.getChatContextItems(params)
             cache.set(key, result)
             return result
         },
