@@ -193,6 +193,13 @@ export const HumanMessageEditor: FunctionComponent<{
         [onGapClick]
     )
 
+    const appendTextToEditor = useCallback((text: string): void => {
+        if (!editorRef.current) {
+            throw new Error('No editorRef')
+        }
+        editorRef.current.appendText(text)
+    }, [])
+
     const onMentionClick = useCallback((): void => {
         if (!editorRef.current) {
             throw new Error('No editorRef')
@@ -293,6 +300,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     submitState={submitState}
                     onGapClick={onGapClick}
                     focusEditor={focusEditor}
+                    appendTextToEditor={appendTextToEditor}
                     hidden={!focused && isSent}
                     className={clsx('tw-transition-all', styles.toolbar)}
                 />

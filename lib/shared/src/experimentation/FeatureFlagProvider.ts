@@ -79,6 +79,8 @@ export enum FeatureFlag {
 
     /** Chat in sidebar */
     CodyChatInSidebar = 'cody-chat-in-sidebar',
+
+    ChatPromptSelector = 'chat-prompt-selector',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

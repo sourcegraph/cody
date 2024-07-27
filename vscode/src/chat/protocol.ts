@@ -11,6 +11,7 @@ import type {
     EnhancedContextContextT,
     MentionQuery,
     Model,
+    Prompt,
     RangeData,
     SerializedChatMessage,
     UserLocalHistory,
@@ -165,6 +166,10 @@ export type WebviewMessage =
     | {
           command: 'experimental-unit-test-prompt'
       }
+    | {
+          command: 'queryPrompts'
+          query: string
+      }
 
 /**
  * A message sent from the extension host to the webview.
@@ -206,6 +211,7 @@ export type ExtensionMessage =
               attribution: boolean
               serverSentModels: boolean
           }
+          exportedFeatureFlags: Record<string, boolean>
       }
     | {
           type: 'allMentionProvidersMetadata'
@@ -215,6 +221,11 @@ export type ExtensionMessage =
           type: 'updateEditorState'
           /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
           editorState?: unknown | undefined | null
+      }
+    | {
+          type: 'queryPrompts/response'
+          result?: Prompt[] | null | undefined
+          error?: string | null | undefined
       }
 
 interface ExtensionAttributionMessage {
