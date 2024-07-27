@@ -1,3 +1,4 @@
+import * as path from 'node:path'
 import type { Response as NodeResponse } from 'node-fetch'
 import { URI } from 'vscode-uri'
 import { fetch } from '../../fetch'
@@ -619,6 +620,37 @@ export class SourcegraphGraphQLAPIClient {
                 data => data.search?.results.results ?? new Error('no files found')
             )
         )
+    }
+
+    public async getRemoteFilesWithFuzzyRetry(
+        repositories: string[],
+        query: string
+    ): Promise<FuzzyFindFile[] | Error> {
+        // as far as I can tell, `query` will only ever contain one file name and nothing else
+
+        // Helper function to fuzz the filename
+        const fuzzTheFilename = (originalFilename: string): string => {
+            const dirname = path.dirname(originalFilename)
+            const basename = path.basename(originalFilename)
+            const extname = path.extname(basename)
+            const name = path.basename(basename, extname)
+            const escapedName = name.replace(/\./g, '\\.')
+            const escapedExt = extname ? `\\.${extname.slice(1)}` : ''
+            const modifiedFilename = `[^/]*${escapedName}[^/]*${escapedExt}$`
+            return `${dirname !== '.' ? `${dirname}/` : ''}${modifiedFilename}`
+        }
+
+        // First attempt with original filename
+        let result = await this.getRemoteFiles(repositories, query)
+        if (
+            (result instanceof Error && result.message === 'no files found') ||
+            (Array.isArray(result) && result.length === 0)
+        ) {
+            // If no results, try once more with a fuzzed filename
+            result = await this.getRemoteFiles(repositories, fuzzTheFilename(query))
+        }
+
+        return result
     }
 
     public async getRemoteSymbols(
