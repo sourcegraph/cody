@@ -252,6 +252,12 @@ export class InlineCompletionItemProvider
                 })
             } else {
                 const nextLineNumber = lastSelection.active.line + 1
+
+                // Ignore out of bounds lines
+                if (nextLineNumber >= document.lineCount) {
+                    return
+                }
+
                 const nextLine = document.lineAt(nextLineNumber)
                 const nextLinePosition = new vscode.Position(
                     nextLineNumber,
