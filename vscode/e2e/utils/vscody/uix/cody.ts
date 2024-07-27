@@ -38,18 +38,21 @@ class UserMessage {
     }
 
     async submit(): Promise<void> {
-        await this.ctx.message.getByRole('button', { name: 'Send' }).click()
-        // Note: if this fails you might not have any reasonable request delay set
-        // in the mitm proxy.
-        await expect(this.ctx.webview.content.getByRole('button', { name: 'Stop' })).toBeVisible()
+        return t.step('Submitting chat', async () => {
+            await this.ctx.message.getByRole('button', { name: 'Send' }).click()
+            // Note: if this fails you might not have any reasonable request delay set
+            // in the mitm proxy.
+            await expect(this.ctx.webview.content.getByRole('button', { name: 'Stop' })).toBeVisible()
+        })
     }
 
-    async abort(): Promise<void> {
-        const stopButton = this.ctx.webview.content.getByRole('button', { name: 'Stop' })
-        if (await stopButton.isVisible()) {
-            await stopButton.click()
-        }
-        await expect(this.ctx.webview.content.getByRole('button', { name: 'Send' })).toBeVisible()
+    abort(): Promise<void> {
+        return t.step('Aborting chat', async () => {
+            // Note: if this fails you might not have any reasonable request delay set
+            // in the mitm proxy.
+            await this.ctx.message.getByRole('button', { name: 'Stop' }).click()
+            await expect(this.ctx.webview.content.getByRole('button', { name: 'Send' })).toBeVisible()
+        })
     }
 }
 

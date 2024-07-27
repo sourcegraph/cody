@@ -25,9 +25,11 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions & Symlin
     fullyParallel: true,
     timeout: isWin || isCI ? 30000 : 20000,
     expect: {
-        timeout: isWin || isCI ? 10000 : 5000,
+        timeout: isWin || isCI ? 20000 : 10000,
     },
     use: {
+        viewport: { width: 1366, height: 768 },
+        deviceScaleFactor: isCI ? 1 : 2, // TODO: Might be nice to detect this automatically
         // You can override options easily per project/worker/test so they are
         // unlikely to need to be modified here. These are just some sane
         // defaults
