@@ -6,7 +6,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
 import { type FunctionComponent, useState } from 'react'
-import { ContextProvidersDecorator, VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
+import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
 import styles from './BaseEditor.story.module.css'
 import { PromptEditor } from './PromptEditor'
 
@@ -20,7 +20,7 @@ const meta: Meta<typeof PromptEditor> = {
         editorClassName: styles.editor,
     } satisfies React.ComponentProps<typeof PromptEditor>,
 
-    decorators: [VSCodeStandaloneComponent, ContextProvidersDecorator],
+    decorators: [VSCodeStandaloneComponent],
 } as Meta
 
 export default meta

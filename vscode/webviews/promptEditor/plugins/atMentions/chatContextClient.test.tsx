@@ -19,6 +19,7 @@ describe('useChatContextItems', () => {
         })
         const client: ChatContextClient = {
             getChatContextItems: async () => ({ userContextFiles: await itemsPromise }),
+            getMentionProvidersMetadata: async () => ({ providers: [] }),
         }
 
         const { result } = renderHook(() => useChatContextItems('q', null), {
