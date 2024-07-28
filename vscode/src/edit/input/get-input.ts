@@ -3,6 +3,8 @@ import {
     type EditModel,
     type EventSource,
     FILE_CONTEXT_MENTION_PROVIDER,
+    GENERAL_HELP_LABEL,
+    LARGE_FILE_WARNING_LABEL,
     ModelUsage,
     ModelsService,
     PromptString,
@@ -15,7 +17,6 @@ import * as vscode from 'vscode'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { EventSourceTelemetryMetadataMapping } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { GENERAL_HELP_LABEL, LARGE_FILE_WARNING_LABEL } from '../../chat/context/constants'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { executeDocCommand, executeTestEditCommand } from '../../commands/execute'
 import { getEditor } from '../../editor/active-editor'

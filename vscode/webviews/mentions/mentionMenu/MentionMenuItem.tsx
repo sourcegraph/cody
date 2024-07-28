@@ -2,6 +2,8 @@ import {
     type ContextItem,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
+    IGNORED_FILE_WARNING_LABEL,
+    LARGE_FILE_WARNING_LABEL,
     type MentionQuery,
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_REPOSITORY_PROVIDER_URI,
@@ -24,10 +26,6 @@ import {
     SquareFunctionIcon,
 } from 'lucide-react'
 import type { FunctionComponent } from 'react'
-import {
-    IGNORED_FILE_WARNING_LABEL,
-    LARGE_FILE_WARNING_LABEL,
-} from '../../../src/chat/context/constants'
 import ConfluenceLogo from '../../icons/providers/confluence.svg?react'
 import GithubLogo from '../../icons/providers/github.svg?react'
 import GoogleLogo from '../../icons/providers/google.svg?react'

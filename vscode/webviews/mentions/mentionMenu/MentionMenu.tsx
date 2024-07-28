@@ -4,17 +4,15 @@ import {
     type ContextItemOpenCtx,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
+    FILE_RANGE_TOOLTIP_LABEL,
     type MentionQuery,
+    NO_SYMBOL_MATCHES_HELP_LABEL,
     REMOTE_FILE_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { type FunctionComponent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-    FILE_RANGE_TOOLTIP_LABEL,
-    NO_SYMBOL_MATCHES_HELP_LABEL,
-} from '../../../src/chat/context/constants'
 import {
     Command,
     CommandEmpty,

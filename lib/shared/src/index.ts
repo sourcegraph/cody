@@ -73,6 +73,11 @@ export {
     type SymbolKind,
     type ContextItemTree,
     type ContextItemRepository,
+    FILE_RANGE_TOOLTIP_LABEL,
+    GENERAL_HELP_LABEL,
+    IGNORED_FILE_WARNING_LABEL,
+    LARGE_FILE_WARNING_LABEL,
+    NO_SYMBOL_MATCHES_HELP_LABEL,
 } from './codebase-context/messages'
 export type {
     CodyCommand,
