@@ -65,7 +65,8 @@ export const sidebarExplorer = (page: Page): Locator => page.getByRole('tab', { 
  * Use the command to toggle DND mode because the UI differs on Windows/non-Windows since 1.86 with
  * macOS appearing to use a native menu where Windows uses a VS Code-drawn menu.
  */
-async function disableNotifications(page: Page): Promise<void> {
+export async function disableNotifications(page: Page): Promise<void> {
+    //TODO: Check if already disabled
     await executeCommandInPalette(page, 'notifications: toggle do not disturb')
 }
 

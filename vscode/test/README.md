@@ -1,5 +1,7 @@
 # Testing Cody VScode
 
+> In addition to the normal test locations for the types below there is a special location for temporary [Issue Tests](issues/README.md).
+
 Cody VScode has four kinds of tests:
 
 1. Unit tests. These are stored alongside the code in files named `.test.ts`.
