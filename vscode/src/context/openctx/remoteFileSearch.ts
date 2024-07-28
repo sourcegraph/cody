@@ -1,5 +1,6 @@
 import type { Item, Mention } from '@openctx/client'
 import {
+    REMOTE_FILE_PROVIDER_URI,
     contextFiltersProvider,
     displayPathBasename,
     graphqlClient,
@@ -14,7 +15,7 @@ const RemoteFileProvider = createRemoteFileProvider()
 
 export function createRemoteFileProvider(customTitle?: string): OpenCtxProvider {
     return {
-        providerUri: 'internal-remote-file-search',
+        providerUri: REMOTE_FILE_PROVIDER_URI,
 
         meta() {
             return {

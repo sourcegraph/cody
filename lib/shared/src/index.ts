@@ -296,6 +296,9 @@ export * from './configuration'
 export {
     setOpenCtxClient,
     openCtx,
+    REMOTE_REPOSITORY_PROVIDER_URI,
+    REMOTE_FILE_PROVIDER_URI,
+    WEB_PROVIDER_URI,
 } from './context/openctx/api'
 export { type ClientStateForWebview } from './clientState'
 export * from './lexicalEditor/editorState'

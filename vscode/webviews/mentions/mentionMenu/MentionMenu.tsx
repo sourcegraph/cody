@@ -5,6 +5,7 @@ import {
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
+    REMOTE_FILE_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
@@ -14,7 +15,6 @@ import {
     FILE_RANGE_TOOLTIP_LABEL,
     NO_SYMBOL_MATCHES_HELP_LABEL,
 } from '../../../src/chat/context/constants'
-import RemoteFileProvider from '../../../src/context/openctx/remoteFileSearch'
 import {
     Command,
     CommandEmpty,
@@ -160,7 +160,7 @@ export const MentionMenu: FunctionComponent<
             if (item.provider === 'openctx') {
                 const openCtxItem = item as ContextItemOpenCtx
                 if (
-                    openCtxItem.providerUri === RemoteFileProvider.providerUri &&
+                    openCtxItem.providerUri === REMOTE_FILE_PROVIDER_URI &&
                     openCtxItem.mention?.data?.repoName &&
                     !openCtxItem.mention?.data?.filePath
                 ) {
@@ -170,7 +170,7 @@ export const MentionMenu: FunctionComponent<
 
                     updateMentionMenuParams({
                         parentItem: {
-                            id: RemoteFileProvider.providerUri,
+                            id: REMOTE_FILE_PROVIDER_URI,
                             title: 'Remote Files',
                             queryLabel: 'Enter file path to search',
                             emptyLabel: `No matching files found in ${openCtxItem?.mention?.data.repoName} repository`,

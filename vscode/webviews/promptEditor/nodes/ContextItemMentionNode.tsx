@@ -3,6 +3,7 @@ import {
     type ContextItem,
     ContextItemSource,
     FILE_CONTEXT_MENTION_PROVIDER,
+    REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SerializedContextItem,
     type SerializedContextItemMentionNode,
@@ -24,7 +25,6 @@ import {
 } from 'lexical'
 import { AtSignIcon } from 'lucide-react'
 import { URI } from 'vscode-uri'
-import RemoteRepositorySearch from '../../../src/context/openctx/remoteRepositorySearch'
 import { iconForProvider } from '../../mentions/mentionMenu/MentionMenuItem'
 import styles from './ContextItemMentionNode.module.css'
 import { MentionComponent } from './MentionComponent'
@@ -172,7 +172,7 @@ function iconForContextItem(contextItem: SerializedContextItem): React.Component
             : contextItem.type === 'symbol'
               ? SYMBOL_CONTEXT_MENTION_PROVIDER.id
               : contextItem.type === 'repository' || contextItem.type === 'tree'
-                ? RemoteRepositorySearch.providerUri
+                ? REMOTE_REPOSITORY_PROVIDER_URI
                 : contextItem.providerUri
     return iconForProvider[providerUri] ?? AtSignIcon
 }

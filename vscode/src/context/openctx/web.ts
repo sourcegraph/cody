@@ -1,11 +1,12 @@
 import type { ItemsParams, ItemsResult } from '@openctx/client'
+import { WEB_PROVIDER_URI } from '@sourcegraph/cody-shared'
 import type { OpenCtxProvider } from './types'
 
 /**
  * An OpenCtx provider that fetches the content of a URL and provides it as an item.
  */
 const WebProvider: OpenCtxProvider = {
-    providerUri: 'internal-web-provider',
+    providerUri: WEB_PROVIDER_URI,
 
     meta() {
         return {

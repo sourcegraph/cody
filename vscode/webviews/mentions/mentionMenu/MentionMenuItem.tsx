@@ -3,7 +3,10 @@ import {
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
+    REMOTE_FILE_PROVIDER_URI,
+    REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    WEB_PROVIDER_URI,
     displayLineRange,
     displayPath,
     displayPathBasename,
@@ -25,9 +28,6 @@ import {
     IGNORED_FILE_WARNING_LABEL,
     LARGE_FILE_WARNING_LABEL,
 } from '../../../src/chat/context/constants'
-import RemoteFileProvider from '../../../src/context/openctx/remoteFileSearch'
-import RemoteRepositorySearch from '../../../src/context/openctx/remoteRepositorySearch'
-import WebProvider from '../../../src/context/openctx/web'
 import ConfluenceLogo from '../../icons/providers/confluence.svg?react'
 import GithubLogo from '../../icons/providers/github.svg?react'
 import GoogleLogo from '../../icons/providers/google.svg?react'
@@ -142,7 +142,7 @@ export const iconForProvider: Record<
     'https://openctx.org/npm/@openctx/provider-devdocs': LibraryBigIcon,
     'https://openctx.org/npm/@openctx/provider-sourcegraph-search': SourcegraphLogo,
     'internal-linear-issues': LinearLogo, // Can't import LinearIssuesProvider due to transitive dep on vscode.
-    [RemoteRepositorySearch.providerUri]: FolderGitIcon,
-    [RemoteFileProvider.providerUri]: FolderGitIcon,
-    [WebProvider.providerUri]: LinkIcon,
+    [REMOTE_REPOSITORY_PROVIDER_URI]: FolderGitIcon,
+    [REMOTE_FILE_PROVIDER_URI]: FolderGitIcon,
+    [WEB_PROVIDER_URI]: LinkIcon,
 }
