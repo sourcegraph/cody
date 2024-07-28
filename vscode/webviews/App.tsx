@@ -27,7 +27,6 @@ import { ClientStateContextProvider, useClientActionDispatcher } from './client/
 
 import { PromptsClientProviderFromVSCodeAPI } from './components/promptSelectField/promptsClient'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
-import { WithContextProviders } from './mentions/providers'
 import { ChatContextClientProviderFromVSCodeAPI } from './promptEditor/plugins/atMentions/chatContextClient'
 import { AccountTab, CommandsTab, HistoryTab, SettingsTab, TabsBar, View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
@@ -373,7 +372,6 @@ export function getAppWrappers(
             provider: ChatModelContextProvider,
             value: chatModelContext,
         } satisfies Wrapper<ComponentProps<typeof ChatModelContextProvider>['value']>,
-        { component: WithContextProviders },
         {
             provider: ClientStateContextProvider,
             value: clientState,

@@ -11,6 +11,7 @@ import {
     type FunctionComponent,
     type ReactNode,
     createContext,
+    useCallback,
     useContext,
     useEffect,
     useMemo,
@@ -32,6 +33,9 @@ export interface ChatContextClient {
     getChatContextItems(params: { query: MentionQuery }): Promise<{
         userContextFiles?: ContextItem[] | null | undefined
     }>
+    getMentionProvidersMetadata(
+        params: Record<string, never>
+    ): Promise<{ providers: ContextMentionProviderMetadata[] }>
 }
 
 const ChatContextClientContext = createContext<ChatContextClient | undefined>(undefined)
@@ -48,6 +52,11 @@ export const ChatContextClientProviderFromVSCodeAPI: FunctionComponent<{
                           vscodeAPI,
                           'queryContextItems',
                           'userContextFiles'
+                      ),
+                      getMentionProvidersMetadata: createExtensionAPIProxyInWebview(
+                          vscodeAPI,
+                          'getAllMentionProvidersMetadata',
+                          'allMentionProvidersMetadata'
                       ),
                   }
                 : null,
@@ -145,7 +154,9 @@ export function useChatContextItems(
     return results
 }
 
-function memoizeChatContextClient(client: ChatContextClient): ChatContextClient {
+function memoizeChatContextClient(
+    client: ChatContextClient
+): Pick<ChatContextClient, 'getChatContextItems'> {
     const cache = new LRUCache<
         string,
         Omit<Extract<ExtensionMessage, { type: 'userContextFiles' }>, 'type'>
@@ -163,4 +174,31 @@ function memoizeChatContextClient(client: ChatContextClient): ChatContextClient 
             return result
         },
     }
+}
+
+const EMPTY_PROVIDERS: ContextMentionProviderMetadata[] = []
+
+export function useChatContextMentionProviders(): {
+    providers: ContextMentionProviderMetadata[]
+    reload: () => void
+} {
+    const client = useContext(ChatContextClientContext)
+    const [providers, setProviders] = useState<ContextMentionProviderMetadata[]>()
+
+    const load = useCallback(() => {
+        if (client) {
+            client
+                .getMentionProvidersMetadata({})
+                .then(result => setProviders(result.providers))
+                .catch(error => {
+                    console.error(error)
+                    setProviders(EMPTY_PROVIDERS)
+                })
+        }
+    }, [client])
+    useEffect(() => {
+        load()
+    }, [load])
+
+    return useMemo(() => ({ providers: providers ?? EMPTY_PROVIDERS, reload: load }), [providers, load])
 }

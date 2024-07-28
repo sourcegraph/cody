@@ -34,6 +34,18 @@ export const dummyChatContextClient: ChatContextClient = {
                     ].filter(f => f.uri.path.includes(queryTextLower))
         return { userContextFiles: results }
     },
+    async getMentionProvidersMetadata() {
+        return {
+            providers: [
+                {
+                    title: 'My Context Source',
+                    id: 'my-context-source',
+                    queryLabel: 'Type a query for My Context Source',
+                    emptyLabel: 'No results found from My Context Source',
+                },
+            ],
+        }
+    },
 }
 
 const DUMMY_FILES: ContextItem[] = [

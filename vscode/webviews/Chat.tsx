@@ -12,7 +12,7 @@ import styles from './Chat.module.css'
 import { GenerateUnitTestsButton } from './chat/components/GenerateUnitTestsButton'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
-import { useContextProviders } from './mentions/providers'
+import { useChatContextMentionProviders } from './promptEditor/plugins/atMentions/chatContextClient'
 import { useTelemetryRecorder } from './utils/telemetry'
 
 interface ChatboxProps {
@@ -46,7 +46,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     className,
     experimentalUnitTestEnabled,
 }) => {
-    const { reload: reloadMentionProviders } = useContextProviders()
+    const { reload: reloadMentionProviders } = useChatContextMentionProviders()
     const telemetryRecorder = useTelemetryRecorder()
     const feedbackButtonsOnSubmit = useCallback(
         (text: string) => {
