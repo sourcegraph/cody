@@ -2,8 +2,13 @@ import {
     type ContextItem,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
+    IGNORED_FILE_WARNING_LABEL,
+    LARGE_FILE_WARNING_LABEL,
     type MentionQuery,
+    REMOTE_FILE_PROVIDER_URI,
+    REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    WEB_PROVIDER_URI,
     displayLineRange,
     displayPath,
     displayPathBasename,
@@ -21,22 +26,15 @@ import {
     SquareFunctionIcon,
 } from 'lucide-react'
 import type { FunctionComponent } from 'react'
-import {
-    IGNORED_FILE_WARNING_LABEL,
-    LARGE_FILE_WARNING_LABEL,
-} from '../../../src/chat/context/constants'
-import RemoteFileProvider from '../../../src/context/openctx/remoteFileSearch'
-import RemoteRepositorySearch from '../../../src/context/openctx/remoteRepositorySearch'
-import WebProvider from '../../../src/context/openctx/web'
-import ConfluenceLogo from '../../icons/providers/confluence.svg?react'
-import GithubLogo from '../../icons/providers/github.svg?react'
-import GoogleLogo from '../../icons/providers/google.svg?react'
-import JiraLogo from '../../icons/providers/jira.svg?react'
-import LinearLogo from '../../icons/providers/linear.svg?react'
-import NotionLogo from '../../icons/providers/notion.svg?react'
-import SentryLogo from '../../icons/providers/sentry.svg?react'
-import SlackLogo from '../../icons/providers/slack.svg?react'
-import SourcegraphLogo from '../../icons/providers/sourcegraph.svg?react'
+import ConfluenceLogo from '../../providerIcons/confluence.svg?react'
+import GithubLogo from '../../providerIcons/github.svg?react'
+import GoogleLogo from '../../providerIcons/google.svg?react'
+import JiraLogo from '../../providerIcons/jira.svg?react'
+import LinearLogo from '../../providerIcons/linear.svg?react'
+import NotionLogo from '../../providerIcons/notion.svg?react'
+import SentryLogo from '../../providerIcons/sentry.svg?react'
+import SlackLogo from '../../providerIcons/slack.svg?react'
+import SourcegraphLogo from '../../providerIcons/sourcegraph.svg?react'
 import styles from './MentionMenuItem.module.css'
 
 function getDescription(item: ContextItem, query: MentionQuery): string {
@@ -142,7 +140,7 @@ export const iconForProvider: Record<
     'https://openctx.org/npm/@openctx/provider-devdocs': LibraryBigIcon,
     'https://openctx.org/npm/@openctx/provider-sourcegraph-search': SourcegraphLogo,
     'internal-linear-issues': LinearLogo, // Can't import LinearIssuesProvider due to transitive dep on vscode.
-    [RemoteRepositorySearch.providerUri]: FolderGitIcon,
-    [RemoteFileProvider.providerUri]: FolderGitIcon,
-    [WebProvider.providerUri]: LinkIcon,
+    [REMOTE_REPOSITORY_PROVIDER_URI]: FolderGitIcon,
+    [REMOTE_FILE_PROVIDER_URI]: FolderGitIcon,
+    [WEB_PROVIDER_URI]: LinkIcon,
 }

@@ -3,22 +3,10 @@ import {
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
-    createExtensionAPIProxyInWebview,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { LRUCache } from 'lru-cache'
-import {
-    type FunctionComponent,
-    type ReactNode,
-    createContext,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react'
-import type { ExtensionMessage } from '../../../../src/chat/protocol'
-import type { VSCodeWrapper } from '../../../utils/VSCodeApi'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 export interface ChatMentionsSettings {
     resolutionMode: 'remote' | 'local'
@@ -32,38 +20,14 @@ export interface ChatContextClient {
     getChatContextItems(params: { query: MentionQuery }): Promise<{
         userContextFiles?: ContextItem[] | null | undefined
     }>
+    getMentionProvidersMetadata(
+        params: Record<string, never>
+    ): Promise<{ providers: ContextMentionProviderMetadata[] }>
 }
 
 const ChatContextClientContext = createContext<ChatContextClient | undefined>(undefined)
 
-export const ChatContextClientProviderFromVSCodeAPI: FunctionComponent<{
-    vscodeAPI: VSCodeWrapper | null
-    children: ReactNode
-}> = ({ vscodeAPI, children }) => {
-    const value = useMemo<ChatContextClient | null>(
-        () =>
-            vscodeAPI
-                ? {
-                      getChatContextItems: createExtensionAPIProxyInWebview(
-                          vscodeAPI,
-                          'queryContextItems',
-                          'userContextFiles'
-                      ),
-                  }
-                : null,
-        [vscodeAPI]
-    )
-    return value ? (
-        <ChatContextClientContext.Provider value={value}>{children}</ChatContextClientContext.Provider>
-    ) : (
-        <>{children}</>
-    )
-}
-
-/**
- * @internal Used in tests only.
- */
-export const ChatContextClientProviderForTestsOnly = ChatContextClientContext.Provider
+export const ChatContextClientProvider = ChatContextClientContext.Provider
 
 /** Hook to get the chat context items for the given query. */
 export function useChatContextItems(
@@ -73,9 +37,7 @@ export function useChatContextItems(
     const mentionSettings = useContext(ChatMentionContext)
     const unmemoizedClient = useContext(ChatContextClientContext)
     if (!unmemoizedClient) {
-        throw new Error(
-            'useChatContextItems must be used within a ChatContextClientProvider or ChatContextClientProviderFromVSCodeAPI'
-        )
+        throw new Error('useChatContextItems must be used within a ChatContextClientProvider')
     }
 
     const chatContextClient = useMemo(
@@ -145,10 +107,14 @@ export function useChatContextItems(
     return results
 }
 
-function memoizeChatContextClient(client: ChatContextClient): ChatContextClient {
+function memoizeChatContextClient(
+    client: ChatContextClient
+): Pick<ChatContextClient, 'getChatContextItems'> {
     const cache = new LRUCache<
         string,
-        Omit<Extract<ExtensionMessage, { type: 'userContextFiles' }>, 'type'>
+        {
+            userContextFiles?: ContextItem[] | null | undefined
+        }
     >({ max: 10 })
     return {
         async getChatContextItems(params) {
@@ -163,4 +129,31 @@ function memoizeChatContextClient(client: ChatContextClient): ChatContextClient 
             return result
         },
     }
+}
+
+const EMPTY_PROVIDERS: ContextMentionProviderMetadata[] = []
+
+export function useChatContextMentionProviders(): {
+    providers: ContextMentionProviderMetadata[]
+    reload: () => void
+} {
+    const client = useContext(ChatContextClientContext)
+    const [providers, setProviders] = useState<ContextMentionProviderMetadata[]>()
+
+    const load = useCallback(() => {
+        if (client) {
+            client
+                .getMentionProvidersMetadata({})
+                .then(result => setProviders(result.providers))
+                .catch(error => {
+                    console.error(error)
+                    setProviders(EMPTY_PROVIDERS)
+                })
+        }
+    }, [client])
+    useEffect(() => {
+        load()
+    }, [load])
+
+    return useMemo(() => ({ providers: providers ?? EMPTY_PROVIDERS, reload: load }), [providers, load])
 }

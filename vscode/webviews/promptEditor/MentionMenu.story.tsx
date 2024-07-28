@@ -9,9 +9,8 @@ import {
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     openCtxProviderMetadata,
 } from '@sourcegraph/cody-shared'
-import { VSCodeDecorator } from '../../storybook/VSCodeStoryDecorator'
-import { MentionMenu } from './MentionMenu'
-import type { MentionMenuData, MentionMenuParams } from './useMentionMenuData'
+import { MentionMenu, type MentionMenuData, type MentionMenuParams } from '@sourcegraph/prompt-editor'
+import { VSCodeDecorator } from '../storybook/VSCodeStoryDecorator'
 
 const meta: Meta<typeof MentionMenu> = {
     title: 'cody/MentionMenu',

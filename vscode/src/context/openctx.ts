@@ -12,17 +12,17 @@ export async function exposeOpenCtxClient(
     config: ConfigurationWithAccessToken,
     isDotCom: boolean,
     // TODO [VK] Expose createController openctx type from vscode-lib
-    createOpenContextController: ((...args: any[]) => any) | undefined
+    createOpenCtxController: ((...args: any[]) => any) | undefined
 ) {
     logDebug('openctx', 'OpenCtx is enabled in Cody')
     await warnIfOpenCtxExtensionConflict()
     try {
         const isCodyWeb = config.agentIDE === CodyIDE.Web
         const providers = isCodyWeb
-            ? getCodyWebOpenContextProviders()
-            : getStandardOpenContextProviders(config, isDotCom)
+            ? getCodyWebOpenCtxProviders()
+            : getStandardOpenCtxProviders(config, isDotCom)
         const createController =
-            createOpenContextController ?? (await import('@openctx/vscode-lib')).createController
+            createOpenCtxController ?? (await import('@openctx/vscode-lib')).createController
 
         setOpenCtxClient(
             createController({
@@ -39,7 +39,7 @@ export async function exposeOpenCtxClient(
     }
 }
 
-function getStandardOpenContextProviders(config: ConfigurationWithAccessToken, isDotCom: boolean) {
+function getStandardOpenCtxProviders(config: ConfigurationWithAccessToken, isDotCom: boolean) {
     // TODO [vk] expose types for providers from openctx/client lib
     const providers: any[] = [
         {
@@ -78,7 +78,7 @@ function getStandardOpenContextProviders(config: ConfigurationWithAccessToken, i
     return providers
 }
 
-function getCodyWebOpenContextProviders() {
+function getCodyWebOpenCtxProviders() {
     return [
         {
             settings: true,

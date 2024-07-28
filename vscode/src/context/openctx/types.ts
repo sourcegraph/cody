@@ -1,5 +1,5 @@
 import type { Provider } from '@openctx/client'
 
-export interface OpenContextProvider extends Provider {
+export interface OpenCtxProvider extends Provider {
     providerUri: string
 }

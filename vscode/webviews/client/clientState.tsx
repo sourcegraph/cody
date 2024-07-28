@@ -1,4 +1,3 @@
-import type { ClientStateForWebview } from '@sourcegraph/cody-shared'
 import {
     type FunctionComponent,
     type ReactNode,
@@ -8,21 +7,6 @@ import {
     useMemo,
 } from 'react'
 import type { ExtensionMessage } from '../../src/chat/protocol'
-
-const ClientStateContext = createContext<ClientStateForWebview | null>(null)
-
-export const ClientStateContextProvider = ClientStateContext.Provider
-
-/**
- * Get the {@link ClientState} stored in React context.
- */
-export function useClientState(): ClientStateForWebview {
-    const clientState = useContext(ClientStateContext)
-    if (!clientState) {
-        throw new Error('no clientState')
-    }
-    return clientState
-}
 
 type ClientActionArg = Omit<Extract<ExtensionMessage, { type: 'clientAction' }>, 'type'>
 

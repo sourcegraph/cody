@@ -9,7 +9,7 @@ import {
     type NodeKey,
 } from 'lexical'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/shadcn/ui/tooltip'
+import { getGlobalPromptEditorConfig } from '../config'
 import { $isTemplateInputNode, type TemplateInputNode } from './TemplateInputNode'
 import { useIsFocused } from './mentionUtils'
 
@@ -20,6 +20,8 @@ export const TemplateInputComponent: React.FC<{
     className: string
     focusedClassName: string
 }> = ({ editor, nodeKey, node, className, focusedClassName }) => {
+    const { tooltipComponents } = getGlobalPromptEditorConfig()
+
     const isEditorFocused = useIsFocused()
     const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(nodeKey)
     const ref = useRef<HTMLSpanElement>(null)
@@ -82,13 +84,19 @@ export const TemplateInputComponent: React.FC<{
     const tooltip = 'replaces template placeholder on keypress'
     const text = node.templateInput.placeholder
 
+    const content = (
+        <span ref={ref} className={composedClassNames} title={tooltipComponents ? undefined : tooltip}>
+            <span>{text}</span>
+        </span>
+    )
+
+    if (!tooltipComponents) {
+        return content
+    }
+    const { Tooltip, TooltipContent, TooltipTrigger } = tooltipComponents
     return (
         <Tooltip>
-            <TooltipTrigger asChild>
-                <span ref={ref} className={composedClassNames}>
-                    <span>{text}</span>
-                </span>
-            </TooltipTrigger>
+            <TooltipTrigger asChild>{content}</TooltipTrigger>
             {tooltip && <TooltipContent>{tooltip}</TooltipContent>}
         </Tooltip>
     )

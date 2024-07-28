@@ -5,13 +5,13 @@ import {
     type ContextItemRepository,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
+    REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     openCtx,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
-import RemoteRepositorySearch from '../../context/openctx/remoteRepositorySearch'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
@@ -87,7 +87,7 @@ export function contextItemMentionFromOpenCtxItem(
     // this for our internal Sourcegraph Repositories provider.
     const isIgnored = item.data?.isIgnored as boolean | undefined
 
-    return item.providerUri === RemoteRepositorySearch.providerUri
+    return item.providerUri === REMOTE_REPOSITORY_PROVIDER_URI
         ? ({
               type: 'repository',
               uri: URI.parse(item.uri),

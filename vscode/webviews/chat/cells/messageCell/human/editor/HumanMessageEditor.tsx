@@ -1,8 +1,10 @@
 import {
+    FAST_CHAT_INPUT_TOKEN_BUDGET,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     textContentFromSerializedLexicalNode,
 } from '@sourcegraph/cody-shared'
+import { PromptEditor, type PromptEditorRefAPI, useClientState } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import {
     type FocusEventHandler,
@@ -14,13 +16,9 @@ import {
     useState,
 } from 'react'
 import type { UserAccountInfo } from '../../../../../Chat'
-import {
-    type ClientActionListener,
-    useClientActionListener,
-    useClientState,
-} from '../../../../../client/clientState'
-import { PromptEditor, type PromptEditorRefAPI } from '../../../../../promptEditor/PromptEditor'
+import { type ClientActionListener, useClientActionListener } from '../../../../../client/clientState'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
+import { useCurrentChatModel } from '../../../../models/chatModelContext'
 import styles from './HumanMessageEditor.module.css'
 import type { SubmitButtonState } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
@@ -262,6 +260,12 @@ export const HumanMessageEditor: FunctionComponent<{
 
     const focused = Boolean(isEditorFocused || isFocusWithin || __storybook__focus)
 
+    const model = useCurrentChatModel()
+    const contextWindowSizeInTokens =
+        model?.contextWindow?.context?.user ||
+        model?.contextWindow?.input ||
+        FAST_CHAT_INPUT_TOKEN_BUDGET
+
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <div
@@ -290,6 +294,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 onEnterKey={onEditorEnterKey}
                 editorRef={editorRef}
                 disabled={disabled}
+                contextWindowSizeInTokens={contextWindowSizeInTokens}
             />
             {!disabled && (
                 <Toolbar

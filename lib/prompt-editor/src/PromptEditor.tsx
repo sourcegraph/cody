@@ -9,12 +9,10 @@ import { $createTextNode, $getRoot, $getSelection, $insertNodes, type LexicalEdi
 import type { EditorState, SerializedEditorState, SerializedLexicalNode } from 'lexical'
 import { isEqual } from 'lodash'
 import { type FunctionComponent, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
-import {
-    isEditorContentOnlyInitialContext,
-    lexicalNodesForContextItems,
-} from '../chat/cells/messageCell/human/editor/initialContext'
 import { BaseEditor } from './BaseEditor'
 import styles from './PromptEditor.module.css'
+import { useSetGlobalPromptEditorConfig } from './config'
+import { isEditorContentOnlyInitialContext, lexicalNodesForContextItems } from './initialContext'
 import { $selectAfter, $selectEnd } from './lexicalUtils'
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
@@ -28,6 +26,8 @@ interface Props extends KeyboardEventPluginProps {
     initialEditorState?: SerializedPromptEditorState
     onChange?: (value: SerializedPromptEditorValue) => void
     onFocusChange?: (focused: boolean) => void
+
+    contextWindowSizeInTokens?: number
 
     disabled?: boolean
 
@@ -54,6 +54,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
     initialEditorState,
     onChange,
     onFocusChange,
+    contextWindowSizeInTokens,
     disabled,
     editorRef: ref,
     onEnterKey,
@@ -161,6 +162,8 @@ export const PromptEditor: FunctionComponent<Props> = ({
         []
     )
 
+    useSetGlobalPromptEditorConfig()
+
     const onBaseEditorChange = useCallback(
         (_editorState: EditorState, editor: LexicalEditor, tags: Set<string>): void => {
             if (onChange) {
@@ -193,6 +196,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
             initialEditorState={initialEditorState?.lexicalEditorState ?? null}
             onChange={onBaseEditorChange}
             onFocusChange={onFocusChange}
+            contextWindowSizeInTokens={contextWindowSizeInTokens}
             editorRef={editorRef}
             placeholder={placeholder}
             disabled={disabled}

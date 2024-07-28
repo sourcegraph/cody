@@ -73,6 +73,11 @@ export {
     type SymbolKind,
     type ContextItemTree,
     type ContextItemRepository,
+    FILE_RANGE_TOOLTIP_LABEL,
+    GENERAL_HELP_LABEL,
+    IGNORED_FILE_WARNING_LABEL,
+    LARGE_FILE_WARNING_LABEL,
+    NO_SYMBOL_MATCHES_HELP_LABEL,
 } from './codebase-context/messages'
 export type {
     CodyCommand,
@@ -145,7 +150,7 @@ export {
 } from './experimentation/FeatureFlagProvider'
 export { GuardrailsPost, summariseAttribution } from './guardrails'
 export type { Attribution, Guardrails } from './guardrails'
-export { SourcegraphGuardrailsClient, GuardrailsClientConfig } from './guardrails/client'
+export { SourcegraphGuardrailsClient, type GuardrailsClientConfig } from './guardrails/client'
 export {
     CompletionStopReason,
     type CodeCompletionsClient,
@@ -296,6 +301,9 @@ export * from './configuration'
 export {
     setOpenCtxClient,
     openCtx,
+    REMOTE_REPOSITORY_PROVIDER_URI,
+    REMOTE_FILE_PROVIDER_URI,
+    WEB_PROVIDER_URI,
 } from './context/openctx/api'
 export { type ClientStateForWebview } from './clientState'
 export * from './lexicalEditor/editorState'

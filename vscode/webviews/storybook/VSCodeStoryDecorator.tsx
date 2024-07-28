@@ -12,7 +12,6 @@ import { URI } from 'vscode-uri'
 import '../../node_modules/@vscode/codicons/dist/codicon.css'
 import { TestAppWrapper } from '../AppWrapper'
 import { type ChatModelContext, ChatModelContextProvider } from '../chat/models/chatModelContext'
-import { WithContextProviders } from '../mentions/providers'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from '../utils/telemetry'
 import styles from './VSCodeStoryDecorator.module.css'
 
@@ -116,11 +115,3 @@ if (!(window as any).acquireVsCodeApi) {
 }
 
 const telemetryRecorder = createWebviewTelemetryRecorder(acquireVsCodeApi())
-
-export const ContextProvidersDecorator: Decorator = (Story, context) => {
-    return (
-        <WithContextProviders>
-            <Story />
-        </WithContextProviders>
-    )
-}

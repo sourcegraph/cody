@@ -195,7 +195,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly contextAPIClient: ContextAPIClient | null
 
     private contextFilesQueryAbortController?: AbortController
-    private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
+    private allMentionProvidersMetadataQueryAbortController?: AbortController
 
     private disposables: vscode.Disposable[] = []
 
@@ -360,9 +360,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await this.handleGetUserContextFilesCandidates({
                     query: parseMentionQuery(message.query, null),
                 })
-                break
-            case 'getAllMentionProvidersMetadata':
-                await this.handleGetAllMentionProvidersMetadata()
                 break
             case 'insert':
                 await handleCodeFromInsertAtCursor(message.text)
@@ -940,35 +937,21 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.postChatModels()
     }
 
-    private async handleGetAllMentionProvidersMetadata(): Promise<void> {
+    private async handleGetAllMentionProvidersMetadata(): Promise<
+        Omit<Extract<ExtensionMessage, { type: 'allMentionProvidersMetadata' }>, 'type'>
+    > {
         // Cancel previously in-flight query.
-        const cancellation = new vscode.CancellationTokenSource()
-        this.allMentionProvidersMetadataQueryCancellation?.cancel()
-        this.allMentionProvidersMetadataQueryCancellation = cancellation
+        const abortController = new AbortController()
+        this.allMentionProvidersMetadataQueryAbortController?.abort()
+        this.allMentionProvidersMetadataQueryAbortController = abortController
 
-        try {
-            const config = await getFullConfig()
-            const isCodyWeb = config.agentIDE === CodyIDE.Web
-            const providers = isCodyWeb
-                ? await webMentionProvidersMetadata()
-                : await allMentionProvidersMetadata()
-
-            if (cancellation.token.isCancellationRequested) {
-                return
-            }
-            void this.postMessage({
-                type: 'allMentionProvidersMetadata',
-                providers,
-            })
-        } catch (error) {
-            if (cancellation.token.isCancellationRequested) {
-                return
-            }
-            cancellation.cancel()
-            this.postError(new Error(`Error retrieving context files: ${error}`))
-        } finally {
-            cancellation.dispose()
-        }
+        const config = await getFullConfig()
+        const isCodyWeb = config.agentIDE === CodyIDE.Web
+        const providers = isCodyWeb
+            ? await webMentionProvidersMetadata()
+            : await allMentionProvidersMetadata()
+        abortController.signal.throwIfAborted()
+        return { providers }
     }
 
     private async handleGetUserContextFilesCandidates({
@@ -1646,6 +1629,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         return { error: String(error) }
                     }
                 }
+            )
+        )
+        this.disposables.push(
+            handleExtensionAPICallFromWebview(
+                webviewAPIWrapper,
+                'getAllMentionProvidersMetadata',
+                'allMentionProvidersMetadata',
+                async () => this.handleGetAllMentionProvidersMetadata()
             )
         )
 

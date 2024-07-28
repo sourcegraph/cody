@@ -4,32 +4,19 @@ import {
     type ContextItemOpenCtx,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
+    FILE_RANGE_TOOLTIP_LABEL,
     type MentionQuery,
+    NO_SYMBOL_MATCHES_HELP_LABEL,
+    REMOTE_FILE_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { type FunctionComponent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-    FILE_RANGE_TOOLTIP_LABEL,
-    NO_SYMBOL_MATCHES_HELP_LABEL,
-} from '../../../src/chat/context/constants'
-import RemoteFileProvider from '../../../src/context/openctx/remoteFileSearch'
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandItem,
-    CommandList,
-    CommandLoading,
-    CommandSeparator,
-} from '../../components/shadcn/ui/command'
-import {
-    type MentionMenuOption,
-    createMentionMenuOption,
-} from '../../promptEditor/plugins/atMentions/atMentions'
-import type { setEditorQuery } from '../../promptEditor/plugins/atMentions/atMentions'
-import { contextItemID } from '../../promptEditor/plugins/atMentions/util'
+import { usePromptEditorConfig } from '../../config'
+import { type MentionMenuOption, createMentionMenuOption } from '../../plugins/atMentions/atMentions'
+import type { setEditorQuery } from '../../plugins/atMentions/atMentions'
+import { contextItemID } from '../../plugins/atMentions/util'
 import styles from './MentionMenu.module.css'
 import { MentionMenuContextItemContent, MentionMenuProviderItemContent } from './MentionMenuItem'
 import type { MentionMenuData, MentionMenuParams } from './useMentionMenuData'
@@ -160,7 +147,7 @@ export const MentionMenu: FunctionComponent<
             if (item.provider === 'openctx') {
                 const openCtxItem = item as ContextItemOpenCtx
                 if (
-                    openCtxItem.providerUri === RemoteFileProvider.providerUri &&
+                    openCtxItem.providerUri === REMOTE_FILE_PROVIDER_URI &&
                     openCtxItem.mention?.data?.repoName &&
                     !openCtxItem.mention?.data?.filePath
                 ) {
@@ -170,7 +157,7 @@ export const MentionMenu: FunctionComponent<
 
                     updateMentionMenuParams({
                         parentItem: {
-                            id: RemoteFileProvider.providerUri,
+                            id: REMOTE_FILE_PROVIDER_URI,
                             title: 'Remote Files',
                             queryLabel: 'Enter file path to search',
                             emptyLabel: `No matching files found in ${openCtxItem?.mention?.data.repoName} repository`,
@@ -221,6 +208,18 @@ export const MentionMenu: FunctionComponent<
     const effectiveValueRow = valueRow ?? firstRow
 
     const heading = getItemsHeading(params.parentItem, mentionQuery)
+
+    const {
+        commandComponents: {
+            Command,
+            CommandEmpty,
+            CommandGroup,
+            CommandItem,
+            CommandList,
+            CommandLoading,
+            CommandSeparator,
+        },
+    } = usePromptEditorConfig()
 
     const providers = data.providers.map(provider => (
         // show remote repositories search provider only if the user is connected to a non-dotcom instance.

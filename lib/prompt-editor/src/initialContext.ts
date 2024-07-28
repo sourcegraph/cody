@@ -1,9 +1,6 @@
 import type { ContextItem } from '@sourcegraph/cody-shared'
 import { $createTextNode, $getRoot, type LexicalEditor, TextNode } from 'lexical'
-import {
-    $createContextItemMentionNode,
-    ContextItemMentionNode,
-} from '../../../../../promptEditor/nodes/ContextItemMentionNode'
+import { $createContextItemMentionNode, ContextItemMentionNode } from './nodes/ContextItemMentionNode'
 
 export function lexicalNodesForContextItems(
     items: ContextItem[],

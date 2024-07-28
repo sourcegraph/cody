@@ -23,12 +23,12 @@ import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
 import { ConnectionIssuesPage } from './Troubleshooting'
 import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
-import { ClientStateContextProvider, useClientActionDispatcher } from './client/clientState'
+import { useClientActionDispatcher } from './client/clientState'
 
+import { ClientStateContextProvider } from '@sourcegraph/prompt-editor'
 import { PromptsClientProviderFromVSCodeAPI } from './components/promptSelectField/promptsClient'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
-import { WithContextProviders } from './mentions/providers'
-import { ChatContextClientProviderFromVSCodeAPI } from './promptEditor/plugins/atMentions/chatContextClient'
+import { ChatContextClientProviderFromVSCodeAPI } from './openctxClient'
 import { AccountTab, CommandsTab, HistoryTab, SettingsTab, TabsBar, View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
@@ -373,7 +373,6 @@ export function getAppWrappers(
             provider: ChatModelContextProvider,
             value: chatModelContext,
         } satisfies Wrapper<ComponentProps<typeof ChatModelContextProvider>['value']>,
-        { component: WithContextProviders },
         {
             provider: ClientStateContextProvider,
             value: clientState,
