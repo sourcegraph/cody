@@ -29,6 +29,8 @@ interface Props extends KeyboardEventPluginProps {
     onChange?: (value: SerializedPromptEditorValue) => void
     onFocusChange?: (focused: boolean) => void
 
+    contextWindowSizeInTokens?: number
+
     disabled?: boolean
 
     editorRef?: React.RefObject<PromptEditorRefAPI>
@@ -54,6 +56,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
     initialEditorState,
     onChange,
     onFocusChange,
+    contextWindowSizeInTokens,
     disabled,
     editorRef: ref,
     onEnterKey,
@@ -193,6 +196,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
             initialEditorState={initialEditorState?.lexicalEditorState ?? null}
             onChange={onBaseEditorChange}
             onFocusChange={onFocusChange}
+            contextWindowSizeInTokens={contextWindowSizeInTokens}
             editorRef={editorRef}
             placeholder={placeholder}
             disabled={disabled}

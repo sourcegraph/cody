@@ -10,7 +10,7 @@ import type { EditorState, LexicalEditor, SerializedEditorState } from 'lexical'
 import { type FunctionComponent, type RefObject, useMemo } from 'react'
 import styles from './BaseEditor.module.css'
 import { RICH_EDITOR_NODES } from './nodes'
-import MentionsPlugin from './plugins/atMentions/atMentions'
+import { MentionsPlugin } from './plugins/atMentions/atMentions'
 import CodeHighlightPlugin from './plugins/codeHighlight'
 import { DisableEscapeKeyBlursPlugin } from './plugins/disableEscapeKeyBlurs'
 import { KeyboardEventPlugin, type KeyboardEventPluginProps } from './plugins/keyboardEvent'
@@ -21,6 +21,7 @@ interface Props extends KeyboardEventPluginProps {
     initialEditorState: SerializedEditorState | null
     onChange: (editorState: EditorState, editor: LexicalEditor, tags: Set<string>) => void
     onFocusChange?: (focused: boolean) => void
+    contextWindowSizeInTokens?: number
     editorRef?: RefObject<LexicalEditor>
     placeholder?: string
     disabled?: boolean
@@ -36,6 +37,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
     initialEditorState,
     onChange,
     onFocusChange,
+    contextWindowSizeInTokens,
     editorRef,
     placeholder,
     disabled,
@@ -86,7 +88,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
                         // our tests using JSDOM. It doesn't hurt to enable otherwise.
                         ignoreHistoryMergeTagChange={false}
                     />
-                    <MentionsPlugin />
+                    <MentionsPlugin contextWindowSizeInTokens={contextWindowSizeInTokens} />
                     <CodeHighlightPlugin />
                     {onFocusChange && <OnFocusChangePlugin onFocusChange={onFocusChange} />}
                     {editorRef && <EditorRefPlugin editorRef={editorRef} />}

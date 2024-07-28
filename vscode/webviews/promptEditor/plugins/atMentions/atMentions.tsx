@@ -19,17 +19,15 @@ import {
     KEY_ESCAPE_COMMAND,
     type TextNode,
 } from 'lexical'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { type FunctionComponent, useCallback, useEffect, useRef, useState } from 'react'
 import styles from './atMentions.module.css'
 
 import {
     type ContextItem,
-    FAST_CHAT_INPUT_TOKEN_BUDGET,
     scanForMentionTriggerInUserTextInput,
     toSerializedPromptEditorValue,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { useCurrentChatModel } from '../../../chat/models/chatModelContext'
 import { MentionMenu } from '../../../mentions/mentionMenu/MentionMenu'
 import {
     useMentionMenuData,
@@ -80,7 +78,9 @@ function scanForMentionTriggerInLexicalInput(text: string) {
 
 export type setEditorQuery = (getNewQuery: (currentText: string) => [string, number?]) => void
 
-export default function MentionsPlugin(): JSX.Element | null {
+export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: number }> = ({
+    contextWindowSizeInTokens,
+}) => {
     const [editor] = useLexicalComposerContext()
 
     /**
@@ -90,12 +90,10 @@ export default function MentionsPlugin(): JSX.Element | null {
 
     const { x, y, refs, strategy } = useFloating(FLOATING_OPTIONS)
 
-    const model = useCurrentChatModel()
-    const limit =
-        model?.contextWindow?.context?.user ||
-        model?.contextWindow?.input ||
-        FAST_CHAT_INPUT_TOKEN_BUDGET
-    const remainingTokenBudget = limit - tokenAdded
+    const remainingTokenBudget =
+        contextWindowSizeInTokens === undefined
+            ? Number.MAX_SAFE_INTEGER
+            : contextWindowSizeInTokens - tokenAdded
 
     const { params, updateQuery, updateMentionMenuParams } = useMentionMenuParams()
 

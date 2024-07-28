@@ -2,6 +2,7 @@ import {
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     textContentFromSerializedLexicalNode,
+    FAST_CHAT_INPUT_TOKEN_BUDGET,
 } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import {
@@ -24,6 +25,7 @@ import { useTelemetryRecorder } from '../../../../../utils/telemetry'
 import styles from './HumanMessageEditor.module.css'
 import type { SubmitButtonState } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
+import { useCurrentChatModel } from '../../../../models/chatModelContext'
 
 /**
  * A component to compose and edit human chat messages and the settings associated with them.
@@ -262,6 +264,12 @@ export const HumanMessageEditor: FunctionComponent<{
 
     const focused = Boolean(isEditorFocused || isFocusWithin || __storybook__focus)
 
+    const model = useCurrentChatModel()
+    const contextWindowSizeInTokens =
+        model?.contextWindow?.context?.user ||
+        model?.contextWindow?.input ||
+        FAST_CHAT_INPUT_TOKEN_BUDGET
+
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <div
@@ -290,6 +298,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 onEnterKey={onEditorEnterKey}
                 editorRef={editorRef}
                 disabled={disabled}
+                contextWindowSizeInTokens={contextWindowSizeInTokens}
             />
             {!disabled && (
                 <Toolbar
