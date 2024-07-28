@@ -9,12 +9,10 @@ import { $createTextNode, $getRoot, $getSelection, $insertNodes, type LexicalEdi
 import type { EditorState, SerializedEditorState, SerializedLexicalNode } from 'lexical'
 import { isEqual } from 'lodash'
 import { type FunctionComponent, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
-import {
-    isEditorContentOnlyInitialContext,
-    lexicalNodesForContextItems,
-} from '../chat/cells/messageCell/human/editor/initialContext'
 import { BaseEditor } from './BaseEditor'
 import styles from './PromptEditor.module.css'
+import { useSetGlobalPromptEditorConfig } from './config'
+import { isEditorContentOnlyInitialContext, lexicalNodesForContextItems } from './initialContext'
 import { $selectAfter, $selectEnd } from './lexicalUtils'
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
@@ -163,6 +161,8 @@ export const PromptEditor: FunctionComponent<Props> = ({
         }),
         []
     )
+
+    useSetGlobalPromptEditorConfig()
 
     const onBaseEditorChange = useCallback(
         (_editorState: EditorState, editor: LexicalEditor, tags: Set<string>): void => {

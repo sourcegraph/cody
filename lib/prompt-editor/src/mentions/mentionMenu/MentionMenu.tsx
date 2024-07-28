@@ -13,21 +13,10 @@ import {
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { type FunctionComponent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandItem,
-    CommandList,
-    CommandLoading,
-    CommandSeparator,
-} from '../../components/shadcn/ui/command'
-import {
-    type MentionMenuOption,
-    createMentionMenuOption,
-} from '../../promptEditor/plugins/atMentions/atMentions'
-import type { setEditorQuery } from '../../promptEditor/plugins/atMentions/atMentions'
-import { contextItemID } from '../../promptEditor/plugins/atMentions/util'
+import { usePromptEditorConfig } from '../../config'
+import { type MentionMenuOption, createMentionMenuOption } from '../../plugins/atMentions/atMentions'
+import type { setEditorQuery } from '../../plugins/atMentions/atMentions'
+import { contextItemID } from '../../plugins/atMentions/util'
 import styles from './MentionMenu.module.css'
 import { MentionMenuContextItemContent, MentionMenuProviderItemContent } from './MentionMenuItem'
 import type { MentionMenuData, MentionMenuParams } from './useMentionMenuData'
@@ -219,6 +208,18 @@ export const MentionMenu: FunctionComponent<
     const effectiveValueRow = valueRow ?? firstRow
 
     const heading = getItemsHeading(params.parentItem, mentionQuery)
+
+    const {
+        commandComponents: {
+            Command,
+            CommandEmpty,
+            CommandGroup,
+            CommandItem,
+            CommandList,
+            CommandLoading,
+            CommandSeparator,
+        },
+    } = usePromptEditorConfig()
 
     const providers = data.providers.map(provider => (
         // show remote repositories search provider only if the user is connected to a non-dotcom instance.

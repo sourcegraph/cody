@@ -1,9 +1,7 @@
-import type { DialogProps } from '@radix-ui/react-dialog'
 import { Command as CommandPrimitive } from 'cmdk'
 import * as React from 'react'
 
 import { cn } from '../utils'
-import { Dialog, DialogContent } from './dialog'
 
 const Command = React.forwardRef<
     React.ElementRef<typeof CommandPrimitive>,
@@ -19,20 +17,6 @@ const Command = React.forwardRef<
     />
 ))
 Command.displayName = CommandPrimitive.displayName
-
-interface CommandDialogProps extends DialogProps {}
-
-const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
-    return (
-        <Dialog {...props}>
-            <DialogContent className="tw-overflow-hidden tw-p-0 tw-shadow-lg">
-                <Command className="[&_[cmdk-group-heading]]:tw-px-2 [&_[cmdk-group-heading]]:tw-font-medium [&_[cmdk-group-heading]]:tw-text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:tw-pt-0 [&_[cmdk-group]]:tw-px-2 [&_[cmdk-input-wrapper]_svg]:tw-h-5 [&_[cmdk-input-wrapper]_svg]:tw-w-5 [&_[cmdk-input]]:tw-h-12 [&_[cmdk-item]]:tw-px-2 [&_[cmdk-item]]:tw-py-3 [&_[cmdk-item]_svg]:tw-h-5 [&_[cmdk-item]_svg]:tw-w-5">
-                    {children}
-                </Command>
-            </DialogContent>
-        </Dialog>
-    )
-}
 
 const CommandInput = React.forwardRef<
     React.ElementRef<typeof CommandPrimitive.Input>,
@@ -221,7 +205,6 @@ export const CommandLink: React.FunctionComponent<
 
 export {
     Command,
-    CommandDialog,
     CommandInput,
     CommandList,
     CommandEmpty,

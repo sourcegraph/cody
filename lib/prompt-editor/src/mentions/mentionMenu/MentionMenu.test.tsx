@@ -4,9 +4,20 @@ import {
     displayPathBasename,
 } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
-import type { ComponentProps } from 'react'
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+    CommandLoading,
+    CommandSeparator,
+} from 'cmdk'
+import type { ComponentProps, FunctionComponent } from 'react'
 import { type Mock, describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
+import { type PromptEditorConfig, PromptEditorConfigProvider } from '../../config'
 import { MentionMenu } from './MentionMenu'
 import type { MentionMenuData } from './useMentionMenuData'
 
@@ -51,26 +62,45 @@ const PROPS: Pick<
     selectOptionAndCleanUp: () => {},
 }
 
+const CONFIG: PromptEditorConfig = {
+    commandComponents: {
+        Command,
+        CommandInput,
+        CommandList,
+        CommandEmpty,
+        CommandLoading,
+        CommandGroup,
+        CommandSeparator,
+        CommandItem,
+    },
+}
+const Wrapper: FunctionComponent<{ children: React.ReactNode }> = ({ children }) => (
+    <PromptEditorConfigProvider value={CONFIG}>{children}</PromptEditorConfigProvider>
+)
+
 describe('MentionMenu', () => {
     describe('initial states', () => {
         describe('all providers', () => {
             test('loading items', () => {
                 const { container } = render(
-                    <MentionMenu {...PROPS} data={{ items: undefined, providers: [PROVIDER_P1] }} />
+                    <MentionMenu {...PROPS} data={{ items: undefined, providers: [PROVIDER_P1] }} />,
+                    { wrapper: Wrapper }
                 )
                 expectMenu(container, ['>provider p1', '#Loading...'])
             })
 
             test('empty items', () => {
                 const { container } = render(
-                    <MentionMenu {...PROPS} data={{ items: [], providers: [PROVIDER_P1] }} />
+                    <MentionMenu {...PROPS} data={{ items: [], providers: [PROVIDER_P1] }} />,
+                    { wrapper: Wrapper }
                 )
                 expectMenu(container, ['>provider p1'])
             })
 
             test('empty providers', () => {
                 const { container } = render(
-                    <MentionMenu {...PROPS} data={{ items: [ITEM_FILE1], providers: [] }} />
+                    <MentionMenu {...PROPS} data={{ items: [ITEM_FILE1], providers: [] }} />,
+                    { wrapper: Wrapper }
                 )
                 expectMenu(container, ['>item file file1.go'])
             })
@@ -84,7 +114,8 @@ describe('MentionMenu', () => {
                             items: [],
                             providers: [],
                         }}
-                    />
+                    />,
+                    { wrapper: Wrapper }
                 )
                 expectMenu(container, ['#No files found'])
             })
@@ -98,7 +129,8 @@ describe('MentionMenu', () => {
                         items: [ITEM_FILE1, ITEM_FILE2],
                         providers: [PROVIDER_P1],
                     }}
-                />
+                />,
+                { wrapper: Wrapper }
             )
             expectMenu(container, ['>provider p1', 'item file file1.go', 'item file file2.ts'])
         })
@@ -116,7 +148,8 @@ describe('MentionMenu', () => {
                             items: [],
                             providers: [],
                         }}
-                    />
+                    />,
+                    { wrapper: Wrapper }
                 )
                 expectMenu(container, ['#p1 title', '#p1 emptyLabel'])
             })
@@ -133,7 +166,8 @@ describe('MentionMenu', () => {
                             items: [],
                             providers: [],
                         }}
-                    />
+                    />,
+                    { wrapper: Wrapper }
                 )
                 expectMenu(container, ['#p1 title', '#p1 queryLabel'])
             })
@@ -150,7 +184,8 @@ describe('MentionMenu', () => {
                             items: [ITEM_FILE1],
                             providers: [],
                         }}
-                    />
+                    />,
+                    { wrapper: Wrapper }
                 )
                 expectMenu(container, ['#p1 title', 'item file file1.go'])
             })
@@ -167,7 +202,8 @@ describe('MentionMenu', () => {
                             items: [ITEM_FILE1],
                             providers: [],
                         }}
-                    />
+                    />,
+                    { wrapper: Wrapper }
                 )
                 expectMenu(container, ['#p1 title', 'item file file1.go'])
             })
@@ -201,7 +237,8 @@ describe('MentionMenu', () => {
                 updateMentionMenuParams={updateMentionMenuParams}
                 setEditorQuery={setEditorQuery}
                 selectOptionAndCleanUp={selectOptionAndCleanUp}
-            />
+            />,
+            { wrapper: Wrapper }
         )
         return {
             updateMentionMenuParams,
@@ -256,7 +293,8 @@ describe('MentionMenu', () => {
             <MentionMenu
                 {...PROPS}
                 data={{ items: [ITEM_FILE1, ITEM_FILE2], providers: [PROVIDER_P1] }}
-            />
+            />,
+            { wrapper: Wrapper }
         )
         expectMenu(container, ['>provider p1', 'item file file1.go', 'item file file2.ts'])
         fireEvent.keyDown(container, { key: 'ArrowDown' })
@@ -272,7 +310,8 @@ describe('MentionMenu', () => {
             <MentionMenu
                 {...PROPS}
                 data={{ items: [ITEM_FILE1, ITEM_FILE2], providers: [PROVIDER_P1, PROVIDER_P2] }}
-            />
+            />,
+            { wrapper: Wrapper }
         )
         fireEvent.keyDown(container, { key: 'ArrowDown' })
         fireEvent.keyDown(container, { key: 'ArrowDown' })

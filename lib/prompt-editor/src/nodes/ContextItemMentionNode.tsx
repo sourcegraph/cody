@@ -25,7 +25,7 @@ import {
 } from 'lexical'
 import { AtSignIcon } from 'lucide-react'
 import { URI } from 'vscode-uri'
-import { iconForProvider } from '../../mentions/mentionMenu/MentionMenuItem'
+import { iconForProvider } from '../mentions/mentionMenu/MentionMenuItem'
 import styles from './ContextItemMentionNode.module.css'
 import { MentionComponent } from './MentionComponent'
 

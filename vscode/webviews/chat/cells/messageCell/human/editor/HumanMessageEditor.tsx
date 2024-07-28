@@ -1,9 +1,10 @@
 import {
+    FAST_CHAT_INPUT_TOKEN_BUDGET,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     textContentFromSerializedLexicalNode,
-    FAST_CHAT_INPUT_TOKEN_BUDGET,
 } from '@sourcegraph/cody-shared'
+import { PromptEditor, type PromptEditorRefAPI, useClientState } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import {
     type FocusEventHandler,
@@ -15,17 +16,12 @@ import {
     useState,
 } from 'react'
 import type { UserAccountInfo } from '../../../../../Chat'
-import {
-    type ClientActionListener,
-    useClientActionListener,
-    useClientState,
-} from '../../../../../client/clientState'
-import { PromptEditor, type PromptEditorRefAPI } from '../../../../../promptEditor/PromptEditor'
+import { type ClientActionListener, useClientActionListener } from '../../../../../client/clientState'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
+import { useCurrentChatModel } from '../../../../models/chatModelContext'
 import styles from './HumanMessageEditor.module.css'
 import type { SubmitButtonState } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
-import { useCurrentChatModel } from '../../../../models/chatModelContext'
 
 /**
  * A component to compose and edit human chat messages and the settings associated with them.

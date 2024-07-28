@@ -1,11 +1,11 @@
 import type { ContextItem, ContextMentionProviderMetadata } from '@sourcegraph/cody-shared'
 import { useMemo, useState } from 'react'
-import { useClientState } from '../../client/clientState'
+import { useClientState } from '../../clientState'
 import {
     useChatContextItems,
     useChatContextMentionProviders,
-} from '../../promptEditor/plugins/atMentions/chatContextClient'
-import { prepareContextItemForMentionMenu } from '../../promptEditor/plugins/atMentions/util'
+} from '../../plugins/atMentions/chatContextClient'
+import { prepareContextItemForMentionMenu } from '../../plugins/atMentions/util'
 
 export interface MentionMenuParams {
     query: string | null

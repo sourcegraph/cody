@@ -15,15 +15,12 @@ import {
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
 
+import { ChatMentionContext, type ChatMentionsSettings } from '@sourcegraph/prompt-editor'
 import { getAppWrappers } from 'cody-ai/webviews/App'
 import { Chat, type UserAccountInfo } from 'cody-ai/webviews/Chat'
 import { ChatEnvironmentContext } from 'cody-ai/webviews/chat/ChatEnvironmentContext'
 import type { ChatModelContext } from 'cody-ai/webviews/chat/models/chatModelContext'
 import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
-import {
-    ChatMentionContext,
-    type ChatMentionsSettings,
-} from 'cody-ai/webviews/promptEditor/plugins/atMentions/chatContextClient'
 import { createWebviewTelemetryRecorder } from 'cody-ai/webviews/utils/telemetry'
 
 import { useWebAgentClient } from './CodyWebChatProvider'

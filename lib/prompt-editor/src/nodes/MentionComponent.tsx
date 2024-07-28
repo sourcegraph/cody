@@ -20,9 +20,7 @@ import {
     SELECTION_CHANGE_COMMAND,
 } from 'lexical'
 import { type FunctionComponent, useCallback, useEffect, useMemo, useRef } from 'react'
-import { URI } from 'vscode-uri'
-import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/shadcn/ui/tooltip'
-import { getVSCodeAPI } from '../../utils/VSCodeApi'
+import { getGlobalPromptEditorConfig } from '../config'
 import { $isContextItemMentionNode, type ContextItemMentionNode } from './ContextItemMentionNode'
 import { IS_IOS, useIsFocused } from './mentionUtils'
 
@@ -39,6 +37,8 @@ export const MentionComponent: FunctionComponent<{
     focusedClassName?: string
     iconClassName?: string
 }> = ({ nodeKey, node, tooltip, icon: Icon, className, focusedClassName, iconClassName }) => {
+    const { tooltipComponents, onContextItemMentionNodeMetaClick } = getGlobalPromptEditorConfig()
+
     const [editor] = useLexicalComposerContext()
     const isEditorFocused = useIsFocused()
     const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(nodeKey)
@@ -144,19 +144,15 @@ export const MentionComponent: FunctionComponent<{
                 setSelected(true)
 
                 // metaKey is true when you press cmd on Mac while clicking.
-                if (event.metaKey && node.contextItem.uri) {
-                    const uri = URI.parse(node.contextItem.uri)
-                    getVSCodeAPI().postMessage({
-                        command: 'openURI',
-                        uri,
-                    })
+                if (event.metaKey) {
+                    onContextItemMentionNodeMetaClick?.(node.contextItem)
                 }
 
                 return true
             }
             return false
         },
-        [clearSelection, setSelected, node.contextItem.uri]
+        [clearSelection, setSelected, onContextItemMentionNodeMetaClick, node.contextItem]
     )
 
     const onBlur = useCallback(() => {
@@ -198,14 +194,20 @@ export const MentionComponent: FunctionComponent<{
         }
     }, [editor, onArrowLeftPress, onArrowRightPress, onClick, onDelete, onBlur, onSelectionChange])
 
+    const content = (
+        <span ref={ref} className={composedClassNames} title={tooltipComponents ? undefined : tooltip}>
+            {Icon && <Icon size={14} strokeWidth={2} className={iconClassName} />}
+            <span>{text}</span>
+        </span>
+    )
+
+    if (!tooltipComponents) {
+        return content
+    }
+    const { Tooltip, TooltipContent, TooltipTrigger } = tooltipComponents
     return (
         <Tooltip>
-            <TooltipTrigger asChild>
-                <span ref={ref} className={composedClassNames}>
-                    {Icon && <Icon size={14} strokeWidth={2} className={iconClassName} />}
-                    <span>{text}</span>
-                </span>
-            </TooltipTrigger>
+            <TooltipTrigger asChild>{content}</TooltipTrigger>
             {tooltip && <TooltipContent>{tooltip}</TooltipContent>}
         </Tooltip>
     )

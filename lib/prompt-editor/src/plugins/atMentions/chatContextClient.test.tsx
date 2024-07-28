@@ -5,7 +5,7 @@ import { describe, expect, test } from 'vitest'
 import { URI } from 'vscode-uri'
 import {
     type ChatContextClient,
-    ChatContextClientProviderForTestsOnly,
+    ChatContextClientProvider,
     useChatContextItems,
 } from './chatContextClient'
 
@@ -24,7 +24,7 @@ describe('useChatContextItems', () => {
 
         const { result } = renderHook(() => useChatContextItems('q', null), {
             wrapper: ({ children }) =>
-                React.createElement(ChatContextClientProviderForTestsOnly, { value: client }, children),
+                React.createElement(ChatContextClientProvider, { value: client }, children),
         })
 
         expect(result.current).toBe(undefined)

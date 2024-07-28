@@ -6,6 +6,7 @@ import {
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
 } from '@sourcegraph/cody-shared'
+import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import {
     type ComponentProps,
     type FunctionComponent,
@@ -16,7 +17,6 @@ import {
 } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
-import type { PromptEditorRefAPI } from '../promptEditor/PromptEditor'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 import { ContextCell } from './cells/contextCell/ContextCell'

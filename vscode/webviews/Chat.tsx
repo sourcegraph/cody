@@ -8,11 +8,11 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
+import { useChatContextMentionProviders } from '@sourcegraph/prompt-editor'
 import styles from './Chat.module.css'
 import { GenerateUnitTestsButton } from './chat/components/GenerateUnitTestsButton'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
-import { useChatContextMentionProviders } from './promptEditor/plugins/atMentions/chatContextClient'
 import { useTelemetryRecorder } from './utils/telemetry'
 
 interface ChatboxProps {

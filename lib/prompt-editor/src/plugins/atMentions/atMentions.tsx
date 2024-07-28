@@ -28,11 +28,8 @@ import {
     toSerializedPromptEditorValue,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { MentionMenu } from '../../../mentions/mentionMenu/MentionMenu'
-import {
-    useMentionMenuData,
-    useMentionMenuParams,
-} from '../../../mentions/mentionMenu/useMentionMenuData'
+import { MentionMenu } from '../../mentions/mentionMenu/MentionMenu'
+import { useMentionMenuData, useMentionMenuParams } from '../../mentions/mentionMenu/useMentionMenuData'
 import {
     $createContextItemMentionNode,
     $createContextItemTextNode,

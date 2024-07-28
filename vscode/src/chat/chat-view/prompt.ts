@@ -4,12 +4,12 @@ import {
     type ContextItem,
     type ContextItemWithContent,
     type Message,
+    PromptMixin,
     PromptString,
     getSimplePreamble,
     isDefined,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { logDebug } from '../../log'
 import { PromptBuilder } from '../../prompt-builder'
 import type { ChatModel } from './ChatModel'

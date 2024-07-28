@@ -1,11 +1,16 @@
 import type { AuthStatus } from '@sourcegraph/cody-shared'
+import {
+    ChatContextClientProvider,
+    ClientStateContextProvider,
+    PromptEditorConfigProvider,
+    dummyChatContextClient,
+} from '@sourcegraph/prompt-editor'
 import { type ComponentProps, type FunctionComponent, type ReactNode, useMemo } from 'react'
-import { ClientActionListenersContextProvider, ClientStateContextProvider } from './client/clientState'
+import { ClientActionListenersContextProvider } from './client/clientState'
 import { dummyPromptsClient } from './components/promptSelectField/fixtures'
 import { PromptsClientProviderForTestsOnly } from './components/promptSelectField/promptsClient'
 import { TooltipProvider } from './components/shadcn/ui/tooltip'
-import { ChatContextClientProviderForTestsOnly } from './promptEditor/plugins/atMentions/chatContextClient'
-import { dummyChatContextClient } from './promptEditor/plugins/atMentions/fixtures'
+import { promptEditorConfig } from './promptEditor/config'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
 import { TelemetryRecorderContext } from './utils/telemetry'
 import { ConfigProvider } from './utils/useConfig'
@@ -35,9 +40,9 @@ export const TestAppWrapper: FunctionComponent<{ children: ReactNode }> = ({ chi
                 value: { initialContext: [] },
             } satisfies Wrapper<ComponentProps<typeof ClientStateContextProvider>['value']>,
             {
-                provider: ChatContextClientProviderForTestsOnly,
+                provider: ChatContextClientProvider,
                 value: dummyChatContextClient,
-            } satisfies Wrapper<ComponentProps<typeof ChatContextClientProviderForTestsOnly>['value']>,
+            } satisfies Wrapper<ComponentProps<typeof ChatContextClientProvider>['value']>,
             {
                 component: ConfigProvider,
                 props: {
@@ -71,4 +76,8 @@ const COMMON_WRAPPERS: Wrapper[] = [
     {
         component: ClientActionListenersContextProvider,
     },
+    {
+        provider: PromptEditorConfigProvider,
+        value: promptEditorConfig,
+    } satisfies Wrapper<ComponentProps<typeof PromptEditorConfigProvider>['value']>,
 ]
