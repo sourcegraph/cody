@@ -1,10 +1,10 @@
 import type { ItemsParams, ItemsResult } from '@openctx/client'
-import type { OpenContextProvider } from './types'
+import type { OpenCtxProvider } from './types'
 
 /**
  * An OpenCtx provider that fetches the content of a URL and provides it as an item.
  */
-const WebProvider: OpenContextProvider = {
+const WebProvider: OpenCtxProvider = {
     providerUri: 'internal-web-provider',
 
     meta() {

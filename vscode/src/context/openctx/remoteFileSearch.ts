@@ -8,11 +8,11 @@ import {
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 
-import type { OpenContextProvider } from './types'
+import type { OpenCtxProvider } from './types'
 
 const RemoteFileProvider = createRemoteFileProvider()
 
-export function createRemoteFileProvider(customTitle?: string): OpenContextProvider {
+export function createRemoteFileProvider(customTitle?: string): OpenCtxProvider {
     return {
         providerUri: 'internal-remote-file-search',
 

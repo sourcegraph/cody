@@ -6,11 +6,11 @@ import {
     isError,
 } from '@sourcegraph/cody-shared'
 
-import type { OpenContextProvider } from './types'
+import type { OpenCtxProvider } from './types'
 
-const RemoteRepositorySearch: OpenContextProvider = createRemoteRepositoryProvider()
+const RemoteRepositorySearch: OpenCtxProvider = createRemoteRepositoryProvider()
 
-export function createRemoteRepositoryProvider(customTitle?: string): OpenContextProvider {
+export function createRemoteRepositoryProvider(customTitle?: string): OpenCtxProvider {
     return {
         providerUri: 'internal-remote-repository-search',
 
