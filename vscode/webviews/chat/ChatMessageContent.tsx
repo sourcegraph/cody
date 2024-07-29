@@ -20,7 +20,7 @@ import type { PriorHumanMessageInfo } from './cells/messageCell/assistant/Assist
 export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
     insertButtonOnSubmit: (text: string, newFile?: boolean) => void
-    smartApplyButtonOnSubmit: (text: string, instruction?: PromptString) => void
+    smartApplyButtonOnSubmit: (text: string, instruction?: PromptString, fileName?: string) => void
 }
 
 interface ChatMessageContentProps {
@@ -42,7 +42,8 @@ function createButtons(
     humanMessage: PriorHumanMessageInfo | null,
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
-    smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
+    smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit'],
+    fileName?: string
 ): HTMLElement {
     if (ENABLE_V2_BUTTONS) {
         return createButtonsV2(
@@ -55,7 +56,10 @@ function createButtons(
     }
 
     const container = document.createElement('div')
-    container.className = styles.buttonsContainer
+    container.className = styles.footerContainer
+
+    const buttonsContainer = document.createElement('div')
+    buttonsContainer.className = styles.buttonsContainer
     if (!copyButtonOnSubmit) {
         return container
     }
@@ -114,12 +118,15 @@ function createButtons(
                 humanMessage,
                 'Smart Apply Code to Current File',
                 SparkleIcon,
-                codeBlockActions
+                codeBlockActions,
+                fileName
             )
         )
     }
 
-    container.append(buttons)
+    // Display the buttons in the codeblock footer.
+    buttonsContainer.append(buttons)
+    container.append(buttonsContainer)
 
     return container
 }
@@ -172,7 +179,8 @@ function createCodeBlockActionButton(
         copy: CodeBlockActionsProps['copyButtonOnSubmit']
         insert?: CodeBlockActionsProps['insertButtonOnSubmit']
         smartApply?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
-    }
+    },
+    fileName?: string
 ): HTMLElement {
     const button = document.createElement('button')
 
@@ -211,7 +219,7 @@ function createCodeBlockActionButton(
 
     const smartApplyOnSubmit = codeBlockActions.smartApply
     if (smartApplyOnSubmit && type === 'smartApply') {
-        button.addEventListener('click', () => smartApplyOnSubmit(preText, humanMessage?.text))
+        button.addEventListener('click', () => smartApplyOnSubmit(preText, humanMessage?.text, fileName))
         return button
     }
 
@@ -431,14 +439,22 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         }
 
         for (const preElement of preElements) {
-            const preText = preElement.textContent
-            if (preText?.trim() && preElement.parentNode) {
+            const preText = preElement.textContent?.trim()
+
+            if (preText && preElement.parentNode) {
+                // Get the filename betweenn the <FILENAME> tags if it exists.
+                const fileName = !isMessageLoading ? preText.match(/FileName: (.*?)\n/)?.[1] : undefined
+
+                // Remove everything between the <FILENAME> tags and the tags.
+                const codeblockText = preText.replace(/FileName: (.*?)\n/, '').trimStart()
+
                 const buttons = createButtons(
-                    preText,
+                    codeblockText,
                     humanMessage,
                     copyButtonOnSubmit,
                     insertButtonOnSubmit,
-                    smartApplyButtonOnSubmit
+                    smartApplyButtonOnSubmit,
+                    fileName
                 )
                 if (guardrails) {
                     const container = document.createElement('div')
@@ -450,7 +466,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                         g.setPending()
 
                         guardrails
-                            .searchAttribution(preText)
+                            .searchAttribution(codeblockText)
                             .then(attribution => {
                                 if (isError(attribution)) {
                                     g.setUnavailable(attribution)
@@ -468,6 +484,18 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                                 return
                             })
                     }
+                }
+
+                if (fileName?.length && !isMessageLoading) {
+                    const fileNameContainer = document.createElement('div')
+                    fileNameContainer.className = styles.fileNameContainer
+                    fileNameContainer.textContent = fileName
+                    buttons.append(fileNameContainer)
+
+                    preElement.innerHTML = preElement.innerHTML.replace(
+                        /<span class="hljs-comment">(.*?)<\/span>/,
+                        ''
+                    )
                 }
 
                 // Insert the buttons after the pre using insertBefore() because there is no insertAfter()

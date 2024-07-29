@@ -1,6 +1,8 @@
 import type { ChatMessage } from '../chat/transcript/messages'
 import { PromptString, ps } from './prompt-string'
 
+const DEFAULT = ps`Add FULL file name after "FileName: " as comment within each code snippet block in your response. `
+
 /**
  * The preamble we add to the start of the last human open-end chat message that has context items.
  */
@@ -16,7 +18,8 @@ const HEDGES_PREVENTION = ps`Answer positively without apologizing. `
  */
 export class PromptMixin {
     private static mixins: PromptMixin[] = []
-    private static defaultMixin: PromptMixin = new PromptMixin(CONTEXT_PREAMBLE)
+    private static defaultMixin: PromptMixin = new PromptMixin(DEFAULT)
+    private static contextMixin: PromptMixin = new PromptMixin(CONTEXT_PREAMBLE)
 
     /**
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
@@ -25,7 +28,9 @@ export class PromptMixin {
     public static mixInto(humanMessage: ChatMessage, modelID: string): ChatMessage {
         // Default Mixin is added at the end so that it cannot be overriden by other mixins.
         let mixins = PromptString.join(
-            [...PromptMixin.mixins, PromptMixin.defaultMixin].map(mixin => mixin.prompt),
+            [...PromptMixin.mixins, PromptMixin.contextMixin, PromptMixin.defaultMixin].map(
+                mixin => mixin.prompt
+            ),
             ps`\n\n`
         )
 
@@ -42,6 +47,14 @@ export class PromptMixin {
             }
         }
         return humanMessage
+    }
+
+    public static setContextPreamble(enable: boolean): void {
+        if (enable) {
+            PromptMixin.contextMixin = new PromptMixin(CONTEXT_PREAMBLE)
+        } else {
+            PromptMixin.contextMixin = new PromptMixin(ps``)
+        }
     }
 
     /**

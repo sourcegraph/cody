@@ -1,12 +1,18 @@
-.buttons-container {
+.footer-container {
     display: flex;
-    align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
     border-style: solid;
     border-width: 1px;
     border-color: var(--vscode-sideBarSectionHeader-border);
     border-bottom-left-radius: 2px;
     border-bottom-right-radius: 2px;
     padding: 4px;
+}
+
+.buttons-container {
+    display: flex;
+    align-items: center;
 }
 
 .buttons {
@@ -147,6 +153,7 @@
     background-color: var(--code-background);
     color: var(--code-foreground);
     margin-bottom: 0;
+    position: relative;
 }
 body[data-vscode-theme-kind='vscode-light'] .content pre,
 body[data-vscode-theme-kind='vscode-light'] .content pre > code {
@@ -198,4 +205,8 @@ body[data-vscode-theme-kind='vscode-light'] .content pre > code {
     margin-block: 1rem;
     padding-inline-start: 2rem;
     list-style: revert;
+}
+
+.file-name-container {
+    font-size: small;
 }
