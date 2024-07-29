@@ -305,6 +305,7 @@ export {
     REMOTE_FILE_PROVIDER_URI,
     WEB_PROVIDER_URI,
 } from './context/openctx/api'
+export * from './context/openctx/context'
 export { type ClientStateForWebview } from './clientState'
 export * from './lexicalEditor/editorState'
 export * from './lexicalEditor/nodes'

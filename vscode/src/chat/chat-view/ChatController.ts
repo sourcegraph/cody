@@ -32,6 +32,7 @@ import {
     Typewriter,
     allMentionProvidersMetadata,
     featureFlagProvider,
+    getContextForChatMessage,
     graphqlClient,
     handleExtensionAPICallFromWebview,
     hydrateAfterPostMessage,
@@ -833,24 +834,31 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                   })
                 : inputTextWithoutContextChips
 
-            const context = getEnhancedContext({
-                strategy: contextStrategy,
-                editor: this.editor,
-                input: { text: rewrite, mentions },
-                addEnhancedContext,
-                providers: {
-                    localEmbeddings: this.localEmbeddings,
-                    symf: this.symf,
-                    remoteSearch: this.remoteSearch,
-                },
-                contextRanking: this.contextRanking,
-            })
+            const context = Promise.all([
+                getEnhancedContext({
+                    strategy: contextStrategy,
+                    editor: this.editor,
+                    input: { text: rewrite, mentions },
+                    addEnhancedContext,
+                    providers: {
+                        localEmbeddings: this.localEmbeddings,
+                        symf: this.symf,
+                        remoteSearch: this.remoteSearch,
+                    },
+                    contextRanking: this.contextRanking,
+                }),
+                getContextForChatMessage(text.toString()),
+            ])
             // add a callback, but return the original context
             context.then(c =>
-                this.contextAPIClient?.rankContext(requestID, inputTextWithoutContextChips.toString(), c)
+                this.contextAPIClient?.rankContext(
+                    requestID,
+                    inputTextWithoutContextChips.toString(),
+                    c.flat()
+                )
             )
 
-            return context
+            return (await context).flat()
         }
 
         const remoteRepoIDs = remoteRepositoryIDsFromHumanInput({ text, mentions })

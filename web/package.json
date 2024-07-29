@@ -41,6 +41,6 @@
     "@types/lodash": "4.14.195",
     "util": "^0.12.5",
     "vscode-uri": "^3.0.7",
-    "@openctx/vscode-lib": "^0.0.13"
+    "@openctx/vscode-lib": "^0.0.14"
   }
 }

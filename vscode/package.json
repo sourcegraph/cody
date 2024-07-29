@@ -1310,7 +1310,7 @@
     "@anthropic-ai/sdk": "^0.20.8",
     "@mdi/js": "^7.2.96",
     "@openctx/provider-linear-issues": "^0.0.6",
-    "@openctx/vscode-lib": "^0.0.13",
+    "@openctx/vscode-lib": "^0.0.14",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/core": "^1.18.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
