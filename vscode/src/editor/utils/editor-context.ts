@@ -12,7 +12,6 @@ import {
     type ContextItemWithContent,
     type Editor,
     type PromptString,
-    type RangeData,
     type SymbolKind,
     TokenCounter,
     contextFiltersProvider,
@@ -30,7 +29,7 @@ import {
 import type { OpenCtxClient } from '@sourcegraph/cody-shared/src/context/openctx/api'
 import { URI } from 'vscode-uri'
 import { getOpenTabsUris } from '.'
-import { toVSCodeRange } from '../../common/range'
+import { rangeContainsLines, toVSCodeRange } from '../../common/range'
 import { debouncePromise } from './debounce-promise'
 import { findWorkspaceFiles } from './findWorkspaceFiles'
 
@@ -486,7 +485,7 @@ async function resolveFileOrSymbolContextItem(
         // TODO(dyma): prompt-builder's getUniqueContextItems filters out items with overlapping ranges.
         // What happens if a provider returns both an item and an annotation for the same range? Should we document this somewhere?
         const within = contextItem.range
-            ? annotation.range && isWithinLineRange(annotation.range, contextItem.range)
+            ? annotation.range && rangeContainsLines(contextItem.range, annotation.range)
             : true
 
         const aiContent = annotation.item.ai?.content
@@ -505,12 +504,4 @@ async function resolveFileOrSymbolContextItem(
         })
     }
     return [...items, ...annotations]
-}
-
-// TODO(dyma): export rangeContainsLines from prompt-builder/unique-context.ts
-function isWithinLineRange(itemRange: RangeData, selection: RangeData): boolean {
-    const { start: itemStart, end: itemEnd } = itemRange
-    const { start: selectionStart, end: selectionEnd } = selection
-
-    return itemStart.line >= selectionStart.line && itemEnd.line <= selectionEnd.line
 }

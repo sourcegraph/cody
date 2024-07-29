@@ -1,4 +1,5 @@
-import type { ContextItem, ContextItemOpenCtx, RangeData } from '@sourcegraph/cody-shared'
+import type { ContextItem, ContextItemOpenCtx } from '@sourcegraph/cody-shared'
+import { rangeContainsLines, rangesOnSameLines } from '../common/range'
 import { getContextItemDisplayPath, getContextItemTokenUsageType } from './utils'
 
 /**
@@ -91,22 +92,6 @@ export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: Context
     }
 
     return true // No conflicts are found.
-}
-
-/**
- * Checks if the outer range contains the inner range:
- * - The start of the outer range is less than or equal to the start of the inner range.
- * - The end of the outer range is greater than or equal to the end of the inner range.
- */
-function rangeContainsLines(outerRange: RangeData, innerRange: RangeData): boolean {
-    return outerRange.start.line <= innerRange.start.line && outerRange.end.line >= innerRange.end.line
-}
-
-/**
- * Checks if both ranges are on the same lines.
- */
-function rangesOnSameLines(range1: RangeData, range2: RangeData): boolean {
-    return range1.start?.line === range2.start?.line && range1.end?.line === range2.end?.line
 }
 
 /**
