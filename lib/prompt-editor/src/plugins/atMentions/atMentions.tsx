@@ -249,15 +249,11 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
                                 ref={ref => {
                                     refs.setFloating(ref)
                                 }}
-                                style={
-                                    x === 0 && y === 0
-                                        ? { display: 'none' }
-                                        : {
-                                              position: strategy,
-                                              top: y,
-                                              left: x,
-                                          }
-                                }
+                                style={{
+                                    position: strategy,
+                                    top: y,
+                                    left: x,
+                                }}
                                 className={clsx(styles.popover)}
                             >
                                 <MentionMenu
