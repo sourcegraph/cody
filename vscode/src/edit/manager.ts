@@ -122,9 +122,9 @@ export class EditManager implements vscode.Disposable {
         const intent = getEditIntent(document, range, configuration.intent)
         const mode = getEditMode(intent, configuration.mode)
 
-        let expandedRange: vscode.Range | undefined
+        let expandedRange: vscode.Range | undefined = configuration.expandedRange
         // Support expanding the selection range for intents where it is useful
-        if (intent !== 'add') {
+        if (intent !== 'add' && !expandedRange) {
             const smartRange = await getEditSmartSelection(document, range, {}, intent)
 
             if (!smartRange.isEqual(range)) {

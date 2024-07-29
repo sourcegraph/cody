@@ -40,6 +40,7 @@ import {
     executeTestEditCommand,
 } from './commands/execute'
 import { executeAutoEditCommand } from './commands/execute/auto-edit'
+import { UpdateCallsitesProvider } from './commands/execute/update-callsites'
 import { CodySourceControl } from './commands/scm/source-control'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
@@ -213,7 +214,7 @@ const register = async (
 
     const editor = new VSCodeEditor()
 
-    const { chatsController } = registerChat(
+    const { chatsController, editorManager } = registerChat(
         {
             context,
             platform,
@@ -231,6 +232,9 @@ const register = async (
         disposables
     )
     disposables.push(chatsController)
+
+    const updateCallsitesProvider = new UpdateCallsitesProvider(editorManager)
+    disposables.push(updateCallsitesProvider)
 
     const sourceControl = new CodySourceControl(chatClient)
     const statusBar = createStatusBar()
@@ -265,7 +269,14 @@ const register = async (
         disposables
     )
 
-    registerCodyCommands(configWatcher, statusBar, sourceControl, chatClient, disposables)
+    registerCodyCommands(
+        configWatcher,
+        statusBar,
+        sourceControl,
+        chatClient,
+        updateCallsitesProvider,
+        disposables
+    )
     registerAuthCommands(authProvider, disposables)
     registerChatCommands(authProvider, disposables)
     disposables.push(...registerSidebarCommands())
@@ -413,6 +424,7 @@ function registerCodyCommands(
     statusBar: CodyStatusBar,
     sourceControl: CodySourceControl,
     chatClient: ChatClient,
+    updateCallsitesProvider: UpdateCallsitesProvider,
     disposables: vscode.Disposable[]
 ): void {
     // Execute Cody Commands and Cody Custom Commands
@@ -461,6 +473,9 @@ function registerCodyCommands(
         vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
         vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a)),
         vscode.commands.registerCommand('cody.command.auto-edit', a => executeAutoEditCommand(a)),
+        vscode.commands.registerCommand('cody.command.updateCallsites', a =>
+            updateCallsitesProvider.executeUpdateCallsitesCommand(a)
+        ),
         sourceControl // Generate Commit Message command
     )
 }
@@ -775,6 +790,7 @@ function registerChat(
     disposables: vscode.Disposable[]
 ): {
     chatsController: ChatsController
+    editorManager: EditManager
 } {
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
@@ -828,7 +844,7 @@ function registerChat(
         })
     }
 
-    return { chatsController }
+    return { chatsController, editorManager }
 }
 
 /**

@@ -314,6 +314,12 @@
         "enablement": "cody.activated"
       },
       {
+        "command": "cody.command.updateCallsites",
+        "category": "Cody Command",
+        "title": "Update Callsites",
+        "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle"
+      },
+      {
         "command": "cody.command.explain-history",
         "category": "Cody Command",
         "title": "Explain Code History",
@@ -736,6 +742,10 @@
           "when": "cody.activated && editorIsOpen"
         },
         {
+          "command": "cody.command.updateCallsites",
+          "when": "cody.activated && editorIsOpen && config.cody.experimental.noodle"
+        },
+        {
           "command": "cody.command.explain-history",
           "when": "cody.activated && editorIsOpen && config.cody.experimental.noodle"
         },
@@ -806,6 +816,11 @@
           "command": "cody.chat.newEditorPanel",
           "when": "cody.activated && !editorHasSelection",
           "group": "ask"
+        },
+        {
+          "command": "cody.command.updateCallsites",
+          "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle",
+          "group": "command"
         },
         {
           "command": "cody.command.explain-code",
