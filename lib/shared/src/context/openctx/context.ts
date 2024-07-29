@@ -1,16 +1,18 @@
 import { URI } from 'vscode-uri'
 import type { ContextItemOpenCtx } from '../../codebase-context/messages'
-import { logDebug } from '../../logger'
 import { openCtx } from './api'
 
+// getContextForChatMessage returns context items for a given chat message from the OpenCtx providers.
 export const getContextForChatMessage = async (message: string): Promise<ContextItemOpenCtx[]> => {
     const openCtxClient = openCtx.client
     if (!openCtxClient) {
         return []
     }
 
+    // get list of all configured OpenCtx providers.
     const providers = await openCtxClient.meta({})
 
+    // filter providers that have message selectors configured and match the message text.
     const matchingProviders = providers.filter(
         p =>
             p.items?.messageSelectors?.filter(
@@ -18,12 +20,14 @@ export const getContextForChatMessage = async (message: string): Promise<Context
             )?.length
     )
 
+    // get list of items from each matching provider.
     const items = (
         await Promise.all(
             matchingProviders.map(({ providerUri }) => openCtxClient.items({ message }, { providerUri }))
         )
-    )
-        .flat()
+    ).flat()
+
+    return items
         .filter(item => item.ai?.content)
         .map(
             item =>
@@ -36,6 +40,4 @@ export const getContextForChatMessage = async (message: string): Promise<Context
                     provider: 'openctx',
                 }) as ContextItemOpenCtx
         )
-
-    return items
 }
