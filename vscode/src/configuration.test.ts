@@ -100,6 +100,8 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'cody.autocomplete.advanced.timeout.firstCompletion':
                         return 1500
+                    case 'cody.autocomplete.experimental.preloadDebounceInterval':
+                        return 0
                     case 'cody.autocomplete.experimental.hotStreakAndSmartThrottle':
                         return false
                     case 'cody.experimental.guardrailsTimeoutSeconds':
@@ -153,6 +155,7 @@ describe('getConfiguration', () => {
                 singleline: undefined,
             },
             autocompleteFirstCompletionTimeout: 1500,
+            autocompleteExperimentalPreloadDebounceInterval: 0,
             autocompleteExperimentalHotStreakAndSmartThrottle: false,
             testingModelConfig: undefined,
             experimentalChatContextRanker: false,

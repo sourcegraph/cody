@@ -1,7 +1,6 @@
 // TODO: use implements vscode.XXX on mocked classes to ensure they match the real vscode API.
 import fspromises from 'node:fs/promises'
 
-import { vi } from 'vitest'
 import type * as vscode_types from 'vscode'
 import type {
     InlineCompletionTriggerKind as VSCodeInlineCompletionTriggerKind,
@@ -793,7 +792,7 @@ export const vsCodeMocks = {
             selection: {},
         },
         onDidChangeActiveTextEditor() {},
-        onDidChangeTextEditorSelection: vi.fn(),
+        onDidChangeTextEditorSelection() {},
         createTextEditorDecorationType: () => ({
             key: 'foo',
             dispose: () => {},
@@ -922,6 +921,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
         singleline: undefined,
     },
     autocompleteFirstCompletionTimeout: 3500,
+    autocompleteExperimentalPreloadDebounceInterval: 0,
     autocompleteExperimentalHotStreakAndSmartThrottle: false,
     testingModelConfig: undefined,
     experimentalChatContextRanker: false,

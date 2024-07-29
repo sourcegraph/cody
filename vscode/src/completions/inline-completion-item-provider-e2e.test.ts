@@ -420,6 +420,8 @@ describe('InlineCompletionItemProvider preloading', () => {
         autocompleteAdvancedProvider: 'fireworks',
     } satisfies Partial<Configuration>
 
+    const onDidChangeTextEditorSelection = vi.spyOn(vsCodeMocks.window, 'onDidChangeTextEditorSelection')
+
     beforeAll(async () => {
         vi.useFakeTimers()
 
@@ -440,7 +442,7 @@ describe('InlineCompletionItemProvider preloading', () => {
         const provider = getInlineCompletionProvider(autocompleteParams)
         const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
 
-        const handler = vsCodeMocks.window.onDidChangeTextEditorSelection.mock.lastCall[0]
+        const [handler] = onDidChangeTextEditorSelection.mock.lastCall as any
 
         // Simulate a cursor movement event
         await handler({
@@ -471,7 +473,7 @@ describe('InlineCompletionItemProvider preloading', () => {
         const { document, position } = autocompleteParams
         const provider = getInlineCompletionProvider(autocompleteParams)
         const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
-        const handler = vsCodeMocks.window.onDidChangeTextEditorSelection.mock.lastCall[0]
+        const [handler] = onDidChangeTextEditorSelection.mock.lastCall as any
 
         // Simulate a cursor movement event
         await handler({
@@ -493,7 +495,7 @@ describe('InlineCompletionItemProvider preloading', () => {
         const { document, position } = autocompleteParams
         const provider = getInlineCompletionProvider(autocompleteParams)
         const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
-        const handler = vsCodeMocks.window.onDidChangeTextEditorSelection.mock.lastCall[0]
+        const [handler] = onDidChangeTextEditorSelection.mock.lastCall as any
 
         await handler({
             textEditor: { document },
@@ -518,7 +520,7 @@ describe('InlineCompletionItemProvider preloading', () => {
         const { document, position } = autocompleteParams
         const provider = getInlineCompletionProvider(autocompleteParams)
         const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
-        const handler = vsCodeMocks.window.onDidChangeTextEditorSelection.mock.lastCall[0]
+        const [handler] = onDidChangeTextEditorSelection.mock.lastCall as any
 
         await handler({
             textEditor: { document },
