@@ -1,7 +1,16 @@
-import { CodyIDE, type ConfigurationWithAccessToken, setOpenCtxClient } from '@sourcegraph/cody-shared'
+import {
+    CodyIDE,
+    type ConfigurationWithAccessToken,
+    FeatureFlag,
+    GIT_OPENCTX_PROVIDER_URI,
+    featureFlagProvider,
+    setOpenCtxClient,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
+import type { Provider } from '@openctx/client'
 import { logDebug, outputChannel } from '../log'
+import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFileSearch'
 import RemoteRepositorySearch, { createRemoteRepositoryProvider } from './openctx/remoteRepositorySearch'
@@ -20,7 +29,7 @@ export async function exposeOpenCtxClient(
         const isCodyWeb = config.agentIDE === CodyIDE.Web
         const providers = isCodyWeb
             ? getCodyWebOpenCtxProviders()
-            : getStandardOpenCtxProviders(config, isDotCom)
+            : await getStandardOpenCtxProviders(config, isDotCom)
         const createController =
             createOpenCtxController ?? (await import('@openctx/vscode-lib')).createController
 
@@ -39,9 +48,11 @@ export async function exposeOpenCtxClient(
     }
 }
 
-function getStandardOpenCtxProviders(config: ConfigurationWithAccessToken, isDotCom: boolean) {
-    // TODO [vk] expose types for providers from openctx/client lib
-    const providers: any[] = [
+async function getStandardOpenCtxProviders(
+    config: ConfigurationWithAccessToken,
+    isDotCom: boolean
+): Promise<{ settings: any; provider: Provider; providerUri: string }[]> {
+    const providers: { settings: any; provider: Provider; providerUri: string }[] = [
         {
             settings: true,
             provider: WebProvider,
@@ -72,6 +83,14 @@ function getStandardOpenCtxProviders(config: ConfigurationWithAccessToken, isDot
             settings: true,
             provider: LinearIssuesProvider,
             providerUri: LinearIssuesProvider.providerUri,
+        })
+    }
+
+    if (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.GitMentionProvider)) {
+        providers.push({
+            settings: true,
+            provider: gitMentionsProvider,
+            providerUri: GIT_OPENCTX_PROVIDER_URI,
         })
     }
 

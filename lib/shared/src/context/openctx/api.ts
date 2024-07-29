@@ -19,3 +19,4 @@ export function setOpenCtxClient(client: OpenCtxClient): void {
 export const REMOTE_REPOSITORY_PROVIDER_URI = 'internal-remote-repository-search'
 export const REMOTE_FILE_PROVIDER_URI = 'internal-remote-file-search'
 export const WEB_PROVIDER_URI = 'internal-web-provider'
+export const GIT_OPENCTX_PROVIDER_URI = 'internal-git-openctx-provider'
