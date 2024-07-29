@@ -6,8 +6,8 @@ import {
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
 } from '@sourcegraph/cody-shared'
-import isEqual from 'lodash/isEqual'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
+import isEqual from 'lodash/isEqual'
 import { type FC, memo, useCallback, useEffect, useMemo, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'

@@ -3,8 +3,8 @@ import {
     type SerializedPromptEditorValue,
     serializedPromptEditorStateFromChatMessage,
 } from '@sourcegraph/cody-shared'
-import isEqual from 'lodash/isEqual'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
+import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, memo, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../Chat'
 import { UserAvatar } from '../../../../components/UserAvatar'
