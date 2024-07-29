@@ -320,7 +320,7 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
     )
 
     return (
-        <AppWrapper vscodeAPI={vscodeAPI}>
+        <AppWrapper>
             <CodyWebChatContext.Provider value={contextInfo}>{children}</CodyWebChatContext.Provider>
         </AppWrapper>
     )
