@@ -583,6 +583,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // When the webview sends the 'ready' message, respond by posting the view config
     private async handleReady(): Promise<void> {
         await this.sendConfig()
+        await this.postConfigFeatures()
+
         // Update the chat model providers again to ensure the correct token limit is set on ready
         this.handleSetChatModel(this.chatModel.modelID)
     }

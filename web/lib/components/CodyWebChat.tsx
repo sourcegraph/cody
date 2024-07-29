@@ -213,13 +213,17 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
         ]
     )
 
+    const isLoading =
+        !client ||
+        !userAccountInfo ||
+        !chatModels ||
+        !activeChatID ||
+        !exportedFeatureFlags ||
+        initialization !== 'completed'
+
     return (
         <div className={className} data-cody-web-chat={true} ref={setRootElement}>
-            {client &&
-            userAccountInfo &&
-            chatModels &&
-            activeChatID &&
-            initialization === 'completed' ? (
+            {!isLoading ? (
                 isErrorLike(client) ? (
                     <p>Error: {client.message}</p>
                 ) : (
@@ -244,7 +248,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                     </ChatEnvironmentContext.Provider>
                 )
             ) : (
-                <div className={styles.loading}>Loading Cody Agent...</div>
+                <div className={styles.loading}>Loading Cody Client...</div>
             )}
         </div>
     )

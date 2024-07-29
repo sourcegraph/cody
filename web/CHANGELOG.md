@@ -1,3 +1,7 @@
+## 0.3.0
+- Rename package to @sourcegraph/cody-web 
+- Fixes problem when cody agent publishes setConfigFeatures too early 
+
 ## 0.2.10
 - Add better rendering memoization (fixes problem with long-history chats) 
 
