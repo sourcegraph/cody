@@ -91,10 +91,10 @@ export async function promptModelForOriginalCode(
         },
     })
 
-    const messages = await getPrompt(replacement, document, model)
     const abortController = new AbortController()
+    const messages = await getPrompt(replacement, document, model)
     const stream = client.chat(
-        messages, // TODO write messages
+        messages,
         {
             model,
             stopSequences: [],
@@ -122,7 +122,6 @@ export async function promptModelForOriginalCode(
         }
     }
 
-    console.log('returning text')
     return text
 }
 
@@ -133,9 +132,7 @@ export async function getSmartApplySelection(
     client: ChatClient
 ): Promise<vscode.Selection | null> {
     const originalCode = await promptModelForOriginalCode(replacement, document, model, client)
-    console.log('Got original code!', originalCode)
     const fuzzyLocation = fuzzyFindLocation(document, originalCode)
-    console.log('Got fuzzy location', fuzzyLocation)
     if (!fuzzyLocation) {
         return null
     }
