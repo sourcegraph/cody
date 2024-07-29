@@ -8,6 +8,7 @@ import { TESTING_CREDENTIALS } from '../../../vscode/src/testutils/testing-crede
 import { buildAgentBinary, getAgentDir } from '../TestClient'
 import { TestWorkspace } from '../TestWorkspace'
 import { Streams, StringBufferStream } from './Streams'
+import { isWindows } from './command-bench/isWindows'
 import { type ChatOptions, chatAction, chatCommand } from './command-chat'
 
 process.env.CODY_SHIM_TESTING = 'true'
@@ -120,20 +121,24 @@ describe('cody chat', () => {
         ).toMatchSnapshot()
     }, 20_000)
 
-    it('--context-file (animal test)', async () => {
-        expect(
-            YAML.stringify(
-                await runCommand({
-                    args: [
-                        'chat',
-                        '--context-file',
-                        'animal.ts',
-                        '--show-context',
-                        '-m',
-                        'implement a cow. Only print the code without any explanation.',
-                    ],
-                })
-            )
-        ).toMatchSnapshot()
-    }, 20_000)
+    it.skipIf(isWindows())(
+        '--context-file (animal test)',
+        async () => {
+            expect(
+                YAML.stringify(
+                    await runCommand({
+                        args: [
+                            'chat',
+                            '--context-file',
+                            'animal.ts',
+                            '--show-context',
+                            '-m',
+                            'implement a cow. Only print the code without any explanation.',
+                        ],
+                    })
+                )
+            ).toMatchSnapshot()
+        },
+        20_000
+    )
 })
