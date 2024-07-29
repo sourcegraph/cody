@@ -11,10 +11,11 @@ export const getContextForChatMessage = async (message: string): Promise<Context
 
     const providers = await openCtxClient.meta({})
 
-    const matchingProviders = providers.filter(p =>
-        p.items?.messageSelectors
-            ?.map(({ pattern }) => message.match(new RegExp(pattern)))
-            .some(matches => matches?.length)
+    const matchingProviders = providers.filter(
+        p =>
+            p.items?.messageSelectors?.filter(
+                ({ pattern }) => message.match(new RegExp(pattern))?.length
+            )?.length
     )
 
     const items = (
@@ -35,8 +36,6 @@ export const getContextForChatMessage = async (message: string): Promise<Context
                     provider: 'openctx',
                 }) as ContextItemOpenCtx
         )
-
-    logDebug('items items ', JSON.stringify(items))
 
     return items
 }
