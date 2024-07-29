@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { type ContextItem, ModelsService, PromptString, isDefined } from '@sourcegraph/cody-shared'
+import { type ContextItem, PromptString, isDefined } from '@sourcegraph/cody-shared'
 import { glob } from 'glob'
 import * as vscode from 'vscode'
 import YAML from 'yaml'
@@ -32,14 +32,16 @@ export async function evaluateChatStrategy(
     }
     const llm = new LlmJudge(options)
     const scores: LlmJudgeScore[] = []
-    const model = ModelsService.getModelByIDSubstringOrError(chatModel).model
     const files = absoluteFiles.map(file => path.relative(options.workspace, file))
     const yamlFiles = files.filter(file => file.endsWith('question.yaml'))
     await evaluateEachFile(yamlFiles, options, async params => {
         const document = EvaluationDocument.from(params, options)
         const task: ChatTask = YAML.parse(params.content)
         const id = await client.request('chat/new', null)
-        client.request('webview/receiveMessage', { id, message: { command: 'chatModel', model } })
+        client.request('webview/receiveMessage', {
+            id,
+            message: { command: 'chatModel', model: chatModel },
+        })
         const contextFiles: ContextItem[] = []
         for (const relativePath of task.files ?? []) {
             const uri = vscode.Uri.file(path.join(path.dirname(params.uri.fsPath), relativePath))
