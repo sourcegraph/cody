@@ -21,7 +21,7 @@ import {
 
 import { AccountMenuOptions, openAccountMenu } from '../auth/account-menu'
 import { closeAuthProgressIndicator } from '../auth/auth-progress-indicator'
-import { ACCOUNT_USAGE_URL, isLoggedIn as isAuthenticated, isSourcegraphToken } from '../chat/protocol'
+import { ACCOUNT_USAGE_URL, isSourcegraphToken } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
 import { logDebug } from '../log'
@@ -157,7 +157,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
                         token: newToken || null,
                     })
                 }
-                await showAuthResultMessage(selectedEndpoint, authStatus?.authStatus)
+                await showAuthResultMessage(selectedEndpoint, authStatus)
                 logDebug('AuthProvider:signinMenu', mode, selectedEndpoint)
             }
         }
@@ -174,10 +174,10 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         })
         telemetryRecorder.recordEvent('cody.auth.signin.token', 'clicked', {
             metadata: {
-                success: authState?.isLoggedIn ? 1 : 0,
+                success: authState.isLoggedIn ? 1 : 0,
             },
         })
-        await showAuthResultMessage(instanceUrl, authState?.authStatus)
+        await showAuthResultMessage(instanceUrl, authState)
     }
 
     public async signoutMenu(): Promise<void> {
@@ -254,46 +254,14 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
             this.client = new SourcegraphGraphQLAPIClient(config)
         }
         // Version is for frontend to check if Cody is not enabled due to unsupported version when siteHasCodyEnabled is false
-        const [{ enabled, version }, codyLLMConfiguration, userInfo] = await Promise.all([
-            this.client.isCodyEnabled(),
-            this.client.getCodyLLMConfiguration(),
-            this.client.getCurrentUserInfo(),
-        ])
+        const [{ enabled: siteHasCodyEnabled, version: siteVersion }, codyLLMConfiguration, userInfo] =
+            await Promise.all([
+                this.client.isCodyEnabled(),
+                this.client.getCodyLLMConfiguration(),
+                this.client.getCurrentUserInfo(),
+            ])
 
-        const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
-
-        const isDotCom = this.client.isDotCom()
-
-        if (!isDotCom) {
-            const hasVerifiedEmail = false
-
-            // check first if it's a network error
-            if (isError(userInfo)) {
-                if (isNetworkError(userInfo)) {
-                    return { ...networkErrorAuthStatus, endpoint }
-                }
-                return { ...unauthenticatedStatus, endpoint }
-            }
-
-            return newAuthStatus(
-                endpoint,
-                isDotCom,
-                !isError(userInfo),
-                hasVerifiedEmail,
-                enabled,
-                /* userCanUpgrade: */ false,
-                version,
-                userInfo.avatarURL,
-                userInfo.username,
-                userInfo.displayName,
-                userInfo.primaryEmail?.email,
-                configOverwrites
-            )
-        }
-
-        // Configure AuthStatus for DotCom users
-        const isCodyEnabled = true
-
+        logDebug('CodyLLMConfiguration', JSON.stringify(codyLLMConfiguration))
         // check first if it's a network error
         if (isError(userInfo)) {
             if (isNetworkError(userInfo)) {
@@ -302,26 +270,42 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
             return { ...unauthenticatedStatus, endpoint }
         }
 
+        const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
+
+        const isDotCom = this.client.isDotCom()
+
+        if (!isDotCom) {
+            return newAuthStatus({
+                ...userInfo,
+                endpoint,
+                isDotCom,
+                siteVersion,
+                configOverwrites,
+                authenticated: true,
+                hasVerifiedEmail: false,
+                siteHasCodyEnabled,
+                userCanUpgrade: false,
+            })
+        }
+
+        // Configure AuthStatus for DotCom users
+
         const proStatus = await this.client.getCurrentUserCodySubscription()
         // Pro user without the pending status is the valid pro users
         const isActiveProUser =
             'plan' in proStatus && proStatus.plan === 'PRO' && proStatus.status !== 'PENDING'
 
-        return newAuthStatus(
+        return newAuthStatus({
+            ...userInfo,
             endpoint,
             isDotCom,
-            !!userInfo.id,
-            userInfo.hasVerifiedEmail,
-            isCodyEnabled,
-            !isActiveProUser, // UserCanUpgrade
-            version,
-            userInfo.avatarURL,
-            userInfo.username,
-            userInfo.displayName,
-            userInfo.primaryEmail?.email,
+            siteHasCodyEnabled,
+            siteVersion,
             configOverwrites,
-            userInfo.organizations
-        )
+            authenticated: !!userInfo.id,
+            userCanUpgrade: !isActiveProUser,
+            primaryEmail: userInfo.primaryEmail?.email ?? '',
+        })
     }
 
     public getAuthStatus(): AuthStatus {
@@ -341,7 +325,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         customHeaders?: Record<string, string> | null
         isExtensionStartup?: boolean
         isOfflineMode?: boolean
-    }): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean }> {
+    }): Promise<AuthStatus> {
         const config = {
             serverEndpoint: formatURL(endpoint) ?? '',
             accessToken: token,
@@ -350,38 +334,39 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
         try {
             const authStatus = await this.makeAuthStatus(config, isOfflineMode)
-            const isLoggedIn = isAuthenticated(authStatus)
-            authStatus.isLoggedIn = isLoggedIn
 
             if (!isOfflineMode) {
                 await this.storeAuthInfo(config.serverEndpoint, config.accessToken)
             }
 
             await this.setAuthStatus(authStatus)
-            await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
+
+            // Set context for the extension to render views based on auth status.
+            // isConsumer should be set before activated to avoid flickering.
+            const isConsumer = authStatus.isLoggedIn && authStatus.isDotCom
+            await vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', isConsumer)
+            await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
 
             // If the extension is authenticated on startup, it can't be a user's first
             // ever authentication. We store this to prevent logging first-ever events
             // for already existing users.
-            if (isExtensionStartup && isLoggedIn) {
+            if (isExtensionStartup && authStatus.isLoggedIn) {
                 await this.setHasAuthenticatedBefore()
-            } else if (isLoggedIn) {
+            } else if (authStatus.isLoggedIn) {
                 this.handleFirstEverAuthentication()
             }
 
-            return { authStatus, isLoggedIn }
+            return authStatus
         } catch (error) {
             logDebug('AuthProvider:auth', 'failed', error)
 
             // Try to reload auth status in case of network error, else return default auth status
-            return await this.reloadAuthStatus().catch(() => {
-                return { authStatus: unauthenticatedStatus, isLoggedIn: false }
-            })
+            return await this.reloadAuthStatus().catch(() => unauthenticatedStatus)
         }
     }
 
     // Set auth status in case of reload
-    public async reloadAuthStatus(): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean }> {
+    public async reloadAuthStatus(): Promise<AuthStatus> {
         await vscode.commands.executeCommand('setContext', 'cody.activated', false)
 
         this.config = await getFullConfig()
@@ -532,7 +517,8 @@ export function isNetworkError(error: Error): boolean {
         message.includes('ENOTFOUND') ||
         message.includes('ECONNREFUSED') ||
         message.includes('ECONNRESET') ||
-        message.includes('EHOSTUNREACH')
+        message.includes('EHOSTUNREACH') ||
+        message.includes('ETIMEDOUT')
     )
 }
 

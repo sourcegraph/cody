@@ -1,5 +1,4 @@
 import * as vscode from 'vscode'
-
 import { CODY_DOC_URL, CODY_FEEDBACK_URL, CODY_SUPPORT_URL, DISCORD_URL } from '../chat/protocol'
 
 // Support items
@@ -8,6 +7,12 @@ export const SupportOptionItems = [
         label: '$(question) Cody Support',
         async onSelect(): Promise<void> {
             await vscode.env.openExternal(vscode.Uri.parse(CODY_SUPPORT_URL.href))
+        },
+    },
+    {
+        label: '$(tasklist) Cody Tutorial',
+        async onSelect(): Promise<void> {
+            await vscode.commands.executeCommand('cody.tutorial.start')
         },
     },
 ]

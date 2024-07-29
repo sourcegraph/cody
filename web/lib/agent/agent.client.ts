@@ -28,6 +28,7 @@ interface AgentClientOptions {
     serverEndpoint: string
     accessToken: string
     workspaceRootUri: string
+    telemetryClientName?: string
     customHeaders?: Record<string, string>
     debug?: boolean
     trace?: boolean
@@ -38,6 +39,7 @@ export async function createAgentClient({
     accessToken,
     workspaceRootUri,
     customHeaders,
+    telemetryClientName,
     debug = true,
     trace = false,
 }: AgentClientOptions): Promise<AgentClient> {
@@ -76,9 +78,13 @@ export async function createAgentClient({
         name: 'web',
         version: '0.0.1',
         workspaceRootUri,
+        capabilities: {
+            completions: 'none',
+        },
         extensionConfiguration: {
             accessToken,
             serverEndpoint,
+            telemetryClientName,
             customHeaders: customHeaders ?? {},
             customConfiguration: {
                 'cody.experimental.noodle': true,

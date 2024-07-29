@@ -910,7 +910,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteCompleteSuggestWidgetSelection: true,
     autocompleteFormatOnAccept: true,
     autocompleteDisableInsideComments: false,
-    autocompleteExperimentalHotStreak: false,
     autocompleteExperimentalGraphContext: null,
     autocompleteExperimentalOllamaOptions: {
         model: 'codellama:7b-code',
@@ -921,8 +920,8 @@ export const DEFAULT_VSCODE_SETTINGS = {
         singleline: undefined,
     },
     autocompleteFirstCompletionTimeout: 3500,
-    autocompleteExperimentalSmartThrottle: false,
-    autocompleteExperimentalSmartThrottleExtended: false,
+    autocompleteExperimentalHotStreakAndSmartThrottle: false,
     testingModelConfig: undefined,
     experimentalChatContextRanker: false,
+    experimentalGuardrailsTimeoutSeconds: undefined,
 } satisfies Configuration

@@ -1,0 +1,47 @@
+{
+  "name": "@sourcegraph/prompt-editor",
+  "version": "0.0.0-dev",
+  "description": "Shared prompt editor UI component",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/cody",
+    "directory": "lib/prompt-editor"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "src", "!**/*.test.*"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc --build",
+    "test": "vitest",
+    "prepublishOnly": "tsc --build --clean && pnpm run build"
+  },
+  "dependencies": {
+    "@floating-ui/react": "^0.26.9",
+    "@lexical/code": "^0.16.0",
+    "@lexical/react": "^0.16.0",
+    "@lexical/text": "^0.16.0",
+    "@lexical/utils": "^0.16.0",
+    "@sourcegraph/cody-shared": "workspace:*",
+    "clsx": "^2.1.1",
+    "cmdk": "^1.0.0",
+    "lexical": "^0.16.0",
+    "lodash": "^4.17.21",
+    "lru-cache": "^10.0.0",
+    "lucide-react": "^0.378.0",
+    "vscode-uri": "^3.0.7"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.7",
+    "@types/react": "18.2.37",
+    "@types/react-dom": "18.2.15",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "peerDependencies": {
+    "react": "^16.8.0 ^17 ^18",
+    "react-dom": "^16.8.0 ^17 ^18"
+  }
+}

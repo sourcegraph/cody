@@ -1,10 +1,9 @@
-import * as vscode from 'vscode'
-
 import {
     type AuthStatusProvider,
     CodyIDE,
     type Configuration,
     type ConfigurationWithAccessToken,
+    type ExtensionDetails,
     type LogEventMode,
     MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
@@ -23,25 +22,16 @@ import { localStorage } from './LocalStorageProvider'
 
 const { platform, arch } = getOSArch()
 
-export interface ExtensionDetails {
-    ide: CodyIDE
-    ideVersion?: string
-    ideExtensionType: 'Cody' | 'CodeSearch'
-    platform: string
-    arch?: string
-
-    /** Version number for the extension. */
-    version: string
-}
-
 export const getExtensionDetails = (
-    config: Pick<Configuration, 'agentIDE' | 'agentIDEVersion' | 'agentExtensionVersion'>
+    config: Pick<
+        Configuration,
+        'agentIDE' | 'agentIDEVersion' | 'agentExtensionVersion' | 'telemetryClientName'
+    >
 ): ExtensionDetails => ({
     ide: config.agentIDE ?? CodyIDE.VSCode,
-    ideVersion: config.agentIDEVersion ?? vscode.version,
-    ideExtensionType: 'Cody',
-    platform: platform ?? 'browser',
+    telemetryClientName: config.telemetryClientName,
     arch: arch,
+    platform: platform ?? 'browser',
     version: config.agentExtensionVersion ?? version,
 })
 
@@ -79,11 +69,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
     // Add timestamp processor for realistic data in output for dev or no-op scenarios
     const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([new TimestampTelemetryProcessor()])
 
-    if (
-        config.telemetryLevel === 'off' ||
-        !extensionDetails.ide ||
-        extensionDetails.ideExtensionType !== 'Cody'
-    ) {
+    if (config.telemetryLevel === 'off' || !extensionDetails.ide) {
         updateGlobalTelemetryInstances(defaultNoOpProvider)
         return
     }

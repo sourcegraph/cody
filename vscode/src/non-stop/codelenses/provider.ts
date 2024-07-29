@@ -220,6 +220,11 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
         await vscode.workspace.applyEdit(edit)
         await doc.save()
 
+        // If there is more than one editor group, maximize the current group
+        if (vscode.window.tabGroups.all.length > 1) {
+            await vscode.commands.executeCommand('workbench.action.toggleMaximizeEditorGroup')
+        }
+
         // Show diff between current document and replacement content
         await vscode.commands.executeCommand(
             'vscode.diff',

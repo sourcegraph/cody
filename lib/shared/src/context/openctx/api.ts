@@ -15,3 +15,7 @@ export const openCtx = new OpenCtx(undefined)
 export function setOpenCtxClient(client: OpenCtxClient): void {
     openCtx.client = client
 }
+
+export const REMOTE_REPOSITORY_PROVIDER_URI = 'internal-remote-repository-search'
+export const REMOTE_FILE_PROVIDER_URI = 'internal-remote-file-search'
+export const WEB_PROVIDER_URI = 'internal-web-provider'

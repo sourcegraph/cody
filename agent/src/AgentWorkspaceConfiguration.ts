@@ -73,6 +73,8 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                 // that we don't want to submit vscode-specific events when
                 // running inside the agent.
                 return 'agent'
+            case 'cody.telemetry.clientName':
+                return extensionConfig?.telemetryClientName
             case 'cody.autocomplete.enabled':
                 return true
             case 'cody.autocomplete.advanced.provider':

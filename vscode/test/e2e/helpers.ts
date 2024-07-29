@@ -93,6 +93,7 @@ export const test = base
         extraWorkspaceSettings: {
             // NOTE: Enable unstable features for testing.
             'cody.internal.unstable': true,
+            'cody.internal.chatInSidebar': true,
         },
     })
     // By default, treat https://sourcegraph.com as "dotcom".

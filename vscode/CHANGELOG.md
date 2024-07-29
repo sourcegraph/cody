@@ -6,14 +6,54 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
-- Chat: Chat has been added back to the VS Code sidebar (after being removed about 6 months ago). By default, new chats open in the sidebar. New chats can still be opened in an editor panel with the `New Chat in Sidebar` command. Currently open chats can be moved from the sidebar into an editor panel and vice versa. [pull/4832](https://github.com/sourcegraph/cody/pull/4832)
+### Fixed
+
+### Changed
+
+## 1.28.0
+
+### Added
+
+- Chat: Chat has been added back to the VS Code sidebar (after being removed about 6 months ago). By default, new chats open in the sidebar. New chats can still be opened in an editor panel with the `New Chat in Sidebar` command. Currently open chats can be moved from the sidebar into an editor panel and vice versa. Enterprise users are not affected. [pull/4832](https://github.com/sourcegraph/cody/pull/4832)
+- Chat: Chat History, commands, and settings are now accessible through the chat view for Non-Enterprise users. [pull/4900](https://github.com/sourcegraph/cody/pull/4900)
+- Edit: Added support to select the full range of a file for an edit. [pull/4864](https://github.com/sourcegraph/cody/pull/4864)
 
 ### Fixed
 
 - Command: The "Ask Cody to Explain" command for explaining terminal output has been removed from the command palette, as it is only callable from the terminal context menu. [pull/4860](https://github.com/sourcegraph/cody/pull/4860)
-- Autocomplete: Fixed the request manager cache keys computation. [pull/4902](https://github.com/sourcegraph/cody/pull/4902)
+- Command: Make "Open Diff" button maximize current editor if multiple are open. [pull/4957](https://github.com/sourcegraph/cody/pull/4957)
+- Chat: Design cleanups of the new chat UI. [pull/4959](https://github.com/sourcegraph/cody/pull/4959)
+- Autocomplete: Fixed an issue where completions would incorrectly be marked as "read" if the cursor position or active document no longer passes the visibility checks. [pull/4984](https://github.com/sourcegraph/cody/pull/4984)
 
 ### Changed
+
+- For non-Enterprise users, the sidebar for commands, chat history, and settings has been removed and replaced by the sidebar chat. [pull/4832](https://github.com/sourcegraph/cody/pull/4832)
+
+## 1.26.7
+
+### Fixed
+
+- Autocomplete: Fixed an issue where autocomplete context requests were never resolved. [pull/4961](https://github.com/sourcegraph/cody/pull/4961)
+
+## 1.26.6
+
+### Fixed
+
+- Autocomplete: Fixed an issue where the cached retriever was attempting to open removed files. [pull/4942](https://github.com/sourcegraph/cody/pull/4942)
+
+## 1.26.5
+
+### Fixed
+
+- Chat context: Fixed an issue where querying context retrievers with context chips included in the query returned poor results. [pull/4936](https://github.com/sourcegraph/cody/pull/4936)
+
+## 1.26.4
+
+### Fixed
+
+- Autocomplete: Fixed the request manager cache keys computation. [pull/4902](https://github.com/sourcegraph/cody/pull/4902)
+- Autocomplete: Fixed the default model value for the Anthropic autocomplete provider. [pull/4803](https://github.com/sourcegraph/cody/pull/4803)
+- It is no longer possible to add a file to chat context by right clicking the file in the file explorer.
 
 ## 1.26.3
 
@@ -55,7 +95,6 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Edit: Fixed an issue where, when unable to detect the indentation of a file, Cody would remove all indentation from a response. [pull/4704](https://github.com/sourcegraph/cody/pull/4704)
 - Edit: Fixed an issue where Cody would sometimes remove unintended parts of the code when an edit was accepted on save. [pull/4720](https://github.com/sourcegraph/cody/pull/4720)
-- Autocomplete: Fixes the default model value for the Anthropic autocomplete provider. [pull/4803](https://github.com/sourcegraph/cody/pull/4803)
 - Chat: The loading dots in the loading page are now centered correctly. [pull/4808](https://github.com/sourcegraph/cody/pull/4808)
 
 ### Changed

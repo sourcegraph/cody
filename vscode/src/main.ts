@@ -19,6 +19,8 @@ import {
 import type { CommandResult } from './CommandResult'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
+import { ContextFetcher } from './chat/chat-view/ContextFetcher'
+import type { ContextAPIClient } from './chat/context/contextAPIClient'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -94,6 +96,26 @@ export async function start(
     context: vscode.ExtensionContext,
     platform: PlatformContext
 ): Promise<vscode.Disposable> {
+    // NOTE: Hack to ensure the window is reloaded when extension is restarted after upgrade
+    //  to get the updated sidebar chat UI. Can be removed after the next release (1.28).
+    if (
+        !context.globalState.get('newSidebarChatUI_isReloaded', false) &&
+        process.env.CODY_TESTING !== 'true'
+    ) {
+        // First activation, set the flag and then reload the window
+        await context.globalState.update('newSidebarChatUI_isReloaded', true)
+        await vscode.commands.executeCommand('workbench.action.reloadWindow')
+    }
+
+    const isExtensionModeDevOrTest =
+        context.extensionMode === vscode.ExtensionMode.Development ||
+        context.extensionMode === vscode.ExtensionMode.Test
+
+    // HACK to improve e2e test latency
+    if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.chatInSidebar')) {
+        await vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', true)
+    }
+
     // Set internal storage fields for storage provider singletons
     localStorage.setStorage(
         platform.createStorage ? await platform.createStorage() : context.globalState
@@ -109,9 +131,6 @@ export async function start(
 
     const authProvider = AuthProvider.create(await getFullConfig())
     const configWatcher = await BaseConfigWatcher.create(authProvider, disposables)
-    const isExtensionModeDevOrTest =
-        context.extensionMode === vscode.ExtensionMode.Development ||
-        context.extensionMode === vscode.ExtensionMode.Test
     await configWatcher.onChange(
         async config => {
             await configureEventsInfra(config, isExtensionModeDevOrTest, authProvider)
@@ -179,6 +198,7 @@ const register = async (
         contextRanking,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
         symfRunner,
+        contextAPIClient,
     } = await configureExternalServices(context, configWatcher, platform, authProvider)
     configWatcher.onChange(async config => {
         externalServicesOnDidConfigurationChange(config)
@@ -187,6 +207,7 @@ const register = async (
     if (symfRunner) {
         disposables.push(symfRunner)
     }
+    const contextFetcher = new ContextFetcher(symfRunner, completionsClient)
 
     // Initialize enterprise context
     const enterpriseContextFactory = new EnterpriseContextFactory(completionsClient)
@@ -196,6 +217,7 @@ const register = async (
     }, disposables)
 
     const editor = new VSCodeEditor()
+
     const { chatsController } = registerChat(
         {
             context,
@@ -208,6 +230,8 @@ const register = async (
             localEmbeddings,
             contextRanking,
             symfRunner,
+            contextAPIClient,
+            contextFetcher,
         },
         disposables
     )
@@ -487,13 +511,11 @@ function registerAuthCommands(authProvider: AuthProvider, disposables: vscode.Di
                 if (typeof accessToken !== 'string') {
                     throw new TypeError('accessToken is required')
                 }
-                return (
-                    await authProvider.auth({
-                        endpoint: serverEndpoint,
-                        token: accessToken,
-                        customHeaders,
-                    })
-                ).authStatus
+                return await authProvider.auth({
+                    endpoint: serverEndpoint,
+                    token: accessToken,
+                    customHeaders,
+                })
             }
         )
     )
@@ -522,7 +544,7 @@ function registerUpgradeHandlers(
             if (ws.focused && authStatus.isDotCom && authStatus.isLoggedIn) {
                 const res = await graphqlClient.getCurrentUserCodyProEnabled()
                 if (res instanceof Error) {
-                    console.error(res)
+                    logError('onDidChangeWindowState', 'getCurrentUserCodyProEnabled', res)
                     return
                 }
                 // Re-auth if user's cody pro status has changed
@@ -628,7 +650,7 @@ function registerAutocomplete(
                     disposeAutocomplete()
                     if (
                         config.isRunningInsideAgent &&
-                        !process.env.CODY_SUPPRESS_AGENT_AUTOCOMPLETE_WARNING
+                        platform.extensionClient.capabilities?.completions !== 'none'
                     ) {
                         throw new Error(
                             'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
@@ -670,7 +692,7 @@ function registerAutocomplete(
                 )
             })
             .catch(error => {
-                console.error('Error creating inline completion item provider:', error)
+                logError('registerAutocomplete', 'Error creating inline completion item provider', error)
             })
         return setupAutocompleteQueue
     }
@@ -736,6 +758,8 @@ interface RegisterChatOptions {
     localEmbeddings?: LocalEmbeddingsController
     contextRanking?: ContextRankingController
     symfRunner?: SymfRunner
+    contextAPIClient?: ContextAPIClient
+    contextFetcher: ContextFetcher
 }
 
 function registerChat(
@@ -750,6 +774,8 @@ function registerChat(
         localEmbeddings,
         contextRanking,
         symfRunner,
+        contextAPIClient,
+        contextFetcher,
     }: RegisterChatOptions,
     disposables: vscode.Disposable[]
 ): {
@@ -774,7 +800,9 @@ function registerChat(
         localEmbeddings || null,
         contextRanking || null,
         symfRunner || null,
-        guardrails
+        contextFetcher,
+        guardrails,
+        contextAPIClient || null
     )
     chatsController.registerViewsAndCommands()
 

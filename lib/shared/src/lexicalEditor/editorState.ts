@@ -16,9 +16,12 @@ import {
     CONTEXT_ITEM_MENTION_NODE_TYPE,
     type SerializedContextItem,
     type SerializedContextItemMentionNode,
+    type SerializedTemplateInputNode,
+    TEMPLATE_INPUT_NODE_TYPE,
     contextItemMentionNodeDisplayText,
     isSerializedContextItemMentionNode,
     serializeContextItem,
+    templateInputNodeDisplayText,
 } from './nodes'
 
 export interface SerializedPromptEditorValue {
@@ -42,6 +45,11 @@ export function toSerializedPromptEditorValue(editor: LexicalEditor): Serialized
 }
 
 /**
+ * This type encodes all known versions of serialized editor state.
+ */
+type StateVersion = 'lexical-v0' | 'lexical-v1'
+
+/**
  * This version string is stored in {@link SerializedPromptEditorState} to indicate the schema
  * version of the value.
  *
@@ -55,7 +63,7 @@ export function toSerializedPromptEditorValue(editor: LexicalEditor): Serialized
  * written. Then you can switch to having it write the new schema (knowing that even clients ~1
  * month old can read that schema).
  */
-export const STATE_VERSION_CURRENT = 'lexical-v0' as const
+const STATE_VERSION_CURRENT: StateVersion = 'lexical-v1'
 
 /**
  * The representation of a user's prompt input in the chat view.
@@ -65,14 +73,14 @@ export interface SerializedPromptEditorState {
      * Version identifier for this type. If this type changes, the version identifier must change,
      * and callers must check this value to ensure they are working with the correct type.
      */
-    v: typeof STATE_VERSION_CURRENT
+    v: StateVersion
 
     /**
      * The minimum version of reader that can read this value. If STATE_VERSION_CURRENT >=
      * minReaderV, then this version of the code can read this value. If undefined, its value is
      * {@link DEFAULT_MIN_READER_V},
      */
-    minReaderV?: typeof STATE_VERSION_CURRENT
+    minReaderV?: StateVersion
 
     /**
      * The [Lexical editor state](https://lexical.dev/docs/concepts/editor-state).
@@ -80,14 +88,21 @@ export interface SerializedPromptEditorState {
     lexicalEditorState: SerializedEditorState
 }
 
-const DEFAULT_MIN_READER_V = 'lexical-v0' as const
+const DEFAULT_MIN_READER_V: StateVersion = 'lexical-v0'
+
+// We support reading from lexical-v0
+const SUPPORTED_READER_VERSIONS: StateVersion[] = ['lexical-v0', 'lexical-v1']
 
 function toPromptEditorState(editor: LexicalEditor): SerializedPromptEditorState {
-    const editorState = editor.getEditorState()
+    const editorState = editor.getEditorState().toJSON()
+    // We don't need to encode as the latest version unless the editor state
+    // contains new features. Given our reader is backwards compatible we can
+    // still encode as the older version.
+    const v = minimumReaderVersion(editorState)
     return {
-        v: STATE_VERSION_CURRENT,
-        minReaderV: STATE_VERSION_CURRENT,
-        lexicalEditorState: editorState.toJSON(),
+        v,
+        minReaderV: v,
+        lexicalEditorState: editorState,
     }
 }
 
@@ -135,12 +150,17 @@ export function serializedPromptEditorStateFromChatMessage(
     chatMessage: ChatMessage
 ): SerializedPromptEditorState {
     function isCompatibleVersionEditorState(value: unknown): value is SerializedPromptEditorState {
+        if (!value) {
+            return false
+        }
+
+        const editorState = value as SerializedPromptEditorState
+
+        // We can read this if the version of the serialized text is compatible
+        // or its minimum version is compatible.
         return (
-            Boolean(value) &&
-            ((value as SerializedPromptEditorState).v === STATE_VERSION_CURRENT ||
-                // Update if the SerializedPromptEditorState version changes.
-                ((value as SerializedPromptEditorState).minReaderV ?? DEFAULT_MIN_READER_V) ===
-                    STATE_VERSION_CURRENT)
+            SUPPORTED_READER_VERSIONS.includes(editorState.v) ||
+            SUPPORTED_READER_VERSIONS.includes(editorState.minReaderV ?? DEFAULT_MIN_READER_V)
         )
     }
 
@@ -163,50 +183,36 @@ export function contextItemsFromPromptEditorValue(
     const contextItems: SerializedContextItem[] = []
 
     if (state.lexicalEditorState) {
-        const queue: SerializedLexicalNode[] = [state.lexicalEditorState.root]
-        while (queue.length > 0) {
-            const node = queue.shift()
-            if (node && 'children' in node && Array.isArray(node.children)) {
-                for (const child of node.children as SerializedLexicalNode[]) {
-                    if (isSerializedContextItemMentionNode(child)) {
-                        contextItems.push(child.contextItem)
-                    }
-                    queue.push(child)
-                }
+        forEachPreOrder(state.lexicalEditorState.root, node => {
+            if (isSerializedContextItemMentionNode(node)) {
+                contextItems.push(node.contextItem)
             }
-        }
+        })
     }
 
     return contextItems
+}
+
+export function inputTextWithoutContextChipsFromPromptEditorState(
+    state: SerializedPromptEditorState
+): string {
+    state = filterLexicalNodes(state, node => !isSerializedContextItemMentionNode(node))
+
+    return textContentFromSerializedLexicalNode(state.lexicalEditorState.root).trimStart()
 }
 
 export function filterContextItemsFromPromptEditorValue(
     value: SerializedPromptEditorValue,
     keep: (item: SerializedContextItem) => boolean
 ): SerializedPromptEditorValue {
-    const editorState: typeof value.editorState.lexicalEditorState = JSON.parse(
-        JSON.stringify(value.editorState.lexicalEditorState)
+    const editorState = filterLexicalNodes(value.editorState, node =>
+        isSerializedContextItemMentionNode(node) ? keep(node.contextItem) : true
     )
-    const queue: SerializedLexicalNode[] = [editorState.root]
-    while (queue.length > 0) {
-        const node = queue.shift()
-        if (node && 'children' in node && Array.isArray(node.children)) {
-            node.children = node.children.filter(child =>
-                isSerializedContextItemMentionNode(child) ? keep(child.contextItem) : true
-            )
-            for (const child of node.children as SerializedLexicalNode[]) {
-                queue.push(child)
-            }
-        }
-    }
 
     return {
         ...value,
-        editorState: {
-            ...value.editorState,
-            lexicalEditorState: editorState,
-        },
-        text: textContentFromSerializedLexicalNode(editorState.root),
+        editorState,
+        text: textContentFromSerializedLexicalNode(editorState.lexicalEditorState.root),
         contextItems: value.contextItems.filter(item => keep(serializeContextItem(item))),
     }
 }
@@ -216,23 +222,19 @@ export function textContentFromSerializedLexicalNode(
     __testing_wrapText?: (text: string) => string | undefined
 ): string {
     const text: string[] = []
-    const queue: SerializedLexicalNode[] = [root]
-    while (queue.length > 0) {
-        const node = queue.shift()!
+    forEachPreOrder(root, node => {
         if ('type' in node && node.type === CONTEXT_ITEM_MENTION_NODE_TYPE) {
             const nodeText = contextItemMentionNodeDisplayText(
                 (node as SerializedContextItemMentionNode).contextItem
             )
             text.push(__testing_wrapText ? __testing_wrapText(nodeText) ?? nodeText : nodeText)
+        } else if ('type' in node && node.type === TEMPLATE_INPUT_NODE_TYPE) {
+            const nodeText = templateInputNodeDisplayText(node as SerializedTemplateInputNode)
+            text.push(__testing_wrapText ? __testing_wrapText(nodeText) ?? nodeText : nodeText)
         } else if ('text' in node && typeof node.text === 'string') {
             text.push(node.text)
         }
-        if (node && 'children' in node && Array.isArray(node.children)) {
-            for (const child of node.children as SerializedLexicalNode[]) {
-                queue.push(child)
-            }
-        }
-    }
+    })
     return text.join('')
 }
 
@@ -240,7 +242,56 @@ export function editorStateToText(editorState: EditorState): string {
     return editorState.read(() => $getRoot().getTextContent())
 }
 
-export function lexicalEditorStateFromPromptString(input: PromptString): SerializedEditorState {
+interface EditorStateFromPromptStringOptions {
+    /**
+     * Experimental support for template values. These are placeholder values between "{{" and "}}".
+     */
+    parseTemplates: boolean
+}
+
+export function editorStateFromPromptString(
+    input: PromptString,
+    opts?: EditorStateFromPromptStringOptions
+): SerializedPromptEditorState {
+    return {
+        lexicalEditorState: lexicalEditorStateFromPromptString(input, opts),
+        v: STATE_VERSION_CURRENT,
+        minReaderV: STATE_VERSION_CURRENT,
+    }
+}
+
+/**
+ * This inspects the editor state to find out what the minimum version we can
+ * encode it as.
+ *
+ * In particular if there are template inputs then we need to encode it as
+ * lexical-v1, otherwise lexical-v0 is sufficient.
+ */
+function minimumReaderVersion(editorState: SerializedEditorState): StateVersion {
+    let hasTemplateInput = false
+
+    forEachPreOrder(editorState.root, node => {
+        if ('type' in node && node.type === TEMPLATE_INPUT_NODE_TYPE) {
+            hasTemplateInput = true
+        }
+    })
+
+    /* Only if there are templateInputs do we need a newer parser */
+    if (hasTemplateInput) {
+        return 'lexical-v1'
+    }
+    return 'lexical-v0'
+}
+
+type SupportedSerializedNodes =
+    | SerializedTextNode
+    | SerializedContextItemMentionNode
+    | SerializedTemplateInputNode
+
+function lexicalEditorStateFromPromptString(
+    input: PromptString,
+    opts?: EditorStateFromPromptStringOptions
+): SerializedEditorState {
     // HACK(sqs): This breaks if the PromptString's references' displayPaths are present anywhere
     // else. A better solution would be to track range information for the constituent PromptString
     // parts.
@@ -250,19 +301,7 @@ export function lexicalEditorStateFromPromptString(input: PromptString): Seriali
         refsByDisplayPath.set(displayPath(ref), ref)
     }
 
-    function textNode(text: string): SerializedTextNode {
-        return {
-            detail: 0,
-            format: 0,
-            mode: 'normal',
-            style: '',
-            type: 'text',
-            version: 1,
-            text,
-        }
-    }
-
-    const children: (SerializedTextNode | SerializedContextItemMentionNode)[] = []
+    let children: SupportedSerializedNodes[] = []
     let lastTextNode: SerializedTextNode | undefined
     const words = input.toString().split(' ')
     for (const word of words) {
@@ -305,6 +344,10 @@ export function lexicalEditorStateFromPromptString(input: PromptString): Seriali
         children.push(lastTextNode)
     }
 
+    if (opts?.parseTemplates) {
+        children = parseTemplateInputsInTextNodes(children)
+    }
+
     return {
         root: {
             direction: null,
@@ -326,6 +369,86 @@ export function lexicalEditorStateFromPromptString(input: PromptString): Seriali
     }
 }
 
+/**
+ * walks the tree calling callbackfn for each node. callbackfn is called in
+ * "pre-order". IE a parent is called before its children are called in order.
+ */
+function forEachPreOrder(
+    node: SerializedLexicalNode,
+    callbackfn: (node: SerializedLexicalNode) => void
+) {
+    callbackfn(node)
+    if (node && 'children' in node && Array.isArray(node.children)) {
+        for (const child of node.children) {
+            forEachPreOrder(child, callbackfn)
+        }
+    }
+}
+
+/**
+ * returns a copy of editorState with only nodes which return true from
+ * predicate.
+ */
+function filterLexicalNodes(
+    editorState: SerializedPromptEditorState,
+    predicate: (node: SerializedLexicalNode) => boolean
+): SerializedPromptEditorState {
+    const copy: typeof editorState.lexicalEditorState = JSON.parse(
+        JSON.stringify(editorState.lexicalEditorState)
+    )
+
+    forEachPreOrder(copy.root, node => {
+        if (node && 'children' in node && Array.isArray(node.children)) {
+            node.children = node.children.filter(child => predicate(child))
+        }
+    })
+
+    return {
+        ...editorState,
+        lexicalEditorState: copy,
+    }
+}
+
+function parseTemplateInputsInTextNodes(nodes: SupportedSerializedNodes[]): SupportedSerializedNodes[] {
+    return nodes.flatMap(node => {
+        if (node.type !== 'text') {
+            return [node]
+        }
+
+        const template = node.text
+
+        const regex = /{{(.*?)}}/g
+        const parts = []
+        let lastIndex = 0
+        while (true) {
+            const match = regex.exec(template)
+            if (!match) {
+                break
+            }
+
+            if (match.index > lastIndex) {
+                parts.push(textNode(template.slice(lastIndex, match.index)))
+            }
+
+            // Add the variable
+            parts.push({
+                type: TEMPLATE_INPUT_NODE_TYPE,
+                templateInput: { placeholder: match[1].trim() },
+                version: 1,
+            } satisfies SerializedTemplateInputNode)
+
+            lastIndex = regex.lastIndex
+        }
+
+        // Add any remaining text after the last match
+        if (lastIndex < template.length) {
+            parts.push(textNode(template.slice(lastIndex)))
+        }
+
+        return parts
+    })
+}
+
 function parseRangeString(str: string): RangeData | undefined {
     const [startStr, endStr] = str.split('-', 2)
     if (!startStr || !endStr) {
@@ -337,4 +460,16 @@ function parseRangeString(str: string): RangeData | undefined {
         return undefined
     }
     return { start: { line: start - 1, character: 0 }, end: { line: end, character: 0 } }
+}
+
+function textNode(text: string): SerializedTextNode {
+    return {
+        detail: 0,
+        format: 0,
+        mode: 'normal',
+        style: '',
+        type: 'text',
+        version: 1,
+        text,
+    }
 }

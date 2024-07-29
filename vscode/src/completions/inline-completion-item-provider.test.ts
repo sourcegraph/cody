@@ -1,6 +1,6 @@
 import dedent from 'dedent'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
@@ -12,12 +12,11 @@ import {
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { localStorage } from '../services/LocalStorageProvider'
-import { DEFAULT_VSCODE_SETTINGS, vsCodeMocks } from '../testutils/mocks'
+import { DEFAULT_VSCODE_SETTINGS } from '../testutils/mocks'
 import { withPosixPaths } from '../testutils/textDocument'
 import { SupportedLanguage } from '../tree-sitter/grammars'
 import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
 import { getParser, resetParsersCache } from '../tree-sitter/parser'
-import { InlineCompletionsResultSource } from './get-inline-completions'
 import {
     getInlineCompletions,
     getInlineCompletionsFullResponse,
@@ -29,20 +28,9 @@ import * as CompletionLogger from './logger'
 import { createProviderConfig } from './providers/anthropic'
 import { completion, initTreeSitterParser } from './test-helpers'
 
-vi.mock('vscode', () => ({
-    ...vsCodeMocks,
-    workspace: {
-        ...vsCodeMocks.workspace,
-
-        onDidChangeTextDocument() {
-            return null
-        },
-    },
-}))
-
 const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     selectedCompletionInfo: undefined,
-    triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
+    triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
 }
 
 const DUMMY_AUTH_STATUS: AuthStatus = {
@@ -103,6 +91,11 @@ describe('InlineCompletionItemProvider', () => {
     })
     beforeEach(() => {
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+        CompletionLogger.reset_testOnly()
+    })
+
+    afterEach(() => {
+        vi.restoreAllMocks()
     })
 
     it('returns results that span the whole line', async () => {
@@ -269,7 +262,7 @@ describe('InlineCompletionItemProvider', () => {
 
     describe('logger', () => {
         it('logs a completion as shown', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'suggested')
+            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('const foo = █', [completion`bar`])
             const provider = new MockableInlineCompletionItemProvider(() =>
@@ -285,7 +278,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not log a completion when the abort handler was triggered after a network fetch', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'suggested')
+            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
 
             let onCancel = () => {}
             const token: vscode.CancellationToken = {
@@ -316,7 +309,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not log a completion if it does not overlap the completion popup', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'suggested')
+            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('console.█', [completion`log()`])
             const provider = new MockableInlineCompletionItemProvider(() =>
@@ -326,8 +319,8 @@ describe('InlineCompletionItemProvider', () => {
                 completionParams.document,
                 completionParams.position,
                 {
-                    triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-                    selectedCompletionInfo: { text: 'dir', range: new vsCodeMocks.Range(0, 8, 0, 8) },
+                    triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
+                    selectedCompletionInfo: { text: 'dir', range: new vscode.Range(0, 8, 0, 8) },
                 }
             )
 
@@ -335,7 +328,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('log a completion if the suffix is inside the completion', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'suggested')
+            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('const a = [1, █];', [completion`2] ;`])
             const provider = new MockableInlineCompletionItemProvider(() =>
@@ -351,7 +344,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('log a completion if the suffix is inside the completion in CRLF format', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'suggested')
+            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('const a = [1, █];\r\nconsol.log(1234);\r\n', [
                 completion`2] ;`,
@@ -369,7 +362,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not log a completion if the suffix does not match', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'suggested')
+            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('const a = [1, █)(123);', [completion`2];`])
             const provider = new MockableInlineCompletionItemProvider(() =>
@@ -385,7 +378,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not log a completion if it is marked as stale', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'suggested')
+            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('const foo = █', [completion`bar`])
             const provider = new MockableInlineCompletionItemProvider(async () => {
@@ -406,7 +399,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not log a completion if the prefix no longer matches due to a cursor change', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'suggested')
+            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
 
             // Ensure the mock returns a completion item that requires the original
             // prefix to be present.
@@ -414,7 +407,7 @@ describe('InlineCompletionItemProvider', () => {
 
             // Update the cursor position to be after the expected completion request
             const cursorSelectionMock = vi
-                .spyOn(vsCodeMocks.window, 'activeTextEditor', 'get')
+                .spyOn(vscode.window, 'activeTextEditor', 'get')
                 .mockReturnValue({
                     selection: {
                         active: completionParams.position.with(
@@ -440,65 +433,110 @@ describe('InlineCompletionItemProvider', () => {
             cursorSelectionMock.mockReset()
         })
 
-        it('logs a single completion if a subsequent completion has a matching logId', async () => {
-            vi.useFakeTimers()
-            const spy = vi.spyOn(telemetryRecorder, 'recordEvent')
+        describe('timer based', () => {
+            it('logs a completion after 750ms', async () => {
+                vi.useFakeTimers()
+                const spy = vi.spyOn(telemetryRecorder, 'recordEvent')
 
-            // Ensure the mock returns a completion item that requires the original
-            // prefix to be present.
-            const firstCompletionParams = params('const foo = █', [completion`bar`])
-            const secondCompletionParams = params('const foo = █', [completion`bar`])
+                const completionParams = params('const foo = █', [completion`bar`])
+                vi.spyOn(vscode.window, 'activeTextEditor', 'get').mockReturnValue({
+                    ...vscode.window.activeTextEditor,
+                    document: completionParams.document,
+                    selection: { active: completionParams.position },
+                } as any)
 
-            let logId: CompletionLogger.CompletionLogID
-            const fn = vi
-                .fn()
-                .mockImplementationOnce(async () => {
-                    const result = await getInlineCompletionsFullResponse(firstCompletionParams)
-                    if (result) {
-                        logId = result.logId
-                    }
-                    return result
-                })
-                .mockImplementationOnce(async () => {
-                    const result = await getInlineCompletionsFullResponse(secondCompletionParams)
-                    if (result) {
-                        // This mimics the behaviour in request-manager, where a synthesized completion
-                        // will re-use the logId.
-                        // TODO: Consider adding better E2E tests that mean we don't need to mimic and instead
-                        // we just mock the network response.
-                        result.logId = logId
-                        result.source = InlineCompletionsResultSource.CacheAfterRequestStart
-                    }
-                    return result
-                })
+                const provider = new MockableInlineCompletionItemProvider(() =>
+                    getInlineCompletionsFullResponse(completionParams)
+                )
 
-            const provider = new MockableInlineCompletionItemProvider(fn)
-
-            // Trigger two completion requests. The second one will act as a synthesized completion of the first
-            await Promise.all([
-                provider.provideInlineCompletionItems(
-                    firstCompletionParams.document,
-                    firstCompletionParams.position,
+                await provider.provideInlineCompletionItems(
+                    completionParams.document,
+                    completionParams.position,
                     DUMMY_CONTEXT
-                ),
-                provider.provideInlineCompletionItems(
-                    secondCompletionParams.document,
-                    secondCompletionParams.position,
+                )
+
+                vi.advanceTimersByTime(500)
+                expect(spy).toHaveBeenCalledTimes(0) // Not waited long enough
+
+                vi.advanceTimersByTime(250) // 500 + 250 = 750ms (time until completion is considered visible)
+                CompletionLogger.logSuggestionEvents(true)
+                expect(spy).toHaveBeenCalledTimes(1)
+                expect(spy).toHaveBeenCalledWith(
+                    'cody.completion',
+                    'suggested',
+                    expect.objectContaining({ metadata: expect.objectContaining({ read: 1 }) })
+                )
+            })
+
+            it('does not log a completion if it is hidden due to a cursor position change after 750ms', async () => {
+                vi.useFakeTimers()
+                const spy = vi.spyOn(telemetryRecorder, 'recordEvent')
+
+                const completionParams = params('const foo = █\nconst other =', [completion`bar`])
+
+                const provider = new MockableInlineCompletionItemProvider(() =>
+                    getInlineCompletionsFullResponse(completionParams)
+                )
+
+                await provider.provideInlineCompletionItems(
+                    completionParams.document,
+                    completionParams.position,
                     DUMMY_CONTEXT
-                ),
-            ])
+                )
 
-            // Advance the clock by the same `READ_TIMEOUT_MS` value that we set to determine
-            // that any completions were visible for long enough
-            // This will mark the first completion was visible, set `suggestionAnalyticsLoggedAt` and then
-            // the second completion (with the same logId) will not be logged..
-            vi.advanceTimersByTime(750)
-            CompletionLogger.logSuggestionEvents(true)
+                vi.advanceTimersByTime(500) // 500ms has passed, now let us modify the cursor position
+                vi.spyOn(vscode.window, 'activeTextEditor', 'get').mockReturnValue({
+                    ...vscode.window.activeTextEditor,
+                    document: completionParams.document,
+                    selection: {
+                        active: new vscode.Position(completionParams.position.line + 1, 0),
+                    },
+                } as any)
 
-            // Only a single suggestion event should be logged, as the second completion was a synthesized
-            // completion of the first.
-            expect(spy).toHaveBeenCalledTimes(1)
-            expect(spy).toHaveBeenCalledWith('cody.completion', 'suggested', expect.anything())
+                vi.advanceTimersByTime(250) // 500 + 250 = 750ms (time until completion is considered visible)
+                CompletionLogger.logSuggestionEvents(true)
+                expect(spy).toHaveBeenCalledTimes(1)
+                expect(spy).toHaveBeenCalledWith(
+                    'cody.completion',
+                    'suggested',
+                    expect.objectContaining({ metadata: expect.objectContaining({ read: 0 }) })
+                )
+            })
+
+            it('does not log a completion if it is hidden due to a document change after 750ms', async () => {
+                vi.useFakeTimers()
+                const spy = vi.spyOn(telemetryRecorder, 'recordEvent')
+
+                const completionParams = params('const foo = █', [completion`bar`])
+
+                const provider = new MockableInlineCompletionItemProvider(() =>
+                    getInlineCompletionsFullResponse(completionParams)
+                )
+
+                await provider.provideInlineCompletionItems(
+                    completionParams.document,
+                    completionParams.position,
+                    DUMMY_CONTEXT
+                )
+
+                vi.advanceTimersByTime(500) // 500ms has passed, now let us modify the document uri
+                vi.spyOn(vscode.window, 'activeTextEditor', 'get').mockReturnValue({
+                    ...vscode.window.activeTextEditor,
+                    document: {
+                        ...completionParams.document,
+                        uri: { toString: () => 'some-other-uri' },
+                    },
+                } as any)
+
+                vi.advanceTimersByTime(250) // 500 + 250 = 750ms (time until completion is considered visible)
+                CompletionLogger.logSuggestionEvents(true)
+                expect(spy).toHaveBeenCalledTimes(1)
+                expect(spy).toHaveBeenCalledWith(
+                    'cody.completion',
+                    'suggested',
+                    expect.objectContaining({ metadata: expect.objectContaining({ read: 0 }) })
+                )
+            })
         })
     })
 
@@ -520,8 +558,8 @@ describe('InlineCompletionItemProvider', () => {
                 completionParams.document,
                 completionParams.position,
                 {
-                    triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-                    selectedCompletionInfo: { text: 'log', range: new vsCodeMocks.Range(1, 12, 1, 13) },
+                    triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
+                    selectedCompletionInfo: { text: 'log', range: new vscode.Range(1, 12, 1, 13) },
                 }
             )
 
@@ -559,8 +597,8 @@ describe('InlineCompletionItemProvider', () => {
                 completionParams.document,
                 completionParams.position,
                 {
-                    triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-                    selectedCompletionInfo: { text: 'dir', range: new vsCodeMocks.Range(1, 12, 1, 12) },
+                    triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
+                    selectedCompletionInfo: { text: 'dir', range: new vscode.Range(1, 12, 1, 12) },
                 }
             )
 
@@ -568,8 +606,8 @@ describe('InlineCompletionItemProvider', () => {
                 completionParams.document,
                 completionParams.position,
                 {
-                    triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-                    selectedCompletionInfo: { text: 'log', range: new vsCodeMocks.Range(1, 12, 1, 12) },
+                    triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
+                    selectedCompletionInfo: { text: 'log', range: new vscode.Range(1, 12, 1, 12) },
                 }
             )
 
@@ -621,8 +659,8 @@ describe('InlineCompletionItemProvider', () => {
                 completionParams.document,
                 completionParams.position,
                 {
-                    triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-                    selectedCompletionInfo: { text: 'dir', range: new vsCodeMocks.Range(1, 12, 1, 13) },
+                    triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
+                    selectedCompletionInfo: { text: 'dir', range: new vscode.Range(1, 12, 1, 13) },
                 }
             )
 

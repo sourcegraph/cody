@@ -1,36 +1,7 @@
-# Cody CLI (experimental)
+# Cody CLI
 
-A command-line interface for Cody. Important note: this tool used to be called `cody-agent` but was renamed to just `cody`.
+The Cody CLI documentation now lives in the official Sourcegraph docs https://sourcegraph.com/docs/cody/clients/install-cli.
 
-**Status:** experimental
-
-## Changelog
-
-See [CHANGELOG.md](../agent/CHANGELOG.md).
-
-## Usage
-
-Run the following commands to get started with the Cody CLI:
-
-```
-npm install -g @sourcegraph/cody-agent
-
-# Authenticate with Sourcegraph by opening a browser window
-cody-agent auth login --web
-
-# Ask Cody a question (with no context):
-cody-agent chat -m 'what color is the sky?'
-
-# Ask Cody a question (with Sourcegraph Enterprise repository context):
-cody-agent chat --context-repo github.com/sourcegraph/{sourcegraph,cody} --show-context -m 'how is authentication handled in sourcegraph/cody?'
-```
-
-## Development & feedback
-
-Use the [Feedback on upcoming Cody CLI Beta](https://community.sourcegraph.com/t/share-your-feedback-on-the-upcoming-cody-cli-beta/672) thread in the Sourcegraph community forum.
-
-Issues and PRs appreciated!
-
-## Releases
-
-The CLI is built and published as part of the [Cody Agent](../agent/README.md).
+Historical context:
+* The Cody CLI tool was originally called `cody-agent` but has now been renamed into just `cody`. The new npm package name is `@sourcegraph/cody` instead of the old `@sourcegraph/cody-agent`.
+* The original `cody-agent experimental-cli` command is now just `cody`.

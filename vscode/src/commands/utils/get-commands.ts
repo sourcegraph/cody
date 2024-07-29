@@ -12,6 +12,7 @@ export function getDefaultCommandsMap(editorCommands: CodyCommand[] = []): Map<s
     // Add editor specific commands
     for (const command of editorCommands) {
         if (command.key) {
+            command.type = 'default'
             map.set(command.key, command)
         }
     }

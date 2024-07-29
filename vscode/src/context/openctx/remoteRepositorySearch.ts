@@ -1,18 +1,19 @@
 import type { Item, Mention } from '@openctx/client'
 import {
+    REMOTE_REPOSITORY_PROVIDER_URI,
     type RepoSearchResponse,
     contextFiltersProvider,
     graphqlClient,
     isError,
 } from '@sourcegraph/cody-shared'
 
-import type { OpenContextProvider } from './types'
+import type { OpenCtxProvider } from './types'
 
-const RemoteRepositorySearch: OpenContextProvider = createRemoteRepositoryProvider()
+const RemoteRepositorySearch: OpenCtxProvider = createRemoteRepositoryProvider()
 
-export function createRemoteRepositoryProvider(customTitle?: string): OpenContextProvider {
+export function createRemoteRepositoryProvider(customTitle?: string): OpenCtxProvider {
     return {
-        providerUri: 'internal-remote-repository-search',
+        providerUri: REMOTE_REPOSITORY_PROVIDER_URI,
 
         meta() {
             return { name: customTitle ?? 'Remote Repositories', mentions: {} }

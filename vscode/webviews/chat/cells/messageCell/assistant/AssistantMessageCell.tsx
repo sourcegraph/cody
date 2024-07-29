@@ -9,11 +9,11 @@ import {
     reformatBotMessageForChat,
     serializedPromptEditorStateFromChatMessage,
 } from '@sourcegraph/cody-shared'
+import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import { type FunctionComponent, type RefObject, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
-import type { PromptEditorRefAPI } from '../../../../promptEditor/PromptEditor'
 import { ChatMessageContent, type CodeBlockActionsProps } from '../../../ChatMessageContent'
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
 import { type Interaction, editHumanMessage } from '../../../Transcript'

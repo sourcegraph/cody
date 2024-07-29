@@ -509,6 +509,9 @@ export interface CompletionBookkeepingEvent {
     items: CompletionItemInfo[]
     // Already logged partially accepted length
     loggedPartialAcceptedLength: number
+    // If the completion was explictly marked as "read", this is if the completion
+    // was visible for at least a set amount of time
+    read: boolean
 }
 
 export interface ItemPostProcessingInfo {
@@ -544,8 +547,6 @@ export interface CompletionItemInfo extends ItemPostProcessingInfo {
     insertText?: string
     stopReason?: string
 }
-
-const READ_TIMEOUT_MS = 750
 
 // Maintain a cache of active suggestion requests
 const activeSuggestionRequests = new LRUCache<CompletionLogID, CompletionBookkeepingEvent>({
@@ -598,6 +599,7 @@ export function create(
         acceptedAt: null,
         items: [],
         loggedPartialAcceptedLength: 0,
+        read: false,
     })
 
     return id
@@ -718,10 +720,13 @@ export function loaded(params: LoadedParams): void {
 //
 // For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
 // suggested completion count as soon as we count it as such.
-export function suggested(id: CompletionLogID, span?: Span): void {
+export function prepareSuggestionEvent(
+    id: CompletionLogID,
+    span?: Span
+): { getEvent: () => CompletionBookkeepingEvent | undefined; markAsRead: () => void } | null {
     const event = activeSuggestionRequests.get(id)
     if (!event) {
-        return
+        return null
     }
 
     const completionId = event.params.id
@@ -744,28 +749,22 @@ export function suggested(id: CompletionLogID, span?: Span): void {
             span.setAttribute('sampled', true)
         }
 
-        setTimeout(() => {
-            const event = activeSuggestionRequests.get(id)
-            if (!event) {
-                return
-            }
-
-            // We can assume that this completion will be marked as `read: true` because
-            // READ_TIMEOUT_MS has passed without the completion being logged yet.
-            if (
-                event.suggestedAt !== null &&
-                event.suggestionAnalyticsLoggedAt === null &&
-                event.suggestionLoggedAt === null
-            ) {
+        return {
+            getEvent: () => activeSuggestionRequests.get(id),
+            markAsRead: () => {
                 if (completionIdsMarkedAsSuggested.has(completionId)) {
                     return
                 }
+
+                event.read = true
                 statistics.logSuggested()
                 completionIdsMarkedAsSuggested.set(completionId, true)
                 event.suggestionAnalyticsLoggedAt = performance.now()
-            }
-        }, READ_TIMEOUT_MS)
+            },
+        }
     }
+
+    return null
 }
 
 export function accepted(
@@ -964,9 +963,8 @@ export function logSuggestionEvents(isDotComUser: boolean): void {
 
         const latency = loadedAt - startedAt
         const displayDuration = now - suggestedAt
-        const seen = displayDuration >= READ_TIMEOUT_MS
         const accepted = acceptedAt !== null
-        const read = accepted || seen
+        const read = accepted || completionEvent.read
         const inlineCompletionItemContext = getInlineContextItemToLog(
             completionEvent.params.inlineCompletionItemContext
         )

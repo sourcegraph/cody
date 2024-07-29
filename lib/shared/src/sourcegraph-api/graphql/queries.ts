@@ -194,6 +194,30 @@ query Repositories($names: [String!]!, $first: Int!) {
   }
 `
 
+export const CHAT_INTENT_QUERY = `
+query ChatIntent($query: String!, $interactionId: String!) {
+    chatIntent(query: $query, interactionId: $interactionId) {
+        intent
+        score
+    }
+}`
+
+export const RECORD_CONTEXT_QUERY = `
+query RecordContext($interactionId: String!, $usedContextItems: [InputContextItem!]!, $ignoredContextItems: [InputContextItem!]!) {
+    recordContext(interactionId: $interactionId, usedContextItems: $usedContextItems, ignoredContextItems: $ignoredContextItems) {
+        alwaysNil
+    }
+}`
+
+export const RANK_CONTEXT_QUERY = `
+query RankContext($interactionId: String!, $query: String!, $contextItems: [InputContextItem!]!) {
+    rankContext(interactionId: $interactionId, query:$query, contextItems: $contextItems) {
+        ranker
+        used
+        ignored
+    }
+}`
+
 export const CONTEXT_SEARCH_QUERY = `
 query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
 	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
@@ -221,6 +245,31 @@ query ContextFilters {
     site {
         codyContextFilters(version: V1) {
             raw
+        }
+    }
+}`
+
+export const PROMPTS_QUERY = `
+query ViewerPrompts($query: String!) {
+    prompts(query: $query, first: 100, viewerIsAffiliated: true, orderBy: PROMPT_NAME_WITH_OWNER) {
+        nodes {
+            id
+            name
+            nameWithOwner
+            owner {
+                namespaceName
+            }
+            description
+            draft
+            definition {
+                text
+            }
+            url
+        }
+        totalCount
+        pageInfo {
+            hasNextPage
+            endCursor
         }
     }
 }`
@@ -301,10 +350,10 @@ query SiteIdentification {
 
 export const GET_FEATURE_FLAGS_QUERY = `
     query FeatureFlags {
-        evaluatedFeatureFlags() {
+        evaluatedFeatureFlags {
             name
             value
-          }
+        }
     }
 `
 

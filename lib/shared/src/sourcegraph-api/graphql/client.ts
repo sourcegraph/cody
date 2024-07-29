@@ -13,6 +13,7 @@ import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
 import {
+    CHAT_INTENT_QUERY,
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
@@ -37,6 +38,9 @@ import {
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
     PACKAGE_LIST_QUERY,
+    PROMPTS_QUERY,
+    RANK_CONTEXT_QUERY,
+    RECORD_CONTEXT_QUERY,
     RECORD_TELEMETRY_EVENTS_MUTATION,
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
@@ -316,6 +320,23 @@ interface SearchAttributionResponse {
 
 type LogEventResponse = unknown
 
+interface ChatIntentResponse {
+    chatIntent: {
+        intent: string
+        score: number
+    }
+}
+
+type RecordContextResponse = unknown
+
+interface RankContextResponse {
+    rankContext: {
+        ranker: string
+        used: number[]
+        ignored: number[]
+    }
+}
+
 interface ContextSearchResponse {
     getCodyContext: {
         blob: {
@@ -344,6 +365,20 @@ export interface EmbeddingsSearchResult {
     content: string
 }
 
+export interface ChatIntentResult {
+    intent: string
+    score: number
+}
+
+/**
+ * Experimental API.
+ */
+export interface InputContextItem {
+    content: string
+    retriever: string
+    score?: number
+}
+
 export interface ContextSearchResult {
     repoName: string
     commit: string
@@ -352,6 +387,24 @@ export interface ContextSearchResult {
     startLine: number
     endLine: number
     content: string
+}
+
+/**
+ * A prompt that can be shared and reused. See Prompt in the Sourcegraph GraphQL API.
+ */
+export interface Prompt {
+    id: string
+    name: string
+    nameWithOwner: string
+    owner: {
+        namespaceName: string
+    }
+    description?: string
+    draft: boolean
+    definition: {
+        text: string
+    }
+    url: string
 }
 
 interface ContextFiltersResponse {
@@ -847,6 +900,52 @@ export class SourcegraphGraphQLAPIClient {
         return isError(result) ? null : result
     }
 
+    /** Experimental API */
+    public async chatIntent(interactionID: string, query: string): Promise<ChatIntentResult | Error> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<ChatIntentResponse>>(
+            CHAT_INTENT_QUERY,
+            {
+                query: query,
+                interactionId: interactionID,
+            }
+        )
+        return extractDataOrError(response, data => data.chatIntent)
+    }
+
+    /** Experimental API */
+    public async recordContext(
+        interactionID: string,
+        used: InputContextItem[],
+        ignored: InputContextItem[]
+    ): Promise<RecordContextResponse | Error> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<RecordContextResponse>>(
+            RECORD_CONTEXT_QUERY,
+            {
+                interactionId: interactionID,
+                usedContextItems: used,
+                ignoredContextItems: ignored,
+            }
+        )
+        return extractDataOrError(response, data => data)
+    }
+
+    /** Experimental API */
+    public async rankContext(
+        interactionID: string,
+        query: string,
+        context: InputContextItem[]
+    ): Promise<RankContextResponse | Error> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<RankContextResponse>>(
+            RANK_CONTEXT_QUERY,
+            {
+                interactionId: interactionID,
+                query,
+                contextItems: context,
+            }
+        )
+        return extractDataOrError(response, data => data)
+    }
+
     public async contextSearch(
         repoIDs: string[],
         query: string
@@ -875,14 +974,14 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async contextFilters(): Promise<ContextFilters> {
+    public async contextFilters(): Promise<{ filters: ContextFilters; transient: boolean }> {
         // CONTEXT FILTERS are only available on Sourcegraph 5.3.3 and later.
         const minimumVersion = '5.3.3'
         const { enabled, version } = await this.isCodyEnabled()
         const insiderBuild = version.length > 12 || version.includes('dev')
         const isValidVersion = insiderBuild || semver.gte(version, minimumVersion)
         if (!enabled || !isValidVersion) {
-            return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+            return { filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: false }
         }
 
         const response =
@@ -892,28 +991,40 @@ export class SourcegraphGraphQLAPIClient {
 
         const result = extractDataOrError(response, data => {
             if (data?.site?.codyContextFilters?.raw === null) {
-                return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+                return { filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: false }
             }
 
             if (data?.site?.codyContextFilters?.raw) {
-                return data.site.codyContextFilters.raw
+                return { filters: data.site.codyContextFilters.raw, transient: false }
             }
 
             // Exclude everything in case of an unexpected response structure.
-            return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
+            return { filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: true }
         })
 
         if (result instanceof Error) {
             // Ignore errors caused by outdated Sourcegraph API instances.
             if (hasOutdatedAPIErrorMessages(result)) {
-                return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+                return { filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: false }
             }
 
             logError('SourcegraphGraphQLAPIClient', 'contextFilters', result.message)
             // Exclude everything in case of an unexpected error.
-            return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
+            return { filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: true }
         }
 
+        return result
+    }
+
+    public async queryPrompts(query: string): Promise<Prompt[]> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<{ prompts: { nodes: Prompt[] } }>>(
+            PROMPTS_QUERY,
+            { query }
+        )
+        const result = extractDataOrError(response, data => data.prompts.nodes)
+        if (result instanceof Error) {
+            throw result
+        }
         return result
     }
 
@@ -1127,12 +1238,16 @@ export class SourcegraphGraphQLAPIClient {
         return initialDataOrError
     }
 
-    public async searchAttribution(snippet: string): Promise<SearchAttributionResults | Error> {
+    public async searchAttribution(
+        snippet: string,
+        timeoutMs: number
+    ): Promise<SearchAttributionResults | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SearchAttributionResponse>>(
             SEARCH_ATTRIBUTION_QUERY,
             {
                 snippet,
-            }
+            },
+            timeoutMs
         ).then(response => extractDataOrError(response, data => data.snippetAttribution))
     }
 
@@ -1204,7 +1319,7 @@ export class SourcegraphGraphQLAPIClient {
                 .then(response => response.json() as T)
                 .catch(error => {
                     if (error.name === 'AbortError') {
-                        return new Error(`EHOSTUNREACH: Request timed out after ${timeout}ms (${url})`)
+                        return new Error(`ETIMEDOUT: Request timed out after ${timeout}ms (${url})`)
                     }
                     return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
                 })
@@ -1298,7 +1413,7 @@ export class SourcegraphGraphQLAPIClient {
                 .then(response => response.json() as T)
                 .catch(error => {
                     if (error.name === 'AbortError') {
-                        return new Error(`EHOSTUNREACH: Request timed out after ${timeout}ms (${url})`)
+                        return new Error(`ETIMEDOUT: Request timed out after ${timeout}ms (${url})`)
                     }
                     return new Error(`accessing Sourcegraph HTTP API: ${error} (${url})`)
                 })

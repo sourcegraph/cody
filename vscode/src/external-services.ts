@@ -5,12 +5,15 @@ import {
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
     type Guardrails,
+    type GuardrailsClientConfig,
     type SourcegraphCompletionsClient,
     SourcegraphGuardrailsClient,
+    featureFlagProvider,
     graphqlClient,
     isError,
 } from '@sourcegraph/cody-shared'
 
+import { ContextAPIClient } from './chat/context/contextAPIClient'
 import { createClient as createCodeCompletionsClient } from './completions/client'
 import type { ConfigWatcher } from './configwatcher'
 import type { PlatformContext } from './extension.common'
@@ -29,6 +32,7 @@ interface ExternalServices {
     contextRanking: ContextRankingController | undefined
     localEmbeddings: LocalEmbeddingsController | undefined
     symfRunner: SymfRunner | undefined
+    contextAPIClient: ContextAPIClient | undefined
 
     /** Update configuration for all of the services in this interface. */
     onConfigurationChange: (newConfig: ExternalServicesConfiguration) => void
@@ -45,7 +49,8 @@ type ExternalServicesConfiguration = Pick<
     | 'experimentalTracing'
 > &
     LocalEmbeddingsConfig &
-    ContextRankerConfig
+    ContextRankerConfig &
+    GuardrailsClientConfig
 
 export async function configureExternalServices(
     context: vscode.ExtensionContext,
@@ -84,7 +89,9 @@ export async function configureExternalServices(
 
     const chatClient = new ChatClient(completionsClient, () => authProvider.getAuthStatus())
 
-    const guardrails = new SourcegraphGuardrailsClient(graphqlClient)
+    const guardrails = new SourcegraphGuardrailsClient(graphqlClient, initialConfig)
+
+    const contextAPIClient = new ContextAPIClient(graphqlClient, featureFlagProvider)
 
     return {
         chatClient,
@@ -94,11 +101,13 @@ export async function configureExternalServices(
         localEmbeddings,
         contextRanking,
         symfRunner,
+        contextAPIClient,
         onConfigurationChange: newConfig => {
             sentryService?.onConfigurationChange(newConfig)
             openTelemetryService?.onConfigurationChange(newConfig)
             completionsClient.onConfigurationChange(newConfig)
             codeCompletionsClient.onConfigurationChange(newConfig)
+            guardrails.onConfigurationChange(newConfig)
             void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
             void contextRanking?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },

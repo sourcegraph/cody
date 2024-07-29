@@ -11,6 +11,7 @@ import type {
 import { ProtocolTextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentTextDocument } from '../../AgentTextDocument'
 
+import type { ContextItemSource } from '@sourcegraph/cody-shared'
 import type { AutocompleteMatchKind } from './AutocompleteMatcher'
 import { BenchStrategy, type CodyBenchOptions } from './command-bench'
 import type { EvaluateFileParams } from './evaluateEachFile'
@@ -78,6 +79,9 @@ export class EvaluationDocument {
         }
         if (item.event) {
             item.eventJSON = JSON.stringify(item.event)
+        }
+        if (item.contextItems) {
+            item.contextItemsJSON = JSON.stringify(item.contextItems, null, 2)
         }
         this.items.push({
             ...item,
@@ -153,9 +157,8 @@ export class EvaluationDocument {
                 if (item.resultExact) {
                     out.push(' EXACT_MATCH')
                 }
-
-                if (item.resultExact) {
-                    out.push(' EXACT_MATCH')
+                if (item.contextItems) {
+                    pushMultilineText('CONTEXT_ITEMS', item.contextItemsJSON ?? '[]')
                 }
                 if (item.resultEmpty) {
                     out.push(' EMPTY_RESULT')
@@ -264,6 +267,8 @@ interface EvaluationItem {
     editDiff?: string
     chatReply?: string
     chatQuestion?: string
+    contextItems?: ContextItem[]
+    contextItemsJSON?: string
     questionClass?: string
     fixBeforeDiagnostic?: string
     fixAfterDiagnostic?: string
@@ -283,6 +288,12 @@ interface EvaluationItem {
     testUsedExpectedTestFramework?: boolean
     testUsedCorrectAppendOperation?: boolean
     testDiagnostics?: string
+}
+
+interface ContextItem {
+    source?: ContextItemSource
+    file: string
+    content?: string | null
 }
 
 interface EvaluationItemHeader extends ObjectHeaderItem {
@@ -315,6 +326,7 @@ export const headerItems: EvaluationItemHeader[] = [
     { id: 'editDiff', title: 'EDIT_DIFF' },
     { id: 'chatReply', title: 'CHAT_REPLY' },
     { id: 'chatQuestion', title: 'CHAT_QUESTION' },
+    { id: 'contextItemsJSON', title: 'CONTEXT_ITEMS' },
     { id: 'questionClass', title: 'QUESTION_CLASS' },
     { id: 'fixAfterDiagnostic', title: 'FIX_AFTER_DIAGNOSTIC' },
     { id: 'fixBeforeDiagnostic', title: 'FIX_BEFORE_DIAGNOSTIC' },
