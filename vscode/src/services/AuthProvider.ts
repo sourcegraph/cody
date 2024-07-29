@@ -341,12 +341,6 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
             await this.setAuthStatus(authStatus)
 
-            // Set context for the extension to render views based on auth status.
-            // isConsumer should be set before activated to avoid flickering.
-            const isConsumer = authStatus.isLoggedIn && authStatus.isDotCom
-            await vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', isConsumer)
-            await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
-
             // If the extension is authenticated on startup, it can't be a user's first
             // ever authentication. We store this to prevent logging first-ever events
             // for already existing users.
@@ -379,6 +373,9 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
     // Set auth status and share it with chatview
     private async setAuthStatus(authStatus: AuthStatus): Promise<void> {
+        // Set Editor Context for extension activation.
+        await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
+
         if (this.status === authStatus) {
             return
         }
