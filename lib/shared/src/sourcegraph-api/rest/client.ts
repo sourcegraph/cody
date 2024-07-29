@@ -32,7 +32,7 @@ export class RestClient {
     // Make an authenticated HTTP request to the Sourcegraph instance.
     // "name" is a developer-friendly term to label the request's trace span.
     private getRequest<T>(name: string, urlSuffix: string): Promise<T | Error> {
-        const headers = new Headers(this.customHeaders as HeadersInit)
+        const headers = new Headers(this.customHeaders)
         if (this.accessToken) {
             headers.set('Authorization', `token ${this.accessToken}`)
         }
