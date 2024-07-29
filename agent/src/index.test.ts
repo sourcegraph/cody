@@ -60,7 +60,6 @@ function safeJsonParse(str: string | null | undefined) {
 }
 
 describe('Agent', () => {
-    let expectedEvents: string[] | undefined
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'defaultClient',
@@ -126,7 +125,7 @@ describe('Agent', () => {
     beforeEach(async () => {
         await client.request('testing/reset', null)
         // reset expectedEvents before each test
-        expectedEvents = undefined
+        client.expectedEvents = []
     })
 
     afterEach(async () => {
@@ -151,9 +150,9 @@ describe('Agent', () => {
                 testRunId
             )
         }
-        if (expectedEvents) {
+        if (client.expectedEvents) {
             expect(telemetryEvents.loggedTelemetryEventsV2).toEqual(
-                expect.arrayContaining(expectedEvents)
+                expect.arrayContaining(client.expectedEvents)
             )
         }
     })
@@ -168,7 +167,7 @@ describe('Agent', () => {
 
     it('extensionConfiguration/change & chat/models (handle errors)', async () => {
         // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-        expectedEvents = [
+        client.expectedEvents = [
             'cody.auth:failed',
             'cody.auth.login:firstEver',
             'cody.auth:connected',
@@ -226,7 +225,7 @@ describe('Agent', () => {
 
     it('graphql/getCurrentUserCodySubscription', async () => {
         // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-        expectedEvents = [
+        client.expectedEvents = [
             'cody.auth:failed',
             'cody.auth.login:firstEver',
             'cody.auth:connected',
@@ -250,7 +249,7 @@ describe('Agent', () => {
     describe('Chat', () => {
         it('chat/submitMessage (short message)', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            expectedEvents = [
+            client.expectedEvents = [
                 'cody.auth:failed',
                 'cody.auth.login:firstEver',
                 'cody.auth:connected',
@@ -273,7 +272,7 @@ describe('Agent', () => {
 
         it('chat/submitMessage (long message)', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            expectedEvents = [
+            client.expectedEvents = [
                 'cody.auth:failed',
                 'cody.auth.login:firstEver',
                 'cody.auth:connected',
@@ -330,7 +329,7 @@ describe('Agent', () => {
 
         it('chat/restore', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            expectedEvents = [
+            client.expectedEvents = [
                 'cody.auth:failed',
                 'cody.auth.login:firstEver',
                 'cody.auth:connected',
@@ -384,7 +383,7 @@ describe('Agent', () => {
 
         it('chat/restore (With null model)', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            expectedEvents = [
+            client.expectedEvents = [
                 'cody.auth:failed',
                 'cody.auth.login:firstEver',
                 'cody.auth:connected',
@@ -433,7 +432,7 @@ describe('Agent', () => {
 
         it('chat/restore (multiple) & export', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            expectedEvents = [
+            client.expectedEvents = [
                 'cody.auth:failed',
                 'cody.auth.login:firstEver',
                 'cody.auth:connected',
@@ -492,7 +491,7 @@ describe('Agent', () => {
 
         it('chat/submitMessage (with enhanced context)', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            expectedEvents = [
+            client.expectedEvents = [
                 'cody.auth:failed',
                 'cody.auth.login:firstEver',
                 'cody.auth:connected',
@@ -540,7 +539,7 @@ describe('Agent', () => {
 
         it('chat/submitMessage (with enhanced context, squirrel test)', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            expectedEvents = [
+            client.expectedEvents = [
                 'cody.auth:failed',
                 'cody.auth.login:firstEver',
                 'cody.auth:connected',
@@ -566,7 +565,7 @@ describe('Agent', () => {
 
         it('webview/receiveMessage (type: chatModel)', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            expectedEvents = [
+            client.expectedEvents = [
                 'cody.auth:failed',
                 'cody.auth.login:firstEver',
                 'cody.auth:connected',
@@ -586,7 +585,7 @@ describe('Agent', () => {
 
         it('webview/receiveMessage (type: reset)', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            expectedEvents = [
+            client.expectedEvents = [
                 'cody.auth:failed',
                 'cody.auth.login:firstEver',
                 'cody.auth:connected',
@@ -617,7 +616,7 @@ describe('Agent', () => {
             it(
                 'edits the last human chat message',
                 async () => {
-                    expectedEvents = [
+                    client.expectedEvents = [
                         'cody.auth:failed',
                         'cody.auth.login:firstEver',
                         'cody.auth:connected',
@@ -655,7 +654,7 @@ describe('Agent', () => {
 
             it('edits messages by index', async () => {
                 // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-                expectedEvents = [
+                client.expectedEvents = [
                     'cody.auth:failed',
                     'cody.auth.login:firstEver',
                     'cody.auth:connected',
@@ -843,7 +842,7 @@ describe('Agent', () => {
     describe('Text documents', () => {
         it('chat/submitMessage (understands the selected text)', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            expectedEvents = [
+            client.expectedEvents = [
                 'cody.auth:failed',
                 'cody.auth.login:firstEver',
                 'cody.auth:connected',
@@ -880,7 +879,7 @@ describe('Agent', () => {
     describe('Commands', () => {
         it('commands/explain', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            expectedEvents = [
+            client.expectedEvents = [
                 'cody.auth:failed',
                 'cody.auth.login:firstEver',
                 'cody.auth:connected',
@@ -925,7 +924,7 @@ describe('Agent', () => {
             'commands/test',
             async () => {
                 // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-                expectedEvents = [
+                client.expectedEvents = [
                     'cody.auth:failed',
                     'cody.auth.login:firstEver',
                     'cody.auth:connected',
@@ -990,7 +989,7 @@ describe('Agent', () => {
 
         it('commands/smell', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            expectedEvents = [
+            client.expectedEvents = [
                 'cody.auth:failed',
                 'cody.auth.login:firstEver',
                 'cody.auth:connected',
@@ -1044,7 +1043,7 @@ describe('Agent', () => {
     describe('Progress bars', () => {
         it('progress/report', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            expectedEvents = [
+            client.expectedEvents = [
                 'cody.auth:failed',
                 'cody.auth.login:firstEver',
                 'cody.auth:connected',
@@ -1119,7 +1118,7 @@ describe('Agent', () => {
 
         it('progress/cancel', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            expectedEvents = [
+            client.expectedEvents = [
                 'cody.auth:failed',
                 'cody.auth.login:firstEver',
                 'cody.auth:connected',
@@ -1212,7 +1211,7 @@ describe('Agent', () => {
 
         it('chat/submitMessage', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            expectedEvents = [
+            client.expectedEvents = [
                 'cody.auth:failed',
                 'cody.auth.login:firstEver',
                 'cody.auth:connected',
@@ -1259,7 +1258,7 @@ describe('Agent', () => {
 
         it('remoteRepo/list', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            expectedEvents = [
+            client.expectedEvents = [
                 'cody.auth:failed',
                 'cody.auth.login:firstEver',
                 'cody.auth:connected',
@@ -1300,7 +1299,7 @@ describe('Agent', () => {
 
         it('remoteRepo/has', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            expectedEvents = [
+            client.expectedEvents = [
                 'cody.auth:failed',
                 'cody.auth.login:firstEver',
                 'cody.auth:connected',
@@ -1359,7 +1358,7 @@ describe('Agent', () => {
         // See https://sourcegraph.slack.com/archives/C05JDP433DL/p1714017586160079
         it.skip('attribution/found', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            expectedEvents = [
+            client.expectedEvents = [
                 'cody.auth:failed',
                 'cody.auth.login:firstEver',
                 'cody.auth:connected',
@@ -1395,7 +1394,7 @@ describe('Agent', () => {
         describe('Cody Context Filters for enterprise', () => {
             it('testing/ignore/overridePolicy', async () => {
                 // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-                expectedEvents = [
+                client.expectedEvents = [
                     'cody.auth:failed',
                     'cody.auth.login:firstEver',
                     'cody.auth:connected',
