@@ -70,7 +70,7 @@ describe('cody chat', () => {
         return {
             command: 'cody chat ' + params.args.join(' '),
             exitCode,
-            stdout: stdout.buffer,
+            stdout: stdout.buffer.replaceAll(tmp.rootPath, 'WORKING_DIRECTORY'),
             stderr: stderr.buffer,
         }
     }
@@ -111,6 +111,7 @@ describe('cody chat', () => {
                         'chat',
                         '--context-repo',
                         'github.com/sourcegraph/sourcegraph',
+                        '--show-context',
                         '-m',
                         'what is squirrel? Explain as briefly as possible.',
                     ],
@@ -127,6 +128,7 @@ describe('cody chat', () => {
                         'chat',
                         '--context-file',
                         'animal.ts',
+                        '--show-context',
                         '-m',
                         'implement a cow. Only print the code without any explanation.',
                     ],
