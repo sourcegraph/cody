@@ -137,14 +137,13 @@ async function decorateEditorAnimated(
             return
         }
 
+        await sleep(50)
+
         // Three line range
-        const endLine = i + 2
-        const lineRange = new vscode.Range(i, 0, i + 2, 0)
-        await sleep(15)
-        editor.setDecorations(SMART_APPLY_DECORATION_ACTIVE, [lineRange])
+        editor.setDecorations(SMART_APPLY_DECORATION_ACTIVE, [new vscode.Range(i, 0, i, 0)])
 
         // If we reach the end of the file, let's reset
-        if (endLine >= visibleRange.end.line) {
+        if (i >= visibleRange.end.line) {
             i = visibleRange.start.line
         }
     }
@@ -165,9 +164,8 @@ export async function handleSmartApply(text: string): Promise<void> {
     await executeSmartApply({
         configuration: {
             document: activeEditor.document,
-            // test
             instruction: ps`TODO: Implement instruction`,
-            model: 'anthropic/claude-3-haiku-20240307',
+            model: 'anthropic/claude-3-5-sonnet-20240620',
             replacement: text,
         },
     })

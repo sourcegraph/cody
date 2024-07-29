@@ -9,6 +9,15 @@ import { CodyTaskState } from '../utils'
 // Create Lenses based on state
 export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
     const codeLensRange = new vscode.Range(task.selectionRange.start, task.selectionRange.start)
+
+    // TODO: Probably use task.intent for chat-driven edits?
+    const isChatEdit = task.source === 'chat'
+    if (isChatEdit) {
+        const accept = getAcceptLens(codeLensRange, task.id)
+        const reject = getUndoLens(codeLensRange, task.id, 'Reject')
+        return [accept, reject]
+    }
+
     const isTest = task.intent === 'test'
     const isEdit = task.mode === 'edit'
     switch (task.state) {
@@ -163,11 +172,11 @@ function getRetryLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens 
     return lens
 }
 
-function getUndoLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+function getUndoLens(codeLensRange: vscode.Range, id: string, title = 'Undo'): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     const shortcut = isRunningInsideAgent() ? '' : ` (${process.platform === 'darwin' ? '⌥X' : 'Alt+X'})`
     lens.command = {
-        title: `Undo${shortcut}`,
+        title: `${title}${shortcut}`,
         command: 'cody.fixup.codelens.undo',
         arguments: [id],
     }
