@@ -547,8 +547,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalUnitTest),
         ])
 
-        const webviewType =
-            this.webviewPanelOrView?.viewType === 'cody.editorPanel' ? 'editor' : 'sidebar'
+        const webviewType = this.webviewPanelOrView?.webview ? 'sidebar' : 'editor'
+
+        console.log(webviewType, 'webviewType')
 
         return {
             agentIDE: config.isRunningInsideAgent ? config.agentIDE : CodyIDE.VSCode,
@@ -621,6 +622,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.postChatModels()
         await this.saveSession()
         this.initDoer.signalInitialized()
+        await this.sendConfig()
     }
 
     private async getRepoMetadataIfPublic(): Promise<string> {
@@ -1512,8 +1514,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      */
     public async createWebviewViewOrPanel(
         activePanelViewColumn?: vscode.ViewColumn,
-        lastQuestion?: string,
-        viewType = CodyChatEditorViewType
+        lastQuestion?: string
     ): Promise<vscode.WebviewView | vscode.WebviewPanel> {
         // Checks if the webview view or panel already exists and is visible.
         // If so, returns early to avoid creating a duplicate.
@@ -1521,6 +1522,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return this.webviewPanelOrView
         }
 
+        const viewType = CodyChatEditorViewType
         const panelTitle =
             chatHistory.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID)
                 ?.chatTitle || getChatPanelTitle(lastQuestion)
@@ -1674,9 +1676,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             await vscode.commands.executeCommand('setContext', 'cody.activated', false)
             return
         }
-        const viewOrPanel =
-            this._webviewPanelOrView ??
-            (await this.createWebviewViewOrPanel(undefined, undefined, 'cody.chat'))
+        const viewOrPanel = this._webviewPanelOrView ?? (await this.createWebviewViewOrPanel())
+
+        this._webviewPanelOrView = viewOrPanel
 
         revealWebviewViewOrPanel(viewOrPanel)
 
