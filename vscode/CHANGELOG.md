@@ -6,7 +6,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
-Chat: Cody is now defaulted to run in the sidebar for both Enterprise and Non-Enterprise users. [pull/](https://github.com/sourcegraph/cody/pull/)
+Chat: Cody is now defaulted to run in the sidebar for both Enterprise and Non-Enterprise users. [pull/5039](https://github.com/sourcegraph/cody/pull/5039)
 
 ### Fixed
 

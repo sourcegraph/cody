@@ -339,6 +339,8 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
                 await this.storeAuthInfo(config.serverEndpoint, config.accessToken)
             }
 
+            await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
+
             await this.setAuthStatus(authStatus)
 
             // If the extension is authenticated on startup, it can't be a user's first
@@ -373,9 +375,6 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
     // Set auth status and share it with chatview
     private async setAuthStatus(authStatus: AuthStatus): Promise<void> {
-        // Set Editor Context for extension activation.
-        await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
-
         if (this.status === authStatus) {
             return
         }

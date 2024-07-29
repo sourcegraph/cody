@@ -111,6 +111,7 @@ export class ChatsController implements vscode.Disposable {
     }
 
     public registerViewsAndCommands() {
+        this.disposables.push(this.panel)
         this.disposables.push(
             vscode.window.registerWebviewViewProvider('cody.chat', this.panel, {
                 webviewOptions: { retainContextWhenHidden: true },

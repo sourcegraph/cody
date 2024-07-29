@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test'
-import { createEmptyChatPanel, focusSidebar, sidebarSignin } from './common'
+import { getChatInputs, getChatSidebarPanel, sidebarSignin } from './common'
 import { type ExpectedV2Events, test } from './helpers'
 
 test.extend<ExpectedV2Events>({
@@ -16,21 +16,23 @@ test.extend<ExpectedV2Events>({
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
     ],
-})('restore chat from sidebar history view - plg', async ({ page, sidebar }) => {
+})('restore chat from sidebar history view', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
-    const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
+    const sidebarChat = getChatSidebarPanel(page)
+
+    const sidebarTabHistoryIcon = sidebarChat.locator('[id="radix-\\:r0\\:-trigger-history"]')
 
     // Ensure the chat view is ready before we start typing
-    await expect(chatPanelFrame.getByText('to add context to your chat')).toBeVisible()
+    await expect(sidebarTabHistoryIcon).toBeVisible()
 
+    const chatInput = getChatInputs(sidebarChat).first()
     await chatInput.fill('Hey')
     await chatInput.press('Enter')
 
-    await focusSidebar(page)
-    await chatPanelFrame.locator('[id="radix-\\:r0\\:-trigger-history"]').getByRole('button').click()
+    await sidebarTabHistoryIcon.getByRole('button').click()
 
-    const newHistoryItem = chatPanelFrame.getByRole('button', { name: 'Hey' })
+    const newHistoryItem = sidebarChat.getByRole('button', { name: 'Hey' })
     await expect(newHistoryItem).toBeVisible()
     await newHistoryItem.click()
 })
