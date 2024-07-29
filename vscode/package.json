@@ -440,14 +440,6 @@
         "icon": "$(new-comment-icon)"
       },
       {
-        "command": "cody.chat.moveToEditor",
-        "category": "Cody",
-        "title": "Move Chat to Editor Panel",
-        "enablement": "cody.activated",
-        "group": "Cody",
-        "icon": "$(layout-sidebar-left-off)"
-      },
-      {
         "command": "cody.chat.moveFromEditor",
         "category": "Cody",
         "title": "Move Chat from Editor to Main Cody Panel",
@@ -871,11 +863,6 @@
           "command": "cody.chat.history.panel",
           "when": "view != cody.chat && cody.activated",
           "group": "navigation@3"
-        },
-        {
-          "command": "cody.chat.moveToEditor",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@4"
         },
         {
           "command": "cody.welcome",
