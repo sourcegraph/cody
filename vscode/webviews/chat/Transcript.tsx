@@ -7,14 +7,8 @@ import {
     isAbortErrorOrSocketHangUp,
 } from '@sourcegraph/cody-shared'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
-import {
-    type ComponentProps,
-    type FunctionComponent,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-} from 'react'
+import isEqual from 'lodash/isEqual'
+import { type FC, memo, useCallback, useEffect, useMemo, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -26,19 +20,37 @@ import {
 } from './cells/messageCell/assistant/AssistantMessageCell'
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
-export const Transcript: React.FunctionComponent<{
+interface TranscriptProps {
     chatID: string
+    chatEnabled: boolean
     transcript: ChatMessage[]
+    userInfo: UserAccountInfo
     messageInProgress: ChatMessage | null
+
+    guardrails?: Guardrails
+    postMessage?: ApiPostMessage
+    isTranscriptError?: boolean
+
     feedbackButtonsOnSubmit: (text: string) => void
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
-    isTranscriptError?: boolean
-    userInfo: UserAccountInfo
-    chatEnabled: boolean
-    postMessage?: ApiPostMessage
-    guardrails?: Guardrails
-}> = ({ chatID, transcript, messageInProgress, ...props }) => {
+}
+
+export const Transcript: FC<TranscriptProps> = props => {
+    const {
+        chatID,
+        chatEnabled,
+        transcript,
+        userInfo,
+        messageInProgress,
+        guardrails,
+        postMessage,
+        isTranscriptError,
+        feedbackButtonsOnSubmit,
+        copyButtonOnSubmit,
+        insertButtonOnSubmit,
+    } = props
+
     const interactions = useMemo(
         () => transcriptToInteractionPairs(transcript, messageInProgress),
         [transcript, messageInProgress]
@@ -48,13 +60,18 @@ export const Transcript: React.FunctionComponent<{
         <div className="tw-px-8 tw-py-6 tw-pt-8 tw-mt-2 tw-flex tw-flex-col tw-gap-10">
             {interactions.map((interaction, i) => (
                 <TranscriptInteraction
-                    chatID={chatID}
                     // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                     key={`${chatID}-${i}`}
-                    {...props}
-                    transcript={transcript}
-                    messageInProgress={messageInProgress}
+                    chatID={chatID}
+                    chatEnabled={chatEnabled}
+                    userInfo={userInfo}
                     interaction={interaction}
+                    guardrails={guardrails}
+                    postMessage={postMessage}
+                    isTranscriptError={isTranscriptError}
+                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
+                    insertButtonOnSubmit={insertButtonOnSubmit}
                     isFirstInteraction={i === 0}
                     isLastInteraction={i === interactions.length - 1}
                     isLastSentInteraction={
@@ -124,24 +141,33 @@ export function transcriptToInteractionPairs(
     return pairs
 }
 
-const TranscriptInteraction: FunctionComponent<
-    ComponentProps<typeof Transcript> & {
-        interaction: Interaction
-        isFirstInteraction: boolean
-        isLastInteraction: boolean
-        isLastSentInteraction: boolean
-        priorAssistantMessageIsLoading: boolean
-    }
-> = ({
-    interaction: { humanMessage, assistantMessage },
-    isFirstInteraction,
-    isLastInteraction,
-    isLastSentInteraction,
-    priorAssistantMessageIsLoading,
-    isTranscriptError,
-    ...props
-}) => {
+interface TranscriptInteractionProps extends Omit<TranscriptProps, 'transcript' | 'messageInProgress'> {
+    interaction: Interaction
+    isFirstInteraction: boolean
+    isLastInteraction: boolean
+    isLastSentInteraction: boolean
+    priorAssistantMessageIsLoading: boolean
+}
+
+const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
+    const {
+        interaction: { humanMessage, assistantMessage },
+        isFirstInteraction,
+        isLastInteraction,
+        isLastSentInteraction,
+        priorAssistantMessageIsLoading,
+        isTranscriptError,
+        userInfo,
+        chatEnabled,
+        feedbackButtonsOnSubmit,
+        postMessage,
+        guardrails,
+        insertButtonOnSubmit,
+        copyButtonOnSubmit,
+    } = props
+
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
+
     useEffect(() => {
         return getVSCodeAPI().onMessage(message => {
             if (message.type === 'updateEditorState') {
@@ -174,8 +200,9 @@ const TranscriptInteraction: FunctionComponent<
     return (
         <>
             <HumanMessageCell
-                {...props}
                 key={humanMessage.index}
+                userInfo={userInfo}
+                chatEnabled={chatEnabled}
                 message={humanMessage}
                 isFirstMessage={humanMessage.index === 0}
                 isSent={!humanMessage.isUnsentFollowup}
@@ -199,8 +226,14 @@ const TranscriptInteraction: FunctionComponent<
             {assistantMessage && !isContextLoading && (
                 <AssistantMessageCell
                     key={assistantMessage.index}
-                    {...props}
+                    userInfo={userInfo}
+                    chatEnabled={chatEnabled}
                     message={assistantMessage}
+                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
+                    insertButtonOnSubmit={insertButtonOnSubmit}
+                    postMessage={postMessage}
+                    guardrails={guardrails}
                     humanMessage={makeHumanMessageInfo(
                         { humanMessage, assistantMessage },
                         humanEditorRef
@@ -216,7 +249,7 @@ const TranscriptInteraction: FunctionComponent<
             )}
         </>
     )
-}
+}, isEqual)
 
 // TODO(sqs): Do this the React-y way.
 export function focusLastHumanMessageEditor(): void {
