@@ -110,6 +110,11 @@ export type WebviewMessage =
           range?: RangeData | undefined | null
       }
     | {
+        command: 'readLocalFileWithRange'
+        uri: URI
+        range?: RangeData | undefined | null
+    }
+    | {
           command: 'openLocalFileWithRange'
           filePath: string
           // Note: we're not using vscode.Range objects or nesting here, as the protocol
@@ -227,6 +232,11 @@ export type ExtensionMessage =
           result?: Prompt[] | null | undefined
           error?: string | null | undefined
       }
+      | {
+        type: 'fileContent'
+        result?: string | null | undefined
+        error?: string | null | undefined
+    }
 
 interface ExtensionAttributionMessage {
     snippet: string

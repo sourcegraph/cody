@@ -114,7 +114,7 @@ import { CodyChatEditorViewType } from './ChatsController'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import type { ContextFetcher } from './ContextFetcher'
 import { InitDoer } from './InitDoer'
-import { getChatPanelTitle, openFile } from './chat-helpers'
+import { getChatPanelTitle, openFile, readlocalFile } from './chat-helpers'
 import {
     type HumanInput,
     getContextStrategy,
@@ -368,19 +368,27 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await handleCopiedCode(message.text, message.eventType === 'Button')
                 break
             case 'openURI':
-                vscode.commands.executeCommand('vscode.open', message.uri)
+                vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(message.uri))
                 break
             case 'links':
                 void openExternalLinks(message.value)
                 break
             case 'openFile':
                 await openFile(
-                    message.uri,
+                    vscode.Uri.parse(message.uri),
                     message.range ?? undefined,
                     this._webviewPanelOrView && 'viewColumn' in this._webviewPanelOrView
                         ? this._webviewPanelOrView.viewColumn
                         : undefined
                 )
+                break
+            case 'readLocalFileWithRange':
+                console.log("I got a local message")
+                const filecontext= await readlocalFile(vscode.Uri.parse(message.uri.toString()), message.range ?? undefined)
+                this.postMessage({
+                    type: 'fileContent',
+                    result: filecontext
+                });
                 break
             case 'openLocalFileWithRange':
                 await openLocalFileWithRange(message.filePath, message.range ?? undefined)

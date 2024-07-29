@@ -87,6 +87,21 @@ export const FileLink: React.FunctionComponent<
         href = openURI.href
         target = openURI.target
     }
+    const vscode = getVSCodeAPI();
+    vscode.postMessage({
+        command: 'readLocalFileWithRange',
+        uri,
+        range,
+    });
+    
+    window.addEventListener('message', event => {
+        const message = event.data;
+        console.log(`Message received from webview: ${message}`);
+        if (message.type === 'fileContent') {
+            console.log(`Bro the file contents for ${uri.toString()}:`, message.result);
+        }
+    });
+    console.log(`is File contents for ${uri.toString()}:`);
 
     return (
         <div className={clsx('tw-flex tw-items-center tw-max-w-full', className)}>
@@ -112,7 +127,7 @@ export const FileLink: React.FunctionComponent<
                     }
                 />
                 <div
-                    className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}
+                    className={clsx(styles.path, styles.customColorLink, (isTooLarge || isIgnored) && styles.excluded)}
                     data-source={source || 'unknown'}
                 >
                     {pathWithRange}
