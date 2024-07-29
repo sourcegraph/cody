@@ -281,9 +281,9 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     spinner.clear()
 
     if (options.showContext) {
-        const contextFiles = response.messages.flatMap(m => m.contextFiles ?? [])
+        const reponseContextFiles = response.messages.flatMap(m => m.contextFiles ?? [])
         streams.log('> Context items:\n')
-        for (const [i, item] of contextFiles.entries()) {
+        for (const [i, item] of reponseContextFiles.entries()) {
             const uri = vscode.Uri.from(item.uri as any)
             const endpoint = serverInfo.authStatus.endpoint ?? options.endpoint
             // Workaround for strange URI authority resopnse, reported in
