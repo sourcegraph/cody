@@ -151,8 +151,6 @@ async function fetchServerSideModels(endpoint: string): Promise<ServerModelConfi
     const userAccessToken = await secretStorage.getToken(endpoint)
     const customHeaders = getConfiguration().customHeaders ?? {}
 
-    console.log('customHeaders', customHeaders)
-
     // Fetch the data via REST API.
     // NOTE: We may end up exposing this data via GraphQL, it's still TBD.
     const client = new RestClient(endpoint, userAccessToken, customHeaders)
