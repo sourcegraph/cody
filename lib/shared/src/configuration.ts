@@ -20,6 +20,7 @@ export interface ConfigGetter<T> {
     get<T>(section: string, defaultValue?: T): T
 }
 
+// TODO: Question...why do we have this duplicated here? I'd like it to live in ONE place.
 // Should we share VS Code specific config via cody-shared?
 export interface Configuration {
     proxy?: string | null

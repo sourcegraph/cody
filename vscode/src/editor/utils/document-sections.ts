@@ -245,6 +245,8 @@ async function defaultGetFoldingRanges(uri: vscode.Uri): Promise<vscode.FoldingR
     // setting `"cody.experimental.foldingRanges": "indentation-based"` and
     // reload VS Code. Beyond feature parity between all clients, this implementation
     // can be used to write test cases without mocking, which is a nice benefit.
+
+    //TODO: Example then here the config isn't dependency injected ?!?
     if (
         vscode.workspace.getConfiguration().get<string>('cody.experimental.foldingRanges', 'lsp') ===
         'indentation-based'

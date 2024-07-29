@@ -787,6 +787,9 @@ importers:
       http-proxy-middleware:
         specifier: ^3.0.0
         version: 3.0.0
+      json-schema-to-zod:
+        specifier: ^2.3.1
+        version: 2.3.1
       kill-sync:
         specifier: ^1.0.3
         version: 1.0.3
@@ -11243,6 +11246,11 @@ packages:
     resolution: {integrity: sha512-xyFwyhro/JEof6Ghe2iz2NcXoj2sloNsWr/XsERDK/oiPCfaNhl5ONfp+jQdAZRQQ0IJWNzH9zIZF7li91kh2w==}
     dev: true
 
+  /json-schema-to-zod@2.3.1:
+    resolution: {integrity: sha512-mxj4nDqbh6H0PPslVwG8z0w9uvckSyin/j4BMD818l/3E1Ie4L6x77itCVJ29ejZI67cUgBoZGsUB69WGc6b/g==}
+    hasBin: true
+    dev: true
+
   /json-schema-traverse@1.0.0:
     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
     dev: true
@@ -11372,8 +11380,8 @@ packages:
       strip-json-comments: 5.0.1
       summary: 2.1.0
       typescript: 5.4.2
-      zod: 3.22.4
-      zod-validation-error: 3.3.0(zod@3.22.4)
+      zod: 3.23.8
+      zod-validation-error: 3.3.0(zod@3.23.8)
     dev: true
 
   /known-css-properties@0.29.0:
@@ -16902,17 +16910,13 @@ packages:
     engines: {node: '>=12.20'}
     dev: true
 
-  /zod-validation-error@3.3.0(zod@3.22.4):
+  /zod-validation-error@3.3.0(zod@3.23.8):
     resolution: {integrity: sha512-Syib9oumw1NTqEv4LT0e6U83Td9aVRk9iTXPUQr1otyV1PuXQKOvOwhMNqZIq5hluzHP2pMgnOmHEo7kPdI2mw==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       zod: ^3.18.0
     dependencies:
-      zod: 3.22.4
-    dev: true
-
-  /zod@3.22.4:
-    resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
+      zod: 3.23.8
     dev: true
 
   /zod@3.23.8:

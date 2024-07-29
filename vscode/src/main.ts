@@ -45,6 +45,7 @@ import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { createInlineCompletionItemFromMultipleProviders } from './completions/create-multi-model-inline-completion-provider'
+import { type Config, ConfigWatcherV2 } from './config-v2'
 import { getFullConfig } from './configuration'
 import { BaseConfigWatcher, type ConfigWatcher } from './configwatcher'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
@@ -123,9 +124,9 @@ export async function start(
     setLogger({ logDebug, logError })
 
     const disposables: vscode.Disposable[] = []
-
     const authProvider = AuthProvider.create(await getFullConfig())
     const configWatcher = await BaseConfigWatcher.create(authProvider, disposables)
+    const configWatcherV2 = await ConfigWatcherV2.create(authProvider, disposables)
     await configWatcher.onChange(
         async config => {
             await configureEventsInfra(config, isExtensionModeDevOrTest, authProvider)
@@ -147,7 +148,14 @@ export async function start(
     }, disposables)
 
     disposables.push(
-        await register(context, authProvider, configWatcher, platform, isExtensionModeDevOrTest)
+        await register(
+            context,
+            authProvider,
+            configWatcher,
+            configWatcherV2,
+            platform,
+            isExtensionModeDevOrTest
+        )
     )
 
     return vscode.Disposable.from(...disposables)
@@ -158,6 +166,7 @@ const register = async (
     context: vscode.ExtensionContext,
     authProvider: AuthProvider,
     configWatcher: ConfigWatcher<ConfigurationWithAccessToken>,
+    configWatcherV2: ConfigWatcher<Config>,
     platform: PlatformContext,
     isExtensionModeDevOrTest: boolean
 ): Promise<vscode.Disposable> => {
@@ -288,7 +297,7 @@ const register = async (
         autocompleteSetup,
         openCtxSetup,
         tutorialSetup,
-        registerMinion(context, configWatcher, authProvider, symfRunner, disposables),
+        registerMinion(context, configWatcherV2, authProvider, symfRunner, disposables),
     ])
     disposables.push(extensionClientDispose)
 
@@ -317,6 +326,7 @@ async function initializeSingletons(
             promises.push(featureFlagProvider.refresh())
             promises.push(contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri))
             ModelsService.onConfigChange()
+            //TODO: But then here we inject it?
             upstreamHealthProvider.onConfigurationChange(config)
 
             await Promise.all(promises).then()
@@ -722,12 +732,14 @@ async function registerOpenCtxClient(
 
 async function registerMinion(
     context: vscode.ExtensionContext,
-    config: ConfigWatcher<ConfigurationWithAccessToken>,
+    config: ConfigWatcher<Config>,
     authProvider: AuthProvider,
     symfRunner: SymfRunner | undefined,
     disposables: vscode.Disposable[]
 ): Promise<void> {
-    if (config.get().experimentalMinionAnthropicKey) {
+    //if (config.get().experimentalMinionAnthropicKey) {
+    if (config.get()['cody.experimental.minion.anthropicKey']) {
+        //TODO: It's not actually Dependency-Injection the config value?!?
         const minionOrchestrator = new MinionOrchestrator(context.extensionUri, authProvider, symfRunner)
         disposables.push(minionOrchestrator)
         disposables.push(

@@ -1,0 +1,14 @@
+"openctx.providers": {
+          "type": "object",
+          "markdownDescription": "OpenCtx providers configuration.",
+          "default": {},
+          "scope": "resource",
+          "properties": {
+            "A": {
+              "type": "string"
+            },
+            "B": {
+              "type": "string"
+            }
+          }
+        },

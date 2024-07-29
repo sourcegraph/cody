@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { getFullConfig } from './configuration'
 import type { AuthProvider } from './services/AuthProvider'
 
-interface OnChangeOptions {
+export interface OnChangeOptions {
     runImmediately: boolean
 }
 

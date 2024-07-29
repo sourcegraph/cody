@@ -63,7 +63,7 @@ export class MinionOrchestrator implements vscode.Disposable {
         )
 
         const assetRoot = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
-
+        //TODO: Example then here the config isn't dependency injected ?!?
         const config = await getFullConfig()
         const anthropicKey = config.experimentalMinionAnthropicKey
         const anthropic = new Anthropic({ apiKey: anthropicKey })
