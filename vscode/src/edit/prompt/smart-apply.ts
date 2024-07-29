@@ -12,6 +12,7 @@ import {
     psDedent,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { sleep } from '../../completions/utils'
 import { PromptBuilder } from '../../prompt-builder'
 import { fuzzyFindLocation } from '../../supercompletions/utils/fuzzy-find-location'
 
@@ -54,7 +55,7 @@ export const SMART_APPLY_PROMPT = {
 }
 
 export const getPrompt = async (
-    replacement: string,
+    replacement: PromptString,
     document: vscode.TextDocument,
     model: EditModel
 ): Promise<{ messages: Message[]; prefix: string }> => {
@@ -73,7 +74,7 @@ export const getPrompt = async (
     promptBuilder.tryAddToPrefix(preamble)
 
     const instruction = SMART_APPLY_PROMPT.instruction
-        .replaceAll('{incomingText}', PromptString.unsafe_fromLLMResponse(replacement))
+        .replaceAll('{incomingText}', replacement)
         .replaceAll('{fileContents}', documentText)
         .replaceAll('{filePath}', PromptString.fromDisplayPath(document.uri))
 
@@ -86,7 +87,7 @@ export const getPrompt = async (
 }
 
 export async function promptModelForOriginalCode(
-    replacement: string,
+    replacement: PromptString,
     document: vscode.TextDocument,
     model: EditModel,
     client: ChatClient
@@ -139,7 +140,7 @@ export async function promptModelForOriginalCode(
 }
 
 export async function getSmartApplySelection(
-    replacement: string,
+    replacement: PromptString,
     document: vscode.TextDocument,
     model: EditModel,
     client: ChatClient
@@ -152,4 +153,52 @@ export async function getSmartApplySelection(
 
     const range = fuzzyLocation.location.range
     return new vscode.Selection(range.start, range.end)
+}
+
+export const SMART_APPLY_DECORATION = vscode.window.createTextEditorDecorationType({
+    isWholeLine: true,
+    backgroundColor: new vscode.ThemeColor('diffEditor.unchangedCodeBackground'),
+    rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+})
+
+const SMART_APPLY_DECORATION_ACTIVE = vscode.window.createTextEditorDecorationType({
+    isWholeLine: true,
+    backgroundColor: new vscode.ThemeColor('editor.wordHighlightTextBackground'),
+    borderColor: new vscode.ThemeColor('editor.wordHighlightTextBorder'),
+    rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+})
+
+export async function decorateEditorAnimated(
+    editor: vscode.TextEditor,
+    fileRange: vscode.Range,
+    abortSignal: AbortSignal
+): Promise<void> {
+    // To start we decorate the whole file
+    editor.setDecorations(SMART_APPLY_DECORATION, [fileRange])
+
+    if (editor.visibleRanges.length !== 1) {
+        // Multiple visible ranges? No visible ranges? Do not animate
+        // Figure out how this happens
+        return
+    }
+
+    const [visibleRange] = editor.visibleRanges
+    for (let i = visibleRange.start.line; i <= visibleRange.end.line; i++) {
+        if (abortSignal.aborted) {
+            // Clear decorations and exit if aborted
+            editor.setDecorations(SMART_APPLY_DECORATION, [])
+            editor.setDecorations(SMART_APPLY_DECORATION_ACTIVE, [])
+            return
+        }
+
+        await sleep(50)
+
+        // Three line range
+        editor.setDecorations(SMART_APPLY_DECORATION_ACTIVE, [new vscode.Range(i, 0, i, 0)])
+
+        // If we reach the end of the file, let's reset
+        if (i >= visibleRange.end.line) {
+            i = visibleRange.start.line
+        }
+    }
 }

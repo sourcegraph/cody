@@ -12,12 +12,6 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
 
     // TODO: Probably use task.intent for chat-driven edits?
     const isChatEdit = task.source === 'chat'
-    if (isChatEdit) {
-        const accept = getAcceptLens(codeLensRange, task.id)
-        const reject = getUndoLens(codeLensRange, task.id, 'Reject')
-        return [accept, reject]
-    }
-
     const isTest = task.intent === 'test'
     const isEdit = task.mode === 'edit'
     switch (task.state) {
@@ -55,6 +49,10 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
                     isRunningInsideAgent() ? 'Show Diff' : 'Open Diff'
                 )
                 return [accept, retry, undo, showDiff]
+            }
+            if (isChatEdit) {
+                const reject = getUndoLens(codeLensRange, task.id, 'Reject')
+                return [accept, reject]
             }
             return [accept, retry, undo]
         }

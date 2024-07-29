@@ -4,6 +4,8 @@ import {
     type ChatClient,
     ClientConfigSingleton,
     ModelsService,
+    PromptString,
+    ps,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
@@ -21,7 +23,7 @@ import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import type { AuthProvider } from '../services/AuthProvider'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import type { ExecuteEditArguments } from './execute'
-import { getSmartApplySelection } from './prompt/smart-apply'
+import { SMART_APPLY_DECORATION, getSmartApplySelection } from './prompt/smart-apply'
 import { EditProvider } from './provider'
 import type { SmartApplyArguments } from './smart-apply'
 import { getEditIntent } from './utils/edit-intent'
@@ -243,16 +245,44 @@ export class EditManager implements vscode.Disposable {
             return
         }
 
-        console.log('CALLING getSmartApplySelection')
+        // Use the replacement from the LLM response
+        const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
+
+        if (editor.active) {
+            const documentRange = new vscode.Range(0, 0, document.lineCount, 0)
+            editor.active.setDecorations(SMART_APPLY_DECORATION, [documentRange])
+        }
+
         const selection = await getSmartApplySelection(
-            configuration.replacement,
+            replacementCode,
             configuration.document,
             configuration.model,
             this.options.chat
         )
+
+        editor.active?.setDecorations(SMART_APPLY_DECORATION, [])
+
         if (!selection) {
             void vscode.window.showErrorMessage('Unable to apply edit')
             return
+        }
+
+        if (!selection.isEmpty) {
+            // We have a selection to replace, we re-prompt the LLM to generate the changes to ensure that
+            // we can reliably apply this edit.
+            // Just using the replacement code from the response is not enough, as it may contain parts that are not suitable to apply,
+            // e.g. // ...
+            return this.executeEdit({
+                configuration: {
+                    document: configuration.document,
+                    range: selection,
+                    mode: 'edit',
+                    instruction: ps`Apply the following change to this range: ${replacementCode}`,
+                    model: configuration.model,
+                    intent: 'edit',
+                },
+                source: 'chat',
+            })
         }
 
         const task = await this.controller.createTask(

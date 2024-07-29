@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import { ps, telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 
-import { sleep } from '../../completions/utils'
 import { executeSmartApply } from '../../edit/smart-apply'
 import { countCode, matchCodeSnippets } from './code-count'
 
@@ -101,65 +100,12 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
     setLastStoredCode(text, eventName)
 }
 
-const SMART_APPLY_DECORATION = vscode.window.createTextEditorDecorationType({
-    isWholeLine: true,
-    backgroundColor: new vscode.ThemeColor('diffEditor.unchangedCodeBackground'),
-    rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
-})
-
-const SMART_APPLY_DECORATION_ACTIVE = vscode.window.createTextEditorDecorationType({
-    isWholeLine: true,
-    backgroundColor: new vscode.ThemeColor('editor.wordHighlightTextBackground'),
-    borderColor: new vscode.ThemeColor('editor.wordHighlightTextBorder'),
-    rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
-})
-
-async function decorateEditorAnimated(
-    editor: vscode.TextEditor,
-    fileRange: vscode.Range,
-    abortSignal: AbortSignal
-): Promise<void> {
-    // To start we decorate the whole file
-    editor.setDecorations(SMART_APPLY_DECORATION, [fileRange])
-
-    if (editor.visibleRanges.length !== 1) {
-        // Multiple visible ranges? No visible ranges? Do not animate
-        // Figure out how this happens
-        return
-    }
-
-    const [visibleRange] = editor.visibleRanges
-    for (let i = visibleRange.start.line; i <= visibleRange.end.line; i++) {
-        if (abortSignal.aborted) {
-            // Clear decorations and exit if aborted
-            editor.setDecorations(SMART_APPLY_DECORATION, [])
-            editor.setDecorations(SMART_APPLY_DECORATION_ACTIVE, [])
-            return
-        }
-
-        await sleep(50)
-
-        // Three line range
-        editor.setDecorations(SMART_APPLY_DECORATION_ACTIVE, [new vscode.Range(i, 0, i, 0)])
-
-        // If we reach the end of the file, let's reset
-        if (i >= visibleRange.end.line) {
-            i = visibleRange.start.line
-        }
-    }
-}
-
 export async function handleSmartApply(text: string): Promise<void> {
     const editor = getEditor()
     const activeEditor = editor.active
     if (!activeEditor) {
         throw new Error('No editor found to insert text')
     }
-
-    const fullRange = new vscode.Range(0, 0, activeEditor.document.lineCount - 1, 0)
-    const animationAbortController = new AbortController()
-    // Add a decoration to show we're working on the full range of the current file
-    decorateEditorAnimated(activeEditor, fullRange, animationAbortController.signal)
 
     await executeSmartApply({
         configuration: {
@@ -169,9 +115,6 @@ export async function handleSmartApply(text: string): Promise<void> {
             replacement: text,
         },
     })
-
-    // Clear the decorartion on finish
-    animationAbortController.abort()
 }
 /**
  * Handles insert event to insert text from code block to new file
