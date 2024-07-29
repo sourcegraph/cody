@@ -1,13 +1,7 @@
-import {
-    type CodyCommand,
-    type ContextItem,
-    featureFlagProvider,
-    isFileURI,
-} from '@sourcegraph/cody-shared'
+import { type CodyCommand, type ContextItem, isFileURI } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
 import { CodyCommandMenuItems } from '..'
-import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import { getContextFileFromGitLog } from '../context/git-log'
 import { getContextFileFromShell } from '../context/shell'
 import { executeExplainHistoryCommand } from '../execute/explain-history'
@@ -27,8 +21,7 @@ const vscodeDefaultCommands = getDefaultCommandsMap(CodyCommandMenuItems as Cody
 export class CommandsProvider implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     protected readonly defaultCommands = vscodeDefaultCommands
-    public treeViewProvider = new TreeViewProvider('command', featureFlagProvider)
-    protected customCommandsStore = new CustomCommandsManager(this.treeViewProvider)
+    protected customCommandsStore = new CustomCommandsManager()
 
     // The commands grouped with default commands and custom commands
     private allCommands = new Map<string, CodyCommand>()
@@ -44,13 +37,6 @@ export class CommandsProvider implements vscode.Disposable {
             vscode.commands.registerCommand('cody.menu.custom-commands', a => this?.menu('custom', a)),
             vscode.commands.registerCommand('cody.menu.commands-settings', a => this?.menu('config', a)),
             vscode.commands.registerCommand('cody.commands.open.doc', () => openCustomCommandDocsLink())
-        )
-
-        // Tree View
-        this.disposables.push(
-            vscode.window.registerTreeDataProvider('cody.commands.tree.view', this.treeViewProvider),
-            // Update the custom commands when the tree view is refreshed
-            this.treeViewProvider.onDidChangeTreeData(() => this.getCustomCommands())
         )
 
         this.disposables.push(

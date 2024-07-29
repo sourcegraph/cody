@@ -547,6 +547,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalUnitTest),
         ])
 
+        const webviewType = this.webviewPanelOrView?.webview ? 'sidebar' : 'editor'
+
+        console.log(webviewType, 'webviewType')
+
         return {
             agentIDE: config.isRunningInsideAgent ? config.agentIDE : CodyIDE.VSCode,
             agentExtensionVersion: config.isRunningInsideAgent
@@ -556,7 +560,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             serverEndpoint: config.serverEndpoint,
             experimentalNoodle: config.experimentalNoodle,
             experimentalUnitTest,
-            webviewType: this.webviewPanelOrView?.viewType === 'cody.editorPanel' ? 'editor' : 'sidebar',
+            webviewType,
         }
     }
 
@@ -618,6 +622,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.postChatModels()
         await this.saveSession()
         this.initDoer.signalInitialized()
+        await this.sendConfig()
     }
 
     private async getRepoMetadataIfPublic(): Promise<string> {
@@ -1672,6 +1677,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return
         }
         const viewOrPanel = this._webviewPanelOrView ?? (await this.createWebviewViewOrPanel())
+
+        this._webviewPanelOrView = viewOrPanel
 
         revealWebviewViewOrPanel(viewOrPanel)
 
