@@ -6,6 +6,7 @@ import {
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
 } from '@sourcegraph/cody-shared'
+import isEqual from 'lodash/isEqual'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import { type FC, memo, useCallback, useEffect, useMemo, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
@@ -63,10 +64,8 @@ export const Transcript: FC<TranscriptProps> = props => {
                     key={`${chatID}-${i}`}
                     chatID={chatID}
                     chatEnabled={chatEnabled}
-                    transcript={transcript}
                     userInfo={userInfo}
                     interaction={interaction}
-                    messageInProgress={messageInProgress}
                     guardrails={guardrails}
                     postMessage={postMessage}
                     isTranscriptError={isTranscriptError}
@@ -142,7 +141,7 @@ export function transcriptToInteractionPairs(
     return pairs
 }
 
-interface TranscriptInteractionProps extends TranscriptProps {
+interface TranscriptInteractionProps extends Omit<TranscriptProps, 'transcript' | 'messageInProgress'> {
     interaction: Interaction
     isFirstInteraction: boolean
     isLastInteraction: boolean
@@ -250,7 +249,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             )}
         </>
     )
-})
+}, isEqual)
 
 // TODO(sqs): Do this the React-y way.
 export function focusLastHumanMessageEditor(): void {

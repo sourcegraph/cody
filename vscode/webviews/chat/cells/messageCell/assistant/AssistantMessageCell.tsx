@@ -9,6 +9,7 @@ import {
     reformatBotMessageForChat,
     serializedPromptEditorStateFromChatMessage,
 } from '@sourcegraph/cody-shared'
+import isEqual from 'lodash/isEqual'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
@@ -143,7 +144,8 @@ export const AssistantMessageCell: FunctionComponent<{
                 }
             />
         )
-    }
+    },
+    isEqual
 )
 
 export const NON_HUMAN_CELL_AVATAR_SIZE =

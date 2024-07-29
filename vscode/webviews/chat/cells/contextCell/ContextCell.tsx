@@ -2,6 +2,7 @@ import type { ContextItem, Model } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
 import { MENTION_CLASS_NAME } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
+import isEqual from 'lodash/isEqual'
 import { BrainIcon, MessagesSquareIcon } from 'lucide-react'
 import { type FunctionComponent, memo } from 'react'
 import { FileLink } from '../../../components/FileLink'
@@ -156,4 +157,4 @@ export const ContextCell: FunctionComponent<{
             )}
         </Cell>
     ) : null
-})
+}, isEqual)

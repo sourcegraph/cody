@@ -1,6 +1,6 @@
 import { clsx } from 'clsx'
 import type React from 'react'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import type { AuthStatus, ChatMessage, CodyIDE, Guardrails } from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
@@ -48,6 +48,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 }) => {
     const { reload: reloadMentionProviders } = useChatContextMentionProviders()
     const telemetryRecorder = useTelemetryRecorder()
+
+    const transcriptRef = useRef(transcript)
+    transcriptRef.current = transcript
+
     const feedbackButtonsOnSubmit = useCallback(
         (text: string) => {
             enum FeedbackType {
@@ -57,7 +61,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             telemetryRecorder.recordEvent('cody.feedback', 'submit', {
                 metadata: {
                     feedbackType: text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
-                    lastChatUsedEmbeddings: transcript
+                    lastChatUsedEmbeddings: transcriptRef.current
                         .at(-1)
                         ?.contextFiles?.some(file => file.source === 'embeddings')
                         ? 1
@@ -71,12 +75,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an aditional safegaurd measure
                     responseText: userInfo.isDotComUser
-                        ? truncateTextStart(transcript.toString(), CHAT_INPUT_TOKEN_BUDGET)
+                        ? truncateTextStart(transcriptRef.current.toString(), CHAT_INPUT_TOKEN_BUDGET)
                         : '',
                 },
             })
         },
-        [transcript, userInfo, telemetryRecorder]
+        [userInfo, telemetryRecorder]
     )
 
     const copyButtonOnSubmit = useCallback(
