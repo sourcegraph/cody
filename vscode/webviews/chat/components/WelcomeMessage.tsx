@@ -1,8 +1,10 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import {
     AtSignIcon,
+    InfoIcon,
     type LucideProps,
     MessageSquarePlusIcon,
+    PencilLineIcon,
     SettingsIcon,
     TextIcon,
 } from 'lucide-react'
@@ -10,6 +12,8 @@ import type { FunctionComponent } from 'react'
 import type React from 'react'
 import { CollapsiblePanel } from '../../components/CollapsiblePanel'
 import { Kbd } from '../../components/Kbd'
+import { Button } from '../../components/shadcn/ui/button'
+import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { DefaultCommandsList } from './DefaultCommandsList'
 
 const MenuExample: FunctionComponent<{ children: React.ReactNode }> = ({ children }) => (
@@ -47,6 +51,26 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => 
     return (
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-pt-4 tw-px-8 tw-gap-10 sm:tw-pl-21 tw-transition-all">
             <DefaultCommandsList IDE={IDE} />
+            <CollapsiblePanel title="Experimental Features">
+                <Button
+                    key="auto-edit"
+                    variant="ghost"
+                    className="tw-text-left"
+                    onClick={() => {
+                        getVSCodeAPI().postMessage({ command: 'command', id: 'auto-edit' })
+                    }}
+                >
+                    <PencilLineIcon
+                        className="tw-w-8 tw-h-8 tw-opacity-80"
+                        size={16}
+                        strokeWidth="1.25"
+                    />
+                    <span className="tw-truncate tw-w-full">Auto Edit</span>
+                </Button>
+                <FeatureRow icon={InfoIcon}>
+                    Use this command for auto-completing code at the cursor position.
+                </FeatureRow>
+            </CollapsiblePanel>
             <CollapsiblePanel title="Chat Help">
                 <FeatureRow icon={AtSignIcon}>
                     Type <Kbd macOS="@" linuxAndWindows="@" /> to add context to your chat
