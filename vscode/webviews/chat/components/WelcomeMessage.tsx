@@ -55,12 +55,10 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => 
                     <>
                         <FeatureRow icon={TextIcon}>
                             To add code context from an editor, right click and use{' '}
-                            <MenuExample>Add to Cody Chat</MenuExample>
+                            <MenuExample>Cody &gt; Add File/Selection to Cody Chat</MenuExample>
                         </FeatureRow>
                         <FeatureRow icon={MessageSquarePlusIcon}>
-                            Start a new chat using <Kbd macOS="opt+/" linuxAndWindows="alt+/" /> or the{' '}
-                            <FeatureRowInlineIcon Icon={MessageSquarePlusIcon} /> button in the top right
-                            of any file
+                            Start a new chat using <Kbd macOS="opt+L" linuxAndWindows="alt+L" />
                         </FeatureRow>
                         <FeatureRow icon={SettingsIcon}>
                             Customize chat settings with the <FeatureRowInlineIcon Icon={SettingsIcon} />{' '}
