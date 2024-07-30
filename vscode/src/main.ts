@@ -111,11 +111,6 @@ export async function start(
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
 
-    // HACK to improve e2e test latency
-    if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.chatInSidebar')) {
-        await vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', true)
-    }
-
     // Set internal storage fields for storage provider singletons
     localStorage.setStorage(
         platform.createStorage ? await platform.createStorage() : context.globalState

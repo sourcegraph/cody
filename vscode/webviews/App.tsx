@@ -19,7 +19,6 @@ import type { AuthMethod, ConfigurationSubsetForWebview, LocalEnv } from '../src
 import type { UserAccountInfo } from './Chat'
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
-import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
 import { ConnectionIssuesPage } from './Troubleshooting'
 import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
@@ -216,9 +215,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
-    // Is this user a new installation?
-    const isNewInstall = useMemo(() => !userHistory?.some(c => c?.interactions?.length), [userHistory])
-
     const onCurrentChatModelChange = useCallback(
         (selected: Model): void => {
             vscodeAPI.postMessage({
@@ -285,7 +281,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 >
                     {/* NOTE: Display tabs to PLG users only until Universal Cody is ready. */}
                     {/* Shows tab bar for sidebar chats only. */}
-                    {userAccountInfo.isDotComUser && config.webviewType !== 'editor' && (
+                    {userAccountInfo.isDotComUser && config.webviewType === 'editor' ? null : (
                         <TabsBar
                             currentView={view}
                             setView={setView}
@@ -297,23 +293,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     )}
                     <TabContainer value={view}>
                         {view === 'chat' && (
-                            <>
-                                <Notices
-                                    probablyNewInstall={isNewInstall}
-                                    IDE={config.agentIDE}
-                                    version={config.agentExtensionVersion}
-                                />
-                                <Chat
-                                    chatID={chatID}
-                                    chatEnabled={chatEnabled}
-                                    userInfo={userAccountInfo}
-                                    messageInProgress={messageInProgress}
-                                    transcript={transcript}
-                                    vscodeAPI={vscodeAPI}
-                                    isTranscriptError={isTranscriptError}
-                                    guardrails={attributionEnabled ? guardrails : undefined}
-                                />
-                            </>
+                            <Chat
+                                chatID={chatID}
+                                chatEnabled={chatEnabled}
+                                userInfo={userAccountInfo}
+                                messageInProgress={messageInProgress}
+                                transcript={transcript}
+                                vscodeAPI={vscodeAPI}
+                                isTranscriptError={isTranscriptError}
+                                guardrails={attributionEnabled ? guardrails : undefined}
+                            />
                         )}
                         {view === 'history' && <HistoryTab userHistory={userHistory} />}
                         {view === 'commands' && (

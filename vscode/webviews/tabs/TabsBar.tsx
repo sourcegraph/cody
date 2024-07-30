@@ -2,6 +2,7 @@ import * as Tabs from '@radix-ui/react-tabs'
 import clsx from 'clsx'
 import {
     CircleUserIcon,
+    ColumnsIcon,
     DownloadIcon,
     HistoryIcon,
     type LucideProps,
@@ -84,6 +85,11 @@ const BASE_TAB_ITEMS: TabConfig[] = [
                 ),
                 Icon: MessageSquarePlusIcon,
                 command: 'cody.chat.newPanel',
+            },
+            {
+                tooltip: 'Open in Editor',
+                Icon: ColumnsIcon,
+                command: 'cody.chat.moveToEditor',
             },
         ],
         changesView: true,

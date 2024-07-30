@@ -31,6 +31,7 @@ import {
     Typewriter,
     allMentionProvidersMetadata,
     featureFlagProvider,
+    getContextForChatMessage,
     graphqlClient,
     handleExtensionAPICallFromWebview,
     hydrateAfterPostMessage,
@@ -538,6 +539,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const config = await getFullConfig()
 
+        const webviewType = this.webviewPanelOrView?.webview ? 'sidebar' : 'editor'
+
         return {
             agentIDE: config.isRunningInsideAgent ? config.agentIDE : CodyIDE.VSCode,
             agentExtensionVersion: config.isRunningInsideAgent
@@ -546,7 +549,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: config.serverEndpoint,
             experimentalNoodle: config.experimentalNoodle,
-            webviewType: this.webviewPanelOrView?.viewType === 'cody.editorPanel' ? 'editor' : 'sidebar',
+            webviewType,
         }
     }
 
@@ -568,6 +571,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // When the webview sends the 'ready' message, respond by posting the view config
     private async handleReady(): Promise<void> {
         await this.sendConfig()
+        await this.postConfigFeatures()
+
         // Update the chat model providers again to ensure the correct token limit is set on ready
         this.handleSetChatModel(this.chatModel.modelID)
     }
@@ -608,6 +613,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.postChatModels()
         await this.saveSession()
         this.initDoer.signalInitialized()
+        await this.sendConfig()
     }
 
     private async getRepoMetadataIfPublic(): Promise<string> {
@@ -806,24 +812,31 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                   })
                 : inputTextWithoutContextChips
 
-            const context = getEnhancedContext({
-                strategy: contextStrategy,
-                editor: this.editor,
-                input: { text: rewrite, mentions },
-                addEnhancedContext,
-                providers: {
-                    localEmbeddings: this.localEmbeddings,
-                    symf: this.symf,
-                    remoteSearch: this.remoteSearch,
-                },
-                contextRanking: this.contextRanking,
-            })
+            const context = Promise.all([
+                getEnhancedContext({
+                    strategy: contextStrategy,
+                    editor: this.editor,
+                    input: { text: rewrite, mentions },
+                    addEnhancedContext,
+                    providers: {
+                        localEmbeddings: this.localEmbeddings,
+                        symf: this.symf,
+                        remoteSearch: this.remoteSearch,
+                    },
+                    contextRanking: this.contextRanking,
+                }),
+                getContextForChatMessage(text.toString()),
+            ])
             // add a callback, but return the original context
             context.then(c =>
-                this.contextAPIClient?.rankContext(requestID, inputTextWithoutContextChips.toString(), c)
+                this.contextAPIClient?.rankContext(
+                    requestID,
+                    inputTextWithoutContextChips.toString(),
+                    c.flat()
+                )
             )
 
-            return context
+            return (await context).flat()
         }
 
         const remoteRepoIDs = remoteRepositoryIDsFromHumanInput({ text, mentions })
@@ -1650,6 +1663,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return
         }
         const viewOrPanel = this._webviewPanelOrView ?? (await this.createWebviewViewOrPanel())
+
+        this._webviewPanelOrView = viewOrPanel
 
         revealWebviewViewOrPanel(viewOrPanel)
 

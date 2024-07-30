@@ -74,10 +74,9 @@ export enum FeatureFlag {
     /** Whether to use server-side Context API. */
     CodyServerSideContextAPI = 'cody-server-side-context-api-enabled',
 
-    /** Chat in sidebar */
-    CodyChatInSidebar = 'cody-chat-in-sidebar',
-
     ChatPromptSelector = 'chat-prompt-selector',
+
+    GitMentionProvider = 'git-mention-provider',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

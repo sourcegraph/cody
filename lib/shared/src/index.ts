@@ -148,9 +148,10 @@ export {
     FeatureFlagProvider,
     featureFlagProvider,
 } from './experimentation/FeatureFlagProvider'
-export { GuardrailsPost, summariseAttribution } from './guardrails'
+export { GuardrailsPost } from './guardrails'
 export type { Attribution, Guardrails } from './guardrails'
-export { SourcegraphGuardrailsClient, type GuardrailsClientConfig } from './guardrails/client'
+export { SourcegraphGuardrailsClient } from './guardrails/client'
+export type { GuardrailsClientConfig } from './guardrails/client'
 export {
     CompletionStopReason,
     type CodeCompletionsClient,
@@ -304,7 +305,9 @@ export {
     REMOTE_REPOSITORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     WEB_PROVIDER_URI,
+    GIT_OPENCTX_PROVIDER_URI,
 } from './context/openctx/api'
+export * from './context/openctx/context'
 export { type ClientStateForWebview } from './clientState'
 export * from './lexicalEditor/editorState'
 export * from './lexicalEditor/nodes'

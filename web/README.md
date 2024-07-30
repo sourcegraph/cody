@@ -2,7 +2,7 @@
 
 **Status:** experimental (currently is used by Sourcegraph Web client)
 
-The `cody-web-experimental` package implements a standalone web app/components for Cody Web.
+The `@sourcegraph/cody-web` package implements a standalone web app/components for Cody Web.
 
 To run demo standalone web app: 
 - Run `pnpm dev` 
@@ -17,8 +17,8 @@ IndexDB tables for http://localhost:5777 domain.
 
 ## How to run within Sourcegraph client 
 
-- Build `cody-web-experimental` package by running `pnpm build`
+- Build `@sourcegraph/cody-web` package by running `pnpm build`
 - Register package local link with `pnpm link --global`
-- Go to the Sourcegraph repository and create a link with `pnpm link cody-web-experimental --global`
+- Go to the Sourcegraph repository and create a link with `pnpm link @sourcegraph/cody-web --global`
 - Run Sourcegraph `sg start` or `sg start web-standalone`
 
