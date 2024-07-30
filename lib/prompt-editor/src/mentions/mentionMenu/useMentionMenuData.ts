@@ -1,5 +1,6 @@
 import type { ContextItem, ContextMentionProviderMetadata } from '@sourcegraph/cody-shared'
-import { useMemo, useState } from 'react'
+import { debounce } from 'lodash'
+import { useCallback, useMemo, useState } from 'react'
 import { useClientState } from '../../clientState'
 import {
     useChatContextItems,
@@ -19,13 +20,18 @@ export function useMentionMenuParams(): {
 } {
     const [params, setParams] = useState<MentionMenuParams>({ query: null, parentItem: null })
 
+    const updateQuery = useCallback(
+        debounce((query: string | null) => setParams(prev => ({ ...prev, query })), 300),
+        []
+    )
+
     return useMemo(
         () => ({
             params,
-            updateQuery: query => setParams(prev => ({ ...prev, query })),
+            updateQuery,
             updateMentionMenuParams: update => setParams(prev => ({ ...prev, ...update })),
         }),
-        [params]
+        [params, updateQuery]
     )
 }
 

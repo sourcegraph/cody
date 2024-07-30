@@ -86,7 +86,8 @@ test.extend<ExpectedV2Events>({
     // Space before @ is required unless it's at position 0
     await chatInput.fill('Explain@mj')
     await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).not.toBeVisible()
-    await chatInput.fill('@mj')
+    await chatInput.fill('')
+    await chatInput.pressSequentially('@mj', { delay: 350 })
     await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).toBeVisible()
     await chatInput.fill('clear')
 
@@ -226,7 +227,8 @@ test.extend<ExpectedV2Events>({
     const [chatPanelFrame, , firstChatInput] = await createEmptyChatPanel(page)
 
     // Send a message with an @-mention.
-    await firstChatInput.fill('Explain @mj')
+    await firstChatInput.fill('Explain ')
+    await firstChatInput.pressSequentially('@mj', { delay: 350 })
     await chatPanelFrame.getByRole('option', { name: 'Main.java' }).click()
     await expect(firstChatInput).toHaveText('Explain Main.java ')
     await firstChatInput.press('Enter')

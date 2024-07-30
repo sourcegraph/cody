@@ -156,7 +156,7 @@ export async function openMentionsForProvider(
     chatInput: Locator,
     provider: string
 ): Promise<void> {
-    await chatInput.press('@')
+    await chatInput.pressSequentially('@', { delay: 350 })
     await frame.getByRole('option', { name: provider }).click()
 }
 
