@@ -446,7 +446,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 const fileName = !isMessageLoading ? preText.match(/FileName: (.*?)\n/)?.[1] : undefined
 
                 // Remove everything between the <FILENAME> tags and the tags.
-                const codeblockText = preText.replace(/FileName: (.*?)\n/, '').trimStart()
+                const codeblockText = fileName ? preText.replace(/^(.*?)FileName: (.*?)\n/, '') : preText
 
                 const buttons = createButtons(
                     codeblockText,

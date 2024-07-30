@@ -209,4 +209,5 @@ body[data-vscode-theme-kind='vscode-light'] .content pre > code {
 
 .file-name-container {
     font-size: small;
+    color: var(--vscode-input-placeholderForeground);
 }
