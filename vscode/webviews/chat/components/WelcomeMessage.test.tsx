@@ -1,11 +1,18 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, test } from 'vitest'
 import { WelcomeMessage } from './WelcomeMessage'
 
 describe('WelcomeMessage', () => {
+    function openCollapsiblePanels(): void {
+        const collapsibleTriggers = screen.getAllByTestId('collapsible-trigger')
+        for (const trigger of collapsibleTriggers) {
+            fireEvent.click(trigger)
+        }
+    }
     test('renders for CodyIDE.VSCode', () => {
         render(<WelcomeMessage IDE={CodyIDE.VSCode} />)
+        openCollapsiblePanels()
 
         // Check common elements
         expect(screen.getByText(/Chat Help/)).toBeInTheDocument()
@@ -24,6 +31,7 @@ describe('WelcomeMessage', () => {
 
     test('renders for CodyIDE.JetBrains', () => {
         render(<WelcomeMessage IDE={CodyIDE.JetBrains} />)
+        openCollapsiblePanels()
 
         // Check common elements
         expect(screen.getByText(/Chat Help/)).toBeInTheDocument()
