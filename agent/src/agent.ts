@@ -1011,7 +1011,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 return AgentFixupControls.serialize(task)
             }
 
-            return Promise.reject('No task with id' + id)
+            return Promise.reject(`No task with id ${id}`)
         })
 
         this.registerAuthenticatedRequest('editTask/retry', params => {
