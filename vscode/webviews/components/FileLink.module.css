@@ -12,8 +12,8 @@
     width: 100%;
     margin-top: 10px;
     padding: 10px;
-    border: 1px solid #ccc;
-    background-color: #f9f9f9;
+    border: 1px solid #cccccc;
+    background-color: #d13333;
 }
 
 .fileContentDisplay {
@@ -35,4 +35,33 @@
     padding: 0 10px; /* Add some padding */
     display: flex;
     align-items: center;
+}
+
+.fileHeader {
+    margin-bottom: 10px;
+}
+
+.fileName {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.filePath {
+    font-size: 0.9em;
+    color: gray;
+}
+
+.lineRange {
+    font-size: 0.9em;
+    color: gray;
+    margin-top: 5px;
+}
+/* FileLink.module.css */
+.popoverContent {
+    width: 400px; /* Adjust the width as needed */
+    padding: 16px; /* Add padding for better spacing */
+    background-color: #fff; /* Background color */
+    border: 1px solid #ccc; /* Border color */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Shadow for better visibility */
 }

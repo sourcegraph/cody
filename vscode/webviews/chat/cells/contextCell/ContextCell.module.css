@@ -4,9 +4,9 @@
 }
 
 .context-item-link {
-    background:  #1e1e1e;
+    background: none;
     border: none;
-    color: red;
+    color: grey;
     font-size: inherit;
     padding: 0;
     margin: 0;
