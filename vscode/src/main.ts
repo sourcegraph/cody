@@ -55,6 +55,8 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
+import { FuzzyLintsProvider } from './lint/FuzzyLintsProvider'
+import { PreRController } from './lint/PreRController'
 import type { LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logError } from './log'
@@ -260,7 +262,6 @@ const register = async (
         authProvider,
         platform.createOpenCtxController
     )
-
     registerCodyCommands(configWatcher, statusBar, sourceControl, chatClient, disposables)
     registerAuthCommands(authProvider, disposables)
     registerChatCommands(authProvider, disposables)
@@ -270,6 +271,7 @@ const register = async (
     if (isExtensionModeDevOrTest) {
         await registerTestCommands(context, authProvider, disposables)
     }
+    await registerPreR(configWatcher, chatClient, disposables)
     registerUpgradeHandlers(configWatcher, authProvider, disposables)
     disposables.push(new CharactersLogger())
 
@@ -689,6 +691,18 @@ function registerAutocomplete(
     }
     void configWatcher.onChange(setupAutocomplete, disposables)
     return setupAutocomplete().catch(() => {})
+}
+
+async function registerPreR(
+    config: ConfigWatcher<ConfigurationWithAccessToken>,
+    chatClient: ChatClient,
+    disposables: vscode.Disposable[]
+): Promise<void> {
+    if (config.get().experimentalPreREnabled) {
+        const fuzzyLintsProvider = new FuzzyLintsProvider(chatClient)
+        const preRController = new PreRController(fuzzyLintsProvider)
+        disposables.push(preRController, fuzzyLintsProvider)
+    }
 }
 
 async function registerMinion(

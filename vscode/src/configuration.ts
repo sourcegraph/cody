@@ -144,6 +144,7 @@ export function getConfiguration(
 
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
         experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),
+        experimentalPreREnabled: getHiddenSetting('experimental.pre-r.enabled', true),
 
         experimentalGuardrailsTimeoutSeconds: getHiddenSetting('experimental.guardrailsTimeoutSeconds'),
 

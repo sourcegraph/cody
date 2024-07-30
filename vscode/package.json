@@ -472,6 +472,13 @@
         "group": "Cody"
       },
       {
+        "command": "cody.pre-r.run",
+        "category": "Cody",
+        "title": "Run Pre-R Checks",
+        "enablement": "cody.activated",
+        "group": "Cody"
+      },
+      {
         "command": "cody.chat.view.popOut",
         "category": "Cody",
         "title": "Pop out",
