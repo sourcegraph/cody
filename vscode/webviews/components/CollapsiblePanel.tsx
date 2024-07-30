@@ -8,16 +8,16 @@ interface CollapsiblePanelProps {
     title: string
     children: React.ReactNode
     className?: string
-    closeByDefault?: boolean
+    initialOpen?: boolean
 }
 
-const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
+export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
     title,
     children,
     className,
-    closeByDefault,
+    initialOpen,
 }) => {
-    const [isOpen, setIsOpen] = React.useState(!closeByDefault)
+    const [isOpen, setIsOpen] = React.useState(initialOpen)
 
     const Icon = isOpen ? ChevronsDownUpIcon : ChevronsUpDownIcon
 
@@ -30,7 +30,7 @@ const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
             <div className="tw-flex tw-justify-between">
                 <h4 className="tw-text tw-font-medium tw-text-muted-foreground">{title}</h4>
                 <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" data-testid="collapsible-trigger">
                         <Icon className="tw-h-8 tw-w-8 tw-text" size={16} strokeWidth="1.25" />
                     </Button>
                 </CollapsibleTrigger>
@@ -43,5 +43,3 @@ const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
         </Collapsible>
     )
 }
-
-export { CollapsiblePanel }
