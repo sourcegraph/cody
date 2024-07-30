@@ -4,7 +4,13 @@ import path from 'node:path'
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { type ContextItem, DOTCOM_URL, ModelUsage, isWindows } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type ContextItem,
+    DOTCOM_URL,
+    ModelUsage,
+    isWindows,
+} from '@sourcegraph/cody-shared'
 
 import { ResponseError } from 'vscode-jsonrpc'
 import { URI } from 'vscode-uri'
@@ -94,6 +100,7 @@ describe('Agent', () => {
     // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
     const ignoredUri = workspace.file('src', 'isIgnored.ts')
 
+    let validAuthStatus: AuthStatus | null
     it('extensionConfiguration/change & chat/models (handle errors)', async () => {
         // Send two config change notifications because this is what the
         // JetBrains client does and there was a bug where everything worked
@@ -116,17 +123,17 @@ describe('Agent', () => {
         })
         expect(invalid?.isLoggedIn).toBeFalsy()
         const invalidModels = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
-        const remoteInvalidModels = invalidModels.models.filter(model => model.provider !== 'Ollama')
+        const remoteInvalidModels = invalidModels.models.filter(model => model.provider !== '2Ollama')
         expect(remoteInvalidModels).toStrictEqual([])
 
-        const valid = await client.request('extensionConfiguration/change', {
+        validAuthStatus = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
             anonymousUserID: 'abcde1234',
             accessToken: client.info.extensionConfiguration?.accessToken ?? 'invalid',
             serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? DOTCOM_URL.toString(),
             customHeaders: {},
         })
-        expect(valid?.isLoggedIn).toBeTruthy()
+        expect(validAuthStatus?.isLoggedIn).toBeTruthy()
 
         const reauthenticatedModels = await client.request('chat/models', {
             modelUsage: ModelUsage.Chat,
@@ -143,8 +150,18 @@ describe('Agent', () => {
         //    source agent/scripts/export-cody-http-recording-tokens.sh
         //
         // If you don't have access to this private file then you need to ask
-        expect(valid?.username).toStrictEqual('sourcegraphbot9k-fnwmu')
+        expect(validAuthStatus?.username).toStrictEqual('sourcegraphbot9k-fnwmu')
     }, 10_000)
+
+    it('check that we are authenticated', () => {
+        if (!validAuthStatus?.isLoggedIn) {
+            process.stderr.write(
+                'Not authenticated. This can happen if the test above fails. ' +
+                    "To fix this problem, run `it.only` on the extensionConfiguration/change tests case above and debug why it's.\n"
+            )
+            process.exit(1)
+        }
+    })
 
     it('graphql/getCurrentUserCodySubscription', async () => {
         const currentUserCodySubscription = await client.request(
