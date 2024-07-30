@@ -36,6 +36,11 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             const accept = getAcceptLens(codeLensRange, task.id)
             const retry = getRetryLens(codeLensRange, task.id)
             const undo = getUndoLens(codeLensRange, task.id)
+            if (isChatEdit) {
+                const reject = getUndoLens(codeLensRange, task.id, 'Reject')
+                return [accept, reject]
+            }
+
             if (isTest) {
                 return [accept, undo]
             }
@@ -49,10 +54,6 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
                     isRunningInsideAgent() ? 'Show Diff' : 'Open Diff'
                 )
                 return [accept, retry, undo, showDiff]
-            }
-            if (isChatEdit) {
-                const reject = getUndoLens(codeLensRange, task.id, 'Reject')
-                return [accept, reject]
             }
             return [accept, retry, undo]
         }

@@ -110,12 +110,15 @@ export async function handleSmartApply(text: string): Promise<void> {
     await executeSmartApply({
         configuration: {
             document: activeEditor.document,
-            instruction: ps`TODO: Implement instruction`,
+            instruction: ps``,
+            // TODO: Support other models here? Will need to for enterprise
             model: 'anthropic/claude-3-5-sonnet-20240620',
             replacement: text,
         },
+        source: 'chat',
     })
 }
+
 /**
  * Handles insert event to insert text from code block to new file
  */

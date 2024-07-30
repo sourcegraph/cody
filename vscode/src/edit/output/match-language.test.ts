@@ -16,7 +16,7 @@ describe('matchLanguage', () => {
                 original: EXAMPLE_RESPONSE,
             } as FixupTask
             const incoming = EXAMPLE_RESPONSE
-            const updated = matchLanguage(incoming, mockTask)
+            const updated = matchLanguage(incoming, mockTask.original, mockTask.fixupFile.uri)
             expect(updated).toBe(EXAMPLE_RESPONSE)
         })
     })
@@ -31,7 +31,11 @@ describe('matchLanguage', () => {
                 'console.log(text)',
                 'console.log(text);'
             )
-            const updated = matchLanguage(incomingWithSemicolons, mockTask)
+            const updated = matchLanguage(
+                incomingWithSemicolons,
+                mockTask.original,
+                mockTask.fixupFile.uri
+            )
             expect(updated).toBe(EXAMPLE_RESPONSE)
         })
 
@@ -41,7 +45,11 @@ describe('matchLanguage', () => {
                 original: EXAMPLE_RESPONSE,
             } as FixupTask
             const incomingWithSemicolons = EXAMPLE_RESPONSE.replace('console', 'console;')
-            const updated = matchLanguage(incomingWithSemicolons, mockTask)
+            const updated = matchLanguage(
+                incomingWithSemicolons,
+                mockTask.original,
+                mockTask.fixupFile.uri
+            )
             expect(updated).toBe(incomingWithSemicolons)
         })
     })

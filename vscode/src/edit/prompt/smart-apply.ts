@@ -12,35 +12,32 @@ import {
     psDedent,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { sleep } from '../../completions/utils'
 import { PromptBuilder } from '../../prompt-builder'
 import { fuzzyFindLocation } from '../../supercompletions/utils/fuzzy-find-location'
 
 const SMART_APPLY_TOPICS = {
     FILE_CONTENTS: ps`FILE_CONTENTS`,
     INCOMING: ps`INCOMING`,
-    ORIGINAL: ps`ORIGINAL`,
+    REPLACE: ps`REPLACE`,
 } as const
 
-const RESPONSE_PREFIX = ps`<${SMART_APPLY_TOPICS.ORIGINAL}>`
+const RESPONSE_PREFIX = ps`<${SMART_APPLY_TOPICS.REPLACE}>`
 const SHARED_PARAMETERS = {
-    stopSequences: [`</${SMART_APPLY_TOPICS.ORIGINAL}>`],
+    stopSequences: [`</${SMART_APPLY_TOPICS.REPLACE}>`],
     assistantText: RESPONSE_PREFIX,
     assistantPrefix: RESPONSE_PREFIX,
 }
 
-const SMART_APPLY_PREFIX = `<${SMART_APPLY_TOPICS.ORIGINAL}>`
+const SMART_APPLY_PREFIX = `<${SMART_APPLY_TOPICS.REPLACE}>`
 
 export const SMART_APPLY_PROMPT = {
     system: psDedent`
-        - You are an AI programming assistant who is an expert in determiing the best way to apply a change to a codebase.
+        - You are an AI programming assistant who is an expert in determiing the best way to apply a code snippet to a file.
         - Given a change, and the file where that change should be applied, you should determine the best way to apply the change to the file.
         - You will be provided with the contents of the current active file, enclosed in <${SMART_APPLY_TOPICS.FILE_CONTENTS}></${SMART_APPLY_TOPICS.FILE_CONTENTS}> XML tags.
         - You will be provided with an incoming change to a file, enclosed in <${SMART_APPLY_TOPICS.INCOMING}></${SMART_APPLY_TOPICS.INCOMING}> XML tags.
-        - You should respond with the original code that should be updated, enclosed in <${SMART_APPLY_TOPICS.ORIGINAL}></${SMART_APPLY_TOPICS.ORIGINAL}> XML tags.
-        - If this code should not replace any existing code, you should provide an empty <${SMART_APPLY_TOPICS.ORIGINAL}></${SMART_APPLY_TOPICS.ORIGINAL}> XML tag, at the position where the new code should be inserted.\
-        - We will paste the incoming change to replace the original code you produce, so ensure that the original code contains all code that should be replaced.
-        - Do not provide any additional commentary about the changes you made. Only respond with the generated code.`,
+        - You will be asked to determine the best way to apply the incoming change to the file.
+        - Do not provide any additional commentary about the changes you made.`,
     instruction: psDedent`
         We are in the file: {filePath}
 
@@ -50,7 +47,12 @@ export const SMART_APPLY_PROMPT = {
         We have the following code to apply to the file:
         <${SMART_APPLY_TOPICS.INCOMING}>{incomingText}</${SMART_APPLY_TOPICS.INCOMING}>
 
-        You should respond with the original code that should be updated, enclosed in <${SMART_APPLY_TOPICS.ORIGINAL}></${SMART_APPLY_TOPICS.ORIGINAL}> XML tags.
+        You should respond with the original code that should be updated, enclosed in <${SMART_APPLY_TOPICS.REPLACE}></${SMART_APPLY_TOPICS.REPLACE}> XML tags.
+
+        Follow these specific rules:
+        - If you find code that should be replaced, respond with the exact code enclosed within <${SMART_APPLY_TOPICS.REPLACE}></${SMART_APPLY_TOPICS.REPLACE}> XML tags.
+        - If you cannot find code that should be replaced, and believe this code should be inserted into the file, respond with "<${SMART_APPLY_TOPICS.REPLACE}>INSERT</${SMART_APPLY_TOPICS.REPLACE}>"
+        - If you believe that the contents of the entire file should be replaced, respond with "<${SMART_APPLY_TOPICS.REPLACE}>ENTIRE_FILE</${SMART_APPLY_TOPICS.REPLACE}>"
     `,
 }
 
@@ -96,7 +98,7 @@ export async function promptModelForOriginalCode(
     const contextWindow = ModelsService.getContextWindowByID(model)
 
     let text = ''
-    multiplexer.sub(SMART_APPLY_TOPICS.ORIGINAL.toString(), {
+    multiplexer.sub(SMART_APPLY_TOPICS.REPLACE.toString(), {
         onResponse: async (content: string) => {
             text += content
         },
@@ -111,7 +113,7 @@ export async function promptModelForOriginalCode(
         messages,
         {
             model,
-            stopSequences: [],
+            stopSequences: SHARED_PARAMETERS.stopSequences,
             maxTokensToSample: contextWindow.output,
         },
         abortController.signal
@@ -139,20 +141,62 @@ export async function promptModelForOriginalCode(
     return text
 }
 
+export function getFullRangeofDocument(document: vscode.TextDocument): vscode.Range {
+    const endOfDocument = document.lineCount - 1
+    const lastLine = document.lineAt(endOfDocument)
+    const range = new vscode.Range(0, 0, endOfDocument, lastLine.range.end.character)
+    return range
+}
+
+interface SmartSelection {
+    type: 'insert' | 'selection' | 'entire-file'
+    range: vscode.Range
+}
+
 export async function getSmartApplySelection(
     replacement: PromptString,
     document: vscode.TextDocument,
     model: EditModel,
     client: ChatClient
-): Promise<vscode.Selection | null> {
+): Promise<SmartSelection | null> {
     const originalCode = await promptModelForOriginalCode(replacement, document, model, client)
+
+    if (originalCode.trim().length === 0 || originalCode.trim() === 'INSERT') {
+        // Insert flow. Cody thinks that this code should be inserted into the document.
+        // Add the code to the end position of the document.
+        const range = getFullRangeofDocument(document)
+        return {
+            type: 'insert',
+            range: new vscode.Range(range.end, range.end),
+        }
+    }
+
+    if (originalCode.trim() === 'ENTIRE_FILE') {
+        // Replace flow. Cody thinks that the entire file should be replaced.
+        // Replace the entire file.
+        // Note: This is essentially a shortcut for a common use case,
+        // we don't want Cody to repeat the entire file if we can avoid it.
+        const range = new vscode.Range(0, 0, document.lineCount - 1, 0)
+        return {
+            type: 'entire-file',
+            range,
+        }
+    }
+
     const fuzzyLocation = fuzzyFindLocation(document, originalCode)
     if (!fuzzyLocation) {
+        // Cody told us we need to replace some code, but we couldn't find where to replace it
+        // Do nothing.
+        // TODO: Should we just insert at the bottom of the file?
         return null
     }
 
-    const range = fuzzyLocation.location.range
-    return new vscode.Selection(range.start, range.end)
+    console.log('got fuzzy location?', fuzzyLocation)
+
+    return {
+        type: 'selection',
+        range: fuzzyLocation.location.range,
+    }
 }
 
 export const SMART_APPLY_DECORATION = vscode.window.createTextEditorDecorationType({
@@ -160,45 +204,3 @@ export const SMART_APPLY_DECORATION = vscode.window.createTextEditorDecorationTy
     backgroundColor: new vscode.ThemeColor('diffEditor.unchangedCodeBackground'),
     rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
 })
-
-const SMART_APPLY_DECORATION_ACTIVE = vscode.window.createTextEditorDecorationType({
-    isWholeLine: true,
-    backgroundColor: new vscode.ThemeColor('editor.wordHighlightTextBackground'),
-    borderColor: new vscode.ThemeColor('editor.wordHighlightTextBorder'),
-    rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
-})
-
-export async function decorateEditorAnimated(
-    editor: vscode.TextEditor,
-    fileRange: vscode.Range,
-    abortSignal: AbortSignal
-): Promise<void> {
-    // To start we decorate the whole file
-    editor.setDecorations(SMART_APPLY_DECORATION, [fileRange])
-
-    if (editor.visibleRanges.length !== 1) {
-        // Multiple visible ranges? No visible ranges? Do not animate
-        // Figure out how this happens
-        return
-    }
-
-    const [visibleRange] = editor.visibleRanges
-    for (let i = visibleRange.start.line; i <= visibleRange.end.line; i++) {
-        if (abortSignal.aborted) {
-            // Clear decorations and exit if aborted
-            editor.setDecorations(SMART_APPLY_DECORATION, [])
-            editor.setDecorations(SMART_APPLY_DECORATION_ACTIVE, [])
-            return
-        }
-
-        await sleep(50)
-
-        // Three line range
-        editor.setDecorations(SMART_APPLY_DECORATION_ACTIVE, [new vscode.Range(i, 0, i, 0)])
-
-        // If we reach the end of the file, let's reset
-        if (i >= visibleRange.end.line) {
-            i = visibleRange.start.line
-        }
-    }
-}

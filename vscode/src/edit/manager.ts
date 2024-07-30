@@ -26,6 +26,7 @@ import type { ExecuteEditArguments } from './execute'
 import { SMART_APPLY_DECORATION, getSmartApplySelection } from './prompt/smart-apply'
 import { EditProvider } from './provider'
 import type { SmartApplyArguments } from './smart-apply'
+import type { EditIntent, EditMode } from './types'
 import { getEditIntent } from './utils/edit-intent'
 import { getEditMode } from './utils/edit-mode'
 import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
@@ -267,7 +268,10 @@ export class EditManager implements vscode.Disposable {
             return
         }
 
-        if (!selection.isEmpty) {
+        // Move focus to the determined selection
+        editor.active?.revealRange(selection.range, vscode.TextEditorRevealType.InCenter)
+
+        if (!selection.range.isEmpty) {
             // We have a selection to replace, we re-prompt the LLM to generate the changes to ensure that
             // we can reliably apply this edit.
             // Just using the replacement code from the response is not enough, as it may contain parts that are not suitable to apply,
@@ -275,9 +279,9 @@ export class EditManager implements vscode.Disposable {
             return this.executeEdit({
                 configuration: {
                     document: configuration.document,
-                    range: selection,
+                    range: selection.range,
                     mode: 'edit',
-                    instruction: ps`Apply the following change to this range: ${replacementCode}`,
+                    instruction: ps`Apply the following change to this code: ${replacementCode}`,
                     model: configuration.model,
                     intent: 'edit',
                 },
@@ -285,13 +289,16 @@ export class EditManager implements vscode.Disposable {
             })
         }
 
+        const isInsert = selection.type === 'insert'
+        const intent: EditIntent = isInsert ? 'add' : 'edit'
+        const mode: EditMode = isInsert ? 'insert' : 'edit'
         const task = await this.controller.createTask(
             document,
             configuration.instruction,
             [],
-            selection,
-            'edit',
-            'edit',
+            selection.range,
+            intent,
+            mode,
             configuration.model,
             source,
             configuration.document.uri,
@@ -300,7 +307,10 @@ export class EditManager implements vscode.Disposable {
         )
 
         const provider = this.getProviderForTask(task)
-        await provider.applyEdit(configuration.replacement)
+
+        await provider.applyEdit(
+            isInsert ? '\n\n' + configuration.replacement : configuration.replacement
+        )
         return task
     }
 
