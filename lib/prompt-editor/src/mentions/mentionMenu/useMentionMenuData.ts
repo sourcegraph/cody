@@ -70,6 +70,15 @@ export function useMentionMenuData(
                       ),
             items: results
                 ?.slice(0, limit)
+                .filter(
+                    // If an item is in the initial context, don't show it twice.
+                    item =>
+                        !clientState.initialContext.some(
+                            initialItem =>
+                                initialItem.uri.toString() === item.uri.toString() &&
+                                initialItem.type === item.type
+                        )
+                )
                 .map(item => prepareContextItemForMentionMenu(item, remainingTokenBudget)),
             initialContextItems: clientState.initialContext.filter(item =>
                 queryLower
