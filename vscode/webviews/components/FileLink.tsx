@@ -23,6 +23,7 @@ interface FileLinkProps {
     isTooLarge?: boolean
     isIgnored?: boolean
 }
+import {  useState } from 'react'
 
 const LIMIT_WARNING = 'Excluded due to context window limit'
 const IGNORE_WARNING = 'File ignored by an admin setting'
@@ -43,7 +44,34 @@ const hoverSourceLabels: Record<ContextItemSource, string | undefined> = {
     history: 'from git history',
     initial: 'from open repo or file',
 }
+interface FileContentDisplayProps {
+    fileName: string;
+    fileContents: string;
+}
 
+const FileContentDisplay: React.FC<FileContentDisplayProps> = ({ fileName, fileContents }) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    const toggleOpen = () => {
+        setIsOpen(!isOpen);
+    };
+
+    return (
+        <div className={styles.fileContentDisplay}>
+            <div className={styles.fileName} onClick={toggleOpen}>
+                {fileName} {isOpen ? '▼' : '▶'}
+            </div>
+            {isOpen && (
+                <div className={styles.fileContentsContainer}>
+                    <pre className={styles.fileContents}>{fileContents}</pre>
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+export default FileContentDisplay;
 export const FileLink: React.FunctionComponent<
     FileLinkProps & { className?: string; linkClassName?: string }
 > = ({
@@ -93,25 +121,28 @@ export const FileLink: React.FunctionComponent<
         uri,
         range,
     });
-    
+
+    const [fileContents, setFileContents] = useState<string | null>(null);
     window.addEventListener('message', event => {
         const message = event.data;
         console.log(`Message received from webview: ${message}`);
         if (message.type === 'fileContent') {
-            console.log(`Bro the file contents for ${uri.toString()}:`, message.result);
+            setFileContents(message.result.split('\n').slice(0, 5).join('\n'));
+            console.log(`Bro the file contents for ${uri.toString()}:`, fileContents);
+
         }
     });
     console.log(`is File contents for ${uri.toString()}:`);
 
     return (
-        <div className={clsx('tw-flex tw-items-center tw-max-w-full', className)}>
+        <div className={clsx('tw-flex tw-items-center tw-max-w-full tw-text-green-500 tw-bg-green-100', className)}>
             {isIgnored ? (
                 <i className="codicon codicon-warning" title={IGNORE_WARNING} />
             ) : isTooLarge ? (
                 <i className="codicon codicon-warning" title={LIMIT_WARNING} />
             ) : null}
             <a
-                className={linkClassName}
+                className={clsx(linkClassName, styles.path)}
                 title={tooltip}
                 href={href}
                 target={target}
@@ -127,12 +158,18 @@ export const FileLink: React.FunctionComponent<
                     }
                 />
                 <div
-                    className={clsx(styles.path, styles.customColorLink, (isTooLarge || isIgnored) && styles.excluded)}
+                    className={clsx(styles.path,  (isTooLarge || isIgnored) && styles.excluded)}
                     data-source={source || 'unknown'}
                 >
                     {pathWithRange}
                 </div>
             </a>
+            {fileContents && (
+                <FileContentDisplay
+                    fileName={  'Unknown file'}
+                    fileContents={fileContents}
+                />
+            )}
         </div>
     )
 }

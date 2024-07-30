@@ -1,0 +1,48 @@
+.path {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    color: #007acc; /* Custom color for file links */
+    text-decoration: none; /* Remove underline */
+}
+
+.path:hover {
+    text-decoration: underline; /* Underline on hover */
+}
+
+.excluded {
+    text-decoration: line-through !important;
+    color: #ff0000; /* Red color for excluded items */
+}
+
+.fileContentDisplay {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-top: 10px;
+    background-color: #f9f9f9;
+    cursor: pointer;
+}
+
+.fileName {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #007acc; /* Blue color for file name */
+}
+
+.fileContentsContainer {
+    max-height: 200px;
+    overflow: auto;
+    border-top: 1px solid #ccc;
+    padding-top: 10px;
+    background-color: #2d2d2d; /* Dark background for code block */
+}
+
+.fileContents {
+    white-space: pre;
+    font-family: monospace;
+    overflow-x: auto;
+    background-color: #2d2d2d; /* Dark background for code block */
+    color: #f8f8f2; /* Light text color for code block */
+    padding: 10px;
+    border-radius: 4px;
+}
