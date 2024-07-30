@@ -1,4 +1,4 @@
-import { type Guardrails, isError } from '@sourcegraph/cody-shared'
+import { type Guardrails, type PromptString, isError } from '@sourcegraph/cody-shared'
 import type React from 'react'
 import { useEffect, useRef } from 'react'
 
@@ -14,16 +14,18 @@ import {
 import { clsx } from 'clsx'
 import { MarkdownFromCody } from '../components/MarkdownFromCody'
 import styles from './ChatMessageContent.module.css'
+import type { PriorHumanMessageInfo } from './cells/messageCell/assistant/AssistantMessageCell'
 
 export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
     insertButtonOnSubmit: (text: string, newFile?: boolean) => void
-    smartApplyButtonOnSubmit: (text: string) => void
+    smartApplyButtonOnSubmit: (text: string, instruction?: PromptString) => void
 }
 
 interface ChatMessageContentProps {
     displayMarkdown: string
     isMessageLoading: boolean
+    humanMessage: PriorHumanMessageInfo | null
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
@@ -34,7 +36,8 @@ interface ChatMessageContentProps {
 }
 
 function createButtons(
-    text: string,
+    preText: string,
+    humanMessage: PriorHumanMessageInfo | null,
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
     smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
@@ -58,7 +61,8 @@ function createButtons(
 
     const copyButton = createCodeBlockActionButton(
         'copy',
-        text,
+        preText,
+        humanMessage,
         'Copy Code',
         CopyCodeBlockIcon,
         codeBlockActions
@@ -70,7 +74,8 @@ function createButtons(
         buttons.append(
             createCodeBlockActionButton(
                 'insert',
-                text,
+                preText,
+                humanMessage,
                 'Insert Code at Cursor',
                 InsertCodeBlockIcon,
                 codeBlockActions
@@ -80,7 +85,8 @@ function createButtons(
         buttons.append(
             createCodeBlockActionButton(
                 'new',
-                text,
+                preText,
+                humanMessage,
                 'Save Code to New File...',
                 SaveCodeBlockIcon,
                 codeBlockActions
@@ -92,7 +98,8 @@ function createButtons(
         buttons.append(
             createCodeBlockActionButton(
                 'smartApply',
-                text,
+                preText,
+                humanMessage,
                 'Smart Apply Code to Current File',
                 SparkleIcon,
                 codeBlockActions
@@ -111,7 +118,8 @@ function createButtons(
  */
 function createCodeBlockActionButton(
     type: 'copy' | 'insert' | 'new' | 'smartApply',
-    text: string,
+    preText: string,
+    humanMessage: PriorHumanMessageInfo | null,
     title: string,
     iconSvg: string,
     codeBlockActions: {
@@ -131,15 +139,15 @@ function createCodeBlockActionButton(
     if (type === 'copy') {
         button.addEventListener('click', () => {
             button.innerHTML = CheckCodeBlockIcon
-            navigator.clipboard.writeText(text).catch(error => console.error(error))
+            navigator.clipboard.writeText(preText).catch(error => console.error(error))
             button.className = className
-            codeBlockActions.copy(text, 'Button')
+            codeBlockActions.copy(preText, 'Button')
             setTimeout(() => {
                 button.innerHTML = iconSvg
             }, 5000)
 
             // Log for `chat assistant response code buttons` e2e test.
-            console.log('Code: Copy to Clipboard', text)
+            console.log('Code: Copy to Clipboard', preText)
         })
     }
 
@@ -147,17 +155,17 @@ function createCodeBlockActionButton(
     if (insertOnSubmit) {
         switch (type) {
             case 'insert':
-                button.addEventListener('click', () => insertOnSubmit(text, false))
+                button.addEventListener('click', () => insertOnSubmit(preText, false))
                 break
             case 'new':
-                button.addEventListener('click', () => insertOnSubmit(text, true))
+                button.addEventListener('click', () => insertOnSubmit(preText, true))
                 break
         }
     }
 
     const smartApplyOnSubmit = codeBlockActions.smartApply
     if (smartApplyOnSubmit && type === 'smartApply') {
-        button.addEventListener('click', () => smartApplyOnSubmit(text))
+        button.addEventListener('click', () => smartApplyOnSubmit(preText, humanMessage?.text))
         return button
     }
 
@@ -261,6 +269,7 @@ class GuardrailsStatusController {
 export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps> = ({
     displayMarkdown,
     isMessageLoading,
+    humanMessage,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
     smartApplyButtonOnSubmit,
@@ -290,6 +299,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
             if (preText?.trim() && preElement.parentNode) {
                 const buttons = createButtons(
                     preText,
+                    humanMessage,
                     copyButtonOnSubmit,
                     insertButtonOnSubmit,
                     smartApplyButtonOnSubmit

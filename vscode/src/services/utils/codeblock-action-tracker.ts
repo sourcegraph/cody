@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { ps, telemetryRecorder } from '@sourcegraph/cody-shared'
+import { PromptString, telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 
 import { executeSmartApply } from '../../edit/smart-apply'
@@ -100,7 +100,7 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
     setLastStoredCode(text, eventName)
 }
 
-export async function handleSmartApply(text: string): Promise<void> {
+export async function handleSmartApply(code: string, instruction?: string): Promise<void> {
     const editor = getEditor()
     const activeEditor = editor.active
     if (!activeEditor) {
@@ -110,10 +110,10 @@ export async function handleSmartApply(text: string): Promise<void> {
     await executeSmartApply({
         configuration: {
             document: activeEditor.document,
-            instruction: ps``,
+            instruction: PromptString.unsafe_fromUserQuery(instruction || ''),
             // TODO: Support other models here? Will need to for enterprise
             model: 'anthropic/claude-3-5-sonnet-20240620',
-            replacement: text,
+            replacement: code,
         },
         source: 'chat',
     })

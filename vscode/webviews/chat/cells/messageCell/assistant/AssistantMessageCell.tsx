@@ -2,6 +2,7 @@ import {
     type ChatMessage,
     ContextItemSource,
     type Guardrails,
+    type PromptString,
     contextItemsFromPromptEditorValue,
     filterContextItemsFromPromptEditorValue,
     isAbortErrorOrSocketHangUp,
@@ -103,6 +104,7 @@ export const AssistantMessageCell: FunctionComponent<{
                         <ChatMessageContent
                             displayMarkdown={displayMarkdown}
                             isMessageLoading={isLoading}
+                            humanMessage={humanMessage}
                             copyButtonOnSubmit={copyButtonOnSubmit}
                             insertButtonOnSubmit={insertButtonOnSubmit}
                             smartApplyButtonOnSubmit={smartApplyButtonOnSubmit}
@@ -156,6 +158,7 @@ export interface HumanMessageInitialContextInfo {
 }
 
 export interface PriorHumanMessageInfo {
+    text?: PromptString
     hasInitialContext: HumanMessageInitialContextInfo
     rerunWithDifferentContext: (withInitialContext: HumanMessageInitialContextInfo) => void
 
@@ -175,6 +178,7 @@ export function makeHumanMessageInfo(
     const contextItems = contextItemsFromPromptEditorValue(editorValue)
 
     return {
+        text: humanMessage.text,
         hasInitialContext: {
             repositories: Boolean(
                 contextItems.some(item => item.type === 'repository' || item.type === 'tree')

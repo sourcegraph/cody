@@ -16,6 +16,7 @@ import { PromptBuilder } from '../../prompt-builder'
 import { fuzzyFindLocation } from '../../supercompletions/utils/fuzzy-find-location'
 
 const SMART_APPLY_TOPICS = {
+    INSTRUCTION: ps`INSTRUCTION`,
     FILE_CONTENTS: ps`FILE_CONTENTS`,
     INCOMING: ps`INCOMING`,
     REPLACE: ps`REPLACE`,
@@ -36,6 +37,7 @@ export const SMART_APPLY_PROMPT = {
         - Given a change, and the file where that change should be applied, you should determine the best way to apply the change to the file.
         - You will be provided with the contents of the current active file, enclosed in <${SMART_APPLY_TOPICS.FILE_CONTENTS}></${SMART_APPLY_TOPICS.FILE_CONTENTS}> XML tags.
         - You will be provided with an incoming change to a file, enclosed in <${SMART_APPLY_TOPICS.INCOMING}></${SMART_APPLY_TOPICS.INCOMING}> XML tags.
+        - You will be provided with an instruction that the user provided to generate the incoming change, enclosed in <${SMART_APPLY_TOPICS.INSTRUCTION}></${SMART_APPLY_TOPICS.INSTRUCTION}> XML tags.
         - You will be asked to determine the best way to apply the incoming change to the file.
         - Do not provide any additional commentary about the changes you made.`,
     instruction: psDedent`
@@ -47,6 +49,9 @@ export const SMART_APPLY_PROMPT = {
         We have the following code to apply to the file:
         <${SMART_APPLY_TOPICS.INCOMING}>{incomingText}</${SMART_APPLY_TOPICS.INCOMING}>
 
+        We generated this code from the following instruction that the user provided:
+        <${SMART_APPLY_TOPICS.INSTRUCTION}>{instruction}</${SMART_APPLY_TOPICS.INSTRUCTION}>
+
         You should respond with the original code that should be updated, enclosed in <${SMART_APPLY_TOPICS.REPLACE}></${SMART_APPLY_TOPICS.REPLACE}> XML tags.
 
         Follow these specific rules:
@@ -57,6 +62,7 @@ export const SMART_APPLY_PROMPT = {
 }
 
 export const getPrompt = async (
+    instruction: PromptString,
     replacement: PromptString,
     document: vscode.TextDocument,
     model: EditModel
@@ -75,12 +81,13 @@ export const getPrompt = async (
     const preamble = getSimplePreamble(model, fakeApiVersion, SMART_APPLY_PROMPT.system)
     promptBuilder.tryAddToPrefix(preamble)
 
-    const instruction = SMART_APPLY_PROMPT.instruction
+    const text = SMART_APPLY_PROMPT.instruction
+        .replaceAll('{instruction}', instruction)
         .replaceAll('{incomingText}', replacement)
         .replaceAll('{fileContents}', documentText)
         .replaceAll('{filePath}', PromptString.fromDisplayPath(document.uri))
 
-    const transcript: ChatMessage[] = [{ speaker: 'human', text: instruction }]
+    const transcript: ChatMessage[] = [{ speaker: 'human', text }]
     transcript.push({ speaker: 'assistant', text: SHARED_PARAMETERS.assistantText })
 
     promptBuilder.tryAddMessages(transcript.reverse())
@@ -89,6 +96,7 @@ export const getPrompt = async (
 }
 
 export async function promptModelForOriginalCode(
+    instruction: PromptString,
     replacement: PromptString,
     document: vscode.TextDocument,
     model: EditModel,
@@ -108,7 +116,7 @@ export async function promptModelForOriginalCode(
     })
 
     const abortController = new AbortController()
-    const { prefix, messages } = await getPrompt(replacement, document, model)
+    const { prefix, messages } = await getPrompt(instruction, replacement, document, model)
     const stream = client.chat(
         messages,
         {
@@ -154,12 +162,19 @@ interface SmartSelection {
 }
 
 export async function getSmartApplySelection(
+    instruction: PromptString,
     replacement: PromptString,
     document: vscode.TextDocument,
     model: EditModel,
     client: ChatClient
 ): Promise<SmartSelection | null> {
-    const originalCode = await promptModelForOriginalCode(replacement, document, model, client)
+    const originalCode = await promptModelForOriginalCode(
+        instruction,
+        replacement,
+        document,
+        model,
+        client
+    )
 
     if (originalCode.trim().length === 0 || originalCode.trim() === 'INSERT') {
         // Insert flow. Cody thinks that this code should be inserted into the document.

@@ -255,6 +255,7 @@ export class EditManager implements vscode.Disposable {
         }
 
         const selection = await getSmartApplySelection(
+            configuration.instruction,
             replacementCode,
             configuration.document,
             configuration.model,

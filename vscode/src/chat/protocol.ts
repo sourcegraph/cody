@@ -131,7 +131,8 @@ export type WebviewMessage =
       }
     | {
           command: 'smartApply'
-          text: string
+          instruction?: string
+          code: string
       }
     | {
           command: 'auth'

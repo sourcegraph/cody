@@ -369,7 +369,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await handleCopiedCode(message.text, message.eventType === 'Button')
                 break
             case 'smartApply':
-                await handleSmartApply(message.text)
+                await handleSmartApply(message.code, message.instruction)
                 break
             case 'openURI':
                 vscode.commands.executeCommand('vscode.open', message.uri)

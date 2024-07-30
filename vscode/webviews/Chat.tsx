@@ -2,7 +2,13 @@ import { clsx } from 'clsx'
 import type React from 'react'
 import { useCallback, useEffect, useMemo } from 'react'
 
-import type { AuthStatus, ChatMessage, CodyIDE, Guardrails } from '@sourcegraph/cody-shared'
+import type {
+    AuthStatus,
+    ChatMessage,
+    CodyIDE,
+    Guardrails,
+    PromptString,
+} from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -115,12 +121,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             return
         }
 
-        return (text: string) => {
+        return (text: string, instruction?: PromptString) => {
             // Log the event type and text to telemetry in chat view
             vscodeAPI.postMessage({
                 command: 'smartApply',
+                instruction: instruction?.toString(),
                 // remove the additional /n added by the text area at the end of the text
-                text: text.replace(/\n$/, ''),
+                code: text.replace(/\n$/, ''),
             })
         }
     }, [vscodeAPI, showIDESnippetActions])
