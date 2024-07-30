@@ -22,13 +22,13 @@ export async function openFile(
     })
 }
 
-export async function readlocalFile(uri: vscode.Uri,    range?: RangeData ): Promise<string> {
+export async function readlocalFile(uri: vscode.Uri, range?: RangeData): Promise<{ text: string, uri: vscode.Uri }> {
     console.log("this is my read browser")
     const doc = await vscode.workspace.openTextDocument(uri)
     // +1 because selection range starts at 0 while editor line starts at 1
     const selection = range && new vscode.Range(range.start.line, 0, range.end.line + 1, 0)
     const text = doc.getText(selection)
-    return text
+    return { text, uri }
 }
 
 export function getChatPanelTitle(lastHumanText?: string, truncateTitle = true): string {

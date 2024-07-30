@@ -1,5 +1,6 @@
 import { clsx } from 'clsx'
 import type React from 'react'
+import { useState } from 'react'
 
 import {
     type ContextItemSource,
@@ -23,16 +24,11 @@ interface FileLinkProps {
     isTooLarge?: boolean
     isIgnored?: boolean
 }
-import {  useState } from 'react'
 
 const LIMIT_WARNING = 'Excluded due to context window limit'
 const IGNORE_WARNING = 'File ignored by an admin setting'
 
-// todo(tim): All OpenCtx context source items have source === undefined,
-// instead of 'user' or something more useful (like the provider icon and name)
-
 const hoverSourceLabels: Record<ContextItemSource, string | undefined> = {
-    // Shown in the format `Included ${label}`
     unified: 'via remote repository search',
     search: 'via local repository index (symf)',
     embeddings: 'via local repository index (embeddings)',
@@ -40,38 +36,30 @@ const hoverSourceLabels: Record<ContextItemSource, string | undefined> = {
     selection: 'from selected code',
     user: 'via @-mention',
     terminal: 'from terminal output',
-    uri: 'from URI', // todo(tim): what is this?
+    uri: 'from URI',
     history: 'from git history',
     initial: 'from open repo or file',
 }
+
 interface FileContentDisplayProps {
     fileName: string;
     fileContents: string;
 }
 
 const FileContentDisplay: React.FC<FileContentDisplayProps> = ({ fileName, fileContents }) => {
-    const [isOpen, setIsOpen] = useState(false);
-
-    const toggleOpen = () => {
-        setIsOpen(!isOpen);
-    };
+    console.log("This is the file contents", fileContents)
 
     return (
         <div className={styles.fileContentDisplay}>
-            <div className={styles.fileName} onClick={toggleOpen}>
-                {fileName} {isOpen ? '▼' : '▶'}
+            <div className={styles.fileContentsContainer}>
+                <pre className={styles.fileContents}>{fileContents}</pre>
             </div>
-            {isOpen && (
-                <div className={styles.fileContentsContainer}>
-                    <pre className={styles.fileContents}>{fileContents}</pre>
-                </div>
-            )}
         </div>
     );
 };
 
-
 export default FileContentDisplay;
+
 export const FileLink: React.FunctionComponent<
     FileLinkProps & { className?: string; linkClassName?: string }
 > = ({
@@ -86,6 +74,8 @@ export const FileLink: React.FunctionComponent<
     className,
     linkClassName,
 }) => {
+    const [fileContents, setFileContents] = useState<string | null>(null);
+    const [isFileContentVisible, setIsFileContentVisible] = useState(false);
     function logFileLinkClicked() {
         getVSCodeAPI().postMessage({
             command: 'event',
@@ -94,17 +84,40 @@ export const FileLink: React.FunctionComponent<
         })
     }
 
+    function toggleFileContent() {
+        console.log("This is the toggleFileContent function")
+        if (!isFileContentVisible) {
+            const vscode = getVSCodeAPI();
+            vscode.postMessage({
+                command: 'readLocalFileWithRange',
+                uri,
+                range,
+            });
+    
+            window.addEventListener('message', event => {
+                const message = event.data;
+                if (message.type === 'fileContent' && message.result.uri === uri.toString()) {
+                    setFileContents(message.result.text);
+                    setIsFileContentVisible(true);
+                }
+                
+                console.log("This is the after of filecontents", fileContents, " with the message", message)
+            }, { once: true });
+        } else {
+            setIsFileContentVisible(false);
+        }
+        console.log("This is the isFileContentVisible", isFileContentVisible, "This is of the cars fileContents", fileContents)
+    }
+
     let tooltip: string
     let pathWithRange: string
     let href: string
     let target: string | undefined
     if (source === 'unified') {
-        // Remote search result.
         const repoShortName = repoName?.slice(repoName.lastIndexOf('/') + 1)
         const pathToDisplay = `${repoShortName} ${title}`
         pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
         tooltip = `${repoName} @${revision}\nincluded via Enhanced Context (Remote Search)`
-        // We can skip encoding when the uri path already contains '@'.
         href = uri.toString(uri.path.includes('@'))
         target = '_blank'
     } else {
@@ -115,60 +128,49 @@ export const FileLink: React.FunctionComponent<
         href = openURI.href
         target = openURI.target
     }
-    const vscode = getVSCodeAPI();
-    vscode.postMessage({
-        command: 'readLocalFileWithRange',
-        uri,
-        range,
-    });
-
-    const [fileContents, setFileContents] = useState<string | null>(null);
-    window.addEventListener('message', event => {
-        const message = event.data;
-        console.log(`Message received from webview: ${message}`);
-        if (message.type === 'fileContent') {
-            setFileContents(message.result.split('\n').slice(0, 5).join('\n'));
-            console.log(`Bro the file contents for ${uri.toString()}:`, fileContents);
-
-        }
-    });
-    console.log(`is File contents for ${uri.toString()}:`);
 
     return (
-        <div className={clsx('tw-flex tw-items-center tw-max-w-full tw-text-green-500 tw-bg-green-100', className)}>
-            {isIgnored ? (
-                <i className="codicon codicon-warning" title={IGNORE_WARNING} />
-            ) : isTooLarge ? (
-                <i className="codicon codicon-warning" title={LIMIT_WARNING} />
-            ) : null}
-            <a
-                className={clsx(linkClassName, styles.path)}
-                title={tooltip}
-                href={href}
-                target={target}
-                onClick={logFileLinkClicked}
-            >
-                <i
-                    className={clsx('codicon', `codicon-${source === 'user' ? 'mention' : 'file'}`)}
-                    title={
-                        (source &&
-                            hoverSourceLabels[source] &&
-                            `Included ${hoverSourceLabels[source]}`) ||
-                        undefined
-                    }
-                />
-                <div
-                    className={clsx(styles.path,  (isTooLarge || isIgnored) && styles.excluded)}
-                    data-source={source || 'unknown'}
+        <div className={clsx('tw-flex tw-flex-col tw-items-start tw-max-w-full tw-text-green-500 tw-bg-green-100', className)}>
+            <div className={clsx('tw-flex tw-items-center tw-w-full')}>
+                {isIgnored ? (
+                    <i className="codicon codicon-warning" title={IGNORE_WARNING} />
+                ) : isTooLarge ? (
+                    <i className="codicon codicon-warning" title={LIMIT_WARNING} />
+                ) : null}
+                <a
+                    className={clsx(linkClassName, styles.path)}
+                    title={tooltip}
+                    href={href}
+                    target={target}
+                    onClick={logFileLinkClicked}
                 >
-                    {pathWithRange}
+                    <i
+                        className={clsx('codicon', `codicon-${source === 'user' ? 'mention' : 'file'}`)}
+                        title={
+                            (source &&
+                                hoverSourceLabels[source] &&
+                                `Included ${hoverSourceLabels[source]}`) ||
+                            undefined
+                        }
+                    />
+                    <div
+                        className={clsx(styles.path,  (isTooLarge || isIgnored) && styles.excluded)}
+                        data-source={source || 'unknown'}
+                    >
+                        {pathWithRange}
+                    </div>
+                </a>
+                <div onClick={toggleFileContent} className={styles.toggleIcon}>
+                    {isFileContentVisible ? '▼' : '▶'}
                 </div>
-            </a>
-            {fileContents && (
-                <FileContentDisplay
-                    fileName={  'Unknown file'}
-                    fileContents={fileContents}
-                />
+            </div>
+            {isFileContentVisible && fileContents && (
+                <div className={styles.fileContentBox}>
+                    <FileContentDisplay
+                        fileName={'Unknown file'}
+                        fileContents={fileContents}
+                    />
+                </div>
             )}
         </div>
     )

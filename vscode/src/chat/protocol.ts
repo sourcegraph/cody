@@ -234,7 +234,7 @@ export type ExtensionMessage =
       }
       | {
         type: 'fileContent'
-        result?: string | null | undefined
+        result?: { text: string; uri: string } | null | undefined // Update to support the object structure
         error?: string | null | undefined
     }
 

@@ -384,10 +384,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             case 'readLocalFileWithRange':
                 console.log("I got a local message")
-                const filecontext= await readlocalFile(vscode.Uri.parse(message.uri.toString()), message.range ?? undefined)
+                const { text , uri } = await readlocalFile(vscode.Uri.parse(message.uri.toString()), message.range ?? undefined)
                 this.postMessage({
                     type: 'fileContent',
-                    result: filecontext
+                    result: {text: text, uri:  uri.toString() } // Extract the text property
                 });
                 break
             case 'openLocalFileWithRange':
