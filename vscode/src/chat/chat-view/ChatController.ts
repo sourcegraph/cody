@@ -683,12 +683,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.contextAPIClient?.detectChatIntent(requestID, inputText.toString())
 
                 // Add user's current selection as context for chat messages.
-                const selectionContext = source === 'chat' ? await getContextFileFromSelection() : []
-                abortSignal.throwIfAborted()
+                if (addEnhancedContext) {
+                    const selectionContext = source === 'chat' ? await getContextFileFromSelection() : []
+                    abortSignal.throwIfAborted()
+                    mentions = [...mentions, ...selectionContext]
+                }
 
                 const userContextItems: ContextItemWithContent[] = await resolveContextItems(
                     this.editor,
-                    [...mentions, ...selectionContext],
+                    mentions,
                     inputText
                 )
                 abortSignal.throwIfAborted()
