@@ -1,7 +1,6 @@
 import {
     type ChatMessage,
     type Guardrails,
-    type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
@@ -11,7 +10,6 @@ import {
     type ComponentProps,
     type FunctionComponent,
     useCallback,
-    useEffect,
     useMemo,
     useRef,
 } from 'react'
@@ -142,15 +140,6 @@ const TranscriptInteraction: FunctionComponent<
     ...props
 }) => {
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
-    useEffect(() => {
-        return getVSCodeAPI().onMessage(message => {
-            if (message.type === 'updateEditorState') {
-                humanEditorRef.current?.setEditorState(
-                    message.editorState as SerializedPromptEditorState
-                )
-            }
-        })
-    }, [])
 
     const onEditSubmit = useCallback(
         (editorValue: SerializedPromptEditorValue): void => {

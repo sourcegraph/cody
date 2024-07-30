@@ -47,7 +47,6 @@ sealed class WebviewMessage {
           "attribution-search" -> context.deserialize<`attribution-searchWebviewMessage`>(element, `attribution-searchWebviewMessage`::class.java)
           "troubleshoot/reloadAuth" -> context.deserialize<Troubleshoot_reloadAuthWebviewMessage>(element, Troubleshoot_reloadAuthWebviewMessage::class.java)
           "getAllMentionProvidersMetadata" -> context.deserialize<GetAllMentionProvidersMetadataWebviewMessage>(element, GetAllMentionProvidersMetadataWebviewMessage::class.java)
-          "experimental-unit-test-prompt" -> context.deserialize<`experimental-unit-test-promptWebviewMessage`>(element, `experimental-unit-test-promptWebviewMessage`::class.java)
           "queryPrompts" -> context.deserialize<QueryPromptsWebviewMessage>(element, QueryPromptsWebviewMessage::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
@@ -423,15 +422,6 @@ data class GetAllMentionProvidersMetadataWebviewMessage(
 
   enum class CommandEnum {
     @SerializedName("getAllMentionProvidersMetadata") GetAllMentionProvidersMetadata,
-  }
-}
-
-data class `experimental-unit-test-promptWebviewMessage`(
-  val command: CommandEnum, // Oneof: experimental-unit-test-prompt
-) : WebviewMessage() {
-
-  enum class CommandEnum {
-    @SerializedName("experimental-unit-test-prompt") `Experimental-unit-test-prompt`,
   }
 }
 

@@ -30,7 +30,6 @@ sealed class ExtensionMessage {
           "context/remote-repos" -> context.deserialize<`context_remote-reposExtensionMessage`>(element, `context_remote-reposExtensionMessage`::class.java)
           "setConfigFeatures" -> context.deserialize<SetConfigFeaturesExtensionMessage>(element, SetConfigFeaturesExtensionMessage::class.java)
           "allMentionProvidersMetadata" -> context.deserialize<AllMentionProvidersMetadataExtensionMessage>(element, AllMentionProvidersMetadataExtensionMessage::class.java)
-          "updateEditorState" -> context.deserialize<UpdateEditorStateExtensionMessage>(element, UpdateEditorStateExtensionMessage::class.java)
           "queryPrompts/response" -> context.deserialize<QueryPrompts_responseExtensionMessage>(element, QueryPrompts_responseExtensionMessage::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
@@ -213,16 +212,6 @@ data class AllMentionProvidersMetadataExtensionMessage(
 
   enum class TypeEnum {
     @SerializedName("allMentionProvidersMetadata") AllMentionProvidersMetadata,
-  }
-}
-
-data class UpdateEditorStateExtensionMessage(
-  val type: TypeEnum, // Oneof: updateEditorState
-  val editorState: Any? = null,
-) : ExtensionMessage() {
-
-  enum class TypeEnum {
-    @SerializedName("updateEditorState") UpdateEditorState,
   }
 }
 

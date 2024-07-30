@@ -17,7 +17,6 @@ import {
     DOTCOM_URL,
     type DefaultChatCommands,
     type EventSource,
-    FeatureFlag,
     type GenericWebviewAPIWrapper,
     type Guardrails,
     type MentionQuery,
@@ -69,7 +68,6 @@ import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getCodyCommandList } from '../../commands/CommandsController'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
-import { experimentalUnitTestMessageSubmission } from '../../commands/execute/test-chat-experimental'
 import { getConfiguration, getFullConfig } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
@@ -534,18 +532,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 })
                 break
             }
-            case 'experimental-unit-test-prompt': {
-                await this.experimentalSetUnitTestPrompt()
-                break
-            }
         }
     }
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
-        const [config, experimentalUnitTest] = await Promise.all([
-            getFullConfig(),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalUnitTest),
-        ])
+        const config = await getFullConfig()
 
         return {
             agentIDE: config.isRunningInsideAgent ? config.agentIDE : CodyIDE.VSCode,
@@ -555,7 +546,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: config.serverEndpoint,
             experimentalNoodle: config.experimentalNoodle,
-            experimentalUnitTest,
             webviewType: this.webviewPanelOrView?.viewType === 'cody.editorPanel' ? 'editor' : 'sidebar',
         }
     }
@@ -630,18 +620,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return JSON.stringify(gitMetadata)
         }
         return ''
-    }
-
-    public async experimentalSetUnitTestPrompt() {
-        const message = await experimentalUnitTestMessageSubmission()
-        if (!message?.editorState) {
-            return
-        }
-
-        this.postMessage({
-            type: 'updateEditorState',
-            editorState: message.editorState as SerializedPromptEditorState,
-        })
     }
 
     /**

@@ -10,7 +10,6 @@ import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncatio
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import { useChatContextMentionProviders } from '@sourcegraph/prompt-editor'
 import styles from './Chat.module.css'
-import { GenerateUnitTestsButton } from './chat/components/GenerateUnitTestsButton'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
 import { useTelemetryRecorder } from './utils/telemetry'
@@ -28,7 +27,6 @@ interface ChatboxProps {
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
     className?: string
-    experimentalUnitTestEnabled?: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -44,7 +42,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showWelcomeMessage = true,
     showIDESnippetActions = true,
     className,
-    experimentalUnitTestEnabled,
 }) => {
     const { reload: reloadMentionProviders } = useChatContextMentionProviders()
     const telemetryRecorder = useTelemetryRecorder()
@@ -162,8 +159,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         reloadMentionProviders()
     }, [userInfo.isDotComUser, reloadMentionProviders])
 
-    const showUnitTestsButton = experimentalUnitTestEnabled && transcript.length === 0
-
     return (
         <div className={clsx(styles.container, className, 'tw-relative')}>
             {!chatEnabled && (
@@ -184,7 +179,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 postMessage={postMessage}
                 guardrails={guardrails}
             />
-            {showUnitTestsButton && <GenerateUnitTestsButton postMessage={postMessage} />}
             {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage IDE={userInfo.ide} />}
             <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
         </div>
