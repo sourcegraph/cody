@@ -164,9 +164,6 @@ export type WebviewMessage =
           command: 'getAllMentionProvidersMetadata'
       }
     | {
-          command: 'experimental-unit-test-prompt'
-      }
-    | {
           command: 'queryPrompts'
           query: string
       }
@@ -216,11 +213,6 @@ export type ExtensionMessage =
     | {
           type: 'allMentionProvidersMetadata'
           providers: ContextMentionProviderMetadata[]
-      }
-    | {
-          type: 'updateEditorState'
-          /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
-          editorState?: unknown | undefined | null
       }
     | {
           type: 'queryPrompts/response'
@@ -282,7 +274,6 @@ export interface ConfigurationSubsetForWebview
         ConfigurationWithAccessToken,
         'experimentalNoodle' | 'serverEndpoint' | 'agentIDE' | 'agentExtensionVersion'
     > {
-    experimentalUnitTest: boolean
     webviewType?: WebviewType | undefined | null
 }
 

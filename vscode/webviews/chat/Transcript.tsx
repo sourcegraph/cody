@@ -1,14 +1,13 @@
 import {
     type ChatMessage,
     type Guardrails,
-    type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
 } from '@sourcegraph/cody-shared'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
-import { type FC, memo, useCallback, useEffect, useMemo, useRef } from 'react'
+import { type FC, memo, useCallback, useMemo, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -167,16 +166,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     } = props
 
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
-
-    useEffect(() => {
-        return getVSCodeAPI().onMessage(message => {
-            if (message.type === 'updateEditorState') {
-                humanEditorRef.current?.setEditorState(
-                    message.editorState as SerializedPromptEditorState
-                )
-            }
-        })
-    }, [])
 
     const onEditSubmit = useCallback(
         (editorValue: SerializedPromptEditorValue): void => {

@@ -6,7 +6,6 @@ data class ConfigParams(
   val agentIDE: CodyIDE? = null, // Oneof: VSCode, JetBrains, Neovim, Emacs, Web, VisualStudio
   val agentExtensionVersion: String? = null,
   val serverEndpoint: String,
-  val experimentalUnitTest: Boolean,
   val webviewType: WebviewType? = null, // Oneof: sidebar, editor
   val uiKindIsWeb: Boolean,
 )
