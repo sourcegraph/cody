@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react'
 import {
     CheckCodeBlockIcon,
     CopyCodeBlockIcon,
+    EllipsisIcon,
     InsertCodeBlockIcon,
     SaveCodeBlockIcon,
     ShieldIcon,
@@ -35,6 +36,7 @@ interface ChatMessageContentProps {
     className?: string
 }
 
+const ENABLE_V2_BUTTONS = true
 function createButtons(
     preText: string,
     humanMessage: PriorHumanMessageInfo | null,
@@ -42,6 +44,16 @@ function createButtons(
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
     smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
 ): HTMLElement {
+    if (ENABLE_V2_BUTTONS) {
+        return createButtonsV2(
+            preText,
+            humanMessage,
+            copyButtonOnSubmit,
+            insertButtonOnSubmit,
+            smartApplyButtonOnSubmit
+        )
+    }
+
     const container = document.createElement('div')
     container.className = styles.buttonsContainer
     if (!copyButtonOnSubmit) {
@@ -112,6 +124,40 @@ function createButtons(
     return container
 }
 
+function createButtonsV2(
+    preText: string,
+    humanMessage: PriorHumanMessageInfo | null,
+    copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
+    smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
+): HTMLElement {
+    // The container will contain the buttons and the <pre> element with the code.
+    // This allows us to position the buttons independent of the code.
+    const container = document.createElement('div')
+    container.className = styles.buttonsContainer
+    if (!copyButtonOnSubmit) {
+        return container
+    }
+
+    const buttons = document.createElement('div')
+    buttons.className = styles.buttons
+
+    const copyButton = createCopyButton(preText, copyButtonOnSubmit)
+    buttons.append(copyButton)
+
+    if (smartApplyButtonOnSubmit) {
+        const applyButton = createApplyButton(preText, humanMessage, smartApplyButtonOnSubmit)
+        buttons.append(applyButton)
+    }
+
+    const actionsDropdown = createActionsDropdown(preText)
+    buttons.append(actionsDropdown)
+
+    container.append(buttons)
+
+    return container
+}
+
 /**
  * Creates a button to perform an action on a code block.
  * @returns The button element.
@@ -168,6 +214,96 @@ function createCodeBlockActionButton(
         button.addEventListener('click', () => smartApplyOnSubmit(preText, humanMessage?.text))
         return button
     }
+
+    return button
+}
+
+function createCopyButton(
+    preText: string,
+    onCopy: CodeBlockActionsProps['copyButtonOnSubmit']
+): HTMLElement {
+    const button = document.createElement('button')
+    button.innerHTML = 'Copy'
+    button.title = 'Copy'
+    button.className = styles.button
+
+    const iconContainer = document.createElement('div')
+    iconContainer.className = styles.iconContainer
+    iconContainer.innerHTML = CopyCodeBlockIcon
+    button.prepend(iconContainer)
+
+    button.addEventListener('click', () => {
+        iconContainer.innerHTML = CheckCodeBlockIcon
+        iconContainer.className = styles.iconContainer
+        button.innerHTML = 'Copied'
+        button.className = styles.button
+        button.prepend(iconContainer)
+
+        navigator.clipboard.writeText(preText).catch(error => console.error(error))
+        onCopy(preText, 'Button')
+        setTimeout(() => {
+            // Reset the icon to the original.
+            iconContainer.innerHTML = CopyCodeBlockIcon
+            iconContainer.className = styles.iconContainer
+            button.innerHTML = 'Copy'
+            button.className = styles.button
+            button.prepend(iconContainer)
+        }, 5000)
+
+        // Log for `chat assistant response code buttons` e2e test.
+        console.log('Code: Copy to Clipboard', preText)
+    })
+
+    return button
+}
+
+function createApplyButton(
+    preText: string,
+    humanMessage: PriorHumanMessageInfo | null,
+    onApply: CodeBlockActionsProps['smartApplyButtonOnSubmit']
+): HTMLElement {
+    const button = document.createElement('button')
+    button.innerHTML = 'Apply'
+    button.title = 'Apply'
+    button.className = styles.button
+
+    const iconContainer = document.createElement('div')
+    iconContainer.className = styles.iconContainer
+    iconContainer.innerHTML = SparkleIcon
+    button.prepend(iconContainer)
+
+    button.addEventListener('click', () => onApply(preText, humanMessage?.text))
+
+    return button
+}
+
+function createActionsDropdown(preText: string): HTMLElement {
+    const button = document.createElement('button')
+    button.innerHTML = EllipsisIcon
+    button.title = 'More Actions...'
+    button.className = styles.button
+
+    // Support a custom context menu for the button.
+    const vscodeContext = {
+        webviewSection: 'codeblock-actions',
+        preventDefaultContextMenuItems: true,
+        text: preText,
+    }
+    button.setAttribute('data-vscode-context', JSON.stringify(vscodeContext))
+    button.addEventListener('click', event => {
+        console.log('CLICKED!!')
+        console.log('vscodeContext', vscodeContext)
+
+        event.preventDefault()
+        event.target?.dispatchEvent(
+            new MouseEvent('contextmenu', {
+                bubbles: true,
+                clientX: event.clientX,
+                clientY: event.clientY,
+            })
+        )
+        event.stopPropagation()
+    })
 
     return button
 }

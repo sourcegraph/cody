@@ -608,6 +608,21 @@
         "command": "cody.test.set-context-filters",
         "title": "[Internal] Set Context Filters Overwrite",
         "enablement": "cody.activated && cody.devOrTest"
+      },
+      {
+        "command": "cody.command.insertCodeToCursor",
+        "title": "Insert Code at Cursor",
+        "enablement": "cody.activated"
+      },
+      {
+        "command": "cody.command.replaceSelectionWithCode",
+        "title": "Replace Selection with Code",
+        "enablement": "cody.activated"
+      },
+      {
+        "command": "cody.command.insertCodeToNewFile",
+        "title": "Save Code to New File...",
+        "enablement": "cody.activated"
       }
     ],
     "keybindings": [
@@ -1030,6 +1045,20 @@
           "command": "cody.command.abort-commit",
           "when": "cody.activated && scmProvider == git && cody.isGeneratingCommit",
           "group": "navigation@1"
+        }
+      ],
+      "webview/context": [
+        {
+          "command": "cody.command.insertCodeToCursor",
+          "when": "webviewSection == 'codeblock-actions'"
+        },
+        {
+          "command": "cody.command.replaceSelectionWithCode",
+          "when": "webviewSection == 'codeblock-actions'"
+        },
+        {
+          "command": "cody.command.insertCodeToNewFile",
+          "when": "webviewSection == 'codeblock-actions'"
         }
       ]
     },

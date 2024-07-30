@@ -94,6 +94,7 @@ import {
     handleCodeFromSaveToNewFile,
     handleCopiedCode,
     handleSmartApply,
+    replaceSelectionWithCode,
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
@@ -147,6 +148,11 @@ export interface ChatSession {
     webviewPanelOrView: vscode.WebviewView | vscode.WebviewPanel | undefined
     sessionID: string
 }
+
+export interface CodeBlockActionArgs {
+    text: string
+}
+
 /**
  * ChatController is the view controller class for the chat panel.
  * It handles all events sent from the view, keeps track of the underlying chat model,
@@ -307,6 +313,22 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.postMessage({ type: 'history', localHistory: chatHistory })
             })
         )
+
+        // Register commands for the codeblock actions
+        this.disposables.push(
+            vscode.commands.registerCommand(
+                'cody.command.insertCodeToCursor',
+                (args: CodeBlockActionArgs) => handleCodeFromInsertAtCursor(args.text)
+            ),
+            vscode.commands.registerCommand(
+                'cody.command.insertCodeToNewFile',
+                (args: CodeBlockActionArgs) => handleCodeFromSaveToNewFile(args.text, this.editor)
+            ),
+            vscode.commands.registerCommand(
+                'cody.command.replaceSelectionWithCode',
+                (args: CodeBlockActionArgs) => replaceSelectionWithCode(args.text)
+            )
+        )
     }
 
     /**
@@ -390,8 +412,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await openLocalFileWithRange(message.filePath, message.range ?? undefined)
                 break
             case 'newFile':
-                handleCodeFromSaveToNewFile(message.text)
-                await this.editor.createWorkspaceFile(message.text)
+                await handleCodeFromSaveToNewFile(message.text, this.editor)
                 break
             case 'context/get-remote-search-repos': {
                 await this.postMessage({

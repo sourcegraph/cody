@@ -4,6 +4,7 @@ import { PromptString, telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 
 import { executeSmartApply } from '../../edit/smart-apply'
+import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { countCode, matchCodeSnippets } from './code-count'
 
 /**
@@ -100,6 +101,25 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
     setLastStoredCode(text, eventName)
 }
 
+export async function replaceSelectionWithCode(text: string): Promise<void> {
+    const editor = getEditor()
+    const activeEditor = editor.active
+    const selectionRange = activeEditor?.selection
+    if (!activeEditor || !selectionRange) {
+        throw new Error('No editor or selection found to insert text')
+    }
+
+    const edit = new vscode.WorkspaceEdit()
+    // trimEnd() to remove new line added by Cody
+    edit.replace(activeEditor.document.uri, selectionRange, `${text}\n`)
+    await vscode.workspace.applyEdit(edit)
+
+    // Log insert event
+    const op = 'replace'
+    const eventName = `${op}Button`
+    setLastStoredCode(text, eventName)
+}
+
 export async function handleSmartApply(code: string, instruction?: string): Promise<void> {
     const editor = getEditor()
     const activeEditor = editor.active
@@ -122,9 +142,10 @@ export async function handleSmartApply(code: string, instruction?: string): Prom
 /**
  * Handles insert event to insert text from code block to new file
  */
-export function handleCodeFromSaveToNewFile(text: string): void {
+export async function handleCodeFromSaveToNewFile(text: string, editor: VSCodeEditor): Promise<void> {
     const eventName = 'saveButton'
     setLastStoredCode(text, eventName)
+    return editor.createWorkspaceFile(text)
 }
 
 /**

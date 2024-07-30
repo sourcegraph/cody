@@ -12,9 +12,30 @@
 .buttons {
     display: flex;
 }
+.button {
+    display: flex;
+    align-items: center;
+    padding: 3px;
+    height: 16px;
+    background-color: transparent;
+    cursor: pointer;
+    background: var(--button-icon-background);
+    border-radius: var(--button-icon-corner-radius);
+    color: var(--foreground);
+}
+.button:hover {
+    background: var(--button-icon-hover-background);
+    outline: 1px dotted var(--contrast-active-border);
+    outline-offset: -1px;
+}
+.button:not(:first-child) {
+    margin-left: 0.25rem;
+}
 
-.copy-button,
-.insert-button,
+.button .icon-container {
+    margin-right: 0.25rem
+}
+
 .attribution-icon,
 .status {
     all: unset;
