@@ -13,3 +13,8 @@ export {
 export { dummyChatContextClient } from './plugins/atMentions/fixtures'
 export { type PromptEditorConfig, PromptEditorConfigProvider } from './config'
 export { useClientState, ClientStateContextProvider } from './clientState'
+export {
+    type SerializedPromptEditorState,
+    type SerializedPromptEditorValue,
+    setDisplayPathEnvInfo,
+} from '@sourcegraph/cody-shared'
