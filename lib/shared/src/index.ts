@@ -148,7 +148,7 @@ export {
     FeatureFlagProvider,
     featureFlagProvider,
 } from './experimentation/FeatureFlagProvider'
-export { GuardrailsPost, summariseAttribution } from './guardrails'
+export { GuardrailsPost } from './guardrails'
 export type { Attribution, Guardrails } from './guardrails'
 export { SourcegraphGuardrailsClient } from './guardrails/client'
 export type { GuardrailsClientConfig } from './guardrails/client'
