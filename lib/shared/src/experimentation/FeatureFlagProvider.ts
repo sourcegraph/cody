@@ -42,6 +42,11 @@ export enum FeatureFlag {
     //              Enable smart-throttling for more aggressive request cancellation and lower initial latencies
     CodyAutocompleteHotStreakAndSmartThrottle = 'cody-autocomplete-hot-streak-and-smart-throttle',
 
+    CodyAutocompletePreloadingExperimentBaseFeatureFlag = 'cody-autocomplete-preloading-experiment-flag',
+    CodyAutocompletePreloadingExperimentVariant1 = 'cody-autocomplete-preloading-experiment-variant-1',
+    CodyAutocompletePreloadingExperimentVariant2 = 'cody-autocomplete-preloading-experiment-variant-2',
+    CodyAutocompletePreloadingExperimentVariant3 = 'cody-autocomplete-preloading-experiment-variant-3',
+
     // When enabled, it will extend the number of languages considered for context (e.g. React files
     // will be able to use CSS files as context).
     CodyAutocompleteContextExtendLanguagePool = 'cody-autocomplete-context-extend-language-pool',

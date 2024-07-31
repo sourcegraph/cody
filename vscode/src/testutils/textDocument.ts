@@ -35,8 +35,15 @@ export function wrapVSCodeTextDocument(doc: TextDocument): VSCodeTextDocument {
         validateRange(): Range {
             throw new Error('Method not implemented.')
         },
-        validatePosition(): Position {
-            throw new Error('Method not implemented.')
+        validatePosition(position: Position): Position {
+            const line = Math.max(0, Math.min(position.line, this.lineCount - 1))
+            const linePosition = new vsCodeMocks.Position(line, 0)
+            const character = Math.max(
+                0,
+                Math.min(position.character, this.lineAt(linePosition).text.length)
+            )
+
+            return new vsCodeMocks.Position(line, character)
         },
     }
 }
