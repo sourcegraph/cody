@@ -43,11 +43,19 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
             messageText = content
             break
         default:
-            // title is a required field for ContextItemOpenctx, only checking for type safety here.
+            // title is a required field for ContextItemOpenCtx, only checking for type safety here.
             if (contextItem.type === 'openctx' && title) {
-                messageText = ps`Content for "{title}" from {displayPath}:\n"`
-                    .replace('{title}', title)
+                switch (contextItem.kind) {
+                    case 'item':
+                        messageText = ps`Content for "{title}" from {displayPath}:\n`
+                        break
+                    case 'annotation':
+                        messageText = ps`Annotation for {displayPath}:\n"{title}"\n`
+                        break
+                }
+                messageText = messageText
                     .replace('{displayPath}', PromptString.fromDisplayPath(uri))
+                    .replace('{title}', title)
                     .concat(content)
             } else {
                 messageText = populateCodeContextTemplate(content, uri, repoName)

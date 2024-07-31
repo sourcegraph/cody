@@ -76,7 +76,7 @@ export enum ContextItemSource {
     /** From embeddings search */
     Embeddings = 'embeddings',
 
-    /** Explicitly @-mentioned by the user in chat */
+    /** Explicitly `@`-mentioned by the user in chat */
     User = 'user',
 
     /** From the current editor state and open tabs/documents */
@@ -112,7 +112,8 @@ export type ContextItem =
     | ContextItemRepository
     | ContextItemTree
     | ContextItemSymbol
-    | ContextItemOpenCtx
+    | ContextItemOpenCtx<'item'>
+    | ContextItemOpenCtx<'annotation'>
 
 /**
  * A context item that represents a repository.
@@ -140,9 +141,10 @@ export interface ContextItemTree extends ContextItemCommon {
 /**
  * An OpenCtx context item returned from a provider.
  */
-export interface ContextItemOpenCtx extends ContextItemCommon {
+export interface ContextItemOpenCtx<K extends 'item' | 'annotation' = 'item'> extends ContextItemCommon {
     type: 'openctx'
     provider: 'openctx'
+    kind: K
     title: string
     uri: URI
     providerUri: string

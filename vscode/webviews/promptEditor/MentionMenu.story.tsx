@@ -314,6 +314,7 @@ function openCtxStory(query: string, names: string[] | undefined): StoryObj<type
                   name =>
                       ({
                           type: 'openctx',
+                          kind: 'item',
                           provider: 'openctx',
                           title: name,
                           uri: URI.parse('https://example.com').with({ query: name }),

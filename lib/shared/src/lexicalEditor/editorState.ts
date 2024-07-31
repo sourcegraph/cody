@@ -107,7 +107,7 @@ function toPromptEditorState(editor: LexicalEditor): SerializedPromptEditorState
 }
 
 /**
- * This treats the entire text as plain text and does not parse it for any @-mentions.
+ * This treats the entire text as plain text and does not parse it for any `@`-mentions.
  */
 export function serializedPromptEditorStateFromText(text: string): SerializedPromptEditorState {
     const editorState: SerializedEditorState = {
@@ -171,7 +171,7 @@ export function serializedPromptEditorStateFromChatMessage(
     // Fall back to using plain text for chat messages that don't have a serialized Lexical editor
     // state that we recognize.
     //
-    // It would be smoother to automatically import or convert textual @-mentions to the Lexical
+    // It would be smoother to automatically import or convert textual `@`-mentions to the Lexical
     // mention nodes, but that would add a lot of extra complexity for the relatively rare use case
     // of editing old messages in your chat history.
     return serializedPromptEditorStateFromText(chatMessage.text ? chatMessage.text.toString() : '')

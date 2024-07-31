@@ -1,4 +1,5 @@
-import type { ContextItem, RangeData } from '@sourcegraph/cody-shared'
+import type { ContextItem, ContextItemOpenCtx } from '@sourcegraph/cody-shared'
+import { rangeContainsLines, rangesOnSameLines } from '../common/range'
 import { getContextItemDisplayPath, getContextItemTokenUsageType } from './utils'
 
 /**
@@ -31,6 +32,7 @@ export function getUniqueContextItems(reversedItems: ContextItem[]): ContextItem
                 getContextItemDisplayPath(item) !== itemToAddPath ||
                 !item.range ||
                 (itemToAdd.range && !rangeContainsLines(itemToAdd.range, item.range)) ||
+                maybeAllowedAnnotationOverlap(itemToAdd, item) ||
                 (isUserAddedItem(item) && itemToAdd.source !== item.source)
         )
 
@@ -73,8 +75,9 @@ export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: Context
             // or if one range contains the other.
             if (itemToAddRange && itemRange) {
                 if (
-                    rangesOnSameLines(itemRange, itemToAddRange) ||
-                    rangeContainsLines(itemRange, itemToAddRange)
+                    (rangesOnSameLines(itemRange, itemToAddRange) ||
+                        rangeContainsLines(itemRange, itemToAddRange)) &&
+                    !maybeAllowedAnnotationOverlap(itemToAdd, item)
                 ) {
                     return false
                 }
@@ -92,24 +95,8 @@ export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: Context
 }
 
 /**
- * Checks if the outer range contains the inner range:
- * - The start of the outer range is less than or equal to the start of the inner range.
- * - The end of the outer range is greater than or equal to the end of the inner range.
- */
-function rangeContainsLines(outerRange: RangeData, innerRange: RangeData): boolean {
-    return outerRange.start.line <= innerRange.start.line && outerRange.end.line >= innerRange.end.line
-}
-
-/**
- * Checks if both ranges are on the same lines.
- */
-function rangesOnSameLines(range1: RangeData, range2: RangeData): boolean {
-    return range1.start?.line === range2.start?.line && range1.end?.line === range2.end?.line
-}
-
-/**
  * If the context item is a user-added item:
- * - `user` - The item was added by the user through @-mentions or other user input.
+ * - `user` - The item was added by the user through `@`-mentions or other user input.
  * - `selection` - The item was added by the user through a selection.
  */
 function isUserAddedItem(item: ContextItem): boolean {
@@ -121,4 +108,34 @@ function isUserAddedItem(item: ContextItem): boolean {
  */
 function equalTrimmedContent(item1: ContextItem, item2: ContextItem): boolean {
     return !!item1.content && !!item2.content && item1.content.trim() === item2.content.trim()
+}
+
+/**
+ * Checks if either of the items is an annotation and if the two are allowed to overlap.
+ * The check is `true` for cases when:
+ * - Only *one of the items is an annotation*, since annotations will naturally overlap with other
+ * items, such as file-mentions.
+ * - Both items are annotations, but returned by *different providers*.
+ *
+ * For all other cases the check is `false`. This also includes the case where both items are non-annotations.
+ * The client code is free to overrule this case based on some other logic.
+ *
+ * @param item1 context item overlapping `item2`
+ * @param item2 context item overlapping `item1`
+ */
+function maybeAllowedAnnotationOverlap(item1: ContextItem, item2: ContextItem): boolean {
+    const isAnnotation = (item: ContextItem): item is ContextItemOpenCtx =>
+        item.type === 'openctx' && item.kind === 'annotation'
+
+    // Items may overlap if only one is an annotation.
+    if (isAnnotation(item1) !== isAnnotation(item2)) {
+        return true
+    }
+
+    // Non-annotations cannot overlap.
+    if (!(isAnnotation(item1) && isAnnotation(item2))) {
+        return false
+    }
+
+    return item1.providerUri !== item2.providerUri
 }

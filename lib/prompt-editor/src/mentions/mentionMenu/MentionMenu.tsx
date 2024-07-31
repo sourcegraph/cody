@@ -22,9 +22,9 @@ import { MentionMenuContextItemContent, MentionMenuProviderItemContent } from '.
 import type { MentionMenuData, MentionMenuParams } from './useMentionMenuData'
 
 /**
- * The menu for @-mentioning context in a chat message.
+ * The menu for `@`-mentioning context in a chat message.
  *
- * - A menu item either (1) inserts an @-mention of a context item or (2) navigates the user one
+ * - A menu item either (1) inserts an `@`-mention of a context item or (2) navigates the user one
  *   level deeper in the menu.
  * - The root level of the menu shows the context providers by type and some suggestions for context
  *   items.
