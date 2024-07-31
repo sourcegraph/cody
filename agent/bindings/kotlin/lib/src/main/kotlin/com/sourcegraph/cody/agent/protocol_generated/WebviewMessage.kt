@@ -381,6 +381,7 @@ data class GetUserContextWebviewMessage(
 data class QueryContextItemsWebviewMessage(
   val command: CommandEnum, // Oneof: queryContextItems
   val query: MentionQuery,
+  val requestId: Long? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {

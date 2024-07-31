@@ -192,7 +192,7 @@ export type ExtensionMessage =
     | {
           type: 'userContextFiles'
           userContextFiles?: ContextItem[] | undefined | null
-          requestId?: number
+          responseId?: number
       }
     | { type: 'clientState'; value: ClientStateForWebview }
     | { type: 'clientAction'; addContextItemsToLastHumanInput: ContextItem[] }
