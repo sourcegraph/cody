@@ -41,6 +41,7 @@ export const cQueries = {
         singlelineTriggers: '',
         intents: '',
         documentableNodes: DOCUMENTABLE_NODES,
+        refactorableNodes: '',
         identifiers: '',
         graphContextIdentifiers: '',
         enclosingFunction: ENCLOSING_FUNCTION_QUERY,

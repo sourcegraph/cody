@@ -42,10 +42,12 @@ import {
 import { executeAutoEditCommand } from './commands/execute/auto-edit'
 import { UpdateCallsitesProvider } from './commands/execute/update-callsites'
 import { CodySourceControl } from './commands/scm/source-control'
+import { refactorCodeLensProvider } from './commands/services/refactor-code-lenses'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { createInlineCompletionItemFromMultipleProviders } from './completions/create-multi-model-inline-completion-provider'
+import { logIgnored } from './completions/inline-completion-item-provider'
 import { getFullConfig } from './configuration'
 import { BaseConfigWatcher, type ConfigWatcher } from './configwatcher'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
@@ -317,6 +319,7 @@ async function initializeSingletons(
     // user's model choices
     ModelsService.setStorage(localStorage)
     disposables.push(upstreamHealthProvider, contextFiltersProvider)
+    disposables.push(refactorCodeLensProvider)
     setCommandController(platform.createCommandsProvider?.())
     repoNameResolver.init(authProvider)
     await configWatcher.onChange(
@@ -457,6 +460,8 @@ function registerCodyCommands(
         return await executeCodyCommand(id, newCodyCommandArgs(args))
     }
 
+    logIgnored({} as any, 'cody-ignore', false)
+
     // Initialize supercompletion provider if experimental feature is enabled
     if (config.get().experimentalSupercompletions) {
         disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
@@ -473,8 +478,9 @@ function registerCodyCommands(
         vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
         vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a)),
         vscode.commands.registerCommand('cody.command.auto-edit', a => executeAutoEditCommand(a)),
-        vscode.commands.registerCommand('cody.command.updateCallsites', a =>
-            updateCallsitesProvider.executeUpdateCallsitesCommand(a)
+        vscode.commands.registerCommand(
+            'cody.command.updateCallsites',
+            updateCallsitesProvider.executeUpdateCallsitesCommand
         ),
         sourceControl // Generate Commit Message command
     )

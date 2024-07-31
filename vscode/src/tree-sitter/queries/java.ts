@@ -60,6 +60,7 @@ const ENCLOSING_FUNCTION = dedent`
 export const javaQueries = {
     [SupportedLanguage.java]: {
         documentableNodes: DOCUMENTABLE_NODES,
+        refactorableNodes: '',
         singlelineTriggers: '',
         intents: '',
         identifiers: '',

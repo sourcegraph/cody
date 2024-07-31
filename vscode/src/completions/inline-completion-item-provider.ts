@@ -1000,7 +1000,12 @@ function onlyCompletionWidgetSelectionChanged(
 }
 
 let lastIgnoredUriLogged: string | undefined = undefined
-function logIgnored(uri: vscode.Uri, reason: CodyIgnoreType, isManualCompletion: boolean) {
+interface Args {
+    uri: vscode.Uri
+    reason: CodyIgnoreType
+    isManualCompletion: boolean
+}
+export function logIgnored(args: Args) {
     // Only show a notification for actively triggered autocomplete requests.
     if (isManualCompletion) {
         showCodyIgnoreNotification('autocomplete', reason)

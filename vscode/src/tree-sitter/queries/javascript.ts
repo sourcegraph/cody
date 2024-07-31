@@ -242,11 +242,16 @@ const TS_IDENTIFIERS = `
     (type_identifier) @identifier
 `
 
+const JS_REFACTORABLE_NODES_QUERY = `
+    (function_declaration) @function
+`
+
 export const javascriptQueries = {
     [SupportedLanguage.javascript]: {
         singlelineTriggers: '',
         intents: JS_INTENTS_QUERY,
         documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,
+        refactorableNodes: JS_REFACTORABLE_NODES_QUERY,
         identifiers: JS_IDENTIFIERS,
         graphContextIdentifiers: JS_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
         enclosingFunction: JS_ENCLOSING_FUNCTION_QUERY,
@@ -255,6 +260,7 @@ export const javascriptQueries = {
         singlelineTriggers: '',
         intents: JSX_INTENTS_QUERY,
         documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,
+        refactorableNodes: JS_REFACTORABLE_NODES_QUERY,
         identifiers: JS_IDENTIFIERS,
         graphContextIdentifiers: JSX_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
         enclosingFunction: JS_ENCLOSING_FUNCTION_QUERY,
@@ -263,6 +269,7 @@ export const javascriptQueries = {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TS_INTENTS_QUERY,
         documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
+        refactorableNodes: JS_REFACTORABLE_NODES_QUERY,
         identifiers: TS_IDENTIFIERS,
         graphContextIdentifiers: TS_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
         enclosingFunction: JS_ENCLOSING_FUNCTION_QUERY,
@@ -271,6 +278,7 @@ export const javascriptQueries = {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TSX_INTENTS_QUERY,
         documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
+        refactorableNodes: JS_REFACTORABLE_NODES_QUERY,
         identifiers: TS_IDENTIFIERS,
         graphContextIdentifiers: TSX_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
         enclosingFunction: JS_ENCLOSING_FUNCTION_QUERY,

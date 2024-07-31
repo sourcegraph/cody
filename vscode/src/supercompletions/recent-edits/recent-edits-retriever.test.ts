@@ -89,6 +89,20 @@ describe('RecentEditsRetriever', () => {
             reason: undefined,
         })
     }
+    function addParameter(document = testDocument) {
+        onDidChangeTextDocument({
+            document,
+            contentChanges: [
+                {
+                    range: range(0, 13, 0, 13),
+                    text: 'n: number',
+                    rangeLength: 0,
+                    rangeOffset: 13,
+                },
+            ],
+            reason: undefined,
+        })
+    }
 
     it('tracks document changes and creates a git diff', async () => {
         replaceFooLogWithNumber()
@@ -110,6 +124,22 @@ describe('RecentEditsRetriever', () => {
           +    console.log(1338)
            }
           \\ No newline at end of file
+          "
+        `)
+    })
+
+    it.only('tracks document changes and creates a git diff2', async () => {
+        addParameter()
+
+        const diff = await retriever.getDiff(testDocument.uri)
+        expect(diff!.toString().split('\n').slice(2).join('\n')).toMatchInlineSnapshot(`
+          "@@ -1,5 +1,5 @@
+          -function foo() {
+          +function foo(n: number) {
+               console.log('foo')
+           }
+           
+           function bar() {
           "
         `)
     })

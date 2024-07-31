@@ -22,6 +22,7 @@ import {
     EventSourceTelemetryMetadataMapping,
 } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { workspace } from 'vscode'
+import { RefactorResponseCallback } from '../commands/execute/update-callsites'
 import { doesFileExist } from '../commands/utils/workspace-files'
 import { CodyTaskState } from '../non-stop/utils'
 import { splitSafeMetadata } from '../services/telemetry-v2'
@@ -48,9 +49,115 @@ export class EditProvider {
 
     constructor(public config: EditProviderOptions) {}
 
+    public async getEditText(cb: RefactorResponseCallback): Promise<void> {
+        return wrapInActiveSpan('command.editText.start', async span => {
+            console.log('edit:start', this.config.task.selectionRange)
+
+            const handleResponse = (response: string, isMessageInProgress: boolean): void => {
+                // Error state: The response finished but we didn't receive any text
+                if (!response && !isMessageInProgress) {
+                    this.handleError(new Error('Cody did not respond with any text'))
+                }
+
+                if (!response) {
+                    return
+                }
+
+                // cb(responseTransformer(response, this.config.task, isMessageInProgress))
+                cb(response)
+            }
+
+            // this.config.controller.startTask(this.config.task)
+            const model = this.config.task.model
+            const contextWindow = ModelsService.getContextWindowByID(model)
+            const {
+                messages,
+                stopSequences,
+                responseTopic,
+                responsePrefix = '',
+            } = await buildInteraction({
+                model,
+                codyApiVersion: this.config.authProvider.getAuthStatus().codyApiVersion,
+                contextWindow: contextWindow.input,
+                task: this.config.task,
+                editor: this.config.editor,
+            }).catch(err => {
+                // TODO: handle errors properly
+                handleResponse('', false)
+                this.handleError(err)
+                throw err
+            })
+
+            const multiplexer = new BotResponseMultiplexer()
+
+            let text = ''
+            multiplexer.sub(responseTopic, {
+                onResponse: async (content: string) => {
+                    text += content
+                    return Promise.resolve()
+                },
+                onTurnComplete: async () => {
+                    void handleResponse(text, false)
+                    return Promise.resolve()
+                },
+            })
+
+            this.abortController = new AbortController()
+            const stream = this.config.chat.chat(
+                messages,
+                {
+                    model,
+                    stopSequences,
+                    maxTokensToSample: contextWindow.output,
+                },
+                this.abortController.signal
+            )
+
+            let textConsumed = 0
+            for await (const message of stream) {
+                switch (message.type) {
+                    case 'change': {
+                        if (textConsumed === 0 && responsePrefix) {
+                            void multiplexer.publish(responsePrefix)
+                        }
+                        const text = message.text.slice(textConsumed)
+                        textConsumed += text.length
+                        void multiplexer.publish(text)
+                        break
+                    }
+                    case 'complete': {
+                        void multiplexer.notifyTurnComplete()
+                        break
+                    }
+                    case 'error': {
+                        let err = message.error
+                        logError('EditProvider:onError', err.message)
+
+                        if (isAbortError(err)) {
+                            void handleResponse(text, false)
+                            return
+                        }
+
+                        if (isNetworkError(err)) {
+                            err = new Error('Cody could not respond due to network error.')
+                        }
+
+                        // Display error message as assistant response
+                        this.handleError(err)
+                        console.error(`Completion request failed: ${err.message}`)
+
+                        break
+                    }
+                }
+            }
+        })
+    }
+
     public async startEdit(): Promise<void> {
         return wrapInActiveSpan('command.edit.start', async span => {
-            this.config.controller.startTask(this.config.task)
+            console.log('edit:start', this.config.task.selectionRange)
+
+            // this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
             const contextWindow = ModelsService.getContextWindowByID(model)
             const {
@@ -175,6 +282,9 @@ export class EditProvider {
     }
 
     private async handleResponse(response: string, isMessageInProgress: boolean): Promise<void> {
+        console.log('edit:handleResponse', response)
+        this.config.task.replacement
+
         // Error state: The response finished but we didn't receive any text
         if (!response && !isMessageInProgress) {
             this.handleError(new Error('Cody did not respond with any text'))
