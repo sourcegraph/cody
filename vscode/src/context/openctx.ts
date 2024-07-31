@@ -9,6 +9,7 @@ import {
 import * as vscode from 'vscode'
 
 import type { Provider } from '@openctx/client'
+import type { createController } from '@openctx/vscode-lib'
 import { logDebug, outputChannel } from '../log'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
@@ -20,8 +21,7 @@ export async function exposeOpenCtxClient(
     context: Pick<vscode.ExtensionContext, 'extension' | 'secrets'>,
     config: ConfigurationWithAccessToken,
     isDotCom: boolean,
-    // TODO [VK] Expose createController openctx type from vscode-lib
-    createOpenCtxController: ((...args: any[]) => any) | undefined
+    createOpenCtxController: typeof createController | undefined
 ) {
     logDebug('openctx', 'OpenCtx is enabled in Cody')
     await warnIfOpenCtxExtensionConflict()
