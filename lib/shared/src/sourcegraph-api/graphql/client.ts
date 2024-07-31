@@ -332,8 +332,8 @@ type RecordContextResponse = unknown
 interface RankContextResponse {
     rankContext: {
         ranker: string
-        used: number[]
-        ignored: number[]
+        used: { index: number; score: number }[]
+        ignored: { index: number; score: number }[]
     }
 }
 
