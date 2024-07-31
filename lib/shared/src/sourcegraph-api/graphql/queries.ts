@@ -213,8 +213,14 @@ export const RANK_CONTEXT_QUERY = `
 query RankContext($interactionId: String!, $query: String!, $contextItems: [InputContextItem!]!) {
     rankContext(interactionId: $interactionId, query:$query, contextItems: $contextItems) {
         ranker
-        used
-        ignored
+        used {
+            index
+            score
+        }
+        ignored {
+            index
+            score
+        }
     }
 }`
 
