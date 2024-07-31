@@ -1,3 +1,6 @@
+## 0.3.2
+- Fixes mention providers fetching as we switch between chats 
+
 ## 0.3.1
 - Improves debounce logic for context item suggestions 
 

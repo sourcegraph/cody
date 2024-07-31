@@ -6,7 +6,7 @@ import {
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { LRUCache } from 'lru-cache'
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 export interface ChatMentionsSettings {
     resolutionMode: 'remote' | 'local'
@@ -136,25 +136,39 @@ const EMPTY_PROVIDERS: ContextMentionProviderMetadata[] = []
 
 export function useChatContextMentionProviders(): {
     providers: ContextMentionProviderMetadata[]
-    reload: () => void
 } {
     const client = useContext(ChatContextClientContext)
-    const [providers, setProviders] = useState<ContextMentionProviderMetadata[]>()
+    const [providers, setProviders] = useState<ContextMentionProviderMetadata[]>(EMPTY_PROVIDERS)
 
-    const load = useCallback(() => {
+    useEffect(() => {
+        // Track if the query changed since this request was sent (which would make our results
+        // no longer valid).
+        let invalidated = false
+
         if (client) {
             client
                 .getMentionProvidersMetadata({})
-                .then(result => setProviders(result.providers))
+                .then(result => {
+                    if (invalidated) {
+                        return
+                    }
+
+                    setProviders(result.providers)
+                })
                 .catch(error => {
-                    console.error(error)
+                    if (invalidated) {
+                        console.error(error)
+                        return
+                    }
+
                     setProviders(EMPTY_PROVIDERS)
                 })
         }
-    }, [client])
-    useEffect(() => {
-        load()
-    }, [load])
 
-    return useMemo(() => ({ providers: providers ?? EMPTY_PROVIDERS, reload: load }), [providers, load])
+        return () => {
+            invalidated = true
+        }
+    }, [client])
+
+    return useMemo(() => ({ providers }), [providers])
 }
