@@ -14,14 +14,14 @@ export const openCtx: OpenCtx = {}
  * Set the handle to the OpenCtx. If there is an existing handle it will be
  * disposed and replaced.
  */
-export function setOpenCtx(newOpenCtx: OpenCtx): void {
-    const old = { ...openCtx }
+export function setOpenCtx({ client, disposable }: OpenCtx): void {
+    const { client: oldClient, disposable: oldDisposable } = openCtx
 
-    openCtx.client = newOpenCtx.client
-    openCtx.disposable = newOpenCtx.disposable
+    openCtx.client = client
+    openCtx.disposable = disposable
 
-    old.client?.dispose()
-    old.disposable?.dispose()
+    oldClient?.dispose()
+    oldDisposable?.dispose()
 }
 
 export const REMOTE_REPOSITORY_PROVIDER_URI = 'internal-remote-repository-search'
