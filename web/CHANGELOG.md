@@ -1,3 +1,6 @@
+## 0.3.1
+- Improves debounce logic for context item suggestions 
+
 ## 0.3.0
 - Rename package to @sourcegraph/cody-web 
 - Fixes problem when cody agent publishes setConfigFeatures too early 
