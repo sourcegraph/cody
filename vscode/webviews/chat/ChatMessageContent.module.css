@@ -1,5 +1,6 @@
 .buttons-container {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     border-style: solid;
     border-width: 1px;

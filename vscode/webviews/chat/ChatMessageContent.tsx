@@ -488,7 +488,9 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 if (fileName?.length && !isMessageLoading) {
                     const fileNameContainer = document.createElement('div')
                     fileNameContainer.className = styles.fileNameContainer
-                    fileNameContainer.textContent = fileName
+
+                    // TODO: Rename `fileName` to file path, as that's what it represents more
+                    fileNameContainer.textContent = getFileName(fileName)
                     buttons.append(fileNameContainer)
 
                     preElement.innerHTML = preElement.innerHTML.replace(
@@ -510,4 +512,8 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
             </MarkdownFromCody>
         </div>
     )
+}
+
+function getFileName(filePath: string): string {
+    return filePath.split('/').pop() || filePath
 }
