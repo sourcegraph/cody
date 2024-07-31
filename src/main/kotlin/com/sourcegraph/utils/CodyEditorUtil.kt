@@ -1,13 +1,11 @@
 package com.sourcegraph.utils
 
-import com.intellij.application.options.CodeStyle
 import com.intellij.ide.scratch.ScratchFileService
 import com.intellij.ide.scratch.ScratchRootType
 import com.intellij.injected.editor.EditorWindow
 import com.intellij.lang.Language
 import com.intellij.lang.LanguageUtil
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Document
@@ -28,7 +26,6 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.ex.temp.TempFileSystem
-import com.intellij.psi.codeStyle.CommonCodeStyleSettings
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.withScheme
 import com.sourcegraph.cody.agent.protocol_extensions.*
@@ -36,7 +33,6 @@ import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.config.ConfigUtil
 import java.net.URI
 import java.net.URISyntaxException
-import java.util.*
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createFile
 import kotlin.io.path.exists
@@ -61,19 +57,6 @@ object CodyEditorUtil {
    * disable autocomplete. If absent, assumes editors want autocomplete.
    */
   @JvmStatic val KEY_EDITOR_WANTS_AUTOCOMPLETE = Key.create<Boolean>("cody.editorWantsAutocomplete")
-
-  /**
-   * @param editor given editor
-   * @return code style settings for the given editor, if null defaults to default app code style
-   *   settings
-   */
-  @JvmStatic
-  fun codeStyleSettings(editor: Editor): CommonCodeStyleSettings {
-    return ReadAction.compute<CommonCodeStyleSettings, RuntimeException> {
-      Optional.ofNullable(CodeStyle.getLanguageSettings(editor))
-          .orElse(CodeStyle.getDefaultSettings())
-    }
-  }
 
   @JvmStatic
   fun getTextRange(document: Document, range: Range): TextRange {
@@ -216,18 +199,21 @@ object CodyEditorUtil {
     }
   }
 
-  fun createFileOrScratch(
+  fun createFileOrScratchFromUntitled(
       project: Project,
       uriString: String,
       content: String? = null
   ): VirtualFile? {
     try {
-      val uri = URI.create(uriString).withScheme("file")
-      if (!uri.toPath().exists()) {
-        uri.toPath().parent?.createDirectories()
-        uri.toPath().createFile()
+      val uri = URI.create(uriString)
+
+      val fileUri = uri.withScheme("file")
+      if (!fileUri.toPath().exists()) {
+        fileUri.toPath().parent?.createDirectories()
+        fileUri.toPath().createFile()
       }
-      val vf = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(uri.toPath())
+
+      val vf = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(fileUri.toPath())
       content?.let {
         WriteCommandAction.runWriteCommandAction(project) { vf?.setBinaryContent(it.toByteArray()) }
       }

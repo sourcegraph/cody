@@ -8,6 +8,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.util.net.HttpConfigurable
+import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.chat.AgentChatSessionService
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.context.RemoteRepoSearcher
@@ -100,14 +101,11 @@ class CodyAgentService(private val project: Project) : Disposable {
       }
 
       agent.client.onOpenUntitledDocument = Function { params ->
-        val result = CompletableFuture<Boolean>()
+        val result = CompletableFuture<ProtocolTextDocument?>()
         ApplicationManager.getApplication().invokeAndWait {
-          val vf = CodyEditorUtil.createFileOrScratch(project, params.uri, params.content)
-          if (vf == null) {
-            result.complete(false)
-            return@invokeAndWait
-          }
-          result.complete(true)
+          val vf =
+              CodyEditorUtil.createFileOrScratchFromUntitled(project, params.uri, params.content)
+          result.complete(if (vf == null) null else ProtocolTextDocument.fromVirtualFile(vf))
         }
         result.get()
       }

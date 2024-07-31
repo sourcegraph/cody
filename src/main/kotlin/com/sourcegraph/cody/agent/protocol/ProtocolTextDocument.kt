@@ -15,7 +15,7 @@ import com.sourcegraph.cody.agent.protocol_extensions.Position
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import java.awt.Point
 import java.nio.file.FileSystems
-import java.util.*
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 
