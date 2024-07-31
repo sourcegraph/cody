@@ -54,7 +54,6 @@ export function useChatContextItems(
     hasResults.current = Boolean(results && results.length > 0)
 
     useEffect(() => {
-        console.log('QUERY PROVIDER ', query, provider)
         // An empty query is a valid query that we use to get open tabs context, while a null query
         // means this is not an at-mention query.
         if (query === null) {
@@ -68,8 +67,6 @@ export function useChatContextItems(
             ...parseMentionQuery(query, provider),
             includeRemoteRepositories: mentionSettings.resolutionMode === 'remote',
         }
-
-        console.log('MENTION QUERY PROVIDER', mentionQuery)
 
         if (!hasResults && mentionQuery.maybeHasRangeSuffix && !mentionQuery.range) {
             return

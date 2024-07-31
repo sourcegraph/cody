@@ -1,8 +1,10 @@
 import type { ContextItem, ContextMentionProviderMetadata } from '@sourcegraph/cody-shared'
+import { REMOTE_FILE_PROVIDER_URI, REMOTE_REPOSITORY_PROVIDER_URI } from '@sourcegraph/cody-shared'
 import { debounce } from 'lodash'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useContext, useMemo, useState } from 'react'
 import { useClientState } from '../../clientState'
 import {
+    ChatMentionContext,
     useChatContextItems,
     useChatContextMentionProviders,
 } from '../../plugins/atMentions/chatContextClient'
@@ -18,11 +20,22 @@ export function useMentionMenuParams(): {
     updateQuery: (query: string | null) => void
     updateMentionMenuParams: MentionMenuContextValue['updateMentionMenuParams']
 } {
+    const mentionSettings = useContext(ChatMentionContext)
     const [params, setParams] = useState<MentionMenuParams>({ query: null, parentItem: null })
 
+    const isRemoteLikeProviderActive =
+        mentionSettings.resolutionMode === 'remote' ||
+        params.parentItem?.id === REMOTE_FILE_PROVIDER_URI ||
+        params.parentItem?.id === REMOTE_REPOSITORY_PROVIDER_URI
+
+    // Increase debounce time in case of remote context item resolution (Cody Web case) or
+    // in case of remote-like providers such as remote repositories or remote files
+    const debounceTime: number = isRemoteLikeProviderActive ? 300 : 10
+
+    // biome-ignore lint/correctness/useExhaustiveDependencies: biome bug, debounceTime is dynamic variable should be in deps list
     const debouncedUpdateQuery = useCallback(
-        debounce((query: string | null) => setParams(prev => ({ ...prev, query })), 300),
-        []
+        debounce((query: string | null) => setParams(prev => ({ ...prev, query })), debounceTime),
+        [debounceTime]
     )
 
     const updateQuery = useCallback(
