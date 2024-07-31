@@ -609,11 +609,15 @@ export class SourcegraphGraphQLAPIClient {
         repositories: string[],
         query: string
     ): Promise<FuzzyFindFile[] | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<FuzzyFindFilesResponse>>(FUZZY_FILES_QUERY, {
-            query: `type:path count:30 ${
-                repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
-            } ${query}`,
-        }).then(response =>
+        return this.fetchSourcegraphAPI<APIResponse<FuzzyFindFilesResponse>>(
+            FUZZY_FILES_QUERY,
+            {
+                query: `type:path count:30 ${
+                    repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
+                } ${query}`,
+            },
+            15000
+        ).then(response =>
             extractDataOrError(
                 response,
                 data => data.search?.results.results ?? new Error('no files found')

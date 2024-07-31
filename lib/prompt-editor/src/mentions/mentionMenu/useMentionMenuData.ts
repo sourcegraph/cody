@@ -20,9 +20,23 @@ export function useMentionMenuParams(): {
 } {
     const [params, setParams] = useState<MentionMenuParams>({ query: null, parentItem: null })
 
-    const updateQuery = useCallback(
+    const debouncedUpdateQuery = useCallback(
         debounce((query: string | null) => setParams(prev => ({ ...prev, query })), 300),
         []
+    )
+
+    const updateQuery = useCallback(
+        (query: string | null) => {
+            // Update query immediately if it's an initial query state
+            if (!query) {
+                debouncedUpdateQuery(query)
+                debouncedUpdateQuery.flush()
+                return
+            }
+
+            debouncedUpdateQuery(query)
+        },
+        [debouncedUpdateQuery]
     )
 
     return useMemo(

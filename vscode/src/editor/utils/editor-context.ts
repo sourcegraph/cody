@@ -28,7 +28,6 @@ import {
 import { URI } from 'vscode-uri'
 import { getOpenTabsUris } from '.'
 import { toVSCodeRange } from '../../common/range'
-import { debouncePromise } from './debounce-promise'
 import { findWorkspaceFiles } from './findWorkspaceFiles'
 
 // Some matches we don't want to ignore because they might be valid code (for example `bin/` in Dart)
@@ -46,13 +45,6 @@ const lowScoringPathSegments = ['bin']
  * potentially swallow errors and return (and cache) incomplete data.
  */
 const throttledFindFiles = throttle(() => findWorkspaceFiles(), 10000)
-
-const debouncedRemoteFindFiles = debouncePromise(graphqlClient.getRemoteFiles.bind(graphqlClient), 500)
-const debouncedRemoteFindSymbols = debouncePromise(
-    graphqlClient.getRemoteSymbols.bind(graphqlClient),
-    500
-)
-
 /**
  * Searches all workspaces for files matching the given string. VS Code doesn't
  * provide an API for fuzzy file searching, only precise globs, so we recreate
@@ -70,9 +62,9 @@ export async function getFileContextFiles(
 
     // TODO [VK] Support fuzzy find logic that we have for local file resolution
     if (repositoriesNames) {
-        const filesOrError = await debouncedRemoteFindFiles(repositoriesNames, query)
+        const filesOrError = await graphqlClient.getRemoteFiles(repositoriesNames, query)
 
-        if (isErrorLike(filesOrError) || filesOrError === 'skipped') {
+        if (isErrorLike(filesOrError)) {
             return []
         }
 
@@ -164,9 +156,9 @@ export async function getSymbolContextFiles(
     }
 
     if (remoteRepositoriesNames) {
-        const symbolsOrError = await debouncedRemoteFindSymbols(remoteRepositoriesNames, query)
+        const symbolsOrError = await graphqlClient.getRemoteSymbols(remoteRepositoriesNames, query)
 
-        if (symbolsOrError === 'skipped' || isErrorLike(symbolsOrError)) {
+        if (isErrorLike(symbolsOrError)) {
             return []
         }
 

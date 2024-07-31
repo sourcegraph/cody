@@ -29,6 +29,8 @@ const ChatContextClientContext = createContext<ChatContextClient | undefined>(un
 
 export const ChatContextClientProvider = ChatContextClientContext.Provider
 
+let callerCount = 0
+
 /** Hook to get the chat context items for the given query. */
 export function useChatContextItems(
     query: string | null,
@@ -54,6 +56,7 @@ export function useChatContextItems(
     hasResults.current = Boolean(results && results.length > 0)
 
     useEffect(() => {
+        console.log('QUERY PROVIDER ', query, provider)
         // An empty query is a valid query that we use to get open tabs context, while a null query
         // means this is not an at-mention query.
         if (query === null) {
@@ -61,12 +64,16 @@ export function useChatContextItems(
             return
         }
 
+        const count = callerCount++
+
         // If user has typed an incomplete range, fetch new chat context items only if there are no
         // results.
         const mentionQuery: MentionQuery = {
             ...parseMentionQuery(query, provider),
             includeRemoteRepositories: mentionSettings.resolutionMode === 'remote',
         }
+
+        console.log('MENTION QUERY PROVIDER', mentionQuery)
 
         if (!hasResults && mentionQuery.maybeHasRangeSuffix && !mentionQuery.range) {
             return
@@ -83,20 +90,27 @@ export function useChatContextItems(
         let invalidated = false
 
         if (chatContextClient) {
+            console.log(`[ITEMS] ${count} Start fetching`)
             chatContextClient
                 .getChatContextItems({ query: mentionQuery })
                 .then(result => {
-                    // Since remote mention search debounce and batches all mention
-                    // search requests we shouldn't invalidate any old responses like
-                    // we do for local search.
-                    if (invalidated && !mentionQuery.includeRemoteRepositories) {
+                    console.log(`[ITEMS] ${count} Resolved`, result)
+                    if (invalidated) {
+                        console.log(`[ITEMS] ${count} invalidated`)
                         return
                     }
+
+                    console.log(`[ITEMS] ${count} Set items`)
                     setResults(result.userContextFiles ?? [])
                 })
                 .catch(error => {
+                    console.log(`[ITEMS] ${count} error`)
+                    if (invalidated) {
+                        console.log(`[ITEMS] ${count} error invalidated`)
+                        console.error(error)
+                        return
+                    }
                     setResults(undefined)
-                    console.error(error)
                 })
         }
 
