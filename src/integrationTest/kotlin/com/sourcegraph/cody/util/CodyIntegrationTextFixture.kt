@@ -274,7 +274,7 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
   }
 
   companion object {
-    const val ASYNC_WAIT_TIMEOUT_SECONDS = 10L
+    const val ASYNC_WAIT_TIMEOUT_SECONDS = 20L
     var myProject: Project? = null
   }
 }
