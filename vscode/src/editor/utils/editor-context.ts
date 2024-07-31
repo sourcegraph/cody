@@ -395,7 +395,7 @@ async function resolveContextMentionProviderContextItem(
         return []
     }
 
-    const openCtxClient = openCtx.client
+    const openCtxClient = openCtx.controller
     if (!openCtxClient) {
         return []
     }

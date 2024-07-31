@@ -136,6 +136,7 @@ export type {
 export {
     displayPath,
     displayPathBasename,
+    uriHasPrefix,
     displayPathDirname,
     displayPathWithoutWorkspaceFolderPrefix,
     setDisplayPathEnvInfo,
@@ -215,6 +216,7 @@ export {
     TracedError,
     isAbortError,
     isAbortErrorOrSocketHangUp,
+    isContextWindowLimitError,
     isAuthError,
     isNetworkError,
     isRateLimitError,
@@ -317,9 +319,15 @@ export {
     UNKNOWN_NODES_EDITOR_STATE_FIXTURE,
 } from './lexicalEditor/fixtures'
 export { getSerializedParams } from './sourcegraph-api/completions/utils'
+export { type WebviewToExtensionAPI, type FeatureFlagUsedInWebview } from './misc/rpc/webviewAPI'
 export {
+    proxyExtensionAPI,
+    addMessageListenersForExtensionAPI,
+    createMessageAPIForWebview,
+    type ResponseMessage,
+    type RequestMessage,
     type GenericVSCodeWrapper,
     type GenericWebviewAPIWrapper,
-    createExtensionAPIProxyInWebview,
-    handleExtensionAPICallFromWebview,
-} from './misc/rpc/proxy'
+    createMessageAPIForExtension,
+} from './misc/rpc/rpc'
+export * from './misc/asyncGenerator'

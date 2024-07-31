@@ -5,7 +5,7 @@ import { openCtx } from './api'
 // getContextForChatMessage returns context items for a given chat message from the OpenCtx providers.
 export const getContextForChatMessage = async (message: string): Promise<ContextItemOpenCtx[]> => {
     try {
-        const openCtxClient = openCtx.client
+        const openCtxClient = openCtx.controller
         if (!openCtxClient) {
             return []
         }
