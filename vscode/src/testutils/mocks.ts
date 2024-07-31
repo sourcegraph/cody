@@ -792,6 +792,7 @@ export const vsCodeMocks = {
             selection: {},
         },
         onDidChangeActiveTextEditor() {},
+        onDidChangeTextEditorSelection() {},
         createTextEditorDecorationType: () => ({
             key: 'foo',
             dispose: () => {},
@@ -920,6 +921,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
         singleline: undefined,
     },
     autocompleteFirstCompletionTimeout: 3500,
+    autocompleteExperimentalPreloadDebounceInterval: 0,
     autocompleteExperimentalHotStreakAndSmartThrottle: false,
     testingModelConfig: undefined,
     experimentalChatContextRanker: false,

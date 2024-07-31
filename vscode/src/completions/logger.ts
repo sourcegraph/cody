@@ -1127,14 +1127,24 @@ type AutocompletePipelineStage =
 export class AutocompleteStageRecorder {
     private createdAt = performance.now()
     private logId?: CompletionLogID
+    private isPreloadRequest: boolean
 
     public stageTimings = {} as Record<string, number>
+
+    constructor(params: { isPreloadRequest: boolean }) {
+        this.isPreloadRequest = params.isPreloadRequest
+    }
 
     public setLogId(logId: CompletionLogID): void {
         this.logId = logId
     }
 
     public record(eventName: AutocompletePipelineStage): void {
+        if (this.isPreloadRequest) {
+            // Do not record events for preload requests.
+            return
+        }
+
         // Record event for OpenTelemetry traces.
         trace.getActiveSpan()?.addEvent(eventName)
 

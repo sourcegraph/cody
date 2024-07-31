@@ -2,7 +2,12 @@ import * as vscode from 'vscode'
 
 import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-utils'
 
-import type { DocumentContext, DocumentDependentContext, LinesContext } from '@sourcegraph/cody-shared'
+import {
+    type DocumentContext,
+    type DocumentDependentContext,
+    type LinesContext,
+    getEditorInsertSpaces,
+} from '@sourcegraph/cody-shared'
 import { detectMultiline } from './detect-multiline'
 import {
     getFirstLine,
@@ -33,7 +38,22 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
 
     // TODO(philipp-spiess): This requires us to read the whole document. Can we limit our ranges
     // instead?
-    const completePrefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
+    let completePrefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
+
+    // For preloading completions we might have a position that is not in the document.
+    // For example, if we preload a completion for the next empty line and the current line is
+    // indented, the position for preloaded completion would have the same indentation level.
+    //
+    // But, because the document doesn't not current have whitespace there, the `document.getText(start, end)`
+    // would use `end.character === 0` instead of end.character === indentationLevel` position.
+    // We have to manually add required whitespace that will be used as a current line prefix in a cache key later.
+    const validatedPosition = document.validatePosition(position)
+    if (position.line === validatedPosition.line && position.character > validatedPosition.character) {
+        const insertSpaces = getEditorInsertSpaces(document.uri, vscode.workspace, vscode.window)
+        const indentString = insertSpaces ? ' ' : '\t'
+        completePrefix += indentString.repeat(position.character - validatedPosition.character)
+    }
+
     const completeSuffix = document.getText(
         new vscode.Range(position, document.positionAt(document.getText().length))
     )

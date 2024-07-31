@@ -1,5 +1,6 @@
 import {
     type AuthStatus,
+    type Configuration,
     type GraphQLAPIClientConfig,
     contextFiltersProvider,
     graphqlClient,
@@ -12,7 +13,7 @@ import { DEFAULT_VSCODE_SETTINGS, vsCodeMocks } from '../testutils/mocks'
 import * as CompletionProvider from './get-completion-provider'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { TriggerKind } from './get-inline-completions'
-import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
+import { initCompletionProviderConfig, params } from './get-inline-completions-tests/helpers'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import * as CompletionLogger from './logger'
 import { createProviderConfig } from './providers/anthropic'
@@ -410,5 +411,125 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
               ]
             `)
         })
+    })
+})
+
+describe('InlineCompletionItemProvider preloading', () => {
+    const autocompleteConfig = {
+        autocompleteExperimentalPreloadDebounceInterval: 150,
+        autocompleteAdvancedProvider: 'fireworks',
+    } satisfies Partial<Configuration>
+
+    const onDidChangeTextEditorSelection = vi.spyOn(vsCodeMocks.window, 'onDidChangeTextEditorSelection')
+
+    beforeAll(async () => {
+        vi.useFakeTimers()
+
+        await initCompletionProviderConfig(autocompleteConfig)
+
+        localStorage.setStorage({
+            get: () => null,
+            update: () => {},
+        } as any as vscode.Memento)
+    })
+
+    it('triggers preload request on cursor movement if cursor is at the end of a line', async () => {
+        const autocompleteParams = params('console.log(█', [], {
+            configuration: autocompleteConfig,
+        })
+
+        const { document, position } = autocompleteParams
+        const provider = getInlineCompletionProvider(autocompleteParams)
+        const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
+
+        const [handler] = onDidChangeTextEditorSelection.mock.lastCall as any
+
+        // Simulate a cursor movement event
+        await handler({
+            textEditor: { document },
+            selections: [new vsCodeMocks.Selection(position, position)],
+        })
+
+        expect(provideCompletionSpy).not.toBeCalled()
+        await vi.advanceTimersByTimeAsync(50)
+        expect(provideCompletionSpy).not.toBeCalled()
+
+        await vi.advanceTimersByTimeAsync(
+            autocompleteConfig.autocompleteExperimentalPreloadDebounceInterval - 50
+        )
+
+        expect(provideCompletionSpy).toBeCalledWith(
+            document,
+            position,
+            expect.objectContaining({ isPreload: true })
+        )
+    })
+
+    it('does not trigger preload request if current line has non-empty suffix', async () => {
+        const autocompleteParams = params('console.log(█);', [], {
+            configuration: autocompleteConfig,
+        })
+
+        const { document, position } = autocompleteParams
+        const provider = getInlineCompletionProvider(autocompleteParams)
+        const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
+        const [handler] = onDidChangeTextEditorSelection.mock.lastCall as any
+
+        // Simulate a cursor movement event
+        await handler({
+            textEditor: { document },
+            selections: [new vsCodeMocks.Selection(position, position)],
+        })
+
+        await vi.advanceTimersByTimeAsync(
+            autocompleteConfig.autocompleteExperimentalPreloadDebounceInterval
+        )
+        expect(provideCompletionSpy).not.toHaveBeenCalled()
+    })
+
+    it('triggers preload request on next empty line if current line has non-empty suffix', async () => {
+        const autocompleteParams = params('console.log(█);\n', [], {
+            configuration: autocompleteConfig,
+        })
+
+        const { document, position } = autocompleteParams
+        const provider = getInlineCompletionProvider(autocompleteParams)
+        const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
+        const [handler] = onDidChangeTextEditorSelection.mock.lastCall as any
+
+        await handler({
+            textEditor: { document },
+            selections: [new vsCodeMocks.Selection(position, position)],
+        })
+
+        await vi.advanceTimersByTimeAsync(
+            autocompleteConfig.autocompleteExperimentalPreloadDebounceInterval
+        )
+        expect(provideCompletionSpy).toBeCalledWith(
+            document,
+            position.with({ line: position.line + 1, character: 0 }),
+            expect.objectContaining({ isPreload: true })
+        )
+    })
+
+    it('does not trigger preload request if next line is not empty', async () => {
+        const autocompleteParams = params('console.log(█);\nconsole.log()', [], {
+            configuration: autocompleteConfig,
+        })
+
+        const { document, position } = autocompleteParams
+        const provider = getInlineCompletionProvider(autocompleteParams)
+        const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
+        const [handler] = onDidChangeTextEditorSelection.mock.lastCall as any
+
+        await handler({
+            textEditor: { document },
+            selections: [new vsCodeMocks.Selection(position, position)],
+        })
+
+        await vi.advanceTimersByTimeAsync(
+            autocompleteConfig.autocompleteExperimentalPreloadDebounceInterval
+        )
+        expect(provideCompletionSpy).not.toHaveBeenCalled()
     })
 })
