@@ -53,7 +53,13 @@ export function logError(filterLabel: string, text: string, ...args: unknown[]):
  * - cody.debug.verbose: prints out the text in the `verbose` field of the last argument
  *
  */
-function log(level: 'debug' | 'error', filterLabel: string, text: string, ...args: unknown[]): void {
+function log(
+    level: 'debug' | 'error',
+    filterLabel: string,
+    // text to log
+    text: string,
+    ...args: unknown[]
+): void {
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
