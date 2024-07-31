@@ -580,16 +580,7 @@
         "key": "alt+l",
         "when": "!cody.activated"
       },
-      {
-        "command": "cody.chat.newPanel",
-        "key": "alt+/",
-        "when": "cody.activated"
-      },
-      {
-        "command": "cody.chat.newPanel",
-        "key": "alt+shift+l",
-        "when": "cody.activated"
-      },
+
       {
         "command": "cody.chat.toggle",
         "key": "alt+l",
@@ -607,13 +598,50 @@
         }
       },
       {
-        "command": "cody.chat.newEditorPanel",
-        "key": "alt+l",
+        "command": "cody.chat.toggle",
+        "key": "alt+/",
         "when": "cody.activated && editorTextFocus",
         "args": {
           "editorFocus": true
         }
       },
+      {
+        "command": "cody.chat.toggle",
+        "key": "alt+/",
+        "when": "cody.activated && !editorTextFocus",
+        "args": {
+          "editorFocus": false
+        }
+      },
+
+      {
+        "command": "cody.chat.newPanel",
+        "key": "shift+alt+/",
+        "when": "cody.activated"
+      },
+      {
+        "command": "cody.chat.newPanel",
+        "key": "shift+alt+l",
+        "when": "cody.activated"
+      },
+
+      {
+        "command": "cody.chat.newEditorPanel",
+        "key": "shift+alt+l",
+        "when": "cody.activated && editorTextFocus",
+        "args": {
+          "editorFocus": true
+        }
+      },
+      {
+        "command": "cody.chat.newEditorPanel",
+        "key": "shift+alt+/",
+        "when": "cody.activated && editorTextFocus",
+        "args": {
+          "editorFocus": true
+        }
+      },
+
       {
         "command": "cody.mention.selection",
         "key": "alt+/",
@@ -624,6 +652,7 @@
         "key": "alt+l",
         "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
+
       {
         "command": "cody.tutorial.chat",
         "key": "alt+l",

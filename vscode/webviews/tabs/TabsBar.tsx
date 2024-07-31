@@ -80,7 +80,7 @@ const BASE_TAB_ITEMS: TabConfig[] = [
             {
                 tooltip: (
                     <>
-                        New Chat <Kbd macOS="opt+/" linuxAndWindows="alt+/" />
+                        New Chat <Kbd macOS="shift+opt+l" linuxAndWindows="shift+alt+l" />
                     </>
                 ),
                 Icon: MessageSquarePlusIcon,
