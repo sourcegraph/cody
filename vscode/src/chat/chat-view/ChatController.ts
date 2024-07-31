@@ -116,10 +116,9 @@ import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, openFile } from './chat-helpers'
 import {
     type HumanInput,
+    codebaseRootsFromHumanInput,
     getContextStrategy,
     getEnhancedContext,
-    remoteRepositoryIDsFromHumanInput,
-    remoteRepositoryURIsForLocalTrees,
 } from './context'
 import { DefaultPrompter } from './prompt'
 
@@ -842,25 +841,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return (await context).flat()
         }
 
-        const remoteRepoIDs = remoteRepositoryIDsFromHumanInput({ text, mentions })
-
-        const localRepoURIs = await remoteRepositoryURIsForLocalTrees({ text, mentions })
-        if (localRepoURIs.length === 0) {
-            // early return is necessary because getRepoIds will return all repos when invoked
-            // with an empty list
-            return []
-        }
-
-        const localRepoUriIds = await graphqlClient.getRepoIds(localRepoURIs, localRepoURIs.length)
-        if (isError(localRepoUriIds)) {
-            throw localRepoUriIds
-        }
-
-        const localRepoIDs = localRepoUriIds.map(r => r.id)
-        const repoIDs = remoteRepoIDs.concat(localRepoIDs)
+        const roots = await codebaseRootsFromHumanInput({ text, mentions })
         const context = this.contextFetcher.fetchContext({
             userQuery: text,
-            repoIDs,
+            roots,
         })
 
         return await context

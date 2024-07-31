@@ -72,7 +72,7 @@ export async function configureExternalServices(
     const completionsClient = platform.createCompletionsClient(initialConfig, logger)
     const codeCompletionsClient = createCodeCompletionsClient(initialConfig, logger)
 
-    const symfRunner = platform.createSymfRunner?.(context, config, completionsClient)
+    const symfRunner = platform.createSymfRunner?.(context, completionsClient)
 
     if (initialConfig.codebase && isError(await graphqlClient.getRepoId(initialConfig.codebase))) {
         logDebug(

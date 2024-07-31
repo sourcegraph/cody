@@ -28,7 +28,6 @@ import {
 import { logDebug } from '../log'
 
 import path from 'node:path'
-import type { ConfigWatcher } from '../configwatcher'
 import { getEditor } from '../editor/active-editor'
 import { getSymfPath } from './download-symf'
 import { rewriteKeywordQuery } from './rewrite-keyword-query'
@@ -66,10 +65,6 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
 
     constructor(
         private context: vscode.ExtensionContext,
-        private config: ConfigWatcher<{
-            serverEndpoint: string
-            accessToken: string | null
-        }>,
         private completionsClient: SourcegraphCompletionsClient
     ) {
         const indexRoot = vscode.Uri.joinPath(context.globalStorageUri, 'symf', 'indexroot').with(
@@ -102,23 +97,12 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return this.status.onDidEnd(cb)
     }
 
-    private async getSymfInfo(): Promise<{
-        symfPath: string
-        serverEndpoint: string
-        accessToken: string
-    }> {
-        const { accessToken, serverEndpoint } = this.config.get()
-        if (!accessToken) {
-            throw new Error('SymfRunner.getResults: No access token')
-        }
-        if (!serverEndpoint) {
-            throw new Error('SymfRunner.getResults: No Sourcegraph server endpoint')
-        }
+    private async mustSymfPath(): Promise<string> {
         const symfPath = await getSymfPath(this.context)
         if (!symfPath) {
             throw new Error('No symf executable')
         }
-        return { accessToken, serverEndpoint, symfPath }
+        return symfPath
     }
 
     public getResults(userQuery: PromptString, scopeDirs: vscode.Uri[]): Promise<Promise<Result[]>[]> {
@@ -128,6 +112,35 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
                 .filter(isFileURI)
                 .map(scopeDir => this.getResultsForScopeDir(userQuery, expandedQuery, scopeDir))
         )
+    }
+
+    public async getLiveResults(
+        userQuery: PromptString,
+        keywordQuery: string,
+        files: string[]
+    ): Promise<Result[]> {
+        const symfPath = await this.mustSymfPath()
+        const args = [
+            'live-query',
+            ...files.flatMap(f => ['-f', f]),
+            '--limit',
+            files.length < 5 ? `${files.length}` : '5',
+            '--fmt',
+            'json',
+            '--boosted-keywords',
+            `${userQuery}`,
+            `${keywordQuery}`,
+        ]
+        try {
+            const { stdout } = await execFile(symfPath, args, {
+                env: { HOME: process.env.HOME },
+                maxBuffer: 1024 * 1024 * 1024,
+                timeout: 1000 * 30, // timeout in 30 seconds
+            })
+            return parseSymfStdout(stdout)
+        } catch (error) {
+            throw toSymfError(error)
+        }
     }
 
     /**
@@ -163,8 +176,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
             if (indexNotFound) {
                 continue
             }
-            const results = parseSymfStdout(stdout)
-            return results
+            return parseSymfStdout(stdout)
         }
         throw new Error(`failed to find index after ${maxRetries} tries for directory ${scopeDir}`)
     }
@@ -235,7 +247,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
 
     private async statIndex(scopeDir: FileURI): Promise<CorpusDiff | null> {
         const { indexDir } = this.getIndexDir(scopeDir)
-        const { symfPath } = await this.getSymfInfo()
+        const symfPath = await this.mustSymfPath()
         try {
             const { stdout } = await execFile(symfPath, [
                 '--index-root',
@@ -285,7 +297,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         scopeDir: FileURI
     ): Promise<string> {
         const { indexDir } = this.getIndexDir(scopeDir)
-        const { accessToken, symfPath, serverEndpoint } = await this.getSymfInfo()
+        const symfPath = await this.mustSymfPath()
         try {
             const { stdout } = await execFile(
                 symfPath,
@@ -297,16 +309,12 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
                     scopeDir.fsPath,
                     '--fmt',
                     'json',
-                    '--rewritten-query',
-                    `"${keywordQuery}"`,
-                    `${userQuery}`,
+                    '--boosted-keywords',
+                    `"${userQuery}"`,
+                    `${keywordQuery}`,
                 ],
                 {
-                    env: {
-                        SOURCEGRAPH_TOKEN: accessToken,
-                        SOURCEGRAPH_URL: serverEndpoint,
-                        HOME: process.env.HOME,
-                    },
+                    env: { HOME: process.env.HOME },
                     maxBuffer: 1024 * 1024 * 1024,
                     timeout: 1000 * 30, // timeout in 30 seconds
                 }
@@ -663,7 +671,7 @@ function toSymfError(error: unknown): Error {
     } else if (errorString.includes('401')) {
         errorMessage = `symf: Unauthorized. Is Cody signed in? ${error}`
     } else {
-        errorMessage = `symf index creation failed: ${error}`
+        errorMessage = `symf failed: ${error}`
     }
     return new EvalError(errorMessage)
 }

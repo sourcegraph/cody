@@ -202,7 +202,6 @@ const register = async (
     if (symfRunner) {
         disposables.push(symfRunner)
     }
-    const contextFetcher = new ContextFetcher(symfRunner, completionsClient)
 
     // Initialize enterprise context
     const enterpriseContextFactory = new EnterpriseContextFactory(completionsClient)
@@ -212,6 +211,7 @@ const register = async (
     }, disposables)
 
     const editor = new VSCodeEditor()
+    const contextFetcher = new ContextFetcher(editor, symfRunner, completionsClient)
 
     const { chatsController } = registerChat(
         {
