@@ -12,7 +12,6 @@ import java.util.EnumSet
 import java.util.jar.JarFile
 import java.util.zip.ZipFile
 import org.jetbrains.changelog.markdownToHTML
-import org.jetbrains.intellij.or
 import org.jetbrains.intellij.tasks.RunPluginVerifierTask.FailureLevel
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.incremental.deleteDirectoryContents
@@ -54,7 +53,7 @@ val skippedFailureLevels =
 plugins {
   id("java")
   id("jvm-test-suite")
-  id("org.jetbrains.kotlin.jvm") version "1.9.24"
+  id("org.jetbrains.kotlin.jvm") version "1.9.25"
   id("org.jetbrains.intellij") version "1.17.3"
   id("org.jetbrains.changelog") version "2.2.0"
   id("com.diffplug.spotless") version "6.25.0"
@@ -509,6 +508,7 @@ tasks {
   runPluginVerifier {
     ideVersions.set(versionsToValidate)
     failureLevel.set(EnumSet.complementOf(skippedFailureLevels))
+    verifierVersion.set("1.371")
   }
 
   // Configure UI tests plugin
