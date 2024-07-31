@@ -121,13 +121,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             return
         }
 
-        return (text: string, instruction?: PromptString) => {
+        return (text: string, instruction?: PromptString, fileName?: string) => {
             // Log the event type and text to telemetry in chat view
             vscodeAPI.postMessage({
                 command: 'smartApply',
                 instruction: instruction?.toString(),
                 // remove the additional /n added by the text area at the end of the text
                 code: text.replace(/\n$/, ''),
+                fileName,
             })
         }
     }, [vscodeAPI, showIDESnippetActions])

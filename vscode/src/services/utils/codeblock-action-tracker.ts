@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { PromptString, telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 
+import { Utils } from 'vscode-uri'
 import { executeSmartApply } from '../../edit/smart-apply'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { countCode, matchCodeSnippets } from './code-count'
@@ -120,16 +121,24 @@ export async function replaceSelectionWithCode(text: string): Promise<void> {
     setLastStoredCode(text, eventName)
 }
 
-export async function handleSmartApply(code: string, instruction?: string): Promise<void> {
-    const editor = getEditor()
-    const activeEditor = editor.active
-    if (!activeEditor) {
+export async function handleSmartApply(
+    code: string,
+    instruction?: string,
+    fileUri?: string
+): Promise<void> {
+    const activeEditor = getEditor()?.active
+    const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
+    const uri =
+        fileUri && workspaceUri ? Utils.joinPath(workspaceUri, fileUri) : activeEditor?.document.uri
+    const document = uri ? await vscode.workspace.openTextDocument(uri) : activeEditor?.document
+    const editor = uri && (await vscode.window.showTextDocument(uri))
+    if (!editor || !document) {
         throw new Error('No editor found to insert text')
     }
 
     await executeSmartApply({
         configuration: {
-            document: activeEditor.document,
+            document: editor.document,
             instruction: PromptString.unsafe_fromUserQuery(instruction || ''),
             // TODO: Support other models here? Will need to for enterprise
             model: 'anthropic/claude-3-5-sonnet-20240620',
