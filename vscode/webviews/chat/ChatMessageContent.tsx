@@ -140,7 +140,6 @@ function createButtonsV2(
     // This allows us to position the buttons independent of the code.
     const container = document.createElement('div')
     container.className = styles.buttonsContainer
-
     if (!copyButtonOnSubmit) {
         return container
     }
@@ -159,8 +158,6 @@ function createButtonsV2(
     const actionsDropdown = createActionsDropdown(preText)
     buttons.append(actionsDropdown)
 
-    // Display the buttons in the codeblock footer.
-    // buttonsContainer.append(buttons)
     container.append(buttons)
 
     return container
