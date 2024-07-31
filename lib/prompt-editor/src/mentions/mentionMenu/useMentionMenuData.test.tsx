@@ -49,7 +49,6 @@ describe('useMentionMenuData', () => {
         ])
         vi.mocked(useChatContextMentionProviders).mockReturnValue({
             providers: mockProviders,
-            reload: () => {},
         })
         vi.mocked(useClientState).mockReturnValue({
             initialContext: [mockContextItems[0]],

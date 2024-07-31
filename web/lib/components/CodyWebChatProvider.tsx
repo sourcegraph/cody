@@ -29,6 +29,13 @@ import { useLocalStorage } from '../utils/use-local-storage'
  */
 const ACTIVE_CHAT_ID_KEY = 'cody-web.last-active-chat-id'
 
+// Usually the CodyWebChatProvider VSCode API wrapper listens only to messages from the Extension host
+// which matches the current active panel id. But this message id check can be corrupted
+// by race conditions in different events that the extension host sends during chat-switching.
+// Some events should always be handled by the client regardless of which active panel they
+// came from.
+const GLOBAL_MESSAGE_TYPES: Array<ExtensionMessage['type']> = ['allMentionProvidersMetadata']
+
 interface AgentClient {
     rpc: MessageConnection
     dispose(): void
@@ -171,7 +178,10 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
             client.rpc.onNotification(
                 'webview/postMessage',
                 ({ id, message }: { id: string; message: ExtensionMessage }) => {
-                    if (activeWebviewPanelIDRef.current === id) {
+                    if (
+                        activeWebviewPanelIDRef.current === id ||
+                        GLOBAL_MESSAGE_TYPES.includes(message.type)
+                    ) {
                         for (const callback of onMessageCallbacksRef.current) {
                             callback(hydrateAfterPostMessage(message, uri => URI.from(uri as any)))
                         }
@@ -285,7 +295,6 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
                     [interaction.humanMessage, interaction.assistantMessage].filter(message => message)
                 ),
             })
-
             activeWebviewPanelIDRef.current = nextPanelId
             setActiveWebviewPanelID(nextPanelId)
 
