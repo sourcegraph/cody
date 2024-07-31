@@ -22,8 +22,7 @@ const commonCommandList = [
 ]
 
 const vscodeCommandList = [
-    { key: 'cody.menu.custom-commands', title: 'Custom Commands', icon: PencilRulerIcon, href: <a href="https://sourcegraph.com">Import to Prompt Library</a>},]
-
+    { key: 'cody.menu.custom-commands', title: 'Custom Commands. To be replaced by Prompts soon', icon: PencilRulerIcon, href: <a href="https://sourcegraph.com">Import any of your existing Custom Commands to your Prompt Library</a>},]
 export const DefaultCommandsList: FunctionComponent<{
     IDE?: CodyIDE
     setView?: (view: View) => void
