@@ -86,17 +86,18 @@ export function useChatContextItems(
             chatContextClient
                 .getChatContextItems({ query: mentionQuery })
                 .then(result => {
-                    // Since remote mention search debounce and batches all mention
-                    // search requests we shouldn't invalidate any old responses like
-                    // we do for local search.
-                    if (invalidated && !mentionQuery.includeRemoteRepositories) {
+                    if (invalidated) {
                         return
                     }
+
                     setResults(result.userContextFiles ?? [])
                 })
                 .catch(error => {
+                    if (invalidated) {
+                        console.error(error)
+                        return
+                    }
                     setResults(undefined)
-                    console.error(error)
                 })
         }
 
