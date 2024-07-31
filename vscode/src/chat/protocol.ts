@@ -149,7 +149,6 @@ export type WebviewMessage =
     | {
           command: 'queryContextItems'
           query: MentionQuery
-          requestId?: number
       }
     | {
           command: 'reset'
@@ -192,7 +191,6 @@ export type ExtensionMessage =
     | {
           type: 'userContextFiles'
           userContextFiles?: ContextItem[] | undefined | null
-          responseId?: number
       }
     | { type: 'clientState'; value: ClientStateForWebview }
     | { type: 'clientAction'; addContextItemsToLastHumanInput: ContextItem[] }

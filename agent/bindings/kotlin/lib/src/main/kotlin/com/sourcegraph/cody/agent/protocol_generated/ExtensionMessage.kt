@@ -125,7 +125,6 @@ data class CommandsExtensionMessage(
 data class UserContextFilesExtensionMessage(
   val type: TypeEnum, // Oneof: userContextFiles
   val userContextFiles: List<ContextItem>? = null,
-  val responseId: Long? = null,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
