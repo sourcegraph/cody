@@ -393,6 +393,18 @@ async function resolveContextMentionProviderContextItem(
         title: item.title,
     }
 
+    // TODO!(sqs): hack
+    if (item.uri.path.endsWith('/annotation')) {
+        return [
+            {
+                ...item,
+                type: 'openctx',
+                provider: 'openctx',
+                content: decodeURIComponent(item.uri.query.slice(1)),
+            } satisfies ContextItemWithContent,
+        ]
+    }
+
     const items = await openCtxClient.items(
         { message: input.toString(), mention },
         { providerUri: item.providerUri }

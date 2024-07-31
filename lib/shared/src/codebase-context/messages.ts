@@ -131,7 +131,10 @@ export interface ContextItemTree extends ContextItemCommon {
     type: 'tree'
 
     /** Only workspace root trees are supported right now. */
-    isWorkspaceRoot: true
+    isWorkspaceRoot: boolean
+
+    /** The containing workspace folder, if any. */
+    workspaceFolder: URI | null
 
     content: null
     name: string

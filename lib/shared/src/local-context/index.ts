@@ -3,7 +3,11 @@ import type { PromptString } from '../prompt/prompt-string'
 import type { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 
 export interface LocalEmbeddingsFetcher {
-    getContext(query: PromptString, numResults: number): Promise<EmbeddingsSearchResult[]>
+    getContext(
+        query: PromptString,
+        dirInRepo: string | null,
+        numResults: number
+    ): Promise<EmbeddingsSearchResult[]>
 }
 interface Point {
     row: number
