@@ -27,6 +27,7 @@ export interface PromptEditorConfig {
         CommandEmpty: typeof Command.Empty
         CommandGroup: typeof Command.Group
         CommandItem: typeof Command.Item
+        CommandLoading: typeof Command.Loading
     }
 }
 

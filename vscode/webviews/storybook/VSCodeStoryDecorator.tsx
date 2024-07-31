@@ -10,7 +10,7 @@ import { clsx } from 'clsx'
 import { type CSSProperties, useState } from 'react'
 import { URI } from 'vscode-uri'
 import '../../node_modules/@vscode/codicons/dist/codicon.css'
-import { TestAppWrapper } from '../AppWrapper'
+import { AppWrapperForTest } from '../AppWrapperForTest'
 import { type ChatModelContext, ChatModelContextProvider } from '../chat/models/chatModelContext'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from '../utils/telemetry'
 import styles from './VSCodeStoryDecorator.module.css'
@@ -83,13 +83,13 @@ export function VSCodeDecorator(className: string | undefined, style?: CSSProper
 
         return (
             <div className={clsx(styles.container, className)} style={style}>
-                <TestAppWrapper>
+                <AppWrapperForTest>
                     <ChatModelContextProvider value={useDummyChatModelContext()}>
                         <TelemetryRecorderContext.Provider value={telemetryRecorder}>
                             {story()}
                         </TelemetryRecorderContext.Provider>
                     </ChatModelContextProvider>
-                </TestAppWrapper>
+                </AppWrapperForTest>
             </div>
         )
     }

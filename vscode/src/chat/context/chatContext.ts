@@ -76,11 +76,11 @@ export async function getChatContextItemsForMention(
         default: {
             telemetryRecorder?.withProvider('openctx', { id: mentionQuery.provider })
 
-            if (!openCtx.client) {
+            if (!openCtx.controller) {
                 return []
             }
 
-            const items = await openCtx.client.mentions(
+            const items = await openCtx.controller.mentions(
                 { query: mentionQuery.text },
                 // get mention items for the selected provider only.
                 { providerUri: mentionQuery.provider }

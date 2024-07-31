@@ -4,7 +4,15 @@ import {
     displayPathBasename,
 } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from 'cmdk'
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+    CommandLoading,
+} from 'cmdk'
 import type { ComponentProps, FunctionComponent } from 'react'
 import { type Mock, describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
@@ -61,6 +69,7 @@ const CONFIG: PromptEditorConfig = {
         CommandEmpty,
         CommandGroup,
         CommandItem,
+        CommandLoading,
     },
 }
 const Wrapper: FunctionComponent<{ children: React.ReactNode }> = ({ children }) => (
@@ -122,6 +131,21 @@ describe('MentionMenu', () => {
                 { wrapper: Wrapper }
             )
             expectMenu(container, ['>provider p1', 'item file file1.go', 'item file file2.ts'])
+        })
+
+        test('with error', () => {
+            const { container } = render(
+                <MentionMenu
+                    {...PROPS}
+                    data={{
+                        items: [ITEM_FILE1, ITEM_FILE2],
+                        providers: [],
+                        error: 'my-error',
+                    }}
+                />,
+                { wrapper: Wrapper }
+            )
+            expectMenu(container, ['>item file file1.go', 'item file file2.ts', '#Error: my-error'])
         })
 
         describe('single provider', () => {
