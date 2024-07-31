@@ -7,5 +7,5 @@ data class EditTask(
   val error: CodyError? = null,
   val selectionRange: Range,
   val instruction: String? = null,
+  val edits: List<TextEdit> 
 )
-

@@ -41,6 +41,7 @@ import { type Edit, computeDiff, makeDiffEditBuilderCompatible } from './line-di
 import { trackRejection } from './rejection-tracker'
 import type { FixupActor, FixupFileCollection, FixupTextChanged } from './roles'
 import { CodyTaskState, expandRangeToInsertedText, getMinimumDistanceToRangeBoundary } from './utils'
+import {  logError } from '@sourcegraph/cody-shared'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
@@ -757,6 +758,7 @@ export class FixupController
     }
 
     private async applyTask(task: FixupTask): Promise<void> {
+        logError('Agent',  "applyTask")
         if (task.state !== CodyTaskState.Applying) {
             return
         }

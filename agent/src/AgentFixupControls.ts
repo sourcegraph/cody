@@ -5,6 +5,11 @@ import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategie
 import { type Agent, errorToCodyError } from './agent'
 import type { EditTask } from './protocol-alias'
 import * as vscode from 'vscode'
+import { TextEdit } from './protocol-alias' // Adjust the import path as needed
+
+// import { TextEdit, ReplaceTextEdit, InsertTextEdit, DeleteTextEdit } from './protocol-alias' // Adjust the import path as needed
+// import { Edit } from '../../vscode/src/non-stop/line-diff'
+// import {  logError } from '@sourcegraph/cody-shared'
 
 export class AgentFixupControls implements FixupControlApplicator {
     constructor(
@@ -61,12 +66,53 @@ export class AgentFixupControls implements FixupControlApplicator {
     dispose() {}
 
     public static serialize(task: FixupTask): EditTask {
+        const textEdits: TextEdit[] = [
+            {
+                type: 'insert',
+                position: { line: 0, character: 0 },
+                value: 'Arbitrary text edit'
+            },
+            {
+                type: 'delete',
+                range: { start: { line: 1, character: 0 }, end: { line: 2, character: 0 } }
+            },
+            {
+                type: 'replace',
+                range: { start: { line: 3, character: 0 }, end: { line: 3, character: 10 } },
+                value: 'Replaced text'
+            }
+        ]
         return {
-            id: task.id,
+            id: "TestingIdJM",
             state: task.state,
             error: errorToCodyError(task.error),
             selectionRange: task.selectionRange,
             instruction: task.instruction?.toString().trim(),
+            edits: textEdits
         }
     }
 }
+
+// function convertEditToTextEdit(edit: Edit): TextEdit {
+//     switch (edit.type) {
+//         case 'insertion':
+//             return {
+//                 type: 'insert',
+//                 position: edit.range.start,
+//                 value: edit.text,
+//             } as InsertTextEdit
+//         case 'deletion':
+//             return {
+//                 type: 'delete',
+//                 range: edit.range,
+//             } as DeleteTextEdit
+//         case 'decoratedReplacement':
+//             return {
+//                 type: 'replace',
+//                 range: edit.range,
+//                 value: edit.text,
+//             } as ReplaceTextEdit
+//         default:
+//             throw new Error(`Unknown edit type: ${(edit as any).type}`)
+//     }
+// }

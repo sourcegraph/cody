@@ -1043,6 +1043,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         )
 
         this.registerAuthenticatedRequest('editCommands/code', params => {
+            console.warn("JM: editCommands/code request received")
             const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
             const args: ExecuteEditArguments = {
                 configuration: {

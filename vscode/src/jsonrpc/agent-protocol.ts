@@ -813,6 +813,7 @@ export interface EditTask {
     error?: CodyError | undefined | null
     selectionRange: Range
     instruction?: string | undefined | null
+    edits: TextEdit[]
 }
 
 export interface CodyError {
