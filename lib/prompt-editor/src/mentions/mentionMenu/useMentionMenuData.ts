@@ -32,9 +32,8 @@ export function useMentionMenuParams(): {
     // in case of remote-like providers such as remote repositories or remote files
     const debounceTime: number = isRemoteLikeProviderActive ? 300 : 10
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: biome bug, debounceTime is dynamic variable should be in deps list
-    const debouncedUpdateQuery = useCallback(
-        debounce((query: string | null) => setParams(prev => ({ ...prev, query })), debounceTime),
+    const debouncedUpdateQuery = useMemo(
+        () => debounce((query: string | null) => setParams(prev => ({ ...prev, query })), debounceTime),
         [debounceTime]
     )
 
