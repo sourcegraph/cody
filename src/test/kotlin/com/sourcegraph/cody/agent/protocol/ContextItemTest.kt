@@ -4,6 +4,8 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.intellij.openapi.util.SystemInfoRt
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.sourcegraph.cody.agent.protocol_generated.Position
+import com.sourcegraph.cody.agent.protocol_generated.Range
 import java.net.URI
 
 class ContextItemTest : BasePlatformTestCase() {

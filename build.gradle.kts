@@ -12,6 +12,7 @@ import java.util.EnumSet
 import java.util.jar.JarFile
 import java.util.zip.ZipFile
 import org.jetbrains.changelog.markdownToHTML
+import org.jetbrains.intellij.or
 import org.jetbrains.intellij.tasks.RunPluginVerifierTask.FailureLevel
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.incremental.deleteDirectoryContents
@@ -212,7 +213,8 @@ fun Test.sharedIntegrationTestConfig(buildCodyDir: File, mode: String) {
 
   val resourcesDir = project.file("src/integrationTest/resources")
   systemProperties(
-      "cody-agent.trace-path" to "$buildDir/sourcegraph/cody-agent-trace.json",
+      "cody-agent.trace-path" to
+          "${layout.buildDirectory.asFile.get()}/sourcegraph/cody-agent-trace.json",
       "cody-agent.directory" to buildCodyDir.parent,
       "sourcegraph.verbose-logging" to "true",
       "cody.autocomplete.enableFormatting" to
@@ -313,7 +315,7 @@ tasks {
     return destination
   }
 
-  val buildCodyDir = buildDir.resolve("sourcegraph").resolve("agent")
+  val buildCodyDir = layout.buildDirectory.asFile.get().resolve("sourcegraph").resolve("agent")
   fun buildCody(): File {
     if (!isForceAgentBuild && (buildCodyDir.listFiles()?.size ?: 0) > 0) {
       println("Cached $buildCodyDir")
@@ -400,7 +402,8 @@ tasks {
   // `./gradlew test` or when testing inside IntelliJ
   val agentProperties =
       mapOf<String, Any>(
-          "cody-agent.trace-path" to "$buildDir/sourcegraph/cody-agent-trace.json",
+          "cody-agent.trace-path" to
+              "${layout.buildDirectory.asFile.get()}/sourcegraph/cody-agent-trace.json",
           "cody-agent.directory" to buildCodyDir.parent,
           "sourcegraph.verbose-logging" to "true",
           "cody-agent.panic-when-out-of-sync" to
@@ -410,11 +413,12 @@ tasks {
           "cody.autocomplete.enableFormatting" to
               (project.property("cody.autocomplete.enableFormatting") ?: "true"))
 
-  fun getIdeaInstallDir(ideaVersion: String): File? {
+  fun getIdeaInstallDir(ideaVersion: String, ideaType: String): File? {
     val gradleHome = project.gradle.gradleUserHomeDir
-    val cacheDir = File(gradleHome, "caches/modules-2/files-2.1/com.jetbrains.intellij.idea/ideaIC")
+    val cacheDir =
+        File(gradleHome, "caches/modules-2/files-2.1/com.jetbrains.intellij.idea/idea$ideaType")
     val ideaDir = File(cacheDir, ideaVersion)
-    return ideaDir.walk().find { it.name == "ideaIC-$ideaVersion" }
+    return ideaDir.walk().find { it.name == "idea$ideaType-$ideaVersion" }
   }
 
   register("copyProtocol") { copyProtocol() }
@@ -496,13 +500,20 @@ tasks {
     agentProperties.forEach { (key, value) -> systemProperty(key, value) }
 
     val platformRuntimeVersion = project.findProperty("platformRuntimeVersion")
-    if (platformRuntimeVersion != null) {
+    val platformRuntimeType = project.findProperty("platformRuntimeType")
+    if (platformRuntimeVersion != null || platformRuntimeType != null) {
       val ideaInstallDir =
-          getIdeaInstallDir(platformRuntimeVersion.toString())
+          getIdeaInstallDir(
+              platformRuntimeVersion.or(project.property("platformVersion")).toString(),
+              platformRuntimeType.or(project.property("platformType")).toString())
               ?: throw GradleException(
-                  "Could not find IntelliJ install for $platformRuntimeVersion")
+                  "Could not find IntelliJ install for version: $platformRuntimeVersion")
       ideDir.set(ideaInstallDir)
     }
+    // TODO: we need to wait to switch to Platform Gradle Plugin 2.0.0 to be able to have separate
+    // runtime plugins
+    // https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1489
+    // val platformRuntimePlugins = project.findProperty("platformRuntimePlugins")
   }
 
   runPluginVerifier {
@@ -581,13 +592,16 @@ tasks {
 
   named<Copy>("processIntegrationTestResources") {
     from(sourceSets["integrationTest"].resources)
-    into("$buildDir/resources/integrationTest")
+    into("${layout.buildDirectory.asFile.get()}/resources/integrationTest")
     exclude("**/.idea/**")
     exclude("**/*.xml")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
   }
 
-  withType<Test> { systemProperty("idea.test.src.dir", "$buildDir/resources/integrationTest") }
+  withType<Test> {
+    systemProperty(
+        "idea.test.src.dir", "${layout.buildDirectory.asFile.get()}/resources/integrationTest")
+  }
 
   named("classpathIndexCleanup") { dependsOn("processIntegrationTestResources") }
 

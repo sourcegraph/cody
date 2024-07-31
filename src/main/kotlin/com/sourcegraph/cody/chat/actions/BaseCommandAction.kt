@@ -24,7 +24,8 @@ abstract class BaseCommandAction : BaseChatAction() {
     ApplicationManager.getApplication().assertIsDispatchThread()
     FileEditorManager.getInstance(project).selectedTextEditor?.let { editor ->
       val file = FileDocumentManager.getInstance().getFile(editor.document)
-      val protocolFile = file?.let { ProtocolTextDocument.fromVirtualFile(editor, it) } ?: return
+      val protocolFile =
+          file?.let { ProtocolTextDocument.fromVirtualEditorFile(editor, it) } ?: return
 
       ReadAction.nonBlocking(
               Callable { IgnoreOracle.getInstance(project).policyForUri(protocolFile.uri).get() })

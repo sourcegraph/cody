@@ -1,6 +1,8 @@
 package com.sourcegraph.cody.agent.protocol
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.sourcegraph.cody.agent.protocol_extensions.*
+import com.sourcegraph.cody.agent.protocol_generated.Position
 
 class PositionTest : BasePlatformTestCase() {
 

@@ -19,6 +19,7 @@
     </depends>
 
     <extensions defaultExtensionNs="com.intellij">
+        <highlightingPassFactory implementation="com.sourcegraph.cody.inspections.CodyFixHighlightPassFactory" order="last" />
         <projectService
                 serviceImplementation="com.sourcegraph.config.CodyProjectService"/>
         <applicationService

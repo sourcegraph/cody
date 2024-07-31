@@ -1,7 +1,7 @@
 package com.sourcegraph.cody.vscode;
 
-import com.sourcegraph.cody.agent.protocol.Position;
-import com.sourcegraph.cody.agent.protocol.Range;
+import com.sourcegraph.cody.agent.protocol_generated.Position;
+import com.sourcegraph.cody.agent.protocol_generated.Range;
 import java.net.URI;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;

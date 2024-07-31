@@ -2,8 +2,6 @@ package com.sourcegraph.cody.agent.protocol
 
 import com.intellij.codeInsight.codeVision.ui.popup.layouter.bottom
 import com.intellij.codeInsight.codeVision.ui.popup.layouter.right
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.DocumentEvent
@@ -11,6 +9,10 @@ import com.intellij.openapi.editor.event.SelectionEvent
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.sourcegraph.cody.agent.intellij_extensions.codyPosition
+import com.sourcegraph.cody.agent.intellij_extensions.codyRange
+import com.sourcegraph.cody.agent.protocol_extensions.Position
+import com.sourcegraph.cody.agent.protocol_generated.Range
 import java.awt.Point
 import java.nio.file.FileSystems
 import java.util.*
@@ -26,15 +28,7 @@ private constructor(
     val contentChanges: List<ProtocolTextDocumentContentChangeEvent>? = null,
     val testing: TestingParams? = null,
 ) {
-
-  init {
-    if (!ApplicationManager.getApplication().isDispatchThread) {
-      throw IllegalStateException("ProtocolTextDocument must be be created on EDT")
-    }
-  }
-
   companion object {
-
     @RequiresEdt
     private fun getTestingParams(
         uri: String,
@@ -162,12 +156,12 @@ private constructor(
     @RequiresEdt
     fun fromEditor(editor: Editor): ProtocolTextDocument? {
       val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
-      return fromVirtualFile(editor, file)
+      return fromVirtualEditorFile(editor, file)
     }
 
     @JvmStatic
     @RequiresEdt
-    fun fromVirtualFile(
+    fun fromVirtualEditorFile(
         editor: Editor,
         file: VirtualFile,
     ): ProtocolTextDocument {
@@ -183,6 +177,14 @@ private constructor(
     }
 
     @JvmStatic
+    fun fromVirtualFile(file: VirtualFile): ProtocolTextDocument {
+      val content = FileDocumentManager.getInstance().getDocument(file)?.text
+      val uri = uriFor(file)
+      return ProtocolTextDocument(
+          uri = uri, content = content, testing = getTestingParams(uri = uri, content = content))
+    }
+
+    @JvmStatic
     fun uriFor(file: VirtualFile): String {
       val uri = FileSystems.getDefault().getPath(file.path).toUri().toString()
       return uri.replace(Regex("file:///(\\w):/")) {
@@ -192,28 +194,4 @@ private constructor(
       }
     }
   }
-}
-
-private fun Document.codyPosition(offset: Int): Position {
-  val line = this.getLineNumber(offset)
-  val lineStartOffset = this.getLineStartOffset(line)
-  val character = offset - lineStartOffset
-  return Position(line, character)
-}
-
-private fun Document.codyRange(startOffset: Int, endOffset: Int): Range {
-  val startLine = this.getLineNumber(startOffset)
-  val lineStartOffset1 = this.getLineStartOffset(startLine)
-  val startCharacter = startOffset - lineStartOffset1
-
-  val endLine = this.getLineNumber(endOffset)
-  val lineStartOffset2 =
-      if (startLine == endLine) {
-        lineStartOffset1
-      } else {
-        this.getLineStartOffset(endLine)
-      }
-  val endCharacter = endOffset - lineStartOffset2
-
-  return Range(Position(startLine, startCharacter), Position(endLine, endCharacter))
 }

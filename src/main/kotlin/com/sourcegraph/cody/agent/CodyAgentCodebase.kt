@@ -31,7 +31,7 @@ class CodyAgentCodebase(val project: Project) {
       if (repositoryName != null && inferredUrl.getNow(null) != repositoryName) {
         inferredUrl.complete(repositoryName)
         CodyAgentService.withAgent(project) {
-          it.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
+          it.server.extensionConfiguration_didChange(ConfigUtil.getAgentConfiguration(project))
         }
       }
     }

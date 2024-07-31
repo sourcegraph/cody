@@ -31,7 +31,8 @@ import com.intellij.openapi.vfs.ex.temp.TempFileSystem
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.withScheme
-import com.sourcegraph.cody.agent.protocol.Range
+import com.sourcegraph.cody.agent.protocol_extensions.*
+import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.config.ConfigUtil
 import java.net.URI
 import java.net.URISyntaxException

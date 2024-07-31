@@ -2,8 +2,8 @@ package com.sourcegraph.cody.context
 
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.GetRepoIdsParam
 import com.sourcegraph.cody.agent.protocol.Repo
+import com.sourcegraph.cody.agent.protocol_generated.Graphql_GetRepoIdsParams
 import com.sourcegraph.vcs.CodebaseName
 import java.util.concurrent.CompletableFuture
 
@@ -23,9 +23,12 @@ object RemoteRepoUtils {
     }
     CodyAgentService.withAgent(project) { agent ->
       try {
-        val param = GetRepoIdsParam(codebaseNames.map { it.value }, codebaseNames.size)
-        val repos = agent.server.getRepoIds(param).get()
-        result.complete(repos?.repos ?: emptyList())
+        val param =
+            Graphql_GetRepoIdsParams(codebaseNames.map { it.value }, codebaseNames.size.toLong())
+        val repos = agent.server.graphql_getRepoIds(param).get()
+        result.complete(
+            repos?.repos?.map { reposParams -> Repo(reposParams.id, reposParams.name) }
+                ?: emptyList())
       } catch (e: Exception) {
         result.complete(emptyList())
       }

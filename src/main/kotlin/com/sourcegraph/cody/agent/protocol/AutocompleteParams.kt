@@ -1,5 +1,7 @@
 package com.sourcegraph.cody.agent.protocol
 
+import com.sourcegraph.cody.agent.protocol_generated.Position
+
 enum class AutocompleteTriggerKind(val value: String) {
   AUTOMATIC("Automatic"),
   INVOKE("Invoke"),

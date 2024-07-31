@@ -1,4 +1,4 @@
-@file:Suppress("FunctionName")
+@file:Suppress("FunctionName", "REDUNDANT_NULLABLE")
 
 package com.sourcegraph.cody.agent
 
@@ -11,13 +11,10 @@ import com.sourcegraph.cody.agent.protocol.ChatModelsParams
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.agent.protocol.ChatRestoreParams
 import com.sourcegraph.cody.agent.protocol.ChatSubmitMessageParams
-import com.sourcegraph.cody.agent.protocol.ClientInfo
 import com.sourcegraph.cody.agent.protocol.CompletionItemParams
 import com.sourcegraph.cody.agent.protocol.CurrentUserCodySubscription
 import com.sourcegraph.cody.agent.protocol.Event
 import com.sourcegraph.cody.agent.protocol.GetFeatureFlag
-import com.sourcegraph.cody.agent.protocol.GetRepoIdsParam
-import com.sourcegraph.cody.agent.protocol.GetRepoIdsResponse
 import com.sourcegraph.cody.agent.protocol.IgnorePolicySpec
 import com.sourcegraph.cody.agent.protocol.IgnoreTestParams
 import com.sourcegraph.cody.agent.protocol.IgnoreTestResponse
@@ -28,14 +25,8 @@ import com.sourcegraph.cody.agent.protocol.RemoteRepoHasParams
 import com.sourcegraph.cody.agent.protocol.RemoteRepoHasResponse
 import com.sourcegraph.cody.agent.protocol.RemoteRepoListParams
 import com.sourcegraph.cody.agent.protocol.RemoteRepoListResponse
-import com.sourcegraph.cody.agent.protocol.ServerInfo
 import com.sourcegraph.cody.agent.protocol.TelemetryEvent
-import com.sourcegraph.cody.agent.protocol_generated.EditTask
-import com.sourcegraph.cody.agent.protocol_generated.EditTask_AcceptParams
-import com.sourcegraph.cody.agent.protocol_generated.EditTask_CancelParams
-import com.sourcegraph.cody.agent.protocol_generated.EditTask_GetTaskDetailsParams
-import com.sourcegraph.cody.agent.protocol_generated.EditTask_RetryParams
-import com.sourcegraph.cody.agent.protocol_generated.EditTask_UndoParams
+import com.sourcegraph.cody.agent.protocol_generated.*
 import com.sourcegraph.cody.chat.ConnectionId
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
@@ -50,15 +41,36 @@ interface _SubsetGeneratedCodyAgentServer {
   // ========
   // Requests
   // ========
+  @JsonRequest("initialize") fun initialize(params: ClientInfo): CompletableFuture<ServerInfo>
+
   @JsonRequest("editTask/retry")
   fun editTask_retry(params: EditTask_RetryParams): CompletableFuture<EditTask>
 
   @JsonRequest("editTask/getTaskDetails")
   fun editTask_getTaskDetails(params: EditTask_GetTaskDetailsParams): CompletableFuture<EditTask>
 
-  // =============
-  // Notifications
-  // =============
+  @JsonRequest("diagnostics/publish")
+  fun diagnostics_publish(params: Diagnostics_PublishParams): CompletableFuture<Null?>
+
+  @JsonRequest("codeActions/provide")
+  fun codeActions_provide(
+      params: CodeActions_ProvideParams
+  ): CompletableFuture<CodeActions_ProvideResult>
+
+  @JsonRequest("codeActions/trigger")
+  fun codeActions_trigger(params: CodeActions_TriggerParams): CompletableFuture<EditTask>
+
+  @JsonRequest("graphql/getRepoIds")
+  fun graphql_getRepoIds(
+      params: Graphql_GetRepoIdsParams
+  ): CompletableFuture<Graphql_GetRepoIdsResult>
+
+  //  // =============
+  //  // Notifications
+  //  // =============
+
+  @JsonNotification("extensionConfiguration/didChange")
+  fun extensionConfiguration_didChange(params: ExtensionConfiguration)
 }
 
 // TODO: Requests waiting to be migrated & tested for compatibility. Avoid placing new protocol
@@ -70,9 +82,6 @@ interface _SubsetGeneratedCodyAgentServer {
  * works similar to JavaScript Proxy.
  */
 interface _LegacyAgentServer {
-  // Requests
-  @JsonRequest("initialize") fun initialize(clientInfo: ClientInfo): CompletableFuture<ServerInfo>
-
   @JsonRequest("shutdown") fun shutdown(): CompletableFuture<Void?>
 
   @JsonRequest("autocomplete/execute")
@@ -85,22 +94,19 @@ interface _LegacyAgentServer {
 
   @JsonRequest("graphql/currentUserId") fun currentUserId(): CompletableFuture<String>
 
-  @JsonRequest("graphql/getRepoIds")
-  fun getRepoIds(repoName: GetRepoIdsParam): CompletableFuture<GetRepoIdsResponse>
-
+  // TODO(CODY-2826): Would be nice if we can generate some set of "known" feature flags from the
+  // protocol
   @JsonRequest("featureFlags/getFeatureFlag")
   fun evaluateFeatureFlag(flagName: GetFeatureFlag): CompletableFuture<Boolean?>
 
+  // TODO(CODY-2827): To avoid having to pass annoying null values we should generate a default
+  // value
   @JsonRequest("graphql/getCurrentUserCodySubscription")
   fun getCurrentUserCodySubscription(): CompletableFuture<CurrentUserCodySubscription?>
 
-  // Notifications
   @JsonNotification("initialized") fun initialized()
 
   @JsonNotification("exit") fun exit()
-
-  @JsonNotification("extensionConfiguration/didChange")
-  fun configurationDidChange(document: ExtensionConfiguration)
 
   @JsonNotification("textDocument/didFocus")
   fun textDocumentDidFocus(document: ProtocolTextDocument)

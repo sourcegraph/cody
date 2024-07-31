@@ -8,6 +8,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.protocol.TextEdit
 import com.sourcegraph.cody.agent.protocol.WorkspaceEditParams
+import com.sourcegraph.cody.agent.protocol_extensions.toOffset
 import com.sourcegraph.utils.CodyEditorUtil
 
 @Service(Service.Level.PROJECT)

@@ -5,6 +5,9 @@ import com.intellij.openapi.fileEditor.FileEditorProvider
 import com.intellij.openapi.fileEditor.impl.text.TextEditorProvider
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.sourcegraph.cody.agent.protocol_extensions.PositionFactory
+import com.sourcegraph.cody.agent.protocol_generated.Position
+import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.cody.listeners.EditorChangesBus
 import junit.framework.TestCase
 
@@ -27,7 +30,7 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
   }
 
   fun test_emptySelection() {
-    val protocolTextFile = ProtocolTextDocument.fromVirtualFile(myFixture.editor, file)
+    val protocolTextFile = ProtocolTextDocument.fromVirtualEditorFile(myFixture.editor, file)
     assertEquals("file:///src/test.txt", protocolTextFile.uri)
     assertEquals(content, protocolTextFile.content)
     assertEquals(Range(Position(0, 0), Position(0, 0)), protocolTextFile.selection)
@@ -72,7 +75,7 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
     myFixture.openFileInEditor(emptyFile)
     assertEquals(
         Range(Position(0, 0), Position(0, 0)),
-        ProtocolTextDocument.fromVirtualFile(myFixture.editor, emptyFile).selection)
+        ProtocolTextDocument.fromVirtualEditorFile(myFixture.editor, emptyFile).selection)
   }
 
   fun test_selectionListener() {
@@ -120,8 +123,8 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
       val offset = if (isAppend) currentContent.length else 0
       assertEquals(
           Range(
-              Position.fromOffset(myFixture.editor.document, offset),
-              Position.fromOffset(myFixture.editor.document, offset),
+              PositionFactory.fromOffset(myFixture.editor.document, offset),
+              PositionFactory.fromOffset(myFixture.editor.document, offset),
           ),
           lastTextDocument!!.contentChanges!!.first().range)
     }
@@ -141,8 +144,10 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
 
       val removalStartOffset = myFixture.editor.document.text.indexOf(removedContent)
       val removalEndOffset = removalStartOffset + removedContent.length
-      val removalStartPosition = Position.fromOffset(myFixture.editor.document, removalStartOffset)
-      val removalEndPosition = Position.fromOffset(myFixture.editor.document, removalEndOffset)
+      val removalStartPosition =
+          PositionFactory.fromOffset(myFixture.editor.document, removalStartOffset)
+      val removalEndPosition =
+          PositionFactory.fromOffset(myFixture.editor.document, removalEndOffset)
 
       WriteAction.run<RuntimeException> { file.setBinaryContent(newContent.toByteArray()) }
 
@@ -171,8 +176,8 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
 
       val startOffset = currentContent.indexOf(oldSubstring)
       val endOffset = startOffset + oldSubstring.length
-      val startPosition = Position.fromOffset(myFixture.editor.document, startOffset)
-      val endPosition = Position.fromOffset(myFixture.editor.document, endOffset)
+      val startPosition = PositionFactory.fromOffset(myFixture.editor.document, startOffset)
+      val endPosition = PositionFactory.fromOffset(myFixture.editor.document, endOffset)
 
       WriteAction.run<RuntimeException> { file.setBinaryContent(newContent.toByteArray()) }
 
@@ -198,8 +203,8 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
       val currentContent = myFixture.editor.document.text
       val startOffset = currentContent.indexOf(afterSubstring)
       val endOffset = startOffset
-      val startPosition = Position.fromOffset(myFixture.editor.document, startOffset)
-      val endPosition = Position.fromOffset(myFixture.editor.document, endOffset)
+      val startPosition = PositionFactory.fromOffset(myFixture.editor.document, startOffset)
+      val endPosition = PositionFactory.fromOffset(myFixture.editor.document, endOffset)
 
       val newContent =
           StringBuilder(currentContent).apply { insert(startOffset, insertSubstring) }.toString()

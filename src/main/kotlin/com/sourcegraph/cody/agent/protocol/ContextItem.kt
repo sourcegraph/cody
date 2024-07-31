@@ -8,6 +8,8 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonSerializer
 import com.intellij.openapi.vfs.StandardFileSystems
 import com.intellij.openapi.vfs.VfsUtil
+import com.sourcegraph.cody.agent.protocol_extensions.*
+import com.sourcegraph.cody.agent.protocol_generated.Range
 import java.io.File
 import java.lang.reflect.Type
 import java.net.URI

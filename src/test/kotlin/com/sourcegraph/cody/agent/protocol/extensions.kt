@@ -1,6 +1,8 @@
 package com.sourcegraph.cody.agent.protocol
 
 import com.intellij.openapi.editor.Editor
+import com.sourcegraph.cody.agent.protocol_extensions.toOffset
+import com.sourcegraph.cody.agent.protocol_generated.Range
 import junit.framework.TestCase
 
 fun Editor.testing_selectSubstring(substring: String) {

@@ -11,6 +11,7 @@ import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.ContextItem
 import com.sourcegraph.cody.agent.protocol.ContextItemFile
 import com.sourcegraph.cody.agent.protocol.Speaker
+import com.sourcegraph.cody.agent.protocol_extensions.*
 import com.sourcegraph.cody.chat.ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH
 import com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN
 import com.sourcegraph.cody.ui.AccordionSection

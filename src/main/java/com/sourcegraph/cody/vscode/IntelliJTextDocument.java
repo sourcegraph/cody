@@ -8,8 +8,9 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.sourcegraph.cody.agent.protocol.Position;
-import com.sourcegraph.cody.agent.protocol.Range;
+import com.sourcegraph.cody.agent.protocol_extensions.PositionKt;
+import com.sourcegraph.cody.agent.protocol_generated.Position;
+import com.sourcegraph.cody.agent.protocol_generated.Range;
 import java.net.URI;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
@@ -40,7 +41,7 @@ public class IntelliJTextDocument implements TextDocument {
 
   @Override
   public int offsetAt(Position position) {
-    return position.toOffset(this.editor.getDocument());
+    return PositionKt.toOffset(position, this.editor.getDocument());
   }
 
   @Override
@@ -52,7 +53,7 @@ public class IntelliJTextDocument implements TextDocument {
   public String getText(Range range) {
     return this.editor
         .getDocument()
-        .getText(TextRange.create(offsetAt(range.start), offsetAt(range.end)));
+        .getText(TextRange.create(offsetAt(range.getStart()), offsetAt(range.getEnd())));
   }
 
   @Override

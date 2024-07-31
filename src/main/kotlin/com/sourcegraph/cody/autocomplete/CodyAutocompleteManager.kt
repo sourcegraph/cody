@@ -34,11 +34,12 @@ import com.sourcegraph.cody.agent.protocol.AutocompleteTriggerKind
 import com.sourcegraph.cody.agent.protocol.CompletionItemParams
 import com.sourcegraph.cody.agent.protocol.ErrorCode
 import com.sourcegraph.cody.agent.protocol.ErrorCodeUtils.toErrorCode
-import com.sourcegraph.cody.agent.protocol.Position
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument.Companion.uriFor
-import com.sourcegraph.cody.agent.protocol.Range
 import com.sourcegraph.cody.agent.protocol.RateLimitError.Companion.toRateLimitError
 import com.sourcegraph.cody.agent.protocol.SelectedCompletionInfo
+import com.sourcegraph.cody.agent.protocol_extensions.Position
+import com.sourcegraph.cody.agent.protocol_generated.Position
+import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRendererType
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteBlockElementRenderer
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
@@ -238,7 +239,7 @@ class CodyAutocompleteManager {
                 SelectedCompletionInfo(
                     lookupString,
                     if (startPosition < 0) Range(position, position)
-                    else Range(Position(lineNumber.toLong(), startPosition.toLong()), position)))
+                    else Range(Position(lineNumber, startPosition), position)))
     notifyApplication(project, CodyStatus.AutocompleteInProgress)
 
     val resultOuter = CompletableFuture<Void?>()
