@@ -19,7 +19,6 @@ import com.intellij.openapi.keymap.KeymapManager
 import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
@@ -28,15 +27,18 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.MessageBusConnection
 import com.intellij.util.ui.ImageUtil
 import com.intellij.util.ui.JBUI
+import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
+import com.sourcegraph.cody.agent.protocol.InlineEditParams
 import com.sourcegraph.cody.agent.protocol.ModelUsage
+import com.sourcegraph.cody.agent.protocol_generated.EditTask
+import com.sourcegraph.cody.agent.protocol_generated.EditTask_RetryParams
 import com.sourcegraph.cody.chat.PromptHistory
 import com.sourcegraph.cody.chat.ui.LlmDropdown
 import com.sourcegraph.cody.edit.EditUtil.namedButton
 import com.sourcegraph.cody.edit.EditUtil.namedLabel
 import com.sourcegraph.cody.edit.EditUtil.namedPanel
-import com.sourcegraph.cody.edit.sessions.EditCodeSession
-import com.sourcegraph.cody.edit.sessions.FixupSession
+import com.sourcegraph.cody.edit.actions.EditCodeAction
 import com.sourcegraph.cody.ui.FrameMover
 import com.sourcegraph.cody.ui.TextAreaHistoryManager
 import java.awt.BorderLayout
@@ -74,17 +76,19 @@ import javax.swing.event.CaretListener
 
 /** Pop up a user interface for giving Cody instructions to fix up code at the cursor. */
 class EditCommandPrompt(
-    val controller: FixupService,
+    val project: Project,
     val editor: Editor,
     dialogTitle: String,
-    instruction: String? = null
-) : JFrame(), Disposable, FixupService.ActiveFixupSessionStateListener, DataProvider {
+    private val previousEdit: EditTask? = null
+) : JFrame(), Disposable, DataProvider {
 
   private val logger = Logger.getInstance(EditCommandPrompt::class.java)
 
   private val offset = editor.caretModel.primaryCaret.offset
 
   private var connection: MessageBusConnection? = null
+
+  private var model: String? = previousEdit?.model
 
   private val isDisposed: AtomicBoolean = AtomicBoolean(false)
 
@@ -136,17 +140,18 @@ class EditCommandPrompt(
       }
 
   private val instructionsField =
-      InstructionsInputTextArea(this).apply { text = instruction ?: lastPrompt }
+      InstructionsInputTextArea(this).apply { text = previousEdit?.instruction ?: lastPrompt }
 
   private val historyManager = TextAreaHistoryManager(instructionsField, promptHistory)
 
   private val llmDropdown =
       LlmDropdown(
               modelUsage = ModelUsage.EDIT,
-              project = controller.project,
-              onSetSelectedItem = {},
+              project = project,
+              onSetSelectedItem = { model = it.model },
               this,
-              chatModelProviderFromState = null)
+              chatModelProviderFromState = null,
+              model = model)
           .apply {
             foreground = boldLabelColor()
             background = textFieldBackground()
@@ -252,13 +257,8 @@ class EditCommandPrompt(
   init {
     ApplicationManager.getApplication().assertIsDispatchThread()
 
-    // Register with FixupService as a failsafe if the project closes. Normally we're disposed
-    // sooner, when the dialog is closed or focus is lost.
-    Disposer.register(controller, this)
     connection = ApplicationManager.getApplication().messageBus.connect(this)
     registerListeners()
-    // Don't reset the session, just any previous instructions dialog.
-    controller.currentEditPrompt.get()?.performCancelAction()
 
     setupTextField()
     setupKeyListener()
@@ -280,12 +280,10 @@ class EditCommandPrompt(
     updateDialogPosition()
     isVisible = true
 
-    val old = controller.project.getUserData(EDIT_COMMAND_PROMPT_KEY)
-    old?.dispose()
-    controller.project.putUserData(EDIT_COMMAND_PROMPT_KEY, this)
+    project.putUserData(EDIT_COMMAND_PROMPT_KEY, this)
   }
 
-  fun isOkActionEnabled() = okButtonGroup.isEnabled
+  fun isOkActionEnabled() = okButtonGroup.isEnabled && model != null
 
   private fun updateDialogPosition() {
     // Convert caret position to screen coordinates.
@@ -316,8 +314,6 @@ class EditCommandPrompt(
     // Close dialog if window loses focus.
     addWindowFocusListener(windowFocusListener)
     addFocusListener(focusListener)
-
-    FixupService.getInstance(controller.project).addListener(this)
   }
 
   override fun setBounds(x: Int, y: Int, width: Int, height: Int) {
@@ -352,9 +348,7 @@ class EditCommandPrompt(
 
   @RequiresEdt
   private fun updateOkButtonState() {
-    okButtonGroup.isEnabled =
-        instructionsField.text.isNotBlank() &&
-            !FixupService.getInstance(controller.project).isEditInProgress()
+    okButtonGroup.isEnabled = instructionsField.text.isNotBlank()
   }
 
   @RequiresEdt
@@ -502,37 +496,38 @@ class EditCommandPrompt(
         performCancelAction()
         return
       }
-      val activeSession = controller.getActiveSession()
       historyManager.addPrompt(text)
       if (editor.project == null) {
         val msg = "Null project for new edit session"
-        controller.getActiveSession()?.showErrorGroup(msg)
         logger.warn(msg)
         return
       }
 
-      activeSession?.let { session ->
-        session.afterSessionFinished {
-          startEditCodeSession(text, if (session.isInserted) "insert" else "edit")
-        }
-        session.undo()
-      } ?: run { startEditCodeSession(text) }
+      val currentModel = model
+      if (currentModel == null) {
+        logger.warn("Model for new edit cannot be null")
+        return
+      }
+
+      CodyAgentService.withAgent(project) { agent ->
+        val result =
+            if (previousEdit != null) {
+              val params =
+                  EditTask_RetryParams(
+                      previousEdit.id,
+                      text,
+                      currentModel,
+                      EditTask_RetryParams.ModeEnum.Edit,
+                      previousEdit.selectionRange)
+              agent.server.editTask_retry(params).get()
+            } else {
+              agent.server.commandsEdit(InlineEditParams(text, currentModel, "edit")).get()
+            }
+        EditCodeAction.completedEditTasks[result.id] = result
+      }
     } finally {
       performCancelAction()
     }
-  }
-
-  private fun validateProject(session: FixupSession?): Boolean {
-    return if (editor.project == null) {
-      // TODO move these to Cody bundle
-      session?.showErrorGroup("Error initiating Code Edit: Could not find current Project")
-      logger.warn("Project was null when trying to add an edit session")
-      false
-    } else true
-  }
-
-  private fun startEditCodeSession(text: String, mode: String = "edit") {
-    runInEdt { EditCodeSession(controller, editor, text, llmDropdown.item, mode) }
   }
 
   private fun makeCornerShape(width: Int, height: Int): RoundRectangle2D {
@@ -541,7 +536,6 @@ class EditCommandPrompt(
   }
 
   override fun dispose() {
-    controller.project.putUserData(EDIT_COMMAND_PROMPT_KEY, null)
     if (!isDisposed.get()) {
       try {
         unregisterListeners()
@@ -611,30 +605,15 @@ class EditCommandPrompt(
     /** Returns a compact symbol representation of the action's keyboard shortcut, if any. */
     @JvmStatic
     fun getShortcutDisplayString(actionId: String): String? {
-      fun getFirstShortcut(id: String): String? {
-        return KeymapManager.getInstance().activeKeymap.getShortcuts(id).firstOrNull()?.let {
-          KeymapUtil.getShortcutText(it)
-        }
-      }
-
-      return when (actionId) {
-        "cody.editCodeAction",
-        "cody.inlineEditRetryAction" -> getFirstShortcut("cody.editCodeAction")
-        "cody.inlineEditCancelAction",
-        "cody.inlineEditUndoAction",
-        "cody.inlineEditDismissAction" -> getFirstShortcut("cody.editCancelOrUndoAction")
-        else -> getFirstShortcut(actionId)
+      return KeymapManager.getInstance().activeKeymap.getShortcuts(actionId).firstOrNull()?.let {
+        KeymapUtil.getShortcutText(it)
       }
     }
   }
 
-  override fun fixupSessionStateChanged(isInProgress: Boolean) {
-    runInEdt { okButtonGroup.isEnabled = !isInProgress }
-  }
-
   override fun getData(dataId: String): Any? {
     if (CommonDataKeys.PROJECT.`is`(dataId)) {
-      return controller.project
+      return project
     }
     return null
   }

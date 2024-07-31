@@ -16,13 +16,14 @@ import com.intellij.testFramework.EditorTestUtil
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.testFramework.runInEdtAndWait
-import com.intellij.util.messages.Topic
 import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.protocol_generated.ProtocolCodeLens
 import com.sourcegraph.cody.config.CodyPersistentAccountsHost
 import com.sourcegraph.cody.config.SourcegraphServerPath
-import com.sourcegraph.cody.edit.CodyInlineEditActionNotifier
-import com.sourcegraph.cody.edit.FixupService
-import com.sourcegraph.cody.edit.sessions.FixupSession
+import com.sourcegraph.cody.edit.LensListener
+import com.sourcegraph.cody.edit.LensesService
+import com.sourcegraph.cody.edit.widget.LensAction
+import com.sourcegraph.cody.edit.widget.LensWidgetGroup
 import com.sourcegraph.config.ConfigUtil
 import java.io.File
 import java.nio.file.Paths
@@ -30,25 +31,23 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 
-open class CodyIntegrationTextFixture : BasePlatformTestCase() {
+open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
   private val logger = Logger.getInstance(CodyIntegrationTextFixture::class.java)
+  private val lensSubscribers =
+      mutableListOf<
+          Pair<(List<ProtocolCodeLens>) -> Boolean, CompletableFuture<LensWidgetGroup?>>>()
 
   override fun setUp() {
     super.setUp()
+    myProject = project
     configureFixture()
     checkInitialConditions()
-    myProject = project
+    LensesService.getInstance(project).addListener(this)
   }
 
   override fun tearDown() {
     try {
-      FixupService.getInstance(myFixture.project).getActiveSession()?.apply {
-        try {
-          dispose()
-        } catch (x: Exception) {
-          logger.warn("Error shutting down session", x)
-        }
-      }
+      LensesService.getInstance(project).removeListener(this)
       CodyAgentService.getInstance(myFixture.project).apply {
         try {
           stopAgent(project)
@@ -192,11 +191,6 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase() {
     }
   }
 
-  protected fun activeSession(): FixupSession {
-    assertActiveSession()
-    return FixupService.getInstance(project).getActiveSession()!!
-  }
-
   protected fun assertNoInlayShown() {
     runInEdtAndWait {
       PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
@@ -214,49 +208,63 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase() {
     }
   }
 
-  protected fun assertNoActiveSession() {
-    assertNull(
-        "NO active session was expected", FixupService.getInstance(project).getActiveSession())
-  }
-
-  protected fun assertActiveSession() {
-    assertNotNull(
-        "Active session was expected", FixupService.getInstance(project).getActiveSession())
-  }
-
-  protected fun runAndWaitForNotifications(
-      actionId: String,
-      vararg topic: Topic<CodyInlineEditActionNotifier>
+  override fun onLensesUpdate(
+      lensWidgetGroup: LensWidgetGroup?,
+      codeLenses: List<ProtocolCodeLens>
   ) {
-    val futures = topic.associateWith { subscribeToTopic(it) }
-    triggerAction(actionId)
-    futures.forEach { (t, f) ->
-      try {
-        f.get()
-      } catch (e: Exception) {
-        assertTrue(
-            "Error while awaiting ${t.displayName} notification: ${e.localizedMessage}", false)
+    synchronized(lensSubscribers) {
+      lensSubscribers.removeAll { (checkFunc, future) ->
+        val hasLensAppeared = checkFunc(codeLenses)
+        if (hasLensAppeared) future.complete(lensWidgetGroup)
+        hasLensAppeared
       }
     }
   }
 
-  // Returns a future that completes when the topic is published.
-  private fun subscribeToTopic(
-      topic: Topic<CodyInlineEditActionNotifier>,
-  ): CompletableFuture<Void> {
-    val future = CompletableFuture<Void>().orTimeout(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-    project.messageBus
-        .connect()
-        .subscribe(
-            topic,
-            object : CodyInlineEditActionNotifier {
-              override fun afterAction() {
-                logger.warn("Notification sent for topic '${topic.displayName}'")
-                future.complete(null)
-              }
-            })
-    logger.warn("Subscribed to topic: $topic")
-    return future
+  fun runAndWaitForLenses(actionId: String, actionLensId: String): LensWidgetGroup? {
+    val future = CompletableFuture<LensWidgetGroup?>()
+    val check = { codeLens: List<ProtocolCodeLens> ->
+      codeLens.any { it.command?.command == actionLensId }
+    }
+    lensSubscribers.add(check to future)
+
+    triggerAction(actionId)
+
+    try {
+      return future.get(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+    } catch (e: Exception) {
+      val stackTrace = e.stackTrace.joinToString("\n") { it.toString() }
+      assertTrue(
+          "Error while awaiting condition after action $actionId: ${e.localizedMessage}\n$stackTrace",
+          false)
+      throw e
+    }
+  }
+
+  fun runLensAction(lensWidgetGroup: LensWidgetGroup, actionLensId: String): LensWidgetGroup? {
+    val future = CompletableFuture<LensWidgetGroup?>()
+    val check = { codeLens: List<ProtocolCodeLens> -> codeLens.isEmpty() }
+    lensSubscribers.add(check to future)
+
+    runInEdtAndWait {
+      val action: LensAction? =
+          lensWidgetGroup.widgets.filterIsInstance<LensAction>().find {
+            it.actionId == actionLensId
+          }
+      PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+      assertTrue("Lens action $actionLensId should be available", action != null)
+      action?.triggerAction(myFixture.editor)
+    }
+
+    try {
+      return future.get(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+    } catch (e: Exception) {
+      val stackTrace = e.stackTrace.joinToString("\n") { it.toString() }
+      assertTrue(
+          "Error while awaiting condition after lens action $actionLensId: ${e.localizedMessage}\n$stackTrace",
+          false)
+      throw e
+    }
   }
 
   protected fun hasJavadocComment(text: String): Boolean {

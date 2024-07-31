@@ -11,9 +11,12 @@ import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.openapi.keymap.KeymapManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.config.CodyAuthenticationManager
-import com.sourcegraph.cody.edit.FixupService
+import com.sourcegraph.cody.ignore.IgnoreOracle
+import com.sourcegraph.cody.ignore.IgnorePolicy
 import com.sourcegraph.config.ConfigUtil
+import com.sourcegraph.utils.CodyEditorUtil
 import java.awt.Font
 import java.awt.Graphics
 import java.awt.Graphics2D
@@ -23,24 +26,21 @@ import java.awt.geom.GeneralPath
 import java.util.Locale
 
 class CodySelectionInlayManager(val project: Project) {
-
   private var currentInlay: Inlay<*>? = null
 
   private val disposable = Disposer.newDisposable()
 
   fun handleSelectionChanged(editor: Editor, event: SelectionEvent) {
     clearInlay()
-    val service = FixupService.getInstance(project)
-    // Don't spam with notifications as we're selecting code.
-    if (!service.isEligibleForInlineEdit(editor, verbose = false)) {
+
+    if (!ConfigUtil.isCodyEnabled() ||
+        !CodyAgentService.isConnected(project) ||
+        !ConfigUtil.isCodyUIHintsEnabled() ||
+        !CodyEditorUtil.isEditorValidForAutocomplete(editor) ||
+        CodyAuthenticationManager.getInstance(project).hasNoActiveAccount() ||
+        IgnoreOracle.getInstance(project).policyForEditor(editor) != IgnorePolicy.USE) {
       return
     }
-    // Don't show it if we're in the middle of an edit.
-    if (service.getActiveSession() != null) {
-      return
-    }
-    if (!ConfigUtil.isCodyUIHintsEnabled()) return // User-disabled.
-    if (CodyAuthenticationManager.getInstance(project).hasNoActiveAccount()) return
 
     val startOffset = event.newRange.startOffset
     val endOffset = event.newRange.endOffset

@@ -3,6 +3,8 @@ package com.sourcegraph.cody.agent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.cody.agent.protocol.*;
+import com.sourcegraph.cody.agent.protocol_generated.DisplayCodeLensParams;
+import com.sourcegraph.cody.agent.protocol_generated.EditTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -36,6 +38,9 @@ public class CodyAgentClient {
   // Callback for the "editTask/didDelete" notification from the agent.
   @Nullable Consumer<EditTask> onEditTaskDidDelete;
 
+  // Callback for the "editTask/codeLensesDisplay" notification from the agent.
+  @Nullable Consumer<DisplayCodeLensParams> onCodeLensesDisplay;
+
   // Callback for the "textDocument/edit" request from the agent.
   @Nullable Function<TextDocumentEditParams, Boolean> onTextDocumentEdit;
 
@@ -58,6 +63,11 @@ public class CodyAgentClient {
   @JsonNotification("editTask/didDelete")
   public CompletableFuture<Void> editTaskDidDelete(EditTask params) {
     return acceptOnEventThread("editTask/didDelete", onEditTaskDidDelete, params);
+  }
+
+  @JsonNotification("codeLenses/display")
+  public void codeLensesDisplay(DisplayCodeLensParams params) {
+    acceptOnEventThread("codeLenses/display", onCodeLensesDisplay, params);
   }
 
   @Nullable Consumer<Void> onRemoteRepoDidChange;

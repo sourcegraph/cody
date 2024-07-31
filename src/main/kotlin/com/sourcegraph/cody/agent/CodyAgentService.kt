@@ -2,7 +2,6 @@ package com.sourcegraph.cody.agent
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
@@ -12,8 +11,8 @@ import com.intellij.util.net.HttpConfigurable
 import com.sourcegraph.cody.chat.AgentChatSessionService
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.context.RemoteRepoSearcher
-import com.sourcegraph.cody.edit.FixupService
-import com.sourcegraph.cody.edit.sessions.CodyEditingNotAvailableException
+import com.sourcegraph.cody.edit.EditService
+import com.sourcegraph.cody.edit.LensesService
 import com.sourcegraph.cody.error.CodyConsole
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.cody.listeners.CodyFileEditorListener
@@ -70,44 +69,23 @@ class CodyAgentService(private val project: Project) : Disposable {
         }
       }
 
-      agent.client.onEditTaskDidUpdate = Consumer { task ->
-        FixupService.getInstance(project).getActiveSession()?.update(task)
-      }
-
-      agent.client.onEditTaskDidDelete = Consumer { params ->
-        FixupService.getInstance(project).getActiveSession()?.let {
-          if (params.id == it.taskId) it.dispose()
-        }
-      }
-
       agent.client.onWorkspaceEdit = Function { params ->
-        val activeSession = FixupService.getInstance(project).getActiveSession()
         try {
-          activeSession?.performWorkspaceEdit(params)
-          true
-        } catch (e: CodyEditingNotAvailableException) {
-          runInEdt { EditingNotAvailableNotification().notify(project) }
-          activeSession?.dispose()
-          false
+          EditService.getInstance(project).performWorkspaceEdit(params)
         } catch (e: RuntimeException) {
-          activeSession?.dispose()
           logger.error(e)
           false
         }
       }
 
+      agent.client.onCodeLensesDisplay = Consumer { params ->
+        LensesService.getInstance(project).updateLenses(params.uri, params.codeLenses)
+      }
+
       agent.client.onTextDocumentEdit = Function { params ->
-        val activeSession = FixupService.getInstance(project).getActiveSession()
         try {
-          activeSession?.updateEditorIfNeeded(params.uri)
-          activeSession?.performInlineEdits(params.edits)
-          true
-        } catch (e: CodyEditingNotAvailableException) {
-          runInEdt { EditingNotAvailableNotification().notify(project) }
-          activeSession?.dispose()
-          false
+          EditService.getInstance(project).performTextEdits(params.uri, params.edits)
         } catch (e: RuntimeException) {
-          activeSession?.dispose()
           logger.error(e)
           false
         }

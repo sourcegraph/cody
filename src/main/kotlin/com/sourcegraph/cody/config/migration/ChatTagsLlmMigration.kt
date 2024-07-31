@@ -39,8 +39,8 @@ object ChatTagsLlmMigration {
     }
   }
 
-  fun addTagIf(llm: LLMState, tag: String, condition: Boolean?) {
-    if (condition ?: false && !llm.tags.contains(tag)) {
+  private fun addTagIf(llm: LLMState, tag: String, condition: Boolean?) {
+    if (condition == true && !llm.tags.contains(tag)) {
       llm.tags.add(tag)
     }
   }

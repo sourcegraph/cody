@@ -45,7 +45,7 @@ sealed class ContextItem {
     if (pathComponents.size > 3) {
       return "...${File.separator}${
         pathComponents.subList(pathComponents.size - 3, pathComponents.size).joinToString(
-          File.separator
+            File.separator
         )
       }"
     }

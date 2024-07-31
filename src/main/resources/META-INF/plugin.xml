@@ -214,7 +214,7 @@
                         class="com.sourcegraph.cody.edit.actions.TestCodeAction"
                         text="Generate Unit Tests"
                         description="Generates unit tests for the selected code">
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt G" keymap="$default"/>
+                    <keyboard-shortcut replace-all="true" first-keystroke="alt G" keymap="$default"/>
                     <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt G" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Generate Unit Tests"/>
                 </action>
@@ -224,87 +224,74 @@
                         class="com.sourcegraph.cody.edit.actions.DocumentCodeAction"
                         text="Document Code"
                         description="Documents the selected code">
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt H" keymap="$default"/>
+                    <keyboard-shortcut replace-all="true" first-keystroke="alt H" keymap="$default"/>
                     <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt H" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Document Code"/>
                 </action>
 
                 <action id="cody.editCodeAction"
                         icon="/icons/edit/edit_code.svg"
-                        class="com.sourcegraph.cody.edit.actions.EditOpenOrRetryAction"
+                        class="com.sourcegraph.cody.edit.actions.EditCodeAction"
                         description="Opens the Edit Code dialog"
                         text="Edit Code...">
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt COMMA" keymap="$default"/>
+                    <keyboard-shortcut replace-all="true" first-keystroke="alt ENTER" keymap="$default"/>
                     <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt ENTER" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Edit Code..."/>
                 </action>
 
                 <!-- Lens widget actions -->
-                <action id="cody.inlineEditAcceptAction"
-                        class="com.sourcegraph.cody.edit.actions.EditAcceptAction"
+                <action id="cody.fixup.codelens.accept"
+                        class="com.sourcegraph.cody.edit.actions.lenses.EditAcceptAction"
                         text="Accept Edit"
                         description="Accept the fixup">
-                    <!-- Intended as ctrl shift PLUS but that is not recognized by IntelliJ. -->
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift EQUALS" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift EQUALS" keymap="Mac OS X 10.5+"/>
+                    <keyboard-shortcut replace-all="true" first-keystroke="alt A" keymap="$default"/>
+                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt A" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Accept Edit"/>
                 </action>
 
-                <action id="cody.inlineEditCancelAction"
-                        class="com.sourcegraph.cody.edit.actions.EditCancelAction"
+                <action id="cody.fixup.codelens.cancel"
+                        class="com.sourcegraph.cody.edit.actions.lenses.EditCancelAction"
                         text="Cancel Edit"
                         description="Cancel the fixup">
                     <override-text place="GoToAction" text="Cody: Cancel Edit"/>
+                    <keyboard-shortcut replace-all="true" first-keystroke="alt Z" keymap="$default"/>
+                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt Z" keymap="Mac OS X 10.5+"/>
                 </action>
 
-                <action id="cody.inlineEditRetryAction"
-                        class="com.sourcegraph.cody.edit.actions.EditRetryAction"
+                <action id="cody.fixup.codelens.retry"
+                        class="com.sourcegraph.cody.edit.actions.lenses.EditRetryAction"
                         text="Retry Edit"
                         description="Retry the fixup">
-                    <!-- Key shortcut is handled by cody.editCodeAction, which converts to a Retry if Accept is showing. -->
+                    <keyboard-shortcut replace-all="true" first-keystroke="alt R" keymap="$default"/>
+                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt T" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Retry Edit"/>
                 </action>
 
-                <action id="cody.inlineEditUndoAction"
-                        class="com.sourcegraph.cody.edit.actions.EditUndoAction"
+                <action id="cody.fixup.codelens.undo"
+                        class="com.sourcegraph.cody.edit.actions.lenses.EditUndoAction"
                         text="Undo Edit"
                         description="Undo the fixup">
                     <override-text place="GoToAction" text="Cody: Undo Edit"/>
+                    <keyboard-shortcut replace-all="true" first-keystroke="alt X" keymap="$default"/>
+                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt X"
+                                       keymap="Mac OS X 10.5+"/>
                 </action>
 
-                <action id="cody.editShowDiffAction"
-                        class="com.sourcegraph.cody.edit.EditShowDiffAction"
+                <action id="cody.fixup.codelens.diff"
+                        class="com.sourcegraph.cody.edit.actions.lenses.EditShowDiffAction"
                         text="Show Diff"
                         description="Show a diff view of the fixup">
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt D" keymap="$default"/>
+                    <keyboard-shortcut replace-all="true" first-keystroke="alt D" keymap="$default"/>
                     <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt K" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Show Diff"/>
                 </action>
 
-                <action id="cody.inlineEditDismissAction"
-                        class="com.sourcegraph.cody.edit.actions.EditDismissAction"
-                        text="Dismiss"
-                        description="Dismisses the inline error message">
-                    <override-text place="GoToAction" text="Cody: Dismiss"/>
-                </action>
-
                 <action id="cody.inlineEditEditCode"
                         text="Edit Code"
-                        class="com.sourcegraph.cody.edit.InlineEditPromptEditCodeAction" >
+                        class="com.sourcegraph.cody.edit.InlineEditPromptEditCodeAction">
                     <keyboard-shortcut replace-all="true" first-keystroke="ctrl ENTER" keymap="$default"/>
                     <keyboard-shortcut replace-all="true" first-keystroke="meta ENTER" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Edit Code"/>
-                </action>
-
-                <!-- also now dismisses error lens, if showing -->
-                <action id="cody.editCancelOrUndoAction"
-                        class="com.sourcegraph.cody.edit.actions.EditCancelOrUndoAction"
-                        text="Cancel or Undo Current Edit"
-                        description="Activates the cancel or undo lens, whichever is showing.">
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt BACK_SPACE" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt BACK_SPACE"
-                                       keymap="Mac OS X 10.5+"/>
-                    <override-text place="GoToAction" text="Cody: Cancel or Undo Current Edit"/>
                 </action>
             </group>
 

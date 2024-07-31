@@ -3,7 +3,12 @@ package com.sourcegraph.cody.ui
 import com.intellij.ide.ui.UISettings
 import com.intellij.ui.ColorUtil
 import com.intellij.util.ui.UIUtil
-import java.awt.*
+import java.awt.AlphaComposite
+import java.awt.BasicStroke
+import java.awt.Dimension
+import java.awt.FontMetrics
+import java.awt.Graphics
+import java.awt.Graphics2D
 import javax.swing.JButton
 
 open class TransparentButton(text: String) : JButton(text) {
@@ -24,7 +29,7 @@ open class TransparentButton(text: String) : JButton(text) {
   fun updatePreferredSize() {
     val horizontalPadding = 10
     val verticalPadding = 5
-    val width = fontMetric.stringWidth(getText()) + horizontalPadding * 2
+    val width = fontMetric.stringWidth(text) + horizontalPadding * 2
     val height = fontMetric.height + verticalPadding * 2
     preferredSize = Dimension(width, height)
   }

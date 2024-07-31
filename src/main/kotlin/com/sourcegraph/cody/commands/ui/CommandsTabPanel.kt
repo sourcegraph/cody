@@ -14,7 +14,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.TitledSeparator
 import com.intellij.ui.components.JBPanelWithEmptyText
 import com.sourcegraph.cody.commands.CommandId
-import com.sourcegraph.cody.edit.FixupService
 import com.sourcegraph.cody.edit.actions.DocumentCodeAction
 import com.sourcegraph.cody.edit.actions.EditCodeAction
 import com.sourcegraph.cody.edit.actions.TestCodeAction
@@ -36,14 +35,11 @@ class CommandsTabPanel(
     private val executeCommand: (CommandId) -> Unit
 ) :
     JBPanelWithEmptyText(GridLayout(/* rows = */ 0, /* cols = */ 1)),
-    IgnoreOracle.FocusedFileIgnorePolicyListener,
-    FixupService.ActiveFixupSessionStateListener {
+    IgnoreOracle.FocusedFileIgnorePolicyListener {
   private val ignoreBanner = CommandPanelIgnoreBanner()
   private val buttons = mutableMapOf<String, JButton>()
 
   @Volatile private var ignorePolicy: IgnorePolicy = IgnorePolicy.USE
-
-  @Volatile private var isInlineEditInProgress: Boolean = false
 
   init {
     layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -64,7 +60,6 @@ class CommandsTabPanel(
     CommandId.values().forEach { command -> addCommandButton(command) }
 
     IgnoreOracle.getInstance(project).addListener(this)
-    FixupService.getInstance(project).addListener(this)
   }
 
   private fun addInlineEditActionButton(actionId: String) {
@@ -112,13 +107,8 @@ class CommandsTabPanel(
 
   private fun update() {
     // Dis/enable all the buttons.
-    for ((actionId, button) in buttons) {
-      // We block only DocumentCodeAction and TestCodeAction, for EditCodeAction we will block the
-      // button on the edit dialog
-      val shouldBlockInlineEditAction =
-          isInlineEditInProgress &&
-              (actionId == DocumentCodeAction.ID || actionId == TestCodeAction.ID)
-      button.isEnabled = ignorePolicy == IgnorePolicy.USE && !shouldBlockInlineEditAction
+    for (button in buttons.values) {
+      button.isEnabled = ignorePolicy == IgnorePolicy.USE
     }
 
     when (ignorePolicy) {
@@ -135,11 +125,6 @@ class CommandsTabPanel(
 
   override fun focusedFileIgnorePolicyChanged(policy: IgnorePolicy) {
     this.ignorePolicy = policy
-    runInEdt { update() }
-  }
-
-  override fun fixupSessionStateChanged(isInProgress: Boolean) {
-    this.isInlineEditInProgress = isInProgress
     runInEdt { update() }
   }
 }

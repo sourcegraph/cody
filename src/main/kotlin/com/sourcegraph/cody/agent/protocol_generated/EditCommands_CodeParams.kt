@@ -12,6 +12,7 @@ data class EditCommands_CodeParams(
   val instruction: String,
   val model: String? = null,
   val mode: ModeEnum? = null, // Oneof: edit, insert
+  val range: Range? = null,
 ) {
 
   enum class ModeEnum {

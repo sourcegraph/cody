@@ -26,9 +26,10 @@ class LlmDropdown(
     private val project: Project,
     private val onSetSelectedItem: (ChatModelsResponse.ChatModelProvider) -> Unit,
     val parentDialog: EditCommandPrompt?,
-    val chatModelProviderFromState: ChatModelsResponse.ChatModelProvider?,
+    private val chatModelProviderFromState: ChatModelsResponse.ChatModelProvider?,
+    private val model: String? = null
 ) : ComboBox<ChatModelsResponse.ChatModelProvider>(MutableCollectionComboBoxModel()) {
-  var hasServerSentModels = false
+  private var hasServerSentModels = false
 
   init {
     renderer = LlmComboBoxRenderer(this)
@@ -73,7 +74,7 @@ class LlmDropdown(
     val selectedFromState = chatModelProviderFromState
     val selectedFromHistory = HistoryService.getInstance(project).getDefaultLlm()
     val selectedModel =
-        availableModels.find { it.model == selectedFromState?.model }
+        availableModels.find { it.model == selectedFromState?.model || it.model == model }
             ?: availableModels.find { it.model == selectedFromHistory?.model }
 
     selectedItem =

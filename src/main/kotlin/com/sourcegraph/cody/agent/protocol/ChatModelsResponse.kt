@@ -37,8 +37,8 @@ data class ChatModelsResponse(val models: List<ChatModelProvider>) {
       }
     }
 
-    public fun isCodyProOnly(): Boolean = tags?.contains("pro") ?: codyProOnly
+    fun isCodyProOnly(): Boolean = tags?.contains("pro") ?: codyProOnly
 
-    public fun isDeprecated(): Boolean = tags?.contains("deprecated") ?: deprecated
+    fun isDeprecated(): Boolean = tags?.contains("deprecated") ?: deprecated
   }
 }
