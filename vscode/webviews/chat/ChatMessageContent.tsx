@@ -57,10 +57,8 @@ function createButtons(
     }
 
     const container = document.createElement('div')
-    container.className = styles.footerContainer
+    container.className = styles.buttonContainer
 
-    const buttonsContainer = document.createElement('div')
-    buttonsContainer.className = styles.buttonsContainer
     if (!copyButtonOnSubmit) {
         return container
     }
@@ -125,9 +123,7 @@ function createButtons(
         )
     }
 
-    // Display the buttons in the codeblock footer.
-    buttonsContainer.append(buttons)
-    container.append(buttonsContainer)
+    container.append(buttons)
 
     return container
 }
@@ -143,10 +139,8 @@ function createButtonsV2(
     // The container will contain the buttons and the <pre> element with the code.
     // This allows us to position the buttons independent of the code.
     const container = document.createElement('div')
-    container.className = styles.footerContainer
+    container.className = styles.buttonsContainer
 
-    const buttonsContainer = document.createElement('div')
-    buttonsContainer.className = styles.buttonsContainer
     if (!copyButtonOnSubmit) {
         return container
     }
@@ -166,8 +160,8 @@ function createButtonsV2(
     buttons.append(actionsDropdown)
 
     // Display the buttons in the codeblock footer.
-    buttonsContainer.append(buttons)
-    container.append(buttonsContainer)
+    // buttonsContainer.append(buttons)
+    container.append(buttons)
 
     return container
 }

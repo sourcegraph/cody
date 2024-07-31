@@ -1,18 +1,12 @@
-.footer-container {
+.buttons-container {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
+    align-items: center;
     border-style: solid;
     border-width: 1px;
     border-color: var(--vscode-sideBarSectionHeader-border);
     border-bottom-left-radius: 2px;
     border-bottom-right-radius: 2px;
     padding: 4px;
-}
-
-.buttons-container {
-    display: flex;
-    align-items: center;
 }
 
 .buttons {
@@ -153,7 +147,6 @@
     background-color: var(--code-background);
     color: var(--code-foreground);
     margin-bottom: 0;
-    position: relative;
 }
 body[data-vscode-theme-kind='vscode-light'] .content pre,
 body[data-vscode-theme-kind='vscode-light'] .content pre > code {
@@ -210,4 +203,5 @@ body[data-vscode-theme-kind='vscode-light'] .content pre > code {
 .file-name-container {
     font-size: small;
     color: var(--vscode-input-placeholderForeground);
+    margin-left: auto;
 }
