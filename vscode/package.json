@@ -1395,7 +1395,7 @@
     "@storybook/preview-api": "^8.0.5",
     "@types/crypto-js": "^4.2.2",
     "@types/dedent": "^0.7.0",
-    "@types/diff": "^5.0.9",
+    "@types/diff": "^5.2.1",
     "@types/express": "^4.17.17",
     "@types/fs-extra": "^11.0.4",
     "@types/glob": "^8.0.0",

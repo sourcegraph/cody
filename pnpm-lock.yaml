@@ -683,8 +683,8 @@ importers:
         specifier: ^0.7.0
         version: 0.7.0
       '@types/diff':
-        specifier: ^5.0.9
-        version: 5.0.9
+        specifier: ^5.2.1
+        version: 5.2.1
       '@types/express':
         specifier: ^4.17.17
         version: 4.17.17
@@ -6451,6 +6451,10 @@ packages:
 
   /@types/diff@5.0.9:
     resolution: {integrity: sha512-RWVEhh/zGXpAVF/ZChwNnv7r4rvqzJ7lYNSmZSVTxjV0PBLf6Qu7RNg+SUtkpzxmiNkjCx0Xn2tPp7FIkshJwQ==}
+    dev: true
+
+  /@types/diff@5.2.1:
+    resolution: {integrity: sha512-uxpcuwWJGhe2AR1g8hD9F5OYGCqjqWnBUQFD8gMZsDbv8oPHzxJF6iMO6n8Tk0AdzlxoaaoQhOYlIg/PukVU8g==}
     dev: true
 
   /@types/doctrine@0.0.3:
