@@ -29,10 +29,10 @@ import { useLocalStorage } from '../utils/use-local-storage'
  */
 const ACTIVE_CHAT_ID_KEY = 'cody-web.last-active-chat-id'
 
-// Usually CodyWebChatProvider VSCode API wrapper listens messages from Extension host
-// which matches with the current active panel id. But this message id check can be corrupted
-// by race conditions in different events that extension host is sending during switching chats.
-// Some events should be always handled by the client regardless from which active panel they
+// Usually the CodyWebChatProvider VSCode API wrapper listens only to messages from the Extension host
+// which matches the current active panel id. But this message id check can be corrupted
+// by race conditions in different events that the extension host sends during chat-switching.
+// Some events should always be handled by the client regardless of which active panel they
 // came from.
 const GLOBAL_MESSAGE_TYPES: Array<ExtensionMessage['type']> = ['allMentionProvidersMetadata']
 
