@@ -652,7 +652,7 @@ class FireworksProvider extends Provider {
                         if (!choice) {
                             continue
                         }
-
+                        
                         result.completionResponse = {
                             completion: (lastResponseField('completion') || '') + choice.text,
                             stopReason:
@@ -712,6 +712,7 @@ class FireworksProvider extends Provider {
         )
     }
 }
+
 
 export function createProviderConfig({
     model,

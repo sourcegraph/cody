@@ -165,17 +165,11 @@ export const FileLink: React.FunctionComponent<
         href = openURI.href
         target = openURI.target
     }
-    function handleMouseEnter() {
+    function handleBoxClick() {
         if (!isFileContentVisible) {
             fetchFileContent();
         }
-        console.log("I have entered")
-        setIsPopoverVisible(true);
-    }
-
-    function handleMouseLeave() {
-        console.log("I have left")
-        setIsPopoverVisible(false);
+        setIsPopoverVisible(!isPopoverVisible);
     }
     fileName = uri.path.split('/').pop() || 'Unknown file'
     const filePath = uri.path;
@@ -195,22 +189,12 @@ export const FileLink: React.FunctionComponent<
                     href={href}
                     target={target}
                 >
-                    <i
-                        className={clsx('codicon', `codicon-${source === 'user' ? 'mention' : 'file'}`)}
-                        title={
-                            (source &&
-                                hoverSourceLabels[source] &&
-                                `Included ${hoverSourceLabels[source]}`) ||
-                            undefined
-                        }
-                    />
                     <Popover>
                         <PopoverTrigger asChild>
                             <div
                                 className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}
                                 data-source={source || 'unknown'}
-                                onMouseEnter={handleMouseEnter}
-                                onMouseLeave={handleMouseLeave}
+                                onClick={handleBoxClick}
                             >
                                 {fileName}
                             </div>

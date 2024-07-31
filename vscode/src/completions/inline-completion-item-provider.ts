@@ -223,6 +223,7 @@ export class InlineCompletionItemProvider
                 return null
             }
 
+            
             // Update the last request
             const lastCompletionRequest = this.latestCompletionRequest
             const completionRequest: CompletionRequest = {
