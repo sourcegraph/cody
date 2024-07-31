@@ -487,7 +487,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerNotification('textDocument/didSave', async params => {
             const uri = vscode.Uri.parse(params.uri)
-            const document = await vscode.workspace.openTextDocument(uri)
+            const document = await this.workspace.openTextDocument(uri)
             vscode_shim.onDidSaveTextDocument.fire(document)
         })
 
@@ -1317,6 +1317,27 @@ export class Agent extends MessageHandler implements ExtensionClient {
     ): FixupControlApplicator {
         this.fixups = new AgentFixupControls(files, this.notify.bind(this))
         return this.fixups
+    }
+
+    public openNewDocument = async (
+        _: typeof vscode.workspace,
+        uri: vscode.Uri
+    ): Promise<vscode.TextDocument | undefined> => {
+        if (uri.scheme !== 'untitled') {
+            return vscode_shim.workspace.openTextDocument(uri)
+        }
+
+        if (this.clientInfo?.capabilities?.untitledDocuments !== 'enabled') {
+            const errorMessage =
+                'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
+            logError('Agent', 'unsupported operation', errorMessage)
+            throw new Error(errorMessage)
+        }
+
+        const result = await this.request('textDocument/openUntitledDocument', {
+            uri: uri.toString(),
+        })
+        return result ? vscode_shim.workspace.openTextDocument(result.uri) : undefined
     }
 
     private maybeExtension: ExtensionObjects | undefined

@@ -301,16 +301,14 @@ const _workspace: typeof vscode.workspace = {
             throw new Error('workspaceDocuments is uninitialized')
         }
 
-        const result = toUri(uriOrString)
-        if (result) {
-            if (result.uri.scheme === 'untitled' && result.shouldOpenInClient) {
-                await openUntitledDocument(result.uri)
-            }
-            return workspaceDocuments.openTextDocument(result.uri)
-        }
-        return Promise.reject(
-            new Error(`workspace.openTextDocument:unsupported argument ${JSON.stringify(uriOrString)}`)
-        )
+        const uri = toUri(uriOrString)
+        return uri
+            ? workspaceDocuments.openTextDocument(uri)
+            : Promise.reject(
+                  new Error(
+                      `workspace.openTextDocument: unsupported argument ${JSON.stringify(uriOrString)}`
+                  )
+              )
     },
     workspaceFolders,
     getWorkspaceFolder: () => {
@@ -463,18 +461,14 @@ const defaultTreeView: vscode.TreeView<any> = {
     title: undefined,
 }
 
-/**
- * @returns An object with a URI and a boolean indicating whether the URI should be opened in the client.
- * This object with UUID path is used only when we want to create in-memory temp files, and those we do not want to send to the clients.
- */
 function toUri(
     uriOrString: string | vscode.Uri | { language?: string; content?: string } | undefined
-): { uri: Uri; shouldOpenInClient: boolean } | undefined {
+): Uri | undefined {
     if (typeof uriOrString === 'string') {
-        return { uri: Uri.file(uriOrString), shouldOpenInClient: true }
+        return Uri.parse(uriOrString)
     }
     if (uriOrString instanceof Uri) {
-        return { uri: uriOrString, shouldOpenInClient: true }
+        return uriOrString
     }
     if (
         typeof uriOrString === 'object' &&
@@ -482,37 +476,12 @@ function toUri(
     ) {
         const language = (uriOrString as any)?.language ?? ''
         const extension = extensionForLanguage(language) ?? language
-        return {
-            uri: Uri.from({
-                scheme: 'untitled',
-                path: `${uuid.v4()}.${extension}`,
-            }),
-            shouldOpenInClient: false,
-        }
+        return Uri.from({
+            scheme: 'untitled',
+            path: `${uuid.v4()}.${extension}`,
+        })
     }
     return
-}
-
-async function openUntitledDocument(uri: Uri, content?: string, language?: string) {
-    if (clientInfo?.capabilities?.untitledDocuments !== 'enabled') {
-        const errorMessage =
-            'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
-        logError('vscode.workspace.openTextDocument', 'unsupported operation', errorMessage)
-        throw new Error(errorMessage)
-    }
-    if (agent) {
-        const result = await agent.request('textDocument/openUntitledDocument', {
-            uri: uri.toString(),
-            content,
-            language,
-        })
-
-        if (!result) {
-            throw new Error(
-                `client returned false from textDocument/openUntitledDocument: ${uri.toString()}`
-            )
-        }
-    }
 }
 
 function outputChannel(name: string): vscode.LogOutputChannel {
@@ -705,6 +674,7 @@ const _window: typeof vscode.window = {
                       selection.end.character
                   )
                 : undefined
+
             const result = await agent.request('textDocument/show', {
                 uri,
                 options: {
@@ -715,6 +685,7 @@ const _window: typeof vscode.window = {
             if (!result) {
                 throw new Error(`showTextDocument: client returned false when trying to show URI ${uri}`)
             }
+
             if (!workspaceDocuments) {
                 throw new Error('workspaceDocuments is undefined')
             }

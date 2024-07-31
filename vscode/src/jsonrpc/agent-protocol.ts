@@ -311,7 +311,7 @@ export type ServerRequests = {
     'window/showMessage': [ShowWindowMessageParams, string | null]
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
-    'textDocument/openUntitledDocument': [UntitledTextDocument, boolean]
+    'textDocument/openUntitledDocument': [UntitledTextDocument, ProtocolTextDocument | undefined | null]
     'textDocument/show': [
         {
             uri: string
