@@ -75,6 +75,7 @@
       "name": "Launch Agent port 3113",
       "program": "${workspaceFolder}/agent/dist/index.js",
       "runtimeArgs": ["--enable-source-maps", "--preserve-symlinks"],
+      "args": ["api", "jsonrpc-stdio"],
       "preLaunchTask": "Build Agent",
       "env": {
         "CODY_AGENT_DEBUG_REMOTE": "true",

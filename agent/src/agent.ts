@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
-import { type CodyCommand, isWindows, telemetryRecorder } from '@sourcegraph/cody-shared'
+import { type CodyCommand, ModelUsage, isWindows, telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 
@@ -43,6 +43,8 @@ import { loadTscRetriever } from '../../vscode/src/completions/context/retriever
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
+import type { QuickPickInput } from '../../vscode/src/edit/input/get-input'
+import { getModelOptionItems } from '../../vscode/src/edit/input/get-items/model'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient, ExtensionObjects } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
@@ -485,7 +487,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerNotification('textDocument/didSave', async params => {
             const uri = vscode.Uri.parse(params.uri)
-            const document = await vscode.workspace.openTextDocument(uri)
+            const document = await this.workspace.openTextDocument(uri)
             vscode_shim.onDidSaveTextDocument.fire(document)
         })
 
@@ -1003,6 +1005,32 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return null
         })
 
+        this.registerAuthenticatedRequest('editTask/getTaskDetails', async ({ id }) => {
+            const task = this.fixups?.getTask(id)
+            if (task) {
+                return AgentFixupControls.serialize(task)
+            }
+
+            return Promise.reject(`No task with id ${id}`)
+        })
+
+        this.registerAuthenticatedRequest('editTask/retry', params => {
+            const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
+            const models = getModelOptionItems(ModelsService.getModels(ModelUsage.Edit), true)
+            const previousInput: QuickPickInput = {
+                instruction: instruction,
+                userContextFiles: [],
+                model: models.find(item => item.modelTitle === params.model)?.model ?? models[0].model,
+                range: vscodeRange(params.range),
+                intent: 'edit',
+                mode: params.mode,
+            }
+
+            if (!this.fixups) return Promise.reject()
+            const retryResult = this.fixups.retry(params.id, previousInput)
+            return this.createEditTask(retryResult.then(task => task && { type: 'edit', task }))
+        })
+
         this.registerAuthenticatedRequest(
             'editTask/getFoldingRanges',
             async (params): Promise<GetFoldingRangeResult> => {
@@ -1289,6 +1317,27 @@ export class Agent extends MessageHandler implements ExtensionClient {
     ): FixupControlApplicator {
         this.fixups = new AgentFixupControls(files, this.notify.bind(this))
         return this.fixups
+    }
+
+    public openNewDocument = async (
+        _: typeof vscode.workspace,
+        uri: vscode.Uri
+    ): Promise<vscode.TextDocument | undefined> => {
+        if (uri.scheme !== 'untitled') {
+            return vscode_shim.workspace.openTextDocument(uri)
+        }
+
+        if (this.clientInfo?.capabilities?.untitledDocuments !== 'enabled') {
+            const errorMessage =
+                'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
+            logError('Agent', 'unsupported operation', errorMessage)
+            throw new Error(errorMessage)
+        }
+
+        const result = await this.request('textDocument/openUntitledDocument', {
+            uri: uri.toString(),
+        })
+        return result ? vscode_shim.workspace.openTextDocument(result.uri) : undefined
     }
 
     private maybeExtension: ExtensionObjects | undefined

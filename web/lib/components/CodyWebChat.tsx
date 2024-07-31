@@ -2,6 +2,7 @@ import { type FC, useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import { URI } from 'vscode-uri'
 
 import {
+    type AuthStatus,
     type ChatMessage,
     type ClientStateForWebview,
     CodyIDE,
@@ -14,21 +15,19 @@ import {
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
 
+import { ChatMentionContext, type ChatMentionsSettings } from '@sourcegraph/prompt-editor'
 import { getAppWrappers } from 'cody-ai/webviews/App'
 import { Chat, type UserAccountInfo } from 'cody-ai/webviews/Chat'
 import { ChatEnvironmentContext } from 'cody-ai/webviews/chat/ChatEnvironmentContext'
 import type { ChatModelContext } from 'cody-ai/webviews/chat/models/chatModelContext'
 import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
-import {
-    ChatMentionContext,
-    type ChatMentionsSettings,
-} from 'cody-ai/webviews/promptEditor/plugins/atMentions/chatContextClient'
 import { createWebviewTelemetryRecorder } from 'cody-ai/webviews/utils/telemetry'
 
 import { useWebAgentClient } from './CodyWebChatProvider'
 
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
+import type { ConfigurationSubsetForWebview, LocalEnv } from 'cody-ai/src/chat/protocol'
 import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
 import styles from './CodyWebChat.module.css'
 
@@ -64,6 +63,9 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
     const [chatModels, setChatModels] = useState<Model[]>()
     const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
+    const [exportedFeatureFlags, setExportedFeatureFlags] = useState<Record<string, boolean>>()
+    const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
+    const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
 
     useLayoutEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -91,6 +93,8 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                     setChatModels(message.models)
                     break
                 case 'config':
+                    setConfig(message.config)
+                    setAuthStatus(message.authStatus)
                     setUserAccountInfo({
                         isCodyProUser: !message.authStatus.userCanUpgrade,
                         isDotComUser: message.authStatus.isDotCom,
@@ -102,6 +106,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                     dispatchClientAction(message)
                     break
                 case 'setConfigFeatures':
+                    setExportedFeatureFlags(message.exportedFeatureFlags)
                     setServerSentModelsEnabled(!!message.configFeatures.serverSentModels)
                     break
             }
@@ -188,17 +193,37 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     const envVars = useMemo(() => ({ clientType: CodyIDE.Web }), [])
 
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers(vscodeAPI, telemetryRecorder, chatModelContext, clientState),
-        [vscodeAPI, telemetryRecorder, chatModelContext, clientState]
+        () =>
+            getAppWrappers(
+                vscodeAPI,
+                telemetryRecorder,
+                chatModelContext,
+                clientState,
+                exportedFeatureFlags,
+                config && authStatus ? { config, authStatus } : undefined
+            ),
+        [
+            vscodeAPI,
+            telemetryRecorder,
+            chatModelContext,
+            clientState,
+            exportedFeatureFlags,
+            config,
+            authStatus,
+        ]
     )
+
+    const isLoading =
+        !client ||
+        !userAccountInfo ||
+        !chatModels ||
+        !activeChatID ||
+        !exportedFeatureFlags ||
+        initialization !== 'completed'
 
     return (
         <div className={className} data-cody-web-chat={true} ref={setRootElement}>
-            {client &&
-            userAccountInfo &&
-            chatModels &&
-            activeChatID &&
-            initialization === 'completed' ? (
+            {!isLoading ? (
                 isErrorLike(client) ? (
                     <p>Error: {client.message}</p>
                 ) : (
@@ -223,7 +248,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                     </ChatEnvironmentContext.Provider>
                 )
             ) : (
-                <div className={styles.loading}>Loading Cody Agent...</div>
+                <div className={styles.loading}>Loading Cody Client...</div>
             )}
         </div>
     )

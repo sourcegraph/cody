@@ -1,3 +1,17 @@
+## 0.3.1
+- Improves debounce logic for context item suggestions 
+
+## 0.3.0
+- Rename package to @sourcegraph/cody-web 
+- Fixes problem when cody agent publishes setConfigFeatures too early 
+
+## 0.2.10
+- Add better rendering memoization (fixes problem with long-history chats) 
+
+## 0.2.9 
+- Add support for custom headers in Rest API service
+(fixes problem with fetching remote LLM models for Cody Web) 
+
 ## 0.2.8
 - Adds new prop to set custom client telemetry name (telemetryClientName)
 

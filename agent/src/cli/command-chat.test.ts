@@ -8,6 +8,7 @@ import { TESTING_CREDENTIALS } from '../../../vscode/src/testutils/testing-crede
 import { buildAgentBinary, getAgentDir } from '../TestClient'
 import { TestWorkspace } from '../TestWorkspace'
 import { Streams, StringBufferStream } from './Streams'
+import { isWindows } from './command-bench/isWindows'
 import { type ChatOptions, chatAction, chatCommand } from './command-chat'
 
 process.env.CODY_SHIM_TESTING = 'true'
@@ -70,7 +71,7 @@ describe('cody chat', () => {
         return {
             command: 'cody chat ' + params.args.join(' '),
             exitCode,
-            stdout: stdout.buffer,
+            stdout: stdout.buffer.replaceAll(tmp.rootPath, 'WORKING_DIRECTORY'),
             stderr: stderr.buffer,
         }
     }
@@ -111,6 +112,7 @@ describe('cody chat', () => {
                         'chat',
                         '--context-repo',
                         'github.com/sourcegraph/sourcegraph',
+                        '--show-context',
                         '-m',
                         'what is squirrel? Explain as briefly as possible.',
                     ],
@@ -119,19 +121,24 @@ describe('cody chat', () => {
         ).toMatchSnapshot()
     }, 20_000)
 
-    it('--context-file (animal test)', async () => {
-        expect(
-            YAML.stringify(
-                await runCommand({
-                    args: [
-                        'chat',
-                        '--context-file',
-                        'animal.ts',
-                        '-m',
-                        'implement a cow. Only print the code without any explanation.',
-                    ],
-                })
-            )
-        ).toMatchSnapshot()
-    }, 20_000)
+    it.skipIf(isWindows())(
+        '--context-file (animal test)',
+        async () => {
+            expect(
+                YAML.stringify(
+                    await runCommand({
+                        args: [
+                            'chat',
+                            '--context-file',
+                            'animal.ts',
+                            '--show-context',
+                            '-m',
+                            'implement a cow. Only print the code without any explanation.',
+                        ],
+                    })
+                )
+            ).toMatchSnapshot()
+        },
+        20_000
+    )
 })

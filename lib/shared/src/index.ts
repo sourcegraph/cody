@@ -73,6 +73,11 @@ export {
     type SymbolKind,
     type ContextItemTree,
     type ContextItemRepository,
+    FILE_RANGE_TOOLTIP_LABEL,
+    GENERAL_HELP_LABEL,
+    IGNORED_FILE_WARNING_LABEL,
+    LARGE_FILE_WARNING_LABEL,
+    NO_SYMBOL_MATCHES_HELP_LABEL,
 } from './codebase-context/messages'
 export type {
     CodyCommand,
@@ -143,9 +148,10 @@ export {
     FeatureFlagProvider,
     featureFlagProvider,
 } from './experimentation/FeatureFlagProvider'
-export { GuardrailsPost, summariseAttribution } from './guardrails'
+export { GuardrailsPost } from './guardrails'
 export type { Attribution, Guardrails } from './guardrails'
-export { SourcegraphGuardrailsClient, GuardrailsClientConfig } from './guardrails/client'
+export { SourcegraphGuardrailsClient } from './guardrails/client'
+export type { GuardrailsClientConfig } from './guardrails/client'
 export {
     CompletionStopReason,
     type CodeCompletionsClient,
@@ -237,6 +243,7 @@ export type {
     CodyLLMSiteConfiguration,
     ContextSearchResult,
     EmbeddingsSearchResult,
+    Prompt,
     event,
 } from './sourcegraph-api/graphql/client'
 export { RestClient } from './sourcegraph-api/rest/client'
@@ -293,9 +300,14 @@ export * from './token'
 export * from './token/constants'
 export * from './configuration'
 export {
-    setOpenCtxClient,
+    setOpenCtx,
     openCtx,
+    REMOTE_REPOSITORY_PROVIDER_URI,
+    REMOTE_FILE_PROVIDER_URI,
+    WEB_PROVIDER_URI,
+    GIT_OPENCTX_PROVIDER_URI,
 } from './context/openctx/api'
+export * from './context/openctx/context'
 export { type ClientStateForWebview } from './clientState'
 export * from './lexicalEditor/editorState'
 export * from './lexicalEditor/nodes'

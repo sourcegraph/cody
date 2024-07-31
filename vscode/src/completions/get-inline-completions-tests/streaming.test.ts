@@ -1,10 +1,10 @@
 import dedent from 'dedent'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { completion } from '../test-helpers'
 
-import { type V, getInlineCompletions, params } from './helpers'
+import { type V, getInlineCompletions, getInlineCompletionsWithInlinedChunks, params } from './helpers'
 
 describe('[getInlineCompletions] streaming', () => {
     it('terminates early for a single-line request', async () => {
@@ -164,5 +164,38 @@ describe('[getInlineCompletions] streaming', () => {
 
         expect(result?.items[0].insertText).toMatchInlineSnapshot('"// Bubble sort algorithm"')
         expect(result?.source).toBe(InlineCompletionsResultSource.Network)
+    })
+
+    it('ignores leading empty liens at the start completion responses', async () => {
+        vi.useFakeTimers()
+
+        let request = await getInlineCompletionsWithInlinedChunks(
+            `class Something {
+                private one = 1
+
+                private two = 2
+                █
+                private three = 3
+                █
+                private four = 4
+                █
+            }`,
+            {
+                configuration: {
+                    autocompleteExperimentalHotStreakAndSmartThrottle: true,
+                    autocompleteAdvancedProvider: 'fireworks',
+                },
+                delayBetweenChunks: 50,
+            }
+        )
+
+        await vi.runAllTimersAsync()
+        await request.completionResponseGeneratorPromise
+
+        expect(request.items[0].insertText).toEqual('private three = 3')
+
+        request = await request.acceptFirstCompletionAndPressEnter()
+        expect(request.items[0].insertText).toEqual('private four = 4')
+        expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
     })
 })

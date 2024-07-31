@@ -28,7 +28,6 @@ import {
 import { URI } from 'vscode-uri'
 import { getOpenTabsUris } from '.'
 import { toVSCodeRange } from '../../common/range'
-import { debouncePromise } from './debounce-promise'
 import { findWorkspaceFiles } from './findWorkspaceFiles'
 
 // Some matches we don't want to ignore because they might be valid code (for example `bin/` in Dart)
@@ -46,13 +45,6 @@ const lowScoringPathSegments = ['bin']
  * potentially swallow errors and return (and cache) incomplete data.
  */
 const throttledFindFiles = throttle(() => findWorkspaceFiles(), 10000)
-
-const debouncedRemoteFindFiles = debouncePromise(graphqlClient.getRemoteFiles.bind(graphqlClient), 500)
-const debouncedRemoteFindSymbols = debouncePromise(
-    graphqlClient.getRemoteSymbols.bind(graphqlClient),
-    500
-)
-
 /**
  * Searches all workspaces for files matching the given string. VS Code doesn't
  * provide an API for fuzzy file searching, only precise globs, so we recreate
@@ -70,9 +62,9 @@ export async function getFileContextFiles(
 
     // TODO [VK] Support fuzzy find logic that we have for local file resolution
     if (repositoriesNames) {
-        const filesOrError = await debouncedRemoteFindFiles(repositoriesNames, query)
+        const filesOrError = await graphqlClient.getRemoteFiles(repositoriesNames, query)
 
-        if (isErrorLike(filesOrError) || filesOrError === 'skipped') {
+        if (isErrorLike(filesOrError)) {
             return []
         }
 
@@ -116,14 +108,28 @@ export async function getFileContextFiles(
         threshold: -100000,
     })
 
-    // Apply a penalty for segments that are in the low scoring list.
+    const openDocuments = new Set<string>()
+    for (const uri of getOpenTabsUris()) {
+        // Using `.path` instead of `Uri.toString()` for performance reasons. This is
+        // a performance sensitive code path so we should void redundant work.
+        openDocuments.add(uri.path)
+    }
+    const LARGE_SCORE = 100000
     const adjustedResults = [...results].map(result => {
+        // Boost results for documents that are open in the editor.
+        if (openDocuments.has(result.obj.uri.path)) {
+            return {
+                ...result,
+                score: result.score + LARGE_SCORE,
+            }
+        }
+        // Apply a penalty for segments that are in the low scoring list.
         const segments = result.obj.uri.path.split(/[\/\\]/).filter(segment => segment !== '')
         for (const lowScoringPathSegment of lowScoringPathSegments) {
             if (segments.includes(lowScoringPathSegment) && !query.includes(lowScoringPathSegment)) {
                 return {
                     ...result,
-                    score: result.score - 100000,
+                    score: result.score - LARGE_SCORE,
                 }
             }
         }
@@ -164,9 +170,9 @@ export async function getSymbolContextFiles(
     }
 
     if (remoteRepositoriesNames) {
-        const symbolsOrError = await debouncedRemoteFindSymbols(remoteRepositoriesNames, query)
+        const symbolsOrError = await graphqlClient.getRemoteSymbols(remoteRepositoriesNames, query)
 
-        if (symbolsOrError === 'skipped' || isErrorLike(symbolsOrError)) {
+        if (isErrorLike(symbolsOrError)) {
             return []
         }
 

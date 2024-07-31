@@ -1,4 +1,4 @@
-import { diffLines } from 'diff'
+import { type LinesOptions, diffLines } from 'diff'
 import * as vscode from 'vscode'
 
 interface InsertionEdit {
@@ -37,7 +37,15 @@ export function computeDiff(
 
     let startLine = range.start.line
     const applicableDiff: Edit[] = []
-    const diff = diffLines(original, replacement)
+    const diff = diffLines(
+        original,
+        replacement,
+        {
+            // Handle cases where we generate an incorrect diff due to a mismatch in the end of line sequence between
+            // the LLM and the original code in the users' editor.
+            stripTrailingCr: true,
+        } as LinesOptions // @types/diff is not currently up to date
+    )
 
     for (const change of diff) {
         const count = change.count || 0

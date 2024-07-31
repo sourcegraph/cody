@@ -6,7 +6,7 @@ import {
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { canUsePartialCompletion } from '../can-use-partial-completion'
-import { getFirstLine } from '../text-processing'
+import { getFirstLine, removeLeadingEmptyLines } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import {
     type InlineCompletionItemWithAnalytics,
@@ -105,7 +105,12 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
         const extractCompletion = shouldYieldFirstCompletion
             ? parseAndTruncateCompletion
             : canUsePartialCompletion
-        const rawCompletion = providerSpecificPostProcess(completion)
+
+        let rawCompletion = providerSpecificPostProcess(completion)
+
+        if (docContext.currentLinePrefix.trim() === '' && docContext.currentLineSuffix.trim() === '') {
+            rawCompletion = removeLeadingEmptyLines(rawCompletion)
+        }
 
         if (!getFirstLine(rawCompletion) && !shouldYieldFirstCompletion) {
             continue

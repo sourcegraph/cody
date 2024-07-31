@@ -1,11 +1,12 @@
 import {
     ContextItemSource,
+    type Message,
     Model,
     ModelUsage,
     ModelsService,
     contextFiltersProvider,
+    ps,
 } from '@sourcegraph/cody-shared'
-import { type Message, ps } from '@sourcegraph/cody-shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { ChatModel } from './ChatModel'

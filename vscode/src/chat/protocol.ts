@@ -11,6 +11,7 @@ import type {
     EnhancedContextContextT,
     MentionQuery,
     Model,
+    Prompt,
     RangeData,
     SerializedChatMessage,
     UserLocalHistory,
@@ -163,7 +164,8 @@ export type WebviewMessage =
           command: 'getAllMentionProvidersMetadata'
       }
     | {
-          command: 'experimental-unit-test-prompt'
+          command: 'queryPrompts'
+          query: string
       }
 
 /**
@@ -206,15 +208,16 @@ export type ExtensionMessage =
               attribution: boolean
               serverSentModels: boolean
           }
+          exportedFeatureFlags: Record<string, boolean>
       }
     | {
           type: 'allMentionProvidersMetadata'
           providers: ContextMentionProviderMetadata[]
       }
     | {
-          type: 'updateEditorState'
-          /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
-          editorState?: unknown | undefined | null
+          type: 'queryPrompts/response'
+          result?: Prompt[] | null | undefined
+          error?: string | null | undefined
       }
 
 interface ExtensionAttributionMessage {
@@ -271,7 +274,6 @@ export interface ConfigurationSubsetForWebview
         ConfigurationWithAccessToken,
         'experimentalNoodle' | 'serverEndpoint' | 'agentIDE' | 'agentExtensionVersion'
     > {
-    experimentalUnitTest: boolean
     webviewType?: WebviewType | undefined | null
 }
 

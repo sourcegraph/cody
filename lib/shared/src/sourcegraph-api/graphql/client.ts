@@ -38,6 +38,7 @@ import {
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
     PACKAGE_LIST_QUERY,
+    PROMPTS_QUERY,
     RANK_CONTEXT_QUERY,
     RECORD_CONTEXT_QUERY,
     RECORD_TELEMETRY_EVENTS_MUTATION,
@@ -331,8 +332,8 @@ type RecordContextResponse = unknown
 interface RankContextResponse {
     rankContext: {
         ranker: string
-        used: number[]
-        ignored: number[]
+        used: { index: number; score: number }[]
+        ignored: { index: number; score: number }[]
     }
 }
 
@@ -386,6 +387,24 @@ export interface ContextSearchResult {
     startLine: number
     endLine: number
     content: string
+}
+
+/**
+ * A prompt that can be shared and reused. See Prompt in the Sourcegraph GraphQL API.
+ */
+export interface Prompt {
+    id: string
+    name: string
+    nameWithOwner: string
+    owner: {
+        namespaceName: string
+    }
+    description?: string
+    draft: boolean
+    definition: {
+        text: string
+    }
+    url: string
 }
 
 interface ContextFiltersResponse {
@@ -590,11 +609,15 @@ export class SourcegraphGraphQLAPIClient {
         repositories: string[],
         query: string
     ): Promise<FuzzyFindFile[] | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<FuzzyFindFilesResponse>>(FUZZY_FILES_QUERY, {
-            query: `type:path count:30 ${
-                repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
-            } ${query}`,
-        }).then(response =>
+        return this.fetchSourcegraphAPI<APIResponse<FuzzyFindFilesResponse>>(
+            FUZZY_FILES_QUERY,
+            {
+                query: `type:path count:30 ${
+                    repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
+                } ${query}`,
+            },
+            15000
+        ).then(response =>
             extractDataOrError(
                 response,
                 data => data.search?.results.results ?? new Error('no files found')
@@ -994,6 +1017,18 @@ export class SourcegraphGraphQLAPIClient {
             return { filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: true }
         }
 
+        return result
+    }
+
+    public async queryPrompts(query: string): Promise<Prompt[]> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<{ prompts: { nodes: Prompt[] } }>>(
+            PROMPTS_QUERY,
+            { query }
+        )
+        const result = extractDataOrError(response, data => data.prompts.nodes)
+        if (result instanceof Error) {
+            throw result
+        }
         return result
     }
 

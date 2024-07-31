@@ -339,13 +339,9 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
                 await this.storeAuthInfo(config.serverEndpoint, config.accessToken)
             }
 
-            await this.setAuthStatus(authStatus)
-
-            // Set context for the extension to render views based on auth status.
-            // isConsumer should be set before activated to avoid flickering.
-            const isConsumer = authStatus.isLoggedIn && authStatus.isDotCom
-            await vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', isConsumer)
             await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
+
+            await this.setAuthStatus(authStatus)
 
             // If the extension is authenticated on startup, it can't be a user's first
             // ever authentication. We store this to prevent logging first-ever events

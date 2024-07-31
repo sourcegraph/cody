@@ -296,22 +296,32 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
         [client, vscodeAPI, setLastActiveChatID]
     )
 
+    const contextInfo = useMemo(
+        () => ({
+            client,
+            vscodeAPI,
+            activeWebviewPanelID,
+            activeChatID: lastActiveChatID,
+            setLastActiveChatID,
+            initialContext,
+            createChat,
+            selectChat,
+        }),
+        [
+            client,
+            vscodeAPI,
+            activeWebviewPanelID,
+            lastActiveChatID,
+            setLastActiveChatID,
+            initialContext,
+            createChat,
+            selectChat,
+        ]
+    )
+
     return (
         <AppWrapper>
-            <CodyWebChatContext.Provider
-                value={{
-                    client,
-                    vscodeAPI,
-                    activeWebviewPanelID,
-                    activeChatID: lastActiveChatID,
-                    setLastActiveChatID,
-                    initialContext,
-                    createChat,
-                    selectChat,
-                }}
-            >
-                {children}
-            </CodyWebChatContext.Provider>
+            <CodyWebChatContext.Provider value={contextInfo}>{children}</CodyWebChatContext.Provider>
         </AppWrapper>
     )
 }
