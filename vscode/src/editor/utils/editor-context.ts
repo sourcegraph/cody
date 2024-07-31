@@ -116,14 +116,28 @@ export async function getFileContextFiles(
         threshold: -100000,
     })
 
-    // Apply a penalty for segments that are in the low scoring list.
+    const openDocuments = new Set<string>()
+    for (const uri of getOpenTabsUris()) {
+        // Using `.path` instead of `Uri.toString()` for performance reasons. This is
+        // a performance sensitive code path so we should void redundant work.
+        openDocuments.add(uri.path)
+    }
+    const LARGE_SCORE = 100000
     const adjustedResults = [...results].map(result => {
+        // Boost results for documents that are open in the editor.
+        if (openDocuments.has(result.obj.uri.path)) {
+            return {
+                ...result,
+                score: result.score + LARGE_SCORE,
+            }
+        }
+        // Apply a penalty for segments that are in the low scoring list.
         const segments = result.obj.uri.path.split(/[\/\\]/).filter(segment => segment !== '')
         for (const lowScoringPathSegment of lowScoringPathSegments) {
             if (segments.includes(lowScoringPathSegment) && !query.includes(lowScoringPathSegment)) {
                 return {
                     ...result,
-                    score: result.score - 100000,
+                    score: result.score - LARGE_SCORE,
                 }
             }
         }
