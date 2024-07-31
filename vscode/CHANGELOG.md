@@ -10,6 +10,8 @@ Chat: Cody is now defaulted to run in the sidebar for both Enterprise and Non-En
 
 ### Fixed
 
+- Edit: Fixed an issue where we would generate an inefficient diff due to a mismatch in the end-of-line sequence between the user and the LLM. [pull/5069](https://github.com/sourcegraph/cody/pull/5069)
+
 ### Changed
 
 - Autocomplete: Ignores leading empty new lines for autocomplete suggestions to reduce the number of cases when Cody doesn't suggest anything. [pull/4864](https://github.com/sourcegraph/cody/pull/4864)
