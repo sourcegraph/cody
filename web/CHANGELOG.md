@@ -1,3 +1,6 @@
+## 0.3.3
+- Disables Ollama local models fetching 
+
 ## 0.3.2
 - Fixes mention providers fetching as we switch between chats 
 
