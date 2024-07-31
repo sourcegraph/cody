@@ -7,12 +7,13 @@ import type {
     CodyIDE,
     ConfigurationWithAccessToken,
     ContextItem,
-    ContextMentionProviderMetadata,
     EnhancedContextContextT,
     MentionQuery,
     Model,
     Prompt,
     RangeData,
+    RequestMessage,
+    ResponseMessage,
     SerializedChatMessage,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
@@ -161,12 +162,10 @@ export type WebviewMessage =
           command: 'troubleshoot/reloadAuth'
       }
     | {
-          command: 'getAllMentionProvidersMetadata'
-      }
-    | {
           command: 'queryPrompts'
           query: string
       }
+    | { command: 'rpc/request'; message: RequestMessage }
 
 /**
  * A message sent from the extension host to the webview.
@@ -211,14 +210,11 @@ export type ExtensionMessage =
           exportedFeatureFlags: Record<string, boolean>
       }
     | {
-          type: 'allMentionProvidersMetadata'
-          providers: ContextMentionProviderMetadata[]
-      }
-    | {
           type: 'queryPrompts/response'
           result?: Prompt[] | null | undefined
           error?: string | null | undefined
       }
+    | { type: 'rpc/response'; message: ResponseMessage }
 
 interface ExtensionAttributionMessage {
     snippet: string

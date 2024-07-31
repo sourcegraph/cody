@@ -1,13 +1,17 @@
 import type { Client } from '@openctx/client'
 import type * as vscode from 'vscode'
 
-type OpenCtxClient = Pick<Client<vscode.Range>, 'meta' | 'mentions' | 'items'>
+type OpenCtxClient = Pick<
+    Client<vscode.Range>,
+    | 'meta'
+    | 'metaChanges__asyncGenerator'
+    | 'mentions'
+    | 'mentionsChanges__asyncGenerator'
+    | 'items'
+    | 'annotationsChanges__asyncGenerator'
+>
 
-class OpenCtx {
-    constructor(public client: OpenCtxClient | undefined) {}
-}
-
-export const openCtx = new OpenCtx(undefined)
+export const openCtx: { client: OpenCtxClient | undefined } = { client: undefined }
 
 /**
  * Set the handle to the OpenCtx client.

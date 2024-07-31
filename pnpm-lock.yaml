@@ -18,8 +18,8 @@ importers:
   .:
     dependencies:
       '@openctx/client':
-        specifier: ^0.0.20
-        version: 0.0.20
+        specifier: ^0.0.22
+        version: 0.0.22
       ignore:
         specifier: ^5.3.1
         version: 5.3.1
@@ -433,8 +433,8 @@ importers:
         specifier: ^0.0.6
         version: 0.0.6
       '@openctx/vscode-lib':
-        specifier: ^0.0.14
-        version: 0.0.14
+        specifier: ^0.0.16
+        version: 0.0.16
       '@opentelemetry/api':
         specifier: ^1.7.0
         version: 1.7.0
@@ -842,8 +842,8 @@ importers:
   web:
     devDependencies:
       '@openctx/vscode-lib':
-        specifier: ^0.0.14
-        version: 0.0.14
+        specifier: ^0.0.16
+        version: 0.0.16
       '@sourcegraph/cody':
         specifier: workspace:*
         version: link:../agent
@@ -3480,8 +3480,8 @@ packages:
       which: 4.0.0
     dev: true
 
-  /@openctx/client@0.0.20:
-    resolution: {integrity: sha512-mLfFBO/OpQfCD/fi03gX+1efxzEQp9X0HkJR05E3dagm3WMiGT3bqqWB8U9eN/9ajpA/H92MD0Gg00rhSKsusw==}
+  /@openctx/client@0.0.22:
+    resolution: {integrity: sha512-qqOKrmYafBnbrmp7QzWM1ItUEYTqyqkEBet/Ih3E5kDbE8/JTT5H99Kt0AG7okTxGcBWJElHDcqe+4FmLqhk3g==}
     dependencies:
       '@openctx/protocol': 0.0.16
       '@openctx/provider': 0.0.15
@@ -3537,10 +3537,10 @@ packages:
       sanitize-html: 2.13.0
       xss: 1.0.15
 
-  /@openctx/vscode-lib@0.0.14:
-    resolution: {integrity: sha512-60nWaP28NgVP9wpq0Ap/Swfm1JJjKZLVYi9URK8BhdLW3RN3TivIrBIDN75Hf2eGbJ5s2XLI+WmTSlETzwOTkQ==}
+  /@openctx/vscode-lib@0.0.16:
+    resolution: {integrity: sha512-Hs3L4jVXMQj5kud86ZpfzWLHmXZI3vFyx8BsfCOIYIY71kRjYZUGXx67e5BgKtP8JUSX5GBkPx1fJFTqDqGUug==}
     dependencies:
-      '@openctx/client': 0.0.20
+      '@openctx/client': 0.0.22
       '@openctx/ui-common': 0.0.11
       rxjs: 7.8.1
 

@@ -3,10 +3,13 @@ import {
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
+    type WebviewToExtensionAPI,
+    type WithAbortSignalAsLastArg,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { LRUCache } from 'lru-cache'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useAsyncGenerator } from '../../useAsyncGenerator'
 
 export interface ChatMentionsSettings {
     resolutionMode: 'remote' | 'local'
@@ -16,13 +19,11 @@ export const ChatMentionContext = createContext<ChatMentionsSettings>({
     resolutionMode: 'local',
 })
 
-export interface ChatContextClient {
+export interface ChatContextClient
+    extends WithAbortSignalAsLastArg<Pick<WebviewToExtensionAPI, 'mentionProviders'>> {
     getChatContextItems(params: { query: MentionQuery }): Promise<{
         userContextFiles?: ContextItem[] | null | undefined
     }>
-    getMentionProvidersMetadata(
-        params: Record<string, never>
-    ): Promise<{ providers: ContextMentionProviderMetadata[] }>
 }
 
 const ChatContextClientContext = createContext<ChatContextClient | undefined>(undefined)
@@ -133,27 +134,14 @@ function memoizeChatContextClient(
 
 const EMPTY_PROVIDERS: ContextMentionProviderMetadata[] = []
 
-export function useChatContextMentionProviders(): {
-    providers: ContextMentionProviderMetadata[]
-    reload: () => void
-} {
+export function useChatContextMentionProviders(): ContextMentionProviderMetadata[] {
     const client = useContext(ChatContextClientContext)
-    const [providers, setProviders] = useState<ContextMentionProviderMetadata[]>()
+    if (!client) {
+        throw new Error('useChatContextMentionProviders must be used within a ChatContextClientProvider')
+    }
 
-    const load = useCallback(() => {
-        if (client) {
-            client
-                .getMentionProvidersMetadata({})
-                .then(result => setProviders(result.providers))
-                .catch(error => {
-                    console.error(error)
-                    setProviders(EMPTY_PROVIDERS)
-                })
-        }
-    }, [client])
-    useEffect(() => {
-        load()
-    }, [load])
-
-    return useMemo(() => ({ providers: providers ?? EMPTY_PROVIDERS, reload: load }), [providers, load])
+    const { value } = useAsyncGenerator(
+        useCallback((signal: AbortSignal) => client.mentionProviders(signal), [client])
+    )
+    return value ?? EMPTY_PROVIDERS
 }
