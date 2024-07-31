@@ -49,6 +49,7 @@ function createButtons(
         return createButtonsV2(
             preText,
             humanMessage,
+            fileName,
             copyButtonOnSubmit,
             insertButtonOnSubmit,
             smartApplyButtonOnSubmit
@@ -134,6 +135,7 @@ function createButtons(
 function createButtonsV2(
     preText: string,
     humanMessage: PriorHumanMessageInfo | null,
+    fileName?: string,
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
     smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
@@ -141,7 +143,10 @@ function createButtonsV2(
     // The container will contain the buttons and the <pre> element with the code.
     // This allows us to position the buttons independent of the code.
     const container = document.createElement('div')
-    container.className = styles.buttonsContainer
+    container.className = styles.footerContainer
+
+    const buttonsContainer = document.createElement('div')
+    buttonsContainer.className = styles.buttonsContainer
     if (!copyButtonOnSubmit) {
         return container
     }
@@ -153,14 +158,16 @@ function createButtonsV2(
     buttons.append(copyButton)
 
     if (smartApplyButtonOnSubmit) {
-        const applyButton = createApplyButton(preText, humanMessage, smartApplyButtonOnSubmit)
+        const applyButton = createApplyButton(preText, humanMessage, smartApplyButtonOnSubmit, fileName)
         buttons.append(applyButton)
     }
 
     const actionsDropdown = createActionsDropdown(preText)
     buttons.append(actionsDropdown)
 
-    container.append(buttons)
+    // Display the buttons in the codeblock footer.
+    buttonsContainer.append(buttons)
+    container.append(buttonsContainer)
 
     return container
 }
@@ -268,7 +275,8 @@ function createCopyButton(
 function createApplyButton(
     preText: string,
     humanMessage: PriorHumanMessageInfo | null,
-    onApply: CodeBlockActionsProps['smartApplyButtonOnSubmit']
+    onApply: CodeBlockActionsProps['smartApplyButtonOnSubmit'],
+    fileName?: string
 ): HTMLElement {
     const button = document.createElement('button')
     button.innerHTML = 'Apply'
@@ -280,7 +288,7 @@ function createApplyButton(
     iconContainer.innerHTML = SparkleIcon
     button.prepend(iconContainer)
 
-    button.addEventListener('click', () => onApply(preText, humanMessage?.text))
+    button.addEventListener('click', () => onApply(preText, humanMessage?.text, fileName))
 
     return button
 }
