@@ -300,7 +300,7 @@ export * from './token'
 export * from './token/constants'
 export * from './configuration'
 export {
-    setOpenCtxClient,
+    setOpenCtx,
     openCtx,
     REMOTE_REPOSITORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,

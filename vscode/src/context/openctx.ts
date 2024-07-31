@@ -4,7 +4,7 @@ import {
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
     featureFlagProvider,
-    setOpenCtxClient,
+    setOpenCtx,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
@@ -33,16 +33,19 @@ export async function exposeOpenCtxClient(
         const createController =
             createOpenCtxController ?? (await import('@openctx/vscode-lib')).createController
 
-        setOpenCtxClient(
-            createController({
-                extensionId: context.extension.id,
-                secrets: context.secrets,
-                outputChannel,
-                features: {},
-                providers,
-                preloadDelay: 5 * 1000, // 5 seconds
-            }).controller
-        )
+        const controller = createController({
+            extensionId: context.extension.id,
+            secrets: context.secrets,
+            outputChannel,
+            features: {},
+            providers,
+            preloadDelay: 5 * 1000, // 5 seconds
+        })
+
+        setOpenCtx({
+            client: controller.controller,
+            disposable: controller.disposable,
+        })
     } catch (error) {
         logDebug('openctx', `Failed to load OpenCtx client: ${error}`)
     }
