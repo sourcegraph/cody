@@ -634,7 +634,7 @@ export class SourcegraphGraphQLAPIClient {
                     repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
                 } ${query}`,
             },
-            15000
+            AbortSignal.timeout(15000)
         ).then(response =>
             extractDataOrError(
                 response,
@@ -1085,10 +1085,11 @@ export class SourcegraphGraphQLAPIClient {
         return result
     }
 
-    public async queryPrompts(query: string): Promise<Prompt[]> {
+    public async queryPrompts(query: string, signal?: AbortSignal): Promise<Prompt[]> {
         const response = await this.fetchSourcegraphAPI<APIResponse<{ prompts: { nodes: Prompt[] } }>>(
             PROMPTS_QUERY,
-            { query }
+            { query },
+            signal
         )
         const result = extractDataOrError(response, data => data.prompts.nodes)
         if (result instanceof Error) {

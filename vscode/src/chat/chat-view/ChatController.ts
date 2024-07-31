@@ -16,7 +16,6 @@ import {
     DOTCOM_URL,
     type DefaultChatCommands,
     type EventSource,
-    type GenericWebviewAPIWrapper,
     type Guardrails,
     type MentionQuery,
     type Message,
@@ -28,14 +27,18 @@ import {
     type SerializedPromptEditorState,
     TokenCounter,
     Typewriter,
+    addMessageListenersForExtensionAPI,
     allMentionProvidersMetadata,
+    asyncGeneratorFromPromise,
+    createMessageAPIForExtension,
     featureFlagProvider,
     getContextForChatMessage,
     graphqlClient,
-    handleExtensionAPICallFromWebview,
     hydrateAfterPostMessage,
     inputTextWithoutContextChipsFromPromptEditorState,
+    isAbortError,
     isAbortErrorOrSocketHangUp,
+    isContextWindowLimitError,
     isDefined,
     isError,
     isFileURI,
@@ -52,10 +55,6 @@ import {
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import {
-    isAbortError,
-    isContextWindowLimitError,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { URI } from 'vscode-uri'
 import { version as VSCEVersion } from '../../../package.json'
@@ -189,8 +188,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly repoPicker: RemoteRepoPicker | null
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
     private readonly contextAPIClient: ContextAPIClient | null
-
-    private allMentionProvidersMetadataQueryAbortController?: AbortController
 
     private disposables: vscode.Disposable[] = []
 
@@ -892,23 +889,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.postChatModels()
     }
 
-    private async handleGetAllMentionProvidersMetadata(): Promise<
-        Omit<Extract<ExtensionMessage, { type: 'allMentionProvidersMetadata' }>, 'type'>
-    > {
-        // Cancel previously in-flight query.
-        const abortController = new AbortController()
-        this.allMentionProvidersMetadataQueryAbortController?.abort()
-        this.allMentionProvidersMetadataQueryAbortController = abortController
-
-        const config = await getFullConfig()
-        const isCodyWeb = config.agentIDE === CodyIDE.Web
-        const providers = isCodyWeb
-            ? await webMentionProvidersMetadata()
-            : await allMentionProvidersMetadata()
-        abortController.signal.throwIfAborted()
-        return { providers }
-    }
-
     private async handleGetUserContextFilesCandidates({
         query,
     }: { query: MentionQuery }): Promise<
@@ -1549,43 +1529,40 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
             )
         )
-        const webviewAPIWrapper: GenericWebviewAPIWrapper<WebviewMessage, ExtensionMessage> = {
-            postMessage: this.postMessage.bind(this),
-            postError: this.postError.bind(this),
-            onMessage: callback => {
-                const disposable = viewOrPanel.webview.onDidReceiveMessage(callback)
-                return () => disposable.dispose()
-            },
-        }
+
+        // Listen for API calls from the webview.
         this.disposables.push(
-            handleExtensionAPICallFromWebview(
-                webviewAPIWrapper,
-                'queryContextItems',
-                'userContextFiles',
-                this.handleGetUserContextFilesCandidates.bind(this)
-            )
-        )
-        this.disposables.push(
-            handleExtensionAPICallFromWebview(
-                webviewAPIWrapper,
-                'queryPrompts',
-                'queryPrompts/response',
-                async ({ query }) => {
-                    try {
-                        const prompts = await graphqlClient.queryPrompts(query)
-                        return { result: prompts }
-                    } catch (error) {
-                        return { error: String(error) }
-                    }
+            addMessageListenersForExtensionAPI(
+                createMessageAPIForExtension({
+                    postMessage: this.postMessage.bind(this),
+                    postError: this.postError.bind(this),
+                    onMessage: callback => {
+                        const disposable = viewOrPanel.webview.onDidReceiveMessage(callback)
+                        return () => disposable.dispose()
+                    },
+                }),
+                {
+                    mentionProviders: async function* (signal: AbortSignal) {
+                        const isCodyWeb = (await getFullConfig()).agentIDE === CodyIDE.Web
+                        const g = isCodyWeb
+                            ? webMentionProvidersMetadata(signal)
+                            : allMentionProvidersMetadata(signal)
+                        for await (const value of g) {
+                            yield value
+                        }
+                    },
+                    contextItems: query =>
+                        asyncGeneratorFromPromise(
+                            this.handleGetUserContextFilesCandidates({ query }).then(
+                                result => result.userContextFiles ?? []
+                            )
+                        ),
+                    evaluatedFeatureFlag: (flag, signal) =>
+                        featureFlagProvider.evaluatedFeatureFlag(flag, signal),
+                    prompts: async function* (query, signal) {
+                        yield await graphqlClient.queryPrompts(query, signal)
+                    },
                 }
-            )
-        )
-        this.disposables.push(
-            handleExtensionAPICallFromWebview(
-                webviewAPIWrapper,
-                'getAllMentionProvidersMetadata',
-                'allMentionProvidersMetadata',
-                async () => this.handleGetAllMentionProvidersMetadata()
             )
         )
 
@@ -1607,7 +1584,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 attribution: clientConfig?.attributionEnabled ?? false,
                 serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
             },
-            exportedFeatureFlags: featureFlagProvider.getExposedExperiments(),
         })
     }
 
@@ -1767,7 +1743,6 @@ export function webviewViewOrPanelOnDidChangeViewState(
 }
 
 export function revealWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscode.WebviewPanel): void {
-    // TODO!(sqs): focus sidebar if is webviewView
     if ('reveal' in viewOrPanel) {
         viewOrPanel.reveal()
     }
