@@ -14,7 +14,7 @@ import javax.swing.JPanel
 abstract class CodyCredentialsUi {
   abstract fun getPreferredFocusableComponent(): JComponent?
 
-  abstract fun getValidator(): Validator
+  abstract fun getValidationInfo(): ValidationInfo?
 
   abstract fun createExecutor(server: SourcegraphServerPath): SourcegraphApiRequestExecutor
 

@@ -48,12 +48,14 @@ class AddCodyEnterpriseAccountAction : BaseAddAccountWithTokenAction() {
     e.project?.let { TelemetryV2.sendTelemetryEvent(it, "auth.login", "clicked") }
 
     val accountsHost = getCodyAccountsHost(e) ?: return
-    val dialog = newAddAccountDialog(e.project, e.getData(PlatformCoreDataKeys.CONTEXT_COMPONENT))
+    val dialog =
+        SourcegraphInstanceLoginDialog(
+            project = e.project, parent = e.getData(PlatformCoreDataKeys.CONTEXT_COMPONENT))
 
-    dialog.setServer(defaultServer)
     if (dialog.showAndGet()) {
+      val data = dialog.codyAuthData
       accountsHost.addAccount(
-          dialog.server, dialog.login, dialog.displayName, dialog.token, dialog.id)
+          data.account.server, data.login, data.account.displayName, data.token, data.account.id)
     }
   }
 }
@@ -70,12 +72,6 @@ abstract class BaseAddAccountWithTokenAction : DumbAwareEDTAction() {
       (e.getData(CodyAccountsHost.DATA_KEY)
           ?: DataManager.getInstance().loadFromDataContext(e.dataContext, CodyAccountsHost.KEY))
 }
-
-private fun newAddAccountDialog(project: Project?, parent: Component?): BaseLoginDialog =
-    SourcegraphTokenLoginDialog(project, parent, SsoAuthMethod.DEFAULT).apply {
-      title = "Add Sourcegraph Account"
-      setLoginButtonText("Add Account")
-    }
 
 fun signInWithSourcegraphDialog(project: Project?, parent: Component?): BaseLoginDialog =
     SourcegraphTokenLoginDialog(project, parent, SsoAuthMethod.DEFAULT).apply {

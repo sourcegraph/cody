@@ -20,17 +20,19 @@ import javax.swing.JTextField
 
 internal typealias UniqueLoginPredicate = (login: String, server: SourcegraphServerPath) -> Boolean
 
+class ServerTextField : ExtendableTextField(SourcegraphServerPath.DEFAULT_HOST, 0)
+
 class CodyLoginPanel(
     executorFactory: SourcegraphApiRequestExecutor.Factory,
 ) : Wrapper() {
 
-  private val serverTextField = ExtendableTextField(SourcegraphServerPath.DEFAULT_HOST, 0)
+  private val serverTextField = ServerTextField()
   private var tokenAcquisitionError: ValidationInfo? = null
 
   private lateinit var currentUi: CodyCredentialsUi
   private var tokenUi = CodyTokenCredentialsUi(serverTextField, executorFactory)
 
-  private var authUI = CodyAuthCredentialsUi(executorFactory)
+  private var authUi = CodyAuthCredentialsUi(executorFactory)
 
   private val progressIcon = AnimatedIcon.Default.INSTANCE
   private val progressExtension = ExtendableTextComponent.Extension { progressIcon }
@@ -60,10 +62,12 @@ class CodyLoginPanel(
   fun doValidateAll(): List<ValidationInfo> {
     val uiError =
         validateCustomRequestHeaders(tokenUi.customRequestHeadersField)
-            ?: currentUi.getValidator().invoke()
+            ?: currentUi.getValidationInfo()
 
     return listOfNotNull(uiError, tokenAcquisitionError)
   }
+
+  fun getServerPathValidationInfo() = tokenUi.getServerPathValidationInfo()
 
   private fun validateCustomRequestHeaders(field: JTextField): ValidationInfo? {
     if (field.text.isEmpty()) {
@@ -136,5 +140,5 @@ class CodyLoginPanel(
 
   fun setTokenUi() = applyUi(tokenUi)
 
-  fun setAuthUI() = applyUi(authUI)
+  fun setAuthUI() = applyUi(authUi)
 }

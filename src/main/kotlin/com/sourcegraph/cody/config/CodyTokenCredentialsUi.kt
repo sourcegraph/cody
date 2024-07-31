@@ -1,16 +1,13 @@
 package com.sourcegraph.cody.config
 
-import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.ui.setEmptyState
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.fields.ExtendableTextField
-import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.MAX_LINE_LENGTH_NO_WRAP
 import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
-import com.intellij.ui.layout.enteredTextSatisfies
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphApiRequests
 import com.sourcegraph.cody.api.SourcegraphAuthenticationException
@@ -18,8 +15,8 @@ import com.sourcegraph.cody.auth.SsoAuthMethod
 import com.sourcegraph.cody.config.DialogValidationUtils.custom
 import com.sourcegraph.cody.config.DialogValidationUtils.notBlank
 import com.sourcegraph.common.AuthorizationUtil
-import com.sourcegraph.common.BrowserOpener
-import java.net.URLEncoder
+import com.sourcegraph.common.CodyBundle
+import com.sourcegraph.common.CodyBundle.fmt
 import java.net.UnknownHostException
 import javax.swing.JComponent
 import javax.swing.JTextField
@@ -38,30 +35,22 @@ internal class CodyTokenCredentialsUi(
   }
 
   override fun Panel.centerPanel() {
-    lateinit var serverField: Cell<ExtendableTextField>
-    row("Server: ") { serverField = cell(serverTextField).horizontalAlign(HorizontalAlign.FILL) }
-    row("Token: ") { cell(tokenTextField).horizontalAlign(HorizontalAlign.FILL) }
-    row("") {
-      link("Generate new token") { BrowserOpener.openInBrowser(null, buildNewTokenUrl()) }
-          .enabledIf(
-              serverField.component.enteredTextSatisfies {
-                it.isNotEmpty() && isServerPathValid(it)
-              })
+    row(CodyBundle.getString("login.dialog.instance-url.label")) {
+      cell(serverTextField).horizontalAlign(HorizontalAlign.FILL)
     }
-    collapsibleGroup("Advanced settings", indent = false) {
-      row("Custom request headers: ") {
+    row(CodyBundle.getString("login.dialog.token.label")) {
+      cell(tokenTextField).horizontalAlign(HorizontalAlign.FILL)
+    }
+    group(CodyBundle.getString("login.dialog.optional.group"), indent = false) {
+      row(CodyBundle.getString("login.dialog.custom-headers.label")) {
         customRequestHeadersField = ExtendableTextField("", 0)
         cell(customRequestHeadersField)
             .horizontalAlign(HorizontalAlign.FILL)
             .comment(
-                """Any custom headers to send with every request to Sourcegraph.<br>
-                  |Use any number of pairs: "header1, value1, header2, value2, ...".<br>
-                  |Whitespace around commas doesn't matter.
-              """
-                    .trimMargin(),
+                CodyBundle.getString("login.dialog.custom-headers.comment").trimMargin(),
                 MAX_LINE_LENGTH_NO_WRAP)
             .applyToComponent {
-              this.setEmptyState("Client-ID, client-one, X-Extra, some metadata")
+              this.setEmptyState(CodyBundle.getString("login.dialog.custom-headers.empty"))
             }
       }
     }
@@ -69,31 +58,22 @@ internal class CodyTokenCredentialsUi(
 
   override fun getPreferredFocusableComponent(): JComponent = tokenTextField
 
-  private fun buildNewTokenUrl(): String {
-    val sourcegraphServerPath =
-        runCatching { SourcegraphServerPath.from(serverTextField.text, "") }.getOrNull()
-            ?: return ""
-    val productName = ApplicationNamesInfo.getInstance().fullProductName
-    val productNameEncoded = URLEncoder.encode(productName, "UTF-8")
-    return sourcegraphServerPath.url + "user/settings/tokens/new?description=" + productNameEncoded
-  }
+  override fun getValidationInfo() =
+      getServerPathValidationInfo()
+          ?: notBlank(tokenTextField, CodyBundle.getString("login.dialog.validation.empty-token"))
+          ?: custom(tokenTextField, CodyBundle.getString("login.dialog.validation.invalid-token")) {
+            AuthorizationUtil.isValidAccessToken(tokenTextField.text)
+          }
 
-  override fun getValidator(): () -> ValidationInfo? = {
-    getServerPathValidationInfo()
-        ?: notBlank(tokenTextField, "Token cannot be empty")
-        ?: custom(tokenTextField, "Invalid access token") {
-          AuthorizationUtil.isValidAccessToken(tokenTextField.text)
-        }
-  }
-
-  private fun getServerPathValidationInfo(): ValidationInfo? {
-    return notBlank(serverTextField, "Server url cannot be empty")
+  fun getServerPathValidationInfo(): ValidationInfo? {
+    return notBlank(
+        serverTextField, CodyBundle.getString("login.dialog.validation.empty-instance-url"))
         ?: validateServerPath(serverTextField)
   }
 
   private fun validateServerPath(field: JTextField): ValidationInfo? =
       if (!isServerPathValid(field.text)) {
-        ValidationInfo("Invalid server url", field)
+        ValidationInfo(CodyBundle.getString("login.dialog.validation.invalid-instance-url"), field)
       } else {
         null
       }
@@ -118,7 +98,10 @@ internal class CodyTokenCredentialsUi(
   override fun handleAcquireError(error: Throwable): ValidationInfo =
       when (error) {
         is SourcegraphParseException ->
-            ValidationInfo(error.message ?: "Invalid server url", serverTextField)
+            ValidationInfo(
+                error.message
+                    ?: CodyBundle.getString("login.dialog.validation.invalid-instance-url"),
+                serverTextField)
         else -> handleError(error)
       }
 
@@ -148,11 +131,18 @@ internal class CodyTokenCredentialsUi(
 
     fun handleError(error: Throwable): ValidationInfo =
         when (error) {
-          is UnknownHostException -> ValidationInfo("Server is unreachable.").withOKEnabled()
+          is UnknownHostException ->
+              ValidationInfo(CodyBundle.getString("login.dialog.error.server-unreachable"))
+                  .withOKEnabled()
           is SourcegraphAuthenticationException ->
-              ValidationInfo("Incorrect credentials.\n" + error.message.orEmpty()).withOKEnabled()
+              ValidationInfo(
+                      CodyBundle.getString("login.dialog.error.incorrect-credentials")
+                          .fmt(error.message.orEmpty()))
+                  .withOKEnabled()
           else ->
-              ValidationInfo("Invalid authentication data.\n" + error.message.orEmpty())
+              ValidationInfo(
+                      CodyBundle.getString("login.dialog.error.invalid-authentication")
+                          .fmt(error.message.orEmpty()))
                   .withOKEnabled()
         }
   }

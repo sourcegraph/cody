@@ -6,10 +6,9 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.config.CodyPersistentAccountsHost
-import com.sourcegraph.cody.config.signInWithSourcegraphDialog
+import com.sourcegraph.cody.config.SourcegraphInstanceLoginDialog
 import com.sourcegraph.common.ui.DumbAwareEDTAction
 import com.sourcegraph.config.ConfigUtil
-import java.awt.Dimension
 
 class SignInWithEnterpriseInstanceAction(
     private val defaultServer: String = ConfigUtil.DOTCOM_URL
@@ -20,14 +19,15 @@ class SignInWithEnterpriseInstanceAction(
     val authManager = CodyAuthenticationManager.getInstance(project)
     val serverUrl = authManager.account?.server?.url ?: defaultServer
     val dialog =
-        signInWithSourcegraphDialog(project, e.getData(PlatformCoreDataKeys.CONTEXT_COMPONENT))
-            .apply {
-              contentPane.minimumSize = Dimension(MIN_DIALOG_WIDTH, MIN_DIALOG_HEIGHT)
-              setServer(serverUrl)
-            }
+        SourcegraphInstanceLoginDialog(
+            project, e.getData(PlatformCoreDataKeys.CONTEXT_COMPONENT), serverUrl)
     if (dialog.showAndGet()) {
       accountsHost.addAccount(
-          dialog.server, dialog.login, dialog.displayName, dialog.token, dialog.id)
+          dialog.codyAuthData.server,
+          dialog.codyAuthData.login,
+          dialog.codyAuthData.account.displayName,
+          dialog.codyAuthData.token,
+          dialog.codyAuthData.account.id)
       if (ConfigUtil.isCodyEnabled()) {
         // Open Cody sidebar
         val toolWindowManager = ToolWindowManager.getInstance(project)

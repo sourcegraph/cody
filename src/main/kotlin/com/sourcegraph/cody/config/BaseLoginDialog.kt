@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.config
 
 import com.intellij.collaboration.async.CompletableFutureUtil
-import com.intellij.collaboration.async.CompletableFutureUtil.completionOnEdt
 import com.intellij.collaboration.async.CompletableFutureUtil.errorOnEdt
 import com.intellij.collaboration.async.CompletableFutureUtil.successOnEdt
 import com.intellij.openapi.application.ModalityState
@@ -13,16 +12,19 @@ import com.intellij.openapi.util.Disposer
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.auth.SsoAuthMethod
 import java.awt.Component
+import javax.swing.Action
 import javax.swing.JComponent
 
 abstract class BaseLoginDialog(
-    project: Project?,
-    parent: Component?,
+    protected val project: Project?,
+    protected val parent: Component?,
     executorFactory: SourcegraphApiRequestExecutor.Factory,
     private val authMethod: SsoAuthMethod
 ) : DialogWrapper(project, parent, false, IdeModalityType.PROJECT) {
 
   protected val loginPanel = CodyLoginPanel(executorFactory)
+
+  override fun createActions(): Array<Action> = arrayOf(cancelAction, okAction)
 
   var id: String = ""
     private set
@@ -65,10 +67,8 @@ abstract class BaseLoginDialog(
     val emptyProgressIndicator = EmptyProgressIndicator(modalityState)
     Disposer.register(disposable) { emptyProgressIndicator.cancel() }
 
-    startGettingToken()
     loginPanel
         .acquireDetailsAndToken(emptyProgressIndicator, authMethod)
-        .completionOnEdt(modalityState) { finishGettingToken() }
         .successOnEdt(modalityState) { (details, newToken) ->
           login = details.username
           displayName = details.displayName
@@ -82,7 +82,26 @@ abstract class BaseLoginDialog(
         }
   }
 
-  protected open fun startGettingToken() = Unit
+  fun authenticate() {
+    val modalityState = ModalityState.stateForComponent(loginPanel)
+    val emptyProgressIndicator = EmptyProgressIndicator(modalityState)
+    Disposer.register(disposable) { emptyProgressIndicator.cancel() }
 
-  protected open fun finishGettingToken() = Unit
+    loginPanel.setAuthUI()
+    okAction.isEnabled = false
+
+    loginPanel
+        .acquireDetailsAndToken(emptyProgressIndicator, SsoAuthMethod.DEFAULT)
+        .successOnEdt(modalityState) { (details, newToken) ->
+          login = details.username
+          displayName = details.displayName
+          token = newToken
+          id = details.id
+
+          close(OK_EXIT_CODE, true)
+        }
+        .errorOnEdt(modalityState) {
+          if (!CompletableFutureUtil.isCancellation(it)) startTrackingValidation()
+        }
+  }
 }

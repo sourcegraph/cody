@@ -35,11 +35,11 @@ class CodyAccountListModel(private val project: Project) :
             .login(
                 parentComponent,
                 CodyLoginRequest(
-                    login = account.name,
+                    title = "Edit Sourcegraph Account",
                     server = account.server,
+                    login = account.name,
                     token = token,
                     customRequestHeaders = account.server.customRequestHeaders,
-                    title = "Edit Sourcegraph Account",
                     loginButtonText = "Save account",
                 ))
 

@@ -319,9 +319,9 @@
                 </action>
                 <action id="Cody.Accounts.AddCodyEnterpriseAccount"
                         class="com.sourcegraph.cody.config.AddCodyEnterpriseAccountAction"
-                        text="Log In with Token to Sourcegraph Enterprise"
-                        description="Logs in to Sourcegraph Enterprise with a token">
-                    <override-text place="GoToAction" text="Cody: Log In with Token to Sourcegraph Enterprise"/>
+                        text="Log In to Sourcegraph Enterprise"
+                        description="Logs in to Sourcegraph Enterprise">
+                    <override-text place="GoToAction" text="Cody: Log In to Sourcegraph Enterprise"/>
                 </action>
             </group>
 
