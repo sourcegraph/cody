@@ -4,6 +4,7 @@ import { PromptString, telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 
 import { Utils } from 'vscode-uri'
+import { doesFileExist } from '../../commands/utils/workspace-files'
 import { executeSmartApply } from '../../edit/smart-apply'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { countCode, matchCodeSnippets } from './code-count'
@@ -130,6 +131,11 @@ export async function handleSmartApply(
     const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
     const uri =
         fileUri && workspaceUri ? Utils.joinPath(workspaceUri, fileUri) : activeEditor?.document.uri
+
+    if (uri && !(await doesFileExist(uri))) {
+        return handleNewFileWithCode(code, uri)
+    }
+
     const document = uri ? await vscode.workspace.openTextDocument(uri) : activeEditor?.document
     const editor = uri && (await vscode.window.showTextDocument(uri))
     if (!editor || !document) {
@@ -146,6 +152,15 @@ export async function handleSmartApply(
         },
         source: 'chat',
     })
+}
+
+export async function handleNewFileWithCode(code: string, uri: vscode.Uri): Promise<void> {
+    const workspaceEditor = new vscode.WorkspaceEdit()
+    workspaceEditor.createFile(uri, { ignoreIfExists: false })
+    const range = new vscode.Range(0, 0, 0, 0)
+    workspaceEditor.replace(uri, range, code.trimEnd())
+    await vscode.workspace.applyEdit(workspaceEditor)
+    return vscode.commands.executeCommand('vscode.open', uri)
 }
 
 /**
