@@ -29,8 +29,6 @@ const ChatContextClientContext = createContext<ChatContextClient | undefined>(un
 
 export const ChatContextClientProvider = ChatContextClientContext.Provider
 
-let callerCount = 0
-
 /** Hook to get the chat context items for the given query. */
 export function useChatContextItems(
     query: string | null,
@@ -64,8 +62,6 @@ export function useChatContextItems(
             return
         }
 
-        const count = callerCount++
-
         // If user has typed an incomplete range, fetch new chat context items only if there are no
         // results.
         const mentionQuery: MentionQuery = {
@@ -90,23 +86,17 @@ export function useChatContextItems(
         let invalidated = false
 
         if (chatContextClient) {
-            console.log(`[ITEMS] ${count} Start fetching`)
             chatContextClient
                 .getChatContextItems({ query: mentionQuery })
                 .then(result => {
-                    console.log(`[ITEMS] ${count} Resolved`, result)
                     if (invalidated) {
-                        console.log(`[ITEMS] ${count} invalidated`)
                         return
                     }
 
-                    console.log(`[ITEMS] ${count} Set items`)
                     setResults(result.userContextFiles ?? [])
                 })
                 .catch(error => {
-                    console.log(`[ITEMS] ${count} error`)
                     if (invalidated) {
-                        console.log(`[ITEMS] ${count} error invalidated`)
                         console.error(error)
                         return
                     }
