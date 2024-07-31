@@ -18,7 +18,7 @@ function toInput(input: ContextItem[]): InputContextItem[] {
                       retriever: i.source || '',
                   }
         )
-        .filter(i => i !== null) as InputContextItem[]
+        .filter(i => i !== null) satisfies InputContextItem[]
 }
 
 export class ContextAPIClient {
