@@ -51,20 +51,22 @@ export const SYMBOL_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata & {
 }
 
 /** Metadata for all registered {@link ContextMentionProvider}s. */
-export async function allMentionProvidersMetadata(): Promise<ContextMentionProviderMetadata[]> {
-    const items = [
-        FILE_CONTEXT_MENTION_PROVIDER,
-        SYMBOL_CONTEXT_MENTION_PROVIDER,
-        ...(await openCtxMentionProviders()),
-    ]
-
-    return items
+export async function* allMentionProvidersMetadata(
+    signal?: AbortSignal
+): AsyncGenerator<ContextMentionProviderMetadata[]> {
+    for await (const providers of openCtxMentionProviders(signal)) {
+        yield [FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER, ...providers]
+    }
 }
 
 // Cody Web providers don't include standard file provider since
 // it uses openctx remote file provider instead
-export async function webMentionProvidersMetadata(): Promise<ContextMentionProviderMetadata[]> {
-    return [SYMBOL_CONTEXT_MENTION_PROVIDER, ...(await openCtxMentionProviders())]
+export async function* webMentionProvidersMetadata(
+    signal?: AbortSignal
+): AsyncGenerator<ContextMentionProviderMetadata[]> {
+    for await (const providers of openCtxMentionProviders(signal)) {
+        yield [SYMBOL_CONTEXT_MENTION_PROVIDER, ...providers]
+    }
 }
 
 export function openCtxProviderMetadata(
@@ -78,20 +80,24 @@ export function openCtxProviderMetadata(
     }
 }
 
-async function openCtxMentionProviders(): Promise<ContextMentionProviderMetadata[]> {
+async function* openCtxMentionProviders(
+    signal?: AbortSignal
+): AsyncGenerator<ContextMentionProviderMetadata[]> {
     const client = openCtx.client
     if (!client) {
         return []
     }
 
     try {
-        const providers = await client.meta({})
-
-        return providers
-            .filter(provider => !!provider.mentions)
-            .map(openCtxProviderMetadata)
-            .sort((a, b) => (a.title > b.title ? 1 : -1))
+        for await (const providers of client.metaChanges__asyncGenerator({}, {}, signal)) {
+            console.debug('X->W: providers', providers)
+            yield providers
+                .filter(provider => !!provider.mentions)
+                .map(openCtxProviderMetadata)
+                .sort((a, b) => (a.title > b.title ? 1 : -1))
+        }
     } catch (error) {
+        console.log('X->W: error', error)
         logDebug('openctx', `Failed to fetch OpenCtx providers: ${error}`)
         return []
     }

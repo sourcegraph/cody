@@ -1,4 +1,7 @@
-import type { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared'
+import {
+    type ConfigurationWithAccessToken,
+    asyncGeneratorFromVSCodeEvent,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getFullConfig } from './configuration'
 import type { AuthProvider } from './services/AuthProvider'
@@ -26,6 +29,8 @@ export interface ConfigWatcher<C> extends vscode.Disposable {
         disposables: vscode.Disposable[],
         options?: OnChangeOptions
     ): Promise<void>
+
+    observe(): AsyncGenerator<C>
 }
 
 export class BaseConfigWatcher implements ConfigWatcher<ConfigurationWithAccessToken> {
@@ -82,6 +87,12 @@ export class BaseConfigWatcher implements ConfigWatcher<ConfigurationWithAccessT
         if (runImmediately) {
             await callback(this.currentConfig)
         }
+    }
+
+    public async *observe(): AsyncGenerator<ConfigurationWithAccessToken> {
+        // TODO!(sqs)
+        yield this.currentConfig
+        return asyncGeneratorFromVSCodeEvent(this.configChangeEvent.event)
     }
 
     private set(config: ConfigurationWithAccessToken): void {

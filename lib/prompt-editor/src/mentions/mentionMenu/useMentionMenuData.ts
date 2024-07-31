@@ -53,7 +53,7 @@ export function useMentionMenuData(
     const results = useChatContextItems(params.query, params.parentItem)
     const queryLower = params.query?.toLowerCase()?.trim() ?? null
 
-    const { providers } = useChatContextMentionProviders()
+    const providers = useChatContextMentionProviders()
     const clientState = useClientState()
 
     return useMemo(

@@ -1,4 +1,9 @@
-import { createExtensionAPIProxyInWebview } from '@sourcegraph/cody-shared'
+import {
+    type GenericVSCodeWrapper,
+    createExtensionAPIProxyInWebview,
+    createMessageAPIForWebview,
+    proxyExtensionAPI,
+} from '@sourcegraph/cody-shared'
 import { type ChatContextClient, ChatContextClientProvider } from '@sourcegraph/prompt-editor'
 import { type FunctionComponent, type ReactNode, useMemo } from 'react'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
@@ -16,10 +21,9 @@ export const ChatContextClientProviderFromVSCodeAPI: FunctionComponent<{
                           'queryContextItems',
                           'userContextFiles'
                       ),
-                      getMentionProvidersMetadata: createExtensionAPIProxyInWebview(
-                          vscodeAPI,
-                          'getAllMentionProvidersMetadata',
-                          'allMentionProvidersMetadata'
+                      mentionProviders: proxyExtensionAPI(
+                          createMessageAPIForWebview(vscodeAPI as GenericVSCodeWrapper<any, any>), // TODO!(sqs): type
+                          'mentionProviders'
                       ),
                   }
                 : null,

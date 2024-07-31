@@ -1,4 +1,8 @@
-import type { ContextItem } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    type ContextMentionProviderMetadata,
+    asyncGeneratorValues,
+} from '@sourcegraph/cody-shared'
 import { renderHook } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, test } from 'vitest'
@@ -19,7 +23,7 @@ describe('useChatContextItems', () => {
         })
         const client: ChatContextClient = {
             getChatContextItems: async () => ({ userContextFiles: await itemsPromise }),
-            getMentionProvidersMetadata: async () => ({ providers: [] }),
+            mentionProviders: () => asyncGeneratorValues<ContextMentionProviderMetadata[]>([]),
         }
 
         const { result } = renderHook(() => useChatContextItems('q', null), {

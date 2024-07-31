@@ -29,7 +29,10 @@ import {
     type SerializedPromptEditorState,
     TokenCounter,
     Typewriter,
+    addMessageListenersForExtensionAPI,
     allMentionProvidersMetadata,
+    asyncGeneratorFromPromise,
+    createMessageAPIForExtension,
     featureFlagProvider,
     getContextForChatMessage,
     graphqlClient,
@@ -194,7 +197,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly contextAPIClient: ContextAPIClient | null
 
     private contextFilesQueryAbortController?: AbortController
-    private allMentionProvidersMetadataQueryAbortController?: AbortController
 
     private disposables: vscode.Disposable[] = []
 
@@ -931,23 +933,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.postChatModels()
     }
 
-    private async handleGetAllMentionProvidersMetadata(): Promise<
-        Omit<Extract<ExtensionMessage, { type: 'allMentionProvidersMetadata' }>, 'type'>
-    > {
-        // Cancel previously in-flight query.
-        const abortController = new AbortController()
-        this.allMentionProvidersMetadataQueryAbortController?.abort()
-        this.allMentionProvidersMetadataQueryAbortController = abortController
-
-        const config = await getFullConfig()
-        const isCodyWeb = config.agentIDE === CodyIDE.Web
-        const providers = isCodyWeb
-            ? await webMentionProvidersMetadata()
-            : await allMentionProvidersMetadata()
-        abortController.signal.throwIfAborted()
-        return { providers }
-    }
-
     private async handleGetUserContextFilesCandidates({
         query,
     }: { query: MentionQuery }): Promise<
@@ -1625,13 +1610,27 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }
             )
         )
+        const webviewAPIWrapper2 = createMessageAPIForExtension(
+            webviewAPIWrapper as any /* TODO!(sqs) */
+        )
         this.disposables.push(
-            handleExtensionAPICallFromWebview(
-                webviewAPIWrapper,
-                'getAllMentionProvidersMetadata',
-                'allMentionProvidersMetadata',
-                async () => this.handleGetAllMentionProvidersMetadata()
-            )
+            addMessageListenersForExtensionAPI(webviewAPIWrapper2, {
+                mentionProviders: async function* (signal: AbortSignal) {
+                    const isCodyWeb = (await getFullConfig()).agentIDE === CodyIDE.Web
+                    const g = isCodyWeb
+                        ? webMentionProvidersMetadata(signal)
+                        : allMentionProvidersMetadata(signal)
+                    for await (const value of g) {
+                        yield value
+                    }
+                },
+                contextItems: query =>
+                    asyncGeneratorFromPromise(
+                        this.handleGetUserContextFilesCandidates({ query }).then(
+                            result => result.userContextFiles ?? []
+                        )
+                    ),
+            })
         )
 
         await this.postConfigFeatures()

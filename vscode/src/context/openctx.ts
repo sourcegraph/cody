@@ -3,12 +3,15 @@ import {
     type ConfigurationWithAccessToken,
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
+    asyncGeneratorValues,
     featureFlagProvider,
+    firstValueFrom,
     setOpenCtxClient,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
 import type { Provider } from '@openctx/client'
+import type { createController } from '@openctx/vscode-lib'
 import { logDebug, outputChannel } from '../log'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
@@ -20,16 +23,15 @@ export async function exposeOpenCtxClient(
     context: Pick<vscode.ExtensionContext, 'extension' | 'secrets'>,
     config: ConfigurationWithAccessToken,
     isDotCom: boolean,
-    // TODO [VK] Expose createController openctx type from vscode-lib
-    createOpenCtxController: ((...args: any[]) => any) | undefined
+    createOpenCtxController: typeof createController | undefined
 ) {
     logDebug('openctx', 'OpenCtx is enabled in Cody')
     await warnIfOpenCtxExtensionConflict()
     try {
         const isCodyWeb = config.agentIDE === CodyIDE.Web
         const providers = isCodyWeb
-            ? getCodyWebOpenCtxProviders()
-            : await getStandardOpenCtxProviders(config, isDotCom)
+            ? asyncGeneratorValues(getCodyWebOpenCtxProviders())
+            : getStandardOpenCtxProviders(config, isDotCom)
         const createController =
             createOpenCtxController ?? (await import('@openctx/vscode-lib')).createController
 
@@ -38,9 +40,8 @@ export async function exposeOpenCtxClient(
                 extensionId: context.extension.id,
                 secrets: context.secrets,
                 outputChannel,
-                features: {},
-                providers,
-                preloadDelay: 5 * 1000, // 5 seconds
+                features: { annotations: true, statusBar: true },
+                providers: await firstValueFrom(providers),
             }).controller
         )
     } catch (error) {
@@ -48,10 +49,10 @@ export async function exposeOpenCtxClient(
     }
 }
 
-async function getStandardOpenCtxProviders(
+async function* getStandardOpenCtxProviders(
     config: ConfigurationWithAccessToken,
     isDotCom: boolean
-): Promise<{ settings: any; provider: Provider; providerUri: string }[]> {
+): AsyncGenerator<{ settings: any; provider: Provider; providerUri: string }[]> {
     const providers: { settings: any; provider: Provider; providerUri: string }[] = [
         {
             settings: true,
@@ -86,6 +87,7 @@ async function getStandardOpenCtxProviders(
         })
     }
 
+    // TODO!(sqs): convert to AsyncGnenerator
     if (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.GitMentionProvider)) {
         providers.push({
             settings: true,
@@ -94,7 +96,7 @@ async function getStandardOpenCtxProviders(
         })
     }
 
-    return providers
+    yield providers
 }
 
 function getCodyWebOpenCtxProviders() {

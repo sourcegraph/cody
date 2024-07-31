@@ -136,6 +136,7 @@ export type {
 export {
     displayPath,
     displayPathBasename,
+    uriHasPrefix,
     displayPathDirname,
     displayPathWithoutWorkspaceFolderPrefix,
     setDisplayPathEnvInfo,
@@ -323,3 +324,14 @@ export {
     createExtensionAPIProxyInWebview,
     handleExtensionAPICallFromWebview,
 } from './misc/rpc/proxy'
+export { type WebviewToExtensionAPI } from './misc/rpc/webviewAPI'
+export {
+    proxyExtensionAPI,
+    addMessageListenersForExtensionAPI,
+    createMessageAPIForWebview,
+    type WithAbortSignalAsLastArg,
+    type ResponseMessage,
+    type RequestMessage,
+    createMessageAPIForExtension,
+} from './misc/rpc/rpc'
+export * from './misc/asyncGenerator'

@@ -8,7 +8,6 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
-import { useChatContextMentionProviders } from '@sourcegraph/prompt-editor'
 import styles from './Chat.module.css'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
@@ -43,7 +42,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showIDESnippetActions = true,
     className,
 }) => {
-    const { reload: reloadMentionProviders } = useChatContextMentionProviders()
     const telemetryRecorder = useTelemetryRecorder()
 
     const transcriptRef = useRef(transcript)
@@ -157,11 +155,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             window.removeEventListener('focus', onFocus)
         }
     }, [])
-
-    // biome-ignore lint/correctness/useExhaustiveDependencies: needs to run when is dotcom status is changing to update openctx providers
-    useEffect(() => {
-        reloadMentionProviders()
-    }, [userInfo.isDotComUser, reloadMentionProviders])
 
     return (
         <div className={clsx(styles.container, className, 'tw-relative')}>
