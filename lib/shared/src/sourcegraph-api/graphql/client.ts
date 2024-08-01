@@ -48,6 +48,7 @@ import {
     REPOSITORY_SEARCH_QUERY,
     REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
+    VIEWER_SETTINGS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
 
@@ -490,6 +491,10 @@ interface EvaluatedFeatureFlagsResponse {
 
 interface EvaluateFeatureFlagResponse {
     evaluateFeatureFlag: boolean
+}
+
+interface ViewerSettingsResponse {
+    viewerSettings: { final: string }
 }
 
 function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (data: T) => R): R | Error {
@@ -1276,6 +1281,14 @@ export class SourcegraphGraphQLAPIClient {
                 flagName,
             }
         ).then(response => extractDataOrError(response, data => data.evaluateFeatureFlag))
+    }
+
+    public async viewerSettings(): Promise<Record<string, any> | Error> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<ViewerSettingsResponse>>(
+            VIEWER_SETTINGS_QUERY,
+            {}
+        )
+        return extractDataOrError(response, data => JSON.parse(data.viewerSettings.final))
     }
 
     public fetchSourcegraphAPI<T>(

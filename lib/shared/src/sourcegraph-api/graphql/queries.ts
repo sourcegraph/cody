@@ -458,3 +458,11 @@ query GetRemoteFileQuery($repositoryName: String!, $filePath: String!, $startLin
   }
 }
 `
+
+export const VIEWER_SETTINGS_QUERY = `
+query ViewerSettings {
+  viewerSettings {
+    final
+  }
+}
+`

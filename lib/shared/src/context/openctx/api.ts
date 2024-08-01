@@ -15,12 +15,11 @@ export const openCtx: OpenCtx = {}
  * disposed and replaced.
  */
 export function setOpenCtx({ client, disposable }: OpenCtx): void {
-    const { client: oldClient, disposable: oldDisposable } = openCtx
+    const { disposable: oldDisposable } = openCtx
 
     openCtx.client = client
     openCtx.disposable = disposable
 
-    oldClient?.dispose()
     oldDisposable?.dispose()
 }
 
