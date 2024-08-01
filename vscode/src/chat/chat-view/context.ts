@@ -15,6 +15,7 @@ import {
     featureFlagProvider,
     isAbortError,
     isFileURI,
+    pathFunctionsForURI,
     truncateTextNearestLine,
     uriBasename,
     wrapInActiveSpan,
@@ -82,6 +83,8 @@ export async function resolveContext({
                 item.type !== 'repository' && item.type !== 'tree'
         )
 
+        const dirInRepo = getDirInRepoFromMentions(input.mentions)
+
         // Right now, repo mentions are always remote (remoteSearch), and tree mentions are always
         // local (symf or embeddings).
 
@@ -93,6 +96,7 @@ export async function resolveContext({
                           remoteSearch,
                           input.text,
                           repoMentions.map(m => m.repoID),
+                          dirInRepo,
                           signal
                       ),
                       'remote-search'
@@ -105,7 +109,7 @@ export async function resolveContext({
                 ? Promise.all(
                       treeMentions.map(tree =>
                           retrieveContextGracefully(
-                              searchSymf(symf, editor, tree.uri, input.text),
+                              searchSymf(symf, editor, tree.uri, input.text, dirInRepo),
                               `symf ${tree.name}`
                           )
                       )
@@ -117,7 +121,7 @@ export async function resolveContext({
         const treeContextEmbeddingsSearchResults =
             localEmbeddings && strategy !== 'keyword' && treeMentions.length > 0
                 ? retrieveContextGracefully(
-                      searchEmbeddingsLocal(localEmbeddings, input.text),
+                      searchEmbeddingsLocal(localEmbeddings, input.text, dirInRepo),
                       'local-embeddings'
                   )
                 : Promise.resolve([])
@@ -136,6 +140,22 @@ export async function resolveContext({
         const priorityContext = await getPriorityContext(input.text, editor, allContext)
         return priorityContext.concat(allContext)
     })
+}
+
+function getDirInRepoFromMentions(items: ContextItem[]): string | null {
+    // TODO!(sqs): does not support multiple items that are trees
+    for (const item of items) {
+        if (item.type === 'tree') {
+            if (item.isWorkspaceRoot) {
+                return null
+            }
+            if (!item.workspaceFolder) {
+                throw new Error('tree context item workspace folder is null')
+            }
+            return pathFunctionsForURI(item.uri).relative(item.workspaceFolder.path, item.uri.path)
+        }
+    }
+    return null
 }
 
 export async function getContextStrategy(
@@ -201,6 +221,7 @@ export async function searchSymf(
     editor: VSCodeEditor,
     workspaceRoot: vscode.Uri,
     userText: PromptString,
+    dirInRepo: string | null,
     blockOnIndex = false
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.symf', async () => {
@@ -223,7 +244,10 @@ export async function searchSymf(
         // trigger background reindex if the index is stale
         void symf?.reindexIfStale(workspaceRoot)
 
-        const r0 = (await symf.getResults(userText, [workspaceRoot])).flatMap(async results => {
+        const scopeDir =
+            dirInRepo === null ? workspaceRoot : vscode.Uri.joinPath(workspaceRoot, dirInRepo)
+
+        const r0 = (await symf.getResults(userText, [scopeDir])).flatMap(async results => {
             const items = (await results).flatMap(
                 async (result: Result): Promise<ContextItem[] | ContextItem> => {
                     const range = new vscode.Range(
@@ -269,12 +293,13 @@ export async function searchSymf(
 async function searchEmbeddingsLocal(
     localEmbeddings: LocalEmbeddingsController,
     text: PromptString,
+    dirInRepo: string | null,
     numResults: number = NUM_CODE_RESULTS + NUM_TEXT_RESULTS
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.embeddings.local', async span => {
         logDebug('ChatController', 'resolveContext > searching local embeddings')
         const contextItems: ContextItem[] = []
-        const embeddingsResults = await localEmbeddings.getContext(text, numResults)
+        const embeddingsResults = await localEmbeddings.getContext(text, dirInRepo, numResults)
         span.setAttribute('numResults', embeddingsResults.length)
 
         for (const result of embeddingsResults) {
