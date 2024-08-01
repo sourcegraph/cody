@@ -8,6 +8,7 @@ import {
     expandToLineRange,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { getAncestorProjectRootDir } from '../commands/context/project'
 import { getSelectionOrFileContext } from '../commands/context/selection'
 import { createRemoteRepositoryMention } from '../context/openctx/remoteRepositorySearch'
 import type { RemoteSearch } from '../context/remote-search'
@@ -16,6 +17,8 @@ import { contextItemMentionFromOpenCtxItem } from './context/chatContext'
 import type { ExtensionMessage } from './protocol'
 
 type PostMessage = (message: Extract<ExtensionMessage, { type: 'clientState' }>) => void
+
+const USE_DIRECTORY_INITIAL_CONTEXT = true
 
 /**
  * Listen for changes to the client (such as VS Code) state to send to the webview.
@@ -48,7 +51,8 @@ export function startClientStateBroadcaster({
                     continue
                 }
 
-                const item = {
+                // TODO!(sqs): add remote repo support for monorepo dirs
+                const item: ContextItem = {
                     ...contextItemMentionFromOpenCtxItem(
                         createRemoteRepositoryMention({
                             id: repo.id,
@@ -65,21 +69,31 @@ export function startClientStateBroadcaster({
             }
         } else {
             // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
-            const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
-            if (workspaceFolder) {
-                const item = {
-                    type: 'tree',
-                    uri: workspaceFolder.uri,
-                    title: 'Current Repository',
-                    name: workspaceFolder.name,
-                    description: workspaceFolder.name,
-                    isWorkspaceRoot: true,
-                    content: null,
-                    source: ContextItemSource.Initial,
-                    icon: 'folder',
-                } satisfies ContextItemTree
-
-                items.push(item)
+            if (USE_DIRECTORY_INITIAL_CONTEXT) {
+                const item = await getAncestorProjectRootDir(signal ?? undefined)
+                if (item) {
+                    item.source = ContextItemSource.Initial
+                    item.icon = 'folder'
+                    item.title = 'Project'
+                    items.push(item)
+                }
+            } else {
+                const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
+                if (workspaceFolder) {
+                    const item = {
+                        type: 'tree',
+                        uri: workspaceFolder.uri,
+                        title: 'Current Repository',
+                        name: workspaceFolder.name,
+                        description: workspaceFolder.name,
+                        isWorkspaceRoot: true,
+                        workspaceFolder: workspaceFolder.uri,
+                        content: null,
+                        source: ContextItemSource.Initial,
+                        icon: 'folder',
+                    } satisfies ContextItemTree
+                    items.push(item)
+                }
             }
         }
 
