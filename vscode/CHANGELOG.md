@@ -21,6 +21,15 @@ Chat: Cody is now defaulted to run in the sidebar for both Enterprise and Non-En
 
 - Autocomplete: Ignores leading empty new lines for autocomplete suggestions to reduce the number of cases when Cody doesn't suggest anything. [pull/4864](https://github.com/sourcegraph/cody/pull/4864)
 - Autocomplete: Preload completions on cursor movement. [pull/4901](https://github.com/sourcegraph/cody/pull/4901)
+- Chat: The shortcuts for starting starting and toggling the chat have changed:
+  - `Alt+L`: think of this as the muscle-memory "chat" shortcut
+    - From text editor: opens/focuses the chat sidebar panel
+    - From text editor with active selection: adds the active selection to chat
+    - From chat sidebar: focuses the last editor panel
+    - From chat editor: no-op
+  - `Shift+Alt+L`:
+    - From text editor: opens a new chat editor panel
+    - Anywhere else: starts a new chat in the sidebar
 
 ## 1.28.0
 

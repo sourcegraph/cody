@@ -582,39 +582,6 @@
       },
 
       {
-        "command": "cody.chat.toggle",
-        "key": "alt+l",
-        "when": "cody.activated && editorTextFocus",
-        "args": {
-          "editorFocus": true
-        }
-      },
-      {
-        "command": "cody.chat.toggle",
-        "key": "alt+l",
-        "when": "cody.activated && !editorTextFocus",
-        "args": {
-          "editorFocus": false
-        }
-      },
-      {
-        "command": "cody.chat.toggle",
-        "key": "alt+/",
-        "when": "cody.activated && editorTextFocus",
-        "args": {
-          "editorFocus": true
-        }
-      },
-      {
-        "command": "cody.chat.toggle",
-        "key": "alt+/",
-        "when": "cody.activated && !editorTextFocus",
-        "args": {
-          "editorFocus": false
-        }
-      },
-
-      {
         "command": "cody.chat.newPanel",
         "key": "shift+alt+/",
         "when": "cody.activated"
@@ -623,6 +590,39 @@
         "command": "cody.chat.newPanel",
         "key": "shift+alt+l",
         "when": "cody.activated"
+      },
+
+      {
+        "command": "cody.chat.toggle",
+        "key": "alt+l",
+        "when": "cody.activated && editorTextFocus",
+        "args": {
+          "editorFocus": true
+        }
+      },
+      {
+        "command": "cody.chat.toggle",
+        "key": "alt+l",
+        "when": "cody.activated && !editorTextFocus",
+        "args": {
+          "editorFocus": false
+        }
+      },
+      {
+        "command": "cody.chat.toggle",
+        "key": "alt+/",
+        "when": "cody.activated && editorTextFocus",
+        "args": {
+          "editorFocus": true
+        }
+      },
+      {
+        "command": "cody.chat.toggle",
+        "key": "alt+/",
+        "when": "cody.activated && !editorTextFocus",
+        "args": {
+          "editorFocus": false
+        }
       },
 
       {
