@@ -1,7 +1,7 @@
 import type { ChatMessage } from '../chat/transcript/messages'
 import { PromptString, ps } from './prompt-string'
 
-const DEFAULT = ps`Include the full file path in the markdown tag. For example: \`\`\`typescript:path/to/file.ts\n\`\`\` `
+const DEFAULT = ps`Include the full file path in the Markdown tag. For example: \`\`\`language:path/to/file\n\`\`\` `
 
 /**
  * The preamble we add to the start of the last human open-end chat message that has context items.

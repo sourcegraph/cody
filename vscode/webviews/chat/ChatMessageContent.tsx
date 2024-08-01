@@ -442,9 +442,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
 
             if (codeblockText && preElement.parentNode) {
                 const codeElement = preElement.querySelectorAll('code')?.[0]
-                const fileName = codeElement?.getAttribute('date-file-path') || undefined
-
-                console.log(fileName, 'fileName', codeElement)
+                const fileName = codeElement?.getAttribute('data-file-path') || undefined
 
                 const buttons = createButtons(
                     codeblockText,
@@ -455,12 +453,10 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     fileName
                 )
 
-                console.log
-
-                if (fileName?.length && !isMessageLoading) {
+                if (fileName?.length) {
                     const fileNameContainer = document.createElement('div')
                     fileNameContainer.className = styles.fileNameContainer
-                    fileNameContainer.textContent = fileName
+                    fileNameContainer.textContent = getFileName(fileName)
                     buttons.append(fileNameContainer)
                 }
                 if (guardrails) {
