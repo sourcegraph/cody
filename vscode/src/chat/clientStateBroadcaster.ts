@@ -6,10 +6,12 @@ import {
     displayLineRange,
     displayPathBasename,
     expandToLineRange,
+    openCtx,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getAncestorProjectRootDir } from '../commands/context/project'
 import { getSelectionOrFileContext } from '../commands/context/selection'
+import { toVSCodeRange } from '../common/range'
 import { createRemoteRepositoryMention } from '../context/openctx/remoteRepositorySearch'
 import type { RemoteSearch } from '../context/remote-search'
 import type { ChatModel } from './chat-view/ChatModel'
@@ -118,6 +120,36 @@ export function startClientStateBroadcaster({
             } satisfies ContextItem
 
             items.push(item)
+        }
+
+        // Get OpenCtx annotations that are in the selection range.
+        const openctxController = openCtx.controller
+        if (openctxController) {
+            const selectionRange = toVSCodeRange(contextFile.range)
+            const doc = await vscode.workspace.openTextDocument(contextFile.uri)
+            const anns = await openctxController.annotations(doc)
+            for (const ann of anns) {
+                if (selectionRange && ann.range && !selectionRange.intersection(ann.range)) {
+                    continue
+                }
+                items.push({
+                    type: 'openctx',
+                    provider: 'openctx',
+                    title: ann.item.title,
+                    uri: vscode.Uri.parse(
+                        `${ann.uri}/annotation?${encodeURIComponent(ann.item.url ?? '')}`
+                    ), // TODO!(sqs): encoding
+                    providerUri: ann.providerUri,
+                    mention: {
+                        uri: ann.uri,
+                        data: ann.item,
+                        description:
+                            ann.item.ui?.hover?.markdown ?? ann.item.ui?.hover?.text ?? undefined,
+                    },
+                    content: ann.item.url, // TODO!(sqs): ann.item.ai?.content,
+                    source: ContextItemSource.Initial,
+                })
+            }
         }
 
         postMessage({ type: 'clientState', value: { initialContext: items } })

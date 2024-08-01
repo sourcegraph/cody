@@ -5,6 +5,11 @@ type OpenCtxController = Pick<
     Client<vscode.Range>,
     'meta' | 'metaChanges__asyncGenerator' | 'mentions' | 'mentionsChanges__asyncGenerator' | 'items'
 > & {
+    annotations(
+        doc: Pick<vscode.TextDocument, 'uri' | 'getText'>,
+        opts?: ProviderMethodOptions
+    ): ReturnType<Client<vscode.Range>['annotations']>
+
     annotationsChanges__asyncGenerator(
         doc: Pick<vscode.TextDocument, 'uri' | 'getText'>,
         opts?: ProviderMethodOptions,
