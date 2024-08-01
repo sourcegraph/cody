@@ -17,10 +17,10 @@ test('chat keyboard shortcuts for sidebar chat', async ({ page, sidebar }) => {
     const chatPanel = getChatEditorPanel(page)
     const chatInput = getChatInputs(chatPanel).first()
 
-    // Alt+L with no selection opens a new chat (with file mention).
+    // Shift+Alt+L with no selection opens a new chat in an editor panel (with file mention).
     await openFileInEditorTab(page, 'buzz.ts')
     await clickEditorTab(page, 'buzz.ts')
-    await page.keyboard.press('Alt+L')
+    await page.keyboard.press('Shift+Alt+L')
     await expect(chatInput).toContainText('buzz.ts', { timeout: 3_000 })
 
     await executeCommandInPalette(page, 'View: Close Primary Sidebar')
@@ -37,7 +37,8 @@ test('chat keyboard shortcuts for sidebar chat', async ({ page, sidebar }) => {
     await page.keyboard.press('Alt+L')
     await expect(chatInput).toContainText('buzz.ts buzz.ts:3-5 x buzz.ts:7-9 ')
 
-    // Alt+L in the chat (after sending) opens a new chat.
+    // Alt+Shift+L in the chat (after sending) opens a new chat.
     await chatInput.press('Enter')
+    await page.keyboard.press('Shift+Alt+L')
     await expect(chatMessageRows(chatPanel).nth(2)).toContainText(/hello from the assistant/)
 })
