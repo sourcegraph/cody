@@ -1,5 +1,6 @@
 import {
     type ChatMessage,
+    type ContextItem,
     ContextItemSource,
     type Guardrails,
     type PromptString,
@@ -159,6 +160,7 @@ export interface HumanMessageInitialContextInfo {
 
 export interface PriorHumanMessageInfo {
     text?: PromptString
+    contextFiles?: ContextItem[]
     hasInitialContext: HumanMessageInitialContextInfo
     rerunWithDifferentContext: (withInitialContext: HumanMessageInitialContextInfo) => void
 
@@ -179,6 +181,7 @@ export function makeHumanMessageInfo(
 
     return {
         text: humanMessage.text,
+        contextFiles: humanMessage.contextFiles,
         hasInitialContext: {
             repositories: Boolean(
                 contextItems.some(item => item.type === 'repository' || item.type === 'tree')

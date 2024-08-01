@@ -6,6 +6,7 @@ import type {
     AuthStatus,
     ChatMessage,
     CodyIDE,
+    ContextItem,
     Guardrails,
     PromptString,
 } from '@sourcegraph/cody-shared'
@@ -121,14 +122,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             return
         }
 
-        return (text: string, instruction?: PromptString, fileName?: string) => {
+        return (text: string, instruction?: PromptString, contextFiles?: ContextItem[]) => {
             // Log the event type and text to telemetry in chat view
             vscodeAPI.postMessage({
                 command: 'smartApply',
                 instruction: instruction?.toString(),
                 // remove the additional /n added by the text area at the end of the text
                 code: text.replace(/\n$/, ''),
-                fileName,
+                contextFiles,
             })
         }
     }, [vscodeAPI, showIDESnippetActions])

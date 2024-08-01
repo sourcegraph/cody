@@ -67,14 +67,12 @@ export class DefaultPrompter {
             //
             // Adding the preamble before the final build step ensures it is included in the final prompt but not displayed in the UI.
             // It also allows adding the preamble only when there is context to display, without wasting tokens on the same preamble repeatedly.
-
-            PromptMixin.setContextPreamble(
+            if (
                 !this.isCommand &&
-                    Boolean(
-                        this.explicitContext.length || historyItems.length || this.getEnhancedContext
-                    )
-            )
-            reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0], chat.modelID)
+                Boolean(this.explicitContext.length || historyItems.length || this.getEnhancedContext)
+            ) {
+                reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0], chat.modelID)
+            }
 
             const messagesIgnored = promptBuilder.tryAddMessages(reverseTranscript)
             if (messagesIgnored) {

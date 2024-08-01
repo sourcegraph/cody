@@ -1,10 +1,9 @@
 import * as vscode from 'vscode'
 
-import { PromptString, telemetryRecorder } from '@sourcegraph/cody-shared'
+import { type ContextItem, PromptString, telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 
-import { Utils } from 'vscode-uri'
-import { doesFileExist } from '../../commands/utils/workspace-files'
+import { fastFuzzyMatch } from '../../edit/fast-fuzzy-match'
 import { executeSmartApply } from '../../edit/smart-apply'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { countCode, matchCodeSnippets } from './code-count'
@@ -122,22 +121,59 @@ export async function replaceSelectionWithCode(text: string): Promise<void> {
     setLastStoredCode(text, eventName)
 }
 
+async function fuzzySearchFilesForSnippet(
+    snippet: string,
+    files: ContextItem[],
+    abortSignal: AbortSignal
+): Promise<vscode.Uri | undefined> {
+    return new Promise((resolve, reject) => {
+        let foundMatch: { uri?: vscode.Uri; distance: number } = { distance: Number.MAX_SAFE_INTEGER }
+
+        for (const file of files) {
+            if (abortSignal.aborted) {
+                return reject(new Error('Operation aborted'))
+            }
+
+            if (file.type !== 'file' || !file.content) {
+                continue
+            }
+            const distance = fastFuzzyMatch(file.content, snippet)
+            if (distance && distance < foundMatch.distance) {
+                foundMatch = { uri: file.uri as vscode.Uri, distance }
+            }
+        }
+
+        resolve(foundMatch.uri)
+    })
+}
+
 export async function handleSmartApply(
     code: string,
     instruction?: string,
-    fileUri?: string
+    contextFiles?: ContextItem[]
 ): Promise<void> {
-    const activeEditor = getEditor()?.active
-    const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
-    const uri =
-        fileUri && workspaceUri ? Utils.joinPath(workspaceUri, fileUri) : activeEditor?.document.uri
+    let document: vscode.TextDocument | undefined
+    let editor: vscode.TextEditor | undefined
 
-    if (uri && !(await doesFileExist(uri))) {
-        return handleNewFileWithCode(code, uri)
+    const fuzzySearchAbortController = new AbortController()
+    const fileMatch = await Promise.race([
+        fuzzySearchFilesForSnippet(code, contextFiles || [], fuzzySearchAbortController.signal),
+        new Promise<undefined>(resolve =>
+            setTimeout(() => {
+                fuzzySearchAbortController.abort()
+                resolve(undefined)
+            }, 500)
+        ),
+    ])
+
+    if (fileMatch) {
+        document = await vscode.workspace.openTextDocument(fileMatch)
+        editor = await vscode.window.showTextDocument(document)
+    } else {
+        editor = getEditor()?.active
+        document = editor?.document
     }
 
-    const document = uri ? await vscode.workspace.openTextDocument(uri) : activeEditor?.document
-    const editor = uri && (await vscode.window.showTextDocument(uri))
     if (!editor || !document) {
         throw new Error('No editor found to insert text')
     }
@@ -146,9 +182,9 @@ export async function handleSmartApply(
         configuration: {
             document: editor.document,
             instruction: PromptString.unsafe_fromUserQuery(instruction || ''),
-            // TODO: Support other models here? Will need to for enterprise
             model: 'anthropic/claude-3-5-sonnet-20240620',
             replacement: code,
+            contextFiles,
         },
         source: 'chat',
     })
