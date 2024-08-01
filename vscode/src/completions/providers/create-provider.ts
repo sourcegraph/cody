@@ -98,8 +98,10 @@ export async function createProviderConfig(
     /**
      * Look for the autocomplete provider in VSCode settings and return matching provider config.
      */
+
     const providerAndModelFromVSCodeConfig = await resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
-        config.autocompleteAdvancedProvider
+        config.autocompleteAdvancedProvider,
+        authStatus.isDotCom
     )
     if (providerAndModelFromVSCodeConfig) {
         const { provider, model } = providerAndModelFromVSCodeConfig
@@ -240,7 +242,8 @@ async function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<
 }
 
 async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
-    configuredProvider: string | null
+    configuredProvider: string | null,
+    isDotCom: boolean
 ): Promise<{
     provider: string
     model?: FireworksOptions['model'] | AnthropicOptions['model']
@@ -249,7 +252,7 @@ async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
         return { provider: configuredProvider }
     }
 
-    const [starCoder2Hybrid, starCoderHybrid, claude3, finetunedFIMModelHybrid, fimModelExperimentFlag] =
+    const [starCoder2Hybrid, starCoderHybrid, claude3, finetunedFIMModelHybrid, fimModelExperimentFlag, deepseekV2LiteBase] =
         await Promise.all([
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
@@ -258,6 +261,9 @@ async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
             featureFlagProvider.evaluateFeatureFlag(
                 FeatureFlag.CodyAutocompleteFIMModelExperimentBaseFeatureFlag
             ),
+            featureFlagProvider.evaluateFeatureFlag(
+                FeatureFlag.CodyAutocompleteDeepseekV2LiteBase
+            )
         ])
 
     // We run fine tuning experiment for VSC client only.
@@ -269,6 +275,10 @@ async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
     if (!isFinetuningExperimentDisabled && fimModelExperimentFlag) {
         // The traffic in this feature flag is interpreted as a traffic allocated to the fine-tuned experiment.
         return resolveFIMModelExperimentFromFeatureFlags()
+    }
+
+    if (isDotCom && deepseekV2LiteBase) {
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
     }
 
     if (finetunedFIMModelHybrid) {

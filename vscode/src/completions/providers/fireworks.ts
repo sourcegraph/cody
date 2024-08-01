@@ -722,7 +722,7 @@ export function createProviderConfig({
 }): ProviderConfig {
     const clientModel =
         model === null || model === ''
-            ? 'starcoder-hybrid'
+            ? DEEPSEEK_CODER_V2_LITE_BASE
             : ['starcoder-hybrid', 'starcoder2-hybrid'].includes(model)
               ? (model as FireworksModel)
               : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
