@@ -46,18 +46,23 @@ const lowScoringPathSegments = ['bin']
  * potentially swallow errors and return (and cache) incomplete data.
  */
 const throttledFindFiles = throttle(() => findWorkspaceFiles(), 10000)
+
+interface FileContextItemsOptions {
+    query: string
+    maxResults: number
+    range: RangeData | undefined
+    repositoriesNames?: string[]
+}
+
 /**
  * Searches all workspaces for files matching the given string. VS Code doesn't
  * provide an API for fuzzy file searching, only precise globs, so we recreate
  * it by getting a list of all files across all workspaces and using fuzzysort.
  * Large files over 1MB are filtered.
  */
-export async function getFileContextFiles(
-    query: string,
-    range: RangeData | undefined,
-    maxResults: number,
-    repositoriesNames?: string[]
-): Promise<ContextItemFile[]> {
+export async function getFileContextFiles(options: FileContextItemsOptions): Promise<ContextItemFile[]> {
+    let { query, maxResults, repositoriesNames, range } = options
+
     if (!query.trim()) {
         return []
     }
@@ -434,27 +439,21 @@ async function resolveFileOrSymbolContextItem(
         // Get only actual file path without repository name
         const repository = contextItem.remoteRepositoryName
         const path = contextItem.uri.path.slice(repository.length + 1, contextItem.uri.path.length)
+        const ranges = contextItem.range
+            ? { startLine: contextItem.range.start.line, endLine: contextItem.range.end.line + 1 }
+            : undefined
 
-        // TODO [VK]: Support ranges for symbol context items
-        const resultOrError = await graphqlClient.getFileContent(repository, path)
+        const resultOrError = await graphqlClient.getFileContent(repository, path, ranges)
 
         if (!isErrorLike(resultOrError)) {
-            const range = contextItem.range
-            const content = range
-                ? resultOrError
-                      .split(/\r?\n|\r|\n/g)
-                      .filter((line, index) => index >= range.start.line - 1 && index <= range.end.line)
-                      .join('\\n')
-                : resultOrError
-
             return {
                 ...contextItem,
                 title: path,
                 uri: URI.parse(`${graphqlClient.endpoint}${repository}/-/blob/${path}`),
-                content: content,
+                content: resultOrError,
                 repoName: repository,
                 source: ContextItemSource.Unified,
-                size: TokenCounter.countTokens(content),
+                size: TokenCounter.countTokens(resultOrError),
             }
         }
     }

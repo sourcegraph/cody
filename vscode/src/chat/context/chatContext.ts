@@ -42,12 +42,12 @@ export async function getChatContextItemsForMention(
         case FILE_CONTEXT_MENTION_PROVIDER.id: {
             telemetryRecorder?.withProvider(mentionQuery.provider)
             const files = mentionQuery.text
-                ? await getFileContextFiles(
-                      mentionQuery.text,
-                      mentionQuery.range,
-                      MAX_RESULTS,
-                      remoteRepositoriesNames
-                  )
+                ? await getFileContextFiles({
+                      query: mentionQuery.text,
+                      range: mentionQuery.range,
+                      maxResults: MAX_RESULTS,
+                      repositoriesNames: remoteRepositoriesNames,
+                  })
                 : await getOpenTabsContextFile()
 
             // If a range is provided, that means user is trying to mention a specific line range.
