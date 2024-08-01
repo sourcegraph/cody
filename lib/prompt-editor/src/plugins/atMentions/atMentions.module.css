@@ -5,9 +5,7 @@
     box-shadow: 0 0 8px 2px var(--vscode-widget-shadow);
     border-radius: 3px;
 
-    min-width: 20vw;
-    width: 400px;
-    max-width: 90vw;
+    width: clamp(200px, 100vw, 400px);
 }
 
 .reset-anchor {
