@@ -139,7 +139,7 @@ export const ContextCell: FunctionComponent<{
                                                 )}
                                             >
                                                 <BrainIcon size={14} className="tw-ml-1" />
-                                                <span>Public knowledge</span>
+                                                <span>The Public knowledge</span>
                                             </span>
                                         </TooltipTrigger>
                                         <TooltipContent side="bottom">
