@@ -1,3 +1,6 @@
+## 0.3.4
+- Adds support for URL mentions
+
 ## 0.3.4 
 - Adds support for remote file ranges  
 
