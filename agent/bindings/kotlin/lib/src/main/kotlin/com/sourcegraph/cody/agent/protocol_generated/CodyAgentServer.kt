@@ -28,10 +28,6 @@ interface CodyAgentServer {
   fun chat_export(params: Chat_ExportParams?): CompletableFuture<List<ChatExportResult>>
   @JsonRequest("chat/remoteRepos")
   fun chat_remoteRepos(params: Chat_RemoteReposParams): CompletableFuture<Chat_RemoteReposResult>
-  @JsonRequest("chat/submitMessage")
-  fun chat_submitMessage(params: Chat_SubmitMessageParams): CompletableFuture<ExtensionMessage>
-  @JsonRequest("chat/editMessage")
-  fun chat_editMessage(params: Chat_EditMessageParams): CompletableFuture<ExtensionMessage>
   @JsonRequest("commands/explain")
   fun commands_explain(params: Null?): CompletableFuture<String>
   @JsonRequest("commands/test")
@@ -90,8 +86,6 @@ interface CodyAgentServer {
   fun git_codebaseName(params: Git_CodebaseNameParams): CompletableFuture<String?>
   @JsonRequest("webview/didDispose")
   fun webview_didDispose(params: Webview_DidDisposeParams): CompletableFuture<Null?>
-  @JsonRequest("webview/receiveMessage")
-  fun webview_receiveMessage(params: Webview_ReceiveMessageParams): CompletableFuture<Null?>
   @JsonRequest("webview/receiveMessageStringEncoded")
   fun webview_receiveMessageStringEncoded(params: Webview_ReceiveMessageStringEncodedParams): CompletableFuture<Null?>
   @JsonRequest("diagnostics/publish")

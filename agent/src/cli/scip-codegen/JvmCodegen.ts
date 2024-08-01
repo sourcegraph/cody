@@ -520,9 +520,15 @@ export class JvmCodegen extends BaseCodegen {
         p.block(() => {
             p.sectionComment('Requests')
             for (const request of symtab.structuralType(symtab.canonicalSymbol(requests))) {
-                // if (request.display_name === 'webview/receiveMessage') {
-                //     continue
-                // }
+                // We skip the webview protocol because our IDE clients are now
+                // using the string-encoded protocol instead.
+                if (
+                    request.display_name === 'webview/receiveMessage' ||
+                    request.display_name === 'chat/submitMessage' ||
+                    request.display_name === 'chat/editMessage'
+                ) {
+                    continue
+                }
                 // Process a JSON-RPC request signature. For example:
                 // type Requests = { 'textDocument/inlineCompletions': [RequestParams, RequestResult] }
                 const resultType = request.signature.value_signature.tpe.type_ref.type_arguments?.[1]
@@ -557,9 +563,11 @@ export class JvmCodegen extends BaseCodegen {
             p.line()
             p.sectionComment('Notifications')
             for (const notification of symtab.structuralType(symtab.canonicalSymbol(notifications))) {
-                // if (notification.display_name === 'webview/postMessage') {
-                //     continue
-                // }
+                // We skip the webview protocol because our IDE clients are now
+                // using the string-encoded protocol instead.
+                if (notification.display_name === 'webview/postMessage') {
+                    continue
+                }
                 // Process a JSON-RPC request signature. For example:
                 // type Notifications = { 'textDocument/inlineCompletions': [NotificationParams] }
                 const { parameterType, parameterSyntax } = f.jsonrpcMethodParameter(notification)

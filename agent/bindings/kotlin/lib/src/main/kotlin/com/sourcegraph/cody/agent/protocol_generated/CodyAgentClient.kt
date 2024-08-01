@@ -36,8 +36,6 @@ interface CodyAgentClient {
   fun codeLenses_display(params: DisplayCodeLensParams)
   @JsonNotification("ignore/didChange")
   fun ignore_didChange(params: Null?)
-  @JsonNotification("webview/postMessage")
-  fun webview_postMessage(params: WebviewPostMessageParams)
   @JsonNotification("webview/postMessageStringEncoded")
   fun webview_postMessageStringEncoded(params: Webview_PostMessageStringEncodedParams)
   @JsonNotification("progress/start")
