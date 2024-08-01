@@ -170,6 +170,7 @@ const TranscriptInteraction: FunctionComponent<
             isLastSentInteraction &&
             assistantMessage?.text === undefined
     )
+    const isSearchEnabled = true
 
     return (
         <>
@@ -187,34 +188,50 @@ const TranscriptInteraction: FunctionComponent<
                 isEditorInitiallyFocused={isLastInteraction}
                 editorRef={humanEditorRef}
             />
-            {((humanMessage.contextFiles && humanMessage.contextFiles.length > 0) ||
-                isContextLoading) && (
-                <ContextCell
-                    key={`${humanMessage.index}-context`}
-                    contextItems={humanMessage.contextFiles}
-                    model={assistantMessage?.model}
-                    isForFirstMessage={humanMessage.index === 0}
-                />
-            )}
-            {assistantMessage && !isContextLoading && (
-                <AssistantMessageCell
-                    key={assistantMessage.index}
-                    {...props}
-                    message={assistantMessage}
-                    humanMessage={makeHumanMessageInfo(
-                        { humanMessage, assistantMessage },
-                        humanEditorRef
+            {isSearchEnabled && (
+                <>
+                    {((humanMessage.contextFiles && humanMessage.contextFiles.length > 0) ||
+                        isContextLoading) && (
+                        <ContextCell
+                            key={`${humanMessage.index}-context`}
+                            contextItems={humanMessage.contextFiles}
+                            model={assistantMessage?.model}
+                            isForFirstMessage={humanMessage.index === 0}
+                        />
                     )}
-                    isLoading={assistantMessage.isLoading}
-                    showFeedbackButtons={
-                        !assistantMessage.isLoading &&
-                        !isTranscriptError &&
-                        !assistantMessage.error &&
-                        isLastSentInteraction
-                    }
-                />
+                    {assistantMessage && !isContextLoading && (
+                        <AssistantMessageCell
+                            key={assistantMessage.index}
+                            {...props}
+                            message={assistantMessage}
+                            humanMessage={makeHumanMessageInfo(
+                                { humanMessage, assistantMessage },
+                                humanEditorRef
+                            )}
+                            isLoading={assistantMessage.isLoading}
+                            showFeedbackButtons={
+                                !assistantMessage.isLoading &&
+                                !isTranscriptError &&
+                                !assistantMessage.error &&
+                                isLastSentInteraction
+                            }
+                        />
+                    )}
+                </>
             )}
-        </>
+            {!isSearchEnabled && (
+                <>
+                    {((humanMessage.contextFiles && humanMessage.contextFiles.length > 0) ||
+                        isContextLoading) && (
+                        <ContextCell
+                            key={`${humanMessage.index}-context`}
+                            contextItems={humanMessage.contextFiles}
+                            model={assistantMessage?.model}
+                            isForFirstMessage={humanMessage.index === 0}
+                        />
+                    )}
+                </>
+            )}            </>
     )
 }
 

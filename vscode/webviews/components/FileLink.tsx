@@ -16,12 +16,6 @@ import styles from './FileLink.module.css'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { dracula } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-import {
-    Popover,
-    PopoverTrigger,
-    PopoverContent,
-} from './shadcn/ui/popover'
-
 interface FileLinkProps {
     uri: URI
     repoName?: string
@@ -51,20 +45,20 @@ const hoverSourceLabels: Record<ContextItemSource, string | undefined> = {
 
 interface FileContentDisplayProps {
     fileName: string;
-    fileContents: string;
-    range: RangeData;
-}
-
-interface FileContentDisplayProps {
-    fileName: string;
     filePath: string;
     fileContents: string;
     range: RangeData;
 }
-
 const FileContentDisplay: React.FC<FileContentDisplayProps> = ({ fileName, filePath, fileContents, range }) => {
-    const startLine = range.start.line - 2 > 0 ? range.start.line - 2 : 0;
-    const endLine = range.end.line + 2;
+    let startLine, endLine;
+    if (range) {
+        startLine = range.start.line - 2 > 0 ? range.start.line - 2 : 0;
+        endLine = range.end.line + 2;
+    } else {
+        // Random range when range is null
+        startLine = Math.floor(Math.random() * 10);
+        endLine = startLine + Math.floor(Math.random() * 10) + 5;
+    }
     const lines = fileContents.split('\n');
     const displayedLines = lines;
 
@@ -77,8 +71,8 @@ const FileContentDisplay: React.FC<FileContentDisplayProps> = ({ fileName, fileP
             <div className={styles.fileContentsContainer}>
                 <div className={styles.fileHeader}>
                     <div className={styles.fileName}>{fileName}</div>
-                    <div className={styles.filePath}>{filePath}</div>
-                    <div className={styles.lineRange}>Lines {range.start.line} - {range.end.line}</div>
+                    <div className={styles.filePath}>vscode/webviews/components/FileLink.tsx</div>
+                    <div className={styles.lineRange}>Lines {startLine + 1} - {endLine}</div>
                 </div>
                 <SyntaxHighlighter
                     language="typescript"
@@ -118,19 +112,17 @@ export const FileLink: React.FunctionComponent<
             properties: { source },
         })
     }
-    const [isPopoverVisible, setIsPopoverVisible] = useState(false);
 
-    function fetchFileContent() {
+    function toggleFileContent() {
+        console.log("This is the toggleFileContent function")
         if (!isFileContentVisible) {
             const vscode = getVSCodeAPI();
             vscode.postMessage({
                 command: 'readLocalFileWithRange',
                 uri,
-                range: range ? {
-                    start: { line: range.start.line - 2, character: 0 },
-                    end: { line: range.end.line + 2, character: 0 }
-                } : undefined,
+                range,
             });
+    
             window.addEventListener('message', event => {
                 const message = event.data;
                 if (message.type === 'fileContent' && message.result.uri === uri.toString()) {
@@ -138,18 +130,18 @@ export const FileLink: React.FunctionComponent<
                     setIsFileContentVisible(true);
                 }
                 
+                console.log("This is the after of filecontents", fileContents, " with the message", message)
             }, { once: true });
         } else {
             setIsFileContentVisible(false);
         }
+        console.log("This is the isFileContentVisible", isFileContentVisible, "This is of the cars fileContents", fileContents)
     }
 
     let tooltip: string
     let pathWithRange: string
     let href: string
     let target: string | undefined
-    let fileName: string
-
     if (source === 'unified') {
         const repoShortName = repoName?.slice(repoName.lastIndexOf('/') + 1)
         const pathToDisplay = `${repoShortName} ${title}`
@@ -165,43 +157,48 @@ export const FileLink: React.FunctionComponent<
         href = openURI.href
         target = openURI.target
     }
-    function handleBoxClick() {
-        if (!isFileContentVisible) {
-            fetchFileContent();
-        }
-        setIsPopoverVisible(!isPopoverVisible);
-    }
+    let fileName: string
     fileName = uri.path.split('/').pop() || 'Unknown file'
     const filePath = uri.path;
     console.log("Path with range:", pathWithRange)
-
     return (
-        <div className={clsx('tw-flex tw-flex-col tw-items-start tw-max-w-full', className)} >
+        <div className={clsx('tw-flex tw-flex-col tw-items-start tw-max-w-full tw-text-blue-500 tw-bg-blue-100', className)}>
             <div className={clsx('tw-flex tw-items-center tw-w-full')}>
                 {isIgnored ? (
-                    <i className="codicon codicon-warning" title={IGNORE_WARNING} style={{ color: '#d4d4d4' }} />
+                    <i className="codicon codicon-warning" title={IGNORE_WARNING} />
                 ) : isTooLarge ? (
-                    <i className="codicon codicon-warning" title={LIMIT_WARNING} style={{ color: '#d4d4d4' }} />
+                    <i className="codicon codicon-warning" title={LIMIT_WARNING} />
                 ) : null}
-                     <a
+                <a
                     className={clsx(linkClassName, styles.path)}
                     title={tooltip}
                     href={href}
                     target={target}
+                    onClick={logFileLinkClicked}
                 >
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <div
-                                className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}
-                                data-source={source || 'unknown'}
-                                onClick={handleBoxClick}
-                            >
-                                {fileName}
-                            </div>
-                        </PopoverTrigger>
-                        {isPopoverVisible && (
-                            <PopoverContent className={styles.popoverContent}>
-                                {isFileContentVisible && fileContents && (
+                    <i
+                        className={clsx('codicon', `codicon-${source === 'user' ? 'mention' : 'file'}`)}
+                        title={
+                            (source &&
+                                hoverSourceLabels[source] &&
+                                `Included ${hoverSourceLabels[source]}`) ||
+                            undefined
+                        }
+                    />
+                    <div
+                        className={clsx(styles.path,  (isTooLarge || isIgnored) && styles.excluded)}
+                        data-source={source || 'unknown'}
+                    >
+                        {fileName}
+                    </div>
+                </a>
+                <div onClick={toggleFileContent} className={styles.toggleIcon}>
+                    {isFileContentVisible ? '▼' : '▶'}
+                </div>
+            </div>
+            {isFileContentVisible && fileContents &&  (
+                <div className={styles.fileContentBox}>
+  {isFileContentVisible && fileContents && (
                                     <FileContentDisplay
                                         fileName={fileName}
                                         filePath={filePath}
@@ -209,11 +206,8 @@ export const FileLink: React.FunctionComponent<
                                         range={range as RangeData}
                                     />
                                 )}
-                            </PopoverContent>
-                        )}
-                    </Popover>
-                </a>
-            </div>
+                </div>
+            )}
         </div>
     )
 }

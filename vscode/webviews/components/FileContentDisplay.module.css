@@ -12,14 +12,14 @@
 
 .excluded {
     text-decoration: line-through !important;
-    color: #ff0000; /* Red color for excluded items */
+    color: #fffb00; /* Red color for excluded items */
 }
 
 .fileContentDisplay {
     border: 1px solid #ccc;
     padding: 10px;
     margin-top: 10px;
-    background-color: #f9f9f9;
+    background-color: #f9f9f9ad;
     cursor: pointer;
 }
 
