@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { type ComponentProps, useCallback, useEffect, useMemo, useState } from 'react'
 
 import styles from './App.module.css'
 
@@ -12,24 +12,29 @@ import {
     type Model,
     PromptString,
     type SerializedChatTranscript,
+    type TelemetryRecorder,
     isCodyProUser,
 } from '@sourcegraph/cody-shared'
 import type { AuthMethod, ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 import type { UserAccountInfo } from './Chat'
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
-import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
 import { ConnectionIssuesPage } from './Troubleshooting'
 import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
-import { ClientStateContextProvider, useClientActionDispatcher } from './client/clientState'
+import { useClientActionDispatcher } from './client/clientState'
 
+import { ClientStateContextProvider } from '@sourcegraph/prompt-editor'
+import { PromptsClientProviderFromVSCodeAPI } from './components/promptSelectField/promptsClient'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
-import { WithContextProviders } from './mentions/providers'
+import { ChatContextClientProviderFromVSCodeAPI } from './openctxClient'
 import { AccountTab, CommandsTab, HistoryTab, SettingsTab, TabsBar, View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
+import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
+import { type Config, ConfigProvider } from './utils/useConfig'
+import { FeatureFlagsProvider } from './utils/useFeatureFlags'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
@@ -53,6 +58,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
     const [commandList, setCommandList] = useState<CodyCommand[]>([])
     const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
+    const [exportedFeatureFlags, setExportedFeatureFlags] = useState<Record<string, boolean>>()
 
     const [clientState, setClientState] = useState<ClientStateForWebview>({
         initialContext: [],
@@ -117,6 +123,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         }
                         break
                     case 'setConfigFeatures':
+                        setExportedFeatureFlags(message.exportedFeatureFlags)
                         setChatEnabled(message.configFeatures.chat)
                         setAttributionEnabled(message.configFeatures.attribution)
                         setServerSentModelsEnabled(message.configFeatures.serverSentModels)
@@ -208,9 +215,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
-    // Is this user a new installation?
-    const isNewInstall = useMemo(() => !userHistory?.some(c => c?.interactions?.length), [userHistory])
-
     const onCurrentChatModelChange = useCallback(
         (selected: Model): void => {
             vscodeAPI.postMessage({
@@ -225,86 +229,95 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [chatModels, onCurrentChatModelChange, serverSentModelsEnabled]
     )
 
+    const wrappers = useMemo<Wrapper[]>(
+        () =>
+            getAppWrappers(
+                vscodeAPI,
+                telemetryRecorder,
+                chatModelContext,
+                clientState,
+                exportedFeatureFlags,
+                config && authStatus ? { config, authStatus } : undefined
+            ),
+        [
+            vscodeAPI,
+            telemetryRecorder,
+            chatModelContext,
+            clientState,
+            exportedFeatureFlags,
+            config,
+            authStatus,
+        ]
+    )
+
     // Wait for all the data to be loaded before rendering Chat View
     if (!view || !authStatus || !config || !userHistory) {
         return <LoadingPage />
     }
 
-    if (authStatus.showNetworkError) {
-        return (
-            <div className={styles.outerContainer}>
-                <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+    return (
+        <ComposedWrappers wrappers={wrappers}>
+            {authStatus.showNetworkError ? (
+                <div className={styles.outerContainer}>
                     <ConnectionIssuesPage
                         configuredEndpoint={authStatus.endpoint}
                         vscodeAPI={vscodeAPI}
                     />
-                </TelemetryRecorderContext.Provider>
-            </div>
-        )
-    }
-
-    if (view === 'login' || !authStatus.isLoggedIn || !userAccountInfo) {
-        return (
-            <div className={styles.outerContainer}>
-                <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                </div>
+            ) : view === 'login' || !authStatus.isLoggedIn || !userAccountInfo ? (
+                <div className={styles.outerContainer}>
                     <LoginSimplified
                         simplifiedLoginRedirect={loginRedirect}
-                        uiKindIsWeb={config?.uiKindIsWeb}
+                        uiKindIsWeb={config.uiKindIsWeb}
                         vscodeAPI={vscodeAPI}
                     />
-                </TelemetryRecorderContext.Provider>
-            </div>
-        )
-    }
-
-    return (
-        <TabRoot
-            defaultValue={View.Chat}
-            value={view}
-            orientation="vertical"
-            className={styles.outerContainer}
-        >
-            {/* NOTE: Display tabs to PLG users only until Universal Cody is ready. */}
-            {/* Shows tab bar for sidebar chats only. */}
-            {userAccountInfo.isDotComUser && config.webviewType !== 'editor' && (
-                <TabsBar currentView={view} setView={setView} IDE={config.agentIDE || CodyIDE.VSCode} />
+                </div>
+            ) : (
+                <TabRoot
+                    defaultValue={View.Chat}
+                    value={view}
+                    orientation="vertical"
+                    className={styles.outerContainer}
+                >
+                    {/* NOTE: Display tabs to PLG users only until Universal Cody is ready. */}
+                    {/* Shows tab bar for sidebar chats only. */}
+                    {userAccountInfo.isDotComUser && config.webviewType === 'editor' ? null : (
+                        <TabsBar
+                            currentView={view}
+                            setView={setView}
+                            IDE={config.agentIDE || CodyIDE.VSCode}
+                        />
+                    )}
+                    {errorMessages && (
+                        <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />
+                    )}
+                    <TabContainer value={view}>
+                        {view === 'chat' && (
+                            <Chat
+                                chatID={chatID}
+                                chatEnabled={chatEnabled}
+                                userInfo={userAccountInfo}
+                                messageInProgress={messageInProgress}
+                                transcript={transcript}
+                                vscodeAPI={vscodeAPI}
+                                isTranscriptError={isTranscriptError}
+                                guardrails={attributionEnabled ? guardrails : undefined}
+                            />
+                        )}
+                        {view === 'history' && <HistoryTab userHistory={userHistory} />}
+                        {view === 'commands' && (
+                            <CommandsTab
+                                setView={setView}
+                                IDE={config.agentIDE}
+                                commands={commandList}
+                            />
+                        )}
+                        {view === 'account' && <AccountTab userInfo={userAccountInfo} />}
+                        {view === 'settings' && <SettingsTab userInfo={userAccountInfo} />}
+                    </TabContainer>
+                </TabRoot>
             )}
-            {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
-            <TabContainer value={view}>
-                {view === 'chat' && (
-                    <ChatModelContextProvider value={chatModelContext}>
-                        <WithContextProviders>
-                            <TelemetryRecorderContext.Provider value={telemetryRecorder}>
-                                <ClientStateContextProvider value={clientState}>
-                                    <Notices
-                                        probablyNewInstall={isNewInstall}
-                                        IDE={config.agentIDE}
-                                        version={config.agentExtensionVersion}
-                                    />
-                                    <Chat
-                                        chatID={chatID}
-                                        chatEnabled={chatEnabled}
-                                        userInfo={userAccountInfo}
-                                        messageInProgress={messageInProgress}
-                                        transcript={transcript}
-                                        vscodeAPI={vscodeAPI}
-                                        isTranscriptError={isTranscriptError}
-                                        guardrails={attributionEnabled ? guardrails : undefined}
-                                        experimentalUnitTestEnabled={config.experimentalUnitTest}
-                                    />
-                                </ClientStateContextProvider>
-                            </TelemetryRecorderContext.Provider>
-                        </WithContextProviders>
-                    </ChatModelContextProvider>
-                )}
-                {view === 'history' && <HistoryTab userHistory={userHistory} />}
-                {view === 'commands' && (
-                    <CommandsTab setView={setView} IDE={config.agentIDE} commands={commandList} />
-                )}
-                {view === 'account' && <AccountTab userInfo={userAccountInfo} />}
-                {view === 'settings' && <SettingsTab userInfo={userAccountInfo} />}
-            </TabContainer>
-        </TabRoot>
+        </ComposedWrappers>
     )
 }
 
@@ -326,3 +339,43 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
             ))}
         </div>
     )
+
+export function getAppWrappers(
+    vscodeAPI: VSCodeWrapper,
+    telemetryRecorder: TelemetryRecorder,
+    chatModelContext: ChatModelContext,
+    clientState: ClientStateForWebview,
+    exportedFeatureFlags: Record<string, boolean> | undefined,
+    config: Config | undefined
+): Wrapper[] {
+    return [
+        {
+            component: ChatContextClientProviderFromVSCodeAPI,
+            props: { vscodeAPI },
+        } satisfies Wrapper<any, ComponentProps<typeof ChatContextClientProviderFromVSCodeAPI>>,
+        {
+            provider: TelemetryRecorderContext.Provider,
+            value: telemetryRecorder,
+        } satisfies Wrapper<ComponentProps<typeof TelemetryRecorderContext.Provider>['value']>,
+        {
+            provider: ChatModelContextProvider,
+            value: chatModelContext,
+        } satisfies Wrapper<ComponentProps<typeof ChatModelContextProvider>['value']>,
+        {
+            provider: ClientStateContextProvider,
+            value: clientState,
+        } satisfies Wrapper<ComponentProps<typeof ClientStateContextProvider>['value']>,
+        {
+            component: FeatureFlagsProvider,
+            props: { value: exportedFeatureFlags },
+        } satisfies Wrapper<any, ComponentProps<typeof FeatureFlagsProvider>>,
+        {
+            component: ConfigProvider,
+            props: { value: config },
+        } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,
+        {
+            component: PromptsClientProviderFromVSCodeAPI,
+            props: { vscodeAPI },
+        } satisfies Wrapper<any, ComponentProps<typeof PromptsClientProviderFromVSCodeAPI>>,
+    ]
+}

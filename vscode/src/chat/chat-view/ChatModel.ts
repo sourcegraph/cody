@@ -10,10 +10,10 @@ import {
     type SerializedChatTranscript,
     errorToChatError,
     isCodyIgnoredFile,
+    serializeChatMessage,
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
-import { serializeChatMessage } from '@sourcegraph/cody-shared'
 import type { Repo } from '../../context/repo-fetcher'
 import { getChatPanelTitle } from './chat-helpers'
 

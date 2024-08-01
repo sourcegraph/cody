@@ -6,6 +6,7 @@ import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { chatModelIconComponent } from '../ChatModelIcon'
+import { Badge } from '../shadcn/ui/badge'
 import { Command, CommandGroup, CommandItem, CommandLink, CommandList } from '../shadcn/ui/command'
 import { ToolbarPopoverItem } from '../shadcn/ui/toolbar'
 import { cn } from '../shadcn/utils'
@@ -216,34 +217,36 @@ export const ModelSelectField: React.FunctionComponent<{
                                 </span>
                             </CommandLink>
                         </CommandGroup>
-                        <CommandGroup>
-                            <CommandLink
-                                key="enterprise-model-options"
-                                href={ENTERPRISE_MODEL_DOCS_PAGE}
-                                target="_blank"
-                                rel="noreferrer"
-                                onSelect={() => {
-                                    telemetryRecorder.recordEvent(
-                                        'cody.modelSelector',
-                                        'clickEnterpriseModelOption'
-                                    )
-                                }}
-                                className={styles.modelTitleWithIcon}
-                            >
-                                <span className={styles.modelIcon}>
-                                    {/* wider than normal to fit in with provider icons */}
-                                    <BuildingIcon size={16} strokeWidth={2} />{' '}
-                                </span>
-                                <span className={styles.modelName}>Enterprise Model Options</span>
-                                <span className={styles.rightIcon}>
-                                    <ExternalLinkIcon
-                                        size={16}
-                                        strokeWidth={1.25}
-                                        className="tw-opacity-80"
-                                    />
-                                </span>
-                            </CommandLink>
-                        </CommandGroup>
+                        {userInfo.isDotComUser && (
+                            <CommandGroup>
+                                <CommandLink
+                                    key="enterprise-model-options"
+                                    href={ENTERPRISE_MODEL_DOCS_PAGE}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onSelect={() => {
+                                        telemetryRecorder.recordEvent(
+                                            'cody.modelSelector',
+                                            'clickEnterpriseModelOption'
+                                        )
+                                    }}
+                                    className={styles.modelTitleWithIcon}
+                                >
+                                    <span className={styles.modelIcon}>
+                                        {/* wider than normal to fit in with provider icons */}
+                                        <BuildingIcon size={16} strokeWidth={2} />{' '}
+                                    </span>
+                                    <span className={styles.modelName}>Enterprise Model Options</span>
+                                    <span className={styles.rightIcon}>
+                                        <ExternalLinkIcon
+                                            size={16}
+                                            strokeWidth={1.25}
+                                            className="tw-opacity-80"
+                                        />
+                                    </span>
+                                </CommandLink>
+                            </CommandGroup>
+                        )}
                     </CommandList>
                 </Command>
             )}
@@ -294,17 +297,21 @@ const ModelTitleWithIcon: FunctionComponent<{
         })}
     >
         {showIcon && <ChatModelIcon model={model.model} className={styles.modelIcon} />}
-        <span className={styles.modelName}>{model.title}</span>
+        <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
         {modelAvailability === 'needs-cody-pro' && (
-            <span className={clsx(styles.badge, styles.badgePro)}>Cody Pro</span>
+            <Badge variant="secondary" className={clsx(styles.badge, 'tw-opacity-75')}>
+                Cody Pro
+            </Badge>
         )}
         {model.tags.includes(ModelTag.Experimental) && (
-            <span className={clsx(styles.badge)}>Experimental</span>
+            <Badge variant="secondary" className={styles.badge}>
+                Experimental
+            </Badge>
         )}
         {model.tags.includes(ModelTag.Recommended) && modelAvailability !== 'needs-cody-pro' ? (
-            <span className={clsx(styles.badge, styles.otherBadge, styles.recommendedBadge)}>
+            <Badge variant="secondary" className={styles.badge}>
                 Recommended
-            </span>
+            </Badge>
         ) : null}
     </span>
 )

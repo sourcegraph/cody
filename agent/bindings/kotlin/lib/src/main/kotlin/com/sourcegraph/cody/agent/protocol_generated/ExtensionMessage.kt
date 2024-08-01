@@ -30,7 +30,7 @@ sealed class ExtensionMessage {
           "context/remote-repos" -> context.deserialize<`context_remote-reposExtensionMessage`>(element, `context_remote-reposExtensionMessage`::class.java)
           "setConfigFeatures" -> context.deserialize<SetConfigFeaturesExtensionMessage>(element, SetConfigFeaturesExtensionMessage::class.java)
           "allMentionProvidersMetadata" -> context.deserialize<AllMentionProvidersMetadataExtensionMessage>(element, AllMentionProvidersMetadataExtensionMessage::class.java)
-          "updateEditorState" -> context.deserialize<UpdateEditorStateExtensionMessage>(element, UpdateEditorStateExtensionMessage::class.java)
+          "queryPrompts/response" -> context.deserialize<QueryPrompts_responseExtensionMessage>(element, QueryPrompts_responseExtensionMessage::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -197,6 +197,7 @@ data class `context_remote-reposExtensionMessage`(
 data class SetConfigFeaturesExtensionMessage(
   val type: TypeEnum, // Oneof: setConfigFeatures
   val configFeatures: ConfigFeaturesParams,
+  val exportedFeatureFlags: Map<String, Boolean>,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
@@ -214,13 +215,14 @@ data class AllMentionProvidersMetadataExtensionMessage(
   }
 }
 
-data class UpdateEditorStateExtensionMessage(
-  val type: TypeEnum, // Oneof: updateEditorState
-  val editorState: Any? = null,
+data class QueryPrompts_responseExtensionMessage(
+  val type: TypeEnum, // Oneof: queryPrompts/response
+  val result: List<Prompt>? = null,
+  val error: String? = null,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
-    @SerializedName("updateEditorState") UpdateEditorState,
+    @SerializedName("queryPrompts/response") QueryPrompts_response,
   }
 }
 

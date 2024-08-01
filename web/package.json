@@ -1,6 +1,6 @@
 {
-  "name": "cody-web-experimental",
-  "version": "0.2.8",
+  "name": "@sourcegraph/cody-web",
+  "version": "0.3.3",
   "description": "Cody standalone web app",
   "license": "Apache-2.0",
   "repository": {
@@ -21,6 +21,7 @@
   "devDependencies": {
     "@sourcegraph/cody": "workspace:*",
     "@sourcegraph/cody-shared": "workspace:*",
+    "@sourcegraph/prompt-editor": "workspace:*",
     "@vitejs/plugin-react-swc": "^3.6.0",
     "@vitest/web-worker": "^1.4.0",
     "@vscode/codicons": "^0.0.35",
@@ -40,6 +41,6 @@
     "@types/lodash": "4.14.195",
     "util": "^0.12.5",
     "vscode-uri": "^3.0.7",
-    "@openctx/vscode-lib": "^0.0.13"
+    "@openctx/vscode-lib": "^0.0.14"
   }
 }

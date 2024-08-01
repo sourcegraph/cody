@@ -5,6 +5,7 @@ import {
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
     type Guardrails,
+    type GuardrailsClientConfig,
     type SourcegraphCompletionsClient,
     SourcegraphGuardrailsClient,
     featureFlagProvider,
@@ -48,7 +49,8 @@ type ExternalServicesConfiguration = Pick<
     | 'experimentalTracing'
 > &
     LocalEmbeddingsConfig &
-    ContextRankerConfig
+    ContextRankerConfig &
+    GuardrailsClientConfig
 
 export async function configureExternalServices(
     context: vscode.ExtensionContext,
@@ -70,7 +72,7 @@ export async function configureExternalServices(
     const completionsClient = platform.createCompletionsClient(initialConfig, logger)
     const codeCompletionsClient = createCodeCompletionsClient(initialConfig, logger)
 
-    const symfRunner = platform.createSymfRunner?.(context, config, completionsClient)
+    const symfRunner = platform.createSymfRunner?.(context, completionsClient)
 
     if (initialConfig.codebase && isError(await graphqlClient.getRepoId(initialConfig.codebase))) {
         logDebug(
@@ -87,7 +89,7 @@ export async function configureExternalServices(
 
     const chatClient = new ChatClient(completionsClient, () => authProvider.getAuthStatus())
 
-    const guardrails = new SourcegraphGuardrailsClient(graphqlClient)
+    const guardrails = new SourcegraphGuardrailsClient(graphqlClient, initialConfig)
 
     const contextAPIClient = new ContextAPIClient(graphqlClient, featureFlagProvider)
 
@@ -105,6 +107,7 @@ export async function configureExternalServices(
             openTelemetryService?.onConfigurationChange(newConfig)
             completionsClient.onConfigurationChange(newConfig)
             codeCompletionsClient.onConfigurationChange(newConfig)
+            guardrails.onConfigurationChange(newConfig)
             void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
             void contextRanking?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },

@@ -18,7 +18,11 @@ function toInput(input: ContextItem[]): InputContextItem[] {
                       retriever: i.source || '',
                   }
         )
-        .filter(i => i !== null) as InputContextItem[]
+        .filter(notNull)
+}
+
+function notNull<T>(value: T | null | undefined): value is T {
+    return value !== null && value !== undefined
 }
 
 export class ContextAPIClient {

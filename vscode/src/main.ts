@@ -111,11 +111,6 @@ export async function start(
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
 
-    // HACK to improve e2e test latency
-    if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.chatInSidebar')) {
-        await vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', true)
-    }
-
     // Set internal storage fields for storage provider singletons
     localStorage.setStorage(
         platform.createStorage ? await platform.createStorage() : context.globalState
@@ -207,7 +202,6 @@ const register = async (
     if (symfRunner) {
         disposables.push(symfRunner)
     }
-    const contextFetcher = new ContextFetcher(symfRunner, completionsClient)
 
     // Initialize enterprise context
     const enterpriseContextFactory = new EnterpriseContextFactory(completionsClient)
@@ -217,6 +211,7 @@ const register = async (
     }, disposables)
 
     const editor = new VSCodeEditor()
+    const contextFetcher = new ContextFetcher(editor, symfRunner, completionsClient)
 
     const { chatsController } = registerChat(
         {
@@ -321,7 +316,7 @@ async function initializeSingletons(
             graphqlClient.setConfig(config)
             promises.push(featureFlagProvider.refresh())
             promises.push(contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri))
-            ModelsService.onConfigChange()
+            void ModelsService.onConfigChange(config)
             upstreamHealthProvider.onConfigurationChange(config)
 
             await Promise.all(promises).then()

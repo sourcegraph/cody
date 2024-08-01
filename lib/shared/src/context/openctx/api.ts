@@ -1,17 +1,30 @@
 import type { Client } from '@openctx/client'
 import type * as vscode from 'vscode'
 
-type OpenCtxClient = Pick<Client<vscode.Range>, 'meta' | 'mentions' | 'items'>
+type OpenCtxClient = Pick<Client<vscode.Range>, 'meta' | 'mentions' | 'items' | 'dispose'>
 
-class OpenCtx {
-    constructor(public client: OpenCtxClient | undefined) {}
+interface OpenCtx {
+    client?: OpenCtxClient
+    disposable?: vscode.Disposable
 }
 
-export const openCtx = new OpenCtx(undefined)
+export const openCtx: OpenCtx = {}
 
 /**
- * Set the handle to the OpenCtx client.
+ * Set the handle to the OpenCtx. If there is an existing handle it will be
+ * disposed and replaced.
  */
-export function setOpenCtxClient(client: OpenCtxClient): void {
+export function setOpenCtx({ client, disposable }: OpenCtx): void {
+    const { client: oldClient, disposable: oldDisposable } = openCtx
+
     openCtx.client = client
+    openCtx.disposable = disposable
+
+    oldClient?.dispose()
+    oldDisposable?.dispose()
 }
+
+export const REMOTE_REPOSITORY_PROVIDER_URI = 'internal-remote-repository-search'
+export const REMOTE_FILE_PROVIDER_URI = 'internal-remote-file-search'
+export const WEB_PROVIDER_URI = 'internal-web-provider'
+export const GIT_OPENCTX_PROVIDER_URI = 'internal-git-openctx-provider'

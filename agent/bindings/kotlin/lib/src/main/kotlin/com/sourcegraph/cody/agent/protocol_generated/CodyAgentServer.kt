@@ -54,6 +54,10 @@ interface CodyAgentServer {
   fun editTask_undo(params: EditTask_UndoParams): CompletableFuture<Null?>
   @JsonRequest("editTask/cancel")
   fun editTask_cancel(params: EditTask_CancelParams): CompletableFuture<Null?>
+  @JsonRequest("editTask/retry")
+  fun editTask_retry(params: EditTask_RetryParams): CompletableFuture<EditTask>
+  @JsonRequest("editTask/getTaskDetails")
+  fun editTask_getTaskDetails(params: EditTask_GetTaskDetailsParams): CompletableFuture<EditTask>
   @JsonRequest("editTask/getFoldingRanges")
   fun editTask_getFoldingRanges(params: GetFoldingRangeParams): CompletableFuture<GetFoldingRangeResult>
   @JsonRequest("command/execute")
@@ -112,6 +116,8 @@ interface CodyAgentServer {
   fun testing_progressCancelation(params: Testing_ProgressCancelationParams): CompletableFuture<Testing_ProgressCancelationResult>
   @JsonRequest("testing/reset")
   fun testing_reset(params: Null?): CompletableFuture<Null?>
+  @JsonRequest("testing/autocomplete/completionEvent")
+  fun testing_autocomplete_completionEvent(params: CompletionItemParams): CompletableFuture<CompletionBookkeepingEvent?>
   @JsonRequest("extensionConfiguration/change")
   fun extensionConfiguration_change(params: ExtensionConfiguration): CompletableFuture<AuthStatus?>
   @JsonRequest("extensionConfiguration/status")

@@ -1,4 +1,5 @@
-import type { Disposable } from 'vscode'
+import type { Disposable, TextDocument, Uri } from 'vscode'
+import type vscode from 'vscode'
 import type { EnterpriseContextFactory } from './context/enterprise-context-factory'
 import type { ClientCapabilities } from './jsonrpc/agent-protocol'
 import { FixupCodeLenses } from './non-stop/codelenses/provider'
@@ -31,6 +32,12 @@ export interface ExtensionClient {
      */
     createFixupControlApplicator(fixups: FixupActor & FixupFileCollection): FixupControlApplicator
 
+    /**
+     * Opens a new document, creating appropriate file is required by a protocol.
+     * This method allows client to change the URI, so the caller should inspect returned TextDocument.
+     */
+    openNewDocument(workspace: typeof vscode.workspace, uri: Uri): Thenable<TextDocument | undefined>
+
     get clientName(): string
     get clientVersion(): string
     get capabilities(): ClientCapabilities | undefined
@@ -45,6 +52,7 @@ export function defaultVSCodeExtensionClient(): ExtensionClient {
             dispose: () => {},
         }),
         createFixupControlApplicator: files => new FixupCodeLenses(files),
+        openNewDocument: (workspace, uri) => workspace.openTextDocument(uri),
         clientName: 'vscode',
         clientVersion: version,
         capabilities: undefined,

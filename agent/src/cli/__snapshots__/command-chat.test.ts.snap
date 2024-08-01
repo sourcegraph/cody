@@ -1,10 +1,16 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`--context-file (animal test) 1`] = `
-"command: cody chat chat --context-file animal.ts -m implement a cow. Only print
-  the code without any explanation.
+"command: cody chat chat --context-file animal.ts --show-context -m implement a
+  cow. Only print the code without any explanation.
 exitCode: 0
 stdout: |+
+  > Context items:
+
+  > 1. WORKING_DIRECTORY/animal.ts
+
+
+
   Here's a simple implementation of a cow in Python:
 
   \`\`\`python

@@ -10,6 +10,12 @@ This is a log of all notable changes to the Cody command-line tool. [Unreleased]
 
 ### Changed
 
+## 5.5.11
+
+### Fixed
+
+- The `cody chat --show-context` flag now correctly prints out the used context for `--context-repo` and `--context-file`.
+
 ## 5.5.10
 
 ### Fixed

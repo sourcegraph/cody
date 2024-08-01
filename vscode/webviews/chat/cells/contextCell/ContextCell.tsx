@@ -1,8 +1,10 @@
 import type { ContextItem, Model } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
+import { MENTION_CLASS_NAME } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
+import isEqual from 'lodash/isEqual'
 import { BrainIcon, MessagesSquareIcon } from 'lucide-react'
-import type React from 'react'
+import { type FunctionComponent, memo } from 'react'
 import { FileLink } from '../../../components/FileLink'
 import {
     Accordion,
@@ -12,7 +14,6 @@ import {
 } from '../../../components/shadcn/ui/accordion'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/shadcn/ui/tooltip'
 import { SourcegraphLogo } from '../../../icons/SourcegraphLogo'
-import { MENTION_CLASS_NAME } from '../../../promptEditor/nodes/ContextItemMentionNode'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
 import { LoadingDots } from '../../components/LoadingDots'
 import { Cell } from '../Cell'
@@ -22,7 +23,7 @@ import styles from './ContextCell.module.css'
 /**
  * A component displaying the context for a human message.
  */
-export const ContextCell: React.FunctionComponent<{
+export const ContextCell: FunctionComponent<{
     contextItems: ContextItem[] | undefined
     model?: Model['model']
     isForFirstMessage: boolean
@@ -30,7 +31,7 @@ export const ContextCell: React.FunctionComponent<{
 
     /** For use in storybooks only. */
     __storybook__initialOpen?: boolean
-}> = ({ contextItems, model, isForFirstMessage, className, __storybook__initialOpen }) => {
+}> = memo(({ contextItems, model, isForFirstMessage, className, __storybook__initialOpen }) => {
     const usedContext: ContextItem[] = []
     const excludedAtContext: ContextItem[] = []
     if (contextItems) {
@@ -156,4 +157,4 @@ export const ContextCell: React.FunctionComponent<{
             )}
         </Cell>
     ) : null
-}
+}, isEqual)

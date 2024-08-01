@@ -104,6 +104,7 @@ export type ClientRequests = {
             instruction: string
             model?: string | undefined | null
             mode?: 'edit' | 'insert' | undefined | null
+            range?: Range | undefined | null
         },
         EditTask,
     ]
@@ -117,6 +118,17 @@ export type ClientRequests = {
     'editTask/undo': [{ id: FixupTaskID }, null]
     // Discards the task. Applicable to tasks in any state.
     'editTask/cancel': [{ id: FixupTaskID }, null]
+    'editTask/retry': [
+        {
+            id: FixupTaskID
+            instruction: string
+            model: string
+            mode: 'edit' | 'insert'
+            range: Range
+        },
+        EditTask,
+    ]
+    'editTask/getTaskDetails': [{ id: FixupTaskID }, EditTask]
 
     // Utility for clients that don't have language-neutral folding-range support.
     // Provides a list of all the computed folding ranges in the specified document.
@@ -207,6 +219,11 @@ export type ClientRequests = {
     // if the agent server. For example, closes all open documents.
     'testing/reset': [null, null]
 
+    'testing/autocomplete/completionEvent': [
+        CompletionItemParams,
+        CompletionBookkeepingEvent | undefined | null,
+    ]
+
     // Updates the extension configuration and returns the new
     // authentication status, which indicates whether the provided credentials are
     // valid or not. The agent can't support autocomplete or chat if the credentials
@@ -294,7 +311,7 @@ export type ServerRequests = {
     'window/showMessage': [ShowWindowMessageParams, string | null]
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
-    'textDocument/openUntitledDocument': [UntitledTextDocument, boolean]
+    'textDocument/openUntitledDocument': [UntitledTextDocument, ProtocolTextDocument | undefined | null]
     'textDocument/show': [
         {
             uri: string
@@ -320,7 +337,7 @@ export type Notifications = ClientNotifications & ServerNotifications
 // Client -> Server
 // ================
 export type ClientNotifications = {
-    // The 'initalized' notification must be sent after receiving the 'initialize' response.
+    // The 'initialized' notification must be sent after receiving the 'initialize' response.
     initialized: [null]
     // The 'exit' notification must be sent after the client receives the 'shutdown' response.
     exit: [null]
@@ -798,6 +815,8 @@ export interface EditTask {
     error?: CodyError | undefined | null
     selectionRange: Range
     instruction?: string | undefined | null
+    model?: string | undefined | null
+    originalText?: string | undefined | null
 }
 
 export interface CodyError {

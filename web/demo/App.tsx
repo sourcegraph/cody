@@ -7,35 +7,49 @@ import { CodyWebChat, CodyWebChatProvider, CodyWebHistory, type Repository, getC
 import '../../vscode/webviews/utils/highlight.css'
 import styles from './App.module.css'
 
-let ACCESS_TOKEN = localStorage.getItem('accessToken')
+const DOTCOM_SERVER_ENDPOINT = 'https://sourcegraph.com'
+
+// To set:
+//
+//   localStorage.setItem('serverEndpoint', 'https://sourcegraph.test:3443')
+const serverEndpoint = localStorage.getItem('serverEndpoint') || DOTCOM_SERVER_ENDPOINT
+
+const accessTokenStorageKey = `accessToken:${serverEndpoint}`
+let accessToken = localStorage.getItem(accessTokenStorageKey)
 
 // Only for testing/demo purpose, in real-life usage consumer
 // should provide context repo information for Cody chat component
-const MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY: Repository[] = [
-    {
-        id: 'UmVwb3NpdG9yeTozNjgwOTI1MA==',
-        name: 'github.com/sourcegraph/sourcegraph',
-    },
-]
+const MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY: Repository[] =
+    serverEndpoint === DOTCOM_SERVER_ENDPOINT
+        ? [
+              {
+                  id: 'UmVwb3NpdG9yeTozNjgwOTI1MA==',
+                  name: 'github.com/sourcegraph/sourcegraph',
+              },
+          ]
+        : []
 
-const MOCK_INITIAL_DOT_COM_CONTEXT = {
-    fileURL: '/internal/uploadstore/config.go',
-    repositories: MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY,
-}
+const MOCK_INITIAL_DOT_COM_CONTEXT =
+    serverEndpoint === DOTCOM_SERVER_ENDPOINT
+        ? {
+              fileURL: '/internal/uploadstore/config.go',
+              repositories: MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY,
+          }
+        : undefined
 
-if (!ACCESS_TOKEN) {
-    ACCESS_TOKEN = window.prompt('Enter a Sourcegraph.com access token:')
-    if (!ACCESS_TOKEN) {
+if (!accessToken) {
+    accessToken = window.prompt(`Enter an access token for ${serverEndpoint}:`)
+    if (!accessToken) {
         throw new Error('No access token provided')
     }
-    localStorage.setItem('accessToken', ACCESS_TOKEN)
+    localStorage.setItem(accessTokenStorageKey, accessToken)
 }
 
 export const App: FC = () => {
     return (
         <CodyWebChatProvider
-            accessToken={ACCESS_TOKEN}
-            serverEndpoint="https://sourcegraph.com"
+            accessToken={accessToken}
+            serverEndpoint={serverEndpoint}
             telemetryClientName="codydemo.testing"
             initialContext={MOCK_INITIAL_DOT_COM_CONTEXT}
         >

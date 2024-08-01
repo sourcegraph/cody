@@ -13,12 +13,13 @@ import {
     type PromptString,
     type Result,
     featureFlagProvider,
+    graphqlClient,
     isFileURI,
     truncateTextNearestLine,
     uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { compact, flatten, zip } from 'lodash'
+import { compact, flatten, isError, zip } from 'lodash'
 import type { RemoteSearch } from '../../context/remote-search'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ContextRankingController } from '../../local-context/context-ranking'
@@ -30,6 +31,75 @@ import { repoNameResolver } from '../../repository/repo-name-resolver'
 export interface HumanInput {
     text: PromptString
     mentions: ContextItem[]
+}
+
+/**
+ * A Root instance represents the root of a codebase.
+ *
+ * If the codebase exists locally, then the `local` property indicates where in the local filesystem the
+ * codebase exists.
+ * If the codebase exists remotely on Sourcegraph, then the `remoteRepo` property indicates the name of the
+ * remote repository and its ID.
+ *
+ * It is possible for both fields to be set, if the codebase exists on Sourcegraph and is checked out locally.
+ */
+export interface Root {
+    local?: vscode.Uri
+    remoteRepo?: {
+        name: string
+        id: string
+    }
+}
+
+/**
+ * Returns the set of codebase roots extracted from the human input.
+ */
+export async function codebaseRootsFromHumanInput(input: HumanInput): Promise<Root[]> {
+    const remoteRepos: Root[] = input.mentions
+        .filter((item): item is ContextItemRepository => item.type === 'repository')
+        .map(repo => ({
+            remoteRepo: {
+                id: repo.repoID,
+                name: repo.repoName,
+            },
+        }))
+
+    const localTrees: ContextItemTree[] = input.mentions.filter(
+        (item): item is ContextItemTree => item.type === 'tree'
+    )
+    const groups = await Promise.all(
+        localTrees.map(async tree => {
+            const repoURIs = await repoNameResolver.getRepoNamesFromWorkspaceUri(tree.uri)
+            return repoURIs.map(repoURI => ({
+                repoURI,
+                local: tree.uri,
+            }))
+        })
+    )
+    const localRepoURIs = Array.from(new Set(groups.flat()))
+    const localRepoIDs = await graphqlClient.getRepoIds(
+        localRepoURIs.map(({ repoURI }) => repoURI),
+        localRepoURIs.length
+    )
+    if (isError(localRepoIDs)) {
+        throw localRepoIDs
+    }
+    const uriToId: { [uri: string]: string } = {}
+    for (const r of localRepoIDs) {
+        uriToId[r.name] = r.id
+    }
+    const localRoots: Root[] = []
+    for (const repoWithURI of localRepoURIs) {
+        localRoots.push({
+            local: repoWithURI.local,
+            remoteRepo: {
+                id: uriToId[repoWithURI.repoURI],
+                name: repoWithURI.repoURI,
+            },
+        })
+    }
+
+    return [...remoteRepos, ...localRoots]
 }
 
 export function remoteRepositoryIDsFromHumanInput(input: HumanInput): string[] {

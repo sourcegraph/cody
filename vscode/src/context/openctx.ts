@@ -1,7 +1,16 @@
-import { CodyIDE, type ConfigurationWithAccessToken, setOpenCtxClient } from '@sourcegraph/cody-shared'
+import {
+    CodyIDE,
+    type ConfigurationWithAccessToken,
+    FeatureFlag,
+    GIT_OPENCTX_PROVIDER_URI,
+    featureFlagProvider,
+    setOpenCtx,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
+import type { Provider } from '@openctx/client'
 import { logDebug, outputChannel } from '../log'
+import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFileSearch'
 import RemoteRepositorySearch, { createRemoteRepositoryProvider } from './openctx/remoteRepositorySearch'
@@ -12,36 +21,41 @@ export async function exposeOpenCtxClient(
     config: ConfigurationWithAccessToken,
     isDotCom: boolean,
     // TODO [VK] Expose createController openctx type from vscode-lib
-    createOpenContextController: ((...args: any[]) => any) | undefined
+    createOpenCtxController: ((...args: any[]) => any) | undefined
 ) {
     logDebug('openctx', 'OpenCtx is enabled in Cody')
     await warnIfOpenCtxExtensionConflict()
     try {
         const isCodyWeb = config.agentIDE === CodyIDE.Web
         const providers = isCodyWeb
-            ? getCodyWebOpenContextProviders()
-            : getStandardOpenContextProviders(config, isDotCom)
+            ? getCodyWebOpenCtxProviders()
+            : await getStandardOpenCtxProviders(config, isDotCom)
         const createController =
-            createOpenContextController ?? (await import('@openctx/vscode-lib')).createController
+            createOpenCtxController ?? (await import('@openctx/vscode-lib')).createController
 
-        setOpenCtxClient(
-            createController({
-                extensionId: context.extension.id,
-                secrets: context.secrets,
-                outputChannel,
-                features: {},
-                providers,
-                preloadDelay: 5 * 1000, // 5 seconds
-            }).controller
-        )
+        const controller = createController({
+            extensionId: context.extension.id,
+            secrets: context.secrets,
+            outputChannel,
+            features: {},
+            providers,
+            preloadDelay: 5 * 1000, // 5 seconds
+        })
+
+        setOpenCtx({
+            client: controller.controller,
+            disposable: controller.disposable,
+        })
     } catch (error) {
         logDebug('openctx', `Failed to load OpenCtx client: ${error}`)
     }
 }
 
-function getStandardOpenContextProviders(config: ConfigurationWithAccessToken, isDotCom: boolean) {
-    // TODO [vk] expose types for providers from openctx/client lib
-    const providers: any[] = [
+async function getStandardOpenCtxProviders(
+    config: ConfigurationWithAccessToken,
+    isDotCom: boolean
+): Promise<{ settings: any; provider: Provider; providerUri: string }[]> {
+    const providers: { settings: any; provider: Provider; providerUri: string }[] = [
         {
             settings: true,
             provider: WebProvider,
@@ -75,10 +89,18 @@ function getStandardOpenContextProviders(config: ConfigurationWithAccessToken, i
         })
     }
 
+    if (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.GitMentionProvider)) {
+        providers.push({
+            settings: true,
+            provider: gitMentionsProvider,
+            providerUri: GIT_OPENCTX_PROVIDER_URI,
+        })
+    }
+
     return providers
 }
 
-function getCodyWebOpenContextProviders() {
+function getCodyWebOpenCtxProviders() {
     return [
         {
             settings: true,

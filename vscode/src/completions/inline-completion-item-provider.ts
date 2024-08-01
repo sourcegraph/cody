@@ -699,6 +699,11 @@ export class InlineCompletionItemProvider
         this.firstCompletionDecoration.show(request)
     }
 
+    public getTestingCompletionEvent(id: CompletionItemID): CompletionBookkeepingEvent | undefined {
+        const completion = suggestedAutocompleteItemsCache.get<AutocompleteItem>(id)
+        return completion ? CompletionLogger.getCompletionEvent(completion.logId) : undefined
+    }
+
     /**
      * Called when a suggestion is shown. This API is inspired by the proposed VS Code API of the
      * same name, it's prefixed with `unstable_` to avoid a clash when the new API goes GA.
@@ -752,19 +757,18 @@ export class InlineCompletionItemProvider
                 return
             }
 
-            const activeEditor = vscode.window.activeTextEditor
-
+            const { activeTextEditor } = vscode.window
             const { document: invokedDocument, position: invokedPosition } = completion.requestParams
 
             if (
-                !activeEditor ||
-                activeEditor.document.uri.toString() !== invokedDocument.uri.toString()
+                !activeTextEditor ||
+                activeTextEditor.document.uri.toString() !== invokedDocument.uri.toString()
             ) {
                 // User is no longer in the same document as the completion
                 return
             }
 
-            const latestCursorPosition = activeEditor.selection.active
+            const latestCursorPosition = activeTextEditor.selection.active
 
             // If the cursor position is the same as the position of the completion request, re-use the
             // completion context. This ensures that we still use the suggestion widget to determine if the
@@ -783,7 +787,7 @@ export class InlineCompletionItemProvider
                           context: completion.context,
                       },
                       {
-                          document: activeEditor.document,
+                          document: activeTextEditor.document,
                           position: latestCursorPosition,
                           context: latestContext,
                       }
@@ -794,14 +798,14 @@ export class InlineCompletionItemProvider
             // cursor position, document and associated values.
             const isStillVisible = isCompletionVisible(
                 completion,
-                activeEditor.document,
+                activeTextEditor.document,
                 {
                     invokedPosition,
-                    latestPosition: activeEditor.selection.active,
+                    latestPosition: activeTextEditor.selection.active,
                 },
                 this.getDocContext(
-                    activeEditor.document,
-                    activeEditor.selection.active,
+                    activeTextEditor.document,
+                    activeTextEditor.selection.active,
                     latestContext,
                     takeSuggestWidgetSelectionIntoAccount
                 ),

@@ -7,20 +7,19 @@ import type {
     PlanStepsStatus,
     Step,
 } from '../../src/minion/action'
-import type { GenericVSCodeWrapper } from '../utils/VSCodeApi'
 
 import './MinionApp.css'
 import {
     type ClientStateForWebview,
+    type GenericVSCodeWrapper,
     type RangeData,
     type SerializedPromptEditorValue,
     markdownCodeBlockLanguageIDForFilename,
 } from '@sourcegraph/cody-shared'
+import { ClientStateContextProvider, PromptEditor } from '@sourcegraph/prompt-editor'
 import type { URI } from 'vscode-uri'
-import { ClientStateContextProvider } from '../client/clientState'
 import { FileLink } from '../components/FileLink'
 import { MarkdownFromCody } from '../components/MarkdownFromCody'
-import { PromptEditor } from '../promptEditor/PromptEditor'
 import { updateDisplayPathEnvInfoForWebview } from '../utils/displayPathEnvInfo'
 import type { MinionExtensionMessage, MinionWebviewMessage } from './webview_protocol'
 
