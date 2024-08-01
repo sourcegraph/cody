@@ -98,7 +98,8 @@ export class JvmCodegen extends BaseCodegen {
                 p.line('public static void register(com.google.gson.GsonBuilder gson) {')
             }
             p.block(() => {
-                for (const symbol of this.discriminatedUnions.keys()) {
+                const discriminatedUnions = [...this.discriminatedUnions.keys()].sort()
+                for (const symbol of discriminatedUnions) {
                     const name = this.symtab.info(symbol).display_name
                     if (this.language === JvmLanguage.Kotlin) {
                         p.line(`gson.registerTypeAdapter(${name}::class.java, ${name}.deserializer)`)
@@ -132,7 +133,8 @@ export class JvmCodegen extends BaseCodegen {
             p.line('public final class Constants {')
         }
         p.block(() => {
-            for (const constant of this.stringLiteralConstants.values()) {
+            const constants = [...this.stringLiteralConstants.values()].sort()
+            for (const constant of constants) {
                 if (this.language === JvmLanguage.Kotlin) {
                     p.line(`const val ${this.f.formatFieldName(constant)} = "${constant}"`)
                 } else {
@@ -518,6 +520,9 @@ export class JvmCodegen extends BaseCodegen {
         p.block(() => {
             p.sectionComment('Requests')
             for (const request of symtab.structuralType(symtab.canonicalSymbol(requests))) {
+                // if (request.display_name === 'webview/receiveMessage') {
+                //     continue
+                // }
                 // Process a JSON-RPC request signature. For example:
                 // type Requests = { 'textDocument/inlineCompletions': [RequestParams, RequestResult] }
                 const resultType = request.signature.value_signature.tpe.type_ref.type_arguments?.[1]
@@ -552,6 +557,9 @@ export class JvmCodegen extends BaseCodegen {
             p.line()
             p.sectionComment('Notifications')
             for (const notification of symtab.structuralType(symtab.canonicalSymbol(notifications))) {
+                // if (notification.display_name === 'webview/postMessage') {
+                //     continue
+                // }
                 // Process a JSON-RPC request signature. For example:
                 // type Notifications = { 'textDocument/inlineCompletions': [NotificationParams] }
                 const { parameterType, parameterSyntax } = f.jsonrpcMethodParameter(notification)
