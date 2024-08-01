@@ -433,8 +433,8 @@ importers:
         specifier: ^0.0.6
         version: 0.0.6
       '@openctx/vscode-lib':
-        specifier: ^0.0.14
-        version: 0.0.14
+        specifier: ^0.0.17
+        version: 0.0.17
       '@opentelemetry/api':
         specifier: ^1.7.0
         version: 1.7.0
@@ -3490,6 +3490,17 @@ packages:
       picomatch: 3.0.1
       rxjs: 7.8.1
 
+  /@openctx/client@0.0.22:
+    resolution: {integrity: sha512-qqOKrmYafBnbrmp7QzWM1ItUEYTqyqkEBet/Ih3E5kDbE8/JTT5H99Kt0AG7okTxGcBWJElHDcqe+4FmLqhk3g==}
+    dependencies:
+      '@openctx/protocol': 0.0.16
+      '@openctx/provider': 0.0.15
+      '@openctx/schema': 0.0.12
+      lru-cache: 10.2.2
+      picomatch: 3.0.1
+      rxjs: 7.8.1
+    dev: false
+
   /@openctx/protocol@0.0.15:
     resolution: {integrity: sha512-mT1iIb+tAdY0SUwFoM8xscvrC9c5wbCQ3hbzQgI5LKaXIULmPdQa478MtGxNto2zfp8QD6VKrySsKbzQ3JFfrA==}
     dependencies:
@@ -3543,6 +3554,15 @@ packages:
       '@openctx/client': 0.0.20
       '@openctx/ui-common': 0.0.11
       rxjs: 7.8.1
+    dev: true
+
+  /@openctx/vscode-lib@0.0.17:
+    resolution: {integrity: sha512-KunSkK0pYZI00cEq6vZJ6kWFLF7VEG02MkI5TvxH6PqM4QmiJfOCrq3pZmiMJ3RrdQPSMpYfXLeYo4ct+aYGXw==}
+    dependencies:
+      '@openctx/client': 0.0.22
+      '@openctx/ui-common': 0.0.11
+      rxjs: 7.8.1
+    dev: false
 
   /@opentelemetry/api-logs@0.45.1:
     resolution: {integrity: sha512-zVGq/k70l+kB/Wuv3O/zhptP2hvDhEbhDu9EtHde1iWZJf3FedeYS/nWVcMBkkyPAjS/JKNk86WN4CBQLGUuOw==}

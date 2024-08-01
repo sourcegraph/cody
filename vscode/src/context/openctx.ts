@@ -4,11 +4,14 @@ import {
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
     featureFlagProvider,
+    graphqlClient,
+    isError,
+    logError,
     setOpenCtx,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
-import type { Provider } from '@openctx/client'
+import type { ClientConfiguration, Provider } from '@openctx/client'
 import { logDebug, outputChannel } from '../log'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
@@ -33,12 +36,18 @@ export async function exposeOpenCtxClient(
         const createController =
             createOpenCtxController ?? (await import('@openctx/vscode-lib')).createController
 
+        // Enable fetching of openctx configuration from Sourcegraph instance
+        const mergeConfiguration = config.experimentalNoodle
+            ? getMergeConfigurationFunction()
+            : undefined
+
         const controller = createController({
             extensionId: context.extension.id,
             secrets: context.secrets,
             outputChannel,
             features: {},
             providers,
+            mergeConfiguration,
             preloadDelay: 5 * 1000, // 5 seconds
         })
 
@@ -113,6 +122,48 @@ function getCodyWebOpenCtxProviders() {
             provider: createRemoteFileProvider('Files'),
         },
     ]
+}
+
+function getMergeConfigurationFunction() {
+    // Cache viewerSettings response since this function can be called
+    // multiple times.
+    //
+    // TODO before this is regarded as ready, we need to introduce some sort
+    // of retry and expiry like we do for feature flags. For now we log once.
+    const viewerSettingsProvidersCached = getViewerSettingsProviders()
+    return async (configuration: ClientConfiguration) => {
+        const providers = await viewerSettingsProvidersCached
+        if (!providers) {
+            return configuration
+        }
+        // Prefer user configured providers
+        for (const [k, v] of Object.entries(configuration.providers || {})) {
+            providers[k] = v
+        }
+        return {
+            ...configuration,
+            providers,
+        }
+    }
+}
+
+async function getViewerSettingsProviders() {
+    try {
+        const settings = await graphqlClient.viewerSettings()
+        if (isError(settings)) {
+            throw settings
+        }
+
+        const providers = settings['openctx.providers']
+        if (!providers) {
+            return undefined
+        }
+
+        return providers as ClientConfiguration['providers']
+    } catch (error) {
+        logError('OpenCtx', 'failed to fetch viewer settings from Sourcegraph', error)
+        return undefined
+    }
 }
 
 async function warnIfOpenCtxExtensionConflict() {
