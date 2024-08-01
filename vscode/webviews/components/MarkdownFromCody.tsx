@@ -109,7 +109,6 @@ function markdownPluginProps(): Pick<
         return _markdownPluginProps
     }
 
-    // @ts-ignore
     _markdownPluginProps = {
         rehypePlugins: [
             [
@@ -147,7 +146,7 @@ function markdownPluginProps(): Pick<
                 } satisfies RehypeHighlightOptions & { ignoreMissing: boolean },
             ],
         ],
-        remarkPlugins: [remarkGFM, [remarkExtractCodeBlocks]],
+        remarkPlugins: [remarkGFM, remarkExtractCodeBlocks],
     }
     return _markdownPluginProps
 }

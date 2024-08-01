@@ -2,20 +2,29 @@ import type { Code, Root } from 'mdast'
 import type { Plugin } from 'unified'
 import { visit } from 'unist-util-visit'
 
+interface CodeNodeData {
+    hProperties?: {
+        'data-file-path'?: string
+    }
+}
+
 export const remarkExtractCodeBlocks: Plugin<[], Root, Root> = () => {
-    return (tree, file) => {
+    return (tree: Root) => {
         visit(tree, 'code', (node: Code) => {
-            console.log('VISITING CODE NODE', node)
             const match = node.lang?.match(/^(\w+):(.+)$/)
             if (match) {
-                // Update the node's lang to remove the file path
-                node.lang = match[1]
+                const [, language, filePath] = match
 
-                if (node.data) {
-                    node.data.hProperties = { ...node.data.hProperties, 'data-file-path': match[2] }
-                } else {
-                    node.data = { hProperties: { 'data-file-path': match[2] } }
+                // Update the node's lang to remove the file path
+                node.lang = language
+
+                // Ensure node.data exists and has the correct type
+                const nodeData = (node.data || {}) as CodeNodeData
+                nodeData.hProperties = {
+                    ...nodeData.hProperties,
+                    'data-file-path': filePath.trim(),
                 }
+                node.data = nodeData
             }
         })
     }
