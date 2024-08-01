@@ -29,8 +29,8 @@ sealed class ExtensionMessage {
           "attribution" -> context.deserialize<AttributionExtensionMessage>(element, AttributionExtensionMessage::class.java)
           "context/remote-repos" -> context.deserialize<`context_remote-reposExtensionMessage`>(element, `context_remote-reposExtensionMessage`::class.java)
           "setConfigFeatures" -> context.deserialize<SetConfigFeaturesExtensionMessage>(element, SetConfigFeaturesExtensionMessage::class.java)
-          "allMentionProvidersMetadata" -> context.deserialize<AllMentionProvidersMetadataExtensionMessage>(element, AllMentionProvidersMetadataExtensionMessage::class.java)
           "queryPrompts/response" -> context.deserialize<QueryPrompts_responseExtensionMessage>(element, QueryPrompts_responseExtensionMessage::class.java)
+          "rpc/response" -> context.deserialize<Rpc_responseExtensionMessage>(element, Rpc_responseExtensionMessage::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -197,21 +197,10 @@ data class `context_remote-reposExtensionMessage`(
 data class SetConfigFeaturesExtensionMessage(
   val type: TypeEnum, // Oneof: setConfigFeatures
   val configFeatures: ConfigFeaturesParams,
-  val exportedFeatureFlags: Map<String, Boolean>,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
     @SerializedName("setConfigFeatures") SetConfigFeatures,
-  }
-}
-
-data class AllMentionProvidersMetadataExtensionMessage(
-  val type: TypeEnum, // Oneof: allMentionProvidersMetadata
-  val providers: List<ContextMentionProviderMetadata>,
-) : ExtensionMessage() {
-
-  enum class TypeEnum {
-    @SerializedName("allMentionProvidersMetadata") AllMentionProvidersMetadata,
   }
 }
 
@@ -223,6 +212,16 @@ data class QueryPrompts_responseExtensionMessage(
 
   enum class TypeEnum {
     @SerializedName("queryPrompts/response") QueryPrompts_response,
+  }
+}
+
+data class Rpc_responseExtensionMessage(
+  val type: TypeEnum, // Oneof: rpc/response
+  val message: ResponseMessage,
+) : ExtensionMessage() {
+
+  enum class TypeEnum {
+    @SerializedName("rpc/response") Rpc_response,
   }
 }
 

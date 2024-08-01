@@ -1,7 +1,7 @@
+import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeStandaloneComponent } from '../../storybook/VSCodeStoryDecorator'
 import { PromptSelectField } from './PromptSelectField'
-import { type PromptsClient, PromptsClientProviderForTestsOnly } from './promptsClient'
 
 const meta: Meta<typeof PromptSelectField> = {
     title: 'cody/PromptSelectField',
@@ -23,17 +23,20 @@ export const Default: Story = {
     args: {},
 }
 
-const ERROR_CLIENT: PromptsClient = {
-    queryPrompts: () => Promise.reject(new Error('my error message')),
-}
-
 export const ErrorMessage: Story = {
     args: {
         __storybook__open: true,
     },
     render: args => (
-        <PromptsClientProviderForTestsOnly value={ERROR_CLIENT}>
+        <ExtensionAPIProviderForTestsOnly
+            value={{
+                ...MOCK_API,
+                prompts: () => {
+                    throw new Error('my error')
+                },
+            }}
+        >
             <PromptSelectField {...args} />
-        </PromptsClientProviderForTestsOnly>
+        </ExtensionAPIProviderForTestsOnly>
     ),
 }

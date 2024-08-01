@@ -127,23 +127,10 @@ export const Default: StoryObj<typeof MentionMenu> = {
     },
 }
 
-export const WithExperimentalProviders: StoryObj<typeof MentionMenu> = {
+export const WithError: StoryObj<typeof MentionMenu> = {
     args: {
-        params: toParams(''),
-        data: toData(
-            [
-                {
-                    uri: URI.file('a/b/x.go'),
-                    type: 'file',
-                },
-                {
-                    uri: URI.file('a/b/foo.go'),
-                    type: 'file',
-                    range: { start: { line: 3, character: 5 }, end: { line: 7, character: 9 } },
-                },
-            ],
-            [FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER]
-        ),
+        params: toParams('', undefined),
+        data: { ...toData([{ uri: URI.file('a/b/c.go'), type: 'file' }]), error: 'my error' },
     },
 }
 

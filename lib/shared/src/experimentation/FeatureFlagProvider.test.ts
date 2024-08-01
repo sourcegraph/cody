@@ -2,6 +2,7 @@ import { describe, expect, it, vitest } from 'vitest'
 
 import type { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
+import { readValuesFrom } from '../misc/asyncGenerator'
 import { nextTick } from '../utils'
 import { FeatureFlag, FeatureFlagProvider } from './FeatureFlagProvider'
 
@@ -114,6 +115,63 @@ describe('FeatureFlagProvider', () => {
         }
     })
 
+    describe('evaluatedFeatureFlag', () => {
+        function promiseResolveOnNextTick<T>(value: T): Promise<T> {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    resolve(value)
+                }, 0)
+            })
+        }
+
+        it(
+            'should yield feature flags from evaluatedFeatureFlag generator',
+            { timeout: 1000 },
+            async () => {
+                vitest.useFakeTimers()
+                const apiClient = {
+                    getEvaluatedFeatureFlags: vitest.fn().mockReturnValue(
+                        promiseResolveOnNextTick({
+                            [FeatureFlag.TestFlagDoNotUse]: true,
+                        })
+                    ),
+                    evaluateFeatureFlag: vitest.fn().mockResolvedValue(true),
+                    endpoint: 'http://example.com',
+                }
+
+                const provider = new FeatureFlagProvider(
+                    apiClient as unknown as SourcegraphGraphQLAPIClient
+                )
+
+                const abortController = new AbortController()
+                const generator = provider.evaluatedFeatureFlag(
+                    FeatureFlag.TestFlagDoNotUse,
+                    abortController.signal
+                )
+
+                const { values, done } = readValuesFrom(generator)
+                vitest.runAllTimers()
+
+                await nextTick()
+                expect(values).toEqual<typeof values>([true])
+                values.pop()
+
+                // Test that the generator yields updated values when flags change.
+                apiClient.getEvaluatedFeatureFlags.mockResolvedValue({
+                    [FeatureFlag.TestFlagDoNotUse]: false,
+                })
+                provider.refresh()
+                await nextTick()
+                expect(values).toEqual<typeof values>([false])
+                values.pop()
+
+                abortController.abort()
+                await done
+                expect(values).toEqual<typeof values>([])
+            }
+        )
+    })
+
     describe('onFeatureFlagChanged', () => {
         it('should call the callback when a feature flag changes from true to false', async () => {
             vitest.useFakeTimers()
@@ -171,7 +229,7 @@ describe('FeatureFlagProvider', () => {
             expect(callback).toHaveBeenCalled()
         })
 
-        it('should not call the callback when a new flag is evaluated', async () => {
+        it('should call the callback when a new flag is evaluated', async () => {
             vitest.useFakeTimers()
             const apiClient = {
                 getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({}),
@@ -191,10 +249,10 @@ describe('FeatureFlagProvider', () => {
             vitest.useRealTimers()
             await nextTick()
 
-            expect(callback).not.toHaveBeenCalled()
+            expect(callback).toHaveBeenCalled()
         })
 
-        it('should not call the callback when a new flag is evaluated', async () => {
+        it('should not call the callback when a new flag is evaluated when not subscribed', async () => {
             vitest.useFakeTimers()
             const apiClient = {
                 getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({

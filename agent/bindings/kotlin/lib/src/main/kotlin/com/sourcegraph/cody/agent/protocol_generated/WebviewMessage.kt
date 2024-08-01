@@ -46,8 +46,8 @@ sealed class WebviewMessage {
           "reset" -> context.deserialize<ResetWebviewMessage>(element, ResetWebviewMessage::class.java)
           "attribution-search" -> context.deserialize<`attribution-searchWebviewMessage`>(element, `attribution-searchWebviewMessage`::class.java)
           "troubleshoot/reloadAuth" -> context.deserialize<Troubleshoot_reloadAuthWebviewMessage>(element, Troubleshoot_reloadAuthWebviewMessage::class.java)
-          "getAllMentionProvidersMetadata" -> context.deserialize<GetAllMentionProvidersMetadataWebviewMessage>(element, GetAllMentionProvidersMetadataWebviewMessage::class.java)
           "queryPrompts" -> context.deserialize<QueryPromptsWebviewMessage>(element, QueryPromptsWebviewMessage::class.java)
+          "rpc/request" -> context.deserialize<Rpc_requestWebviewMessage>(element, Rpc_requestWebviewMessage::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -416,15 +416,6 @@ data class Troubleshoot_reloadAuthWebviewMessage(
   }
 }
 
-data class GetAllMentionProvidersMetadataWebviewMessage(
-  val command: CommandEnum, // Oneof: getAllMentionProvidersMetadata
-) : WebviewMessage() {
-
-  enum class CommandEnum {
-    @SerializedName("getAllMentionProvidersMetadata") GetAllMentionProvidersMetadata,
-  }
-}
-
 data class QueryPromptsWebviewMessage(
   val command: CommandEnum, // Oneof: queryPrompts
   val query: String,
@@ -432,6 +423,16 @@ data class QueryPromptsWebviewMessage(
 
   enum class CommandEnum {
     @SerializedName("queryPrompts") QueryPrompts,
+  }
+}
+
+data class Rpc_requestWebviewMessage(
+  val command: CommandEnum, // Oneof: rpc/request
+  val message: RequestMessage,
+) : WebviewMessage() {
+
+  enum class CommandEnum {
+    @SerializedName("rpc/request") Rpc_request,
   }
 }
 

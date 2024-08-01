@@ -3,12 +3,10 @@ import { REMOTE_FILE_PROVIDER_URI, REMOTE_REPOSITORY_PROVIDER_URI } from '@sourc
 import { debounce } from 'lodash'
 import { useCallback, useContext, useMemo, useState } from 'react'
 import { useClientState } from '../../clientState'
-import {
-    ChatMentionContext,
-    useChatContextItems,
-    useChatContextMentionProviders,
-} from '../../plugins/atMentions/chatContextClient'
+import { ChatMentionContext, useChatContextItems } from '../../plugins/atMentions/useChatContextItems'
 import { prepareContextItemForMentionMenu } from '../../plugins/atMentions/util'
+import { useAsyncGenerator } from '../../useAsyncGenerator'
+import { useExtensionAPI } from '../../useExtensionAPI'
 
 export interface MentionMenuParams {
     query: string | null
@@ -65,6 +63,12 @@ export interface MentionMenuData {
     providers: ContextMentionProviderMetadata[]
     initialContextItems?: (ContextItem & { icon?: string })[]
     items: ContextItem[] | undefined
+
+    /**
+     * If an error is present, the client should display the error *and* still display the other
+     * data that is present.
+     */
+    error?: string
 }
 
 interface MentionMenuContextValue {
@@ -76,16 +80,21 @@ export function useMentionMenuData(
     params: MentionMenuParams,
     { remainingTokenBudget, limit }: { remainingTokenBudget: number; limit: number }
 ): MentionMenuData {
-    const results = useChatContextItems(params.query, params.parentItem)
+    const { value: contextItems, error: contextItemsError } = useChatContextItems(
+        params.query,
+        params.parentItem
+    )
     const queryLower = params.query?.toLowerCase()?.trim() ?? null
 
-    const { providers } = useChatContextMentionProviders()
+    const { value: providers, error: providersError } = useAsyncGenerator(
+        useExtensionAPI().mentionProviders
+    )
     const clientState = useClientState()
 
     return useMemo(
         () => ({
             providers:
-                params.parentItem || queryLower === null
+                params.parentItem || queryLower === null || !providers
                     ? []
                     : providers.filter(
                           provider =>
@@ -94,7 +103,7 @@ export function useMentionMenuData(
                               provider.id.toLowerCase().replaceAll(' ', '').includes(queryLower) ||
                               provider.title?.toLowerCase().replaceAll(' ', '').includes(queryLower)
                       ),
-            items: results
+            items: contextItems
                 ?.slice(0, limit)
                 .filter(
                     // If an item is in the initial context, don't show it twice.
@@ -113,7 +122,18 @@ export function useMentionMenuData(
                       item.description?.toString().toLowerCase().includes(queryLower)
                     : true
             ),
+            error: (contextItemsError ?? providersError)?.message,
         }),
-        [params.parentItem, providers, queryLower, results, limit, remainingTokenBudget, clientState]
+        [
+            params.parentItem,
+            providers,
+            providersError,
+            queryLower,
+            contextItems,
+            contextItemsError,
+            limit,
+            remainingTokenBudget,
+            clientState,
+        ]
     )
 }

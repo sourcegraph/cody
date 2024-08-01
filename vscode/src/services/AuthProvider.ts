@@ -9,6 +9,7 @@ import {
     DOTCOM_URL,
     LOCAL_APP_URL,
     SourcegraphGraphQLAPIClient,
+    asyncGeneratorFromVSCodeEvent,
     defaultAuthStatus,
     graphqlClient,
     isError,
@@ -310,6 +311,10 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
     public getAuthStatus(): AuthStatus {
         return this.status
+    }
+
+    public observeAuthStatus(signal?: AbortSignal): AsyncGenerator<AuthStatus> {
+        return asyncGeneratorFromVSCodeEvent(this.didChangeEvent.event, this.status, signal)
     }
 
     // It processes the authentication steps and stores the login info before sharing the auth status with chatview

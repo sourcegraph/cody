@@ -395,7 +395,7 @@ async function resolveContextMentionProviderContextItem(
         return []
     }
 
-    const openCtxClient = openCtx.client
+    const openCtxClient = openCtx.controller
     if (!openCtxClient) {
         return []
     }
@@ -408,6 +408,18 @@ async function resolveContextMentionProviderContextItem(
     const mention = {
         ...item.mention,
         title: item.title,
+    }
+
+    // TODO!(sqs): hack
+    if (item.uri.path.endsWith('/annotation')) {
+        return [
+            {
+                ...item,
+                type: 'openctx',
+                provider: 'openctx',
+                content: decodeURIComponent(item.uri.query.slice(1)),
+            } satisfies ContextItemWithContent,
+        ]
     }
 
     const items = await openCtxClient.items(

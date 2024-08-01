@@ -3,7 +3,7 @@ import { fireEvent, getQueriesForElement, render as render_, screen } from '@tes
 import type { ComponentProps } from 'react'
 import { type Assertion, describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
-import { TestAppWrapper } from '../AppWrapper'
+import { AppWrapperForTest } from '../AppWrapperForTest'
 import { type Interaction, Transcript, transcriptToInteractionPairs } from './Transcript'
 import { FIXTURE_USER_ACCOUNT_INFO } from './fixtures'
 
@@ -31,7 +31,7 @@ vi.mock('../utils/VSCodeApi', () => ({
 }))
 
 function render(element: JSX.Element): ReturnType<typeof render_> {
-    return render_(element, { wrapper: TestAppWrapper })
+    return render_(element, { wrapper: AppWrapperForTest })
 }
 
 describe('Transcript', () => {

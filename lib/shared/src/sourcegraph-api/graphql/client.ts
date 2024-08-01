@@ -12,6 +12,7 @@ import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
+import { isAbortError } from '../errors'
 import {
     CHAT_INTENT_QUERY,
     CONTEXT_FILTERS_QUERY,
@@ -621,7 +622,7 @@ export class SourcegraphGraphQLAPIClient {
                     repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
                 } ${query}`,
             },
-            15000
+            AbortSignal.timeout(15000)
         ).then(response =>
             extractDataOrError(
                 response,
@@ -1025,10 +1026,11 @@ export class SourcegraphGraphQLAPIClient {
         return result
     }
 
-    public async queryPrompts(query: string): Promise<Prompt[]> {
+    public async queryPrompts(query: string, signal?: AbortSignal): Promise<Prompt[]> {
         const response = await this.fetchSourcegraphAPI<APIResponse<{ prompts: { nodes: Prompt[] } }>>(
             PROMPTS_QUERY,
-            { query }
+            { query },
+            signal
         )
         const result = extractDataOrError(response, data => data.prompts.nodes)
         if (result instanceof Error) {
@@ -1256,7 +1258,7 @@ export class SourcegraphGraphQLAPIClient {
             {
                 snippet,
             },
-            timeoutMs
+            AbortSignal.timeout(timeoutMs)
         ).then(response => extractDataOrError(response, data => data.snippetAttribution))
     }
 
@@ -1294,7 +1296,7 @@ export class SourcegraphGraphQLAPIClient {
     public fetchSourcegraphAPI<T>(
         query: string,
         variables: Record<string, any> = {},
-        timeout = 6000 // Default timeout of 6000ms (6 seconds)
+        abortSignal?: AbortSignal
     ): Promise<T | Error> {
         const headers = new Headers(this.config.customHeaders as HeadersInit)
         headers.set('Content-Type', 'application/json; charset=utf-8')
@@ -1319,9 +1321,6 @@ export class SourcegraphGraphQLAPIClient {
         const controller = new AbortController()
         const signal = controller.signal
 
-        // Set a timeout to trigger the abort
-        const timeoutId = setTimeout(() => controller.abort(), timeout)
-
         return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: 'POST',
@@ -1329,14 +1328,11 @@ export class SourcegraphGraphQLAPIClient {
                 headers,
                 signal, // Pass the signal to the fetch request
             })
-                .then(response => {
-                    clearTimeout(timeoutId) // Clear the timeout if the request completes in time
-                    return verifyResponseCode(response)
-                })
+                .then(verifyResponseCode)
                 .then(response => response.json() as T)
                 .catch(error => {
-                    if (error.name === 'AbortError') {
-                        return new Error(`ETIMEDOUT: Request timed out after ${timeout}ms (${url})`)
+                    if (isAbortError(error)) {
+                        return new Error(`ETIMEDOUT: Request aborted or timed out (${url})`)
                     }
                     return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
                 })

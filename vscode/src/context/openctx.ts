@@ -1,9 +1,14 @@
 import {
+    type AuthStatus,
     CodyIDE,
     type ConfigurationWithAccessToken,
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
+    asyncGeneratorWithValues,
+    combineLatest,
+    dependentAbortController,
     featureFlagProvider,
+    firstValueFrom,
     graphqlClient,
     isError,
     logError,
@@ -12,6 +17,8 @@ import {
 import * as vscode from 'vscode'
 
 import type { ClientConfiguration, Provider } from '@openctx/client'
+import type { createController } from '@openctx/vscode-lib'
+import type { ConfigWatcher } from '../configwatcher'
 import { logDebug, outputChannel } from '../log'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
@@ -21,38 +28,42 @@ import WebProvider from './openctx/web'
 
 export async function exposeOpenCtxClient(
     context: Pick<vscode.ExtensionContext, 'extension' | 'secrets'>,
-    config: ConfigurationWithAccessToken,
-    isDotCom: boolean,
-    // TODO [VK] Expose createController openctx type from vscode-lib
-    createOpenCtxController: ((...args: any[]) => any) | undefined
-) {
+    config: ConfigWatcher<ConfigurationWithAccessToken>,
+    authStatus: AsyncGenerator<AuthStatus>,
+    createOpenCtxController: typeof createController | undefined,
+    parentSignal?: AbortSignal
+): Promise<void> {
     logDebug('openctx', 'OpenCtx is enabled in Cody')
     await warnIfOpenCtxExtensionConflict()
     try {
-        const isCodyWeb = config.agentIDE === CodyIDE.Web
+        const abortController = dependentAbortController(parentSignal)
+        const isCodyWeb = config.get().agentIDE === CodyIDE.Web
         const providers = isCodyWeb
-            ? getCodyWebOpenCtxProviders()
-            : await getStandardOpenCtxProviders(config, isDotCom)
+            ? asyncGeneratorWithValues(getCodyWebOpenCtxProviders())
+            : getOpenCtxProviders(
+                  config.observe(abortController.signal),
+                  authStatus,
+                  abortController.signal
+              )
         const createController =
             createOpenCtxController ?? (await import('@openctx/vscode-lib')).createController
 
         // Enable fetching of openctx configuration from Sourcegraph instance
-        const mergeConfiguration = config.experimentalNoodle
+        const mergeConfiguration = config.get().experimentalNoodle
             ? getMergeConfigurationFunction()
             : undefined
+        const providersPromise = await firstValueFrom(providers, abortController)
 
         const controller = createController({
             extensionId: context.extension.id,
             secrets: context.secrets,
             outputChannel,
-            features: {},
-            providers,
+            features: isCodyWeb ? {} : { annotations: true, statusBar: true },
+            providers: providersPromise,
             mergeConfiguration,
-            preloadDelay: 5 * 1000, // 5 seconds
         })
-
         setOpenCtx({
-            client: controller.controller,
+            controller: controller.controller,
             disposable: controller.disposable,
         })
     } catch (error) {
@@ -60,53 +71,63 @@ export async function exposeOpenCtxClient(
     }
 }
 
-async function getStandardOpenCtxProviders(
-    config: ConfigurationWithAccessToken,
-    isDotCom: boolean
-): Promise<{ settings: any; provider: Provider; providerUri: string }[]> {
-    const providers: { settings: any; provider: Provider; providerUri: string }[] = [
-        {
-            settings: true,
-            provider: WebProvider,
-            providerUri: WebProvider.providerUri,
-        },
-    ]
+async function* getOpenCtxProviders(
+    configChanges: AsyncGenerator<ConfigurationWithAccessToken>,
+    authStatusChanges: AsyncGenerator<AuthStatus>,
+    signal?: AbortSignal
+): AsyncGenerator<{ settings: any; provider: Provider; providerUri: string }[]> {
+    const gitMentionProviderChanges = featureFlagProvider.evaluatedFeatureFlag(
+        FeatureFlag.GitMentionProvider,
+        signal
+    )
+    for await (const [config, authStatus, gitMentionProvider] of combineLatest(
+        [configChanges, authStatusChanges, gitMentionProviderChanges],
+        signal
+    )) {
+        const providers: { settings: any; provider: Provider; providerUri: string }[] = [
+            {
+                settings: true,
+                provider: WebProvider,
+                providerUri: WebProvider.providerUri,
+            },
+        ]
 
-    // Remote repository and remote files should be available only for
-    // non-dotcom users
-    if (!isDotCom) {
-        providers.push({
-            settings: true,
-            provider: RemoteRepositorySearch,
-            providerUri: RemoteRepositorySearch.providerUri,
-        })
+        // Remote repository and remote files should be available only for
+        // non-dotcom users
+        if (!authStatus.isDotCom) {
+            providers.push({
+                settings: true,
+                provider: RemoteRepositorySearch,
+                providerUri: RemoteRepositorySearch.providerUri,
+            })
+
+            if (config.experimentalNoodle) {
+                providers.push({
+                    settings: true,
+                    provider: RemoteFileProvider,
+                    providerUri: RemoteFileProvider.providerUri,
+                })
+            }
+        }
 
         if (config.experimentalNoodle) {
             providers.push({
                 settings: true,
-                provider: RemoteFileProvider,
-                providerUri: RemoteFileProvider.providerUri,
+                provider: LinearIssuesProvider,
+                providerUri: LinearIssuesProvider.providerUri,
             })
         }
-    }
 
-    if (config.experimentalNoodle) {
-        providers.push({
-            settings: true,
-            provider: LinearIssuesProvider,
-            providerUri: LinearIssuesProvider.providerUri,
-        })
-    }
+        if (gitMentionProvider) {
+            providers.push({
+                settings: true,
+                provider: gitMentionsProvider,
+                providerUri: GIT_OPENCTX_PROVIDER_URI,
+            })
+        }
 
-    if (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.GitMentionProvider)) {
-        providers.push({
-            settings: true,
-            provider: gitMentionsProvider,
-            providerUri: GIT_OPENCTX_PROVIDER_URI,
-        })
+        yield providers
     }
-
-    return providers
 }
 
 function getCodyWebOpenCtxProviders() {

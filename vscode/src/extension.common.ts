@@ -14,6 +14,7 @@ import { onActivationDevelopmentHelpers } from './dev/helpers'
 
 import './editor/displayPathEnvInfo' // import for side effects
 
+import type { createController } from '@openctx/vscode-lib'
 import type { CommandsProvider } from './commands/services/provider'
 import { ExtensionApi } from './extension-api'
 import type { ExtensionClient } from './extension-client'
@@ -34,8 +35,7 @@ type Constructor<T extends new (...args: any) => any> = T extends new (
     : never
 
 export interface PlatformContext {
-    // TODO [VK] expose controller types from @openctx/vscode-lib
-    createOpenCtxController?: (...args: any[]) => any
+    createOpenCtxController?: typeof createController
     createStorage?: () => Promise<vscode.Memento>
     createCommandsProvider?: Constructor<typeof CommandsProvider>
     createLocalEmbeddingsController?: (
