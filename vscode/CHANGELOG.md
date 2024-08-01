@@ -22,14 +22,9 @@ Chat: Cody is now defaulted to run in the sidebar for both Enterprise and Non-En
 - Autocomplete: Ignores leading empty new lines for autocomplete suggestions to reduce the number of cases when Cody doesn't suggest anything. [pull/4864](https://github.com/sourcegraph/cody/pull/4864)
 - Autocomplete: Preload completions on cursor movement. [pull/4901](https://github.com/sourcegraph/cody/pull/4901)
 - Chat: The shortcuts for starting starting and toggling the chat have changed:
-  - `Alt+L`: think of this as the muscle-memory "chat" shortcut
-    - From text editor: opens/focuses the chat sidebar panel
-    - From text editor with active selection: adds the active selection to chat
-    - From chat sidebar: focuses the last editor panel
-    - From chat editor: no-op
-  - `Shift+Alt+L`:
-    - From text editor: opens a new chat editor panel
-    - Anywhere else: starts a new chat in the sidebar
+  - `Alt+L`: Toggles between the chat view and the last text editor. If a chat view doesn't exist, it opens a new one. From a text editor with an active selection, it adds the active selection to the chat.
+  - `Shift+Alt+L`: starts a new chat session.
+  - The `cody.chat.defaultLocation` setting controls the default location of chat sessions. The values are "sidebar", "editor", or "sticky". The default is "sticky", which defaults to the sidebar but switches whenever the user moves the chat to the editor panel, or vice versa.
 
 ## 1.28.0
 
