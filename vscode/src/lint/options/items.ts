@@ -65,16 +65,16 @@ export function getLintInputItems(
     //       ]
     const lintItems = [
         {
-            ...FILES_ITEM,
-            detail: activeFiles
-                ? `${activeFiles} ${pluralize('file', activeFiles, 'files')}`
-                : 'No files selected',
-        },
-        {
             ...RULES_ITEM,
             detail: activeRules
                 ? `${activeRules} ${pluralize('file', activeRules, 'files')}`
                 : 'No rules selected',
+        },
+        {
+            ...FILES_ITEM,
+            detail: activeFiles
+                ? `${activeFiles} ${pluralize('file', activeFiles, 'files')}`
+                : 'No files selected',
         },
         {
             label: 'options',
