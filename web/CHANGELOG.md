@@ -1,3 +1,6 @@
+## 0.3.4 
+- Adds support for remote file ranges  
+
 ## 0.3.3
 - Disables Ollama local models fetching 
 

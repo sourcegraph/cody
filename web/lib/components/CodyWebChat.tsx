@@ -179,6 +179,12 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
             mentions.push({
                 type: 'file',
                 isIgnored: false,
+                range: initialContext?.fileRange
+                    ? {
+                          start: { line: initialContext.fileRange.startLine, character: 0 },
+                          end: { line: initialContext.fileRange.endLine + 1, character: 0 },
+                      }
+                    : undefined,
                 remoteRepositoryName: repositories[0].name,
                 uri: URI.file(repositories[0].name + fileURL),
                 source: ContextItemSource.Initial,

@@ -11,6 +11,7 @@ import {
     type ContextItemWithContent,
     type Editor,
     type PromptString,
+    type RangeData,
     type SymbolKind,
     TokenCounter,
     contextFiltersProvider,
@@ -53,6 +54,7 @@ const throttledFindFiles = throttle(() => findWorkspaceFiles(), 10000)
  */
 export async function getFileContextFiles(
     query: string,
+    range: RangeData | undefined,
     maxResults: number,
     repositoriesNames?: string[]
 ): Promise<ContextItemFile[]> {
@@ -62,15 +64,19 @@ export async function getFileContextFiles(
 
     // TODO [VK] Support fuzzy find logic that we have for local file resolution
     if (repositoriesNames) {
-        const filesOrError = await graphqlClient.getRemoteFiles(repositoriesNames, query)
+        const [filePath] = query?.split(':') || []
+        const filesOrError = await graphqlClient.getRemoteFiles(repositoriesNames, filePath)
 
         if (isErrorLike(filesOrError)) {
             return []
         }
 
         return filesOrError.map<ContextItemFile>(item => ({
+            range,
             type: 'file',
-            size: item.file.byteSize,
+            // If range is presented we assume that file content passes size limitation
+            // since we don't have access to file content in this file resolver.
+            size: range ? 100 : item.file.byteSize,
             source: ContextItemSource.User,
             remoteRepositoryName: item.repository.name,
             isIgnored: contextFiltersProvider.isRepoNameIgnored(item.repository.name),
@@ -433,14 +439,22 @@ async function resolveFileOrSymbolContextItem(
         const resultOrError = await graphqlClient.getFileContent(repository, path)
 
         if (!isErrorLike(resultOrError)) {
+            const range = contextItem.range
+            const content = range
+                ? resultOrError
+                      .split(/\r?\n|\r|\n/g)
+                      .filter((line, index) => index >= range.start.line - 1 && index <= range.end.line)
+                      .join('\\n')
+                : resultOrError
+
             return {
                 ...contextItem,
                 title: path,
                 uri: URI.parse(`${graphqlClient.endpoint}${repository}/-/blob/${path}`),
-                content: resultOrError,
+                content: content,
                 repoName: repository,
                 source: ContextItemSource.Unified,
-                size: contextItem.size ?? TokenCounter.countTokens(resultOrError),
+                size: TokenCounter.countTokens(content),
             }
         }
     }

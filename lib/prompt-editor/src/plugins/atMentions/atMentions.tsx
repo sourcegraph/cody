@@ -165,6 +165,9 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
                         const textNode = $createContextItemTextNode(selectedItem)
                         nodeToReplace.replace(textNode)
                         const colonNode = $createTextNode(':')
+                        // Keep at symbol because we're still in the editing mode
+                        // (since ranges haven't been presented yet)
+                        textNode.insertBefore($createTextNode('@'))
                         textNode.insertAfter(colonNode)
                         colonNode.select()
                     } else {
