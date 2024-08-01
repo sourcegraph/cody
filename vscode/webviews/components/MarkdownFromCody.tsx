@@ -1,13 +1,14 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import { all } from 'lowlight'
 import type { ComponentProps, FunctionComponent } from 'react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import Markdown, { defaultUrlTransform } from 'react-markdown'
 import type { UrlTransform } from 'react-markdown/lib'
 import rehypeHighlight, { type Options as RehypeHighlightOptions } from 'rehype-highlight'
 import rehypeSanitize, { type Options as RehypeSanitizeOptions, defaultSchema } from 'rehype-sanitize'
 import remarkGFM from 'remark-gfm'
 import { useChatEnvironment } from '../chat/ChatEnvironmentContext'
+import { type ExtractedCodeBlock, remarkExtractCodeBlocks } from '../chat/extract-code-blocks'
 
 /**
  * Supported URIs to render as links in outputted markdown.
@@ -89,25 +90,45 @@ export const MarkdownFromCody: FunctionComponent<{ className?: string; children:
     className,
     children,
 }) => {
+    const [extractedCodeBlocks, setExtractedCodeBlocks] = useState<ExtractedCodeBlock[]>([])
     const { clientType } = useChatEnvironment()
     const urlTransform = useMemo(() => URL_PROCESSORS[clientType], [clientType])
 
+    const plugins = markdownPluginProps()
+
+    console.log('GOT CODE BLOCKS', extractedCodeBlocks)
+
     return (
-        <Markdown className={className} {...markdownPluginProps()} urlTransform={urlTransform}>
+        <Markdown
+            className={className}
+            {...plugins}
+            urlTransform={urlTransform}
+            components={{
+                code: ({ node, ...props }) => {
+                    console.log('GOT NODE', {
+                        node,
+                        props,
+                    })
+                    return <code {...props} />
+                },
+            }}
+        >
             {children}
         </Markdown>
     )
 }
 
 let _markdownPluginProps: ReturnType<typeof markdownPluginProps> | undefined
-function markdownPluginProps(): Pick<
-    ComponentProps<typeof Markdown>,
-    'rehypePlugins' | 'remarkPlugins'
-> {
+function markdownPluginProps():
+    | (Pick<ComponentProps<typeof Markdown>, 'rehypePlugins' | 'remarkPlugins'> & {
+          extractedCodeBlocks: ExtractedCodeBlock[]
+      })
+    | undefined {
     if (_markdownPluginProps) {
         return _markdownPluginProps
     }
 
+    // @ts-ignore
     _markdownPluginProps = {
         rehypePlugins: [
             [
@@ -144,7 +165,7 @@ function markdownPluginProps(): Pick<
                 } satisfies RehypeHighlightOptions & { ignoreMissing: boolean },
             ],
         ],
-        remarkPlugins: [remarkGFM],
+        remarkPlugins: [remarkGFM, [remarkExtractCodeBlocks]],
     }
     return _markdownPluginProps
 }

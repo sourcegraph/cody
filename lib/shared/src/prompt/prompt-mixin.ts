@@ -1,7 +1,7 @@
 import type { ChatMessage } from '../chat/transcript/messages'
 import { PromptString, ps } from './prompt-string'
 
-const DEFAULT = ps`Add FULL file name after "FileName: " as comment within each code snippet block in your response. `
+const DEFAULT = ps`Include the full file path in the markdown tag. For example: \`\`\`typescript:path/to/file.ts\n\`\`\` `
 
 /**
  * The preamble we add to the start of the last human open-end chat message that has context items.
