@@ -1,57 +1,73 @@
 // biome-ignore lint/style/useImportType: <explanation>
 import {
     ChatClient,
+    ChatModel,
     ContextItem,
     ContextItemWithContent,
-    Model,
-    ModelTag,
+    ModelsService,
     PromptString,
-    getDotComDefaultModels,
     getSimplePreamble,
     ps,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
+import { parse } from 'yaml'
+import { z } from 'zod'
 import { PromptBuilder } from '../prompt-builder'
+export interface LintOptions {
+    rules: LintRule[]
+    /** The LLM that the user has selected */
+    model: ChatModel
+}
 
-// @ts-ignore
-interface Lint {
-    id: string
-    rule: string
+//@ts-ignore
+export interface LintRule {
     title: string
-    description?: string
+    description: {
+        human: string
+        cody?: string
+    }
     readMore?: URI
-    quickFix?: string
-    enhancedContext?:
-        | {
-              ruleQuery?: string
-              fixQuery?: string
-          }
-        | string
-    context?:
-        | {
-              rule?: URI[]
-              fix?: URI[]
-          }
-        | URI[]
 }
 
-const lints: Record<string, { description: string }> = {
-    'NAMING-0001': {
-        description: `variable names must not be generic but be descriptive of their value. For example, "itemCount" is better than "i"`,
-    },
-    'EMOJI-0005': {
-        description:
-            "Longer or dense feeling comment blocks should contain at least a emoji somehwere to make the comment look more appealing and funny. It's important to keep developer morale up when reading long and important comments.",
-    },
-    'EMOJI-0006': {
-        description:
-            'Comments that warn the developer about some dangerous behaviour must always include a 🚨 emoji to draw attention.',
-    },
-    'FORBIDDEN-WORD-0001': {
-        description: "Any mention of the word house in the meaning of 'to store' is forbidden",
-    },
+export const codylintFileSchema = z.object({
+    rules: z.array(
+        z.object({
+            title: z.string(),
+            description: z.union([
+                z.string(),
+                z.object({
+                    human: z.string(),
+                    cody: z.string().optional(),
+                }),
+            ]),
+            readMore: z.string().url().optional(),
+        })
+    ),
+})
+
+export function lintRulesFromCodylintFile(fileContent: string): LintRule[] {
+    const parsedYaml = parse(fileContent)
+    const lintFile = codylintFileSchema.parse(parsedYaml)
+    return lintFile.rules.map(rule => {
+        return {
+            title: rule.title,
+            description: {
+                human: typeof rule.description === 'string' ? rule.description : rule.description.human,
+                cody: typeof rule.description === 'string' ? undefined : rule.description.cody,
+            },
+            readMore: rule.readMore ? URI.parse(rule.readMore) : undefined,
+        } satisfies LintRule
+    })
 }
+
+/**TODO:
+ *
+ *
+ * detail: activeRules ? `${activeRules} files` : undefined,
+ *
+ * use pluralize instead
+ */
 
 //TODO: lints on things that should be booleans but are actually arrays!
 /**
@@ -83,18 +99,9 @@ const lints: Record<string, { description: string }> = {
  */
 
 // Also handles things like `// cody-ignore: lint/bleh/blah: <explanation>`
-export class FuzzyLintsProvider implements vscode.Disposable {
+export class LintService implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
-    private mode = 'QUALITY' // Just temporary
-    private model: Model =
-        this.mode === 'SPEED'
-            ? getDotComDefaultModels().find(model => model.tags.includes(ModelTag.Speed))!
-            : getDotComDefaultModels()[0]
-    private lintConfig: ContextItemWithContent = {
-        uri: URI.parse('config://linter.json'),
-        type: 'file',
-        content: JSON.stringify(lints, null, 2),
-    }
+
     constructor(private readonly chatClient: ChatClient) {
         // Register commands
     }
@@ -105,18 +112,35 @@ export class FuzzyLintsProvider implements vscode.Disposable {
         }
     }
 
-    async apply(files: vscode.Uri[]) {
+    //TODO: Linting sessions CODY-3121
+
+    async apply(files: URI[], options: LintOptions) {
         if (files.length === 0) {
             return []
         }
+        const resolvedModel = ModelsService.resolveModel(options.model)
+        if (!resolvedModel || !options.rules) {
+            return []
+        }
 
-        const { model, contextWindow } = this.model
+        const promptConfigContent = Object.fromEntries(
+            options.rules.map((rule, index) => [
+                `CODY-LINT-${index}`,
+                { rule: rule.description.cody ?? rule.description.human },
+            ])
+        )
+        const promptConfig: ContextItemWithContent = {
+            uri: URI.parse('config://linter.json'),
+            type: 'file',
+            content: JSON.stringify(promptConfigContent, null, 2),
+        }
+        const { model, contextWindow } = resolvedModel
 
         let processedFiles = 0
         const responses = await vscode.window.withProgress(
             {
                 location: vscode.ProgressLocation.Window,
-                title: 'Running Pre-R Checks...',
+                title: `Cody Lint: 0/${files.length}`,
                 cancellable: true,
             },
             async (progress, token) => {
@@ -148,13 +172,17 @@ export class FuzzyLintsProvider implements vscode.Disposable {
                                 { speaker: 'human', text: ps`execute` },
                                 {
                                     speaker: 'assistant',
-                                    text: ps`Understood. Once you give me the \`execute\` command I will review the file \`@indexer/src/main.rs\` and report any issues found that are enabled in the configuration file \`@config://linter.json\`. I will take extra care to strictlly follow the response format."`,
+                                    text: ps`Understood. Once you give me the \`execute\` command I will review ${PromptString.fromDisplayPath(
+                                        targetFile.uri
+                                    )} and report any issues found that are enabled in ${PromptString.fromDisplayPath(
+                                        promptConfig.uri
+                                    )}. I will take extra care to strictly follow the response format."`,
                                 },
-                                { speaker: 'human', text: lintPrompt(targetFile, this.lintConfig) },
+                                { speaker: 'human', text: lintPrompt(targetFile, promptConfig) },
                             ])
                             const { ignored, limitReached } = await promptBuilder.tryAddContext('user', [
                                 targetFile,
-                                this.lintConfig,
+                                promptConfig,
                             ])
                             if (ignored.length || limitReached) {
                                 return null
@@ -199,7 +227,7 @@ export class FuzzyLintsProvider implements vscode.Disposable {
                         } finally {
                             processedFiles++
                             progress.report({
-                                message: `Processed ${processedFiles} of ${files.length} files`,
+                                message: `Cody Lint: ${processedFiles}/${files.length}`,
                                 increment: processedFiles / files.length,
                             })
                         }
@@ -218,11 +246,12 @@ export class FuzzyLintsProvider implements vscode.Disposable {
             }
         )
 
-        return this.convertResponses(responses)
+        return this.convertResponses(responses, options.rules)
     }
 
     convertResponses(
-        responses: ({ response: string; file: URI } | null)[]
+        responses: ({ response: string; file: URI } | null)[],
+        rules: LintRule[]
     ): { diagnostics: vscode.Diagnostic[]; file: URI }[] {
         const diagnostics = []
         for (const entry of responses) {
@@ -242,16 +271,15 @@ export class FuzzyLintsProvider implements vscode.Disposable {
                 const line = Number.parseInt(lineMatch.groups!.line, 10) - 1 // Convert to 0-based index
                 const code = lineMatch
                     .groups!.codes.split(',')
-                    .map(code => code.trim())
-                    .find(code => lints[code])
-                if (!code) {
-                    continue
-                }
+                    .map(code => Number.parseInt(code.trim().substring('CODY-LINT-'.length)))[0]
+                const rule = rules[code]
                 fileDiagnostics.push({
-                    message: lints[code].description,
+                    code: `${code}`,
+                    message: `Cody Lint: ${rule.title.trim()}`,
+                    relatedInformation: [],
                     range: new vscode.Range(line, 0, line, 1000000),
                     severity: vscode.DiagnosticSeverity.Error,
-                    source: 'fuzzy-linter',
+                    source: 'funny.codylint.yaml', // TODO: keep track of which file they came from
                 })
             }
             diagnostics.push({

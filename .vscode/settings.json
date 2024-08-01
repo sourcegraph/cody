@@ -1,9 +1,9 @@
 {
   "search.exclude": {
-    "**/node_modules": true,
-    "**/dist": true,
     "**/.vscode-test": true,
-    "**/.vscode-test-web": true
+    "**/.vscode-test-web": true,
+    "**/dist": true,
+    "**/node_modules": true
   },
   "files.exclude": {
     "**/.vscode-test": true,

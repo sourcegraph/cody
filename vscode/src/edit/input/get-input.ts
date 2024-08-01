@@ -29,7 +29,7 @@ import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } f
 import { getModelInputItems, getModelOptionItems } from './get-items/model'
 import { getRangeInputItems } from './get-items/range'
 import { RANGE_SYMBOLS_ITEM, getRangeSymbolInputItems } from './get-items/range-symbols'
-import type { EditModelItem, EditRangeItem } from './get-items/types'
+import type { EditRangeItem, ModelItem } from './get-items/types'
 import { getMatchingContext } from './get-matching-context'
 import { createQuickPick } from './quick-pick'
 import { fetchDocumentSymbols, getLabelForContextItem, removeAfterLastAt } from './utils'
@@ -177,7 +177,9 @@ export const getInput = async (
     const symbolsPromise = fetchDocumentSymbols(document)
 
     return new Promise(resolve => {
-        const modelInput = createQuickPick({
+        let editInput: ReturnType<typeof createQuickPick>
+
+        const modelInput = createQuickPick<ModelItem>({
             title: activeTitle,
             placeHolder: 'Select a model',
             getItems: () => getModelInputItems(modelOptions, activeModel, isCodyPro),
@@ -185,7 +187,7 @@ export const getInput = async (
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidTriggerButton: () => editInput.render(editInput.input.value),
             onDidAccept: async item => {
-                const acceptedItem = item as EditModelItem
+                const acceptedItem = item as ModelItem
                 if (!acceptedItem) {
                     return
                 }
@@ -296,7 +298,7 @@ export const getInput = async (
             },
         })
 
-        const editInput = createQuickPick({
+        editInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Enter edit instructions (type @ to include code, ⏎ to submit)',
             getItems: () =>

@@ -1,37 +1,85 @@
+import { DEFAULT_EVENT_SOURCE, ModelsService } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import type { FuzzyLintsProvider } from './FuzzyLintsProvider'
+import type { VSCodeEditor } from '../editor/vscode-editor'
+import type { AuthProvider } from '../services/AuthProvider'
+import { type LintService, lintRulesFromCodylintFile } from './LintService'
+import { type LintInput, getInput } from './options/menu'
 // Handles invoking the fuzzy lints between specified diff-points
 // and invoking ways to provide results to the user (comments, squiggles, etc).
 // todo add a panel
 
-export class PreRController implements vscode.Disposable {
+export class LintController implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private commentController = vscode.comments.createCommentController('cody.pre-r', 'Cody Pre-R')
     private diagnosticCollection = vscode.languages.createDiagnosticCollection('sourcegraph.cody-ai')
 
-    constructor(private fuzzyLintsProvider: FuzzyLintsProvider) {
+    private previousInput?: LintInput
+    constructor(
+        private lintService: LintService,
+        private authProvider: AuthProvider,
+        private editor: VSCodeEditor
+    ) {
         this.disposables.push(this.commentController, this.diagnosticCollection)
-        vscode.commands.registerCommand('cody.pre-r.run', () => {
-            this.run()
-        })
-        vscode.commands.registerCommand('cody.pre-r.clean', () => {
-            this.run(true)
-        })
+
+        vscode.commands.registerCommand('cody.lint.init', () => this.run())
+        // vscode.commands.registerCommand('cody.pre-r.clean', () => {
+        //     this.run(true)
+        // })
     }
 
-    async run(allOpen = false) {
+    async run() {
+        // // we now ask if the user wants to run on some selection of open files
+        // // or if they want to run on a git diff
+        // const gitDiffOption: vscode.QuickPickItem = { label: 'Git diff' }
+        // const openFilesOptions = vscode.window.tabGroups.all
+        //     .flatMap(group => group.tabs)
+        //     .filter(tab => tab.input instanceof vscode.TabInputText)
+        //     .map(tab => ({
+        //         label: vscode.workspace.asRelativePath((tab.input as vscode.TabInputText).uri),
+        //         description: (tab.input as vscode.TabInputText).uri.path,
+        //     }))
+        // const gitDiffs: vscode.QuickPickItem[] =
         // TODO: invoke something on the FuzzyLintsProvider
         // TODO: invoke something on the DiagnosticsController to get them registered?
         // await this.addComments()
-        const docs = (
-            allOpen
-                ? vscode.window.visibleTextEditors.map(editor => editor.document)
-                : [vscode.window.activeTextEditor?.document]
-        ).filter(Boolean) as vscode.TextDocument[]
-        if (!docs.length) {
+
+        const input = await getInput(
+            this.editor,
+            this.authProvider,
+            {
+                initialModel: this.previousInput?.model ?? ModelsService.getDefaultChatModel()!,
+                initialLintFiles: this.previousInput?.lintFiles ?? [],
+                initialTarget:
+                    this.previousInput?.targetCommitHash ?? this.previousInput?.targetFiles ?? [],
+            },
+            DEFAULT_EVENT_SOURCE
+        )
+        if (!input) {
             return
         }
-        const entries = await this.fuzzyLintsProvider.apply(docs.map(doc => doc.uri))
+        this.previousInput = input
+
+        // const files = input.targetFiles.map(file => file.uri!).filter(Boolean)
+
+        const codylintFileContents = (
+            await Promise.all(
+                input.lintFiles.map(file =>
+                    vscode.workspace.fs.readFile(file).then(
+                        buf => buf.toString(),
+                        _ => null
+                    )
+                )
+            )
+        ).filter(Boolean) as string[]
+        const rules = codylintFileContents.filter(Boolean).flatMap(lintRulesFromCodylintFile)
+
+        const entries = await this.lintService.apply(input.targetFiles, {
+            model: input.model,
+            rules,
+        })
+
+        // TODO: Streaming results
+
         vscode.languages.createDiagnosticCollection('sourcegraph.cody-ai')
         this.diagnosticCollection.clear()
         for (const entry of entries) {

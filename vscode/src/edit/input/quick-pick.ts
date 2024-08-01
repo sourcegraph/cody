@@ -1,30 +1,34 @@
 import * as vscode from 'vscode'
 
-export interface GetItemsResult {
-    items: vscode.QuickPickItem[]
-    activeItem?: vscode.QuickPickItem
+export interface GetItemsResult<T extends vscode.QuickPickItem = vscode.QuickPickItem> {
+    items: T[]
+    activeItem?: T | T[]
 }
 
-interface QuickPickConfiguration {
+type QuickPickConfiguration<T extends vscode.QuickPickItem = vscode.QuickPickItem> = {
     title: string
     placeHolder: string
-    onDidAccept: (item?: vscode.QuickPickItem) => void
-    onDidChangeActive?: (items: readonly vscode.QuickPickItem[]) => void
+    canSelectMany?: boolean
+    onDidChangeActive?: (items: readonly T[]) => void
     onDidChangeValue?: (value: string) => void
     onDidHide?: () => void
-    getItems: () => GetItemsResult | Promise<GetItemsResult>
+    getItems: () => GetItemsResult<T> | Promise<GetItemsResult<T>>
     value?: string
     buttons?: vscode.QuickInputButton[]
     onDidTriggerButton?: (target: vscode.QuickInputButton) => void
-}
+} & (
+    | { canSelectMany: true; onDidAccept: (items: readonly T[]) => void }
+    | { canSelectMany?: false; onDidAccept: (item: T) => void }
+)
 
-interface QuickPick {
-    input: vscode.QuickPick<vscode.QuickPickItem>
+interface QuickPick<T extends vscode.QuickPickItem = vscode.QuickPickItem> {
+    input: vscode.QuickPick<T>
     render: (value: string) => void
 }
 
-export const createQuickPick = ({
+export const createQuickPick = <T extends vscode.QuickPickItem = vscode.QuickPickItem>({
     title,
+    canSelectMany,
     placeHolder,
     onDidAccept,
     onDidChangeActive,
@@ -34,13 +38,28 @@ export const createQuickPick = ({
     getItems,
     buttons,
     value = '',
-}: QuickPickConfiguration): QuickPick => {
-    const quickPick = vscode.window.createQuickPick()
+}: QuickPickConfiguration<T>): QuickPick<T> => {
+    const quickPick = vscode.window.createQuickPick<T>()
+    quickPick.canSelectMany = canSelectMany ?? false
     quickPick.ignoreFocusOut = true
     quickPick.title = title
     quickPick.placeholder = placeHolder
     quickPick.value = value
-    quickPick.onDidAccept(() => onDidAccept(quickPick.activeItems[0]))
+    quickPick.onDidAccept(() => {
+        //TODO: This is an artifact from that we can dynamically switch single/multi select
+        if (canSelectMany) {
+            if (quickPick.canSelectMany) {
+                onDidAccept(quickPick.selectedItems)
+            } else {
+                onDidAccept([quickPick.activeItems[0]])
+            }
+        } else {
+            if (quickPick.canSelectMany) {
+                throw new Error("Can't have canSelectMany false and onDidAccept")
+            }
+            onDidAccept(quickPick.activeItems[0])
+        }
+    })
 
     // VS Code automatically sorts quick pick items by label.
     // Property not currently documented, open issue: https://github.com/microsoft/vscode/issues/73904
@@ -71,21 +90,28 @@ export const createQuickPick = ({
         render: value => {
             quickPick.value = value
 
+            const updateActiveItems = (item?: T | T[]) => {
+                if (!item) {
+                    return
+                }
+                // We check the actual value set on the quickPick as it could have changed.
+                if (quickPick.canSelectMany) {
+                    quickPick.selectedItems = Array.isArray(item) ? item : [item]
+                } else {
+                    quickPick.activeItems = Array.isArray(item) ? item : [item]
+                }
+            }
             const itemsOrPromise = getItems()
             if (itemsOrPromise instanceof Promise) {
                 quickPick.busy = true
                 itemsOrPromise.then(({ items, activeItem }) => {
                     quickPick.items = items
-                    if (activeItem) {
-                        quickPick.activeItems = [activeItem]
-                    }
+                    updateActiveItems(activeItem)
                     quickPick.busy = false
                 })
             } else {
                 quickPick.items = itemsOrPromise.items
-                if (itemsOrPromise.activeItem) {
-                    quickPick.activeItems = [itemsOrPromise.activeItem]
-                }
+                updateActiveItems(itemsOrPromise.activeItem)
             }
 
             quickPick.show()

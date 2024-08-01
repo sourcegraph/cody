@@ -472,9 +472,9 @@
         "group": "Cody"
       },
       {
-        "command": "cody.pre-r.run",
+        "command": "cody.lint.init",
         "category": "Cody",
-        "title": "Run Pre-R Checks",
+        "title": "Lint",
         "enablement": "cody.activated",
         "group": "Cody"
       },
