@@ -60,24 +60,24 @@ jobs:
       - run: pnpm run test:unit --run --reporter=default --reporter=junit --outputFile.junit=junit.xml
         env:
           CODY_NODE_VERSION: ${{ matrix.node }}
-      - name: Upload test results to Buildkite Test Analytics
-        if: success() || failure() # this enables to run on both cases, but never if the job gets cancelled.
-        env:
-          BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
-        run: |
-          curl \
-          -X POST \
-          --fail-with-body \
-          -H "Authorization: Token token=\"$BUILDKITE_ANALYTICS_TOKEN\"" \
-          -F "data=@junit.xml" \
-          -F "format=junit" \
-          -F "run_env[CI]=github_actions" \
-          -F "run_env[key]=$GITHUB_ACTION-$GITHUB_RUN_NUMBER-$GITHUB_RUN_ATTEMPT" \
-          -F "run_env[number]=$GITHUB_RUN_NUMBER" \
-          -F "run_env[branch]=$GITHUB_REF" \
-          -F "run_env[commit_sha]=$GITHUB_SHA" \
-          -F "run_env[url]=https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
-          https://analytics-api.buildkite.com/v1/uploads
+      # - name: Upload test results to Buildkite Test Analytics
+      #   if: success() || failure() # this enables to run on both cases, but never if the job gets cancelled.
+      #   env:
+      #     BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
+      #   run: |
+      #     curl \
+      #     -X POST \
+      #     --fail-with-body \
+      #     -H "Authorization: Token token=\"$BUILDKITE_ANALYTICS_TOKEN\"" \
+      #     -F "data=@junit.xml" \
+      #     -F "format=junit" \
+      #     -F "run_env[CI]=github_actions" \
+      #     -F "run_env[key]=$GITHUB_ACTION-$GITHUB_RUN_NUMBER-$GITHUB_RUN_ATTEMPT" \
+      #     -F "run_env[number]=$GITHUB_RUN_NUMBER" \
+      #     -F "run_env[branch]=$GITHUB_REF" \
+      #     -F "run_env[commit_sha]=$GITHUB_SHA" \
+      #     -F "run_env[url]=https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+      #     https://analytics-api.buildkite.com/v1/uploads
 
   test-integration:
     needs: fast_tests_matrix_prep
