@@ -629,7 +629,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         mentions: ContextItem[],
         editorState: SerializedPromptEditorState | null,
         addEnhancedContext: boolean,
-        abortSignal: AbortSignal,
+        signal: AbortSignal,
         source?: EventSource,
         command?: DefaultChatCommands
     ): Promise<void> {
@@ -663,12 +663,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 if (submitType === 'user-newchat' && !this.chatModel.isEmpty()) {
                     span.addEvent('clearAndRestartSession')
                     await this.clearAndRestartSession()
-                    abortSignal.throwIfAborted()
+                    signal.throwIfAborted()
                 }
 
                 this.chatModel.addHumanMessage({ text: inputText, editorState })
                 await this.saveSession()
-                abortSignal.throwIfAborted()
+                signal.throwIfAborted()
 
                 this.postEmptyMessageInProgress()
                 this.contextAPIClient?.detectChatIntent(requestID, inputText.toString())
@@ -676,16 +676,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // Add user's current selection as context for chat messages.
                 if (addEnhancedContext) {
                     const selectionContext = source === 'chat' ? await getContextFileFromSelection() : []
-                    abortSignal.throwIfAborted()
+                    signal.throwIfAborted()
                     mentions = [...mentions, ...selectionContext]
                 }
 
                 const userContextItems: ContextItemWithContent[] = await resolveContextItems(
                     this.editor,
                     mentions,
-                    inputText
+                    inputText,
+                    signal
                 )
-                abortSignal.throwIfAborted()
+                signal.throwIfAborted()
 
                 /**
                  * Whether the input has repository or tree mentions that need large-corpus
@@ -749,14 +750,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }
 
                 try {
-                    const prompt = await this.buildPrompt(
-                        prompter,
-                        abortSignal,
-                        requestID,
-                        sendTelemetry
-                    )
-                    abortSignal.throwIfAborted()
-                    this.streamAssistantResponse(requestID, prompt, span, firstTokenSpan, abortSignal)
+                    const prompt = await this.buildPrompt(prompter, signal, requestID, sendTelemetry)
+                    signal.throwIfAborted()
+                    this.streamAssistantResponse(requestID, prompt, span, firstTokenSpan, signal)
                 } catch (error) {
                     if (isAbortErrorOrSocketHangUp(error as Error)) {
                         return
@@ -782,7 +778,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         requestID: string,
         editorState: SerializedPromptEditorState | null,
         addEnhancedContext: boolean,
-        span: Span
+        span: Span,
+        signal?: AbortSignal
     ): Promise<ContextItem[]> {
         if (!vscode.workspace.getConfiguration().get<boolean>('cody.internal.serverSideContext')) {
             // Fetch using legacy context retrieval
@@ -817,8 +814,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         symf: this.symf,
                         remoteSearch: this.remoteSearch,
                     },
+                    signal,
                 }),
-                getContextForChatMessage(text.toString()),
+                getContextForChatMessage(text.toString(), signal),
             ])
             // add a callback, but return the original context
             context.then(c =>
@@ -832,11 +830,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return (await context).flat()
         }
 
-        const roots = await codebaseRootsFromHumanInput({ text, mentions })
-        const context = this.contextFetcher.fetchContext({
-            userQuery: text,
-            roots,
-        })
+        const roots = await codebaseRootsFromHumanInput({ text, mentions }, signal)
+        const context = this.contextFetcher.fetchContext(
+            {
+                userQuery: text,
+                roots,
+            },
+            signal
+        )
 
         return await context
     }

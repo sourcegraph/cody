@@ -76,7 +76,7 @@ export function gitRemoteUrlsFromGitExtension(uri: vscode.Uri): string[] | undef
  * branch with its upstream. If the upstream doesn't exist, then we use the list of
  * files modified since the last commit.
  */
-export async function gitLocallyModifiedFiles(uri: vscode.Uri): Promise<string[]> {
+export async function gitLocallyModifiedFiles(uri: vscode.Uri, signal?: AbortSignal): Promise<string[]> {
     const repo = vscodeGitAPI?.getRepository(uri)
     if (!repo) {
         throw new Error(`repository does not exist at ${uri.toString}`)
@@ -88,9 +88,11 @@ export async function gitLocallyModifiedFiles(uri: vscode.Uri): Promise<string[]
     let diffBase = repo.state.HEAD.commit
     if (repo.state.HEAD?.upstream) {
         diffBase = await repo.getMergeBase(repo.state.HEAD.upstream.name, repo.state.HEAD.commit)
+        signal?.throwIfAborted()
     }
 
     const changes = await repo?.diffWith(diffBase)
+    signal?.throwIfAborted()
     const modifiedFileURIs = changes.map(change => change.renameUri ?? change.uri)
 
     return modifiedFileURIs.map(u => u.fsPath)
