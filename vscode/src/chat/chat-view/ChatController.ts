@@ -97,7 +97,7 @@ import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
 import { startClientStateBroadcaster } from '../clientStateBroadcaster'
-import { getChatContextItemsForMention } from '../context/chatContext'
+import { type GetContextItemsTelemetry, getChatContextItemsForMention } from '../context/chatContext'
 import type { ContextAPIClient } from '../context/contextAPIClient'
 import type {
     ChatSubmitType,
@@ -192,7 +192,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
     private readonly contextAPIClient: ContextAPIClient | null
 
-    private contextFilesQueryAbortController?: AbortController
     private allMentionProvidersMetadataQueryAbortController?: AbortController
 
     private disposables: vscode.Disposable[] = []
@@ -937,11 +936,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }: { query: MentionQuery }): Promise<
         Omit<Extract<ExtensionMessage, { type: 'userContextFiles' }>, 'type'>
     > {
-        // Cancel previously in-flight query.
-        const abortController = new AbortController()
-        this.contextFilesQueryAbortController?.abort()
-        this.contextFilesQueryAbortController = abortController
-
         const source = 'chat'
 
         // Use numerical mapping to send source values to metadata, making this data available on all instances.
@@ -949,7 +943,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             chat: 1,
         } as const
 
-        const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
+        const scopedTelemetryRecorder: GetContextItemsTelemetry = {
             empty: () => {
                 telemetryRecorder.recordEvent('cody.at-mention', 'executed', {
                     metadata: {
@@ -967,18 +961,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         try {
-            const items = await getChatContextItemsForMention(
-                query,
-                abortController.signal,
-                scopedTelemetryRecorder,
-                // Pass possible remote repository context in order to resolve files
-                // for this remote repositories and not for local one, Cody Web case
-                // when we have only remote repositories as context
-                query.includeRemoteRepositories
+            const config = await getFullConfig()
+            const isCodyWeb = config.agentIDE === CodyIDE.Web
+
+            const items = await getChatContextItemsForMention({
+                mentionQuery: query,
+                telemetryRecorder: scopedTelemetryRecorder,
+                rangeFilter: !isCodyWeb,
+                remoteRepositoriesNames: query.includeRemoteRepositories
                     ? this.remoteSearch?.getRepos('all')?.map(repo => repo.name)
-                    : undefined
-            )
-            abortController.signal.throwIfAborted()
+                    : undefined,
+            })
 
             const { input, context } = this.chatModel.contextWindow
             const userContextFiles = items.map(f => ({

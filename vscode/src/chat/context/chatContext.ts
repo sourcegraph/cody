@@ -18,19 +18,29 @@ import {
     getSymbolContextFiles,
 } from '../../editor/utils/editor-context'
 
-export async function getChatContextItemsForMention(
-    mentionQuery: MentionQuery,
-    signal: AbortSignal,
+export interface GetContextItemsTelemetry {
+    empty: () => void
+    withProvider: (type: MentionQuery['provider'], metadata?: { id: string }) => void
+}
+
+interface GetContextItemsOptions {
+    mentionQuery: MentionQuery
+
     // Logging: log when the at-mention starts, and then log when we know the type (after the 1st
     // character is typed). Don't log otherwise because we would be logging prefixes of the same
     // query repeatedly, which is not needed.
-    telemetryRecorder?: {
-        empty: () => void
-        withProvider: (type: MentionQuery['provider'], metadata?: { id: string }) => void
-    },
+    telemetryRecorder?: GetContextItemsTelemetry
+
     remoteRepositoriesNames?: string[]
+    rangeFilter?: boolean
+}
+
+export async function getChatContextItemsForMention(
+    options: GetContextItemsOptions
 ): Promise<ContextItem[]> {
     const MAX_RESULTS = 20
+    const { mentionQuery, telemetryRecorder, remoteRepositoriesNames, rangeFilter = true } = options
+
     switch (mentionQuery.provider) {
         case null:
             telemetryRecorder?.empty()
@@ -52,7 +62,7 @@ export async function getChatContextItemsForMention(
 
             // If a range is provided, that means user is trying to mention a specific line range.
             // We will get the content of the file for that range to display file size warning if needed.
-            if (mentionQuery.range && files.length > 0 && (remoteRepositoriesNames?.length ?? 0) === 0) {
+            if (mentionQuery.range && files.length > 0 && rangeFilter) {
                 const item = await getContextFileFromUri(
                     files[0].uri,
                     new vscode.Range(mentionQuery.range.start.line, 0, mentionQuery.range.end.line, 0)

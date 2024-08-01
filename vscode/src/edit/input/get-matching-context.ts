@@ -12,7 +12,7 @@ interface FixupMatchingContext {
 }
 
 export async function getMatchingContext(mentionQuery: MentionQuery): Promise<FixupMatchingContext[]> {
-    const results = await getChatContextItemsForMention(mentionQuery, new AbortController().signal)
+    const results = await getChatContextItemsForMention({ mentionQuery })
     return results.map(result => {
         return {
             key: getLabelForContextItem(result),
