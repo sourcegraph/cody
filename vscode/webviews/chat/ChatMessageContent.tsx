@@ -438,14 +438,13 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         }
 
         for (const preElement of preElements) {
-            const preText = preElement.textContent?.trim()
+            const codeblockText = preElement.textContent?.trim()
 
-            if (preText && preElement.parentNode) {
-                // Get the filename betweenn the <FILENAME> tags if it exists.
-                const fileName = !isMessageLoading ? preText.match(/FileName: (.*?)\n/)?.[1] : undefined
+            if (codeblockText && preElement.parentNode) {
+                const codeElement = preElement.querySelectorAll('code')?.[0]
+                const fileName = codeElement?.getAttribute('date-file-path') || undefined
 
-                // Remove everything between the <FILENAME> tags and the tags.
-                const codeblockText = fileName ? preText.replace(/^(.*?)FileName: (.*?)\n/, '') : preText
+                console.log(fileName, 'fileName', codeElement)
 
                 const buttons = createButtons(
                     codeblockText,
@@ -455,6 +454,15 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     smartApplyButtonOnSubmit,
                     fileName
                 )
+
+                console.log
+
+                if (fileName?.length && !isMessageLoading) {
+                    const fileNameContainer = document.createElement('div')
+                    fileNameContainer.className = styles.fileNameContainer
+                    fileNameContainer.textContent = fileName
+                    buttons.append(fileNameContainer)
+                }
                 if (guardrails) {
                     const container = document.createElement('div')
                     container.classList.add(styles.attributionContainer)
@@ -483,20 +491,6 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                                 return
                             })
                     }
-                }
-
-                if (fileName?.length && !isMessageLoading) {
-                    const fileNameContainer = document.createElement('div')
-                    fileNameContainer.className = styles.fileNameContainer
-
-                    // TODO: Rename `fileName` to file path, as that's what it represents more
-                    fileNameContainer.textContent = getFileName(fileName)
-                    buttons.append(fileNameContainer)
-
-                    preElement.innerHTML = preElement.innerHTML.replace(
-                        /<span class="hljs-comment">(.*?)<\/span>/,
-                        ''
-                    )
                 }
 
                 // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
