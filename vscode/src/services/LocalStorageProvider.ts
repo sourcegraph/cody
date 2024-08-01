@@ -22,6 +22,8 @@ interface PersistedUserLocalHistory {
     chat: ChatHistory
 }
 
+export type ChatLocation = 'editor' | 'sidebar'
+
 class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     protected readonly KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
@@ -32,6 +34,7 @@ class LocalStorage {
     public readonly LAST_USED_USERNAME = 'SOURCEGRAPH_CODY_USERNAME'
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
     protected readonly CODY_ENROLLMENT_HISTORY = 'SOURCEGRAPH_CODY_ENROLLMENTS'
+    protected readonly LAST_USED_CHAT_MODALITY = 'cody-last-used-chat-modality'
 
     /**
      * Should be set on extension activation via `localStorage.setStorage(context.globalState)`
@@ -224,6 +227,14 @@ class LocalStorage {
 
     public getConfig(): ConfigurationWithAccessToken | null {
         return this.get(this.KEY_CONFIG)
+    }
+
+    public setLastUsedChatModality(modality: 'sidebar' | 'editor'): void {
+        this.set(this.LAST_USED_CHAT_MODALITY, modality)
+    }
+
+    public getLastUsedChatModality(): 'sidebar' | 'editor' {
+        return this.storage?.get(this.LAST_USED_CHAT_MODALITY) ?? 'sidebar'
     }
 
     public get<T>(key: string): T | null {

@@ -424,6 +424,14 @@
         "enablement": "!cody.activated"
       },
       {
+        "command": "cody.chat.new",
+        "category": "Cody",
+        "title": "New Chat",
+        "enablement": "cody.activated",
+        "group": "Cody",
+        "icon": "$(new-comment-icon)"
+      },
+      {
         "command": "cody.chat.newEditorPanel",
         "category": "Cody",
         "title": "New Chat in Editor",
@@ -443,7 +451,8 @@
         "command": "cody.chat.moveFromEditor",
         "category": "Cody",
         "title": "Move Chat from Editor to Main Cody Panel",
-        "enablement": "cody.activated && view == cody.chat",
+        "when": "cody.activated && view == cody.chat",
+        "enablement": "cody.activated",
         "group": "Cody",
         "icon": "$(layout-sidebar-left)"
       },
@@ -582,12 +591,12 @@
       },
 
       {
-        "command": "cody.chat.newPanel",
+        "command": "cody.chat.new",
         "key": "shift+alt+/",
         "when": "cody.activated"
       },
       {
-        "command": "cody.chat.newPanel",
+        "command": "cody.chat.new",
         "key": "shift+alt+l",
         "when": "cody.activated"
       },
@@ -622,23 +631,6 @@
         "when": "cody.activated && !editorTextFocus",
         "args": {
           "editorFocus": false
-        }
-      },
-
-      {
-        "command": "cody.chat.newEditorPanel",
-        "key": "shift+alt+l",
-        "when": "cody.activated && editorTextFocus",
-        "args": {
-          "editorFocus": true
-        }
-      },
-      {
-        "command": "cody.chat.newEditorPanel",
-        "key": "shift+alt+/",
-        "when": "cody.activated && editorTextFocus",
-        "args": {
-          "editorFocus": true
         }
       },
 
@@ -1045,6 +1037,18 @@
           "type": "string",
           "markdownDescription": "A custom instruction to be included at the start of all chat messages (e.g. \"Answer all my questions in Spanish.\")",
           "examples": ["Answer all my questions in Spanish."]
+        },
+        "cody.chat.defaultLocation": {
+          "order": 6,
+          "type": "string",
+          "enum": ["sticky", "sidebar", "editor"],
+          "markdownDescription": "Controls where the Cody chat view opens when the user invokes the `Cody: New Chat` command, or the Alt+L and Alt+/ shortcuts.",
+          "enumDescriptions": [
+            "Opens in the last-activated view location, which is set whenever the user explicitly chooses to open chat in a given location",
+            "Opens in the sidebar",
+            "Opens in an editor panel"
+          ],
+          "default": "sticky"
         },
         "cody.edit.preInstruction": {
           "order": 7,
