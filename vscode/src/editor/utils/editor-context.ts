@@ -11,6 +11,7 @@ import {
     type ContextItemWithContent,
     type Editor,
     type PromptString,
+    type RangeData,
     type SymbolKind,
     TokenCounter,
     contextFiltersProvider,
@@ -45,32 +46,42 @@ const lowScoringPathSegments = ['bin']
  * potentially swallow errors and return (and cache) incomplete data.
  */
 const throttledFindFiles = throttle(() => findWorkspaceFiles(), 10000)
+
+interface FileContextItemsOptions {
+    query: string
+    maxResults: number
+    range: RangeData | undefined
+    repositoriesNames?: string[]
+}
+
 /**
  * Searches all workspaces for files matching the given string. VS Code doesn't
  * provide an API for fuzzy file searching, only precise globs, so we recreate
  * it by getting a list of all files across all workspaces and using fuzzysort.
  * Large files over 1MB are filtered.
  */
-export async function getFileContextFiles(
-    query: string,
-    maxResults: number,
-    repositoriesNames?: string[]
-): Promise<ContextItemFile[]> {
+export async function getFileContextFiles(options: FileContextItemsOptions): Promise<ContextItemFile[]> {
+    let { query, maxResults, repositoriesNames, range } = options
+
     if (!query.trim()) {
         return []
     }
 
     // TODO [VK] Support fuzzy find logic that we have for local file resolution
     if (repositoriesNames) {
-        const filesOrError = await graphqlClient.getRemoteFiles(repositoriesNames, query)
+        const [filePath] = query?.split(':') || []
+        const filesOrError = await graphqlClient.getRemoteFiles(repositoriesNames, filePath)
 
         if (isErrorLike(filesOrError)) {
             return []
         }
 
         return filesOrError.map<ContextItemFile>(item => ({
+            range,
             type: 'file',
-            size: item.file.byteSize,
+            // If range is presented we assume that file content passes size limitation
+            // since we don't have access to file content in this file resolver.
+            size: range ? 100 : item.file.byteSize,
             source: ContextItemSource.User,
             remoteRepositoryName: item.repository.name,
             isIgnored: contextFiltersProvider.isRepoNameIgnored(item.repository.name),
@@ -428,9 +439,11 @@ async function resolveFileOrSymbolContextItem(
         // Get only actual file path without repository name
         const repository = contextItem.remoteRepositoryName
         const path = contextItem.uri.path.slice(repository.length + 1, contextItem.uri.path.length)
+        const ranges = contextItem.range
+            ? { startLine: contextItem.range.start.line, endLine: contextItem.range.end.line + 1 }
+            : undefined
 
-        // TODO [VK]: Support ranges for symbol context items
-        const resultOrError = await graphqlClient.getFileContent(repository, path)
+        const resultOrError = await graphqlClient.getFileContent(repository, path, ranges)
 
         if (!isErrorLike(resultOrError)) {
             return {
@@ -440,7 +453,7 @@ async function resolveFileOrSymbolContextItem(
                 content: resultOrError,
                 repoName: repository,
                 source: ContextItemSource.Unified,
-                size: contextItem.size ?? TokenCounter.countTokens(resultOrError),
+                size: TokenCounter.countTokens(resultOrError),
             }
         }
     }
