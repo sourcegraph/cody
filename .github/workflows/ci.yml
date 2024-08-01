@@ -62,6 +62,8 @@ jobs:
           CODY_NODE_VERSION: ${{ matrix.node }}
       - name: Upload test results to Buildkite Test Analytics
         if: success() || failure() # this enables to run on both cases, but never if the job gets cancelled.
+        env:
+          BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
         run: |
           curl \
           -X POST \
