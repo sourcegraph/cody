@@ -924,6 +924,5 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteExperimentalPreloadDebounceInterval: 0,
     autocompleteExperimentalHotStreakAndSmartThrottle: false,
     testingModelConfig: undefined,
-    experimentalChatContextRanker: false,
     experimentalGuardrailsTimeoutSeconds: undefined,
 } satisfies Configuration

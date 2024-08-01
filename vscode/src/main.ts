@@ -55,7 +55,6 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
-import type { ContextRankingController } from './local-context/context-ranking'
 import type { LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logError } from './log'
@@ -190,7 +189,6 @@ const register = async (
         codeCompletionsClient,
         guardrails,
         localEmbeddings,
-        contextRanking,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
         symfRunner,
         contextAPIClient,
@@ -223,7 +221,6 @@ const register = async (
             authProvider,
             enterpriseContextFactory,
             localEmbeddings,
-            contextRanking,
             symfRunner,
             contextAPIClient,
             contextFetcher,
@@ -751,7 +748,6 @@ interface RegisterChatOptions {
     authProvider: AuthProvider
     enterpriseContextFactory: EnterpriseContextFactory
     localEmbeddings?: LocalEmbeddingsController
-    contextRanking?: ContextRankingController
     symfRunner?: SymfRunner
     contextAPIClient?: ContextAPIClient
     contextFetcher: ContextFetcher
@@ -767,7 +763,6 @@ function registerChat(
         authProvider,
         enterpriseContextFactory,
         localEmbeddings,
-        contextRanking,
         symfRunner,
         contextAPIClient,
         contextFetcher,
@@ -793,7 +788,6 @@ function registerChat(
         authProvider,
         enterpriseContextFactory,
         localEmbeddings || null,
-        contextRanking || null,
         symfRunner || null,
         contextFetcher,
         guardrails,

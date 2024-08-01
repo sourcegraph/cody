@@ -77,7 +77,6 @@ import type { RemoteRepoPicker } from '../../context/repo-picker'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
-import type { ContextRankingController } from '../../local-context/context-ranking'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { rewriteChatQuery } from '../../local-context/rewrite-chat-query'
@@ -128,7 +127,6 @@ interface ChatControllerOptions {
     chatClient: ChatClient
 
     localEmbeddings: LocalEmbeddingsController | null
-    contextRanking: ContextRankingController | null
     symf: SymfRunner | null
     enterpriseContext: EnterpriseContextFactory | null
 
@@ -179,7 +177,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly codebaseStatusProvider: CodebaseStatusProvider
 
     private readonly localEmbeddings: LocalEmbeddingsController | null
-    private readonly contextRanking: ContextRankingController | null
     private readonly symf: SymfRunner | null
     private readonly remoteSearch: RemoteSearch | null
 
@@ -206,7 +203,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         authProvider,
         chatClient,
         localEmbeddings,
-        contextRanking,
         symf,
         editor,
         guardrails,
@@ -219,7 +215,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.authProvider = authProvider
         this.chatClient = chatClient
         this.localEmbeddings = localEmbeddings
-        this.contextRanking = contextRanking
         this.symf = symf
         this.repoPicker = enterpriseContext?.repoPicker || null
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
@@ -239,9 +234,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         // Advise local embeddings to start up if necessary.
         void this.localEmbeddings?.start()
-
-        // Start the context Ranking module
-        void this.contextRanking?.start()
 
         // Push context status to the webview when it changes.
         this.disposables.push(
@@ -825,7 +817,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         symf: this.symf,
                         remoteSearch: this.remoteSearch,
                     },
-                    contextRanking: this.contextRanking,
                 }),
                 getContextForChatMessage(text.toString()),
             ])

@@ -145,8 +145,6 @@ export function getConfiguration(
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
         experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),
 
-        experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
-
         experimentalGuardrailsTimeoutSeconds: getHiddenSetting('experimental.guardrailsTimeoutSeconds'),
 
         autocompleteExperimentalOllamaOptions: getHiddenSetting(
