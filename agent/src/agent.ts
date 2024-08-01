@@ -509,12 +509,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerRequest('extensionConfiguration/getSettingsSchema', async () => {
             return JSON.stringify({
-                "$schema": "http://json-schema.org/draft-07/schema#",
-                "title": "Schema for Cody settings in the Cody VSCode Extension.",
-                "description": "This prevents invalid Cody specific configuration in the settings file.",
-                "type": "object",
-                "allOf": [{"$ref": "https://json.schemastore.org/package"}],
-                "properties": packageJson.contributes.configuration.properties
+                $schema: 'http://json-schema.org/draft-07/schema#',
+                title: 'Schema for Cody settings in the Cody VSCode Extension.',
+                description: 'This prevents invalid Cody specific configuration in the settings file.',
+                type: 'object',
+                allOf: [{ $ref: 'https://json.schemastore.org/package' }],
+                properties: packageJson.contributes.configuration.properties,
             })
         })
 
