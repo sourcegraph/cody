@@ -476,7 +476,24 @@
         "category": "Cody",
         "title": "Lint",
         "enablement": "cody.activated",
-        "group": "Cody"
+        "group": "Cody",
+        "arguments": [
+          {
+            "name": "input",
+            "type": "object",
+            "properties": {
+              "lintFiles": {
+                "type": "array",
+                "items": "string"
+              },
+              "targetFiles": {
+                "type": "array",
+                "items": "string"
+              },
+              "model": "string"
+            }
+          }
+        ]
       },
       {
         "command": "cody.chat.view.popOut",

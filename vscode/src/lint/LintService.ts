@@ -154,6 +154,7 @@ export class LintService implements vscode.Disposable {
                 const chatPromises = Promise.all(
                     files.map(async file => {
                         try {
+                            //TODO: Consistent buffer decoding
                             const targetFileLines = Buffer.from(await vscode.workspace.fs.readFile(file))
                                 .toString('utf-8')
                                 .split('\n')

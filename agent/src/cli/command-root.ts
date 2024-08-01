@@ -5,6 +5,7 @@ import { benchCommand } from './command-bench/command-bench'
 import { chatCommand } from './command-chat'
 import { jsonrpcCommand } from './command-jsonrpc-stdio'
 import { serverCommand } from './command-jsonrpc-websocket'
+import { lintCommand } from './command-lint'
 
 import { version } from '../../package.json'
 
@@ -16,5 +17,6 @@ export const rootCommand = new Command()
     )
     .addCommand(authCommand())
     .addCommand(chatCommand())
+    .addCommand(lintCommand())
     .addCommand(new Command('api').addCommand(serverCommand).addCommand(jsonrpcCommand))
     .addCommand(new Command('internal').addCommand(benchCommand))

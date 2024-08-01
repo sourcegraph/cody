@@ -1,5 +1,6 @@
-import { DEFAULT_EVENT_SOURCE, ModelsService } from '@sourcegraph/cody-shared'
+import { DEFAULT_EVENT_SOURCE, ModelUsage, ModelsService } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import type { URI } from 'vscode-uri'
 import type { VSCodeEditor } from '../editor/vscode-editor'
 import type { AuthProvider } from '../services/AuthProvider'
 import { type LintService, lintRulesFromCodylintFile } from './LintService'
@@ -7,6 +8,13 @@ import { type LintInput, getInput } from './options/menu'
 // Handles invoking the fuzzy lints between specified diff-points
 // and invoking ways to provide results to the user (comments, squiggles, etc).
 // todo add a panel
+
+//TODO: How do we type this
+interface CommandOptions {
+    targetFiles: string[]
+    lintFiles: string[]
+    model: string
+}
 
 export class LintController implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
@@ -21,13 +29,39 @@ export class LintController implements vscode.Disposable {
     ) {
         this.disposables.push(this.commentController, this.diagnosticCollection)
 
-        vscode.commands.registerCommand('cody.lint.init', () => this.run())
-        // vscode.commands.registerCommand('cody.pre-r.clean', () => {
-        //     this.run(true)
-        // })
+        vscode.commands.registerCommand('cody.lint.init', async (options?: CommandOptions) => {
+            let input: LintInput | undefined = undefined
+            if (options) {
+                let model = ModelsService.getDefaultChatModel()!
+                if (options.model) {
+                    const optionsModel = ModelsService.getModelByID(options.model)
+                    if (!optionsModel || !optionsModel.usage.includes(ModelUsage.Chat)) {
+                        throw new Error(`Invalid model ${options.model}`)
+                    }
+                    model = optionsModel.model
+                }
+
+                input = {
+                    model,
+                    targetFiles: options.targetFiles.map(file => vscode.Uri.parse(file)),
+                    lintFiles: options.lintFiles.map(file => vscode.Uri.parse(file)),
+                }
+            }
+
+            const res = await this.run(input)
+            const output: Array<{ uri: URI; diagnostics: vscode.Diagnostic[] }> = []
+            res?.forEach((uri, diagnostics) => {
+                output.push({
+                    uri,
+                    diagnostics: [...diagnostics],
+                })
+            })
+            return output
+            //convert to diagnostics
+        })
     }
 
-    async run() {
+    async run(presetInput?: LintInput) {
         // // we now ask if the user wants to run on some selection of open files
         // // or if they want to run on a git diff
         // const gitDiffOption: vscode.QuickPickItem = { label: 'Git diff' }
@@ -43,17 +77,19 @@ export class LintController implements vscode.Disposable {
         // TODO: invoke something on the DiagnosticsController to get them registered?
         // await this.addComments()
 
-        const input = await getInput(
-            this.editor,
-            this.authProvider,
-            {
-                initialModel: this.previousInput?.model ?? ModelsService.getDefaultChatModel()!,
-                initialLintFiles: this.previousInput?.lintFiles ?? [],
-                initialTarget:
-                    this.previousInput?.targetCommitHash ?? this.previousInput?.targetFiles ?? [],
-            },
-            DEFAULT_EVENT_SOURCE
-        )
+        const input =
+            presetInput ??
+            (await getInput(
+                this.editor,
+                this.authProvider,
+                {
+                    initialModel: this.previousInput?.model ?? ModelsService.getDefaultChatModel()!,
+                    initialLintFiles: this.previousInput?.lintFiles ?? [],
+                    initialTarget:
+                        this.previousInput?.targetCommitHash ?? this.previousInput?.targetFiles ?? [],
+                },
+                DEFAULT_EVENT_SOURCE
+            ))
         if (!input) {
             return
         }
@@ -65,7 +101,7 @@ export class LintController implements vscode.Disposable {
             await Promise.all(
                 input.lintFiles.map(file =>
                     vscode.workspace.fs.readFile(file).then(
-                        buf => buf.toString(),
+                        buf => new TextDecoder('utf-8').decode(buf),
                         _ => null
                     )
                 )
@@ -80,12 +116,13 @@ export class LintController implements vscode.Disposable {
 
         // TODO: Streaming results
 
-        vscode.languages.createDiagnosticCollection('sourcegraph.cody-ai')
         this.diagnosticCollection.clear()
         for (const entry of entries) {
             const { file, diagnostics } = entry
             this.diagnosticCollection.set(file, diagnostics)
         }
+
+        return this.diagnosticCollection
     }
 
     async clean() {

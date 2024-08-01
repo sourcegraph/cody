@@ -1008,6 +1008,11 @@ const foldingRangeProviders = new Set<vscode.FoldingRangeProvider>()
 export const diagnostics = new AgentDiagnostics()
 const _languages: Partial<typeof vscode.languages> = {
     getLanguages: () => Promise.resolve([]),
+
+    createDiagnosticCollection: (name?: string): vscode.DiagnosticCollection => {
+        //TODO: Implement this correctly. Make sure they end up in the diagnostics collection
+        return new ShimDiagnosticsCollection(name ?? 'default')
+    },
     registerFoldingRangeProvider: (_scope, provider) => {
         foldingRangeProviders.add(provider)
         return { dispose: () => foldingRangeProviders.delete(provider) }
@@ -1038,6 +1043,62 @@ const _languages: Partial<typeof vscode.languages> = {
 }
 
 export const languages = _languages as typeof vscode.languages
+
+//TODO: Why is this needed?
+class ShimDiagnosticsCollection implements vscode.DiagnosticCollection {
+    constructor(public name: string) {}
+
+    private _diagnostics = new Map<vscode.Uri, vscode.Diagnostic[]>()
+
+    set(uri: vscode.Uri, diagnostics: readonly vscode.Diagnostic[] | undefined): void
+    set(entries: readonly [vscode.Uri, readonly vscode.Diagnostic[] | undefined][]): void
+    set(uri: unknown, diagnostics?: unknown): void {
+        if (Array.isArray(uri)) {
+            //@ts-ignore
+            for (const [uri, diagnostics] of uri) {
+                this._diagnostics.set(uri, diagnostics ?? [])
+            }
+        } else {
+            //@ts-ignore
+            this._diagnostics.set(uri, diagnostics ?? [])
+        }
+    }
+    delete(uri: vscode.Uri): void {
+        this._diagnostics.delete(uri)
+    }
+    clear(): void {
+        this._diagnostics.clear()
+    }
+    forEach(
+        callback: (
+            uri: vscode.Uri,
+            diagnostics: readonly vscode.Diagnostic[],
+            collection: vscode.DiagnosticCollection
+        ) => any,
+        thisArg?: any
+    ): void {
+        this._diagnostics.forEach((diagnostics, uri) => {
+            callback(uri, diagnostics, this)
+        })
+    }
+    get(uri: vscode.Uri): readonly vscode.Diagnostic[] | undefined {
+        return this._diagnostics.get(uri)
+    }
+    has(uri: vscode.Uri): boolean {
+        return this._diagnostics.has(uri)
+    }
+    dispose(): void {
+        // Implement dispose method
+    }
+
+    [Symbol.iterator](): Iterator<
+        [uri: vscode.Uri, diagnostics: readonly vscode.Diagnostic[]],
+        any,
+        undefined
+    > {
+        return this._diagnostics.entries()
+    }
+}
 
 const commentController: vscode.CommentController = {
     createCommentThread(uri, range, comments) {

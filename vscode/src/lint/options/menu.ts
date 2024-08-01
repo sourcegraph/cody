@@ -55,6 +55,7 @@ export const getInput = async (
     let activeModelItem = modelItems.find(item => item.model === initialValues.initialModel)
     let activeTargetFiles =
         typeof initialValues.initialTarget === 'string' ? [] : initialValues.initialTarget
+    // @ts-ignore TODO
     // biome-ignore lint/style/useConst: <explanation>
     let activeTargetGitHash =
         typeof initialValues.initialTarget === 'string' ? initialValues.initialTarget : null
@@ -80,6 +81,7 @@ export const getInput = async (
             }
         )
     )
+    //@ts-ignore TODO
     const commitPromises = Promise.resolve([])
 
     return new Promise(resolve => {

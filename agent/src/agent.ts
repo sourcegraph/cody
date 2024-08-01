@@ -1316,6 +1316,39 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
+        this.registerAuthenticatedRequest('lint/demo', async options => {
+            const res = vscode_shim.commands.executeCommand<
+                Promise<Array<{ uri: string; diagnostics: vscode.Diagnostic[] }> | undefined>
+            >('cody.lint.init', [options])
+            try {
+                const diagnostics = await res
+                const protocolDiagnostics = diagnostics?.map(d => ({
+                    uri: d.uri,
+                    diagnostics: d.diagnostics.map(
+                        dd =>
+                            ({
+                                location: {
+                                    range: dd.range,
+                                    uri: d.uri,
+                                },
+                                message: dd.message,
+                                severity: 'error',
+                            }) satisfies agent_protocol.ProtocolDiagnostic
+                    ),
+                }))
+                return {
+                    success: true,
+                    diagnostics: protocolDiagnostics ?? [],
+                }
+            } catch (e) {
+                console.error(e)
+                return {
+                    success: false,
+                    diagnostics: [],
+                }
+            }
+        })
+
         this.registerAuthenticatedRequest('ignore/test', async ({ uri: uriString }) => {
             const uri = vscode.Uri.parse(uriString)
             const isIgnored = await contextFiltersProvider.isUriIgnored(uri)
