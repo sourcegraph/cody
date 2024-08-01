@@ -1635,6 +1635,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 chat: clientConfig?.chatEnabled ?? true,
                 attribution: clientConfig?.attributionEnabled ?? false,
                 serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
+                hasRun: true,
             },
             exportedFeatureFlags: featureFlagProvider.getExposedExperiments(),
         })
