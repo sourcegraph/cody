@@ -3,6 +3,7 @@ import {
     type ConfigurationWithAccessToken,
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
+    WEB_PROVIDER_URI,
     featureFlagProvider,
     graphqlClient,
     isError,
@@ -17,7 +18,7 @@ import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFileSearch'
 import RemoteRepositorySearch, { createRemoteRepositoryProvider } from './openctx/remoteRepositorySearch'
-import WebProvider from './openctx/web'
+import { createWebProvider } from './openctx/web'
 
 export async function exposeOpenCtxClient(
     context: Pick<vscode.ExtensionContext, 'extension' | 'secrets'>,
@@ -64,11 +65,15 @@ async function getStandardOpenCtxProviders(
     config: ConfigurationWithAccessToken,
     isDotCom: boolean
 ): Promise<{ settings: any; provider: Provider; providerUri: string }[]> {
-    const providers: { settings: any; provider: Provider; providerUri: string }[] = [
+    const providers: {
+        settings: any
+        provider: Provider
+        providerUri: string
+    }[] = [
         {
             settings: true,
-            provider: WebProvider,
-            providerUri: WebProvider.providerUri,
+            provider: createWebProvider(false),
+            providerUri: WEB_PROVIDER_URI,
         },
     ]
 
@@ -120,6 +125,11 @@ function getCodyWebOpenCtxProviders() {
             settings: true,
             providerUri: RemoteFileProvider.providerUri,
             provider: createRemoteFileProvider('Files'),
+        },
+        {
+            settings: true,
+            providerUri: WEB_PROVIDER_URI,
+            provider: createWebProvider(true),
         },
     ]
 }

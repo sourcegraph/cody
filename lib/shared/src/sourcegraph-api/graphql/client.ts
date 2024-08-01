@@ -35,6 +35,7 @@ import {
     FUZZY_SYMBOLS_QUERY,
     GET_FEATURE_FLAGS_QUERY,
     GET_REMOTE_FILE_QUERY,
+    GET_URL_CONTENT_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
     PACKAGE_LIST_QUERY,
@@ -126,6 +127,14 @@ interface RemoteFileContentReponse {
     }
 }
 
+interface GetURLContentResponse {
+    __typename?: 'Query'
+    urlMentionContext: {
+        title: string | null
+        content: string
+    }
+}
+
 interface SiteIdentificationResponse {
     site: {
         siteID: string
@@ -202,7 +211,9 @@ interface CodyConfigFeaturesResponse {
 }
 
 interface CodyEnterpriseConfigSmartContextResponse {
-    site: { codyLLMConfiguration: { smartContextWindow: string } | null } | null
+    site: {
+        codyLLMConfiguration: { smartContextWindow: string } | null
+    } | null
 }
 
 interface CurrentUserCodyProEnabledResponse {
@@ -664,6 +675,17 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
+    public async getURLContent(url: string): Promise<{ title: string | null; content: string } | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<GetURLContentResponse>>(GET_URL_CONTENT_QUERY, {
+            url,
+        }).then(response =>
+            extractDataOrError(
+                response,
+                data => data.urlMentionContext ?? new Error('failed to fetch url content')
+            )
+        )
+    }
+
     public async getSiteIdentification(): Promise<{ siteid: string; hashedLicenseKey: string } | Error> {
         const response = await this.fetchSourcegraphAPI<APIResponse<SiteIdentificationResponse>>(
             CURRENT_SITE_IDENTIFICATION,
@@ -983,14 +1005,20 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async contextFilters(): Promise<{ filters: ContextFilters; transient: boolean }> {
+    public async contextFilters(): Promise<{
+        filters: ContextFilters
+        transient: boolean
+    }> {
         // CONTEXT FILTERS are only available on Sourcegraph 5.3.3 and later.
         const minimumVersion = '5.3.3'
         const { enabled, version } = await this.isCodyEnabled()
         const insiderBuild = version.length > 12 || version.includes('dev')
         const isValidVersion = insiderBuild || semver.gte(version, minimumVersion)
         if (!enabled || !isValidVersion) {
-            return { filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: false }
+            return {
+                filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS,
+                transient: false,
+            }
         }
 
         const response =
@@ -1000,26 +1028,41 @@ export class SourcegraphGraphQLAPIClient {
 
         const result = extractDataOrError(response, data => {
             if (data?.site?.codyContextFilters?.raw === null) {
-                return { filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: false }
+                return {
+                    filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS,
+                    transient: false,
+                }
             }
 
             if (data?.site?.codyContextFilters?.raw) {
-                return { filters: data.site.codyContextFilters.raw, transient: false }
+                return {
+                    filters: data.site.codyContextFilters.raw,
+                    transient: false,
+                }
             }
 
             // Exclude everything in case of an unexpected response structure.
-            return { filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: true }
+            return {
+                filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
+                transient: true,
+            }
         })
 
         if (result instanceof Error) {
             // Ignore errors caused by outdated Sourcegraph API instances.
             if (hasOutdatedAPIErrorMessages(result)) {
-                return { filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: false }
+                return {
+                    filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS,
+                    transient: false,
+                }
             }
 
             logError('SourcegraphGraphQLAPIClient', 'contextFilters', result.message)
             // Exclude everything in case of an unexpected error.
-            return { filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: true }
+            return {
+                filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
+                transient: true,
+            }
         }
 
         return result
@@ -1049,7 +1092,10 @@ export class SourcegraphGraphQLAPIClient {
      * If the field exists, it calls `getSiteHasCodyEnabled()` to check its value.
      * If the field does not exist, Cody is assumed to be enabled for versions between 5.0.0 - 5.1.0.
      */
-    public async isCodyEnabled(): Promise<{ enabled: boolean; version: string }> {
+    public async isCodyEnabled(): Promise<{
+        enabled: boolean
+        version: string
+    }> {
         // Check site version.
         const siteVersion = await this.getSiteVersion()
         if (isError(siteVersion)) {
