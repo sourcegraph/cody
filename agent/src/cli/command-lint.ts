@@ -23,6 +23,7 @@ export interface LintOptions {
     stdin?: boolean
     file?: string[]
     filesArgs?: string[]
+    stdinPaths?: string[]
     debug: boolean
     endpoint: string
     isTesting?: boolean
@@ -65,6 +66,14 @@ Examples:
         .action(async (options: LintOptions, cmd) => {
             options.filesArgs = cmd.args
 
+            //TODO: Need a more robust way
+            const stdinPathsPromise = options.stdin
+                ? new Promise<string[]>(resolve => {
+                      const lines: string[] = []
+                      process.stdin.on('data', data => lines.push(...data.toString().split('\n')))
+                      process.stdin.on('end', () => resolve(lines.filter(line => line.trim() !== '')))
+                  })
+                : undefined
             if (!options.accessToken) {
                 const spinner = ora().start('Loading access token')
                 const account = await AuthenticatedAccount.fromUserSettings(spinner)
@@ -85,6 +94,7 @@ Examples:
                 })
             }
             let exitCode = 0
+            options.stdinPaths = await stdinPathsPromise
             try {
                 exitCode = await lintAction(options)
             } finally {
@@ -140,9 +150,11 @@ export async function lintAction(options: LintOptions): Promise<number> {
         .map(file => vscode.Uri.file(path.resolve(process.cwd(), file)))
         .map(uri => uri.toString())
     const targetFiles = (options.file ?? [])
-        .concat(options.filesArgs ?? [])
+        .concat(options.filesArgs ?? [], options.stdinPaths ?? [])
         .map(file => vscode.Uri.file(path.resolve(process.cwd(), file)))
         .map(uri => uri.toString())
+
+    console.log('targetFiles', targetFiles)
     spinner.text = `Linting ${targetFiles?.length} files...`
     const response = await client.request('lint/demo', {
         lintFiles,
