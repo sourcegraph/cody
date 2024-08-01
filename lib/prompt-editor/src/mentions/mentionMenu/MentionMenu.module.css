@@ -4,13 +4,7 @@
     outline: none;
 }
 
-.container [cmdk-empty], .container [cmdk-loading] {
-    padding: 0.325rem 0.5rem;
-}
-
 .item {
-    line-height: 1.2;
-
     &.context-item {
         display: flex;
         flex-direction: column;

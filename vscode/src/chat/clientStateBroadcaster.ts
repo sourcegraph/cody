@@ -56,7 +56,7 @@ export function startClientStateBroadcaster({
                             url: repo.name,
                         })
                     ),
-                    title: 'Repository',
+                    title: 'Current Repository',
                     description: repo.name,
                     source: ContextItemSource.Initial,
                     icon: 'folder',
@@ -70,7 +70,7 @@ export function startClientStateBroadcaster({
                 const item = {
                     type: 'tree',
                     uri: workspaceFolder.uri,
-                    title: 'Repository',
+                    title: 'Current Repository',
                     name: workspaceFolder.name,
                     description: workspaceFolder.name,
                     isWorkspaceRoot: true,

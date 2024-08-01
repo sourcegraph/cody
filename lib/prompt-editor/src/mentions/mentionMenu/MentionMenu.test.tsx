@@ -4,16 +4,7 @@ import {
     displayPathBasename,
 } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-    CommandLoading,
-    CommandSeparator,
-} from 'cmdk'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from 'cmdk'
 import type { ComponentProps, FunctionComponent } from 'react'
 import { type Mock, describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
@@ -68,9 +59,7 @@ const CONFIG: PromptEditorConfig = {
         CommandInput,
         CommandList,
         CommandEmpty,
-        CommandLoading,
         CommandGroup,
-        CommandSeparator,
         CommandItem,
     },
 }
@@ -86,7 +75,7 @@ describe('MentionMenu', () => {
                     <MentionMenu {...PROPS} data={{ items: undefined, providers: [PROVIDER_P1] }} />,
                     { wrapper: Wrapper }
                 )
-                expectMenu(container, ['>provider p1', '#Loading...'])
+                expectMenu(container, ['>provider p1'])
             })
 
             test('empty items', () => {

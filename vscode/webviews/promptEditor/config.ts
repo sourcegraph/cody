@@ -8,8 +8,6 @@ import {
     CommandInput,
     CommandItem,
     CommandList,
-    CommandLoading,
-    CommandSeparator,
 } from '../components/shadcn/ui/command'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -38,9 +36,7 @@ export const promptEditorConfig: PromptEditorConfig = {
         CommandInput: CommandInput,
         CommandList: CommandList,
         CommandEmpty: CommandEmpty,
-        CommandLoading: CommandLoading,
         CommandGroup: CommandGroup,
-        CommandSeparator: CommandSeparator,
         CommandItem: CommandItem,
     },
 }
