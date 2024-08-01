@@ -25,6 +25,7 @@ import {
     makeHumanMessageInfo,
 } from './cells/messageCell/assistant/AssistantMessageCell'
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
+import { useState } from'react'
 
 export const Transcript: React.FunctionComponent<{
     chatID: string
@@ -44,9 +45,22 @@ export const Transcript: React.FunctionComponent<{
         [transcript, messageInProgress]
     )
 
+    const [isSearchEnabled, setIsSearchEnabled] = useState(false)
     return (
+        
         <div className="tw-px-8 tw-py-6 tw-pt-8 tw-mt-2 tw-flex tw-flex-col tw-gap-10">
-            {interactions.map((interaction, i) => (
+            <div className="tw-flex tw-justify-end">
+                <button
+                    onClick={() => setIsSearchEnabled(!isSearchEnabled)}
+                    className={`tw-px-4 tw-py-2 tw-rounded-md tw-text-sm tw-font-medium tw-transition-colors ${
+                        isSearchEnabled
+                            ? 'tw-bg-blue-500 tw-text-white hover:tw-bg-blue-600'
+                            : 'tw-bg-green-500 tw-text-white hover:tw-bg-green-600'
+                    }`}
+                >
+                    {isSearchEnabled ? 'Enable Search Mode' : 'Disable Search Mode'}
+                </button>
+            </div>            {interactions.map((interaction, i) => (
                 <TranscriptInteraction
                     chatID={chatID}
                     // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
@@ -63,6 +77,7 @@ export const Transcript: React.FunctionComponent<{
                     priorAssistantMessageIsLoading={Boolean(
                         messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
                     )}
+                    isSearchEnabled={isSearchEnabled}
                 />
             ))}
         </div>
@@ -131,6 +146,7 @@ const TranscriptInteraction: FunctionComponent<
         isLastInteraction: boolean
         isLastSentInteraction: boolean
         priorAssistantMessageIsLoading: boolean
+        isSearchEnabled: boolean
     }
 > = ({
     interaction: { humanMessage, assistantMessage },
@@ -139,6 +155,7 @@ const TranscriptInteraction: FunctionComponent<
     isLastSentInteraction,
     priorAssistantMessageIsLoading,
     isTranscriptError,
+    isSearchEnabled,
     ...props
 }) => {
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
@@ -170,7 +187,6 @@ const TranscriptInteraction: FunctionComponent<
             isLastSentInteraction &&
             assistantMessage?.text === undefined
     )
-    const isSearchEnabled = true
 
     return (
         <>
@@ -197,6 +213,7 @@ const TranscriptInteraction: FunctionComponent<
                             contextItems={humanMessage.contextFiles}
                             model={assistantMessage?.model}
                             isForFirstMessage={humanMessage.index === 0}
+                            isSearchEnabled={isSearchEnabled}
                         />
                     )}
                     {assistantMessage && !isContextLoading && (
@@ -228,6 +245,7 @@ const TranscriptInteraction: FunctionComponent<
                             contextItems={humanMessage.contextFiles}
                             model={assistantMessage?.model}
                             isForFirstMessage={humanMessage.index === 0}
+                            isSearchEnabled={isSearchEnabled}
                         />
                     )}
                 </>

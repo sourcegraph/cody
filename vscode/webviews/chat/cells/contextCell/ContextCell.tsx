@@ -30,7 +30,8 @@ export const ContextCell: React.FunctionComponent<{
 
     /** For use in storybooks only. */
     __storybook__initialOpen?: boolean
-}> = ({ contextItems, model, isForFirstMessage, className, __storybook__initialOpen }) => {
+    isSearchEnabled?: boolean
+}> = ({ contextItems, model, isForFirstMessage, className, __storybook__initialOpen, isSearchEnabled }) => {
     const usedContext: ContextItem[] = []
     const excludedAtContext: ContextItem[] = []
     if (contextItems) {
@@ -80,7 +81,7 @@ export const ContextCell: React.FunctionComponent<{
                     type="single"
                     collapsible
                     className="tw-pt-1.5"
-                    defaultValue={(__storybook__initialOpen && 'item-1') || undefined}
+                    defaultValue={(!isSearchEnabled && 'item-1') || undefined}
                 >
                     <AccordionItem value="item-1">
                         <AccordionTrigger
@@ -89,12 +90,12 @@ export const ContextCell: React.FunctionComponent<{
                             title={contextItemCountLabel}
                         >
                             <span className="tw-flex tw-items-baseline">
-                                <span className="tw-font-medium">Context </span>
-                                <span className="tw-opacity-60 tw-text-sm tw-ml-2">
-                                    &mdash; {contextItemCountLabel}
+                                <span className="tw-font-medium">{!isSearchEnabled ? 'Search results' : 'Context'} </span>                                <span className="tw-opacity-60 tw-text-sm tw-ml-2">
+                                    — {contextItemCountLabel}
                                 </span>
                             </span>
                         </AccordionTrigger>
+
                         <AccordionContent>
                             <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-2">
                                 {contextItems?.map((item, i) => (
@@ -114,6 +115,7 @@ export const ContextCell: React.FunctionComponent<{
                                             isIgnored={item.isIgnored}
                                             className={clsx(styles.contextItem, MENTION_CLASS_NAME)}
                                             linkClassName={styles.contextItemLink}
+                                            isSearchEnabled={isSearchEnabled}
                                         />
                                     </li>
                                 ))}

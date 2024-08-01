@@ -90,7 +90,7 @@ const FileContentDisplay: React.FC<FileContentDisplayProps> = ({ fileName, fileP
 export default FileContentDisplay;
 
 export const FileLink: React.FunctionComponent<
-    FileLinkProps & { className?: string; linkClassName?: string }
+    FileLinkProps & { className?: string; linkClassName?: string, isSearchEnabled: boolean | undefined }
 > = ({
     uri,
     range,
@@ -102,6 +102,7 @@ export const FileLink: React.FunctionComponent<
     isIgnored,
     className,
     linkClassName,
+    isSearchEnabled
 }) => {
     const [fileContents, setFileContents] = useState<string | null>(null);
     const [isFileContentVisible, setIsFileContentVisible] = useState(false);
@@ -161,6 +162,11 @@ export const FileLink: React.FunctionComponent<
     fileName = uri.path.split('/').pop() || 'Unknown file'
     const filePath = uri.path;
     console.log("Path with range:", pathWithRange)
+
+    // Togglefile content if we have ¡searchcontentenabled
+    if (!isSearchEnabled) {
+        toggleFileContent()
+    }
     return (
         <div className={clsx('tw-flex tw-flex-col tw-items-start tw-max-w-full tw-text-blue-500 tw-bg-blue-100', className)}>
             <div className={clsx('tw-flex tw-items-center tw-w-full')}>
@@ -196,9 +202,9 @@ export const FileLink: React.FunctionComponent<
                     {isFileContentVisible ? '▼' : '▶'}
                 </div>
             </div>
-            {isFileContentVisible && fileContents &&  (
+            {(isFileContentVisible || !isSearchEnabled) && fileContents &&  (
                 <div className={styles.fileContentBox}>
-  {isFileContentVisible && fileContents && (
+                  {(isFileContentVisible || !isSearchEnabled) && fileContents && (
                                     <FileContentDisplay
                                         fileName={fileName}
                                         filePath={filePath}
@@ -207,7 +213,7 @@ export const FileLink: React.FunctionComponent<
                                     />
                                 )}
                 </div>
-            )}
+            )}         
         </div>
     )
 }
