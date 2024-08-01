@@ -122,6 +122,8 @@ interface CodyAgentServer {
   fun extensionConfiguration_change(params: ExtensionConfiguration): CompletableFuture<AuthStatus?>
   @JsonRequest("extensionConfiguration/status")
   fun extensionConfiguration_status(params: Null?): CompletableFuture<AuthStatus?>
+  @JsonRequest("extensionConfiguration/getSettingsSchema")
+  fun extensionConfiguration_getSettingsSchema(params: Null?): CompletableFuture<String>
   @JsonRequest("textDocument/change")
   fun textDocument_change(params: ProtocolTextDocument): CompletableFuture<TextDocument_ChangeResult>
   @JsonRequest("attribution/search")
