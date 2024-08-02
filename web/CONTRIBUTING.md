@@ -3,7 +3,7 @@
 ## Getting started
 
 1. Run `pnpm install` (see [repository setup instructions](../doc/dev/index.md) if you don't have `pnpm`).
-2. Go to the `/wed` directory and run `pnpm build`
+2. Go to the `/web` directory and run `pnpm build`
 
 Tips: 
 - Demo runs by default against `sourcegraph.com` instance 
