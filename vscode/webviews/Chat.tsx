@@ -8,6 +8,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
+import type { MenuCommand } from '../src/commands'
 import styles from './Chat.module.css'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
@@ -26,6 +27,7 @@ interface ChatboxProps {
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
     className?: string
+    allowedCommands: MenuCommand[]
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -41,6 +43,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showWelcomeMessage = true,
     showIDESnippetActions = true,
     className,
+    allowedCommands,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -176,7 +179,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 postMessage={postMessage}
                 guardrails={guardrails}
             />
-            {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage IDE={userInfo.ide} />}
+            {transcript.length === 0 && showWelcomeMessage && (
+                <WelcomeMessage allowedCommands={allowedCommands} IDE={userInfo.ide} />
+            )}
             <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
         </div>
     )

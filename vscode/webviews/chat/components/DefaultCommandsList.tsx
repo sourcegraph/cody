@@ -1,4 +1,3 @@
-import { CodyIDE } from '@sourcegraph/cody-shared'
 import {
     BookIcon,
     FileQuestionIcon,
@@ -45,23 +44,29 @@ const test = mkCommand('test', GavelIcon)
 const smell = mkCommand('smell', TextSearchIcon)
 const custom = mkCommand('custom', PencilRulerIcon)
 
-const defaultCommands = [edit, doc, explain, test, smell]
-
-const commandsByIDE: { [key in CodyIDE]?: Command[] } = {
-    [CodyIDE.VSCode]: [...defaultCommands, custom],
-    [CodyIDE.Eclipse]: [],
+const secondCommandMap: Partial<{ [command in MenuCommand]: Command }> = {
+    edit,
+    doc,
+    explain,
+    test,
+    smell,
+    custom,
 }
 
+// const defaultCommands = [edit, doc, explain, test, smell]
+
 export const DefaultCommandsList: FunctionComponent<{
-    IDE?: CodyIDE
+    commands: MenuCommand[]
     setView?: (view: View) => void
     initialOpen: boolean
-}> = ({ IDE, setView, initialOpen }) => {
-    const commandList = useMemo(() => (IDE && commandsByIDE[IDE]) ?? defaultCommands, [IDE])
+}> = ({ commands, setView, initialOpen }) => {
+    const commandList = useMemo(
+        () => commands.map(command => secondCommandMap[command]).filter(Boolean),
+        [commands]
+    ) as Command[]
 
     return (
         <CollapsiblePanel title="Commands" initialOpen={initialOpen}>
-            IDE: {IDE}
             {commandList.map(({ command, title, Icon }) => (
                 <Button
                     key={command}

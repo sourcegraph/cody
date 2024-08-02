@@ -25,6 +25,7 @@ import { type ChatModelContext, ChatModelContextProvider } from './chat/models/c
 import { useClientActionDispatcher } from './client/clientState'
 
 import { ClientStateContextProvider } from '@sourcegraph/prompt-editor'
+import type { MenuCommand } from '../src/commands'
 import { PromptsClientProviderFromVSCodeAPI } from './components/promptSelectField/promptsClient'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
 import { ChatContextClientProviderFromVSCodeAPI } from './openctxClient'
@@ -59,6 +60,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [commandList, setCommandList] = useState<CodyCommand[]>([])
     const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
     const [exportedFeatureFlags, setExportedFeatureFlags] = useState<Record<string, boolean>>()
+    const [allowedCommands, setAllowedCommands] = useState<MenuCommand[]>([])
 
     const [clientState, setClientState] = useState<ClientStateForWebview>({
         initialContext: [],
@@ -127,6 +129,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setChatEnabled(message.configFeatures.chat)
                         setAttributionEnabled(message.configFeatures.attribution)
                         setServerSentModelsEnabled(message.configFeatures.serverSentModels)
+                        setAllowedCommands(message.configFeatures.commands)
                         break
                     case 'history':
                         setUserHistory(Object.values(message.localHistory?.chat ?? {}))
@@ -302,13 +305,14 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                 vscodeAPI={vscodeAPI}
                                 isTranscriptError={isTranscriptError}
                                 guardrails={attributionEnabled ? guardrails : undefined}
+                                allowedCommands={allowedCommands}
                             />
                         )}
                         {view === 'history' && <HistoryTab userHistory={userHistory} />}
                         {view === 'commands' && (
                             <CommandsTab
                                 setView={setView}
-                                IDE={config.agentIDE}
+                                allowedCommands={allowedCommands}
                                 commands={commandList}
                             />
                         )}

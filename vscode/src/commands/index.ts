@@ -13,6 +13,8 @@ export type MenuCommand =
     | 'commit'
     | 'custom'
 
+export const DEFAULT_COMMANDS: MenuCommand[] = ['edit', 'doc', 'explain', 'test', 'smell']
+
 export interface MenuCommandAccessor {
     key: MenuCommand
     title: string

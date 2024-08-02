@@ -66,6 +66,7 @@ import {
     startAuthProgressIndicator,
 } from '../../auth/auth-progress-indicator'
 import type { startTokenReceiver } from '../../auth/token-receiver'
+import { DEFAULT_COMMANDS } from '../../commands'
 import { getCodyCommandList } from '../../commands/CommandsController'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
@@ -76,6 +77,7 @@ import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
+import type { ClientCapabilities } from '../../jsonrpc/agent-protocol'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
@@ -138,6 +140,8 @@ interface ChatControllerOptions {
     editor: VSCodeEditor
     guardrails: Guardrails
     startTokenReceiver?: typeof startTokenReceiver
+
+    clientCapabilities: ClientCapabilities | null
 }
 
 export interface ChatSession {
@@ -191,6 +195,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly repoPicker: RemoteRepoPicker | null
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
     private readonly contextAPIClient: ContextAPIClient | null
+    private readonly clientCapabilities: ClientCapabilities | null
 
     private contextFilesQueryAbortController?: AbortController
     private allMentionProvidersMetadataQueryAbortController?: AbortController
@@ -215,6 +220,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         startTokenReceiver,
         contextAPIClient,
         contextFetcher,
+        clientCapabilities,
     }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
@@ -225,6 +231,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.repoPicker = enterpriseContext?.repoPicker || null
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
+        this.clientCapabilities = clientCapabilities
 
         this.contextFetcher = contextFetcher
 
@@ -1635,6 +1642,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 chat: clientConfig?.chatEnabled ?? true,
                 attribution: clientConfig?.attributionEnabled ?? false,
                 serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
+                commands: this.clientCapabilities?.commands ?? DEFAULT_COMMANDS,
             },
             exportedFeatureFlags: featureFlagProvider.getExposedExperiments(),
         })

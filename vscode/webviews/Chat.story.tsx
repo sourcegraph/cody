@@ -26,6 +26,7 @@ const meta: Meta<typeof Chat> = {
             onMessage: () => () => {},
         },
         isTranscriptError: false,
+        allowedCommands: [],
     } satisfies React.ComponentProps<typeof Chat>,
 
     decorators: [VSCodeWebview],

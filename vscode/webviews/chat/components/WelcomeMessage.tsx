@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import type { FunctionComponent } from 'react'
 import type React from 'react'
+import type { MenuCommand } from '../../../src/commands'
 import { CollapsiblePanel } from '../../components/CollapsiblePanel'
 import { Kbd } from '../../components/Kbd'
 import { DefaultCommandsList } from './DefaultCommandsList'
@@ -40,13 +41,16 @@ const FeatureRow: FunctionComponent<{
 
 export const localStorageKey = 'chat.welcome-message-dismissed'
 
-export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => {
+export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE; allowedCommands: MenuCommand[] }> = ({
+    IDE,
+    allowedCommands,
+}) => {
     // Remove the old welcome message dismissal key that is no longer used.
     localStorage.removeItem(localStorageKey)
 
     return (
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-pt-4 tw-px-8 tw-gap-10 sm:tw-pl-21 tw-transition-all">
-            <DefaultCommandsList IDE={IDE} initialOpen={false} />
+            <DefaultCommandsList commands={allowedCommands} initialOpen={false} />
             <CollapsiblePanel title="Chat Help">
                 <FeatureRow icon={AtSignIcon}>
                     Type <Kbd macOS="@" linuxAndWindows="@" /> to add context to your chat

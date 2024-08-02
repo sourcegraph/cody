@@ -21,6 +21,7 @@ import type { startTokenReceiver } from '../../auth/token-receiver'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import { getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
+import type { ClientCapabilities } from '../../jsonrpc/agent-protocol'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import type { AuthProvider } from '../../services/AuthProvider'
 import type { ContextAPIClient } from '../context/contextAPIClient'
@@ -68,7 +69,8 @@ export class ChatsController implements vscode.Disposable {
         private readonly contextFetcher: ContextFetcher,
 
         private readonly guardrails: Guardrails,
-        private readonly contextAPIClient: ContextAPIClient | null
+        private readonly contextAPIClient: ContextAPIClient | null,
+        private readonly clientCapabilities: ClientCapabilities | null
     ) {
         logDebug('ChatsController:constructor', 'init')
         this.panel = this.createChatController()
@@ -438,6 +440,7 @@ export class ChatsController implements vscode.Disposable {
             startTokenReceiver: this.options.startTokenReceiver,
             contextAPIClient: this.contextAPIClient,
             contextFetcher: this.contextFetcher,
+            clientCapabilities: this.clientCapabilities,
         })
     }
 

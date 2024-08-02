@@ -231,6 +231,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                         <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
                             <ComposedWrappers wrappers={wrappers}>
                                 <Chat
+                                    allowedCommands={[]}
                                     chatID={activeChatID}
                                     chatEnabled={true}
                                     showWelcomeMessage={false}

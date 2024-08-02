@@ -20,6 +20,7 @@ import type {
 import type * as vscode from 'vscode'
 
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
+import type { MenuCommand } from '../commands'
 import type { CompletionBookkeepingEvent } from '../completions/logger'
 import type { Repo } from '../context/repo-fetcher'
 import type { FixupTaskID } from '../non-stop/FixupTask'
@@ -519,6 +520,7 @@ export interface ClientCapabilities {
     // convenient for clients that forward the string directly to an underlying
     // webview container.
     webviewMessages?: 'object-encoded' | 'string-encoded' | undefined | null
+    commands?: MenuCommand[] | undefined | null
 }
 
 export interface ServerInfo {

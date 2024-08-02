@@ -11,7 +11,7 @@ describe('WelcomeMessage', () => {
         }
     }
     test('renders for CodyIDE.VSCode', () => {
-        render(<WelcomeMessage IDE={CodyIDE.VSCode} />)
+        render(<WelcomeMessage allowedCommands={[]} IDE={CodyIDE.VSCode} />)
         openCollapsiblePanels()
 
         // Check common elements
@@ -30,7 +30,7 @@ describe('WelcomeMessage', () => {
     })
 
     test('renders for CodyIDE.JetBrains', () => {
-        render(<WelcomeMessage IDE={CodyIDE.JetBrains} />)
+        render(<WelcomeMessage allowedCommands={[]} IDE={CodyIDE.JetBrains} />)
         openCollapsiblePanels()
 
         // Check common elements

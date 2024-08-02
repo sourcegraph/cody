@@ -23,6 +23,7 @@ import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import type { Uri } from 'vscode'
 import type { View } from '../../webviews/tabs/types'
+import type { MenuCommand } from '../commands'
 import type { Repo } from '../context/repo-fetcher'
 
 /**
@@ -207,6 +208,7 @@ export type ExtensionMessage =
               chat: boolean
               attribution: boolean
               serverSentModels: boolean
+              commands: MenuCommand[]
           }
           exportedFeatureFlags: Record<string, boolean>
       }

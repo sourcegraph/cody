@@ -797,7 +797,8 @@ function registerChat(
         symfRunner || null,
         contextFetcher,
         guardrails,
-        contextAPIClient || null
+        contextAPIClient || null,
+        platform.extensionClient.capabilities || null
     )
     chatsController.registerViewsAndCommands()
 
