@@ -1,3 +1,7 @@
+## 0.3.6
+- Adds fix that chat UI doesn't include context repository as background 
+source of context (uses only mention chips as a possible source of context files)
+
 ## 0.3.5
 - Adds support for URL mentions
 - Adds support for ref-like API in CodyWebChatProvider level
