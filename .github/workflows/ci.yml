@@ -107,9 +107,11 @@ jobs:
         if: matrix.runner == 'ubuntu'
         env:
           BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
+          BUILDKITE_ANALYTICS_DEBUG_ENABLED: true
       - run: pnpm -C vscode run test:integration
         if: matrix.runner == 'windows' || matrix.runner == 'macos'
         env:
+          BUILDKITE_ANALYTICS_DEBUG_ENABLED: true
           BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
 
   # Sets a variable that is used to determine the matrix to run slow tests (e2e) on.
