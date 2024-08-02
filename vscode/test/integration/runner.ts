@@ -11,7 +11,7 @@ export function run(testsRoot: string): Promise<void> {
         grep: process.env.TEST_PATTERN ? new RegExp(process.env.TEST_PATTERN, 'i') : undefined,
         reporter: "mocha-multi-reporters",
         reporterOptions: {
-            "reporterEnabled": "spec, buildkite-test-collector/mocha/reporter",
+            "reporterEnabled": "spec, @buildkite-test-collector/mocha/reporter",
         }
     })
 
