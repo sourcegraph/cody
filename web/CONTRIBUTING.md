@@ -63,4 +63,5 @@ in Sourcegraph `package.json` and merge it to the main.
   (to do this go to the package directory and run `pnpm build`)
 - After you link your local package to Sourcegraph repo it may produce some TypeScript errors about react types in Sourcegraph
 react components, this is because cody repo uses different version of react/react-dom types
+- Currently due to CORS problems the demo doesn't work in Firefox
 
