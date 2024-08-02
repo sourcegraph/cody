@@ -537,7 +537,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const config = await getFullConfig()
 
-        const webviewType = this.webviewPanelOrView?.webview ? 'sidebar' : 'editor'
+        const webviewType =
+            this.webviewPanelOrView?.viewType === 'cody.editorPanel' ? 'editor' : 'sidebar'
 
         return {
             agentIDE: config.isRunningInsideAgent ? config.agentIDE : CodyIDE.VSCode,

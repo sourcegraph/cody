@@ -23,6 +23,7 @@ import { getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import type { AuthProvider } from '../../services/AuthProvider'
+import { type ChatLocation, localStorage } from '../../services/LocalStorageProvider'
 import type { ContextAPIClient } from '../context/contextAPIClient'
 import {
     ChatController,
@@ -130,34 +131,62 @@ export class ChatsController implements vscode.Disposable {
         }
 
         this.disposables.push(
-            vscode.commands.registerCommand(
-                'cody.chat.moveToEditor',
-                async () => await this.moveChatFromPanelToEditor()
-            ),
-            vscode.commands.registerCommand(
-                'cody.chat.moveFromEditor',
-                async () => await this.moveChatFromEditorToPanel()
-            ),
+            vscode.commands.registerCommand('cody.chat.moveToEditor', async () => {
+                localStorage.setLastUsedChatModality('editor')
+                return await this.moveChatFromPanelToEditor()
+            }),
+            vscode.commands.registerCommand('cody.chat.moveFromEditor', async () => {
+                localStorage.setLastUsedChatModality('sidebar')
+                return await this.moveChatFromEditorToPanel()
+            }),
             vscode.commands.registerCommand('cody.action.chat', args => this.submitChat(args)),
             vscode.commands.registerCommand('cody.chat.signIn', () =>
                 vscode.commands.executeCommand('cody.chat.focus')
             ),
+
             vscode.commands.registerCommand('cody.chat.newPanel', async () => {
+                localStorage.setLastUsedChatModality('sidebar')
                 await this.panel.clearAndRestartSession()
-                await vscode.commands.executeCommand('cody.chat.focus')
             }),
+            vscode.commands.registerCommand('cody.chat.newEditorPanel', () => {
+                localStorage.setLastUsedChatModality('editor')
+                return this.getOrCreateEditorChatController()
+            }),
+            vscode.commands.registerCommand('cody.chat.new', async () => {
+                switch (getNewChatLocation()) {
+                    case 'editor':
+                        return vscode.commands.executeCommand('cody.chat.newEditorPanel')
+                    case 'sidebar':
+                        return vscode.commands.executeCommand('cody.chat.newPanel')
+                }
+            }),
+
             vscode.commands.registerCommand(
                 'cody.chat.toggle',
                 async (ops: { editorFocus: boolean }) => {
+                    const modality = getNewChatLocation()
+
                     if (ops.editorFocus) {
-                        await vscode.commands.executeCommand('cody.chat.focus')
+                        if (modality === 'sidebar') {
+                            await vscode.commands.executeCommand('cody.chat.focus')
+                        } else {
+                            const editorView = this.activeEditor?.webviewPanelOrView
+                            if (editorView) {
+                                revealWebviewViewOrPanel(editorView)
+                            } else {
+                                vscode.commands.executeCommand('cody.chat.newEditorPanel')
+                            }
+                        }
                     } else {
-                        await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup')
+                        if (modality === 'sidebar') {
+                            await vscode.commands.executeCommand(
+                                'workbench.action.focusActiveEditorGroup'
+                            )
+                        } else {
+                            await vscode.commands.executeCommand('workbench.action.navigateEditorGroups')
+                        }
                     }
                 }
-            ),
-            vscode.commands.registerCommand('cody.chat.newEditorPanel', () =>
-                this.getOrCreateEditorChatController()
             ),
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', () => this.clearHistory()),
@@ -481,4 +510,16 @@ export class ChatsController implements vscode.Disposable {
         this.disposeAllChats()
         vscode.Disposable.from(...this.disposables).dispose()
     }
+}
+
+function getNewChatLocation(): ChatLocation {
+    const chatDefaultLocation =
+        vscode.workspace
+            .getConfiguration()
+            .get<'sticky' | 'sidebar' | 'editor'>('cody.chat.defaultLocation') ?? 'sticky'
+
+    if (chatDefaultLocation === 'sticky') {
+        return localStorage.getLastUsedChatModality()
+    }
+    return chatDefaultLocation
 }
