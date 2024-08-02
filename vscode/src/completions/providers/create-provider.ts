@@ -11,6 +11,7 @@ import {
 
 import * as vscode from 'vscode'
 import { logError } from '../../log'
+import { localStorage } from '../../services/LocalStorageProvider'
 import {
     type AnthropicOptions,
     DEFAULT_PLG_ANTHROPIC_MODEL,
@@ -32,7 +33,6 @@ import { createProviderConfig as createGeminiProviderConfig } from './google'
 import { createProviderConfig as createOpenAICompatibleProviderConfig } from './openaicompatible'
 import type { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
-import { localStorage } from '../../services/LocalStorageProvider'
 
 export async function createProviderConfigFromVSCodeConfig(
     client: CodeCompletionsClient,
@@ -56,7 +56,7 @@ export async function createProviderConfigFromVSCodeConfig(
                 timeouts: config.autocompleteTimeouts,
                 authStatus,
                 config,
-                anonymousUserID
+                anonymousUserID,
             })
         }
         case 'anthropic': {
@@ -137,7 +137,7 @@ export async function createProviderConfig(
                 model: provider === 'azure-openai' && modelId ? '' : modelId,
             })
 
-        case 'fireworks':
+        case 'fireworks': {
             const { anonymousUserID } = await localStorage.anonymousUserID()
             return createFireworksProviderConfig({
                 client,
@@ -147,6 +147,7 @@ export async function createProviderConfig(
                 config,
                 anonymousUserID,
             })
+        }
         case 'experimental-openaicompatible':
             // TODO(slimsag): self-hosted-models: deprecate and remove this once customers are upgraded
             // to non-experimental version
@@ -257,19 +258,23 @@ async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
         return { provider: configuredProvider }
     }
 
-    const [starCoder2Hybrid, starCoderHybrid, claude3, finetunedFIMModelHybrid, fimModelExperimentFlag, deepseekV2LiteBase] =
-        await Promise.all([
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMFineTunedModelHybrid),
-            featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteFIMModelExperimentBaseFeatureFlag
-            ),
-            featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteDeepseekV2LiteBase
-            )
-        ])
+    const [
+        starCoder2Hybrid,
+        starCoderHybrid,
+        claude3,
+        finetunedFIMModelHybrid,
+        fimModelExperimentFlag,
+        deepseekV2LiteBase,
+    ] = await Promise.all([
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMFineTunedModelHybrid),
+        featureFlagProvider.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteFIMModelExperimentBaseFeatureFlag
+        ),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase),
+    ])
 
     // We run fine tuning experiment for VSC client only.
     // We disable for all agent clients like the JetBrains plugin.

@@ -187,7 +187,16 @@ class FireworksProvider extends Provider {
 
     constructor(
         options: ProviderOptions,
-        { model, maxContextTokens, client, timeouts, config, authStatus, anonymousUserID }: Required<Omit<FireworksOptions, 'anonymousUserID'>> & { anonymousUserID?: string }    ) {
+        {
+            model,
+            maxContextTokens,
+            client,
+            timeouts,
+            config,
+            authStatus,
+            anonymousUserID,
+        }: Required<Omit<FireworksOptions, 'anonymousUserID'>> & { anonymousUserID?: string }
+    ) {
         super(options)
         this.timeouts = timeouts
         if (model === FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID_WITH_200MS_DELAY) {
@@ -539,7 +548,7 @@ class FireworksProvider extends Provider {
                     ],
                     stream: true,
                     languageId: self.options.document.languageId,
-                    anonymousUserID: self.anonymousUserID
+                    anonymousUserID: self.anonymousUserID,
                 }
 
                 const headers = new Headers(self.getCustomHeaders())
@@ -725,7 +734,9 @@ export function createProviderConfig({
 }): ProviderConfig {
     const clientModel =
         model === null || model === ''
-            ? (otherOptions.authStatus.isDotCom ? DEEPSEEK_CODER_V2_LITE_BASE : 'starcoder-hybrid')
+            ? otherOptions.authStatus.isDotCom
+                ? DEEPSEEK_CODER_V2_LITE_BASE
+                : 'starcoder-hybrid'
             : ['starcoder-hybrid', 'starcoder2-hybrid'].includes(model)
               ? (model as FireworksModel)
               : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)

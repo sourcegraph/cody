@@ -1,5 +1,3 @@
-import { describe, expect, it } from 'vitest'
-
 import {
     type AuthStatus,
     type CodeCompletionsClient,
@@ -10,7 +8,9 @@ import {
     defaultAuthStatus,
     graphqlClient,
 } from '@sourcegraph/cody-shared'
-
+import { beforeAll, describe, expect, it } from 'vitest'
+import type * as vscode from 'vscode'
+import { localStorage } from '../../services/LocalStorageProvider'
 import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 
 import { createProviderConfig } from './create-provider'
@@ -53,6 +53,13 @@ describe('createProviderConfig', () => {
     })
 
     describe('if completions provider field is not defined in VSCode settings', () => {
+        beforeAll(async () => {
+            localStorage.setStorage({
+                get: () => null,
+                update: () => {},
+            } as any as vscode.Memento)
+        })
+
         it('returns "anthropic" if completions provider is not configured', async () => {
             const provider = await createProviderConfig(
                 getVSCodeConfigurationWithAccessToken({
@@ -85,7 +92,7 @@ describe('createProviderConfig', () => {
                 dummyAuthStatus
             )
             expect(provider?.identifier).toBe('fireworks')
-            expect(provider?.model).toBe('starcoder-hybrid')
+            expect(provider?.model).toBe('deepseek-coder-v2-lite-base')
         })
 
         it('returns "experimental-openaicompatible" provider config and corresponding model if specified', async () => {
@@ -241,7 +248,7 @@ describe('createProviderConfig', () => {
                 },
                 {
                     codyLLMConfig: { provider: 'fireworks' },
-                    expected: { provider: 'fireworks', model: 'starcoder-hybrid' },
+                    expected: { provider: 'fireworks', model: 'deepseek-coder-v2-lite-base' },
                 },
 
                 // unknown-provider
