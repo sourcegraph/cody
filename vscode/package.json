@@ -443,7 +443,7 @@
         "command": "cody.chat.newPanel",
         "category": "Cody",
         "group": "Cody",
-        "title": "New Chat",
+        "title": "New Chat in Sidebar",
         "enablement": "cody.activated",
         "icon": "$(new-comment-icon)"
       },
