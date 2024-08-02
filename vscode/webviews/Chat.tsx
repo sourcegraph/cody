@@ -158,7 +158,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     return (
         <div className={clsx(styles.container, className, 'tw-relative')}>
-            this is top of chat
             {!chatEnabled && (
                 <div className={styles.chatDisabled}>
                     Cody chat is disabled by your Sourcegraph site administrator
@@ -177,11 +176,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 postMessage={postMessage}
                 guardrails={guardrails}
             />
-            bottom of transcript
             {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage IDE={userInfo.ide} />}
-            bottom of welcome
             <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
-            bottom of chat
         </div>
     )
 }

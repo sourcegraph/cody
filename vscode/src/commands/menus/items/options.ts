@@ -6,21 +6,21 @@ const EDIT_COMMAND = CodyCommandMenuItems[1]
 
 // Common Menu Options
 const chatOption: CommandMenuItem = {
-    label: `$(${ASK_QUESTION_COMMAND.icon}) ${ASK_QUESTION_COMMAND.description}`,
+    label: `$(${ASK_QUESTION_COMMAND.icon}) ${ASK_QUESTION_COMMAND.title}`,
     description: 'Start a new chat with this message',
     key: ASK_QUESTION_COMMAND.key,
     alwaysShow: true,
     type: 'default',
-    command: ASK_QUESTION_COMMAND.command.command,
+    command: ASK_QUESTION_COMMAND.command,
 }
 
 const editOption: CommandMenuItem = {
-    label: `$(${EDIT_COMMAND.icon}) ${EDIT_COMMAND.description}`,
+    label: `$(${EDIT_COMMAND.icon}) ${EDIT_COMMAND.title}`,
     description: 'Start a new code edit with these instructions',
     key: EDIT_COMMAND.key,
     alwaysShow: true,
     type: 'default',
-    command: ASK_QUESTION_COMMAND.command.command,
+    command: ASK_QUESTION_COMMAND.command,
 }
 
 const configOption: CommandMenuItem = {

@@ -54,8 +54,8 @@ export async function showCommandMenu(
                 }
 
                 const key = item.key
-                const label = `$(${item.icon}) ${item.description}`
-                const command = item.command.command
+                const label = `$(${item.icon}) ${item.title}`
+                const command = item.command
                 // Show keybind as description if present
                 const description = item.keybinding ? item.keybinding : ''
                 const type = 'default'

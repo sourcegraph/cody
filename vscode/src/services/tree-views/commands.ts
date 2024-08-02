@@ -19,11 +19,11 @@ export function getCommandTreeItems(customCommands: CodyCommand[]): CodyTreeItem
 
         const treeItem = new CodyTreeItem(
             item.key,
-            item.description,
+            item.title,
             item.icon,
             {
                 command: 'cody.sidebar.commands',
-                args: [item.key, item.command.command],
+                args: [item.key, item.command],
             },
             item.contextValue
         )

@@ -207,7 +207,6 @@ export type ExtensionMessage =
               chat: boolean
               attribution: boolean
               serverSentModels: boolean
-              hasRun: boolean
           }
           exportedFeatureFlags: Record<string, boolean>
       }

@@ -3,47 +3,72 @@ import {
     BookIcon,
     FileQuestionIcon,
     GavelIcon,
-    PencilLineIcon,
+    type LucideIcon,
+    PencilLine,
     PencilRulerIcon,
     TextSearchIcon,
 } from 'lucide-react'
 import { type FunctionComponent, useMemo } from 'react'
+import { CodyCommandMenuItems, type MenuCommand, type MenuCommandAccessor } from '../../../src/commands'
 import { CollapsiblePanel } from '../../components/CollapsiblePanel'
 import { Button } from '../../components/shadcn/ui/button'
 import { View } from '../../tabs/types'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 
-const commonCommandList = [
-    { key: 'cody.command.edit-code', title: 'Edit Code', icon: PencilLineIcon },
-    { key: 'cody.command.document-code', title: 'Document Code', icon: BookIcon },
-    { key: 'cody.command.explain-code', title: 'Explain Code', icon: FileQuestionIcon },
-    { key: 'cody.command.unit-tests', title: 'Generate Unit Tests', icon: GavelIcon },
-    { key: 'cody.command.smell-code', title: 'Find Code Smells', icon: TextSearchIcon },
-]
+interface Command {
+    key: MenuCommand
+    command: string
+    title: string
+    Icon: LucideIcon
+}
 
-const vscodeCommandList = [
-    { key: 'cody.menu.custom-commands', title: 'Custom Commands', icon: PencilRulerIcon },
-]
+function mkCommand(key: MenuCommand, Icon: LucideIcon, overrides: Partial<Command> = {}): Command {
+    return {
+        ...commandMap[key],
+        ...overrides,
+        Icon,
+    }
+}
+
+const commandMap = CodyCommandMenuItems.reduce(
+    (acc, item) => {
+        acc[item.key] = item
+        return acc
+    },
+    {} as { [key in MenuCommand]: MenuCommandAccessor }
+)
+
+const edit = mkCommand('edit', PencilLine)
+const doc = mkCommand('doc', BookIcon)
+const explain = mkCommand('explain', FileQuestionIcon)
+const test = mkCommand('test', GavelIcon)
+const smell = mkCommand('smell', TextSearchIcon)
+const custom = mkCommand('custom', PencilRulerIcon)
+
+const defaultCommands = [edit, doc, explain, test, smell]
+
+const commandsByIDE: { [key in CodyIDE]?: Command[] } = {
+    [CodyIDE.VSCode]: [...defaultCommands, custom],
+    [CodyIDE.Eclipse]: [],
+}
 
 export const DefaultCommandsList: FunctionComponent<{
     IDE?: CodyIDE
     setView?: (view: View) => void
     initialOpen: boolean
 }> = ({ IDE, setView, initialOpen }) => {
-    const commandList = useMemo(
-        () => [...commonCommandList, ...(IDE === CodyIDE.VSCode ? vscodeCommandList : [])],
-        [IDE]
-    )
+    const commandList = useMemo(() => (IDE && commandsByIDE[IDE]) ?? defaultCommands, [IDE])
 
     return (
         <CollapsiblePanel title="Commands" initialOpen={initialOpen}>
-            {commandList.map(({ key, title, icon: Icon }) => (
+            IDE: {IDE}
+            {commandList.map(({ command, title, Icon }) => (
                 <Button
-                    key={key}
+                    key={command}
                     variant="ghost"
                     className="tw-text-left"
                     onClick={() => {
-                        getVSCodeAPI().postMessage({ command: 'command', id: key })
+                        getVSCodeAPI().postMessage({ command: 'command', id: command })
                         setView?.(View.Chat)
                     }}
                 >

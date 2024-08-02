@@ -59,7 +59,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [commandList, setCommandList] = useState<CodyCommand[]>([])
     const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
     const [exportedFeatureFlags, setExportedFeatureFlags] = useState<Record<string, boolean>>()
-    const [hasRun, setHasRun] = useState<boolean>(false)
 
     const [clientState, setClientState] = useState<ClientStateForWebview>({
         initialContext: [],
@@ -128,7 +127,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setChatEnabled(message.configFeatures.chat)
                         setAttributionEnabled(message.configFeatures.attribution)
                         setServerSentModelsEnabled(message.configFeatures.serverSentModels)
-                        setHasRun(message.configFeatures.hasRun)
                         break
                     case 'history':
                         setUserHistory(Object.values(message.localHistory?.chat ?? {}))
@@ -281,7 +279,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     orientation="vertical"
                     className={styles.outerContainer}
                 >
-                    Has run: {hasRun ? 'true' : 'false'}
                     {/* NOTE: Display tabs to PLG users only until Universal Cody is ready. */}
                     {/* Shows tab bar for sidebar chats only. */}
                     {userAccountInfo.isDotComUser && config.webviewType === 'editor' ? null : (
