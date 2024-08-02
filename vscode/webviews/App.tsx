@@ -280,9 +280,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     orientation="vertical"
                     className={styles.outerContainer}
                 >
-                    {/* NOTE: Display tabs to PLG users only until Universal Cody is ready. */}
                     {/* Shows tab bar for sidebar chats only. */}
-                    {userAccountInfo.isDotComUser && config.webviewType === 'editor' ? null : (
+                    {config.webviewType === 'editor' ? null : (
                         <TabsBar
                             currentView={view}
                             setView={setView}
