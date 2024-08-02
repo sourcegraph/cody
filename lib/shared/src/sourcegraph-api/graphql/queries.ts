@@ -280,9 +280,10 @@ query ViewerPrompts($query: String!) {
     }
 }`
 
-export const REPO_NAME_QUERY = `
-query ResolveRepoName($cloneURL: String!) {
+export const REPO_ID_NAME_QUERY = `
+query ResolveRepoIDName($cloneURL: String!) {
     repository(cloneURL: $cloneURL) {
+        id
         name
     }
 }

@@ -2,6 +2,7 @@ import { LRUCache } from 'lru-cache'
 import type * as vscode from 'vscode'
 
 import {
+    type RepoInfo,
     convertGitCloneURLToCodebaseName,
     graphqlClient,
     isDefined,
@@ -14,15 +15,14 @@ import type { AuthProvider } from '../services/AuthProvider'
 import { gitRemoteUrlsFromGitExtension } from './git-extension-api'
 import { gitRemoteUrlsFromParentDirs } from './remote-urls-from-parent-dirs'
 
-type RepoName = string
 type RemoteUrl = string
 type UriFsPath = string
 
 export class RepoNameResolver {
     private authProvider: AuthProvider | undefined
 
-    private fsPathToRepoNameCache = new LRUCache<UriFsPath, RepoName[]>({ max: 1000 })
-    private remoteUrlToRepoNameCache = new LRUCache<RemoteUrl, Promise<RepoName | null>>({ max: 1000 })
+    private fsPathToRepoInfoCache = new LRUCache<UriFsPath, RepoInfo[]>({ max: 1000 })
+    private remoteUrlToRepoInfoCache = new LRUCache<RemoteUrl, Promise<RepoInfo | null>>({ max: 1000 })
 
     public init(authProvider: AuthProvider): void {
         this.authProvider = authProvider
@@ -30,43 +30,43 @@ export class RepoNameResolver {
         // TODO(beyang): handle disposable
         this.authProvider.onChange(
             () => {
-                this.fsPathToRepoNameCache.clear()
-                this.remoteUrlToRepoNameCache.clear()
+                this.fsPathToRepoInfoCache.clear()
+                this.remoteUrlToRepoInfoCache.clear()
             },
             { runImmediately: true }
         )
     }
 
     /**
-     * Gets the repo names for a file URI.
+     * Gets the repo infos for a file URI.
      *
      * ❗️ For enterprise accounts, uses Sourcegraph API to resolve repo names
      * instead of the local conversion function. ❗️
      *
      * Checks if the Git API is initialized, initializes it if not.
-     * If found, gets repo names from the repository.
+     * If found, gets repo infos from the repository.
      * if not found, walks the file system upwards until it finds a `.git` folder.
      */
-    public getRepoNamesFromWorkspaceUri = async (
+    public getRepoInfosFromWorkspaceUri = async (
         uri: vscode.Uri,
         signal?: AbortSignal
-    ): Promise<string[]> => {
+    ): Promise<RepoInfo[]> => {
         if (!isFileURI(uri)) {
             return []
         }
 
-        if (this.fsPathToRepoNameCache.has(uri.fsPath)) {
-            return this.fsPathToRepoNameCache.get(uri.fsPath)!
+        if (this.fsPathToRepoInfoCache.has(uri.fsPath)) {
+            return this.fsPathToRepoInfoCache.get(uri.fsPath)!
         }
 
         try {
             const remoteUrls = await this.getRepoRemoteUrlsFromWorkspaceUri(uri, signal)
 
             if (remoteUrls.length !== 0) {
-                const repoNames = await this.getRepoNamesFromRemoteUrls(remoteUrls)
-                this.fsPathToRepoNameCache.set(uri.fsPath, repoNames)
+                const repoInfos = await this.getRepoNamesFromRemoteUrls(remoteUrls)
+                this.fsPathToRepoInfoCache.set(uri.fsPath, repoInfos)
 
-                return repoNames
+                return repoInfos
             }
         } catch (error) {
             logDebug('RepoNameResolver:getCodebaseFromWorkspaceUri', 'error', { verbose: error })
@@ -98,7 +98,10 @@ export class RepoNameResolver {
         return []
     }
 
-    private async getRepoNamesFromRemoteUrls(remoteUrls: string[]): Promise<string[]> {
+    private async getRepoNamesFromRemoteUrls(
+        remoteUrls: string[],
+        signal?: AbortSignal
+    ): Promise<RepoInfo[]> {
         if (!this.authProvider) {
             throw new Error('RepoNameResolver not initialized')
         }
@@ -107,27 +110,37 @@ export class RepoNameResolver {
 
         // Use local conversion function for non-enterprise accounts.
         if (this.authProvider.getAuthStatus().isDotCom) {
-            return uniqueRemoteUrls.map(convertGitCloneURLToCodebaseName).filter(isDefined)
+            return uniqueRemoteUrls
+                .map(url => {
+                    const name = convertGitCloneURLToCodebaseName(url)
+                    return name ? ({ type: 'local', name } satisfies RepoInfo) : null
+                })
+                .filter(isDefined)
         }
 
         const repoNames = await Promise.all(
             uniqueRemoteUrls.map(remoteUrl => {
-                return this.resolveRepoNameForRemoteUrl(remoteUrl)
+                return this.resolveRepoInfoForRemoteUrl(remoteUrl, signal)
             })
         )
 
         return repoNames.filter(isDefined)
     }
 
-    private async resolveRepoNameForRemoteUrl(remoteUrl: string): Promise<string | null> {
-        if (this.remoteUrlToRepoNameCache.has(remoteUrl)) {
-            return this.remoteUrlToRepoNameCache.get(remoteUrl)!
+    private async resolveRepoInfoForRemoteUrl(
+        remoteUrl: string,
+        signal?: AbortSignal
+    ): Promise<RepoInfo | null> {
+        if (this.remoteUrlToRepoInfoCache.has(remoteUrl)) {
+            return this.remoteUrlToRepoInfoCache.get(remoteUrl)!
         }
 
-        const repoNameRequest = graphqlClient.getRepoName(remoteUrl)
-        this.remoteUrlToRepoNameCache.set(remoteUrl, repoNameRequest)
+        const repoInfoRequest: Promise<RepoInfo | null> = graphqlClient
+            .getRepoNameAndId(remoteUrl, signal)
+            .then(data => (data ? { ...data, type: 'sourcegraph' } : null))
+        this.remoteUrlToRepoInfoCache.set(remoteUrl, repoInfoRequest)
 
-        return repoNameRequest
+        return repoInfoRequest
     }
 }
 

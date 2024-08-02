@@ -861,17 +861,18 @@ log:
           textJSON:
             query: |
               
-              query ResolveRepoName($cloneURL: String!) {
+              query ResolveRepoIDName($cloneURL: String!) {
                   repository(cloneURL: $cloneURL) {
+                      id
                       name
                   }
               }
             variables:
               cloneURL: git@github.com:sourcegraph/cody.git
         queryString:
-          - name: ResolveRepoName
+          - name: ResolveRepoIDName
             value: null
-        url: https://sourcegraph.sourcegraph.com/.api/graphql?ResolveRepoName
+        url: https://sourcegraph.sourcegraph.com/.api/graphql?ResolveRepoIDName
       response:
         bodySize: 123
         content:

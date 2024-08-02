@@ -50,7 +50,11 @@ export type IsIgnored =
     | 'no-repo-found'
     | `repo:${string}`
 
-export type GetRepoNamesFromWorkspaceUri = (uri: vscode.Uri) => Promise<string[] | null>
+export type RepoInfo =
+    | { type: 'sourcegraph'; id: string; name: string }
+    | { type: 'local'; name: string }
+
+export type GetRepoNamesFromWorkspaceUri = (uri: vscode.Uri) => Promise<RepoInfo[] | null>
 type RepoName = string
 type IsRepoNameIgnored = boolean
 
@@ -218,9 +222,9 @@ export class ContextFiltersProvider implements vscode.Disposable {
             return 'no-repo-found'
         }
 
-        const ignoredRepo = repoNames.find(repoName => this.isRepoNameIgnored(repoName))
+        const ignoredRepo = repoNames.find(repoName => this.isRepoNameIgnored(repoName.name))
         if (ignoredRepo) {
-            return `repo:${ignoredRepo}`
+            return `repo:${ignoredRepo.name}`
         }
 
         return false

@@ -311,7 +311,7 @@ async function initializeSingletons(
             promises.push(localStorage.setConfig(config))
             graphqlClient.setConfig(config)
             promises.push(featureFlagProvider.refresh())
-            promises.push(contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri))
+            promises.push(contextFiltersProvider.init(repoNameResolver.getRepoInfosFromWorkspaceUri))
             void ModelsService.onConfigChange(config)
             upstreamHealthProvider.onConfigurationChange(config)
 

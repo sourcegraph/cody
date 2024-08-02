@@ -263,11 +263,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // When the codebase has a remote ID, include it automatically
                 this.codebaseStatusProvider.onDidChangeStatus(async () => {
                     const codebase = await this.codebaseStatusProvider.currentCodebase()
-                    if (codebase?.remote && codebase.remoteRepoId) {
+                    if (codebase?.remoteName && codebase.remoteRepoId) {
                         this.remoteSearch?.setRepos(
                             [
                                 {
-                                    name: codebase.remote,
+                                    name: codebase.remoteName,
                                     id: codebase.remoteRepoId,
                                 },
                             ],
@@ -609,7 +609,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const currentCodebase = await this.codebaseStatusProvider.currentCodebase()
         if (currentCodebase?.isPublic) {
             const gitMetadata = {
-                githubUrl: currentCodebase?.remote,
+                githubUrl: currentCodebase?.remoteName,
                 commit: gitCommitIdFromGitExtension(currentCodebase?.localFolder),
             }
             return JSON.stringify(gitMetadata)

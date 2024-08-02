@@ -20,7 +20,7 @@ import { repoNameResolver } from '../../repository/repo-name-resolver'
 
 interface CodebaseIdentifiers {
     localFolder: vscode.Uri
-    remote?: string
+    remoteName?: string
     remoteRepoId?: string
     setting?: string
     isPublic?: boolean
@@ -153,19 +153,29 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
         if (workspaceRoot) {
             newCodebase = { localFolder: workspaceRoot, setting: config.codebase }
             const currentFile = getEditor()?.active?.document?.uri
+
             // Get codebase from config or fallback to getting codebase name from current file URL
             // Always use the codebase from config as this is manually set by the user
-            newCodebase.remote =
-                config.codebase ||
-                (currentFile
-                    ? (await repoNameResolver.getRepoNamesFromWorkspaceUri(currentFile))[0]
-                    : config.codebase)
-            if (newCodebase.remote) {
-                newCodebase.remoteRepoId = (
-                    await this.codebaseRepoIdMapper?.repoForCodebase(newCodebase.remote)
-                )?.id
-                const instance = RepoMetadatafromGitApi.getInstance()
-                const gitMetaData = await instance.getRepoMetadataUsingGitUrl(newCodebase.remote)
+            if (config.codebase) {
+                newCodebase.remoteName = config.codebase
+                const repoID = (await this.codebaseRepoIdMapper?.repoForCodebase(newCodebase.remoteName))
+                    ?.id
+                if (repoID) {
+                    newCodebase.remoteRepoId = repoID
+                }
+            } else if (currentFile) {
+                const repoInfo = (await repoNameResolver.getRepoInfosFromWorkspaceUri(currentFile))[0]
+                if (repoInfo.type === 'sourcegraph') {
+                    newCodebase.remoteName = repoInfo.name
+                    newCodebase.remoteRepoId = repoInfo.id
+                } else {
+                    newCodebase.remoteName = repoInfo.name
+                }
+            }
+
+            const instance = RepoMetadatafromGitApi.getInstance()
+            if (newCodebase.remoteName) {
+                const gitMetaData = await instance.getRepoMetadataUsingGitUrl(newCodebase.remoteName)
                 newCodebase.isPublic = gitMetaData?.isPublic
             }
         }

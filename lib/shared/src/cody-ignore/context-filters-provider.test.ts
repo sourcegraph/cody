@@ -1,7 +1,6 @@
 import sharedTestDataset from '@sourcegraph/cody-context-filters-test-dataset/dataset.json'
 import { RE2JS as RE2 } from 're2js'
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import {
@@ -10,12 +9,19 @@ import {
     graphqlClient,
 } from '../sourcegraph-api/graphql/client'
 
-import { ContextFiltersProvider } from './context-filters-provider'
+import {
+    ContextFiltersProvider,
+    type GetRepoNamesFromWorkspaceUri,
+    type RepoInfo,
+} from './context-filters-provider'
 
 describe('ContextFiltersProvider', () => {
     let provider: ContextFiltersProvider
 
-    let getRepoNamesFromWorkspaceUri: Mock<[vscode.Uri], any>
+    let getRepoNamesFromWorkspaceUri: Mock<
+        Parameters<GetRepoNamesFromWorkspaceUri>,
+        ReturnType<GetRepoNamesFromWorkspaceUri>
+    >
 
     beforeEach(() => {
         provider = new ContextFiltersProvider()
@@ -276,7 +282,9 @@ describe('ContextFiltersProvider', () => {
         function getTestURI(params: TestUriParams): URI {
             const { repoName, filePath } = params
 
-            getRepoNamesFromWorkspaceUri.mockResolvedValue([`github.com/sourcegraph/${repoName}`])
+            getRepoNamesFromWorkspaceUri.mockResolvedValue([
+                { id: '1', name: `github.com/sourcegraph/${repoName}`, type: 'sourcegraph' },
+            ])
 
             return URI.file(`/${repoName}/${filePath}`)
         }
@@ -303,16 +311,16 @@ describe('ContextFiltersProvider', () => {
 
             const includedURI = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             expect(includedURI.fsPath.replaceAll('\\', '/')).toBe('/cody/foo/bar.ts')
-            expect(await getRepoNamesFromWorkspaceUri(includedURI)).toEqual([
-                'github.com/sourcegraph/cody',
+            expect(await getRepoNamesFromWorkspaceUri(includedURI)).toEqual<RepoInfo[] | null>([
+                { id: '1', name: 'github.com/sourcegraph/cody', type: 'sourcegraph' },
             ])
 
             expect(await provider.isUriIgnored(includedURI)).toBe(false)
 
             const excludedURI = getTestURI({ repoName: 'sourcegraph', filePath: 'src/main.tsx' })
             expect(excludedURI.fsPath.replaceAll('\\', '/')).toBe('/sourcegraph/src/main.tsx')
-            expect(await getRepoNamesFromWorkspaceUri(excludedURI)).toEqual([
-                'github.com/sourcegraph/sourcegraph',
+            expect(await getRepoNamesFromWorkspaceUri(excludedURI)).toEqual<RepoInfo[] | null>([
+                { id: '1', name: 'github.com/sourcegraph/sourcegraph', type: 'sourcegraph' },
             ])
 
             expect(await provider.isUriIgnored(excludedURI)).toBe(
@@ -327,7 +335,7 @@ describe('ContextFiltersProvider', () => {
             })
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
-            getRepoNamesFromWorkspaceUri.mockResolvedValue(undefined)
+            getRepoNamesFromWorkspaceUri.mockResolvedValue(null)
             expect(await provider.isUriIgnored(uri)).toBe('no-repo-found')
         })
 

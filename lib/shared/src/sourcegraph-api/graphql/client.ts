@@ -49,7 +49,7 @@ import {
     REPOSITORY_ID_QUERY,
     REPOSITORY_LIST_QUERY,
     REPOSITORY_SEARCH_QUERY,
-    REPO_NAME_QUERY,
+    REPO_ID_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
     VIEWER_SETTINGS_QUERY,
 } from './queries'
@@ -316,7 +316,7 @@ interface RepositoryIdResponse {
 }
 
 interface RepositoryNameResponse {
-    repository: { name: string } | null
+    repository: { id: string; name: string } | null
 }
 
 interface RepositoryIdsResponse {
@@ -931,15 +931,19 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.repositories?.nodes || []))
     }
 
-    public async getRepoName(cloneURL: string): Promise<string | null> {
+    public async getRepoNameAndId(
+        cloneURL: string,
+        signal?: AbortSignal
+    ): Promise<{ id: string; name: string } | null> {
         const response = await this.fetchSourcegraphAPI<APIResponse<RepositoryNameResponse>>(
-            REPO_NAME_QUERY,
+            REPO_ID_NAME_QUERY,
             {
                 cloneURL,
-            }
+            },
+            signal
         )
 
-        const result = extractDataOrError(response, data => data.repository?.name ?? null)
+        const result = extractDataOrError(response, data => data.repository ?? null)
         return isError(result) ? null : result
     }
 

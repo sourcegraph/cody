@@ -13,14 +13,12 @@ import {
     type PromptString,
     type Result,
     featureFlagProvider,
-    graphqlClient,
     isAbortError,
     isFileURI,
     truncateTextNearestLine,
     uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { isError } from 'lodash'
 import type { RemoteSearch } from '../../context/remote-search'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
@@ -73,49 +71,23 @@ export async function codebaseRootsFromHumanInput(
     )
     const groups = await Promise.all(
         localTrees.map(async tree => {
-            const repoURIs = await repoNameResolver.getRepoNamesFromWorkspaceUri(tree.uri, signal)
-            return repoURIs.map(repoURI => ({
-                repoURI,
+            const repoInfos = await repoNameResolver.getRepoInfosFromWorkspaceUri(tree.uri, signal)
+            return repoInfos.map(repoInfo => ({
+                repoInfo,
                 local: tree.uri,
             }))
         })
     )
-    const localRepoURIs = Array.from(new Set(groups.flat()))
-    const localRepoIDs = await graphqlClient.getRepoIds(
-        localRepoURIs.map(({ repoURI }) => repoURI),
-        localRepoURIs.length,
-        signal
-    )
-    if (isError(localRepoIDs)) {
-        throw localRepoIDs
-    }
-    const uriToId: { [uri: string]: string } = {}
-    for (const r of localRepoIDs) {
-        uriToId[r.name] = r.id
-    }
-    const localRoots: Root[] = []
-    for (const repoWithURI of localRepoURIs) {
-        localRoots.push({
-            local: repoWithURI.local,
-            remoteRepo: {
-                id: uriToId[repoWithURI.repoURI],
-                name: repoWithURI.repoURI,
-            },
-        })
-    }
-
-    return [...remoteRepos, ...localRoots]
-}
-
-export async function remoteRepositoryURIsForLocalTrees(input: HumanInput): Promise<string[]> {
-    const trees: ContextItemTree[] = input.mentions.filter(
-        (item): item is ContextItemTree => item.type === 'tree'
-    )
-
-    const groups = await Promise.all(
-        trees.map(tree => repoNameResolver.getRepoNamesFromWorkspaceUri(tree.uri))
-    )
-    return Array.from(new Set(groups.flat()))
+    return [
+        ...remoteRepos,
+        ...groups.flat().map(
+            g =>
+                ({
+                    local: g.local,
+                    remoteRepo: g.repoInfo.type === 'sourcegraph' ? g.repoInfo : undefined,
+                }) satisfies Root
+        ),
+    ]
 }
 
 /**

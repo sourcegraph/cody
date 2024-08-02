@@ -4092,7 +4092,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 6eadc258175ecf62a9bd9414973d8918
+    - _id: 02fa5224511c593207b0d1a4543cc9d0
       _order: 0
       cache: {}
       request:
@@ -4129,17 +4129,18 @@ log:
           textJSON:
             query: |
 
-              query ResolveRepoName($cloneURL: String!) {
+              query ResolveRepoIDName($cloneURL: String!) {
                   repository(cloneURL: $cloneURL) {
+                      id
                       name
                   }
               }
             variables:
               cloneURL: git@github.com:sourcegraph/cody.git
         queryString:
-          - name: ResolveRepoName
+          - name: ResolveRepoIDName
             value: null
-        url: https://demo.sourcegraph.com/.api/graphql?ResolveRepoName
+        url: https://demo.sourcegraph.com/.api/graphql?ResolveRepoIDName
       response:
         bodySize: 127
         content:

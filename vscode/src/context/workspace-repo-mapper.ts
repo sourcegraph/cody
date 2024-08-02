@@ -1,9 +1,8 @@
-import { graphqlClient, isError, logDebug } from '@sourcegraph/cody-shared'
+import { type RepoInfo, graphqlClient, isError, logDebug } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { vscodeGitAPI } from '../repository/git-extension-api'
 import { repoNameResolver } from '../repository/repo-name-resolver'
 import type { CodebaseRepoIdMapper } from './enterprise-context-factory'
-import { RemoteSearch } from './remote-search'
 import type { Repo } from './repo-fetcher'
 
 // TODO(dpc): The vscode.git extension has an delay before we can fetch a
@@ -144,25 +143,15 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
     // Given a set of workspace folders, looks up their git remotes and finds the related repo IDs,
     // if any.
     private async findRepos(folders: readonly vscode.WorkspaceFolder[]): Promise<Repo[]> {
-        const repoNames = await Promise.all(
-            folders.map(folder => {
-                return repoNameResolver.getRepoNamesFromWorkspaceUri(folder.uri)
-            })
+        const repoInfos = (
+            await Promise.all(
+                folders.map(folder => {
+                    return repoNameResolver.getRepoInfosFromWorkspaceUri(folder.uri)
+                })
+            )
+        ).flat()
+        return repoInfos.filter(
+            (info): info is Extract<RepoInfo, { type: 'sourcegraph' }> => info.type === 'sourcegraph'
         )
-
-        const uniqueRepoNames = new Set(repoNames.flat())
-        if (uniqueRepoNames.size === 0) {
-            // Otherwise we fetch the first 10 repos from the Sourcegraph instance
-            return []
-        }
-        const repos = await graphqlClient.getRepoIds(
-            [...uniqueRepoNames.values()],
-            RemoteSearch.MAX_REPO_COUNT
-        )
-        if (isError(repos)) {
-            throw repos
-        }
-
-        return repos
     }
 }

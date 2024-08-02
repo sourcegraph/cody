@@ -34,11 +34,11 @@ describe('getRepoNamesFromWorkspaceUri', () => {
         })
 
         const getRepoNameGraphQLMock = vi
-            .spyOn(graphqlClient, 'getRepoName')
-            .mockResolvedValue('sourcegraph/cody')
+            .spyOn(graphqlClient, 'getRepoNameAndId')
+            .mockResolvedValue({ name: 'sourcegraph/cody', id: '1' })
 
-        expect(await repoNameResolver.getRepoNamesFromWorkspaceUri(fileUri)).toEqual([
-            'sourcegraph/cody',
+        expect(await repoNameResolver.getRepoInfosFromWorkspaceUri(fileUri)).toEqual([
+            { name: 'sourcegraph/cody', id: '1', type: 'sourcegraph' },
         ])
         expect(getRepoNameGraphQLMock).toBeCalledTimes(1)
     })
@@ -68,11 +68,11 @@ describe('getRepoNamesFromWorkspaceUri', () => {
         })
 
         const getRepoNameGraphQLMock = vi
-            .spyOn(graphqlClient, 'getRepoName')
-            .mockResolvedValue('sourcegraph/cody')
+            .spyOn(graphqlClient, 'getRepoNameAndId')
+            .mockRejectedValue(new Error('not found'))
 
-        expect(await repoNameResolver.getRepoNamesFromWorkspaceUri(fileUri)).toEqual([
-            'github.com/sourcegraph/cody',
+        expect(await repoNameResolver.getRepoInfosFromWorkspaceUri(fileUri)).toEqual([
+            { name: 'github.com/sourcegraph/cody', type: 'local' },
         ])
         expect(getRepoNameGraphQLMock).not.toBeCalled()
     })
