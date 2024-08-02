@@ -1,10 +1,11 @@
 import {
-    type FC,
     type PropsWithChildren,
     createContext,
+    forwardRef,
     useCallback,
     useContext,
     useEffect,
+    useImperativeHandle,
     useMemo,
     useRef,
     useState,
@@ -67,6 +68,10 @@ export const CodyWebChatContext = createContext<CodyWebChatContextData>({
     selectChat: () => Promise.resolve(),
 })
 
+export interface CodyWebChatContextClient {
+    createNewChat: () => Promise<void>
+}
+
 interface CodyWebChatProviderProps {
     serverEndpoint: string
     accessToken: string | null
@@ -75,13 +80,17 @@ interface CodyWebChatProviderProps {
     initialContext?: InitialContext
     customHeaders?: Record<string, string>
     onNewChatCreated?: (chatId: string) => void
+    onClientCreated?: (client: CodyWebChatContextClient) => void
 }
 
 /**
  * The root store/provider node for the Cody Web chat, creates and shares
  * agent client and maintains active web panel ID, chat history and vscodeAPI.
  */
-export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>> = props => {
+export const CodyWebChatProvider = forwardRef<
+    CodyWebChatContextClient,
+    PropsWithChildren<CodyWebChatProviderProps>
+>((props, ref) => {
     const {
         serverEndpoint,
         accessToken,
@@ -89,8 +98,9 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
         telemetryClientName,
         children,
         chatID: initialChatId,
-        onNewChatCreated,
         customHeaders,
+        onNewChatCreated,
+        onClientCreated,
     } = props
 
     // In order to avoid multiple client creation during dev runs
@@ -305,6 +315,18 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
         [client, vscodeAPI, setLastActiveChatID]
     )
 
+    useImperativeHandle(
+        ref,
+        () => ({
+            createNewChat: createChat,
+        }),
+        [createChat]
+    )
+
+    useEffect(() => {
+        onClientCreated?.({ createNewChat: createChat })
+    }, [onClientCreated, createChat])
+
     const contextInfo = useMemo(
         () => ({
             client,
@@ -333,7 +355,7 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
             <CodyWebChatContext.Provider value={contextInfo}>{children}</CodyWebChatContext.Provider>
         </AppWrapper>
     )
-}
+})
 
 export function useWebAgentClient(): CodyWebChatContextData {
     return useContext(CodyWebChatContext)
