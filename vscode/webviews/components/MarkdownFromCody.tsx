@@ -83,6 +83,7 @@ const URL_PROCESSORS: Record<CodyIDE, UrlTransform> = {
     [CodyIDE.Emacs]: defaultUrlProcessor,
     [CodyIDE.VSCode]: wrapLinksWithCodyOpenCommand,
     [CodyIDE.VisualStudio]: wrapLinksWithCodyOpenCommand,
+    [CodyIDE.Eclipse]: wrapLinksWithCodyOpenCommand,
 }
 
 export const MarkdownFromCody: FunctionComponent<{ className?: string; children: string }> = ({
