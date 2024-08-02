@@ -796,6 +796,9 @@ importers:
       mocha:
         specifier: ^10.2.0
         version: 10.2.0
+      mocha-multi-reporters:
+        specifier: ^1.5.1
+        version: 1.5.1(mocha@10.2.0)
       node-fetch:
         specifier: ^2.6.4
         version: 2.7.0
@@ -12616,6 +12619,19 @@ packages:
       pathe: 1.1.2
       pkg-types: 1.1.1
       ufo: 1.5.3
+    dev: true
+
+  /mocha-multi-reporters@1.5.1(mocha@10.2.0):
+    resolution: {integrity: sha512-Yb4QJOaGLIcmB0VY7Wif5AjvLMUFAdV57D2TWEva1Y0kU/3LjKpeRVmlMIfuO1SVbauve459kgtIizADqxMWPg==}
+    engines: {node: '>=6.0.0'}
+    peerDependencies:
+      mocha: '>=3.1.2'
+    dependencies:
+      debug: 4.3.5
+      lodash: 4.17.21
+      mocha: 10.2.0
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /mocha@10.2.0:
