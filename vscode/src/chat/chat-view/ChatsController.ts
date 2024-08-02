@@ -146,7 +146,11 @@ export class ChatsController implements vscode.Disposable {
 
             vscode.commands.registerCommand('cody.chat.newPanel', async () => {
                 localStorage.setLastUsedChatModality('sidebar')
+                const isVisible = this.panel.isVisible()
                 await this.panel.clearAndRestartSession()
+                if (!isVisible) {
+                    await vscode.commands.executeCommand('cody.chat.focus')
+                }
             }),
             vscode.commands.registerCommand('cody.chat.newEditorPanel', () => {
                 localStorage.setLastUsedChatModality('editor')
