@@ -1,5 +1,6 @@
-## 0.3.4
+## 0.3.5
 - Adds support for URL mentions
+- Adds support for ref-like API in CodyWebChatProvider level
 
 ## 0.3.4 
 - Adds support for remote file ranges  

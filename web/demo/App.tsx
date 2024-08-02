@@ -1,10 +1,18 @@
 import type { FC } from 'react'
 
-import { CodyWebChat, CodyWebChatProvider, CodyWebHistory, type Repository, getChatTitle } from '../lib'
+import {
+    CodyWebChat,
+    type CodyWebChatContextRef,
+    CodyWebChatProvider,
+    CodyWebHistory,
+    type Repository,
+    getChatTitle,
+} from '../lib'
 
 // Include highlights styles for demo purpose, clients like
 // Sourcegraph import highlights styles themselves
 import '../../vscode/webviews/utils/highlight.css'
+import { useRef } from 'react'
 import styles from './App.module.css'
 
 const DOTCOM_SERVER_ENDPOINT = 'https://sourcegraph.com'
@@ -46,8 +54,11 @@ if (!accessToken) {
 }
 
 export const App: FC = () => {
+    const rootRef = useRef<CodyWebChatContextRef>(null)
+
     return (
         <CodyWebChatProvider
+            ref={rootRef}
             accessToken={accessToken}
             serverEndpoint={serverEndpoint}
             telemetryClientName="codydemo.testing"
@@ -87,7 +98,7 @@ export const App: FC = () => {
                                         <button
                                             type="button"
                                             className={styles.createChat}
-                                            onClick={() => input.createNewChat()}
+                                            onClick={() => rootRef.current?.createNewChat()}
                                         >
                                             Create new chat +
                                         </button>
