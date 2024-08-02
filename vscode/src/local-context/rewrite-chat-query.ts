@@ -2,7 +2,7 @@ import { XMLParser } from 'fast-xml-parser'
 
 import {
     type ChatClient,
-    type ContextItemWithContent,
+    type ContextItem,
     ModelsService,
     PromptString,
     getSimplePreamble,
@@ -22,7 +22,7 @@ export async function rewriteChatQuery({
     chatModel,
 }: {
     query: PromptString
-    contextItems: ContextItemWithContent[]
+    contextItems: ContextItem[]
     chatClient: ChatClient
     chatModel: ChatModel
 }): Promise<PromptString> {

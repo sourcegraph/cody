@@ -31,7 +31,7 @@ describe('DefaultPrompter', () => {
         const chat = new ChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
-        const { prompt, context } = await new DefaultPrompter([]).makePrompt(chat, 0)
+        const { prompt, context } = await new DefaultPrompter([], []).makePrompt(chat, 0)
 
         expect(prompt).toEqual<Message[]>([
             {
@@ -70,7 +70,7 @@ describe('DefaultPrompter', () => {
         const chat = new ChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
-        const { prompt, context } = await new DefaultPrompter([]).makePrompt(chat, 0)
+        const { prompt, context } = await new DefaultPrompter([], []).makePrompt(chat, 0)
 
         expect(prompt).toEqual<Message[]>([
             {
@@ -107,18 +107,17 @@ describe('DefaultPrompter', () => {
                 {
                     uri: vscode.Uri.file('user1.go'),
                     type: 'file',
-                    content: 'import vscode',
+                    content: 'package vscode',
                     source: ContextItemSource.User,
                 },
             ],
-            () =>
-                Promise.resolve([
-                    {
-                        uri: vscode.Uri.file('enhanced1.ts'),
-                        type: 'file',
-                        content: 'import vscode',
-                    },
-                ])
+            [
+                {
+                    uri: vscode.Uri.file('enhanced1.ts'),
+                    type: 'file',
+                    content: 'import vscode',
+                },
+            ]
         ).makePrompt(chat, 0)
 
         chat.setLastMessageContext(info.context.used)
@@ -141,18 +140,17 @@ describe('DefaultPrompter', () => {
                 {
                     uri: vscode.Uri.file('user2.go'),
                     type: 'file',
-                    content: 'import vscode',
+                    content: 'package vscode',
                     source: ContextItemSource.User,
                 },
             ],
-            () =>
-                Promise.resolve([
-                    {
-                        uri: vscode.Uri.file('enhanced2.ts'),
-                        type: 'file',
-                        content: 'import vscode',
-                    },
-                ])
+            [
+                {
+                    uri: vscode.Uri.file('enhanced2.ts'),
+                    type: 'file',
+                    content: 'import vscode',
+                },
+            ]
         ).makePrompt(chat, 0)
 
         checkPrompt(info.prompt, [
@@ -173,13 +171,17 @@ describe('DefaultPrompter', () => {
     })
 
     function checkPrompt(prompt: Message[], expectedPrefixes: string[]): void {
-        expect(prompt.length).toBe(expectedPrefixes.length)
         for (let i = 0; i < expectedPrefixes.length; i++) {
             const actual = prompt[i].text?.toString()
             const expected = expectedPrefixes[i]
             if (!actual?.includes(expected)) {
-                expect.fail(`Message mismatch: expected ${actual} to include ${expectedPrefixes[i]}`)
+                expect.fail(
+                    `Message mismatch: expected ${JSON.stringify(actual)} to include ${JSON.stringify(
+                        expectedPrefixes[i]
+                    )}`
+                )
             }
         }
+        expect(prompt.length).toBe(expectedPrefixes.length)
     }
 })

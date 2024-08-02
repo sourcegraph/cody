@@ -285,7 +285,7 @@ export {
     type ContextMentionProviderMetadata,
 } from './mentions/api'
 export { TokenCounter } from './token/counter'
-export { ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
+export { CORPUS_CONTEXT_ALLOCATION as ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
 export { tokensToChars, charsToTokens } from './token/utils'
 export * from './prompt/prompt-string'
 export { getCompletionsModelConfig } from './llm-providers/utils'
