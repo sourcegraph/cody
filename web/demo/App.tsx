@@ -2,7 +2,7 @@ import type { FC } from 'react'
 
 import {
     CodyWebChat,
-    type CodyWebChatContextRef,
+    type CodyWebChatContextClient,
     CodyWebChatProvider,
     CodyWebHistory,
     type Repository,
@@ -54,7 +54,7 @@ if (!accessToken) {
 }
 
 export const App: FC = () => {
-    const rootRef = useRef<CodyWebChatContextRef>(null)
+    const rootRef = useRef<CodyWebChatContextClient>(null)
 
     return (
         <CodyWebChatProvider

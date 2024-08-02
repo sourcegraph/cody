@@ -68,7 +68,7 @@ export const CodyWebChatContext = createContext<CodyWebChatContextData>({
     selectChat: () => Promise.resolve(),
 })
 
-export interface CodyWebChatContextRef {
+export interface CodyWebChatContextClient {
     createNewChat: () => Promise<void>
 }
 
@@ -80,6 +80,7 @@ interface CodyWebChatProviderProps {
     initialContext?: InitialContext
     customHeaders?: Record<string, string>
     onNewChatCreated?: (chatId: string) => void
+    onClientCreated?: (client: CodyWebChatContextClient) => void
 }
 
 /**
@@ -87,7 +88,7 @@ interface CodyWebChatProviderProps {
  * agent client and maintains active web panel ID, chat history and vscodeAPI.
  */
 export const CodyWebChatProvider = forwardRef<
-    CodyWebChatContextRef,
+    CodyWebChatContextClient,
     PropsWithChildren<CodyWebChatProviderProps>
 >((props, ref) => {
     const {
@@ -97,8 +98,9 @@ export const CodyWebChatProvider = forwardRef<
         telemetryClientName,
         children,
         chatID: initialChatId,
-        onNewChatCreated,
         customHeaders,
+        onNewChatCreated,
+        onClientCreated,
     } = props
 
     // In order to avoid multiple client creation during dev runs
@@ -320,6 +322,10 @@ export const CodyWebChatProvider = forwardRef<
         }),
         [createChat]
     )
+
+    useEffect(() => {
+        onClientCreated?.({ createNewChat: createChat })
+    }, [onClientCreated, createChat])
 
     const contextInfo = useMemo(
         () => ({
