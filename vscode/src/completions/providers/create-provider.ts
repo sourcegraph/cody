@@ -32,6 +32,7 @@ import { createProviderConfig as createGeminiProviderConfig } from './google'
 import { createProviderConfig as createOpenAICompatibleProviderConfig } from './openaicompatible'
 import type { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
+import { localStorage } from '../../services/LocalStorageProvider'
 
 export async function createProviderConfigFromVSCodeConfig(
     client: CodeCompletionsClient,
@@ -48,12 +49,14 @@ export async function createProviderConfigFromVSCodeConfig(
             })
         }
         case 'fireworks': {
+            const { anonymousUserID } = await localStorage.anonymousUserID()
             return createFireworksProviderConfig({
                 client,
                 model: config.autocompleteAdvancedModel ?? model ?? null,
                 timeouts: config.autocompleteTimeouts,
                 authStatus,
                 config,
+                anonymousUserID
             })
         }
         case 'anthropic': {
@@ -135,12 +138,14 @@ export async function createProviderConfig(
             })
 
         case 'fireworks':
+            const { anonymousUserID } = await localStorage.anonymousUserID()
             return createFireworksProviderConfig({
                 client,
                 timeouts: config.autocompleteTimeouts,
                 model: modelId ?? null,
                 authStatus,
                 config,
+                anonymousUserID,
             })
         case 'experimental-openaicompatible':
             // TODO(slimsag): self-hosted-models: deprecate and remove this once customers are upgraded
