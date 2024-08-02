@@ -38,6 +38,9 @@ export const HumanMessageEditor: FunctionComponent<{
     /** Whether this editor is for a message that has been sent already. */
     isSent: boolean
 
+    /** Wether this editor has an in-progress assistant reposponse */
+    isPendingResponse: boolean
+
     /** Whether this editor is for a followup message to a still-in-progress assistant response. */
     isPendingPriorResponse: boolean
 
@@ -62,6 +65,7 @@ export const HumanMessageEditor: FunctionComponent<{
     placeholder,
     isFirstMessage,
     isSent,
+    isPendingResponse,
     isPendingPriorResponse,
     disabled = false,
     onChange,
@@ -93,11 +97,12 @@ export const HumanMessageEditor: FunctionComponent<{
         [onChange]
     )
 
-    const submitState: SubmitButtonState = isPendingPriorResponse
-        ? 'waitingResponseComplete'
-        : isEmptyEditorValue
-          ? 'emptyEditorValue'
-          : 'submittable'
+    const submitState: SubmitButtonState =
+        isPendingPriorResponse || isPendingResponse
+            ? 'waitingResponseComplete'
+            : isEmptyEditorValue
+              ? 'emptyEditorValue'
+              : 'submittable'
 
     const onSubmitClick = useCallback(() => {
         if (submitState === 'emptyEditorValue') {
@@ -278,7 +283,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 'tw-transition',
                 className
             )}
-            data-keep-toolbar-open={isLastInteraction || undefined}
+            data-keep-toolbar-open={isPendingPriorResponse || isPendingResponse}
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
             onFocus={onFocus}

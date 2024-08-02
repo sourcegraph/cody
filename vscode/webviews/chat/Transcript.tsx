@@ -77,6 +77,9 @@ export const Transcript: FC<TranscriptProps> = props => {
                     isLastSentInteraction={
                         i === interactions.length - 2 && interaction.assistantMessage !== null
                     }
+                    assistantMessageIsLoading={Boolean(
+                        messageInProgress && interactions.at(i)?.assistantMessage?.isLoading
+                    )}
                     priorAssistantMessageIsLoading={Boolean(
                         messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
                     )}
@@ -146,6 +149,7 @@ interface TranscriptInteractionProps extends Omit<TranscriptProps, 'transcript' 
     isFirstInteraction: boolean
     isLastInteraction: boolean
     isLastSentInteraction: boolean
+    assistantMessageIsLoading: boolean
     priorAssistantMessageIsLoading: boolean
 }
 
@@ -155,6 +159,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         isFirstInteraction,
         isLastInteraction,
         isLastSentInteraction,
+        assistantMessageIsLoading,
         priorAssistantMessageIsLoading,
         isTranscriptError,
         userInfo,
@@ -206,6 +211,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 message={humanMessage}
                 isFirstMessage={humanMessage.index === 0}
                 isSent={!humanMessage.isUnsentFollowup}
+                isPendingResponse={assistantMessageIsLoading}
                 isPendingPriorResponse={priorAssistantMessageIsLoading}
                 onSubmit={humanMessage.isUnsentFollowup ? onFollowupSubmit : onEditSubmit}
                 onStop={onStop}

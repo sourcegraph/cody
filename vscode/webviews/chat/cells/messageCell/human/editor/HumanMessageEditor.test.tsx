@@ -161,6 +161,7 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
         initialEditorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
         placeholder: 'my-placeholder',
         isFirstMessage: true,
+        isPendingResponse: false,
         isPendingPriorResponse: false,
         isSent: false,
         onChange,
