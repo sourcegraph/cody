@@ -9,6 +9,10 @@ export function run(testsRoot: string): Promise<void> {
         color: true,
         timeout: 15000,
         grep: process.env.TEST_PATTERN ? new RegExp(process.env.TEST_PATTERN, 'i') : undefined,
+        reporter: "mocha-multi-reporters",
+        reporterOptions: {
+            "reporterEnabled": "spec, buildkite-test-collector/mocha/reporter",
+        }
     })
 
     return new Promise((resolve, reject) => {
