@@ -459,6 +459,15 @@ query GetRemoteFileQuery($repositoryName: String!, $filePath: String!, $startLin
 }
 `
 
+export const GET_URL_CONTENT_QUERY = `
+query GetURLContentQuery($url: String!) {
+    urlMentionContext(url: $url) {
+        title
+        content
+    }
+}
+`
+
 export const VIEWER_SETTINGS_QUERY = `
 query ViewerSettings {
   viewerSettings {
