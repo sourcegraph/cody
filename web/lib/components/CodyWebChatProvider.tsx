@@ -157,16 +157,6 @@ export const CodyWebChatProvider = forwardRef<
                     await selectChat(lastActiveChat, client)
                 }
 
-                if (initialContext?.repositories.length) {
-                    await client.rpc.sendRequest('webview/receiveMessage', {
-                        id: activeWebviewPanelIDRef.current,
-                        message: {
-                            command: 'context/choose-remote-search-repo',
-                            explicitRepos: initialContext?.repositories ?? [],
-                        },
-                    })
-                }
-
                 setClient(client)
             } catch (error) {
                 console.error(error)
@@ -178,7 +168,6 @@ export const CodyWebChatProvider = forwardRef<
         accessToken,
         serverEndpoint,
         lastActiveChatID,
-        initialContext,
         customHeaders,
         telemetryClientName,
     ])
@@ -202,17 +191,6 @@ export const CodyWebChatProvider = forwardRef<
         const vscodeAPI: VSCodeWrapper = {
             postMessage: message => {
                 if (client && !isErrorLike(client)) {
-                    const contextRepositoriesCount = initialContext?.repositories.length ?? 0
-
-                    // Include all enhanced context by default for Cody Web if the initial context
-                    // is presented (mostly used by context-based chat usage like blob UI in Sourcegraph)
-                    if (
-                        contextRepositoriesCount > 0 &&
-                        (message.command === 'submit' || message.command === 'edit')
-                    ) {
-                        message.addEnhancedContext = true
-                    }
-
                     void client.rpc.sendRequest('webview/receiveMessage', {
                         id: activeWebviewPanelIDRef.current,
                         message,
@@ -244,7 +222,7 @@ export const CodyWebChatProvider = forwardRef<
         // components will have access to the mocked/synthetic VSCode API
         setVSCodeWrapper(vscodeAPI)
         return vscodeAPI
-    }, [client, initialContext])
+    }, [client])
 
     const createChat = useCallback(
         async (agent = client) => {

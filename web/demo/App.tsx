@@ -40,7 +40,7 @@ const MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY: Repository[] =
 const MOCK_INITIAL_DOT_COM_CONTEXT =
     serverEndpoint === DOTCOM_SERVER_ENDPOINT
         ? {
-              fileURL: '/internal/uploadstore/config.go',
+              fileURL: 'internal/codeintel/ranking/internal/background/mapper/config.go',
               repositories: MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY,
           }
         : undefined
