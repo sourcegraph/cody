@@ -77,9 +77,9 @@ describe('DefaultPrompter', () => {
         checkPrompt(messages, [
             'preamble',
             'preamble response',
-            'Codebase context from file two',
+            'context two',
             'Ok.',
-            'Codebase context from file one',
+            'context one',
             'Ok.',
             'user message',
         ])
