@@ -161,10 +161,6 @@ describe('DefaultPrompter', () => {
                 ])
         ).makePrompt(chat, 0)
 
-        chat.setLastMessageContext(info.context.used)
-        chat.addBotMessage({ text: ps`Oh hello there.` })
-        chat.addHumanMessage({ text: ps`Hello again!` })
-
         checkPrompt(info.prompt, [
             'You are Cody, an AI coding assistant from Sourcegraph.',
             'I am Cody, an AI coding assistant from Sourcegraph.',
@@ -174,6 +170,10 @@ describe('DefaultPrompter', () => {
             'Ok.',
             'Hello, world!',
         ])
+
+        chat.setLastMessageContext(info.context.used)
+        chat.addBotMessage({ text: ps`Oh hello there.` })
+        chat.addHumanMessage({ text: ps`Hello again!` })
 
         // Second chat should give highest priority to new context (both explicit and enhanced)
         info = await new DefaultPrompter(
