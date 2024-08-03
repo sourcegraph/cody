@@ -1,19 +1,20 @@
-import type { Item, Mention } from '@openctx/client'
+import type { Item } from '@openctx/client'
 import {
+    type InternalOpenCtxProvider,
+    type MentionWithContextItemData,
     REMOTE_FILE_PROVIDER_URI,
-    contextFiltersProvider,
     displayPathBasename,
     graphqlClient,
     isDefined,
     isError,
+    posixFilePaths,
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
-
-import type { OpenCtxProvider } from './types'
+import { createRemoteRepositoryMention } from './remoteRepositorySearch'
 
 const RemoteFileProvider = createRemoteFileProvider()
 
-export function createRemoteFileProvider(customTitle?: string): OpenCtxProvider {
+export function createRemoteFileProvider(customTitle?: string): InternalOpenCtxProvider {
     return {
         providerUri: REMOTE_FILE_PROVIDER_URI,
 
@@ -48,30 +49,20 @@ export function createRemoteFileProvider(customTitle?: string): OpenCtxProvider 
     }
 }
 
-async function getRepoMentions(query?: string): Promise<Mention[]> {
+async function getRepoMentions(query?: string): Promise<MentionWithContextItemData[]> {
     const dataOrError = await graphqlClient.searchRepos(10, undefined, query)
-
     if (isError(dataOrError) || dataOrError === null) {
         return []
     }
-
-    const repositories = dataOrError.repositories.nodes
-
-    return repositories.map(
-        repo =>
-            ({
-                uri: repo.url,
-                title: repo.name,
-                description: ' ',
-                data: {
-                    repoName: repo.name,
-                    isIgnored: contextFiltersProvider.isRepoNameIgnored(repo.name),
-                },
-            }) satisfies Mention
+    return dataOrError.repositories.nodes.map(repo =>
+        createRemoteRepositoryMention(repo, RemoteFileProvider.providerUri)
     )
 }
 
-async function getFileMentions(repoName: string, filePath?: string): Promise<Mention[]> {
+async function getFileMentions(
+    repoName: string,
+    filePath?: string
+): Promise<MentionWithContextItemData[]> {
     const repoRe = `^${escapeRegExp(repoName)}$`
     const fileRe = filePath ? escapeRegExp(filePath) : '^.*$'
     const query = `repo:${repoRe} file:${fileRe} type:file count:10`
@@ -97,11 +88,18 @@ async function getFileMentions(repoName: string, filePath?: string): Promise<Men
                 title: basename,
                 description: result.file.path,
                 data: {
-                    repoName: result.repository.name,
-                    rev: result.file.commit.oid,
-                    filePath: result.file.path,
+                    contextItem: {
+                        type: 'file',
+                        remoteRepositoryName: result.repository.name,
+                        remoteFilePath: result.file.path,
+                        description: posixFilePaths.dirname(result.file.path),
+                        repoName: result.repository.name,
+                        revision: result.file.commit.oid,
+                        uri: url,
+                        provider: 'openctx',
+                    },
                 },
-            } satisfies Mention
+            } satisfies MentionWithContextItemData
         })
         .filter(isDefined)
 }

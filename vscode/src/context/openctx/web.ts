@@ -1,11 +1,15 @@
 import type { ItemsParams, ItemsResult } from '@openctx/client'
-import { WEB_PROVIDER_URI, graphqlClient, isErrorLike } from '@sourcegraph/cody-shared'
-import type { OpenCtxProvider } from './types'
+import {
+    type InternalOpenCtxProvider,
+    WEB_PROVIDER_URI,
+    graphqlClient,
+    isErrorLike,
+} from '@sourcegraph/cody-shared'
 
 /**
  * An OpenCtx provider that fetches the content of a URL and provides it as an item.
  */
-export function createWebProvider(useProxy: boolean): OpenCtxProvider {
+export function createWebProvider(useProxy: boolean): InternalOpenCtxProvider {
     return {
         providerUri: WEB_PROVIDER_URI,
 
