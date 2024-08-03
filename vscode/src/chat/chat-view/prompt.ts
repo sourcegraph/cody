@@ -66,7 +66,7 @@ export class DefaultPrompter {
             // Add existing chat transcript messages
             const reverseTranscript = [...chat.getDehydratedMessages()].reverse()
             const historyItems = reverseTranscript
-                .flatMap(m => m?.contextFiles?.toReversed())
+                .flatMap(m => (m.contextFiles ? m.contextFiles.toReversed() : []))
                 .filter(isDefined)
 
             // Apply the context preamble via the prompt mixin to the last open-ended human message that is not a command.
