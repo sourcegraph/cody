@@ -10,6 +10,7 @@ import {
     isDefined,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { logDebug } from '../../log'
 import { PromptBuilder } from '../../prompt-builder'
 import type { ChatModel } from './ChatModel'
@@ -25,12 +26,17 @@ interface PromptInfo {
         used: ContextItem[]
         ignored: ContextItem[]
     }
+
+    /**
+     * All context lists
+     */
+    contextAlternatives: RankedContext[]
 }
 
 export class DefaultPrompter {
     constructor(
         private explicitContext: ContextItemWithContent[],
-        private getEnhancedContext?: (query: PromptString) => Promise<ContextItem[]>,
+        private getEnhancedContext?: (query: PromptString) => Promise<RankedContext[]>,
         /**
          * Whether the current message is from a default command.
          * We will apply context assist prompt for non-command chat messages.
@@ -97,17 +103,22 @@ export class DefaultPrompter {
             context.ignored.push(...newUserContext.ignored.map(c => ({ ...c, isTooLarge: true })))
 
             // Get new enhanced context from current editor or broader search when enabled
+            const contextAlternatives: RankedContext[] = []
             if (this.getEnhancedContext) {
                 const lastMessage = reverseTranscript[0]
                 if (!lastMessage?.text || lastMessage.speaker !== 'human') {
                     throw new Error('Last message in prompt needs speaker "human", but was "assistant"')
                 }
 
-                const newEnhancedContextItems = await this.getEnhancedContext(lastMessage.text)
+                const contextStrategies = await this.getEnhancedContext(lastMessage.text)
+                const newEnhancedContextItems = contextStrategies[0].items
                 const newEnhancedMessages = await promptBuilder.tryAddContext(
                     'enhanced',
                     newEnhancedContextItems
                 )
+
+                contextAlternatives.push(...contextStrategies)
+
                 // Because this enhanced context is added for the last human message,
                 // we will also add it to the context list for display.
                 context.used.push(...newEnhancedMessages.added)
@@ -130,6 +141,7 @@ export class DefaultPrompter {
             return {
                 prompt: promptBuilder.build(),
                 context,
+                contextAlternatives,
             }
         })
     }

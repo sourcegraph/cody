@@ -208,6 +208,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 <ContextCell
                     key={`${humanMessage.index}-context`}
                     contextItems={humanMessage.contextFiles}
+                    contextAlternatives={humanMessage.contextAlternatives}
                     model={assistantMessage?.model}
                     isForFirstMessage={humanMessage.index === 0}
                 />

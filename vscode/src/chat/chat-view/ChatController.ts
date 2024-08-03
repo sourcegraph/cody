@@ -53,6 +53,7 @@ import {
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
+import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import {
     isAbortError,
     isContextWindowLimitError,
@@ -783,7 +784,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         editorState: SerializedPromptEditorState | null,
         addEnhancedContext: boolean,
         span: Span
-    ): Promise<ContextItem[]> {
+    ): Promise<RankedContext[]> {
         if (!vscode.workspace.getConfiguration().get<boolean>('cody.internal.serverSideContext')) {
             // Fetch using legacy context retrieval
             const config = getConfiguration()
@@ -820,6 +821,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }),
                 getContextForChatMessage(text.toString()),
             ])
+
             // add a callback, but return the original context
             context.then(c =>
                 this.contextAPIClient?.rankContext(
@@ -829,16 +831,56 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
             )
 
-            return (await context).flat()
+            return [
+                {
+                    strategy: 'legacy, symf',
+                    items: (await context).flat(),
+                },
+            ]
         }
 
         const roots = await codebaseRootsFromHumanInput({ text, mentions })
-        const context = this.contextFetcher.fetchContext({
+        const context = await this.contextFetcher.fetchContext({
             userQuery: text,
             roots,
         })
+        if (this.contextAPIClient) {
+            // Remove context chips (repo, @-mentions) from the input text for context retrieval.
+            const inputTextWithoutContextChips = editorState
+                ? PromptString.unsafe_fromUserQuery(
+                      inputTextWithoutContextChipsFromPromptEditorState(editorState)
+                  )
+                : text
+            const response = await this.contextAPIClient.rankContext(
+                requestID,
+                inputTextWithoutContextChips.toString(),
+                context
+            )
+            if (isError(response)) {
+                throw response
+            }
+            if (!response) {
+                throw new Error('empty response from context reranking API')
+            }
+            const { used, ignored } = response
+            const all: [ContextItem, number][] = []
+            const usedContext: ContextItem[] = []
+            const ignoredContext: ContextItem[] = []
+            for (const { index, score } of used) {
+                usedContext.push(context[index])
+                all.push([context[index], score])
+            }
+            for (const { index, score } of ignored) {
+                ignoredContext.push(context[index])
+                all.push([context[index], score])
+            }
+            return [
+                { strategy: 'local+remote, reranked', items: usedContext },
+                { strategy: 'local+remote', items: context },
+            ]
+        }
 
-        return await context
+        return [{ strategy: 'local+remote', items: context }]
     }
 
     private submitOrEditOperation: AbortController | undefined
@@ -1172,7 +1214,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         requestID: string,
         sendTelemetry?: (contextSummary: any, privateContextSummary?: any) => void
     ): Promise<Message[]> {
-        const { prompt, context } = await prompter.makePrompt(
+        const { prompt, context, contextAlternatives } = await prompter.makePrompt(
             this.chatModel,
             this.authProvider.getAuthStatus().codyApiVersion
         )
@@ -1180,7 +1222,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         // Update UI based on prompt construction
         // Includes the excluded context items to display in the UI
-        this.chatModel.setLastMessageContext([...context.used, ...context.ignored])
+        if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.showContextAlternatives')) {
+            this.chatModel.setLastMessageContext(
+                [...context.used, ...context.ignored],
+                contextAlternatives
+            )
+        } else {
+            this.chatModel.setLastMessageContext([...context.used, ...context.ignored])
+        }
+
         // this is not awaited, so we kick the call off but don't block on it returning
         this.contextAPIClient?.recordContext(requestID, context.used, context.ignored)
 

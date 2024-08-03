@@ -49,13 +49,16 @@ export class TokenCounter {
      * @param messages - The messages to calculate the token count for.
      * @returns `true` if the token usage can be allocated, `false` otherwise.
      */
-    public updateUsage(type: TokenUsageType, messages: Message[]): boolean {
+    public updateUsage(
+        type: TokenUsageType,
+        messages: Message[]
+    ): { succeeded: boolean; reason?: string } {
         const count = TokenCounter.getMessagesTokenCount(messages)
-        const isWithinLimit = this.canAllocateTokens(type, count)
+        const { isWithinLimit, reason } = this.canAllocateTokens(type, count)
         if (isWithinLimit) {
             this.usedTokens[type] = this.usedTokens[type] + count
         }
-        return isWithinLimit
+        return { succeeded: isWithinLimit, reason }
     }
 
     /**
@@ -95,27 +98,61 @@ export class TokenCounter {
      * @param count - The number of tokens to allocate.
      * @returns `true` if the tokens can be allocated, `false` otherwise.
      */
-    private canAllocateTokens(type: TokenUsageType, count: number): boolean {
+    private canAllocateTokens(
+        type: TokenUsageType,
+        count: number
+    ): { isWithinLimit: boolean; reason?: string } {
         switch (type) {
-            case 'preamble':
-                return this.remainingTokens.chat >= count
-            case 'input':
+            case 'preamble': {
+                const isWithinLimit = this.remainingTokens.chat >= count
+                return {
+                    isWithinLimit,
+                    reason: !isWithinLimit
+                        ? `preamble tokens exceeded remaining chat tokens (${count} > ${this.remainingTokens.chat})`
+                        : undefined,
+                }
+            }
+            case 'input': {
                 if (!this.usedTokens.preamble) {
                     throw new Error('Preamble must be updated before Chat input.')
                 }
-                return this.remainingTokens.chat >= count
-            case 'user':
+                const isWithinLimit = this.remainingTokens.chat >= count
+                return {
+                    isWithinLimit,
+                    reason: !isWithinLimit
+                        ? `input tokens exceeded remaining chat tokens (${count} > ${this.remainingTokens.chat})`
+                        : undefined,
+                }
+            }
+            case 'user': {
                 if (!this.usedTokens.input) {
                     throw new Error('Chat token usage must be updated before Context.')
                 }
-                return this.remainingTokens.user >= count
-            case 'enhanced':
+                const isWithinLimit = this.remainingTokens.user >= count
+                return {
+                    isWithinLimit,
+                    reason: !isWithinLimit
+                        ? `user context tokens exceeded remaining user context tokens (${count} > ${this.remainingTokens.user})`
+                        : undefined,
+                }
+            }
+            case 'enhanced': {
                 if (!this.usedTokens.input) {
                     throw new Error('Chat token usage must be updated before Context.')
                 }
-                return this.remainingTokens.enhanced >= count
+                const isWithinLimit = this.remainingTokens.enhanced >= count
+                return {
+                    isWithinLimit,
+                    reason: !isWithinLimit
+                        ? `enhanced context tokens exceeded remaining enhanced context tokens (${count} > ${this.remainingTokens.enhanced})`
+                        : undefined,
+                }
+            }
             default:
-                return false
+                return {
+                    isWithinLimit: false,
+                    reason: `unrecognized token usage type ${type}`,
+                }
         }
     }
 

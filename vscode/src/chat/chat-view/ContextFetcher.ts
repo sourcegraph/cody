@@ -72,6 +72,9 @@ export class ContextFetcher implements vscode.Disposable {
     }
 
     private async fetchLiveContext(query: RewrittenQuery, files: string[]): Promise<ContextItem[]> {
+        if (files.length === 0) {
+            return []
+        }
         if (!this.symf) {
             logDebug('ContextFetcher', 'symf not available, skipping live context')
             return []

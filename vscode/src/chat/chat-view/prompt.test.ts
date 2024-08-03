@@ -1,4 +1,5 @@
 import {
+    type ContextItem,
     ContextItemSource,
     type Message,
     Model,
@@ -9,6 +10,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
+import { PromptBuilder } from '../../prompt-builder'
 import { ChatModel } from './ChatModel'
 import { DefaultPrompter } from './prompt'
 
@@ -49,6 +51,39 @@ describe('DefaultPrompter', () => {
         ])
         expect(context.used).toEqual([])
         expect(context.ignored).toEqual([])
+    })
+
+    it('prompt context items are ordered in reverse order of relevance', async () => {
+        const p = new PromptBuilder({ input: 10_000, output: 10_000 })
+        const contextItems: ContextItem[] = [
+            {
+                type: 'file',
+                uri: vscode.Uri.parse('file:///1'),
+                content: 'context 1',
+            },
+            {
+                type: 'file',
+                uri: vscode.Uri.parse('file:///2'),
+                content: 'context 2',
+            },
+        ]
+        p.tryAddToPrefix([
+            { speaker: 'human', text: ps`preamble` },
+            { speaker: 'assistant', text: ps`preamble response` },
+        ])
+        p.tryAddMessages([{ speaker: 'human', text: ps`user message` }])
+        await p.tryAddContext('enhanced', contextItems)
+        const messages = p.build()
+        checkPrompt(messages, [
+            'preamble',
+            'preamble response',
+            'Codebase context from file 2',
+            'Ok.',
+            'Codebase context from file 1',
+            'Ok.',
+            'user message',
+        ])
+        // expect(messages).toEqual([])
     })
 
     it('adds the cody.chat.preInstruction vscode setting if set', async () => {
@@ -114,9 +149,14 @@ describe('DefaultPrompter', () => {
             () =>
                 Promise.resolve([
                     {
-                        uri: vscode.Uri.file('enhanced1.ts'),
-                        type: 'file',
-                        content: 'import vscode',
+                        strategy: 'test',
+                        items: [
+                            {
+                                uri: vscode.Uri.file('enhanced1.ts'),
+                                type: 'file',
+                                content: 'import vscode',
+                            },
+                        ],
                     },
                 ])
         ).makePrompt(chat, 0)
@@ -148,9 +188,14 @@ describe('DefaultPrompter', () => {
             () =>
                 Promise.resolve([
                     {
-                        uri: vscode.Uri.file('enhanced2.ts'),
-                        type: 'file',
-                        content: 'import vscode',
+                        strategy: 'test',
+                        items: [
+                            {
+                                uri: vscode.Uri.file('enhanced2.ts'),
+                                type: 'file',
+                                content: 'import vscode',
+                            },
+                        ],
                     },
                 ])
         ).makePrompt(chat, 0)
