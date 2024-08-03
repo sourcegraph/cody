@@ -90,8 +90,6 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'cody.internal.unstable':
                         return false
-                    case 'cody.experimental.chatContextRanker':
-                        return false
                     case 'cody.experimental.supercompletions':
                         return false
                     case 'cody.experimental.noodle':
@@ -158,7 +156,6 @@ describe('getConfiguration', () => {
             autocompleteExperimentalPreloadDebounceInterval: 0,
             autocompleteExperimentalHotStreakAndSmartThrottle: false,
             testingModelConfig: undefined,
-            experimentalChatContextRanker: false,
             experimentalGuardrailsTimeoutSeconds: undefined,
         } satisfies Configuration)
     })

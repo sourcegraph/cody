@@ -58,7 +58,6 @@ export interface Configuration {
      * Experimental
      */
     experimentalTracing: boolean
-    experimentalChatContextRanker: boolean | undefined
     experimentalSupercompletions: boolean
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean

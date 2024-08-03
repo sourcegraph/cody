@@ -21,7 +21,6 @@ import type { startTokenReceiver } from '../../auth/token-receiver'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import { getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
-import type { ContextRankingController } from '../../local-context/context-ranking'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { type ChatLocation, localStorage } from '../../services/LocalStorageProvider'
 import type { ContextAPIClient } from '../context/contextAPIClient'
@@ -63,7 +62,6 @@ export class ChatsController implements vscode.Disposable {
 
         private readonly enterpriseContext: EnterpriseContextFactory,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
-        private readonly contextRanking: ContextRankingController | null,
         private readonly symf: SymfRunner | null,
 
         private readonly contextFetcher: ContextFetcher,
@@ -464,7 +462,6 @@ export class ChatsController implements vscode.Disposable {
             ...this.options,
             chatClient: this.chatClient,
             localEmbeddings: isConsumer ? this.localEmbeddings : null,
-            contextRanking: isConsumer ? this.contextRanking : null,
             symf: isConsumer ? this.symf : null,
             enterpriseContext: allowRemoteContext ? this.enterpriseContext : null,
             guardrails: this.guardrails,

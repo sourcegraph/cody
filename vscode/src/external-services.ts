@@ -17,8 +17,6 @@ import { ContextAPIClient } from './chat/context/contextAPIClient'
 import { createClient as createCodeCompletionsClient } from './completions/client'
 import type { ConfigWatcher } from './configwatcher'
 import type { PlatformContext } from './extension.common'
-import type { ContextRankerConfig } from './local-context/context-ranking'
-import type { ContextRankingController } from './local-context/context-ranking'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logger } from './log'
@@ -29,7 +27,6 @@ interface ExternalServices {
     completionsClient: SourcegraphCompletionsClient
     codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
-    contextRanking: ContextRankingController | undefined
     localEmbeddings: LocalEmbeddingsController | undefined
     symfRunner: SymfRunner | undefined
     contextAPIClient: ContextAPIClient | undefined
@@ -49,7 +46,6 @@ type ExternalServicesConfiguration = Pick<
     | 'experimentalTracing'
 > &
     LocalEmbeddingsConfig &
-    ContextRankerConfig &
     GuardrailsClientConfig
 
 export async function configureExternalServices(
@@ -62,7 +58,6 @@ export async function configureExternalServices(
         | 'createSentryService'
         | 'createOpenTelemetryService'
         | 'createSymfRunner'
-        | 'createContextRankingController'
     >,
     authProvider: AuthProvider
 ): Promise<ExternalServices> {
@@ -81,10 +76,6 @@ export async function configureExternalServices(
         )
     }
 
-    const contextRanking = initialConfig.experimentalChatContextRanker
-        ? platform.createContextRankingController?.(initialConfig)
-        : undefined
-
     const localEmbeddings = await platform.createLocalEmbeddingsController?.(initialConfig)
 
     const chatClient = new ChatClient(completionsClient, () => authProvider.getAuthStatus())
@@ -99,7 +90,6 @@ export async function configureExternalServices(
         codeCompletionsClient,
         guardrails,
         localEmbeddings,
-        contextRanking,
         symfRunner,
         contextAPIClient,
         onConfigurationChange: newConfig => {
@@ -109,7 +99,6 @@ export async function configureExternalServices(
             codeCompletionsClient.onConfigurationChange(newConfig)
             guardrails.onConfigurationChange(newConfig)
             void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
-            void contextRanking?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },
     }
 }

@@ -22,7 +22,6 @@ import {
 import { compact, flatten, isError, zip } from 'lodash'
 import type { RemoteSearch } from '../../context/remote-search'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
-import type { ContextRankingController } from '../../local-context/context-ranking'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
@@ -132,7 +131,6 @@ interface GetEnhancedContextOptions {
         symf: SymfRunner | null
         remoteSearch: RemoteSearch | null
     }
-    contextRanking: ContextRankingController | null
     addEnhancedContext: boolean
     // TODO(@philipp-spiess): Add abort controller to be able to cancel expensive retrievers
 }
@@ -141,20 +139,8 @@ export async function getEnhancedContext({
     editor,
     input,
     providers,
-    contextRanking,
     addEnhancedContext,
 }: GetEnhancedContextOptions): Promise<ContextItem[]> {
-    if (contextRanking) {
-        return getEnhancedContextFromRanker({
-            strategy,
-            editor,
-            input,
-            providers,
-            contextRanking,
-            addEnhancedContext,
-        })
-    }
-
     return wrapInActiveSpan('chat.enhancedContext', async () => {
         // use user attention context only if config is set to none
         if (strategy === 'none') {
@@ -197,78 +183,6 @@ export async function getEnhancedContext({
 
         const priorityContext = await getPriorityContext(input.text, editor, searchContext)
         return priorityContext.concat(searchContext)
-    })
-}
-
-async function getEnhancedContextFromRanker({
-    editor,
-    input,
-    providers,
-    contextRanking,
-    addEnhancedContext,
-}: GetEnhancedContextOptions): Promise<ContextItem[]> {
-    return wrapInActiveSpan('chat.enhancedContextRanker', async span => {
-        // Get all possible context items to rank
-        let searchContext = getVisibleEditorContext(editor)
-
-        const numResults = 50
-        const embeddingsContextItemsPromise =
-            addEnhancedContext || shouldSearchInLocalWorkspace(input)
-                ? retrieveContextGracefully(
-                      searchEmbeddingsLocal(providers.localEmbeddings, input.text, numResults),
-                      'local-embeddings'
-                  )
-                : []
-
-        const modelSpecificEmbeddingsContextItemsPromise = contextRanking
-            ? retrieveContextGracefully(
-                  contextRanking.searchModelSpecificEmbeddings(input.text, numResults),
-                  'model-specific-embeddings'
-              )
-            : []
-
-        const precomputeQueryEmbeddingPromise = contextRanking?.precomputeContextRankingFeatures(
-            input.text
-        )
-
-        const localSearchContextItemsPromise =
-            providers.symf && (addEnhancedContext || shouldSearchInLocalWorkspace(input))
-                ? retrieveContextGracefully(searchSymf(providers.symf, editor, input.text), 'symf')
-                : []
-
-        const remoteSearchContextItemsPromise = providers.remoteSearch
-            ? retrieveContextGracefully(
-                  searchRemote(providers.remoteSearch, input, addEnhancedContext),
-                  'remote-search'
-              )
-            : []
-
-        const keywordContextItemsPromise = (async () => [
-            ...(await localSearchContextItemsPromise),
-            ...(await remoteSearchContextItemsPromise),
-        ])()
-
-        const [embeddingsContextItems, keywordContextItems, modelEmbeddingContextItems] =
-            await Promise.all([
-                embeddingsContextItemsPromise,
-                keywordContextItemsPromise,
-                modelSpecificEmbeddingsContextItemsPromise,
-                precomputeQueryEmbeddingPromise,
-            ])
-
-        searchContext = searchContext
-            .concat(keywordContextItems)
-            .concat(embeddingsContextItems)
-            .concat(modelEmbeddingContextItems)
-        const editorContext = await getPriorityContext(input.text, editor, searchContext)
-        const allContext = editorContext.concat(searchContext)
-        if (!contextRanking) {
-            return allContext
-        }
-        const rankedContext = wrapInActiveSpan('chat.enhancedContextRanker.reranking', () =>
-            contextRanking.rankContextItems(input.text, allContext)
-        )
-        return rankedContext
     })
 }
 
