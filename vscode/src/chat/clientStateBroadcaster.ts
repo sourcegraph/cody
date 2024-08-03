@@ -2,7 +2,9 @@ import {
     type ContextItem,
     ContextItemSource,
     type ContextItemTree,
+    REMOTE_REPOSITORY_PROVIDER_URI,
     contextFiltersProvider,
+    deserializeContextItem,
     displayLineRange,
     displayPathBasename,
     expandToLineRange,
@@ -12,7 +14,6 @@ import { getSelectionOrFileContext } from '../commands/context/selection'
 import { createRemoteRepositoryMention } from '../context/openctx/remoteRepositorySearch'
 import type { RemoteSearch } from '../context/remote-search'
 import type { ChatModel } from './chat-view/ChatModel'
-import { contextItemMentionFromOpenCtxItem } from './context/chatContext'
 import type { ExtensionMessage } from './protocol'
 
 type PostMessage = (message: Extract<ExtensionMessage, { type: 'clientState' }>) => void
@@ -119,14 +120,16 @@ export function getCorpusContextItemsForEditorState({
             if (contextFiltersProvider.isRepoNameIgnored(repo.name)) {
                 continue
             }
+            const mention = createRemoteRepositoryMention(
+                {
+                    id: repo.id,
+                    name: repo.name,
+                    url: repo.name,
+                },
+                REMOTE_REPOSITORY_PROVIDER_URI
+            )
             items.push({
-                ...contextItemMentionFromOpenCtxItem(
-                    createRemoteRepositoryMention({
-                        id: repo.id,
-                        name: repo.name,
-                        url: repo.name,
-                    })
-                ),
+                ...deserializeContextItem(mention.data.contextItem),
                 title: 'Current Repository',
                 description: repo.name,
                 source: ContextItemSource.Initial,

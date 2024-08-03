@@ -126,6 +126,33 @@ export type ContextItem =
     | ContextItemOpenCtx
 
 /**
+ * All types of {@link ContextItem}. If you add a new ContextItem type, add it here. If you remove a
+ * ContextItem type, remove it from here. This is type-checked by the {@link _checkContextItemTypes}
+ * type-assertion below.
+ */
+export const CONTEXT_ITEM_TYPES = [
+    'symbol',
+    'file',
+    'repository',
+    'tree',
+    'openctx',
+] as const satisfies ContextItem['type'][]
+
+/**
+ * For type-checking only, to ensure that {@link CONTEXT_ITEM_TYPES} contains the exact set of
+ * allowed {@link ContextItem['type']} values.
+ */
+// @ts-ignore
+const _checkContextItemTypes: (typeof CONTEXT_ITEM_TYPES)[number] = {} as any as ContextItem['type']
+
+/**
+ * Whether {@link type} is a valid {@link ContextItem['type']}.
+ */
+export function isContextItemType(type: string): type is ContextItem['type'] {
+    return (CONTEXT_ITEM_TYPES as string[]).includes(type)
+}
+
+/**
  * A context item that represents a repository.
  */
 export interface ContextItemRepository extends ContextItemCommon {
@@ -133,6 +160,8 @@ export interface ContextItemRepository extends ContextItemCommon {
     repoName: string
     repoID: string
     content: null
+
+    openctxProviderUri?: string
 }
 
 /**
@@ -175,6 +204,11 @@ export interface ContextItemFile extends ContextItemCommon {
      * that we need to resolve this context item mention via remote search file
      */
     remoteRepositoryName?: string
+
+    /**
+     * File path in the remote repository.
+     */
+    remoteFilePath?: string
 }
 
 /**
@@ -194,6 +228,11 @@ export interface ContextItemSymbol extends ContextItemCommon {
      * that we need to resolve this context item mention via remote search file
      */
     remoteRepositoryName?: string
+
+    /**
+     * File path in the remote repository.
+     */
+    remoteFilePath?: string
 }
 
 /** The valid kinds of a symbol. */
