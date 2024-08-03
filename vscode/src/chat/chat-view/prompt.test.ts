@@ -58,13 +58,13 @@ describe('DefaultPrompter', () => {
         const contextItems: ContextItem[] = [
             {
                 type: 'file',
-                uri: vscode.Uri.parse('file:///1'),
-                content: 'context 1',
+                uri: vscode.Uri.parse('file:///one'),
+                content: 'context one',
             },
             {
                 type: 'file',
-                uri: vscode.Uri.parse('file:///2'),
-                content: 'context 2',
+                uri: vscode.Uri.parse('file:///two'),
+                content: 'context two',
             },
         ]
         p.tryAddToPrefix([
@@ -77,9 +77,9 @@ describe('DefaultPrompter', () => {
         checkPrompt(messages, [
             'preamble',
             'preamble response',
-            'Codebase context from file 2',
+            'Codebase context from file two',
             'Ok.',
-            'Codebase context from file 1',
+            'Codebase context from file one',
             'Ok.',
             'user message',
         ])
