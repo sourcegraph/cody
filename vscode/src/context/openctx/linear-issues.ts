@@ -1,7 +1,7 @@
 import linearIssues from '@openctx/provider-linear-issues'
-import type { OpenCtxProvider } from './types'
+import type { InternalOpenCtxProvider } from '@sourcegraph/cody-shared'
 
-const LinearIssuesProvider: OpenCtxProvider = {
+const LinearIssuesProvider: InternalOpenCtxProvider = {
     providerUri: 'internal-linear-issues',
     ...linearIssues,
 }

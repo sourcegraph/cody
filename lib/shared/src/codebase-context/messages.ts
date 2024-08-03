@@ -122,6 +122,8 @@ export interface ContextItemRepository extends ContextItemCommon {
     repoName: string
     repoID: string
     content: null
+
+    openctxProviderUri?: string
 }
 
 /**
@@ -164,6 +166,11 @@ export interface ContextItemFile extends ContextItemCommon {
      * that we need to resolve this context item mention via remote search file
      */
     remoteRepositoryName?: string
+
+    /**
+     * File path in the remote repository.
+     */
+    remoteFilePath?: string
 }
 
 /**
@@ -183,6 +190,11 @@ export interface ContextItemSymbol extends ContextItemCommon {
      * that we need to resolve this context item mention via remote search file
      */
     remoteRepositoryName?: string
+
+    /**
+     * File path in the remote repository.
+     */
+    remoteFilePath?: string
 }
 
 /** The valid kinds of a symbol. */
