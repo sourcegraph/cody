@@ -117,7 +117,8 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     public async getLiveResults(
         userQuery: PromptString,
         keywordQuery: string,
-        files: string[]
+        files: string[],
+        signal?: AbortSignal
     ): Promise<Result[]> {
         const symfPath = await this.mustSymfPath()
         const args = [
@@ -137,8 +138,12 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
                 maxBuffer: 1024 * 1024 * 1024,
                 timeout: 1000 * 30, // timeout in 30 seconds
             })
+            signal?.throwIfAborted() // TODO(sqs): abort exec call
             return parseSymfStdout(stdout)
         } catch (error) {
+            if (isAbortError(error)) {
+                throw error
+            }
             throw toSymfError(error)
         }
     }

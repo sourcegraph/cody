@@ -17,6 +17,7 @@ import {
     contextFiltersProvider,
     displayPath,
     graphqlClient,
+    isAbortError,
     isCodyIgnoredFile,
     isDefined,
     isErrorLike,
@@ -351,14 +352,18 @@ export async function filterContextItemFiles(
 export async function resolveContextItems(
     editor: Editor,
     items: ContextItem[],
-    input: PromptString
+    input: PromptString,
+    signal?: AbortSignal
 ): Promise<ContextItemWithContent[]> {
     return (
         await Promise.all(
             items.map(async (item: ContextItem): Promise<ContextItemWithContent[] | null> => {
                 try {
-                    return await resolveContextItem(item, editor, input)
+                    return await resolveContextItem(item, editor, input, signal)
                 } catch (error) {
+                    if (isAbortError(error)) {
+                        throw error
+                    }
                     void vscode.window.showErrorMessage(
                         `Cody could not include context from ${item.uri}. (Reason: ${error})`
                     )
@@ -374,12 +379,13 @@ export async function resolveContextItems(
 async function resolveContextItem(
     item: ContextItem,
     editor: Editor,
-    input: PromptString
+    input: PromptString,
+    signal?: AbortSignal
 ): Promise<ContextItemWithContent[]> {
     const resolvedItems: ContextItemWithContent[] = item.provider
-        ? await resolveContextMentionProviderContextItem(item, input)
+        ? await resolveContextMentionProviderContextItem(item, input, signal)
         : item.type === 'file' || item.type === 'symbol'
-          ? [await resolveFileOrSymbolContextItem(item, editor)]
+          ? [await resolveFileOrSymbolContextItem(item, editor, signal)]
           : []
     return resolvedItems.map(resolvedItem => ({
         ...resolvedItem,
@@ -389,7 +395,8 @@ async function resolveContextItem(
 
 async function resolveContextMentionProviderContextItem(
     { provider: providerUri, ...item }: ContextItem,
-    input: PromptString
+    input: PromptString,
+    signal?: AbortSignal
 ): Promise<ContextItemWithContent[]> {
     if (item.type !== 'openctx') {
         return []
@@ -414,6 +421,8 @@ async function resolveContextMentionProviderContextItem(
         { message: input.toString(), mention },
         { providerUri: item.providerUri }
     )
+    // TODO(sqs): add `signal` arg to openCtxClient.items
+    signal?.throwIfAborted()
 
     return items
         .map((item): (ContextItemWithContent & { providerUri: string }) | null =>
@@ -433,7 +442,8 @@ async function resolveContextMentionProviderContextItem(
 
 async function resolveFileOrSymbolContextItem(
     contextItem: ContextItemFile | ContextItemSymbol,
-    editor: Editor
+    editor: Editor,
+    signal?: AbortSignal
 ): Promise<ContextItemWithContent> {
     if (contextItem.remoteRepositoryName) {
         // Get only actual file path without repository name
@@ -443,7 +453,7 @@ async function resolveFileOrSymbolContextItem(
             ? { startLine: contextItem.range.start.line, endLine: contextItem.range.end.line + 1 }
             : undefined
 
-        const resultOrError = await graphqlClient.getFileContent(repository, path, ranges)
+        const resultOrError = await graphqlClient.getFileContent(repository, path, ranges, signal)
 
         if (!isErrorLike(resultOrError)) {
             return {
@@ -461,6 +471,7 @@ async function resolveFileOrSymbolContextItem(
     const content =
         contextItem.content ??
         (await editor.getTextEditorContentForFile(contextItem.uri, toVSCodeRange(contextItem.range)))
+    signal?.throwIfAborted()
 
     return {
         ...contextItem,

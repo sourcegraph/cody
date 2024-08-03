@@ -37,8 +37,8 @@ export class ContextFetcher implements vscode.Disposable {
         this.symf?.dispose()
     }
 
-    public async fetchContext(query: ContextQuery): Promise<ContextItem[]> {
-        const rewritten = await rewriteKeywordQuery(this.llms, query.userQuery)
+    public async fetchContext(query: ContextQuery, signal?: AbortSignal): Promise<ContextItem[]> {
+        const rewritten = await rewriteKeywordQuery(this.llms, query.userQuery, signal)
         const rewrittenQuery = {
             ...query,
             rewritten,
@@ -53,13 +53,13 @@ export class ContextFetcher implements vscode.Disposable {
             localRoots.push(root.local)
         }
         const changedFilesByRoot = await Promise.all(
-            localRoots.map(root => gitLocallyModifiedFiles(root))
+            localRoots.map(root => gitLocallyModifiedFiles(root, signal))
         )
         const changedFiles = changedFilesByRoot.flat()
 
         const [liveContext, indexedContext] = await Promise.all([
-            this.fetchLiveContext(rewrittenQuery, changedFiles),
-            this.fetchIndexedContext(rewrittenQuery),
+            this.fetchLiveContext(rewrittenQuery, changedFiles, signal),
+            this.fetchIndexedContext(rewrittenQuery, signal),
         ])
 
         const { keep: filteredIndexedContext } = filterLocallyModifiedFilesOutOfRemoteContext(
@@ -71,15 +71,20 @@ export class ContextFetcher implements vscode.Disposable {
         return [...liveContext, ...filteredIndexedContext]
     }
 
-    private async fetchLiveContext(query: RewrittenQuery, files: string[]): Promise<ContextItem[]> {
+    private async fetchLiveContext(
+        query: RewrittenQuery,
+        files: string[],
+        signal?: AbortSignal
+    ): Promise<ContextItem[]> {
         if (!this.symf) {
             logDebug('ContextFetcher', 'symf not available, skipping live context')
             return []
         }
-        const results = await this.symf.getLiveResults(query.userQuery, query.rewritten, files)
+        const results = await this.symf.getLiveResults(query.userQuery, query.rewritten, files, signal)
         return (
             await Promise.all(
                 results.map(async (r): Promise<ContextItem | ContextItem[]> => {
+                    signal?.throwIfAborted()
                     const range = new vscode.Range(
                         r.range.startPoint.row,
                         r.range.startPoint.col,
@@ -105,11 +110,14 @@ export class ContextFetcher implements vscode.Disposable {
         ).flat()
     }
 
-    private async fetchIndexedContext(query: RewrittenQuery): Promise<ContextItem[]> {
+    private async fetchIndexedContext(
+        query: RewrittenQuery,
+        signal?: AbortSignal
+    ): Promise<ContextItem[]> {
         const repoIDs = query.roots
             .flatMap(r => r.remoteRepo?.id)
             .filter((id): id is string => id !== undefined)
-        const result = await graphqlClient.contextSearch(repoIDs, query.rewritten)
+        const result = await graphqlClient.contextSearch(repoIDs, query.rewritten, signal)
         if (isError(result)) {
             throw result
         }

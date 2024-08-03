@@ -14,6 +14,7 @@ import {
     type Result,
     featureFlagProvider,
     graphqlClient,
+    isAbortError,
     isFileURI,
     truncateTextNearestLine,
     uriBasename,
@@ -53,7 +54,10 @@ export interface Root {
 /**
  * Returns the set of codebase roots extracted from the human input.
  */
-export async function codebaseRootsFromHumanInput(input: HumanInput): Promise<Root[]> {
+export async function codebaseRootsFromHumanInput(
+    input: HumanInput,
+    signal?: AbortSignal
+): Promise<Root[]> {
     const remoteRepos: Root[] = input.mentions
         .filter((item): item is ContextItemRepository => item.type === 'repository')
         .map(repo => ({
@@ -68,7 +72,7 @@ export async function codebaseRootsFromHumanInput(input: HumanInput): Promise<Ro
     )
     const groups = await Promise.all(
         localTrees.map(async tree => {
-            const repoURIs = await repoNameResolver.getRepoNamesFromWorkspaceUri(tree.uri)
+            const repoURIs = await repoNameResolver.getRepoNamesFromWorkspaceUri(tree.uri, signal)
             return repoURIs.map(repoURI => ({
                 repoURI,
                 local: tree.uri,
@@ -78,7 +82,8 @@ export async function codebaseRootsFromHumanInput(input: HumanInput): Promise<Ro
     const localRepoURIs = Array.from(new Set(groups.flat()))
     const localRepoIDs = await graphqlClient.getRepoIds(
         localRepoURIs.map(({ repoURI }) => repoURI),
-        localRepoURIs.length
+        localRepoURIs.length,
+        signal
     )
     if (isError(localRepoIDs)) {
         throw localRepoIDs
@@ -132,6 +137,7 @@ interface GetEnhancedContextOptions {
         remoteSearch: RemoteSearch | null
     }
     addEnhancedContext: boolean
+    signal?: AbortSignal
     // TODO(@philipp-spiess): Add abort controller to be able to cancel expensive retrievers
 }
 export async function getEnhancedContext({
@@ -140,6 +146,7 @@ export async function getEnhancedContext({
     input,
     providers,
     addEnhancedContext,
+    signal,
 }: GetEnhancedContextOptions): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.enhancedContext', async () => {
         // use user attention context only if config is set to none
@@ -160,7 +167,7 @@ export async function getEnhancedContext({
         const remoteSearchContextItemsPromise =
             providers.remoteSearch && strategy !== 'embeddings'
                 ? retrieveContextGracefully(
-                      searchRemote(providers.remoteSearch, input, addEnhancedContext),
+                      searchRemote(providers.remoteSearch, input, addEnhancedContext, signal),
                       'remote-search'
                   )
                 : []
@@ -219,7 +226,8 @@ export async function getContextStrategy(
 async function searchRemote(
     remoteSearch: RemoteSearch | null,
     input: HumanInput,
-    allReposForEnhancedContext: boolean
+    allReposForEnhancedContext: boolean,
+    signal?: AbortSignal
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.search.remote', async () => {
         if (!remoteSearch) {
@@ -228,7 +236,7 @@ async function searchRemote(
         const repoIDs = allReposForEnhancedContext
             ? remoteSearch.getRepoIdSet()
             : remoteRepositoryIDsFromHumanInput(input)
-        return (await remoteSearch.query(input.text, repoIDs)).map(result => {
+        return (await remoteSearch.query(input.text, repoIDs, signal)).map(result => {
             return {
                 type: 'file',
                 content: result.content,
@@ -498,6 +506,10 @@ async function retrieveContextGracefully<T>(promise: Promise<T[]>, strategy: str
         logDebug('ChatController', `getEnhancedContext > ${strategy} (start)`)
         return await promise
     } catch (error) {
+        if (isAbortError(error)) {
+            logError('ChatController', `getEnhancedContext > ${strategy}' (aborted)`)
+            throw error
+        }
         logError('ChatController', `getEnhancedContext > ${strategy}' (error)`, error)
         return []
     } finally {

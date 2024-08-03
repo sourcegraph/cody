@@ -47,7 +47,10 @@ export class RepoNameResolver {
      * If found, gets repo names from the repository.
      * if not found, walks the file system upwards until it finds a `.git` folder.
      */
-    public getRepoNamesFromWorkspaceUri = async (uri: vscode.Uri): Promise<string[]> => {
+    public getRepoNamesFromWorkspaceUri = async (
+        uri: vscode.Uri,
+        signal?: AbortSignal
+    ): Promise<string[]> => {
         if (!isFileURI(uri)) {
             return []
         }
@@ -57,7 +60,7 @@ export class RepoNameResolver {
         }
 
         try {
-            const remoteUrls = await this.getRepoRemoteUrlsFromWorkspaceUri(uri)
+            const remoteUrls = await this.getRepoRemoteUrlsFromWorkspaceUri(uri, signal)
 
             if (remoteUrls.length !== 0) {
                 const repoNames = await this.getRepoNamesFromRemoteUrls(remoteUrls)
@@ -72,7 +75,10 @@ export class RepoNameResolver {
         return []
     }
 
-    public getRepoRemoteUrlsFromWorkspaceUri = async (uri: vscode.Uri): Promise<string[]> => {
+    public getRepoRemoteUrlsFromWorkspaceUri = async (
+        uri: vscode.Uri,
+        signal?: AbortSignal
+    ): Promise<string[]> => {
         if (!isFileURI(uri)) {
             return []
         }
@@ -81,7 +87,7 @@ export class RepoNameResolver {
             let remoteUrls = gitRemoteUrlsFromGitExtension(uri)
 
             if (remoteUrls === undefined || remoteUrls.length === 0) {
-                remoteUrls = await gitRemoteUrlsFromParentDirs(uri)
+                remoteUrls = await gitRemoteUrlsFromParentDirs(uri, signal)
             }
 
             return remoteUrls || []
