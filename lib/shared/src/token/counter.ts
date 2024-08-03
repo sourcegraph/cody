@@ -1,9 +1,9 @@
 import { getEncoding } from 'js-tiktoken'
-import type { TokenUsage } from '.'
+import type { TokenBudget, TokenUsage } from '.'
 import type { ChatContextTokenUsage, TokenUsageType } from '.'
 import type { ModelContextWindow } from '..'
 import type { Message, PromptString } from '..'
-import { ENHANCED_CONTEXT_ALLOCATION } from './constants'
+import { CORPUS_CONTEXT_ALLOCATION } from './constants'
 
 /**
  * A class to manage the token allocation during prompt building.
@@ -16,13 +16,13 @@ export class TokenCounter {
     /**
      * The maximum number of tokens that can be used by each context type:
      * - User-Context: tokens reserved for User-added context, like @-mentions.
-     * - Enhanced-Context: % (defined by ENHANCED_CONTEXT_ALLOCATION) of the latest Chat budget.
+     * - Corpus-Context: % (defined by CORPUS_CONTEXT_ALLOCATION) of the latest Chat budget.
      */
     public readonly maxContextTokens: ChatContextTokenUsage
     /**
      * The number of tokens used by chat and context respectively.
      */
-    private usedTokens: TokenUsage = { preamble: 0, input: 0, user: 0, enhanced: 0 }
+    private usedTokens: TokenUsage = { preamble: 0, input: 0, user: 0, corpus: 0 }
     /**
      * Indicates whether the Chat and User-Context share the same token budget.
      * - If true, all types of messages share the same token budget with Chat.
@@ -38,7 +38,7 @@ export class TokenCounter {
         this.maxChatTokens = contextWindow.input
         this.maxContextTokens = {
             user: contextWindow.context?.user ?? contextWindow.input,
-            enhanced: Math.floor(contextWindow.input * ENHANCED_CONTEXT_ALLOCATION),
+            corpus: Math.floor(contextWindow.input * CORPUS_CONTEXT_ALLOCATION),
         }
     }
 
@@ -65,10 +65,10 @@ export class TokenCounter {
      *
      * @returns The remaining token budget for chat, User-Context, and Enhanced-Context (if applicable).
      */
-    private get remainingTokens() {
+    private get remainingTokens(): Pick<TokenBudget, 'chat'> & ChatContextTokenUsage {
         const usedChat = this.usedTokens.preamble + this.usedTokens.input
         const usedUser = this.usedTokens.user
-        const usedEnhanced = this.usedTokens.enhanced
+        const usedCorpus = this.usedTokens.corpus
 
         let chat = this.maxChatTokens - usedChat
         let user = this.maxContextTokens.user - usedUser
@@ -76,7 +76,7 @@ export class TokenCounter {
         // When the context shares the same token budget with Chat...
         if (this.shareChatAndUserBudget) {
             // ...subtracts the tokens used by context from Chat.
-            chat -= usedUser + usedEnhanced
+            chat -= usedUser + usedCorpus
             // ...the remaining token budget for User-Context is the same as Chat.
             user = chat
         }
@@ -84,7 +84,7 @@ export class TokenCounter {
         return {
             chat,
             user,
-            enhanced: Math.floor(chat * ENHANCED_CONTEXT_ALLOCATION),
+            corpus: Math.floor(chat * CORPUS_CONTEXT_ALLOCATION),
         }
     }
 
@@ -109,11 +109,11 @@ export class TokenCounter {
                     throw new Error('Chat token usage must be updated before Context.')
                 }
                 return this.remainingTokens.user >= count
-            case 'enhanced':
+            case 'corpus':
                 if (!this.usedTokens.input) {
                     throw new Error('Chat token usage must be updated before Context.')
                 }
-                return this.remainingTokens.enhanced >= count
+                return this.remainingTokens.corpus >= count
             default:
                 return false
         }

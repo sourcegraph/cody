@@ -34,54 +34,8 @@ export function startClientStateBroadcaster({
     async function rawSendClientState(signal: AbortSignal | null): Promise<void> {
         const items: ContextItem[] = []
 
-        // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
-        // remote search).
-        if (remoteSearch) {
-            // TODO(sqs): Track the last-used repositories. Right now it just uses the current
-            // repository.
-            //
-            // Make a repository item that is the same as what the @-repository OpenCtx provider
-            // would return.
-            const repos = remoteSearch.getRepos('all')
-            for (const repo of repos) {
-                if (contextFiltersProvider.isRepoNameIgnored(repo.name)) {
-                    continue
-                }
-
-                const item = {
-                    ...contextItemMentionFromOpenCtxItem(
-                        createRemoteRepositoryMention({
-                            id: repo.id,
-                            name: repo.name,
-                            url: repo.name,
-                        })
-                    ),
-                    title: 'Current Repository',
-                    description: repo.name,
-                    source: ContextItemSource.Initial,
-                    icon: 'folder',
-                }
-                items.push(item)
-            }
-        } else {
-            // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
-            const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
-            if (workspaceFolder) {
-                const item = {
-                    type: 'tree',
-                    uri: workspaceFolder.uri,
-                    title: 'Current Repository',
-                    name: workspaceFolder.name,
-                    description: workspaceFolder.name,
-                    isWorkspaceRoot: true,
-                    content: null,
-                    source: ContextItemSource.Initial,
-                    icon: 'folder',
-                } satisfies ContextItemTree
-
-                items.push(item)
-            }
-        }
+        const corpusItems = getCorpusContextItemsForEditorState({ remoteSearch })
+        items.push(...corpusItems)
 
         const { input, context } = chatModel.contextWindow
         const userContextSize = context?.user ?? input
@@ -144,6 +98,60 @@ export function startClientStateBroadcaster({
     void sendClientState('immediate')
 
     return vscode.Disposable.from(...disposables)
+}
+
+export function getCorpusContextItemsForEditorState({
+    remoteSearch,
+}: { remoteSearch: RemoteSearch | null }): ContextItem[] {
+    const items: ContextItem[] = []
+
+    // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
+    // remote search). There should be a single internal thing in Cody that lets you monitor the
+    // user's current codebase.
+    if (remoteSearch) {
+        // TODO(sqs): Track the last-used repositories. Right now it just uses the current
+        // repository.
+        //
+        // Make a repository item that is the same as what the @-repository OpenCtx provider
+        // would return.
+        const repos = remoteSearch.getRepos('all')
+        for (const repo of repos) {
+            if (contextFiltersProvider.isRepoNameIgnored(repo.name)) {
+                continue
+            }
+            items.push({
+                ...contextItemMentionFromOpenCtxItem(
+                    createRemoteRepositoryMention({
+                        id: repo.id,
+                        name: repo.name,
+                        url: repo.name,
+                    })
+                ),
+                title: 'Current Repository',
+                description: repo.name,
+                source: ContextItemSource.Initial,
+                icon: 'folder',
+            })
+        }
+    } else {
+        // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
+        const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
+        if (workspaceFolder) {
+            items.push({
+                type: 'tree',
+                uri: workspaceFolder.uri,
+                title: 'Current Repository',
+                name: workspaceFolder.name,
+                description: workspaceFolder.name,
+                isWorkspaceRoot: true,
+                content: null,
+                source: ContextItemSource.Initial,
+                icon: 'folder',
+            } satisfies ContextItemTree)
+        }
+    }
+
+    return items
 }
 
 function idempotentPostMessage(rawPostMessage: PostMessage): PostMessage {

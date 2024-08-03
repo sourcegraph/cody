@@ -18,7 +18,7 @@ describe('PromptBuilder', () => {
 
     const preamble: Message[] = [{ speaker: 'system', text: ps`preamble` }]
 
-    it('throws an error when trying to add Enhanced Context before chat input', () => {
+    it('throws an error when trying to add corpus context before chat input', () => {
         const builder = new PromptBuilder({ input: 100, output: 100 })
         builder.tryAddToPrefix(preamble)
         const file: ContextItem = {
@@ -27,7 +27,7 @@ describe('PromptBuilder', () => {
             content: 'foobar',
             size: 100,
         }
-        expect(() => builder.tryAddContext('enhanced', [file])).rejects.toThrowError()
+        expect(() => builder.tryAddContext('corpus', [file])).rejects.toThrowError()
     })
 
     it('throws an error when trying to add User Context before chat input', () => {
@@ -183,7 +183,7 @@ describe('PromptBuilder', () => {
                 },
             ]
 
-            const { limitReached, ignored } = await builder.tryAddContext('enhanced', contextItems)
+            const { limitReached, ignored } = await builder.tryAddContext('corpus', contextItems)
             expect(limitReached).toBeTruthy()
             expect(ignored).toEqual(contextItems)
             expect(builder.contextItems).toEqual([])
@@ -249,7 +249,7 @@ describe('PromptBuilder', () => {
                 isTooLarge: true,
             }
 
-            const { limitReached, ignored } = await builder.tryAddContext('enhanced', [
+            const { limitReached, ignored } = await builder.tryAddContext('corpus', [
                 innerRange,
                 outerRange,
                 innerRange,
@@ -346,9 +346,9 @@ describe('PromptBuilder', () => {
             expect(history.limitReached).toBeFalsy()
             expect(history.added).toStrictEqual([fullFile])
 
-            const enhanced = await builder.tryAddContext('enhanced', [selection, fullFile])
-            expect(enhanced.limitReached).toBeFalsy()
-            expect(enhanced.added).toStrictEqual([])
+            const corpus = await builder.tryAddContext('corpus', [selection, fullFile])
+            expect(corpus.limitReached).toBeFalsy()
+            expect(corpus.added).toStrictEqual([])
 
             // The final context items should only contain the selection and full file.
             expect(builder.contextItems).toStrictEqual([selection, fullFile])

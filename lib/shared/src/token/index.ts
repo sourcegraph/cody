@@ -17,7 +17,7 @@ export interface ChatContextTokenUsage {
     /**
      * Tokens used by non-user-specified context messages.
      */
-    enhanced: number
+    corpus: number
 }
 
 export interface TokenUsage extends ChatContextTokenUsage {
@@ -32,5 +32,5 @@ export interface TokenUsage extends ChatContextTokenUsage {
 }
 
 export type TokenUsageType = ChatTokenUsageType | ContextTokenUsageType
-export type ChatTokenUsageType = 'preamble' | 'input'
-export type ContextTokenUsageType = 'user' | 'enhanced'
+export type ChatTokenUsageType = Exclude<keyof TokenUsage, keyof ChatContextTokenUsage>
+export type ContextTokenUsageType = keyof ChatContextTokenUsage
