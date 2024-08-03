@@ -293,7 +293,11 @@ export const MentionMenu: FunctionComponent<
                 ) : null}
                 {data.error && (
                     <CommandLoading
-                        className={clsx(COMMAND_ROW_CLASS_NAME, COMMAND_ROW_TEXT_CLASS_NAME)}
+                        className={clsx(
+                            COMMAND_ROW_CLASS_NAME,
+                            COMMAND_ROW_TEXT_CLASS_NAME,
+                            '!tw-h-[unset] !tw-max-h-100px'
+                        )}
                     >
                         Error: {data.error}
                     </CommandLoading>
