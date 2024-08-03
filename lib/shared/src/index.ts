@@ -72,7 +72,6 @@ export {
     type ContextMessage,
     type SymbolKind,
     type ContextItemTree,
-    type ContextItemRepository,
     FILE_RANGE_TOOLTIP_LABEL,
     GENERAL_HELP_LABEL,
     IGNORED_FILE_WARNING_LABEL,
@@ -308,6 +307,7 @@ export {
     REMOTE_FILE_PROVIDER_URI,
     WEB_PROVIDER_URI,
     GIT_OPENCTX_PROVIDER_URI,
+    FOLDER_OPENCTX_PROVIDER_URI,
 } from './context/openctx/api'
 export * from './context/openctx/context'
 export * from './context/openctx/internalProvider'

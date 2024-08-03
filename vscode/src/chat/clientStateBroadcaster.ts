@@ -106,52 +106,39 @@ export function getCorpusContextItemsForEditorState({
 }: { remoteSearch: RemoteSearch | null }): ContextItem[] {
     const items: ContextItem[] = []
 
-    // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
-    // remote search). There should be a single internal thing in Cody that lets you monitor the
-    // user's current codebase.
-    if (remoteSearch) {
-        // TODO(sqs): Track the last-used repositories. Right now it just uses the current
-        // repository.
-        //
-        // Make a repository item that is the same as what the @-repository OpenCtx provider
-        // would return.
-        const repos = remoteSearch.getRepos('all')
-        for (const repo of repos) {
-            if (contextFiltersProvider.isRepoNameIgnored(repo.name)) {
-                continue
-            }
-            const mention = createRemoteRepositoryMention(
-                {
-                    id: repo.id,
-                    name: repo.name,
-                    url: repo.name,
-                },
-                REMOTE_REPOSITORY_PROVIDER_URI
-            )
-            items.push({
-                ...deserializeContextItem(mention.data.contextItem),
-                title: 'Current Repository',
-                description: repo.name,
-                source: ContextItemSource.Initial,
-                icon: 'folder',
-            })
-        }
-    } else {
-        // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
-        const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
-        if (workspaceFolder) {
-            items.push({
-                type: 'tree',
-                uri: workspaceFolder.uri,
-                title: 'Current Repository',
-                name: workspaceFolder.name,
-                description: workspaceFolder.name,
-                isWorkspaceRoot: true,
-                content: null,
-                source: ContextItemSource.Initial,
-                icon: 'folder',
-            } satisfies ContextItemTree)
-        }
+    const repos = (remoteSearch?.getRepos('all') ?? []).filter(repo =>
+        contextFiltersProvider.isRepoNameIgnored(repo.name)
+    )
+    for (const repo of repos) {
+        const mention = createRemoteRepositoryMention(
+            {
+                id: repo.id,
+                name: repo.name,
+                url: repo.name,
+            },
+            REMOTE_REPOSITORY_PROVIDER_URI
+        )
+        items.push({
+            ...deserializeContextItem(mention.data.contextItem),
+            title: 'Current Repository',
+            description: repo.name,
+            source: ContextItemSource.Initial,
+            icon: 'folder',
+        })
+    }
+
+    // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
+    const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
+    if (workspaceFolder) {
+        items.push({
+            type: 'tree',
+            uri: workspaceFolder.uri,
+            title: 'Current Repository',
+            description: workspaceFolder.name,
+            content: null,
+            source: ContextItemSource.Initial,
+            icon: 'folder',
+        } satisfies ContextItemTree)
     }
 
     return items

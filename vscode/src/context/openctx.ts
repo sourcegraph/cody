@@ -2,14 +2,15 @@ import {
     type AuthStatus,
     CodyIDE,
     type ConfigurationWithAccessToken,
+    FOLDER_OPENCTX_PROVIDER_URI,
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
     WEB_PROVIDER_URI,
-    asyncGeneratorWithValues,
     combineLatest,
     dependentAbortController,
     featureFlagProvider,
     graphqlClient,
+    isDefined,
     isError,
     logError,
     setOpenCtx,
@@ -21,6 +22,7 @@ import type { createController } from '@openctx/vscode-lib'
 import type { ConfigWatcher } from '../configwatcher'
 import { logDebug, outputChannel } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
+import { folderMentionsProvider } from './openctx/folderMentions'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFileSearch'
@@ -53,7 +55,7 @@ export async function exposeOpenCtxClient(
             features: isCodyWeb ? {} : { annotations: true, statusBar: true },
             providers: () =>
                 isCodyWeb
-                    ? asyncGeneratorWithValues(getCodyWebOpenCtxProviders())
+                    ? getCodyWebOpenCtxProviders(abortController.signal)
                     : getOpenCtxProviders(
                           config.observe(abortController.signal),
                           authProvider.observeAuthStatus(abortController.signal),
@@ -79,8 +81,17 @@ async function* getOpenCtxProviders(
         FeatureFlag.GitMentionProvider,
         signal
     )
-    for await (const [config, authStatus, gitMentionProvider] of combineLatest(
-        [configChanges, authStatusChanges, gitMentionProviderChanges],
+    const folderMentionsFeatureFlagChanges = featureFlagProvider.evaluatedFeatureFlag(
+        FeatureFlag.FolderMentions,
+        signal
+    )
+    for await (const [
+        config,
+        authStatus,
+        gitMentionProvider,
+        folderMentionsFeatureFlag,
+    ] of combineLatest(
+        [configChanges, authStatusChanges, gitMentionProviderChanges, folderMentionsFeatureFlagChanges],
         signal
     )) {
         const providers: ImportedProviderConfiguration[] = [
@@ -109,6 +120,14 @@ async function* getOpenCtxProviders(
             }
         }
 
+        if (folderMentionsFeatureFlag) {
+            providers.push({
+                settings: true,
+                provider: folderMentionsProvider,
+                providerUri: FOLDER_OPENCTX_PROVIDER_URI,
+            })
+        }
+
         if (config.experimentalNoodle) {
             providers.push({
                 settings: true,
@@ -129,24 +148,39 @@ async function* getOpenCtxProviders(
     }
 }
 
-function getCodyWebOpenCtxProviders(): ImportedProviderConfiguration[] {
-    return [
-        {
-            settings: true,
-            providerUri: RemoteRepositorySearch.providerUri,
-            provider: createRemoteRepositoryProvider('Repositories'),
-        },
-        {
-            settings: true,
-            providerUri: RemoteFileProvider.providerUri,
-            provider: createRemoteFileProvider('Files'),
-        },
-        {
-            settings: true,
-            providerUri: WEB_PROVIDER_URI,
-            provider: createWebProvider(true),
-        },
-    ]
+async function* getCodyWebOpenCtxProviders(
+    signal: AbortSignal
+): AsyncGenerator<ImportedProviderConfiguration[]> {
+    const folderMentionsFeatureFlagChanges = featureFlagProvider.evaluatedFeatureFlag(
+        FeatureFlag.FolderMentions,
+        signal
+    )
+    for await (const folderMentionsFeatureFlag of folderMentionsFeatureFlagChanges) {
+        yield [
+            {
+                settings: true,
+                providerUri: RemoteRepositorySearch.providerUri,
+                provider: createRemoteRepositoryProvider('Repositories'),
+            },
+            {
+                settings: true,
+                providerUri: RemoteFileProvider.providerUri,
+                provider: createRemoteFileProvider('Files'),
+            },
+            {
+                settings: true,
+                providerUri: WEB_PROVIDER_URI,
+                provider: createWebProvider(true),
+            },
+            folderMentionsFeatureFlag
+                ? {
+                      settings: true,
+                      providerUri: FOLDER_OPENCTX_PROVIDER_URI,
+                      provider: folderMentionsProvider,
+                  }
+                : undefined,
+        ].filter(isDefined)
+    }
 }
 
 function getMergeConfigurationFunction(): Parameters<typeof createController>[0]['mergeConfiguration'] {

@@ -7,8 +7,8 @@ import {
     type ClientStateForWebview,
     CodyIDE,
     type ContextItem,
-    type ContextItemRepository,
     ContextItemSource,
+    type ContextItemTree,
     type Model,
     PromptString,
     isErrorLike,
@@ -161,12 +161,14 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
             return { initialContext: [] }
         }
 
-        const mentions: ContextItem[] = repositories.map<ContextItemRepository>(repo => ({
-            type: 'repository',
-            id: repo.id,
-            name: repo.name,
-            repoID: repo.id,
-            repoName: repo.name,
+        const mentions: ContextItem[] = repositories.map<ContextItemTree>(repo => ({
+            type: 'tree',
+            repo: {
+                id: repo.id,
+                name: repo.name,
+                sourceType: 'sourcegraph',
+            },
+            title: 'Current Repository',
             uri: URI.parse(`repo:${repo.name}`),
             content: null,
             source: ContextItemSource.Initial,

@@ -2,6 +2,7 @@ import {
     type ContextItem,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
+    FOLDER_OPENCTX_PROVIDER_URI,
     IGNORED_FILE_WARNING_LABEL,
     LARGE_FILE_WARNING_LABEL,
     type MentionQuery,
@@ -50,6 +51,10 @@ function getDescription(item: ContextItem, query: MentionQuery): string {
             const dir = decodeURIComponent(displayPathDirname(item.uri))
             return `${range ? `Lines ${displayLineRange(range)} · ` : ''}${dir === '.' ? '' : dir}`
         }
+
+        // 'repository' type is for backcompat.
+        //
+        // @ts-ignore
         case 'repository':
         case 'tree':
             return '' // no description since it's duplicative
@@ -143,4 +148,5 @@ export const iconForProvider: Record<
     [REMOTE_REPOSITORY_PROVIDER_URI]: FolderGitIcon,
     [REMOTE_FILE_PROVIDER_URI]: FileIcon,
     [WEB_PROVIDER_URI]: LinkIcon,
+    [FOLDER_OPENCTX_PROVIDER_URI]: FolderIcon,
 }

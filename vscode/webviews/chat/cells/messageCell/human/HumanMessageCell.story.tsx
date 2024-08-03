@@ -63,11 +63,15 @@ export const WithInitialContext: StoryObj<typeof meta> = {
             value={{
                 initialContext: [
                     {
-                        type: 'repository',
+                        type: 'tree',
                         uri: URI.parse('https://example.com/foo/myrepo'),
-                        title: 'foo/myrepo',
-                        repoName: 'foo/myrepo',
-                        repoID: 'abcd',
+                        title: 'Current Repository',
+                        description: 'foo/myrepo',
+                        repo: {
+                            id: 'abcd',
+                            name: 'foo/myrepo',
+                            sourceType: 'sourcegraph',
+                        },
                         content: null,
                     },
                     { type: 'file', uri: URI.file('/foo.js') },
@@ -89,11 +93,15 @@ export const WithInitialContextFileTooLarge: StoryObj<typeof meta> = {
             value={{
                 initialContext: [
                     {
-                        type: 'repository',
+                        type: 'tree',
                         uri: URI.parse('https://example.com/foo/myrepo'),
-                        title: 'foo/myrepo',
-                        repoName: 'foo/myrepo',
-                        repoID: 'abcd',
+                        title: 'Current Repository',
+                        description: 'foo/myrepo',
+                        repo: {
+                            id: 'abcd',
+                            name: 'foo/myrepo',
+                            sourceType: 'sourcegraph',
+                        },
                         content: null,
                     },
                     { type: 'file', isTooLarge: true, uri: URI.file('/large_file.js') },

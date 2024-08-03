@@ -1,4 +1,4 @@
-import { basename } from 'node:path'
+import { basename, resolve } from 'node:path'
 
 import { type UserConfig, mergeConfig } from 'vite'
 import { type UserWorkspaceConfig, configDefaults, defineProject } from 'vitest/config'
@@ -14,6 +14,10 @@ const defaultProjectConfig: UserWorkspaceConfig = {
             {
                 find: /^(@sourcegraph\/(?:cody-[\w-]|prompt-editor)+)$/,
                 replacement: '$1/src/index.ts',
+            },
+            {
+                find: /^cody-ai\/(.*)$/,
+                replacement: resolve(__dirname, '../vscode/$1'),
             },
         ],
     },

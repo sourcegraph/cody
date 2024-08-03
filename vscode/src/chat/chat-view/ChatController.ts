@@ -1644,23 +1644,28 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
                 // All mentions
                 mentionsTotal: mentions.length,
-                mentionsOfRepository: mentions.filter(item => item.type === 'repository').length,
                 mentionsOfTree: mentions.filter(item => item.type === 'tree').length,
-                mentionsOfWorkspaceRootTree: mentions.filter(
-                    item => item.type === 'tree' && item.isWorkspaceRoot
-                ).length,
+                mentionsOfTreeRepository: mentions.filter(item => item.type === 'tree' && !!item.repo)
+                    .length,
+                mentionsOfTreeRootPath: mentions.filter(item => item.type === 'tree' && !item.subpath)
+                    .length,
+                mentionsOfTreeSubpath: mentions.filter(item => item.type === 'tree' && !!item.subpath)
+                    .length,
                 mentionsOfFile: mentions.filter(item => item.type === 'file').length,
 
                 // Initial context mentions
                 mentionsInInitialContext: mentionsInInitialContext.length,
-                mentionsInInitialContextOfRepository: mentionsInInitialContext.filter(
-                    item => item.type === 'repository'
-                ).length,
                 mentionsInInitialContextOfTree: mentionsInInitialContext.filter(
                     item => item.type === 'tree'
                 ).length,
-                mentionsInInitialContextOfWorkspaceRootTree: mentionsInInitialContext.filter(
-                    item => item.type === 'tree' && item.isWorkspaceRoot
+                mentionsInInitialContextOfTreeRepository: mentionsInInitialContext.filter(
+                    item => item.type === 'tree' && !!item.repo
+                ).length,
+                mentionsInInitialContextOfTreeRootPath: mentionsInInitialContext.filter(
+                    item => item.type === 'tree' && !item.subpath
+                ).length,
+                mentionsInInitialContextOfTreeSubpath: mentionsInInitialContext.filter(
+                    item => item.type === 'tree' && !!item.subpath
                 ).length,
                 mentionsInInitialContextOfFile: mentionsInInitialContext.filter(
                     item => item.type === 'file'
@@ -1668,11 +1673,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
                 // Explicit mentions by user
                 mentionsByUser: mentionsByUser.length,
-                mentionsByUserOfRepository: mentionsByUser.filter(item => item.type === 'repository')
-                    .length,
                 mentionsByUserOfTree: mentionsByUser.filter(item => item.type === 'tree').length,
-                mentionsByUserOfWorkspaceRootTree: mentionsByUser.filter(
-                    item => item.type === 'tree' && item.isWorkspaceRoot
+                mentionsByUserOfTreeRepository: mentionsByUser.filter(
+                    item => item.type === 'tree' && !!item.repo
+                ).length,
+                mentionsByUserOfTreeRootPath: mentionsByUser.filter(
+                    item => item.type === 'tree' && !item.subpath
+                ).length,
+                mentionsByUserOfTreeSubpath: mentionsByUser.filter(
+                    item => item.type === 'tree' && !!item.subpath
                 ).length,
                 mentionsByUserOfFile: mentionsByUser.filter(item => item.type === 'file').length,
             },

@@ -85,6 +85,8 @@ export enum FeatureFlag {
     ChatPromptSelector = 'chat-prompt-selector',
 
     GitMentionProvider = 'git-mention-provider',
+
+    FolderMentions = 'folder-mentions',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

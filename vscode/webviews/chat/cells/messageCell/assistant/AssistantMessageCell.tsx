@@ -177,9 +177,7 @@ export function makeHumanMessageInfo(
 
     return {
         hasInitialContext: {
-            repositories: Boolean(
-                contextItems.some(item => item.type === 'repository' || item.type === 'tree')
-            ),
+            repositories: Boolean(contextItems.some(item => item.type === 'tree')),
             files: Boolean(
                 contextItems.some(
                     item => item.type === 'file' && item.source === ContextItemSource.Initial
@@ -192,8 +190,7 @@ export function makeHumanMessageInfo(
                 const newEditorValue = filterContextItemsFromPromptEditorValue(
                     editorValue,
                     item =>
-                        ((item.type === 'repository' || item.type === 'tree') &&
-                            withInitialContext.repositories) ||
+                        (item.type === 'tree' && withInitialContext.repositories) ||
                         (item.type === 'file' && withInitialContext.files)
                 )
                 editHumanMessage(assistantMessage.index - 1, newEditorValue)

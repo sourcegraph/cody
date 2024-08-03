@@ -107,36 +107,45 @@ export enum ContextItemSource {
 /**
  * An item (such as a file or symbol) that is included as context in a chat message.
  */
-export type ContextItem =
-    | ContextItemFile
-    | ContextItemRepository
-    | ContextItemTree
-    | ContextItemSymbol
-    | ContextItemOpenCtx
+export type ContextItem = ContextItemFile | ContextItemTree | ContextItemSymbol | ContextItemOpenCtx
 
 /**
- * A context item that represents a repository.
- */
-export interface ContextItemRepository extends ContextItemCommon {
-    type: 'repository'
-    repoName: string
-    repoID: string
-    content: null
-
-    openctxProviderUri?: string
-}
-
-/**
- * A context item that represents a tree (directory).
+ * A context item that represents a tree (directory), which can be on the local file system or in a
+ * remote repository. It can represent the top-level directory or a subdirectory in a repository.
  */
 export interface ContextItemTree extends ContextItemCommon {
     type: 'tree'
 
-    /** Only workspace root trees are supported right now. */
-    isWorkspaceRoot: true
+    /**
+     * Information about the logical repository that contains this tree.
+     */
+    repo?: {
+        /** The ID of the repository on the Sourcegraph instance. */
+        id: string
 
+        /** The name of the repository on the Sourcegraph instance. */
+        name: string
+
+        sourceType: 'sourcegraph'
+    }
+
+    /**
+     * A subpath in the tree or repository, relative to the root. The subpath must also be
+     * represented in the {@link ContextItemTree.uri}. This value should NOT begin with a trailing
+     * slash, and it should use `/` path separators. The `undefined` value means that this tree is
+     * the top level of the repository.
+     *
+     * @example `projects/foo`
+     */
+    subpath?: string
+
+    /** A title for display only. */
+    title: string
+
+    openctxProviderUri?: string
+
+    /** Not used for trees. */
     content: null
-    name: string
 }
 
 /**

@@ -104,8 +104,11 @@ export const Default: StoryObj<typeof MentionMenu> = {
             [
                 {
                     type: 'tree',
-                    isWorkspaceRoot: true,
-                    name: 'my-repo',
+                    repo: {
+                        name: 'my-repo',
+                        id: 'id',
+                        sourceType: 'sourcegraph',
+                    },
                     description: 'my-repo',
                     title: 'Current Repository',
                     source: ContextItemSource.Initial,

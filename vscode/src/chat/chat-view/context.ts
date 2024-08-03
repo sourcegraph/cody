@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import {
     type ConfigurationUseContext,
     type ContextItem,
-    type ContextItemRepository,
     ContextItemSource,
     type ContextItemTree,
     FeatureFlag,
@@ -14,6 +13,7 @@ import {
     type Result,
     featureFlagProvider,
     isAbortError,
+    isDefined,
     isFileURI,
     truncateTextNearestLine,
     uriBasename,
@@ -58,12 +58,10 @@ export async function codebaseRootsFromHumanInput(
     signal?: AbortSignal
 ): Promise<Root[]> {
     const remoteRepos: Root[] = input.mentions
-        .filter((item): item is ContextItemRepository => item.type === 'repository')
-        .map(repo => ({
-            remoteRepo: {
-                id: repo.repoID,
-                name: repo.repoName,
-            },
+        .filter((item): item is ContextItemTree => item.type === 'tree')
+        .map(({ uri, repo }) => ({
+            local: uri,
+            remoteRepo: repo,
         }))
 
     const localTrees: ContextItemTree[] = input.mentions.filter(
@@ -118,28 +116,23 @@ export async function resolveContext({
             return getVisibleEditorContext(editor)
         }
 
-        const repoMentions = input.mentions.filter(
-            (item): item is ContextItemRepository => item.type === 'repository'
-        )
         const treeMentions = input.mentions.filter(
             (item): item is ContextItemTree => item.type === 'tree'
         )
         const otherMentions = input.mentions.filter(
-            (item): item is Exclude<ContextItem, ContextItemRepository | ContextItemTree> =>
-                item.type !== 'repository' && item.type !== 'tree'
+            (item): item is Exclude<ContextItem, ContextItemTree> => item.type !== 'tree'
         )
 
-        // Right now, repo mentions are always remote (remoteSearch), and tree mentions are always
-        // local (symf or embeddings).
+        // TODO!(sqs): support subpath repo mentions
 
         // Remote search:
         const repoContextSearchResults =
-            remoteSearch && repoMentions.length > 0
+            remoteSearch && treeMentions.length > 0
                 ? retrieveContextGracefully(
                       searchRemote(
                           remoteSearch,
                           input.text,
-                          repoMentions.map(m => m.repoID),
+                          treeMentions.map(m => m.repo?.id).filter(isDefined),
                           signal
                       ),
                       'remote-search'
@@ -153,7 +146,7 @@ export async function resolveContext({
                       treeMentions.map(tree =>
                           retrieveContextGracefully(
                               searchSymf(symf, editor, tree.uri, input.text),
-                              `symf ${tree.name}`
+                              `symf ${tree.title}`
                           )
                       )
                   ).then(v => v.flat())

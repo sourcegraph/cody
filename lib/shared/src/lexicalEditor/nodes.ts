@@ -4,11 +4,11 @@ import type {
     ContextItem,
     ContextItemFile,
     ContextItemOpenCtx,
-    ContextItemRepository,
     ContextItemSource,
     ContextItemSymbol,
     ContextItemTree,
 } from '../codebase-context/messages'
+import { posixFilePaths } from '../common/path'
 import { displayLineRange } from '../common/range'
 import { displayPathBasename } from '../editor/displayPath'
 
@@ -26,7 +26,6 @@ export type SerializedContextItem = {
     source?: ContextItemSource
 } & (
     | Omit<ContextItemFile, 'uri' | 'content' | 'source'>
-    | Omit<ContextItemRepository, 'uri' | 'content' | 'source'>
     | Omit<ContextItemTree, 'uri' | 'content' | 'source'>
     | Omit<ContextItemSymbol, 'uri' | 'content' | 'source'>
     | Omit<ContextItemOpenCtx, 'uri' | 'content' | 'source'>
@@ -91,6 +90,7 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
     // range needs to go to the start (0th character) of line 5. Also, `RangeData` is 0-indexed but
     // display ranges are 1-indexed.
     const rangeText = contextItem.range?.start ? `:${displayLineRange(contextItem.range)}` : ''
+
     switch (contextItem.type) {
         case 'file':
             if (contextItem.provider && contextItem.title) {
@@ -98,18 +98,37 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
             }
             return `${decodeURIComponent(displayPathBasename(URI.parse(contextItem.uri)))}${rangeText}`
 
-        case 'repository':
-            return trimCommonRepoNamePrefixes(contextItem.repoName) ?? 'unknown repository'
-
         case 'tree':
-            return contextItem.name ?? 'unknown folder'
+            if (contextItem.repo) {
+                const repoName = trimCommonRepoNamePrefixes(contextItem.repo.name)
+                return contextItem.subpath
+                    ? `${repoName}: ${posixFilePaths.basename(contextItem.subpath)}`
+                    : repoName
+            }
+            return contextItem.title ?? 'unknown folder'
 
         case 'symbol':
             return contextItem.symbolName
 
         case 'openctx':
             return contextItem.title
+
+        // Backcompat for old context item types. We need to override the type system, which
+        // believes there are no other possible `contextItem.type` values.
+        //
+        // @ts-ignore
+        default:
+            break
     }
+
+    // Backcompat for old context item types.
+    const backcompatItem = contextItem as { type: 'repository'; repoName: string }
+    switch (backcompatItem.type) {
+        case 'repository': {
+            return trimCommonRepoNamePrefixes(backcompatItem.repoName)
+        }
+    }
+
     // @ts-ignore
     throw new Error(`unrecognized context item type ${contextItem.type}`)
 }
