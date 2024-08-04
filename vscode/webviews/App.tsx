@@ -137,7 +137,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setClientState(message.value)
                         break
                     case 'errors':
-                        setErrorMessages([...errorMessages, message.errors].slice(-5))
+                        setErrorMessages(prev => [...prev, message.errors].slice(-5))
                         break
                     case 'view':
                         setView(message.view)
@@ -169,7 +169,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                 }
             }),
-        [errorMessages, view, vscodeAPI, guardrails, dispatchClientAction]
+        [view, vscodeAPI, guardrails, dispatchClientAction]
     )
 
     useEffect(() => {
