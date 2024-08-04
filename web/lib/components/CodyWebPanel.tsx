@@ -23,13 +23,13 @@ import type { ChatModelContext } from 'cody-ai/webviews/chat/models/chatModelCon
 import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
 import { createWebviewTelemetryRecorder } from 'cody-ai/webviews/utils/telemetry'
 
-import { useWebAgentClient } from './CodyWebChatProvider'
+import { useWebAgentClient } from './CodyWebPanelProvider'
 
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
 import type { ConfigurationSubsetForWebview, LocalEnv } from 'cody-ai/src/chat/protocol'
 import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
-import styles from './CodyWebChat.module.css'
+import styles from './CodyWebPanel.module.css'
 
 const CONTEXT_MENTIONS_SETTINGS: ChatMentionsSettings = {
     resolutionMode: 'remote',
@@ -42,13 +42,13 @@ setDisplayPathEnvInfo({
     workspaceFolders: [URI.file('/tmp/foo')],
 })
 
-export interface CodyWebChatProps {
+export interface CodyWebPanelProps {
     className?: string
 }
 
 // NOTE: This code is implements a subset of the
 // functionality for the experimental web chat prototype.
-export const CodyWebChat: FC<CodyWebChatProps> = props => {
+export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const { className } = props
 
     const { vscodeAPI, client, activeChatID, activeWebviewPanelID, initialContext } = useWebAgentClient()

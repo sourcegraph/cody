@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 
-import { CodyWebChat, CodyWebChatProvider, type Repository } from '../lib'
+import { CodyWebPanel, CodyWebPanelProvider, type Repository } from '../lib'
 
 // Include highlights styles for demo purpose, clients like
 // Sourcegraph import highlights styles themselves
@@ -47,15 +47,15 @@ if (!accessToken) {
 
 export const App: FC = () => {
     return (
-        <CodyWebChatProvider
+        <CodyWebPanelProvider
             accessToken={accessToken}
             serverEndpoint={serverEndpoint}
             telemetryClientName="codydemo.testing"
             initialContext={MOCK_INITIAL_DOT_COM_CONTEXT}
         >
             <div className={styles.root}>
-                <CodyWebChat className={styles.container} />
+                <CodyWebPanel className={styles.container} />
             </div>
-        </CodyWebChatProvider>
+        </CodyWebPanelProvider>
     )
 }

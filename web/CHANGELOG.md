@@ -1,3 +1,6 @@
+## Next
+- Adds support for the full panel (not just chat) to the CodyWebPanel component (renamed from CodyWebChat).
+
 ## 0.3.6
 - Adds fix that chat UI doesn't include context repository as background 
 source of context (uses only mention chips as a possible source of context files)

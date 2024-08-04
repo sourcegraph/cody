@@ -25,11 +25,11 @@ import { useLocalStorage } from '../utils/use-local-storage'
 /**
  * Local storage key for storing last active chat id, preserving
  * chat id in the local storage allows us to restore the last active chat
- * as you open/render Cody Web Chat.
+ * as you open/render Cody Web.
  */
 const ACTIVE_CHAT_ID_KEY = 'cody-web.last-active-chat-id'
 
-// Usually the CodyWebChatProvider VSCode API wrapper listens only to messages from the Extension host
+// Usually the CodyWebPanelProvider VSCode API wrapper listens only to messages from the Extension host
 // which matches the current active panel id. But this message id check can be corrupted
 // by race conditions in different events that the extension host sends during chat-switching.
 // Some events should always be handled by the client regardless of which active panel they
@@ -41,7 +41,7 @@ interface AgentClient {
     dispose(): void
 }
 
-interface CodyWebChatContextData {
+interface CodyWebPanelContextData {
     client: AgentClient | Error | null
     activeChatID: string | null
     activeWebviewPanelID: string
@@ -52,14 +52,14 @@ interface CodyWebChatContextData {
     selectChat: (chat: ChatExportResult) => Promise<void>
 }
 
-export const CodyWebChatContext = createContext<CodyWebChatContextData>({
+export const CodyWebPanelContext = createContext<CodyWebPanelContextData>({
     client: null,
     activeChatID: null,
     activeWebviewPanelID: '',
     initialContext: undefined,
 
     // Null casting is just to avoid unnecessary null type checks in
-    // consumers, CodyWebChatProvider creates graphQL vscodeAPI and graphql client
+    // consumers, CodyWebPanelProvider creates graphQL vscodeAPI and graphql client
     // unconditionally, so this is safe to provide null as a default value here
     vscodeAPI: null as any,
     setLastActiveChatID: () => {},
@@ -67,7 +67,7 @@ export const CodyWebChatContext = createContext<CodyWebChatContextData>({
     selectChat: () => Promise.resolve(),
 })
 
-interface CodyWebChatProviderProps {
+interface CodyWebPanelProviderProps {
     serverEndpoint: string
     accessToken: string | null
     chatID?: string | null
@@ -78,10 +78,10 @@ interface CodyWebChatProviderProps {
 }
 
 /**
- * The root store/provider node for the Cody Web chat, creates and shares
+ * The root store/provider node for Cody Web, creates and shares
  * agent client and maintains active web panel ID, chat history and vscodeAPI.
  */
-export const CodyWebChatProvider: FunctionComponent<PropsWithChildren<CodyWebChatProviderProps>> = ({
+export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPanelProviderProps>> = ({
     serverEndpoint,
     accessToken,
     initialContext,
@@ -307,11 +307,11 @@ export const CodyWebChatProvider: FunctionComponent<PropsWithChildren<CodyWebCha
 
     return (
         <AppWrapper>
-            <CodyWebChatContext.Provider value={contextInfo}>{children}</CodyWebChatContext.Provider>
+            <CodyWebPanelContext.Provider value={contextInfo}>{children}</CodyWebPanelContext.Provider>
         </AppWrapper>
     )
 }
 
-export function useWebAgentClient(): CodyWebChatContextData {
-    return useContext(CodyWebChatContext)
+export function useWebAgentClient(): CodyWebPanelContextData {
+    return useContext(CodyWebPanelContext)
 }
