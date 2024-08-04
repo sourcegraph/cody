@@ -76,6 +76,9 @@ export class ContextFetcher implements vscode.Disposable {
         files: string[],
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
+        if (files.length === 0) {
+            return []
+        }
         if (!this.symf) {
             logDebug('ContextFetcher', 'symf not available, skipping live context')
             return []

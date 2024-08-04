@@ -36,6 +36,7 @@ data class ContextItemFile(
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
   val provider: String? = null,
   val icon: String? = null,
   val type: TypeEnum, // Oneof: file
@@ -59,6 +60,7 @@ data class ContextItemRepository(
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
   val provider: String? = null,
   val icon: String? = null,
   val type: TypeEnum, // Oneof: repository
@@ -82,6 +84,7 @@ data class ContextItemTree(
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
   val provider: String? = null,
   val icon: String? = null,
   val type: TypeEnum, // Oneof: tree
@@ -106,6 +109,7 @@ data class ContextItemSymbol(
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
   val provider: String? = null,
   val icon: String? = null,
   val type: TypeEnum, // Oneof: symbol
@@ -131,6 +135,7 @@ data class ContextItemOpenCtx(
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
   val provider: String? = null,
   val icon: String? = null,
   val type: TypeEnum, // Oneof: openctx

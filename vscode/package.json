@@ -1261,6 +1261,12 @@
           "type": "boolean",
           "markdownDescription": "[INTERNAL ONLY] Enable all unstable experimental features.",
           "default": false
+        },
+        "cody.internal.showContextAlternatives": {
+          "order": 999,
+          "type": "boolean",
+          "markdownDescription": "[INTERNAL ONLY] Show alternative context lists in chat",
+          "default": false
         }
       }
     },

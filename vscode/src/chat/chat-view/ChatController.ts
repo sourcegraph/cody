@@ -23,6 +23,7 @@ import {
     ModelUsage,
     ModelsService,
     PromptString,
+    type RankedContext,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     type SerializedPromptEditorState,
@@ -691,7 +692,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     mentions = mentions.concat(selectionContext)
                 }
 
-                const corpusContext = await this.fetchContext(
+                const contextAlternatives = await this.fetchContext(
                     { text: inputText, mentions },
                     requestID,
                     editorState,
@@ -699,6 +700,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     signal
                 )
                 signal.throwIfAborted()
+                const corpusContext = contextAlternatives[0].items
 
                 const explicitMentions = corpusContext.filter(c => c.source === ContextItemSource.User)
                 const implicitMentions = corpusContext.filter(c => c.source !== ContextItemSource.User)
@@ -737,7 +739,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }
 
                 try {
-                    const prompt = await this.buildPrompt(prompter, signal, requestID, sendTelemetry)
+                    const prompt = await this.buildPrompt(
+                        prompter,
+                        signal,
+                        requestID,
+                        sendTelemetry,
+                        contextAlternatives
+                    )
                     signal.throwIfAborted()
                     this.streamAssistantResponse(requestID, prompt, span, firstTokenSpan, signal)
                 } catch (error) {
@@ -765,7 +773,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         editorState: SerializedPromptEditorState | null,
         span: Span,
         signal?: AbortSignal
-    ): Promise<ContextItem[]> {
+    ): Promise<RankedContext[]> {
         if (!vscode.workspace.getConfiguration().get<boolean>('cody.internal.serverSideContext')) {
             // Fetch using legacy context retrieval
             const config = getConfiguration()
@@ -812,11 +820,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 context
             )
 
-            return context
+            return [
+                {
+                    strategy: 'legacy, symf',
+                    items: context.flat(),
+                },
+            ]
         }
 
         const roots = await codebaseRootsFromHumanInput({ text, mentions }, signal)
-        const context = this.contextFetcher.fetchContext(
+        const context = await this.contextFetcher.fetchContext(
             {
                 userQuery: text,
                 roots,
@@ -824,7 +837,43 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             signal
         )
 
-        return await context
+        if (this.contextAPIClient) {
+            // Remove context chips (repo, @-mentions) from the input text for context retrieval.
+            const inputTextWithoutContextChips = editorState
+                ? PromptString.unsafe_fromUserQuery(
+                      inputTextWithoutContextChipsFromPromptEditorState(editorState)
+                  )
+                : text
+            const response = await this.contextAPIClient.rankContext(
+                requestID,
+                inputTextWithoutContextChips.toString(),
+                context
+            )
+            if (isError(response)) {
+                throw response
+            }
+            if (!response) {
+                throw new Error('empty response from context reranking API')
+            }
+            const { used, ignored } = response
+            const all: [ContextItem, number][] = []
+            const usedContext: ContextItem[] = []
+            const ignoredContext: ContextItem[] = []
+            for (const { index, score } of used) {
+                usedContext.push(context[index])
+                all.push([context[index], score])
+            }
+            for (const { index, score } of ignored) {
+                ignoredContext.push(context[index])
+                all.push([context[index], score])
+            }
+            return [
+                { strategy: 'local+remote, reranked', items: usedContext },
+                { strategy: 'local+remote', items: context },
+            ]
+        }
+
+        return [{ strategy: 'local+remote', items: context }]
     }
 
     private submitOrEditOperation: AbortController | undefined
@@ -1156,7 +1205,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         prompter: DefaultPrompter,
         abortSignal: AbortSignal,
         requestID: string,
-        sendTelemetry?: (contextSummary: any, privateContextSummary?: any) => void
+        sendTelemetry?: (contextSummary: any, privateContextSummary?: any) => void,
+        contextAlternatives?: RankedContext[]
     ): Promise<Message[]> {
         const { prompt, context } = await prompter.makePrompt(
             this.chatModel,
@@ -1166,7 +1216,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         // Update UI based on prompt construction
         // Includes the excluded context items to display in the UI
-        this.chatModel.setLastMessageContext([...context.used, ...context.ignored])
+        if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.showContextAlternatives')) {
+            this.chatModel.setLastMessageContext(
+                [...context.used, ...context.ignored],
+                contextAlternatives
+            )
+        } else {
+            this.chatModel.setLastMessageContext([...context.used, ...context.ignored])
+        }
+
         // this is not awaited, so we kick the call off but don't block on it returning
         this.contextAPIClient?.recordContext(requestID, context.used, context.ignored)
 
