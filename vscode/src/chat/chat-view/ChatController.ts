@@ -23,6 +23,7 @@ import {
     ModelUsage,
     ModelsService,
     PromptString,
+    type RankedContext,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     type SerializedPromptEditorState,
@@ -52,7 +53,6 @@ import {
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import {
     isAbortError,
     isContextWindowLimitError,
