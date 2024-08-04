@@ -24,7 +24,7 @@ import styles from './TabsBar.module.css'
 interface TabsBarProps {
     IDE: CodyIDE
     currentView: View
-    setView: (view?: View) => void
+    setView: (view: View) => void
 }
 
 type IconComponent = React.ForwardRefExoticComponent<

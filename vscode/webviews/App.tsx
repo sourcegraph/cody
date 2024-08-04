@@ -17,7 +17,6 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { AuthMethod, ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 import type { UserAccountInfo } from './Chat'
-import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
 import { LoginSimplified } from './OnboardingExperiment'
 import { ConnectionIssuesPage } from './Troubleshooting'
@@ -25,10 +24,10 @@ import { type ChatModelContext, ChatModelContextProvider } from './chat/models/c
 import { useClientActionDispatcher } from './client/clientState'
 
 import { ClientStateContextProvider } from '@sourcegraph/prompt-editor'
+import { CodyPanel } from './CodyPanel'
 import { PromptsClientProviderFromVSCodeAPI } from './components/promptSelectField/promptsClient'
-import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
 import { ChatContextClientProviderFromVSCodeAPI } from './openctxClient'
-import { AccountTab, CommandsTab, HistoryTab, SettingsTab, TabsBar, View } from './tabs'
+import { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
@@ -274,71 +273,28 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     />
                 </div>
             ) : (
-                <TabRoot
-                    defaultValue={View.Chat}
-                    value={view}
-                    orientation="vertical"
-                    className={styles.outerContainer}
-                >
-                    {/* Shows tab bar for sidebar chats only. */}
-                    {config.webviewType === 'editor' ? null : (
-                        <TabsBar
-                            currentView={view}
-                            setView={setView}
-                            IDE={config.agentIDE || CodyIDE.VSCode}
-                        />
-                    )}
-                    {errorMessages && (
-                        <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />
-                    )}
-                    <TabContainer value={view}>
-                        {view === 'chat' && (
-                            <Chat
-                                chatID={chatID}
-                                chatEnabled={chatEnabled}
-                                userInfo={userAccountInfo}
-                                messageInProgress={messageInProgress}
-                                transcript={transcript}
-                                vscodeAPI={vscodeAPI}
-                                isTranscriptError={isTranscriptError}
-                                guardrails={attributionEnabled ? guardrails : undefined}
-                            />
-                        )}
-                        {view === 'history' && <HistoryTab userHistory={userHistory} />}
-                        {view === 'commands' && (
-                            <CommandsTab
-                                setView={setView}
-                                IDE={config.agentIDE}
-                                commands={commandList}
-                            />
-                        )}
-                        {view === 'account' && <AccountTab userInfo={userAccountInfo} />}
-                        {view === 'settings' && <SettingsTab userInfo={userAccountInfo} />}
-                    </TabContainer>
-                </TabRoot>
+                <CodyPanel
+                    view={view}
+                    setView={setView}
+                    config={config}
+                    errorMessages={errorMessages}
+                    setErrorMessages={setErrorMessages}
+                    attributionEnabled={attributionEnabled}
+                    chatID={chatID}
+                    chatEnabled={chatEnabled}
+                    userInfo={userAccountInfo}
+                    messageInProgress={messageInProgress}
+                    transcript={transcript}
+                    vscodeAPI={vscodeAPI}
+                    isTranscriptError={isTranscriptError}
+                    guardrails={guardrails}
+                    userHistory={userHistory}
+                    commands={commandList}
+                />
             )}
         </ComposedWrappers>
     )
 }
-
-const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (errors: string[]) => void }> =
-    ({ errors, setErrors }) => (
-        <div className={styles.errorContainer}>
-            {errors.map((error, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: error strings might not be unique, so we have no natural id
-                <div key={i} className={styles.error}>
-                    <span>{error}</span>
-                    <button
-                        type="button"
-                        className={styles.closeBtn}
-                        onClick={() => setErrors(errors.filter(e => e !== error))}
-                    >
-                        ×
-                    </button>
-                </div>
-            ))}
-        </div>
-    )
 
 export function getAppWrappers(
     vscodeAPI: VSCodeWrapper,
