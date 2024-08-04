@@ -12,7 +12,7 @@ interface CommandsTabProps {
 export const CommandsTab: React.FC<CommandsTabProps> = ({ commands, IDE, setView }) => (
     <div className="tw-flex tw-flex-col tw-gap-8 tw-px-8 tw-py-6">
         <DefaultCommandsList IDE={IDE} setView={setView} initialOpen={true} />
-        {commands.length && (
+        {commands.length > 0 && (
             <CustomCommandsList commands={commands} IDE={IDE} setView={setView} initialOpen={true} />
         )}
     </div>
