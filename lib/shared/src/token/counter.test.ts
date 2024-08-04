@@ -151,15 +151,15 @@ describe('TokenCounter class', () => {
         // Enhanced Token Budget: 9 * 0.6 = Round down to 5
         // - the remaining chat token budget * CORPUS_CONTEXT_ALLOCATION
         const corpusContextMessages = [
-            { speaker: 'human', text: ps`Here is my enhanced context...` },
+            { speaker: 'human', text: ps`Here is my corpus context...` },
             { speaker: 'assistant', text: ps`ok` },
         ] as Message[]
         expect(TokenCounter.getMessagesTokenCount(corpusContextMessages)).toBe(7)
         expect(counter.updateUsage('corpus', corpusContextMessages)).toEqual({
             succeeded: false,
-            reason: 'enhanced context tokens exceeded remaining enhanced context tokens (7 > 5)',
+            reason: 'corpus context tokens exceeded remaining corpus context tokens (7 > 5)',
         })
-        // FAILED: 7 tokens needed, exceeds the remaining token budget of 5 for Enhanced Context
+        // FAILED: 7 tokens needed, exceeds the remaining token budget of 5 for corpus context
 
         const fiveTokensMessages = [
             { speaker: 'human', text: ps`Need 5 tokens` },
@@ -198,21 +198,21 @@ describe('TokenCounter class', () => {
             { speaker: 'assistant', text: ps`ok` },
         ] as Message[]
         expect(TokenCounter.getMessagesTokenCount(shortMessages)).toBe(2)
-        expect(counter.updateUsage('corpus', shortMessages)).toBe({ succeeded: true })
+        expect(counter.updateUsage('corpus', shortMessages)).toEqual({ succeeded: true })
         // ADDED: Remaining input tokens: 13 - 2 = 11 & Remaining user tokens: 6
 
         expect(counter.updateUsage('input', greetings)).toEqual({ succeeded: true })
         // ADDED: Remaining input tokens: 11 - 4 = 7 &  Remaining user tokens: 6
 
         const longMessages = [
-            { speaker: 'human', text: ps`This is a very long enhanced context with code` },
+            { speaker: 'human', text: ps`This is a very long corpus context with code` },
             { speaker: 'assistant', text: ps`limit exceeded` },
         ] as Message[]
         // 11 exceeds the limit of the Enhanced Token Budget (7 * 0.6 = Round down to 4)
         expect(TokenCounter.getMessagesTokenCount(longMessages)).toBe(11)
         expect(counter.updateUsage('corpus', longMessages)).toEqual({
             succeeded: false,
-            reason: 'enhanced context tokens exceeded remaining enhanced context tokens (11 > 5)',
+            reason: 'corpus context tokens exceeded remaining corpus context tokens (11 > 5)',
         })
         // FAILED: Remaining input tokens: 7 & Remaining user tokens: 6
 
@@ -225,7 +225,7 @@ describe('TokenCounter class', () => {
 
         expect(counter.updateUsage('corpus', greetings)).toEqual({
             succeeded: false,
-            reason: 'enhanced context tokens exceeded remaining enhanced context tokens (4 > 3)',
+            reason: 'corpus context tokens exceeded remaining corpus context tokens (4 > 3)',
         })
         // FAILED: Remaining input tokens: 3 & Remaining user tokens: 2
         // - because corpus context only has 3 * 0.6 = 2 tokens left
