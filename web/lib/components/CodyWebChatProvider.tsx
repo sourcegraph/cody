@@ -1,11 +1,10 @@
 import {
+    type FunctionComponent,
     type PropsWithChildren,
     createContext,
-    forwardRef,
     useCallback,
     useContext,
     useEffect,
-    useImperativeHandle,
     useMemo,
     useRef,
     useState,
@@ -68,10 +67,6 @@ export const CodyWebChatContext = createContext<CodyWebChatContextData>({
     selectChat: () => Promise.resolve(),
 })
 
-export interface CodyWebChatContextClient {
-    createNewChat: () => Promise<void>
-}
-
 interface CodyWebChatProviderProps {
     serverEndpoint: string
     accessToken: string | null
@@ -80,29 +75,22 @@ interface CodyWebChatProviderProps {
     initialContext?: InitialContext
     customHeaders?: Record<string, string>
     onNewChatCreated?: (chatId: string) => void
-    onClientCreated?: (client: CodyWebChatContextClient) => void
 }
 
 /**
  * The root store/provider node for the Cody Web chat, creates and shares
  * agent client and maintains active web panel ID, chat history and vscodeAPI.
  */
-export const CodyWebChatProvider = forwardRef<
-    CodyWebChatContextClient,
-    PropsWithChildren<CodyWebChatProviderProps>
->((props, ref) => {
-    const {
-        serverEndpoint,
-        accessToken,
-        initialContext,
-        telemetryClientName,
-        children,
-        chatID: initialChatId,
-        customHeaders,
-        onNewChatCreated,
-        onClientCreated,
-    } = props
-
+export const CodyWebChatProvider: FunctionComponent<PropsWithChildren<CodyWebChatProviderProps>> = ({
+    serverEndpoint,
+    accessToken,
+    initialContext,
+    telemetryClientName,
+    children,
+    chatID: initialChatId,
+    customHeaders,
+    onNewChatCreated,
+}) => {
     // In order to avoid multiple client creation during dev runs
     // since useEffect can be fired multiple times during dev builds
     const isClientInitialized = useRef(false)
@@ -230,9 +218,10 @@ export const CodyWebChatProvider = forwardRef<
                 return
             }
 
-            const { panelId, chatId } = await agent.rpc.sendRequest<{ panelId: string; chatId: string }>(
-                'chat/web/new'
-            )
+            const { panelId, chatId } = await agent.rpc.sendRequest<{
+                panelId: string
+                chatId: string
+            }>('chat/web/new')
 
             activeWebviewPanelIDRef.current = panelId
 
@@ -293,18 +282,6 @@ export const CodyWebChatProvider = forwardRef<
         [client, vscodeAPI, setLastActiveChatID]
     )
 
-    useImperativeHandle(
-        ref,
-        () => ({
-            createNewChat: createChat,
-        }),
-        [createChat]
-    )
-
-    useEffect(() => {
-        onClientCreated?.({ createNewChat: createChat })
-    }, [onClientCreated, createChat])
-
     const contextInfo = useMemo(
         () => ({
             client,
@@ -333,7 +310,7 @@ export const CodyWebChatProvider = forwardRef<
             <CodyWebChatContext.Provider value={contextInfo}>{children}</CodyWebChatContext.Provider>
         </AppWrapper>
     )
-})
+}
 
 export function useWebAgentClient(): CodyWebChatContextData {
     return useContext(CodyWebChatContext)
