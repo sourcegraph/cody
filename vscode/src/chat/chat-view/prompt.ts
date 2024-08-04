@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 
 import {
     type ContextItem,
-    type ContextItemWithContent,
     type Message,
     PromptMixin,
     PromptString,
@@ -10,7 +9,6 @@ import {
     isDefined,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { logDebug } from '../../log'
 import { PromptBuilder } from '../../prompt-builder'
 import type { ChatModel } from './ChatModel'
@@ -26,17 +24,12 @@ interface PromptInfo {
         used: ContextItem[]
         ignored: ContextItem[]
     }
-
-    /**
-     * All context lists
-     */
-    contextAlternatives: RankedContext[]
 }
 
 export class DefaultPrompter {
     constructor(
-        private explicitContext: ContextItemWithContent[],
-        private getEnhancedContext?: (query: PromptString) => Promise<RankedContext[]>,
+        private explicitContext: ContextItem[],
+        private corpusContext: ContextItem[],
         /**
          * Whether the current message is from a default command.
          * We will apply context assist prompt for non-command chat messages.
@@ -77,7 +70,7 @@ export class DefaultPrompter {
             // It also allows adding the preamble only when there is context to display, without wasting tokens on the same preamble repeatedly.
             if (
                 !this.isCommand &&
-                Boolean(this.explicitContext.length || historyItems.length || this.getEnhancedContext)
+                Boolean(this.explicitContext.length || historyItems.length || this.corpusContext.length)
             ) {
                 reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0], chat.modelID)
             }
@@ -90,7 +83,7 @@ export class DefaultPrompter {
                 )
             }
             // Counter for context items categorized by source
-            const ignoredContext = { user: 0, enhanced: 0, transcript: 0 }
+            const ignoredContext = { user: 0, corpus: 0, transcript: 0 }
 
             // Add context from new user-specified context items, e.g. @-mentions, active selection, etc.
             const newUserContext = await promptBuilder.tryAddContext('user', this.explicitContext)
@@ -104,46 +97,34 @@ export class DefaultPrompter {
             // NOTE: Only used for display excluded context from user-specified context items in UI
             context.ignored.push(...newUserContext.ignored.map(c => ({ ...c, isTooLarge: true })))
 
-            // Get new enhanced context from current editor or broader search when enabled
-            const contextAlternatives: RankedContext[] = []
-            if (this.getEnhancedContext) {
-                const lastMessage = reverseTranscript[0]
-                if (!lastMessage?.text || lastMessage.speaker !== 'human') {
-                    throw new Error('Last message in prompt needs speaker "human", but was "assistant"')
-                }
-
-                const contextStrategies = await this.getEnhancedContext(lastMessage.text)
-                const newEnhancedContextItems = contextStrategies[0].items
-                const newEnhancedMessages = await promptBuilder.tryAddContext(
-                    'enhanced',
-                    newEnhancedContextItems
+            // Add corpus context
+            if (this.corpusContext.length > 0) {
+                const newCorpusContextMessages = await promptBuilder.tryAddContext(
+                    'corpus',
+                    this.corpusContext.slice()
                 )
-
-                contextAlternatives.push(...contextStrategies)
-
-                // Because this enhanced context is added for the last human message,
+                // Because this corpus context is added for the last human message,
                 // we will also add it to the context list for display.
-                context.used.push(...newEnhancedMessages.added)
-                context.ignored.push(...newEnhancedMessages.ignored)
-                ignoredContext.enhanced += newEnhancedMessages.ignored.length
+                context.used.push(...newCorpusContextMessages.added)
+                context.ignored.push(...newCorpusContextMessages.ignored)
+                ignoredContext.corpus += newCorpusContextMessages.ignored.length
             }
 
-            // If there's room left, add context from previous messages (both user-defined and enhanced).
+            // If there's room left, add context from previous messages (both user-defined and corpus).
             const historyContext = await promptBuilder.tryAddContext('history', historyItems.reverse())
             ignoredContext.transcript += historyContext.ignored.length
 
             // Log only if there are any ignored context items.
-            if (ignoredContext.user + ignoredContext.enhanced + ignoredContext.transcript > 0) {
+            if (ignoredContext.user + ignoredContext.corpus + ignoredContext.transcript > 0) {
                 logDebug(
                     'DefaultPrompter.makePrompt',
-                    `Ignored context due to context limit: user=${ignoredContext.user}, enhanced=${ignoredContext.enhanced}, previous=${ignoredContext.transcript}`
+                    `Ignored context due to context limit: user=${ignoredContext.user}, corpus=${ignoredContext.corpus}, previous=${ignoredContext.transcript}`
                 )
             }
 
             return {
                 prompt: promptBuilder.build(),
                 context,
-                contextAlternatives,
             }
         })
     }

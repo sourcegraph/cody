@@ -3,7 +3,10 @@ import type { ContextItemOpenCtx } from '../../codebase-context/messages'
 import { openCtx } from './api'
 
 // getContextForChatMessage returns context items for a given chat message from the OpenCtx providers.
-export const getContextForChatMessage = async (message: string): Promise<ContextItemOpenCtx[]> => {
+export const getContextForChatMessage = async (
+    message: string,
+    signal?: AbortSignal
+): Promise<ContextItemOpenCtx[]> => {
     try {
         const openCtxClient = openCtx.client
         if (!openCtxClient) {
@@ -12,6 +15,7 @@ export const getContextForChatMessage = async (message: string): Promise<Context
 
         // get list of all configured OpenCtx providers.
         const providers = await openCtxClient.meta({})
+        signal?.throwIfAborted()
 
         // filter providers that have message selectors configured and match the message text.
         const matchingProviders = providers.filter(
@@ -33,6 +37,8 @@ export const getContextForChatMessage = async (message: string): Promise<Context
                 )
             )
         ).flat()
+        // TODO(sqs): add abort signal to openCtxClient.items API
+        signal?.throwIfAborted()
 
         return items
             .filter(item => item.ai?.content)

@@ -1,18 +1,10 @@
 import type { FC } from 'react'
 
-import {
-    CodyWebChat,
-    type CodyWebChatContextClient,
-    CodyWebChatProvider,
-    CodyWebHistory,
-    type Repository,
-    getChatTitle,
-} from '../lib'
+import { CodyWebPanel, CodyWebPanelProvider, type Repository } from '../lib'
 
 // Include highlights styles for demo purpose, clients like
 // Sourcegraph import highlights styles themselves
 import '../../vscode/webviews/utils/highlight.css'
-import { useRef } from 'react'
 import styles from './App.module.css'
 
 const DOTCOM_SERVER_ENDPOINT = 'https://sourcegraph.com'
@@ -54,62 +46,16 @@ if (!accessToken) {
 }
 
 export const App: FC = () => {
-    const rootRef = useRef<CodyWebChatContextClient>(null)
-
     return (
-        <CodyWebChatProvider
-            ref={rootRef}
+        <CodyWebPanelProvider
             accessToken={accessToken}
             serverEndpoint={serverEndpoint}
             telemetryClientName="codydemo.testing"
             initialContext={MOCK_INITIAL_DOT_COM_CONTEXT}
         >
             <div className={styles.root}>
-                <CodyWebHistory>
-                    {input => (
-                        <ul className={styles.history}>
-                            {input.loading && 'Loading...'}
-                            {input.error && <p>Error: {input.error.message}</p>}
-
-                            {!input.loading && !input.error && (
-                                <>
-                                    {input.chats.map(chat => (
-                                        <li
-                                            key={chat.chatID}
-                                            className={input.isSelectedChat(chat) ? styles.selected : ''}
-                                        >
-                                            <button
-                                                type="button"
-                                                className={styles.select}
-                                                onClick={() => input.selectChat(chat)}
-                                            >
-                                                {getChatTitle(chat)}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={styles.delete}
-                                                onClick={() => input.deleteChat(chat)}
-                                            >
-                                                <i className="codicon codicon-trash" />
-                                            </button>
-                                        </li>
-                                    ))}
-                                    <li>
-                                        <button
-                                            type="button"
-                                            className={styles.createChat}
-                                            onClick={() => rootRef.current?.createNewChat()}
-                                        >
-                                            Create new chat +
-                                        </button>
-                                    </li>
-                                </>
-                            )}
-                        </ul>
-                    )}
-                </CodyWebHistory>
-                <CodyWebChat className={styles.container} />
+                <CodyWebPanel className={styles.container} />
             </div>
-        </CodyWebChatProvider>
+        </CodyWebPanelProvider>
     )
 }

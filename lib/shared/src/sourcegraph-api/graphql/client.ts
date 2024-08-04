@@ -7,11 +7,13 @@ import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 import { escapeRegExp } from 'lodash'
 import semver from 'semver'
 import type { AuthStatus } from '../../auth/types'
+import { dependentAbortController, onAbort } from '../../common/abortController'
 import type { ConfigurationWithAccessToken } from '../../configuration'
 import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
+import { isAbortError } from '../errors'
 import {
     CHAT_INTENT_QUERY,
     CONTEXT_FILTERS_QUERY,
@@ -660,14 +662,19 @@ export class SourcegraphGraphQLAPIClient {
     public async getFileContent(
         repository: string,
         filePath: string,
-        range?: { startLine?: number; endLine?: number }
+        range?: { startLine?: number; endLine?: number },
+        signal?: AbortSignal
     ): Promise<string | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<RemoteFileContentReponse>>(GET_REMOTE_FILE_QUERY, {
-            repositoryName: repository,
-            filePath,
-            startLine: range?.startLine,
-            endLine: range?.endLine,
-        }).then(response =>
+        return this.fetchSourcegraphAPI<APIResponse<RemoteFileContentReponse>>(
+            GET_REMOTE_FILE_QUERY,
+            {
+                repositoryName: repository,
+                filePath,
+                startLine: range?.startLine,
+                endLine: range?.endLine,
+            },
+            signal
+        ).then(response =>
             extractDataOrError(
                 response,
                 data => data.repository.commit.blob.content ?? new Error('no file found')
@@ -911,12 +918,17 @@ export class SourcegraphGraphQLAPIClient {
 
     public async getRepoIds(
         names: string[],
-        first: number
+        first: number,
+        signal?: AbortSignal
     ): Promise<{ name: string; id: string }[] | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<RepositoryIdsResponse>>(REPOSITORY_IDS_QUERY, {
-            names,
-            first,
-        }).then(response => extractDataOrError(response, data => data.repositories?.nodes || []))
+        return this.fetchSourcegraphAPI<APIResponse<RepositoryIdsResponse>>(
+            REPOSITORY_IDS_QUERY,
+            {
+                names,
+                first,
+            },
+            signal
+        ).then(response => extractDataOrError(response, data => data.repositories?.nodes || []))
     }
 
     public async getRepoName(cloneURL: string): Promise<string | null> {
@@ -979,14 +991,19 @@ export class SourcegraphGraphQLAPIClient {
 
     public async contextSearch(
         repoIDs: string[],
-        query: string
+        query: string,
+        signal?: AbortSignal
     ): Promise<ContextSearchResult[] | null | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<ContextSearchResponse>>(CONTEXT_SEARCH_QUERY, {
-            repos: repoIDs,
-            query,
-            codeResultsCount: 15,
-            textResultsCount: 5,
-        }).then(response =>
+        return this.fetchSourcegraphAPI<APIResponse<ContextSearchResponse>>(
+            CONTEXT_SEARCH_QUERY,
+            {
+                repos: repoIDs,
+                query,
+                codeResultsCount: 15,
+                textResultsCount: 5,
+            },
+            signal
+        ).then(response =>
             extractDataOrError(response, data =>
                 (data.getCodyContext || []).map(item => ({
                     commit: item.blob.commit.oid,
@@ -1295,14 +1312,14 @@ export class SourcegraphGraphQLAPIClient {
 
     public async searchAttribution(
         snippet: string,
-        timeoutMs: number
+        signal?: AbortSignal
     ): Promise<SearchAttributionResults | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SearchAttributionResponse>>(
             SEARCH_ATTRIBUTION_QUERY,
             {
                 snippet,
             },
-            timeoutMs
+            signal
         ).then(response => extractDataOrError(response, data => data.snippetAttribution))
     }
 
@@ -1337,10 +1354,10 @@ export class SourcegraphGraphQLAPIClient {
         return extractDataOrError(response, data => JSON.parse(data.viewerSettings.final))
     }
 
-    public fetchSourcegraphAPI<T>(
+    public async fetchSourcegraphAPI<T>(
         query: string,
         variables: Record<string, any> = {},
-        timeout = 6000 // Default timeout of 6000ms (6 seconds)
+        signalOrTimeout?: AbortSignal | number
     ): Promise<T | Error> {
         const headers = new Headers(this.config.customHeaders as HeadersInit)
         headers.set('Content-Type', 'application/json; charset=utf-8')
@@ -1361,28 +1378,32 @@ export class SourcegraphGraphQLAPIClient {
             baseUrl: this.config.serverEndpoint,
         })
 
-        // Create an AbortController instance
-        const controller = new AbortController()
-        const signal = controller.signal
+        // Default timeout of 6 seconds.
+        const timeoutMs = typeof signalOrTimeout === 'number' ? signalOrTimeout : 6000
+        const timeoutSignal = AbortSignal.timeout(timeoutMs)
 
-        // Set a timeout to trigger the abort
-        const timeoutId = setTimeout(() => controller.abort(), timeout)
+        const abortController = dependentAbortController(
+            typeof signalOrTimeout !== 'number' ? signalOrTimeout : undefined
+        )
+        onAbort(timeoutSignal, () => abortController.abort())
 
         return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({ query, variables }),
                 headers,
-                signal, // Pass the signal to the fetch request
+                signal: abortController.signal,
             })
-                .then(response => {
-                    clearTimeout(timeoutId) // Clear the timeout if the request completes in time
-                    return verifyResponseCode(response)
-                })
+                .then(verifyResponseCode)
                 .then(response => response.json() as T)
                 .catch(error => {
-                    if (error.name === 'AbortError') {
-                        return new Error(`ETIMEDOUT: Request timed out after ${timeout}ms (${url})`)
+                    if (isAbortError(error)) {
+                        if (timeoutSignal.aborted) {
+                            return new Error(
+                                `ETIMEDOUT: Request timed out after ${timeoutMs}ms (${url})`
+                            )
+                        }
+                        return error
                     }
                     return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
                 })
@@ -1438,8 +1459,7 @@ export class SourcegraphGraphQLAPIClient {
         queryName: string,
         method: string,
         urlPath: string,
-        body?: string,
-        timeout = 6000 // Default timeout of 6000ms (6 seconds)
+        body?: string
     ): Promise<T | Error> {
         const headers = new Headers(this.config.customHeaders as HeadersInit)
         headers.set('Content-Type', 'application/json; charset=utf-8')
@@ -1453,30 +1473,23 @@ export class SourcegraphGraphQLAPIClient {
         addTraceparent(headers)
         addCustomUserAgent(headers)
 
+        // Timeout of 6 seconds.
+        const signal = AbortSignal.timeout(6000)
+
         const url = new URL(urlPath, this.config.serverEndpoint).href
-
-        // Create an AbortController instance
-        const controller = new AbortController()
-        const signal = controller.signal
-
-        // Set a timeout to trigger the abort
-        const timeoutId = setTimeout(() => controller.abort(), timeout)
 
         return wrapInActiveSpan(`httpapi.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: method,
                 body: body,
                 headers,
-                signal, // Pass the signal to the fetch request
+                signal,
             })
-                .then(response => {
-                    clearTimeout(timeoutId) // Clear the timeout if the request completes in time
-                    return verifyResponseCode(response)
-                })
+                .then(verifyResponseCode)
                 .then(response => response.json() as T)
                 .catch(error => {
-                    if (error.name === 'AbortError') {
-                        return new Error(`ETIMEDOUT: Request timed out after ${timeout}ms (${url})`)
+                    if (isAbortError(error)) {
+                        return error
                     }
                     return new Error(`accessing Sourcegraph HTTP API: ${error} (${url})`)
                 })
