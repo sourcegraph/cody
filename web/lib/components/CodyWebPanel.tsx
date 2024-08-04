@@ -5,19 +5,21 @@ import {
     type AuthStatus,
     type ChatMessage,
     type ClientStateForWebview,
+    type CodyCommand,
     CodyIDE,
     type ContextItem,
     type ContextItemRepository,
     ContextItemSource,
     type Model,
     PromptString,
+    type SerializedChatTranscript,
     isErrorLike,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
 
 import { ChatMentionContext, type ChatMentionsSettings } from '@sourcegraph/prompt-editor'
 import { getAppWrappers } from 'cody-ai/webviews/App'
-import { Chat, type UserAccountInfo } from 'cody-ai/webviews/Chat'
+import type { UserAccountInfo } from 'cody-ai/webviews/Chat'
 import { ChatEnvironmentContext } from 'cody-ai/webviews/chat/ChatEnvironmentContext'
 import type { ChatModelContext } from 'cody-ai/webviews/chat/models/chatModelContext'
 import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
@@ -28,6 +30,8 @@ import { useWebAgentClient } from './CodyWebPanelProvider'
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
 import type { ConfigurationSubsetForWebview, LocalEnv } from 'cody-ai/src/chat/protocol'
+import { CodyPanel } from 'cody-ai/webviews/CodyPanel'
+import type { View } from 'cody-ai/webviews/tabs'
 import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
 import styles from './CodyWebPanel.module.css'
 
@@ -57,6 +61,7 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const [initialization, setInitialization] = useState<'init' | 'completed'>('init')
 
     const [rootElement, setRootElement] = useState<HTMLElement | null>()
+    const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
@@ -65,7 +70,10 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
     const [exportedFeatureFlags, setExportedFeatureFlags] = useState<Record<string, boolean>>()
     const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
+    const [view, setView] = useState<View | undefined>()
     const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
+    const [commandList, setCommandList] = useState<CodyCommand[]>([])
+    const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
 
     useLayoutEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -85,6 +93,12 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     }
                     break
                 }
+                case 'errors':
+                    setErrorMessages(prev => [...prev, message.errors].slice(-5))
+                    break
+                case 'view':
+                    setView(message.view)
+                    break
                 case 'transcript-errors':
                     setIsTranscriptError(message.isTranscriptError)
                     break
@@ -108,6 +122,12 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 case 'setConfigFeatures':
                     setExportedFeatureFlags(message.exportedFeatureFlags)
                     setServerSentModelsEnabled(!!message.configFeatures.serverSentModels)
+                    break
+                case 'commands':
+                    setCommandList(message.commands)
+                    break
+                case 'history':
+                    setUserHistory(Object.values(message.localHistory?.chat ?? {}))
                     break
             }
         })
@@ -225,7 +245,10 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         !chatModels ||
         !activeChatID ||
         !exportedFeatureFlags ||
-        initialization !== 'completed'
+        initialization !== 'completed' ||
+        !config ||
+        !view ||
+        !userHistory
 
     return (
         <div className={className} data-cody-web-chat={true} ref={setRootElement}>
@@ -236,7 +259,15 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     <ChatEnvironmentContext.Provider value={envVars}>
                         <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
                             <ComposedWrappers wrappers={wrappers}>
-                                <Chat
+                                <CodyPanel
+                                    view={view}
+                                    setView={setView}
+                                    errorMessages={errorMessages}
+                                    setErrorMessages={setErrorMessages}
+                                    attributionEnabled={false}
+                                    commands={commandList}
+                                    config={config}
+                                    userHistory={userHistory}
                                     chatID={activeChatID}
                                     chatEnabled={true}
                                     showWelcomeMessage={false}
@@ -247,7 +278,7 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                                     vscodeAPI={vscodeAPI}
                                     isTranscriptError={isTranscriptError}
                                     scrollableParent={rootElement}
-                                    className={styles.chat}
+                                    onlyChatAndHistoryTabs={true}
                                 />
                             </ComposedWrappers>
                         </ChatMentionContext.Provider>

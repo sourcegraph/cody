@@ -25,6 +25,7 @@ interface TabsBarProps {
     IDE: CodyIDE
     currentView: View
     setView: (view: View) => void
+    onlyChatAndHistoryTabs?: boolean
 }
 
 type IconComponent = React.ForwardRefExoticComponent<
@@ -131,8 +132,19 @@ const getTabItemsByIDE = (IDE: CodyIDE): TabConfig[] =>
           )
         : BASE_TAB_ITEMS
 
-export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) => {
-    const tabItems = useMemo(() => getTabItemsByIDE(IDE), [IDE])
+export const TabsBar: React.FC<TabsBarProps> = ({
+    currentView,
+    setView,
+    IDE,
+    onlyChatAndHistoryTabs,
+}) => {
+    const tabItems = useMemo(
+        () =>
+            getTabItemsByIDE(IDE).filter(tab =>
+                onlyChatAndHistoryTabs ? tab.view === View.Chat || tab.view === View.History : true
+            ),
+        [IDE, onlyChatAndHistoryTabs]
+    )
     const currentViewSubIcons = tabItems.find(tab => tab.view === currentView)?.SubIcons
 
     const handleClick = useCallback(
@@ -169,18 +181,22 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                     </Tabs.Trigger>
                 ))}
             </div>
-            <div className="tw-flex tw-gap-4">
-                {currentViewSubIcons?.map(({ Icon, command, tooltip }) => (
-                    <TabButton
-                        key={command}
-                        Icon={Icon}
-                        tooltip={tooltip}
-                        command={command}
-                        onClick={() => getVSCodeAPI().postMessage({ command: 'command', id: command })}
-                        prominent
-                    />
-                ))}
-            </div>
+            {!onlyChatAndHistoryTabs && (
+                <div className="tw-flex tw-gap-4">
+                    {currentViewSubIcons?.map(({ Icon, command, tooltip }) => (
+                        <TabButton
+                            key={command}
+                            Icon={Icon}
+                            tooltip={tooltip}
+                            command={command}
+                            onClick={() =>
+                                getVSCodeAPI().postMessage({ command: 'command', id: command })
+                            }
+                            prominent
+                        />
+                    ))}
+                </div>
+            )}
         </Tabs.List>
     )
 }

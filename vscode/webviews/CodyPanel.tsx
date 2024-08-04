@@ -18,6 +18,8 @@ export const CodyPanel: FunctionComponent<
         errorMessages: string[]
         setErrorMessages: (errors: string[]) => void
         attributionEnabled: boolean
+
+        onlyChatAndHistoryTabs?: boolean
     } & Pick<
         ComponentProps<typeof Chat>,
         | 'chatID'
@@ -54,6 +56,7 @@ export const CodyPanel: FunctionComponent<
     showWelcomeMessage,
     userHistory,
     commands,
+    onlyChatAndHistoryTabs,
 }) => {
     return (
         <TabRoot
@@ -62,10 +65,15 @@ export const CodyPanel: FunctionComponent<
             orientation="vertical"
             className={styles.outerContainer}
         >
-            {/* Shows tab bar for sidebar chats only. */}
-            {config.webviewType === 'editor' ? null : (
-                <TabsBar currentView={view} setView={setView} IDE={config.agentIDE || CodyIDE.VSCode} />
-            )}
+            {/* Hide tab bar in editor chat panels. */}
+            {config.agentIDE === CodyIDE.Web || config.webviewType !== 'editor' ? (
+                <TabsBar
+                    currentView={view}
+                    setView={setView}
+                    IDE={config.agentIDE || CodyIDE.VSCode}
+                    onlyChatAndHistoryTabs={onlyChatAndHistoryTabs}
+                />
+            ) : null}
             {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
             <TabContainer value={view}>
                 {view === 'chat' && (
