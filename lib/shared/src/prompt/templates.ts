@@ -5,6 +5,7 @@ import type { ActiveTextEditorDiagnostic } from '../editor'
 import { displayPath } from '../editor/displayPath'
 import { PromptString, ps } from './prompt-string'
 
+// TODO: Make this work with a feature flag
 export function populateCodeContextTemplate(
     code: PromptString,
     fileUri: URI,
@@ -14,12 +15,14 @@ export function populateCodeContextTemplate(
     const template =
         type === 'edit'
             ? ps`Codebase context from file {filePath}{inRepo}:\n{text}`
-            : ps`Codebase context from file {filePath}{inRepo}:\n\`\`\`{languageID}\n{text}\`\`\``
+            : ps`Codebase context from file {filePath}{inRepo}:\n\`\`\`{languageID}{filePathMeta}\n{text}\`\`\``
 
+    const filePath = PromptString.fromDisplayPath(fileUri)
     return template
         .replaceAll('{inRepo}', repoName ? ps` in repository ${repoName}` : ps``)
-        .replaceAll('{filePath}', PromptString.fromDisplayPath(fileUri))
+        .replaceAll('{filePath}', filePath)
         .replaceAll('{languageID}', PromptString.fromMarkdownCodeBlockLanguageIDForFilename(fileUri))
+        .replaceAll('{filePathMeta}', ps`:${filePath}`)
         .replaceAll('{text}', code)
 }
 

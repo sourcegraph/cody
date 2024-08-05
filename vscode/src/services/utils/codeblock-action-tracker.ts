@@ -112,20 +112,16 @@ export async function replaceSelectionWithCode(text: string): Promise<void> {
     }
 
     const edit = new vscode.WorkspaceEdit()
-    // trimEnd() to remove new line added by Cody
     edit.replace(activeEditor.document.uri, selectionRange, `${text}\n`)
     await vscode.workspace.applyEdit(edit)
 
-    // Log insert event
-    const op = 'replace'
-    const eventName = `${op}Button`
-    setLastStoredCode(text, eventName)
+    setLastStoredCode(text, 'replaceButton')
 }
 
 export async function handleSmartApply(
     code: string,
     instruction?: string,
-    fileUri?: string
+    fileUri?: string | null
 ): Promise<void> {
     const activeEditor = getEditor()?.active
     const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
@@ -137,17 +133,23 @@ export async function handleSmartApply(
     }
 
     const document = uri ? await vscode.workspace.openTextDocument(uri) : activeEditor?.document
-    const editor = uri && (await vscode.window.showTextDocument(uri))
+    const editor = document && (await vscode.window.showTextDocument(document))
     if (!editor || !document) {
         throw new Error('No editor found to insert text')
     }
 
+    /**
+     * TODO: We currently only support 3.5 Sonnet for Smart Apply.
+     * This is because it is the most reliable way to apply these changes to files.
+     * We should also support OpenAI models and update the prompt to ensure we get reliable results.
+     * We will need this for enterprise.
+     */
+    const DEFAULT_MODEL = 'anthropic/claude-3-5-sonnet-20240620'
     await executeSmartApply({
         configuration: {
             document: editor.document,
             instruction: PromptString.unsafe_fromUserQuery(instruction || ''),
-            // TODO: Support other models here? Will need to for enterprise
-            model: 'anthropic/claude-3-5-sonnet-20240620',
+            model: DEFAULT_MODEL,
             replacement: code,
         },
         source: 'chat',
@@ -167,8 +169,7 @@ export async function handleNewFileWithCode(code: string, uri: vscode.Uri): Prom
  * Handles insert event to insert text from code block to new file
  */
 export async function handleCodeFromSaveToNewFile(text: string, editor: VSCodeEditor): Promise<void> {
-    const eventName = 'saveButton'
-    setLastStoredCode(text, eventName)
+    setLastStoredCode(text, 'saveButton')
     return editor.createWorkspaceFile(text)
 }
 

@@ -5,6 +5,7 @@ import {
     ClientConfigSingleton,
     ModelsService,
     PromptString,
+    isCodyIgnoredFile,
     ps,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -23,10 +24,9 @@ import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import type { AuthProvider } from '../services/AuthProvider'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import type { ExecuteEditArguments } from './execute'
-import { SMART_APPLY_DECORATION, getSmartApplySelection } from './prompt/smart-apply'
+import { SMART_APPLY_FILE_DECORATION, getSmartApplySelection } from './prompt/smart-apply'
 import { EditProvider } from './provider'
 import type { SmartApplyArguments } from './smart-apply'
-import type { EditIntent, EditMode } from './types'
 import { getEditIntent } from './utils/edit-intent'
 import { getEditMode } from './utils/edit-mode'
 import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
@@ -230,29 +230,24 @@ export class EditManager implements vscode.Disposable {
             return
         }
 
-        const editor = getEditor()
-        if (editor.ignored) {
+        const document = configuration.document
+        if (isCodyIgnoredFile(document.uri)) {
             showCodyIgnoreNotification('edit', 'cody-ignore')
-            return
-        }
-
-        const document = configuration?.document || editor.active?.document
-        if (!document) {
-            void vscode.window.showErrorMessage('Please open a file before running a command.')
-            return
         }
 
         if (await isUriIgnoredByContextFilterWithNotification(document.uri, 'edit')) {
             return
         }
 
-        // Use the replacement from the LLM response
-        const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
+        const editor = await vscode.window.showTextDocument(document.uri)
+        // Apply some decorations to the editor, this showcases that Cody is working on the full file range
+        // of the document. We will narrow it down to a selection soon.
+        const documentRange = new vscode.Range(0, 0, document.lineCount, 0)
+        editor.setDecorations(SMART_APPLY_FILE_DECORATION, [documentRange])
 
-        if (editor.active) {
-            const documentRange = new vscode.Range(0, 0, document.lineCount, 0)
-            editor.active.setDecorations(SMART_APPLY_DECORATION, [documentRange])
-        }
+        // We need to extract the proposed code, provided by the LLM, so we can use it in future
+        // queries to ask the LLM to generate a selection, and then ultimately apply the edit.
+        const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
 
         const selection = await getSmartApplySelection(
             configuration.instruction,
@@ -262,57 +257,74 @@ export class EditManager implements vscode.Disposable {
             this.options.chat
         )
 
-        editor.active?.setDecorations(SMART_APPLY_DECORATION, [])
+        // We finished prompting the LLM for the selection, we can now remove the "progress" decoration
+        // that indicated we where working on the full file.
+        editor.setDecorations(SMART_APPLY_FILE_DECORATION, [])
 
         if (!selection) {
-            void vscode.window.showErrorMessage('Unable to apply edit')
+            // We couldn't figure out the selection, let's inform the user and return early.
+            // TODO: Should we add a "Copy" button to this error? Then the user can copy the code directly.
+            void vscode.window.showErrorMessage(
+                'Unable to apply this change to the file. Please try applying this code manually'
+            )
             return
         }
 
         // Move focus to the determined selection
-        editor.active?.revealRange(selection.range, vscode.TextEditorRevealType.InCenter)
+        editor.revealRange(selection.range, vscode.TextEditorRevealType.InCenter)
 
-        if (!selection.range.isEmpty) {
-            // We have a selection to replace, we re-prompt the LLM to generate the changes to ensure that
-            // we can reliably apply this edit.
-            // Just using the replacement code from the response is not enough, as it may contain parts that are not suitable to apply,
-            // e.g. // ...
-            return this.executeEdit({
-                configuration: {
-                    document: configuration.document,
-                    range: selection.range,
-                    mode: 'edit',
-                    instruction: ps`Apply the following change to this code: ${replacementCode}`,
-                    model: configuration.model,
-                    intent: 'edit',
+        if (selection.range.isEmpty) {
+            // We determined a selection, but it was empty. This means that we will be _adding_ new code
+            // and _inserting_ it into the document. We do not need to re-prompt the LLM for this, let's just
+            // add the code directly.
+            const task = await this.controller.createTask(
+                document,
+                configuration.instruction,
+                [],
+                selection.range,
+                'add',
+                'insert',
+                configuration.model,
+                source,
+                configuration.document.uri,
+                undefined,
+                {}
+            )
+
+            const legacyMetadata = {
+                intent: task.intent,
+                mode: task.mode,
+                source: task.source,
+            }
+            const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
+            telemetryRecorder.recordEvent('cody.command.edit', 'executed', {
+                metadata,
+                privateMetadata: {
+                    ...privateMetadata,
+                    model: task.model,
                 },
-                source: 'chat',
             })
+
+            const provider = this.getProviderForTask(task)
+            await provider.applyEdit('\n\n' + configuration.replacement)
+            return task
         }
 
-        const isInsert = selection.type === 'insert'
-        const intent: EditIntent = isInsert ? 'add' : 'edit'
-        const mode: EditMode = isInsert ? 'insert' : 'edit'
-        const task = await this.controller.createTask(
-            document,
-            configuration.instruction,
-            [],
-            selection.range,
-            intent,
-            mode,
-            configuration.model,
+        // We have a selection to replace, we re-prompt the LLM to generate the changes to ensure that
+        // we can reliably apply this edit.
+        // Just using the replacement code from the response is not enough, as it may contain parts that are not suitable to apply,
+        // e.g. // ...
+        return this.executeEdit({
+            configuration: {
+                document: configuration.document,
+                range: selection.range,
+                mode: 'edit',
+                instruction: ps`Apply the following change to this code: ${replacementCode}`,
+                model: configuration.model,
+                intent: 'edit',
+            },
             source,
-            configuration.document.uri,
-            undefined,
-            {}
-        )
-
-        const provider = this.getProviderForTask(task)
-
-        await provider.applyEdit(
-            isInsert ? '\n\n' + configuration.replacement : configuration.replacement
-        )
-        return task
+        })
     }
 
     private getProviderForTask(task: FixupTask): EditProvider {

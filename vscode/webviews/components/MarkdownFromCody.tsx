@@ -120,6 +120,7 @@ function markdownPluginProps(): Pick<
                         ...defaultSchema.attributes,
                         code: [
                             ...(defaultSchema.attributes?.code || []),
+                            // We use `data-file-path` to attach file path metadata to <code> blocks.
                             ['data-file-path'],
                             ['className', ...LANGUAGES.map(language => `language-${language}`)],
                         ],

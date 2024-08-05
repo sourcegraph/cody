@@ -174,6 +174,11 @@ export class EditProvider {
         this.abortController?.abort()
     }
 
+    /**
+     * Given a response, allows applying an edit directly.
+     * This is a shortcut to creating an edit without calling `executeEdit`.
+     * Should **only** be used for completed edits.
+     */
     public applyEdit(response: string): Promise<void> {
         // We need to start the task first, before applying
         this.config.controller.startTask(this.config.task)

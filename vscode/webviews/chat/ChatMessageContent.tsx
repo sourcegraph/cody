@@ -36,7 +36,11 @@ interface ChatMessageContentProps {
     className?: string
 }
 
+/**
+ * TODO: Implement feature flag logic
+ */
 const ENABLE_V2_BUTTONS = true
+
 function createButtons(
     preText: string,
     humanMessage: PriorHumanMessageInfo | null,
@@ -51,13 +55,12 @@ function createButtons(
             humanMessage,
             fileName,
             copyButtonOnSubmit,
-            insertButtonOnSubmit,
             smartApplyButtonOnSubmit
         )
     }
 
     const container = document.createElement('div')
-    container.className = styles.buttonContainer
+    container.className = styles.buttonsContainer
 
     if (!copyButtonOnSubmit) {
         return container
@@ -71,13 +74,11 @@ function createButtons(
     const codeBlockActions = {
         copy: copyButtonOnSubmit,
         insert: insertButtonOnSubmit,
-        smartApply: smartApplyButtonOnSubmit,
     }
 
     const copyButton = createCodeBlockActionButton(
         'copy',
         preText,
-        humanMessage,
         'Copy Code',
         CopyCodeBlockIcon,
         codeBlockActions
@@ -90,7 +91,6 @@ function createButtons(
             createCodeBlockActionButton(
                 'insert',
                 preText,
-                humanMessage,
                 'Insert Code at Cursor',
                 InsertCodeBlockIcon,
                 codeBlockActions
@@ -101,24 +101,9 @@ function createButtons(
             createCodeBlockActionButton(
                 'new',
                 preText,
-                humanMessage,
                 'Save Code to New File...',
                 SaveCodeBlockIcon,
                 codeBlockActions
-            )
-        )
-    }
-
-    if (smartApplyButtonOnSubmit) {
-        buttons.append(
-            createCodeBlockActionButton(
-                'smartApply',
-                preText,
-                humanMessage,
-                'Smart Apply Code to Current File',
-                SparkleIcon,
-                codeBlockActions,
-                fileName
             )
         )
     }
@@ -133,7 +118,6 @@ function createButtonsV2(
     humanMessage: PriorHumanMessageInfo | null,
     fileName?: string,
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
-    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
     smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
 ): HTMLElement {
     // The container will contain the buttons and the <pre> element with the code.
@@ -168,15 +152,13 @@ function createButtonsV2(
  * @returns The button element.
  */
 function createCodeBlockActionButton(
-    type: 'copy' | 'insert' | 'new' | 'smartApply',
-    preText: string,
-    humanMessage: PriorHumanMessageInfo | null,
+    type: 'copy' | 'insert' | 'new',
+    text: string,
     title: string,
     iconSvg: string,
     codeBlockActions: {
         copy: CodeBlockActionsProps['copyButtonOnSubmit']
         insert?: CodeBlockActionsProps['insertButtonOnSubmit']
-        smartApply?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
     },
     fileName?: string
 ): HTMLElement {
@@ -191,34 +173,30 @@ function createCodeBlockActionButton(
     if (type === 'copy') {
         button.addEventListener('click', () => {
             button.innerHTML = CheckCodeBlockIcon
-            navigator.clipboard.writeText(preText).catch(error => console.error(error))
+            navigator.clipboard.writeText(text).catch(error => console.error(error))
             button.className = className
-            codeBlockActions.copy(preText, 'Button')
+            codeBlockActions.copy(text, 'Button')
             setTimeout(() => {
                 button.innerHTML = iconSvg
             }, 5000)
 
             // Log for `chat assistant response code buttons` e2e test.
-            console.log('Code: Copy to Clipboard', preText)
+            console.log('Code: Copy to Clipboard', text)
         })
     }
 
     const insertOnSubmit = codeBlockActions.insert
-    if (insertOnSubmit) {
-        switch (type) {
-            case 'insert':
-                button.addEventListener('click', () => insertOnSubmit(preText, false))
-                break
-            case 'new':
-                button.addEventListener('click', () => insertOnSubmit(preText, true))
-                break
-        }
+    if (!insertOnSubmit) {
+        return button
     }
 
-    const smartApplyOnSubmit = codeBlockActions.smartApply
-    if (smartApplyOnSubmit && type === 'smartApply') {
-        button.addEventListener('click', () => smartApplyOnSubmit(preText, humanMessage?.text, fileName))
-        return button
+    switch (type) {
+        case 'insert':
+            button.addEventListener('click', () => insertOnSubmit(text, false))
+            break
+        case 'new':
+            button.addEventListener('click', () => insertOnSubmit(text, true))
+            break
     }
 
     return button
@@ -290,17 +268,17 @@ function createActionsDropdown(preText: string): HTMLElement {
     button.title = 'More Actions...'
     button.className = styles.button
 
-    // Support a custom context menu for the button.
     const vscodeContext = {
         webviewSection: 'codeblock-actions',
         preventDefaultContextMenuItems: true,
         text: preText,
     }
-    button.setAttribute('data-vscode-context', JSON.stringify(vscodeContext))
-    button.addEventListener('click', event => {
-        console.log('CLICKED!!')
-        console.log('vscodeContext', vscodeContext)
 
+    // Attach `data-vscode-context`, this is also provided when the commands are executed,
+    // so serves as a way for us to pass `vscodeContext.text` to each relevant command
+    button.setAttribute('data-vscode-context', JSON.stringify(vscodeContext))
+
+    button.addEventListener('click', event => {
         event.preventDefault()
         event.target?.dispatchEvent(
             new MouseEvent('contextmenu', {
@@ -438,14 +416,17 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         }
 
         for (const preElement of preElements) {
-            const codeblockText = preElement.textContent?.trim()
+            const preText = preElement.textContent
 
-            if (codeblockText && preElement.parentNode) {
+            if (preText?.trim() && preElement.parentNode) {
+                // Extract the <code> element and attached `data-file-path` if present.
+                // This allows us to intelligently apply code to the suitable file.
                 const codeElement = preElement.querySelectorAll('code')?.[0]
                 const fileName = codeElement?.getAttribute('data-file-path') || undefined
 
+                // TODO: Consider using the feature flag here.
                 const buttons = createButtons(
-                    codeblockText,
+                    preText,
                     humanMessage,
                     copyButtonOnSubmit,
                     insertButtonOnSubmit,
@@ -459,6 +440,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     fileNameContainer.textContent = getFileName(fileName)
                     buttons.append(fileNameContainer)
                 }
+
                 if (guardrails) {
                     const container = document.createElement('div')
                     container.classList.add(styles.attributionContainer)
@@ -469,7 +451,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                         g.setPending()
 
                         guardrails
-                            .searchAttribution(codeblockText)
+                            .searchAttribution(preText)
                             .then(attribution => {
                                 if (isError(attribution)) {
                                     g.setUnavailable(attribution)

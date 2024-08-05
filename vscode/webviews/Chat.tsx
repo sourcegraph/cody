@@ -122,7 +122,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
 
         return (text: string, instruction?: PromptString, fileName?: string) => {
-            // Log the event type and text to telemetry in chat view
             vscodeAPI.postMessage({
                 command: 'smartApply',
                 instruction: instruction?.toString(),

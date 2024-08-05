@@ -9,8 +9,6 @@ import { CodyTaskState } from '../utils'
 // Create Lenses based on state
 export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
     const codeLensRange = new vscode.Range(task.selectionRange.start, task.selectionRange.start)
-
-    // TODO: Probably use task.intent for chat-driven edits?
     const isChatEdit = task.source === 'chat'
     const isTest = task.intent === 'test'
     const isEdit = task.mode === 'edit'

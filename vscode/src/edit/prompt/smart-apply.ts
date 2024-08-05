@@ -22,18 +22,16 @@ const SMART_APPLY_TOPICS = {
     REPLACE: ps`REPLACE`,
 } as const
 
-const RESPONSE_PREFIX = ps`<${SMART_APPLY_TOPICS.REPLACE}>`
-const SHARED_PARAMETERS = {
+// TODO: This is Claude specific right now, we should expand and test
+// this with OpenAI LLMs before opening this up to enterprise.
+const LLM_PARAMETERS = {
     stopSequences: [`</${SMART_APPLY_TOPICS.REPLACE}>`],
-    assistantText: RESPONSE_PREFIX,
-    assistantPrefix: RESPONSE_PREFIX,
+    assistantPrefix: ps`<${SMART_APPLY_TOPICS.REPLACE}>`,
 }
-
-const SMART_APPLY_PREFIX = `<${SMART_APPLY_TOPICS.REPLACE}>`
 
 export const SMART_APPLY_PROMPT = {
     system: psDedent`
-        - You are an AI programming assistant who is an expert in determiing the best way to apply a code snippet to a file.
+        - You are an AI programming assistant who is an expert in determining the best way to apply a code snippet to a file.
         - Given a change, and the file where that change should be applied, you should determine the best way to apply the change to the file.
         - You will be provided with the contents of the current active file, enclosed in <${SMART_APPLY_TOPICS.FILE_CONTENTS}></${SMART_APPLY_TOPICS.FILE_CONTENTS}> XML tags.
         - You will be provided with an incoming change to a file, enclosed in <${SMART_APPLY_TOPICS.INCOMING}></${SMART_APPLY_TOPICS.INCOMING}> XML tags.
@@ -57,7 +55,7 @@ export const SMART_APPLY_PROMPT = {
         Follow these specific rules:
         - If you find code that should be replaced, respond with the exact code enclosed within <${SMART_APPLY_TOPICS.REPLACE}></${SMART_APPLY_TOPICS.REPLACE}> XML tags.
         - If you cannot find code that should be replaced, and believe this code should be inserted into the file, respond with "<${SMART_APPLY_TOPICS.REPLACE}>INSERT</${SMART_APPLY_TOPICS.REPLACE}>"
-        - If you believe that the contents of the entire file should be replaced, respond with "<${SMART_APPLY_TOPICS.REPLACE}>ENTIRE_FILE</${SMART_APPLY_TOPICS.REPLACE}>"
+        - If you believe that the entire contents of the file should be replaced, respond with "<${SMART_APPLY_TOPICS.REPLACE}>ENTIRE_FILE</${SMART_APPLY_TOPICS.REPLACE}>"
     `,
 }
 
@@ -88,11 +86,11 @@ export const getPrompt = async (
         .replaceAll('{filePath}', PromptString.fromDisplayPath(document.uri))
 
     const transcript: ChatMessage[] = [{ speaker: 'human', text }]
-    transcript.push({ speaker: 'assistant', text: SHARED_PARAMETERS.assistantText })
+    transcript.push({ speaker: 'assistant', text: LLM_PARAMETERS.assistantPrefix })
 
     promptBuilder.tryAddMessages(transcript.reverse())
 
-    return { prefix: SMART_APPLY_PREFIX, messages: promptBuilder.build() }
+    return { prefix: LLM_PARAMETERS.assistantPrefix.toString(), messages: promptBuilder.build() }
 }
 
 export async function promptModelForOriginalCode(
@@ -121,7 +119,7 @@ export async function promptModelForOriginalCode(
         messages,
         {
             model,
-            stopSequences: SHARED_PARAMETERS.stopSequences,
+            stopSequences: LLM_PARAMETERS.stopSequences,
             maxTokensToSample: contextWindow.output,
         },
         abortController.signal
@@ -201,20 +199,29 @@ export async function getSmartApplySelection(
     const fuzzyLocation = fuzzyFindLocation(document, originalCode)
     if (!fuzzyLocation) {
         // Cody told us we need to replace some code, but we couldn't find where to replace it
-        // Do nothing.
-        // TODO: Should we just insert at the bottom of the file?
         return null
     }
 
-    console.log('got fuzzy location?', fuzzyLocation)
+    if (
+        fuzzyLocation.location.range.isEmpty ||
+        document.getText(fuzzyLocation.location.range).trim() === ''
+    ) {
+        // Cody returned a selection, but it was empty. We ensure that we treat this as an 'insert'
+        // rather than a 'selection' and replace.
+        return {
+            type: 'insert',
+            range: new vscode.Range(fuzzyLocation.location.range.end, fuzzyLocation.location.range.end),
+        }
+    }
 
+    // We found a matching selection in the text, let's use this!
     return {
         type: 'selection',
         range: fuzzyLocation.location.range,
     }
 }
 
-export const SMART_APPLY_DECORATION = vscode.window.createTextEditorDecorationType({
+export const SMART_APPLY_FILE_DECORATION = vscode.window.createTextEditorDecorationType({
     isWholeLine: true,
     backgroundColor: new vscode.ThemeColor('diffEditor.unchangedCodeBackground'),
     rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
