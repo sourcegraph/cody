@@ -254,7 +254,8 @@ export class EditManager implements vscode.Disposable {
             replacementCode,
             configuration.document,
             configuration.model,
-            this.options.chat
+            this.options.chat,
+            this.options.authProvider.getAuthStatus().codyApiVersion
         )
 
         // We finished prompting the LLM for the selection, we can now remove the "progress" decoration

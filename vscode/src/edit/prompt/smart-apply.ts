@@ -63,7 +63,8 @@ export const getPrompt = async (
     instruction: PromptString,
     replacement: PromptString,
     document: vscode.TextDocument,
-    model: EditModel
+    model: EditModel,
+    codyApiVersion: number
 ): Promise<{ messages: Message[]; prefix: string }> => {
     const documentRange = new vscode.Range(0, 0, document.lineCount - 1, 0)
     const documentText = PromptString.fromDocumentText(document, documentRange)
@@ -72,11 +73,9 @@ export const getPrompt = async (
     if (tokenCount > contextWindow.input) {
         throw new Error("The amount of text in this document exceeds Cody's current capacity.")
     }
-    const promptBuilder = new PromptBuilder(contextWindow)
 
-    // TODO: Implement api version
-    const fakeApiVersion = 5
-    const preamble = getSimplePreamble(model, fakeApiVersion, SMART_APPLY_PROMPT.system)
+    const promptBuilder = new PromptBuilder(contextWindow)
+    const preamble = getSimplePreamble(model, codyApiVersion, SMART_APPLY_PROMPT.system)
     promptBuilder.tryAddToPrefix(preamble)
 
     const text = SMART_APPLY_PROMPT.instruction
@@ -98,7 +97,8 @@ export async function promptModelForOriginalCode(
     replacement: PromptString,
     document: vscode.TextDocument,
     model: EditModel,
-    client: ChatClient
+    client: ChatClient,
+    codyApiVersion: number
 ): Promise<string> {
     const multiplexer = new BotResponseMultiplexer()
     const contextWindow = ModelsService.getContextWindowByID(model)
@@ -114,7 +114,13 @@ export async function promptModelForOriginalCode(
     })
 
     const abortController = new AbortController()
-    const { prefix, messages } = await getPrompt(instruction, replacement, document, model)
+    const { prefix, messages } = await getPrompt(
+        instruction,
+        replacement,
+        document,
+        model,
+        codyApiVersion
+    )
     const stream = client.chat(
         messages,
         {
@@ -164,14 +170,16 @@ export async function getSmartApplySelection(
     replacement: PromptString,
     document: vscode.TextDocument,
     model: EditModel,
-    client: ChatClient
+    client: ChatClient,
+    codyApiVersion: number
 ): Promise<SmartSelection | null> {
     const originalCode = await promptModelForOriginalCode(
         instruction,
         replacement,
         document,
         model,
-        client
+        client,
+        codyApiVersion
     )
 
     if (originalCode.trim().length === 0 || originalCode.trim() === 'INSERT') {
