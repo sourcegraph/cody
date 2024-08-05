@@ -8,7 +8,7 @@ import rehypeHighlight, { type Options as RehypeHighlightOptions } from 'rehype-
 import rehypeSanitize, { type Options as RehypeSanitizeOptions, defaultSchema } from 'rehype-sanitize'
 import remarkGFM from 'remark-gfm'
 import { useChatEnvironment } from '../chat/ChatEnvironmentContext'
-import { remarkExtractCodeBlocks } from '../chat/extract-code-blocks'
+import { remarkAttachFilePathToCodeBlocks } from '../chat/extract-code-blocks'
 
 /**
  * Supported URIs to render as links in outputted markdown.
@@ -147,7 +147,7 @@ function markdownPluginProps(): Pick<
                 } satisfies RehypeHighlightOptions & { ignoreMissing: boolean },
             ],
         ],
-        remarkPlugins: [remarkGFM, remarkExtractCodeBlocks],
+        remarkPlugins: [remarkGFM, remarkAttachFilePathToCodeBlocks],
     }
     return _markdownPluginProps
 }

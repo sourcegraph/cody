@@ -26,7 +26,7 @@ const LANG_FILE_PATH_REGEX = /^(\w+):(.+)$/
  * console.log()
  * </code>
  */
-export const remarkExtractCodeBlocks: Plugin<[], Root> = () => {
+export const remarkAttachFilePathToCodeBlocks: Plugin<[], Root> = () => {
     return (tree: Root) => {
         visit(tree, 'code', (node: Code) => {
             const match = node.lang?.match(LANG_FILE_PATH_REGEX)
