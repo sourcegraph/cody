@@ -5,20 +5,23 @@ import {
     type ContextSearchResult,
     type PromptString,
     type SourcegraphCompletionsClient,
+    getContextForChatMessage,
     graphqlClient,
     isFileURI,
 } from '@sourcegraph/cody-shared'
 import { isError } from 'lodash'
 import * as vscode from 'vscode'
+import { getConfiguration } from '../../configuration'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { rewriteKeywordQuery } from '../../local-context/rewrite-keyword-query'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { gitLocallyModifiedFiles } from '../../repository/git-extension-api'
-import type { Root } from './context'
+import { type Root, getContextStrategy, resolveContext } from './context'
 
 interface ContextQuery {
     userQuery: PromptString
+    mentions: ContextItem[]
     roots: Root[]
 }
 
@@ -125,6 +128,43 @@ export class ContextFetcher implements vscode.Disposable {
             throw result
         }
         return result?.flatMap(r => contextSearchResultToContextItem(r) ?? []) ?? []
+    }
+
+    private async fetchIndexedContextLocally(
+        query: RewrittenQuery,
+        signal?: AbortSignal
+    ): Promise<ContextItem[]> {
+        // Fetch using legacy context retrieval
+        const config = getConfiguration()
+        const contextStrategy = await getContextStrategy(config.useContext)
+        // span.setAttribute('strategy', contextStrategy)
+
+        // // Remove context chips (repo, @-mentions) from the input text for context retrieval.
+        // const inputTextWithoutContextChips = editorState
+        //     ? PromptString.unsafe_fromUserQuery(
+        //           inputTextWithoutContextChipsFromPromptEditorState(editorState)
+        //       )
+        //     : text
+
+        return (
+            await Promise.all([
+                resolveContext({
+                    strategy: contextStrategy,
+                    editor: this.editor,
+                    // TODO(beyang): should we use original user query or rewritten query here?
+                    input: { text: query.userQuery, mentions: query.mentions },
+                    providers: {
+                        // localEmbeddings: this.localEmbeddings,
+                        localEmbeddings: null,
+                        symf: this.symf ?? null,
+                        // remoteSearch: this.remoteSearch,
+                        remoteSearch: null,
+                    },
+                    signal,
+                }),
+                getContextForChatMessage(query.userQuery.toString(), signal),
+            ])
+        ).flat()
     }
 }
 

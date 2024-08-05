@@ -829,6 +829,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const context = await this.contextFetcher.fetchContext(
             {
                 userQuery: text,
+                mentions,
                 roots,
             },
             signal
