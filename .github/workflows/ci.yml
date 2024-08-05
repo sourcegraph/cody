@@ -150,6 +150,37 @@ jobs:
           name: playwright-recordings ${{ matrix.runner }}
           path: playwright/
 
+  test-e2e-experimental:
+    needs: fast_tests_matrix_prep
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: ${{ fromJson(needs.fast_tests_matrix_prep.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .tool-versions
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
+      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        shell: bash
+        id: pnpm-cache
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+      - run: pnpm install
+      - run: pnpm -C vscode run test:e2e2
+      - uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
+        with:
+          name: playwright-recordings ${{ matrix.runner }}
+          path: vscode/test-results
+
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 5
