@@ -120,14 +120,46 @@ export class ContextFetcher implements vscode.Disposable {
         query: RewrittenQuery,
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
-        const repoIDs = query.roots
-            .flatMap(r => r.remoteRepo?.id)
-            .filter((id): id is string => id !== undefined)
-        const result = await graphqlClient.contextSearch(repoIDs, query.rewritten, signal)
-        if (isError(result)) {
-            throw result
+        const repoIDsOnRemote: string[] = []
+        const localRootURIs: vscode.Uri[] = []
+        for (const root of query.roots) {
+            if (root.remoteRepo?.id) {
+                repoIDsOnRemote.push(root.remoteRepo.id)
+            } else if (root.local) {
+                localRootURIs.push(root.local)
+            } else {
+                throw new Error(
+                    `Codebase root ${JSON.stringify(root)} is missing both remote and local root`
+                )
+            }
         }
-        return result?.flatMap(r => contextSearchResultToContextItem(r) ?? []) ?? []
+
+        const remoteResultsPromise = this.fetchIndexedContextFromRemote(
+            repoIDsOnRemote,
+            query.rewritten,
+            signal
+        )
+        const localResultsPromise = this.fetchIndexedContextLocally(query, signal)
+
+        const [remoteResults, localResults] = await Promise.all([
+            remoteResultsPromise,
+            localResultsPromise,
+        ])
+        return remoteResults.concat(localResults)
+    }
+
+    private async fetchIndexedContextFromRemote(
+        repoIDs: string[],
+        query: string,
+        signal?: AbortSignal
+    ): Promise<ContextItem[]> {
+        const remoteResultPromise = graphqlClient.contextSearch(repoIDs, query, signal)
+
+        const remoteResult = await remoteResultPromise
+        if (isError(remoteResult)) {
+            throw remoteResult
+        }
+        return remoteResult?.flatMap(r => contextSearchResultToContextItem(r) ?? []) ?? []
     }
 
     private async fetchIndexedContextLocally(
