@@ -84,6 +84,7 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
       CodyAgentService.getInstance(project)
           .stopAgent(project)
           ?.get(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+      CodyAgentService.getInstance(project).dispose()
     } finally {
       super.tearDown()
     }

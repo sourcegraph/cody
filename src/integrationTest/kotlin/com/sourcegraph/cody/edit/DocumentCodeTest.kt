@@ -49,11 +49,14 @@ class DocumentCodeTest : CodyIntegrationTextFixture() {
         (theWidgets[5] as LensLabel).text == LensesService.SEPARATOR)
     assertTrue("Sixth lens group should be an action", theWidgets[6] is LensAction)
     assertTrue("Seventh lens group should be a label with a hotkey", theWidgets[7] is LensHotkey)
+
+    runLensAction(codeLensGroup, EditCancelAction.ID)
+    assertNoInlayShown()
   }
 
   @Test
   fun testShowsAcceptLens() {
-    runAndWaitForLenses(DocumentCodeAction.ID, EditAcceptAction.ID)
+    val codeLensGroup = runAndWaitForLenses(DocumentCodeAction.ID, EditAcceptAction.ID)
     assertInlayIsShown()
 
     // Lens group should match the expected structure.
@@ -79,6 +82,9 @@ class DocumentCodeTest : CodyIntegrationTextFixture() {
 
     // Make sure a doc comment was inserted.
     assertTrue(hasJavadocComment(myFixture.editor.document.text))
+
+    runLensAction(codeLensGroup!!, EditUndoAction.ID)
+    assertNoInlayShown()
   }
 
   @Test
