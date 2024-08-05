@@ -191,7 +191,7 @@ export class ChatsController implements vscode.Disposable {
                 }
             ),
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
-            vscode.commands.registerCommand('cody.chat.history.clear', () => this.clearHistory()),
+            vscode.commands.registerCommand('cody.chat.history.clear', arg => this.clearHistory(arg)),
             vscode.commands.registerCommand('cody.chat.history.delete', item => this.clearHistory(item)),
             vscode.commands.registerCommand('cody.chat.panel.restore', restoreToEditor),
             vscode.commands.registerCommand(CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID, (...args) =>
@@ -345,9 +345,13 @@ export class ChatsController implements vscode.Disposable {
         }
     }
 
-    private async clearHistory(treeItem?: vscode.TreeItem): Promise<void> {
+    private async clearHistory(arg?: vscode.TreeItem | 'clear-all-no-confirm'): Promise<void> {
+        const treeItem = arg && arg !== 'clear-all-no-confirm' ? arg : undefined
+        const clearAllNoConfirm = arg === 'clear-all-no-confirm'
+
         const authProvider = this.options.authProvider
         const authStatus = authProvider.getAuthStatus()
+
         const chatID = treeItem?.id
 
         // delete single chat
@@ -360,15 +364,17 @@ export class ChatsController implements vscode.Disposable {
         // delete all chats
         if (!treeItem) {
             logDebug('ChatsController:clearHistory', 'userConfirmation')
-            // Show warning to users and get confirmation if they want to clear all history
-            const userConfirmation = await vscode.window.showWarningMessage(
-                'Are you sure you want to delete all of your chats?',
-                { modal: true },
-                'Delete All Chats'
-            )
 
-            if (!userConfirmation) {
-                return
+            if (!clearAllNoConfirm) {
+                // Show warning to users and get confirmation if they want to clear all history
+                const userConfirmation = await vscode.window.showWarningMessage(
+                    'Are you sure you want to delete all of your chats?',
+                    { modal: true },
+                    'Delete All Chats'
+                )
+                if (!userConfirmation) {
+                    return
+                }
             }
 
             await chatHistory.clear(authStatus)

@@ -258,15 +258,14 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                                     userHistory={userHistory}
                                     chatID={activeChatID}
                                     chatEnabled={true}
-                                    showWelcomeMessage={false}
-                                    showIDESnippetActions={false}
+                                    showWelcomeMessage={true}
+                                    showIDESnippetActions={true}
                                     userInfo={userAccountInfo}
                                     messageInProgress={messageInProgress}
                                     transcript={transcript}
                                     vscodeAPI={vscodeAPI}
                                     isTranscriptError={isTranscriptError}
                                     scrollableParent={rootElement}
-                                    onlyChatAndHistoryTabs={true}
                                 />
                             </ComposedWrappers>
                         </ChatMentionContext.Provider>
