@@ -1,49 +1,130 @@
 import path from 'node:path'
 import type { Span } from '@opentelemetry/api'
 import {
-    CodyIDE,
     type ContextItem,
+    type ContextItemRepository,
     ContextItemSource,
+    type ContextItemTree,
     type ContextSearchResult,
     type PromptString,
     type SourcegraphCompletionsClient,
-    getContextForChatMessage,
     graphqlClient,
     isFileURI,
 } from '@sourcegraph/cody-shared'
 import { isError } from 'lodash'
 import * as vscode from 'vscode'
 import { getConfiguration } from '../../configuration'
-import type { RemoteSearch } from '../../context/remote-search'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
-import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { rewriteKeywordQuery } from '../../local-context/rewrite-keyword-query'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { gitLocallyModifiedFiles } from '../../repository/git-extension-api'
-import type { AuthProvider } from '../../services/AuthProvider'
-import { type Root, getContextStrategy, resolveContext } from './context'
+import { repoNameResolver } from '../../repository/repo-name-resolver'
+import { type HumanInput, getContextStrategy, retrieveContextGracefully, searchSymf } from './context'
 
-interface ContextQuery {
-    userQuery: PromptString
-    mentions: ContextItem[]
-    roots: Root[]
+interface Input extends HumanInput {
+    inputTextWithoutContextChips: PromptString
 }
 
-interface RewrittenQuery extends ContextQuery {
-    rewritten: string
+interface StructuredMentions {
+    repos: ContextItemRepository[]
+    trees: ContextItemTree[]
+    other: Exclude<ContextItem, ContextItemRepository | ContextItemTree>[]
+}
+
+function toStructuredMentions(mentions: ContextItem[]): StructuredMentions {
+    const repos: ContextItemRepository[] = []
+    const trees: ContextItemTree[] = []
+    const other: Exclude<ContextItem, ContextItemRepository | ContextItemTree>[] = []
+    for (const mention of mentions) {
+        switch (mention.type) {
+            case 'repository':
+                repos.push(mention)
+                break
+            case 'tree':
+                trees.push(mention)
+                break
+            default:
+                other.push(mention)
+                break
+        }
+    }
+    return { repos, trees, other }
+}
+
+/**
+ * A Root instance represents the root of a codebase.
+ *
+ * If the codebase exists locally, then the `local` property indicates where in the local filesystem the
+ * codebase exists.
+ * If the codebase exists remotely on Sourcegraph, then the `remoteRepo` property indicates the name of the
+ * remote repository and its ID.
+ *
+ * It is possible for both fields to be set, if the codebase exists on Sourcegraph and is checked out locally.
+ */
+export interface Root {
+    local?: vscode.Uri
+    remoteRepo?: {
+        name: string
+        id: string
+    }
+}
+
+/**
+ * Extract codebase roots from @-mentions
+ */
+async function codebaseRootsFromMentions(
+    { repos, trees }: StructuredMentions,
+    signal?: AbortSignal
+): Promise<Root[]> {
+    const remoteRepos: Root[] = repos.map(r => ({
+        remoteRepo: {
+            id: r.repoID,
+            name: r.repoName,
+        },
+    }))
+
+    const g = await Promise.all(
+        trees.map(async tree => {
+            const repoURIs = await repoNameResolver.getRepoNamesFromWorkspaceUri(tree.uri, signal)
+            return repoURIs.map(repoURI => ({
+                repoURI,
+                local: tree.uri,
+            }))
+        })
+    )
+    const localRepoURIs = Array.from(new Set(g.flat()))
+    const localRepoIDs = await graphqlClient.getRepoIds(
+        localRepoURIs.map(({ repoURI }) => repoURI),
+        localRepoURIs.length,
+        signal
+    )
+    if (isError(localRepoIDs)) {
+        throw localRepoIDs
+    }
+    const uriToId: { [uri: string]: string } = {}
+    for (const r of localRepoIDs) {
+        uriToId[r.name] = r.id
+    }
+    const localRoots: Root[] = []
+    for (const repoWithURI of localRepoURIs) {
+        localRoots.push({
+            local: repoWithURI.local,
+            remoteRepo: {
+                id: uriToId[repoWithURI.repoURI],
+                name: repoWithURI.repoURI,
+            },
+        })
+    }
+
+    return [...remoteRepos, ...localRoots]
 }
 
 export class ContextFetcher implements vscode.Disposable {
     constructor(
-        private auth: AuthProvider,
         private editor: VSCodeEditor,
         private symf: SymfRunner | undefined,
-        private llms: SourcegraphCompletionsClient,
-        private legacyFetchers: {
-            localEmbeddings?: LocalEmbeddingsController
-            remoteSearch: RemoteSearch
-        }
+        private llms: SourcegraphCompletionsClient
     ) {}
 
     public dispose(): void {
@@ -51,11 +132,30 @@ export class ContextFetcher implements vscode.Disposable {
     }
 
     public async fetchContext(
-        query: ContextQuery,
+        { mentions, inputTextWithoutContextChips }: Input,
         span: Span,
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
-        const rewritten = await rewriteKeywordQuery(this.llms, query.userQuery, signal)
+        const structuredMentions = toStructuredMentions(mentions)
+        const roots = await codebaseRootsFromMentions(structuredMentions, signal)
+
+        console.log(
+            '# TODO(beyang): incorporate explicit @-mentions into context',
+            structuredMentions.other
+        )
+
+        console.log("# TODO(beyang): include 'priority context' (getPriorityContext)")
+
+        return this._fetchContext(roots, inputTextWithoutContextChips, span, signal)
+    }
+
+    private async _fetchContext(
+        roots: Root[],
+        query: PromptString,
+        span: Span,
+        signal?: AbortSignal
+    ): Promise<ContextItem[]> {
+        const rewritten = await rewriteKeywordQuery(this.llms, query, signal)
         const rewrittenQuery = {
             ...query,
             rewritten,
@@ -63,24 +163,25 @@ export class ContextFetcher implements vscode.Disposable {
 
         // Fetch context from locally edited files
         const localRoots: vscode.Uri[] = []
-        for (const root of query.roots) {
+        for (const root of roots) {
             if (!root.local) {
                 continue
             }
             localRoots.push(root.local)
         }
+
         const changedFilesByRoot = await Promise.all(
             localRoots.map(root => gitLocallyModifiedFiles(root, signal))
         )
         const changedFiles = changedFilesByRoot.flat()
 
         const [liveContext, indexedContext] = await Promise.all([
-            this.fetchLiveContext(rewrittenQuery, changedFiles, signal),
-            this.fetchIndexedContext(rewrittenQuery, span, signal),
+            this.fetchLiveContext(query, rewrittenQuery.rewritten, changedFiles, signal),
+            this.fetchIndexedContext(roots, query, rewrittenQuery.rewritten, span, signal),
         ])
 
         const { keep: filteredIndexedContext } = filterLocallyModifiedFilesOutOfRemoteContext(
-            query.roots,
+            roots,
             changedFilesByRoot,
             indexedContext
         )
@@ -89,7 +190,8 @@ export class ContextFetcher implements vscode.Disposable {
     }
 
     private async fetchLiveContext(
-        query: RewrittenQuery,
+        originalQuery: PromptString,
+        rewrittenQuery: string,
         files: string[],
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
@@ -100,7 +202,7 @@ export class ContextFetcher implements vscode.Disposable {
             logDebug('ContextFetcher', 'symf not available, skipping live context')
             return []
         }
-        const results = await this.symf.getLiveResults(query.userQuery, query.rewritten, files, signal)
+        const results = await this.symf.getLiveResults(originalQuery, rewrittenQuery, files, signal)
         return (
             await Promise.all(
                 results.map(async (r): Promise<ContextItem | ContextItem[]> => {
@@ -131,13 +233,15 @@ export class ContextFetcher implements vscode.Disposable {
     }
 
     private async fetchIndexedContext(
-        query: RewrittenQuery,
+        roots: Root[],
+        originalQuery: PromptString,
+        rewrittenQuery: string,
         span: Span,
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
         const repoIDsOnRemote: string[] = []
         const localRootURIs: vscode.Uri[] = []
-        for (const root of query.roots) {
+        for (const root of roots) {
             if (root.remoteRepo?.id) {
                 repoIDsOnRemote.push(root.remoteRepo.id)
             } else if (root.local) {
@@ -151,10 +255,10 @@ export class ContextFetcher implements vscode.Disposable {
 
         const remoteResultsPromise = this.fetchIndexedContextFromRemote(
             repoIDsOnRemote,
-            query.rewritten,
+            rewrittenQuery,
             signal
         )
-        const localResultsPromise = this.fetchIndexedContextLocally(query, span, signal)
+        const localResultsPromise = this.fetchIndexedContextLocally(localRootURIs, originalQuery, span)
 
         const [remoteResults, localResults] = await Promise.all([
             remoteResultsPromise,
@@ -178,37 +282,33 @@ export class ContextFetcher implements vscode.Disposable {
     }
 
     private async fetchIndexedContextLocally(
-        query: ContextQuery,
-        span: Span,
-        signal?: AbortSignal
+        localRootURIs: vscode.Uri[],
+        originalQuery: PromptString,
+        span: Span
     ): Promise<ContextItem[]> {
         // Fetch using legacy context retrieval
         const config = getConfiguration()
         const contextStrategy = await getContextStrategy(config.useContext)
         span.setAttribute('strategy', contextStrategy)
 
-        // TODO(beyang): need to move this to fetchIndexedContextFromRemote...
-        const isConsumer = this.auth.getAuthStatus().isDotCom
-        const isCodyWeb =
-            vscode.workspace.getConfiguration().get<string>('cody.advanced.agent.ide') === CodyIDE.Web
-        const remoteSearch = isCodyWeb && !isConsumer ? this.legacyFetchers.remoteSearch : null
+        // symf fetching
+        const symf = this.symf
+        if (symf && contextStrategy !== 'embeddings' && localRootURIs.length > 0) {
+            const localRootResults = await Promise.all(
+                localRootURIs.map(rootURI =>
+                    // TODO(beyang): break out of searchSymf and retrieveContextGracefully
+                    retrieveContextGracefully(
+                        searchSymf(symf, this.editor, rootURI, originalQuery),
+                        `symf ${rootURI.path}`
+                    )
+                )
+            )
+            return localRootResults.flat()
+        }
 
-        return (
-            await Promise.all([
-                resolveContext({
-                    strategy: contextStrategy,
-                    editor: this.editor,
-                    input: { text: query.userQuery, mentions: query.mentions },
-                    providers: {
-                        symf: this.symf ?? null,
-                        localEmbeddings: this.legacyFetchers.localEmbeddings ?? null,
-                        remoteSearch,
-                    },
-                    signal,
-                }),
-                getContextForChatMessage(query.userQuery.toString(), signal),
-            ])
-        ).flat()
+        // TODO(beyang): local embeddings
+
+        return []
     }
 }
 

@@ -1,8 +1,7 @@
 import type { ContextItem } from '@sourcegraph/cody-shared'
 import { describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
-import { filterLocallyModifiedFilesOutOfRemoteContext } from './ContextFetcher'
-import type { Root } from './context'
+import { type Root, filterLocallyModifiedFilesOutOfRemoteContext } from './ContextFetcher'
 
 describe('filterLocallyModifiedFilesOutOfRemoteContext', () => {
     it('filters out local context files', () => {

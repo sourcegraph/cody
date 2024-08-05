@@ -209,10 +209,7 @@ const register = async (
     }, disposables)
 
     const editor = new VSCodeEditor()
-    const contextFetcher = new ContextFetcher(authProvider, editor, symfRunner, completionsClient, {
-        localEmbeddings,
-        remoteSearch: enterpriseContextFactory.createRemoteSearch(),
-    })
+    const contextFetcher = new ContextFetcher(editor, symfRunner, completionsClient)
 
     const { chatsController } = registerChat(
         {

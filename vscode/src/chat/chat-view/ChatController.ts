@@ -114,12 +114,7 @@ import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import type { ContextFetcher } from './ContextFetcher'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, openFile } from './chat-helpers'
-import {
-    type HumanInput,
-    codebaseRootsFromHumanInput,
-    getContextStrategy,
-    resolveContext,
-} from './context'
+import { type HumanInput, getContextStrategy, resolveContext } from './context'
 import { DefaultPrompter } from './prompt'
 
 interface ChatControllerOptions {
@@ -831,13 +826,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                   inputTextWithoutContextChipsFromPromptEditorState(editorState)
               )
             : text
-
-        const roots = await codebaseRootsFromHumanInput({ text, mentions }, signal)
         const context = await this.contextFetcher.fetchContext(
             {
-                userQuery: inputTextWithoutContextChips,
+                text,
                 mentions,
-                roots,
+                inputTextWithoutContextChips,
             },
             span,
             signal
