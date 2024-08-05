@@ -8,10 +8,10 @@ import {
     TextSearchIcon,
 } from 'lucide-react'
 import { type FunctionComponent, useMemo } from 'react'
-import { CollapsiblePanel } from '../../components/CollapsiblePanel'
-import { Button } from '../../components/shadcn/ui/button'
-import { View } from '../../tabs/types'
-import { getVSCodeAPI } from '../../utils/VSCodeApi'
+import { CollapsiblePanel } from '../components/CollapsiblePanel'
+import { Button } from '../components/shadcn/ui/button'
+import { View } from '../tabs/types'
+import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 const commonCommandList = [
     { key: 'cody.command.edit-code', title: 'Edit Code', icon: PencilLineIcon },

@@ -1,22 +1,22 @@
 import type { CodyCommand } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
-import { CommandsTab } from './CommandsTab'
+import { PromptsTab } from './PromptsTab'
 
-const meta: Meta<typeof CommandsTab> = {
-    title: 'cody/CommandsTab',
-    component: CommandsTab,
+const meta: Meta<typeof PromptsTab> = {
+    title: 'cody/PromptsTab',
+    component: PromptsTab,
     decorators: [VSCodeStandaloneComponent],
     render: args => (
         <div style={{ position: 'relative', padding: '1rem' }}>
-            <CommandsTab {...args} />
+            <PromptsTab {...args} />
         </div>
     ),
 }
 
 export default meta
 
-type Story = StoryObj<typeof CommandsTab>
+type Story = StoryObj<typeof PromptsTab>
 
 export const DefaultOnly: Story = {
     args: {

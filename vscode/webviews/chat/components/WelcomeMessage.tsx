@@ -10,7 +10,7 @@ import type { FunctionComponent } from 'react'
 import type React from 'react'
 import { CollapsiblePanel } from '../../components/CollapsiblePanel'
 import { Kbd } from '../../components/Kbd'
-import { DefaultCommandsList } from './DefaultCommandsList'
+import { DefaultCommandsList } from '../../prompts/DefaultCommandsList'
 
 const MenuExample: FunctionComponent<{ children: React.ReactNode }> = ({ children }) => (
     <span className="tw-p-1 tw-rounded tw-text-keybinding-foreground tw-border tw-border-keybinding-border tw-bg-keybinding-background tw-whitespace-nowrap">
