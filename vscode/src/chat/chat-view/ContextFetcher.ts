@@ -6,6 +6,7 @@ import {
     ContextItemSource,
     type ContextItemTree,
     type ContextSearchResult,
+    type FileURI,
     type PromptString,
     type SourcegraphCompletionsClient,
     graphqlClient,
@@ -87,10 +88,18 @@ async function codebaseRootsFromMentions(
     const g = await Promise.all(
         trees.map(async tree => {
             const repoURIs = await repoNameResolver.getRepoNamesFromWorkspaceUri(tree.uri, signal)
-            return repoURIs.map(repoURI => ({
-                repoURI,
+            if (repoURIs.length === 0) {
+                return []
+            }
+            // TODO(beyang): pass through all remotes? Should ensure we select the origin first?
+            return {
+                repoURI: repoURIs[0],
                 local: tree.uri,
-            }))
+            }
+            // return repoURIs.map(repoURI => ({
+            //     repoURI,
+            //     local: tree.uri,
+            // }))
         })
     )
     const localRepoURIs = Array.from(new Set(g.flat()))
@@ -239,13 +248,13 @@ export class ContextFetcher implements vscode.Disposable {
         span: Span,
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
-        const repoIDsOnRemote: string[] = []
-        const localRootURIs: vscode.Uri[] = []
+        const repoIDsOnRemote = new Set<string>()
+        const localRootURIs = new Map<string, FileURI>()
         for (const root of roots) {
             if (root.remoteRepo?.id) {
-                repoIDsOnRemote.push(root.remoteRepo.id)
-            } else if (root.local) {
-                localRootURIs.push(root.local)
+                repoIDsOnRemote.add(root.remoteRepo.id)
+            } else if (root.local && isFileURI(root.local)) {
+                localRootURIs.set(root.local.toString(), root.local)
             } else {
                 throw new Error(
                     `Codebase root ${JSON.stringify(root)} is missing both remote and local root`
@@ -254,11 +263,15 @@ export class ContextFetcher implements vscode.Disposable {
         }
 
         const remoteResultsPromise = this.fetchIndexedContextFromRemote(
-            repoIDsOnRemote,
+            [...repoIDsOnRemote],
             rewrittenQuery,
             signal
         )
-        const localResultsPromise = this.fetchIndexedContextLocally(localRootURIs, originalQuery, span)
+        const localResultsPromise = this.fetchIndexedContextLocally(
+            [...localRootURIs.values()],
+            originalQuery,
+            span
+        )
 
         const [remoteResults, localResults] = await Promise.all([
             remoteResultsPromise,
@@ -272,6 +285,10 @@ export class ContextFetcher implements vscode.Disposable {
         query: string,
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
+        if (repoIDs.length === 0) {
+            return []
+        }
+
         const remoteResultPromise = graphqlClient.contextSearch(repoIDs, query, signal)
 
         const remoteResult = await remoteResultPromise
@@ -286,6 +303,10 @@ export class ContextFetcher implements vscode.Disposable {
         originalQuery: PromptString,
         span: Span
     ): Promise<ContextItem[]> {
+        if (localRootURIs.length === 0) {
+            return []
+        }
+
         // Fetch using legacy context retrieval
         const config = getConfiguration()
         const contextStrategy = await getContextStrategy(config.useContext)
