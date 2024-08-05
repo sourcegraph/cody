@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { Span } from '@opentelemetry/api'
 import {
     type ContextItem,
     ContextItemSource,
@@ -40,7 +41,11 @@ export class ContextFetcher implements vscode.Disposable {
         this.symf?.dispose()
     }
 
-    public async fetchContext(query: ContextQuery, signal?: AbortSignal): Promise<ContextItem[]> {
+    public async fetchContext(
+        query: ContextQuery,
+        span: Span,
+        signal?: AbortSignal
+    ): Promise<ContextItem[]> {
         const rewritten = await rewriteKeywordQuery(this.llms, query.userQuery, signal)
         const rewrittenQuery = {
             ...query,
@@ -62,7 +67,7 @@ export class ContextFetcher implements vscode.Disposable {
 
         const [liveContext, indexedContext] = await Promise.all([
             this.fetchLiveContext(rewrittenQuery, changedFiles, signal),
-            this.fetchIndexedContext(rewrittenQuery, signal),
+            this.fetchIndexedContext(rewrittenQuery, span, signal),
         ])
 
         const { keep: filteredIndexedContext } = filterLocallyModifiedFilesOutOfRemoteContext(
@@ -118,6 +123,7 @@ export class ContextFetcher implements vscode.Disposable {
 
     private async fetchIndexedContext(
         query: RewrittenQuery,
+        span: Span,
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
         const repoIDsOnRemote: string[] = []
@@ -139,7 +145,7 @@ export class ContextFetcher implements vscode.Disposable {
             query.rewritten,
             signal
         )
-        const localResultsPromise = this.fetchIndexedContextLocally(query, signal)
+        const localResultsPromise = this.fetchIndexedContextLocally(query, span, signal)
 
         const [remoteResults, localResults] = await Promise.all([
             remoteResultsPromise,
@@ -164,12 +170,13 @@ export class ContextFetcher implements vscode.Disposable {
 
     private async fetchIndexedContextLocally(
         query: RewrittenQuery,
+        span: Span,
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
         // Fetch using legacy context retrieval
         const config = getConfiguration()
         const contextStrategy = await getContextStrategy(config.useContext)
-        // span.setAttribute('strategy', contextStrategy)
+        span.setAttribute('strategy', contextStrategy)
 
         return (
             await Promise.all([

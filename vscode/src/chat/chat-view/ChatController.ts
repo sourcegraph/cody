@@ -839,6 +839,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 mentions,
                 roots,
             },
+            span,
             signal
         )
 
