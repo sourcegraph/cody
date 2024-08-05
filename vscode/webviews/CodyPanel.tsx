@@ -68,7 +68,7 @@ export const CodyPanel: FunctionComponent<
             ) : null}
             {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
             <TabContainer value={view}>
-                {view === 'chat' && (
+                {view === View.Chat && (
                     <Chat
                         chatID={chatID}
                         chatEnabled={chatEnabled}
@@ -83,12 +83,12 @@ export const CodyPanel: FunctionComponent<
                         scrollableParent={scrollableParent}
                     />
                 )}
-                {view === 'history' && <HistoryTab userHistory={userHistory} />}
-                {view === 'commands' && (
+                {view === View.History && <HistoryTab userHistory={userHistory} />}
+                {view === View.Commands && (
                     <CommandsTab setView={setView} IDE={config.agentIDE} commands={commands} />
                 )}
-                {view === 'account' && <AccountTab userInfo={userInfo} />}
-                {view === 'settings' && <SettingsTab userInfo={userInfo} />}
+                {view === View.Account && <AccountTab userInfo={userInfo} />}
+                {view === View.Settings && <SettingsTab userInfo={userInfo} />}
             </TabContainer>
         </TabRoot>
     )

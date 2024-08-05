@@ -253,7 +253,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         vscodeAPI={vscodeAPI}
                     />
                 </div>
-            ) : view === 'login' || !authStatus.isLoggedIn || !userAccountInfo ? (
+            ) : view === View.Login || !authStatus.isLoggedIn || !userAccountInfo ? (
                 <div className={styles.outerContainer}>
                     <LoginSimplified
                         simplifiedLoginRedirect={loginRedirect}
