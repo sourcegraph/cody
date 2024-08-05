@@ -767,57 +767,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         signal?: AbortSignal
     ): Promise<RankedContext[]> {
         if (!vscode.workspace.getConfiguration().get<boolean>('cody.internal.serverSideContext')) {
-            // Fetch using legacy context retrieval
-            const config = getConfiguration()
-            const contextStrategy = await getContextStrategy(config.useContext)
-            span.setAttribute('strategy', contextStrategy)
-
-            // Remove context chips (repo, @-mentions) from the input text for context retrieval.
-            const inputTextWithoutContextChips = editorState
-                ? PromptString.unsafe_fromUserQuery(
-                      inputTextWithoutContextChipsFromPromptEditorState(editorState)
-                  )
-                : text
-
-            const rewrite = config.experimentalNoodle
-                ? await rewriteChatQuery({
-                      query: text,
-                      contextItems: mentions,
-                      chatClient: this.chatClient,
-                      chatModel: this.chatModel,
-                  })
-                : inputTextWithoutContextChips
-
-            const context = (
-                await Promise.all([
-                    resolveContext({
-                        strategy: contextStrategy,
-                        editor: this.editor,
-                        input: { text: rewrite, mentions },
-                        providers: {
-                            localEmbeddings: this.localEmbeddings,
-                            symf: this.symf,
-                            remoteSearch: this.remoteSearch,
-                        },
-                        signal,
-                    }),
-                    getContextForChatMessage(text.toString(), signal),
-                ])
-            ).flat()
-
-            // Run in background.
-            void this.contextAPIClient?.rankContext(
-                requestID,
-                inputTextWithoutContextChips.toString(),
-                context
-            )
-
-            return [
-                {
-                    strategy: 'legacy, symf',
-                    items: context.flat(),
-                },
-            ]
+            return this.legacyFetchContext({ text, mentions }, requestID, editorState, span, signal)
         }
 
         // Remove context chips (repo, @-mentions) from the input text for context retrieval.
@@ -836,7 +786,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             signal
         )
 
-        if (this.contextAPIClient) {
+        if (this.contextAPIClient && context.length > 0) {
             const response = await this.contextAPIClient.rankContext(
                 requestID,
                 inputTextWithoutContextChips.toString(),
@@ -867,6 +817,66 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         return [{ strategy: 'local+remote', items: context }]
+    }
+
+    private async legacyFetchContext(
+        { text, mentions }: HumanInput,
+        requestID: string,
+        editorState: SerializedPromptEditorState | null,
+        span: Span,
+        signal?: AbortSignal
+    ): Promise<RankedContext[]> {
+        // Fetch using legacy context retrieval
+        const config = getConfiguration()
+        const contextStrategy = await getContextStrategy(config.useContext)
+        span.setAttribute('strategy', contextStrategy)
+
+        // Remove context chips (repo, @-mentions) from the input text for context retrieval.
+        const inputTextWithoutContextChips = editorState
+            ? PromptString.unsafe_fromUserQuery(
+                  inputTextWithoutContextChipsFromPromptEditorState(editorState)
+              )
+            : text
+
+        const rewrite = config.experimentalNoodle
+            ? await rewriteChatQuery({
+                  query: text,
+                  contextItems: mentions,
+                  chatClient: this.chatClient,
+                  chatModel: this.chatModel,
+              })
+            : inputTextWithoutContextChips
+
+        const context = (
+            await Promise.all([
+                resolveContext({
+                    strategy: contextStrategy,
+                    editor: this.editor,
+                    input: { text: rewrite, mentions },
+                    providers: {
+                        localEmbeddings: this.localEmbeddings,
+                        symf: this.symf,
+                        remoteSearch: this.remoteSearch,
+                    },
+                    signal,
+                }),
+                getContextForChatMessage(text.toString(), signal),
+            ])
+        ).flat()
+
+        // Run in background.
+        void this.contextAPIClient?.rankContext(
+            requestID,
+            inputTextWithoutContextChips.toString(),
+            context
+        )
+
+        return [
+            {
+                strategy: 'legacy, symf',
+                items: context.flat(),
+            },
+        ]
     }
 
     private submitOrEditOperation: AbortController | undefined
