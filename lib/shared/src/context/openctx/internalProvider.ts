@@ -5,6 +5,7 @@ import type {
     Provider,
     ProviderSettings,
 } from '@openctx/client'
+import { isContextItemType } from '../../codebase-context/messages'
 import type { SerializedContextItem } from '../../lexicalEditor/nodes'
 
 /**
@@ -37,11 +38,31 @@ export interface MentionWithContextItemData extends Mention {
 }
 
 export function isMentionWithContextItemData(mention: Mention): mention is MentionWithContextItemData {
-    return Boolean(
-        // biome-ignore lint/complexity/useOptionalChain:
-        mention.data !== undefined &&
-            mention.data.contextItem &&
-            typeof mention.data.contextItem === 'object' &&
-            typeof (mention.data.contextItem as any).uri === 'string'
-    )
+    if (!mention.data) {
+        return false
+    }
+    const data = mention.data
+    if (!('contextItem' in mention.data && mention.data.contextItem)) {
+        return false
+    }
+    const contextItem = data.contextItem
+    if (
+        !(
+            contextItem &&
+            typeof contextItem === 'object' &&
+            'type' in contextItem &&
+            'uri' in contextItem
+        )
+    ) {
+        return false
+    }
+    const { type, uri } = contextItem
+    if (!(typeof type === 'string' && typeof uri === 'string')) {
+        return false
+    }
+    if (!isContextItemType(type)) {
+        return false
+    }
+    ;({ ...mention, data: { contextItem: { type, uri } } }) satisfies MentionWithContextItemData
+    return true
 }
