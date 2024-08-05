@@ -129,7 +129,7 @@ export async function waitForStartup(ctx: Pick<UIXContextFnContext, 'page'>) {
         })
      */
     await ctx.page.waitForSelector('.statusbar-item[id="sourcegraph\\.cody-ai"]', {
-        strict: true,
+        strict: false,
         state: 'visible',
     })
     //TODO: Implement this
