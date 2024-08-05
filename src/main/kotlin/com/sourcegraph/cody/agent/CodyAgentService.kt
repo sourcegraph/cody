@@ -1,7 +1,9 @@
 package com.sourcegraph.cody.agent
 
+import com.intellij.notification.NotificationsManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
@@ -18,6 +20,7 @@ import com.sourcegraph.cody.error.CodyConsole
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.cody.listeners.CodyFileEditorListener
 import com.sourcegraph.cody.statusbar.CodyStatusService
+import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.utils.CodyEditorUtil
 import java.util.Timer
 import java.util.TimerTask
@@ -156,7 +159,7 @@ class CodyAgentService(private val project: Project) : Disposable {
     synchronized(startupActions) { startupActions.add(action) }
   }
 
-  fun startAgent(project: Project): CompletableFuture<CodyAgent> {
+  fun startAgent(project: Project, secondsTimeout: Long = 45): CompletableFuture<CodyAgent> {
     ApplicationManager.getApplication().executeOnPooledThread {
       try {
         val future =
@@ -165,6 +168,7 @@ class CodyAgentService(private val project: Project) : Disposable {
               logger.error(msg)
               throw (CodyAgentException(msg))
             }
+
         val agent = future.get(45, TimeUnit.SECONDS)
         if (!agent.isConnected()) {
           val msg = "Failed to connect to agent Cody agent"
@@ -175,34 +179,46 @@ class CodyAgentService(private val project: Project) : Disposable {
           codyAgent.complete(agent)
           CodyStatusService.resetApplication(project)
         }
-      } catch (e: Exception) {
-        val msg =
-            if (e is TimeoutException)
-                "Failed to start Cody agent in timely manner, please run any Cody action to retry"
-            else "Failed to start Cody agent"
-        logger.error(msg, e)
+      } catch (e: TimeoutException) {
+        val msg = CodyBundle.getString("error.cody-connection-timeout.message")
+        runInEdt {
+          val isNoBalloonDisplayed =
+              NotificationsManager.getNotificationsManager()
+                  .getNotificationsOfType(
+                      CodyConnectionTimeoutExceptionNotification::class.java, project)
+                  .all { it.balloon == null }
+          if (isNoBalloonDisplayed) {
+            CodyConnectionTimeoutExceptionNotification().notify(project)
+          }
+        }
         setAgentError(project, msg)
+        codyAgent.completeExceptionally(CodyAgentException(msg, e))
+      } catch (e: Exception) {
+        val msg = CodyBundle.getString("error.cody-starting.message")
+        setAgentError(project, msg)
+        logger.error(msg, e)
         codyAgent.completeExceptionally(CodyAgentException(msg, e))
       }
     }
     return codyAgent
   }
 
-  fun stopAgent(project: Project?) {
+  fun stopAgent(project: Project?): CompletableFuture<Unit>? {
     try {
-      codyAgent.getNow(null)?.shutdown()
+      return codyAgent.getNow(null)?.shutdown()
     } catch (e: Exception) {
       logger.warn("Failed to stop Cody agent gracefully", e)
+      return CompletableFuture.failedFuture(e)
     } finally {
       codyAgent = CompletableFuture()
       project?.let { CodyStatusService.resetApplication(it) }
     }
   }
 
-  fun restartAgent(project: Project): CompletableFuture<CodyAgent> {
+  fun restartAgent(project: Project, secondsTimeout: Long = 90): CompletableFuture<CodyAgent> {
     synchronized(this) {
       stopAgent(project)
-      return startAgent(project)
+      return startAgent(project, secondsTimeout)
     }
   }
 

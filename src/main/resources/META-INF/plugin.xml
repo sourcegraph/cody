@@ -373,11 +373,11 @@
             </group>
 
             <group id="Cody.Other" text="Other" description="Other Cody actions">
-                <action id="cody.restartAgent"
+                <action id="cody.restartCody"
                         class="com.sourcegraph.cody.agent.action.CodyAgentRestartAction"
-                        text="Restart Cody Agent"
-                        description="Restarts the Cody agent">
-                    <override-text place="GoToAction" text="Cody: Restart Cody Agent"/>
+                        text="Restart Cody"
+                        description="Restarts Cody">
+                    <override-text place="GoToAction" text="Cody: Restart Cody"/>
                 </action>
                 <action id="sourcegraph.login"
                         class="com.sourcegraph.config.OpenPluginSettingsAction"

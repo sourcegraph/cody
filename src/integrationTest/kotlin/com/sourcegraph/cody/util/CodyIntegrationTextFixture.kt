@@ -5,6 +5,8 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.WriteAction
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
@@ -24,12 +26,10 @@ import com.sourcegraph.cody.edit.LensListener
 import com.sourcegraph.cody.edit.LensesService
 import com.sourcegraph.cody.edit.widget.LensAction
 import com.sourcegraph.cody.edit.widget.LensWidgetGroup
-import com.sourcegraph.config.ConfigUtil
-import java.io.File
-import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
+import junit.framework.TestCase
 
 open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
   private val logger = Logger.getInstance(CodyIntegrationTextFixture::class.java)
@@ -39,8 +39,16 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
 
   override fun setUp() {
     super.setUp()
+
     myProject = project
-    configureFixture()
+    myFixture.testDataPath = System.getProperty("test.resources.dir")
+    // The file we pass to configureByFile must be relative to testDataPath.
+    myFixture.configureByFile("testProjects/documentCode/src/main/java/Foo.java")
+    TestCase.assertTrue(myFixture.file.virtualFile.exists())
+
+    initCredentialsAndAgent()
+    initCaretPosition()
+
     checkInitialConditions()
     LensesService.getInstance(project).addListener(this)
   }
@@ -48,49 +56,37 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
   override fun tearDown() {
     try {
       LensesService.getInstance(project).removeListener(this)
-      CodyAgentService.getInstance(myFixture.project).apply {
-        try {
-          stopAgent(project)
-        } catch (x: Exception) {
-          logger.warn("Error shutting down agent", x)
+
+      runInEdt { WriteAction.run<RuntimeException> { myFixture.file.virtualFile.delete(this) } }
+
+      val recordingsFuture = CompletableFuture<Void>()
+      CodyAgentService.withAgent(project) { agent ->
+        val errors = agent.server.testingRequestErrors().get()
+        // We extract polly.js errors to notify users about the missing recordings, if any
+        val missingRecordings = errors.filter { it.error?.contains("`recordIfMissing` is") == true }
+        missingRecordings.forEach { missing ->
+          logger.error(
+              """Recording is missing: ${missing.error}
+                |
+                |${missing.body}
+                |
+                |------------------------------------------------------------------------------------------
+                |To fix this problem please run `./gradlew :recordingIntegrationTest`.
+                |You need to export access tokens first, using script from the `sourcegraph/cody` repository:
+                |`agent/scripts/export-cody-http-recording-tokens.sh`
+                |------------------------------------------------------------------------------------------
+              """
+                  .trimMargin())
         }
+        recordingsFuture.complete(null)
       }
+      recordingsFuture.get(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+      CodyAgentService.getInstance(project)
+          .stopAgent(project)
+          ?.get(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
     } finally {
       super.tearDown()
     }
-  }
-
-  private fun configureFixture() {
-    // If you don't specify this system property with this setting when running the tests,
-    // the tests will fail, because IntelliJ will run them from the EDT, which can't block.
-    // Setting this property invokes the tests from an executor pool thread, which lets us
-    // block/wait on potentially long-running operations during the integration test.
-    val policy = System.getProperty("idea.test.execution.policy")
-    assertTrue(policy == "com.sourcegraph.cody.test.NonEdtIdeaTestExecutionPolicy")
-
-    // This is wherever src/integrationTest/resources is on the box running the tests.
-    val testResourcesDir = File(System.getProperty("test.resources.dir"))
-    assertTrue(testResourcesDir.exists())
-
-    // During test runs this is set by IntelliJ to a private temp folder.
-    // We pass it to the Agent during initialization.
-    val workspaceRootUri = ConfigUtil.getWorkspaceRootPath(project)
-
-    // We copy the test resources there manually, bypassing Gradle, which is picky.
-    val testDataPath = Paths.get(workspaceRootUri.toString(), "src/").toFile()
-    testResourcesDir.copyRecursively(testDataPath, overwrite = true)
-
-    // This useful setting lets us tell the fixture to look where we copied them.
-    myFixture.testDataPath = testDataPath.path
-
-    // The file we pass to configureByFile must be relative to testDataPath.
-    val projectFile = "testProjects/documentCode/src/main/java/Foo.java"
-    val sourcePath = Paths.get(testDataPath.path, projectFile).toString()
-    assertTrue(File(sourcePath).exists())
-    myFixture.configureByFile(projectFile)
-
-    initCredentialsAndAgent()
-    initCaretPosition()
   }
 
   // Ideally we should call this method only once per recording session, but since we need a
@@ -116,6 +112,13 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
   }
 
   private fun checkInitialConditions() {
+    // If you don't specify this system property with this setting when running the tests,
+    // the tests will fail, because IntelliJ will run them from the EDT, which can't block.
+    // Setting this property invokes the tests from an executor pool thread, which lets us
+    // block/wait on potentially long-running operations during the integration test.
+    val policy = System.getProperty("idea.test.execution.policy")
+    assertTrue(policy == "com.sourcegraph.cody.test.NonEdtIdeaTestExecutionPolicy")
+
     val project = myFixture.project
 
     // Check if the project is in dumb mode

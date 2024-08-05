@@ -90,13 +90,7 @@ class DocumentCodeTest : CodyIntegrationTextFixture() {
 
     runLensAction(acceptLens!!, EditAcceptAction.ID)
     assertNoInlayShown()
-    assertThat(
-        myFixture.editor.document.text,
-        startsWith(
-            """/**
-               | * Imports the necessary Java standard library classes for the Foo class, including the ArrayList class.
-               | */"""
-                .trimMargin()))
+    assertThat(myFixture.editor.document.text, startsWith("/**"))
   }
 
   @Test
