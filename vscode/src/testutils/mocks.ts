@@ -424,12 +424,21 @@ export class Range implements VSCodeRange {
         return this.start.line === this.end.line
     }
     public contains(positionOrRange: Position | Range): boolean {
+        const isSmallerOrEqual = (a: Position, b: Position): boolean => {
+            return a.line < b.line || (a.line === b.line && a.character <= b.character)
+        }
+
         if ('line' in positionOrRange) {
             return (
-                positionOrRange.line >= this.start.line &&
-                positionOrRange.line <= this.end.line &&
-                positionOrRange.character >= this.start.character &&
-                positionOrRange.character <= this.end.character
+                isSmallerOrEqual(this.start, positionOrRange) &&
+                isSmallerOrEqual(positionOrRange, this.end)
+            )
+        }
+        if ('start' in positionOrRange && 'end' in positionOrRange) {
+            return (
+                isSmallerOrEqual(this.start, positionOrRange.start) &&
+                isSmallerOrEqual(positionOrRange.start, this.end) &&
+                isSmallerOrEqual(this.end, positionOrRange.end)
             )
         }
 
