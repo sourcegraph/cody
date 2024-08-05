@@ -23,10 +23,7 @@ test.describe('Auth', () => {
 
         await test.step('can view account info', async () => {
             const [sidebar] = await uix.cody.WebView.all({ page }, { atLeast: 1 })
-            await sidebar.content
-                .locator('[id="radix-\\:r0\\:-trigger-account"]')
-                .getByRole('button')
-                .click()
+            await sidebar.content.getByTestId('tab-account').click()
 
             await expect(page.getByText('Signed in as SourcegraphBot')).toBeVisible()
             await expect(page.getByText('Plan: Cody Pro')).toBeVisible()

@@ -69,7 +69,6 @@ export function updateEnvFile(): boolean {
     let hasChanges = false
     for (const name of Array.from(values.keys())) {
         if (existingValues.get(name) !== values.get(name)) {
-            console.log(`Updating ${name}`, values.get(name), existingValues.get(name))
             hasChanges = true
         }
     }
