@@ -125,8 +125,8 @@ test.extend<ExpectedV2Events>({
 
     // Click on the Commands view icon from the tab bar.
     const sidebarChat = getChatSidebarPanel(page)
-    const sidebarTabCommandIcon = sidebarChat.locator('[id="radix-\\:r0\\:-trigger-commands"]')
-    await sidebarTabCommandIcon.getByRole('button').click()
+    const sidebarTabCommandButton = sidebarChat.getByTestId('tab-commands')
+    await sidebarTabCommandButton.click()
     await sidebarChat.getByRole('button', { name: 'Explain code' }).click()
 
     // Click on a command from the sidebar should not start a new Editor window when sidebar is empty.

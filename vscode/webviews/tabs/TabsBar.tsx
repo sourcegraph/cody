@@ -16,7 +16,7 @@ import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
 import { CodyIDE } from '@sourcegraph/cody-shared'
-import { useCallback, useMemo } from 'react'
+import { forwardRef, useCallback, useMemo } from 'react'
 import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import styles from './TabsBar.module.css'
@@ -51,26 +51,30 @@ interface TabButtonProps {
     tooltip: React.ReactNode
 }
 
-const TabButton: React.FC<TabButtonProps> = ({ Icon, isActive, onClick, tooltip, prominent }) => (
-    <Tooltip>
-        <TooltipTrigger asChild>
-            <button
-                type="button"
-                onClick={onClick}
-                className={clsx(
-                    'tw-py-3 tw-px-2 tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
-                    {
-                        '!tw-opacity-100 !tw-border-[var(--vscode-tab-activeBorderTop)]': isActive,
-                        '!tw-opacity-100': prominent,
-                    }
-                )}
-            >
-                <Icon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
-            </button>
-        </TooltipTrigger>
-        <TooltipContent>{tooltip}</TooltipContent>
-    </Tooltip>
+const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
+    ({ Icon, isActive, onClick, tooltip, prominent }, ref) => (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <button
+                    type="button"
+                    onClick={onClick}
+                    ref={ref}
+                    className={clsx(
+                        'tw-py-3 tw-px-2 tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
+                        {
+                            '!tw-opacity-100 !tw-border-[var(--vscode-tab-activeBorderTop)]': isActive,
+                            '!tw-opacity-100': prominent,
+                        }
+                    )}
+                >
+                    <Icon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
+                </button>
+            </TooltipTrigger>
+            <TooltipContent>{tooltip}</TooltipContent>
+        </Tooltip>
+    )
 )
+TabButton.displayName = 'TabButton'
 
 const BASE_TAB_ITEMS: TabConfig[] = [
     {
@@ -169,7 +173,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({
         >
             <div className="tw-flex tw-gap-1">
                 {tabItems.map(({ Icon, view, command, tooltip, changesView }) => (
-                    <Tabs.Trigger key={view} value={view}>
+                    <Tabs.Trigger key={view} value={view} asChild={true}>
                         <TabButton
                             Icon={Icon}
                             view={view}
