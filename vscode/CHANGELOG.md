@@ -17,7 +17,7 @@ Chat: Cody is now defaulted to run in the sidebar for both Enterprise and Non-En
 ### Fixed
 
 - Edit: Fixed an issue where we would generate an inefficient diff due to a mismatch in the end-of-line sequence between the user and the LLM. [pull/5069](https://github.com/sourcegraph/cody/pull/5069)
-- Chat: Fixed an issue where buttons to start a new Cody chat and show Chat History were visible in non-Cody views. [pull/](https://github.com/sourcegraph/cody/pull/)
+- Chat: Fixed an issue where buttons to start a new Cody chat and show Chat History were visible in non-Cody views. [pull/5106](https://github.com/sourcegraph/cody/pull/5106)
 
 ### Changed
 
