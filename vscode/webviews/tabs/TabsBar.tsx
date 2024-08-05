@@ -138,14 +138,12 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                         ].filter(isDefined),
                         changesView: true,
                     },
-                    IDE !== CodyIDE.Web
-                        ? {
-                              view: View.Prompts,
-                              tooltip: 'Prompts',
-                              Icon: BookTextIcon,
-                              changesView: true,
-                          }
-                        : null,
+                    {
+                        view: View.Prompts,
+                        tooltip: 'Prompts',
+                        Icon: BookTextIcon,
+                        changesView: true,
+                    },
                     IDE !== CodyIDE.Web
                         ? {
                               view: View.Settings,
