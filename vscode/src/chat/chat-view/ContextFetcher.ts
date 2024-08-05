@@ -1,6 +1,7 @@
 import path from 'node:path'
-import { Span } from '@opentelemetry/api'
+import type { Span } from '@opentelemetry/api'
 import {
+    CodyIDE,
     type ContextItem,
     ContextItemSource,
     type ContextSearchResult,
@@ -13,11 +14,14 @@ import {
 import { isError } from 'lodash'
 import * as vscode from 'vscode'
 import { getConfiguration } from '../../configuration'
+import type { RemoteSearch } from '../../context/remote-search'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
+import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { rewriteKeywordQuery } from '../../local-context/rewrite-keyword-query'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { gitLocallyModifiedFiles } from '../../repository/git-extension-api'
+import type { AuthProvider } from '../../services/AuthProvider'
 import { type Root, getContextStrategy, resolveContext } from './context'
 
 interface ContextQuery {
@@ -32,9 +36,14 @@ interface RewrittenQuery extends ContextQuery {
 
 export class ContextFetcher implements vscode.Disposable {
     constructor(
+        private auth: AuthProvider,
         private editor: VSCodeEditor,
         private symf: SymfRunner | undefined,
-        private llms: SourcegraphCompletionsClient
+        private llms: SourcegraphCompletionsClient,
+        private legacyFetchers: {
+            localEmbeddings?: LocalEmbeddingsController
+            remoteSearch: RemoteSearch
+        }
     ) {}
 
     public dispose(): void {
@@ -169,7 +178,7 @@ export class ContextFetcher implements vscode.Disposable {
     }
 
     private async fetchIndexedContextLocally(
-        query: RewrittenQuery,
+        query: ContextQuery,
         span: Span,
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
@@ -178,19 +187,22 @@ export class ContextFetcher implements vscode.Disposable {
         const contextStrategy = await getContextStrategy(config.useContext)
         span.setAttribute('strategy', contextStrategy)
 
+        // TODO(beyang): need to move this to fetchIndexedContextFromRemote...
+        const isConsumer = this.auth.getAuthStatus().isDotCom
+        const isCodyWeb =
+            vscode.workspace.getConfiguration().get<string>('cody.advanced.agent.ide') === CodyIDE.Web
+        const remoteSearch = isCodyWeb && !isConsumer ? this.legacyFetchers.remoteSearch : null
+
         return (
             await Promise.all([
                 resolveContext({
                     strategy: contextStrategy,
                     editor: this.editor,
-                    // TODO(beyang): should we use original user query or rewritten query here?
                     input: { text: query.userQuery, mentions: query.mentions },
                     providers: {
-                        // localEmbeddings: this.localEmbeddings,
-                        localEmbeddings: null,
                         symf: this.symf ?? null,
-                        // remoteSearch: this.remoteSearch,
-                        remoteSearch: null,
+                        localEmbeddings: this.legacyFetchers.localEmbeddings ?? null,
+                        remoteSearch,
                     },
                     signal,
                 }),
