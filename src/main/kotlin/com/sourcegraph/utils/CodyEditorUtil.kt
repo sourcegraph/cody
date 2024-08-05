@@ -28,7 +28,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.ex.temp.TempFileSystem
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.withScheme
-import com.sourcegraph.cody.agent.protocol_extensions.*
+import com.sourcegraph.cody.agent.protocol_extensions.toOffset
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.config.ConfigUtil
 import java.net.URI
@@ -211,13 +211,16 @@ object CodyEditorUtil {
       if (!fileUri.toPath().exists()) {
         fileUri.toPath().parent?.createDirectories()
         fileUri.toPath().createFile()
+        val vf = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(fileUri.toPath())
+
+        content?.let {
+          WriteCommandAction.runWriteCommandAction(project) {
+            vf?.setBinaryContent(it.toByteArray())
+          }
+        }
       }
 
-      val vf = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(fileUri.toPath())
-      content?.let {
-        WriteCommandAction.runWriteCommandAction(project) { vf?.setBinaryContent(it.toByteArray()) }
-      }
-      return vf
+      return LocalFileSystem.getInstance().refreshAndFindFileByNioFile(fileUri.toPath())
     } catch (e: URISyntaxException) {
       val fileName = uriString.substringAfterLast(':').trimStart('/', '\\')
       val fileType = FileTypeRegistry.getInstance().getFileTypeByFileName(fileName)

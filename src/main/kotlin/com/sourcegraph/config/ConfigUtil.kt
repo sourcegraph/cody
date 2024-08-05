@@ -1,7 +1,9 @@
 package com.sourcegraph.config
 
 import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.fileEditor.FileEditor
@@ -9,6 +11,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.util.io.readText
 import com.sourcegraph.cody.agent.CodyAgentCodebase
 import com.sourcegraph.cody.agent.protocol_generated.ExtensionConfiguration
 import com.sourcegraph.cody.config.CodyApplicationSettings
@@ -28,6 +31,8 @@ object ConfigUtil {
   const val CODE_SEARCH_DISPLAY_NAME = "Code Search"
   const val SOURCEGRAPH_DISPLAY_NAME = "Sourcegraph"
   private const val FEATURE_FLAGS_ENV_VAR = "CODY_JETBRAINS_FEATURES"
+
+  private val logger = Logger.getInstance(ConfigUtil::class.java)
 
   private val featureFlags: Map<String, Boolean> by lazy {
     parseFeatureFlags(System.getenv(FEATURE_FLAGS_ENV_VAR))
@@ -60,7 +65,10 @@ object ConfigUtil {
   @JvmStatic fun isFeatureFlagEnabled(flagName: String) = featureFlags.getOrDefault(flagName, false)
 
   @JvmStatic
-  fun getAgentConfiguration(project: Project): ExtensionConfiguration {
+  fun getAgentConfiguration(
+      project: Project,
+      customConfigContent: String? = null
+  ): ExtensionConfiguration {
     val serverAuth = ServerAuthLoader.loadServerAuth(project)
 
     return ExtensionConfiguration(
@@ -74,7 +82,7 @@ object ConfigUtil {
         debug = isCodyDebugEnabled(),
         verboseDebug = isCodyVerboseDebugEnabled(),
         codebase = CodyAgentCodebase.getInstance(project).getUrl().getNow(null),
-        customConfiguration = getCustomConfiguration(),
+        customConfiguration = getCustomConfiguration(project, customConfigContent),
     )
   }
 
@@ -112,11 +120,35 @@ object ConfigUtil {
   @JvmStatic fun shouldConnectToDebugAgent() = System.getenv("CODY_AGENT_DEBUG_REMOTE") == "true"
 
   @JvmStatic
-  fun getCustomConfiguration(): Map<String, String> {
+  fun getConfigDir(project: Project): Path {
+    val settingsDir =
+        project.basePath?.let { Paths.get(it) }?.resolve(".idea")
+            ?: Paths.get(System.getProperty("user.home"))
+    return settingsDir.resolve(".sourcegraph")
+  }
+
+  @JvmStatic
+  fun getSettingsFile(project: Project): Path {
+    return getConfigDir(project).resolve("cody_settings.json")
+  }
+
+  @JvmStatic
+  fun getCustomConfiguration(project: Project, customConfigContent: String?): Map<String, Any> {
+    val settingsProperties =
+        try {
+          val text = customConfigContent ?: getSettingsFile(project).readText()
+          val jsonObj = JsonParser.parseString(text).asJsonObject
+          jsonObj.keySet().associateWith { jsonObj[it] }
+        } catch (e: Exception) {
+          logger.warn("Failed to read settings file", e)
+          emptyMap()
+        }
     // Needed by Edit commands to trigger smart-selection; without it things break.
     // So it isn't optional in JetBrains clients, which do not offer language-neutral solutions
     // to this problem; instead we hardwire it to use the indentation-based provider.
-    return mapOf("cody.experimental.foldingRanges" to "indentation-based")
+    val additionalProperties = mapOf("cody.experimental.foldingRanges" to "indentation-based")
+
+    return settingsProperties + additionalProperties
   }
 
   @JvmStatic

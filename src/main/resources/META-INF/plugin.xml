@@ -19,7 +19,8 @@
     </depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <highlightingPassFactory implementation="com.sourcegraph.cody.inspections.CodyFixHighlightPassFactory" order="last" />
+        <highlightingPassFactory implementation="com.sourcegraph.cody.inspections.CodyFixHighlightPassFactory"
+                                 order="last"/>
         <projectService
                 serviceImplementation="com.sourcegraph.config.CodyProjectService"/>
         <applicationService
@@ -373,7 +374,10 @@
             </group>
 
             <group id="Cody.Other" text="Other" description="Other Cody actions">
-                <action id="cody.restartCody"
+                <action id="cody.editCodySettings"
+                        class="com.sourcegraph.cody.config.actions.OpenCodySettingsEditorAction"
+                        text="Open Cody Settings Editor"/>
+                <action id="cody.restartAgent"
                         class="com.sourcegraph.cody.agent.action.CodyAgentRestartAction"
                         text="Restart Cody"
                         description="Restarts Cody">

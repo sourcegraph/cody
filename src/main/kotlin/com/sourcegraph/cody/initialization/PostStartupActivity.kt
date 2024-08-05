@@ -1,11 +1,13 @@
 package com.sourcegraph.cody.initialization
 
+import com.intellij.AppTopics
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.ex.EditorEventMulticasterEx
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.config.CodySettingsChangeListener
 import com.sourcegraph.cody.config.migration.SettingsMigration
 import com.sourcegraph.cody.config.ui.CheckUpdatesTask
 import com.sourcegraph.cody.listeners.CodyCaretListener
@@ -53,6 +55,9 @@ class PostStartupActivity : StartupActivity.DumbAware {
     multicaster.addCaretListener(CodyCaretListener(project), disposable)
     multicaster.addSelectionListener(CodySelectionListener(project), disposable)
     multicaster.addDocumentListener(CodyDocumentListener(project), disposable)
+    project.messageBus
+        .connect(disposable)
+        .subscribe(AppTopics.FILE_DOCUMENT_SYNC, CodySettingsChangeListener(project))
 
     TelemetryV2.sendTelemetryEvent(project, "cody.extension", "started")
   }

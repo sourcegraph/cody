@@ -10,6 +10,7 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
+import com.sourcegraph.cody.config.actions.OpenCodySettingsEditorAction;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.OpenPluginSettingsAction;
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
           toolWindow.getContentManager().addContent(content);
           DefaultActionGroup customCodySettings = new DefaultActionGroup();
           customCodySettings.add(new OpenPluginSettingsAction("Cody Settings..."));
+          customCodySettings.add(new OpenCodySettingsEditorAction());
           customCodySettings.addSeparator();
           toolWindow.setAdditionalGearActions(customCodySettings);
           List<AnAction> titleActions = new ArrayList<>();
