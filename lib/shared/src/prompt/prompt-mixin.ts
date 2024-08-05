@@ -38,6 +38,7 @@ export class PromptMixin {
             ),
             ps`\n\n`
         )
+        // TODO: Make this work with a feature flag
 
         if (modelID.includes('claude-3-5-sonnet')) {
             mixins = mixins.concat(HEDGES_PREVENTION)
@@ -52,14 +53,6 @@ export class PromptMixin {
             }
         }
         return humanMessage
-    }
-
-    public static setContextPreamble(enable: boolean): void {
-        if (enable) {
-            PromptMixin.contextMixin = new PromptMixin(CONTEXT_PREAMBLE)
-        } else {
-            PromptMixin.contextMixin = new PromptMixin(ps``)
-        }
     }
 
     /**

@@ -121,7 +121,7 @@ export async function replaceSelectionWithCode(text: string): Promise<void> {
 export async function handleSmartApply(
     code: string,
     instruction?: string,
-    fileUri?: string | null
+    fileUri?: string
 ): Promise<void> {
     const activeEditor = getEditor()?.active
     const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri

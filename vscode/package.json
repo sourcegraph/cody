@@ -1478,7 +1478,6 @@
     "lucide-react": "^0.378.0",
     "mac-ca": "^2.0.3",
     "marked": "^4.0.16",
-    "mdast": "^3.0.0",
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
     "parse-git-diff": "^0.0.14",

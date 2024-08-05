@@ -159,8 +159,7 @@ function createCodeBlockActionButton(
     codeBlockActions: {
         copy: CodeBlockActionsProps['copyButtonOnSubmit']
         insert?: CodeBlockActionsProps['insertButtonOnSubmit']
-    },
-    fileName?: string
+    }
 ): HTMLElement {
     const button = document.createElement('button')
 
