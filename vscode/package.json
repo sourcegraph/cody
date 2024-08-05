@@ -485,7 +485,7 @@
         "title": "Delete All Chats",
         "group": "Cody",
         "icon": "$(trash)",
-        "enablement": "cody.activated && cody.hasChatHistory"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.chat.history.delete",
@@ -493,7 +493,7 @@
         "title": "Delete Chat",
         "group": "Cody",
         "icon": "$(trash)",
-        "enablement": "cody.activated && cody.hasChatHistory"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.chat.history.export",
@@ -501,7 +501,7 @@
         "title": "Export Chats as JSON",
         "group": "Cody",
         "icon": "$(arrow-circle-down)",
-        "enablement": "cody.activated && cody.hasChatHistory"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.chat.history.panel",
@@ -509,7 +509,7 @@
         "title": "Chat History",
         "group": "Cody",
         "icon": "$(list-unordered)",
-        "enablement": "cody.activated && cody.hasChatHistory"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.search.index-update",
@@ -876,16 +876,6 @@
           "group": "navigation@1"
         },
         {
-          "command": "cody.chat.newPanel",
-          "when": "view != cody.chat && cody.activated",
-          "group": "navigation@2"
-        },
-        {
-          "command": "cody.chat.history.panel",
-          "when": "view != cody.chat && cody.activated",
-          "group": "navigation@3"
-        },
-        {
           "command": "cody.welcome",
           "when": "view == cody.chat",
           "group": "7_cody@0"
@@ -938,7 +928,7 @@
         },
         {
           "command": "cody.chat.view.popOut",
-          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated && !isAuxiliaryEditorPart",
+          "when": "view == cody.chat && cody.activated && !isAuxiliaryEditorPart",
           "group": "navigation@4",
           "visibility": "visible"
         },
