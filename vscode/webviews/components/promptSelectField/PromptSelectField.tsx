@@ -17,7 +17,7 @@ import {
 } from '../shadcn/ui/command'
 import { ToolbarPopoverItem } from '../shadcn/ui/toolbar'
 import { cn } from '../shadcn/utils'
-import { usePromptsQuery } from './promptsClient'
+import { usePromptsQuery } from './usePromptsQuery'
 
 export const PromptSelectField: React.FunctionComponent<{
     onSelect?: (prompt: Prompt) => void
@@ -31,7 +31,7 @@ export const PromptSelectField: React.FunctionComponent<{
 
     const [query, setQuery] = useState('')
     const debouncedQuery = useDebounce(query, 250)
-    const { data: prompts, error } = usePromptsQuery(debouncedQuery)
+    const { value: prompts, error } = usePromptsQuery(debouncedQuery)
 
     // Query and error telemetry.
     useEffect(() => {

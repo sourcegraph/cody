@@ -404,10 +404,10 @@ export class MockServer {
                                         },
                                     },
                                 },
-                            }),
-                        );
-                        break;
-                    case "CurrentUserCodySubscription":
+                            })
+                        )
+                        break
+                    case 'CurrentUserCodySubscription':
                         res.send(
                             JSON.stringify({
                                 data: {
@@ -471,26 +471,32 @@ export class MockServer {
                                         fields: [{ name: "id" }, { name: "isCodyEnabled" }],
                                     },
                                 },
-                            }),
-                        );
-                        break;
-                    case "SiteHasCodyEnabled":
-                        res.send(JSON.stringify({ data: { site: { isCodyEnabled: true } } }));
-                        break;
-                    case "CurrentSiteCodyLlmConfiguration": {
+                            })
+                        )
+                        break
+                    case 'SiteHasCodyEnabled':
+                        res.send(JSON.stringify({ data: { site: { isCodyEnabled: true } } }))
+                        break
+                    case 'FeatureFlags':
+                        res.send(JSON.stringify({ data: { evaluatedFeatureFlags: [{ name: 'git-mention-provider', value: true}]} }))
+                        break
+                    case 'EvaluateFeatureFlag':
+                        res.send(JSON.stringify({ data: { evaluatedFeatureFlag: true } }))
+                        break
+                    case 'CurrentSiteCodyLlmConfiguration': {
                         res.send(
                             JSON.stringify({
                                 data: {
                                     site: {
                                         codyLLMConfiguration: {
-                                            chatModel: "test-chat-default-model",
-                                            provider: "sourcegraph",
+                                            chatModel: 'foo/test-chat-default-model',
+                                            provider: 'sourcegraph',
                                         },
                                     },
                                 },
-                            }),
-                        );
-                        break;
+                            })
+                        )
+                        break
                     }
                     case "CodyConfigFeaturesResponse": {
                         res.send(

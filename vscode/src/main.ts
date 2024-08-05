@@ -254,12 +254,11 @@ const register = async (
         disposables
     )
     const tutorialSetup = tryRegisterTutorial(context, disposables)
-    const openCtxSetup = registerOpenCtxClient(
+    const openCtxSetup = exposeOpenCtxClient(
         context,
-        platform,
         configWatcher,
         authProvider,
-        disposables
+        platform.createOpenCtxController
     )
 
     registerCodyCommands(configWatcher, statusBar, sourceControl, chatClient, disposables)
@@ -690,31 +689,6 @@ function registerAutocomplete(
     }
     void configWatcher.onChange(setupAutocomplete, disposables)
     return setupAutocomplete().catch(() => {})
-}
-
-async function registerOpenCtxClient(
-    context: vscode.ExtensionContext,
-    platform: PlatformContext,
-    config: ConfigWatcher<ConfigurationWithAccessToken>,
-    authProvider: AuthProvider,
-    disposables: vscode.Disposable[]
-): Promise<void> {
-    if (authProvider.getAuthStatus().authenticated) {
-        await exposeOpenCtxClient(
-            context,
-            config.get(),
-            authProvider.getAuthStatus().isDotCom,
-            platform.createOpenCtxController
-        )
-    }
-    config.onChange(async newConfig => {
-        await exposeOpenCtxClient(
-            context,
-            newConfig,
-            authProvider.getAuthStatus().isDotCom,
-            platform.createOpenCtxController
-        )
-    }, disposables)
 }
 
 async function registerMinion(

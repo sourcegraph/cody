@@ -221,7 +221,7 @@ export class FixupController
      * meaning any associated UI and behaviour is updated.
      */
     public registerDiscardOnRestoreListener(task: FixupTask): void {
-        const listener = vscode.workspace.onDidChangeTextDocument(async event => {
+        const listener: vscode.Disposable = vscode.workspace.onDidChangeTextDocument(async event => {
             if (task.state !== CodyTaskState.Applied) {
                 // Task is not in the applied state, this is likely due to it
                 // being accepted or discarded in an alternative way.

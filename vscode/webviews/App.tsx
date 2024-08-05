@@ -23,17 +23,17 @@ import { ConnectionIssuesPage } from './Troubleshooting'
 import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
 import { useClientActionDispatcher } from './client/clientState'
 
-import { ClientStateContextProvider } from '@sourcegraph/prompt-editor'
+import {
+    ClientStateContextProvider,
+    ExtensionAPIProviderFromVSCodeAPI,
+} from '@sourcegraph/prompt-editor'
 import { CodyPanel } from './CodyPanel'
-import { PromptsClientProviderFromVSCodeAPI } from './components/promptSelectField/promptsClient'
-import { ChatContextClientProviderFromVSCodeAPI } from './openctxClient'
 import { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
 import { type Config, ConfigProvider } from './utils/useConfig'
-import { FeatureFlagsProvider } from './utils/useFeatureFlags'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
@@ -57,7 +57,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
     const [commandList, setCommandList] = useState<CodyCommand[]>([])
     const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
-    const [exportedFeatureFlags, setExportedFeatureFlags] = useState<Record<string, boolean>>()
 
     const [clientState, setClientState] = useState<ClientStateForWebview>({
         initialContext: [],
@@ -122,7 +121,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         }
                         break
                     case 'setConfigFeatures':
-                        setExportedFeatureFlags(message.exportedFeatureFlags)
                         setChatEnabled(message.configFeatures.chat)
                         setAttributionEnabled(message.configFeatures.attribution)
                         setServerSentModelsEnabled(message.configFeatures.serverSentModels)
@@ -236,18 +234,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 telemetryRecorder,
                 chatModelContext,
                 clientState,
-                exportedFeatureFlags,
                 config && authStatus ? { config, authStatus } : undefined
             ),
-        [
-            vscodeAPI,
-            telemetryRecorder,
-            chatModelContext,
-            clientState,
-            exportedFeatureFlags,
-            config,
-            authStatus,
-        ]
+        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, config, authStatus]
     )
 
     // Wait for all the data to be loaded before rendering Chat View
@@ -301,18 +290,17 @@ export function getAppWrappers(
     telemetryRecorder: TelemetryRecorder,
     chatModelContext: ChatModelContext,
     clientState: ClientStateForWebview,
-    exportedFeatureFlags: Record<string, boolean> | undefined,
     config: Config | undefined
 ): Wrapper[] {
     return [
         {
-            component: ChatContextClientProviderFromVSCodeAPI,
-            props: { vscodeAPI },
-        } satisfies Wrapper<any, ComponentProps<typeof ChatContextClientProviderFromVSCodeAPI>>,
-        {
             provider: TelemetryRecorderContext.Provider,
             value: telemetryRecorder,
         } satisfies Wrapper<ComponentProps<typeof TelemetryRecorderContext.Provider>['value']>,
+        {
+            component: ExtensionAPIProviderFromVSCodeAPI,
+            props: { vscodeAPI },
+        } satisfies Wrapper<any, ComponentProps<typeof ExtensionAPIProviderFromVSCodeAPI>>,
         {
             provider: ChatModelContextProvider,
             value: chatModelContext,
@@ -322,16 +310,8 @@ export function getAppWrappers(
             value: clientState,
         } satisfies Wrapper<ComponentProps<typeof ClientStateContextProvider>['value']>,
         {
-            component: FeatureFlagsProvider,
-            props: { value: exportedFeatureFlags },
-        } satisfies Wrapper<any, ComponentProps<typeof FeatureFlagsProvider>>,
-        {
             component: ConfigProvider,
             props: { value: config },
         } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,
-        {
-            component: PromptsClientProviderFromVSCodeAPI,
-            props: { vscodeAPI },
-        } satisfies Wrapper<any, ComponentProps<typeof PromptsClientProviderFromVSCodeAPI>>,
     ]
 }

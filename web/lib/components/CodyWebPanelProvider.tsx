@@ -34,7 +34,7 @@ const ACTIVE_CHAT_ID_KEY = 'cody-web.last-active-chat-id'
 // by race conditions in different events that the extension host sends during chat-switching.
 // Some events should always be handled by the client regardless of which active panel they
 // came from.
-const GLOBAL_MESSAGE_TYPES: Array<ExtensionMessage['type']> = ['allMentionProvidersMetadata']
+const GLOBAL_MESSAGE_TYPES: Array<ExtensionMessage['type']> = ['rpc/response']
 
 interface AgentClient {
     rpc: MessageConnection

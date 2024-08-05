@@ -8,7 +8,7 @@ export const getContextForChatMessage = async (
     signal?: AbortSignal
 ): Promise<ContextItemOpenCtx[]> => {
     try {
-        const openCtxClient = openCtx.client
+        const openCtxClient = openCtx.controller
         if (!openCtxClient) {
             return []
         }

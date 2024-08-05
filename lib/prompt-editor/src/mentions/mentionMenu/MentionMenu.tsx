@@ -216,7 +216,14 @@ export const MentionMenu: FunctionComponent<
     const heading = getItemsHeading(params.parentItem, mentionQuery)
 
     const {
-        commandComponents: { Command, CommandEmpty, CommandGroup, CommandItem, CommandList },
+        commandComponents: {
+            Command,
+            CommandEmpty,
+            CommandGroup,
+            CommandItem,
+            CommandList,
+            CommandLoading,
+        },
     } = usePromptEditorConfig()
 
     const providers = data.providers.map(provider => (
@@ -288,6 +295,13 @@ export const MentionMenu: FunctionComponent<
                         {getEmptyLabel(params.parentItem, mentionQuery)}
                     </CommandEmpty>
                 ) : null}
+                {data.error && (
+                    <CommandLoading
+                        className={clsx(COMMAND_ROW_CLASS_NAME, COMMAND_ROW_TEXT_CLASS_NAME)}
+                    >
+                        Error: {data.error}
+                    </CommandLoading>
+                )}
             </CommandList>
         </Command>
     )

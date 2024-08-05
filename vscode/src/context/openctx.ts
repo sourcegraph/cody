@@ -1,9 +1,13 @@
 import {
+    type AuthStatus,
     CodyIDE,
     type ConfigurationWithAccessToken,
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
     WEB_PROVIDER_URI,
+    asyncGeneratorWithValues,
+    combineLatest,
+    dependentAbortController,
     featureFlagProvider,
     graphqlClient,
     isError,
@@ -12,8 +16,11 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
-import type { ClientConfiguration, Provider } from '@openctx/client'
+import type { ClientConfiguration, ImportedProviderConfiguration } from '@openctx/client'
+import type { createController } from '@openctx/vscode-lib'
+import type { ConfigWatcher } from '../configwatcher'
 import { logDebug, outputChannel } from '../log'
+import type { AuthProvider } from '../services/AuthProvider'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFileSearch'
@@ -22,23 +29,20 @@ import { createWebProvider } from './openctx/web'
 
 export async function exposeOpenCtxClient(
     context: Pick<vscode.ExtensionContext, 'extension' | 'secrets'>,
-    config: ConfigurationWithAccessToken,
-    isDotCom: boolean,
-    // TODO [VK] Expose createController openctx type from vscode-lib
-    createOpenCtxController: ((...args: any[]) => any) | undefined
-) {
-    logDebug('openctx', 'OpenCtx is enabled in Cody')
+    config: ConfigWatcher<ConfigurationWithAccessToken>,
+    authProvider: AuthProvider,
+    createOpenCtxController: typeof createController | undefined,
+    parentSignal?: AbortSignal
+): Promise<void> {
     await warnIfOpenCtxExtensionConflict()
     try {
-        const isCodyWeb = config.agentIDE === CodyIDE.Web
-        const providers = isCodyWeb
-            ? getCodyWebOpenCtxProviders()
-            : await getStandardOpenCtxProviders(config, isDotCom)
+        const abortController = dependentAbortController(parentSignal)
+        const isCodyWeb = config.get().agentIDE === CodyIDE.Web
         const createController =
             createOpenCtxController ?? (await import('@openctx/vscode-lib')).createController
 
         // Enable fetching of openctx configuration from Sourcegraph instance
-        const mergeConfiguration = config.experimentalNoodle
+        const mergeConfiguration = config.get().experimentalNoodle
             ? getMergeConfigurationFunction()
             : undefined
 
@@ -46,14 +50,19 @@ export async function exposeOpenCtxClient(
             extensionId: context.extension.id,
             secrets: context.secrets,
             outputChannel,
-            features: {},
-            providers,
+            features: isCodyWeb ? {} : { annotations: true, statusBar: true },
+            providers: () =>
+                isCodyWeb
+                    ? asyncGeneratorWithValues(getCodyWebOpenCtxProviders())
+                    : getOpenCtxProviders(
+                          config.observe(abortController.signal),
+                          authProvider.observeAuthStatus(abortController.signal),
+                          abortController.signal
+                      ),
             mergeConfiguration,
-            preloadDelay: 5 * 1000, // 5 seconds
         })
-
         setOpenCtx({
-            client: controller.controller,
+            controller: controller.controller,
             disposable: controller.disposable,
         })
     } catch (error) {
@@ -61,60 +70,66 @@ export async function exposeOpenCtxClient(
     }
 }
 
-async function getStandardOpenCtxProviders(
-    config: ConfigurationWithAccessToken,
-    isDotCom: boolean
-): Promise<{ settings: any; provider: Provider; providerUri: string }[]> {
-    const providers: {
-        settings: any
-        provider: Provider
-        providerUri: string
-    }[] = [
-        {
-            settings: true,
-            provider: createWebProvider(false),
-            providerUri: WEB_PROVIDER_URI,
-        },
-    ]
+async function* getOpenCtxProviders(
+    configChanges: AsyncGenerator<ConfigurationWithAccessToken>,
+    authStatusChanges: AsyncGenerator<AuthStatus>,
+    signal?: AbortSignal
+): AsyncGenerator<ImportedProviderConfiguration[]> {
+    const gitMentionProviderChanges = featureFlagProvider.evaluatedFeatureFlag(
+        FeatureFlag.GitMentionProvider,
+        signal
+    )
+    for await (const [config, authStatus, gitMentionProvider] of combineLatest(
+        [configChanges, authStatusChanges, gitMentionProviderChanges],
+        signal
+    )) {
+        const providers: ImportedProviderConfiguration[] = [
+            {
+                settings: true,
+                provider: createWebProvider(false),
+                providerUri: WEB_PROVIDER_URI,
+            },
+        ]
 
-    // Remote repository and remote files should be available only for
-    // non-dotcom users
-    if (!isDotCom) {
-        providers.push({
-            settings: true,
-            provider: RemoteRepositorySearch,
-            providerUri: RemoteRepositorySearch.providerUri,
-        })
+        // Remote repository and remote files should be available only for
+        // non-dotcom users
+        if (!authStatus.isDotCom) {
+            providers.push({
+                settings: true,
+                provider: RemoteRepositorySearch,
+                providerUri: RemoteRepositorySearch.providerUri,
+            })
+
+            if (config.experimentalNoodle) {
+                providers.push({
+                    settings: true,
+                    provider: RemoteFileProvider,
+                    providerUri: RemoteFileProvider.providerUri,
+                })
+            }
+        }
 
         if (config.experimentalNoodle) {
             providers.push({
                 settings: true,
-                provider: RemoteFileProvider,
-                providerUri: RemoteFileProvider.providerUri,
+                provider: LinearIssuesProvider,
+                providerUri: LinearIssuesProvider.providerUri,
             })
         }
-    }
 
-    if (config.experimentalNoodle) {
-        providers.push({
-            settings: true,
-            provider: LinearIssuesProvider,
-            providerUri: LinearIssuesProvider.providerUri,
-        })
-    }
+        if (gitMentionProvider) {
+            providers.push({
+                settings: true,
+                provider: gitMentionsProvider,
+                providerUri: GIT_OPENCTX_PROVIDER_URI,
+            })
+        }
 
-    if (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.GitMentionProvider)) {
-        providers.push({
-            settings: true,
-            provider: gitMentionsProvider,
-            providerUri: GIT_OPENCTX_PROVIDER_URI,
-        })
+        yield providers
     }
-
-    return providers
 }
 
-function getCodyWebOpenCtxProviders() {
+function getCodyWebOpenCtxProviders(): ImportedProviderConfiguration[] {
     return [
         {
             settings: true,
@@ -134,7 +149,7 @@ function getCodyWebOpenCtxProviders() {
     ]
 }
 
-function getMergeConfigurationFunction() {
+function getMergeConfigurationFunction(): Parameters<typeof createController>[0]['mergeConfiguration'] {
     // Cache viewerSettings response since this function can be called
     // multiple times.
     //
@@ -157,7 +172,7 @@ function getMergeConfigurationFunction() {
     }
 }
 
-async function getViewerSettingsProviders() {
+async function getViewerSettingsProviders(): Promise<ClientConfiguration['providers']> {
     try {
         const settings = await graphqlClient.viewerSettings()
         if (isError(settings)) {
@@ -169,14 +184,14 @@ async function getViewerSettingsProviders() {
             return undefined
         }
 
-        return providers as ClientConfiguration['providers']
+        return providers
     } catch (error) {
         logError('OpenCtx', 'failed to fetch viewer settings from Sourcegraph', error)
         return undefined
     }
 }
 
-async function warnIfOpenCtxExtensionConflict() {
+async function warnIfOpenCtxExtensionConflict(): Promise<void> {
     const ext = vscode.extensions.getExtension('sourcegraph.openctx')
     if (!ext) {
         return

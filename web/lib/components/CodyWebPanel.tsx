@@ -68,7 +68,6 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
     const [chatModels, setChatModels] = useState<Model[]>()
     const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
-    const [exportedFeatureFlags, setExportedFeatureFlags] = useState<Record<string, boolean>>()
     const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
@@ -120,7 +119,6 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     dispatchClientAction(message)
                     break
                 case 'setConfigFeatures':
-                    setExportedFeatureFlags(message.exportedFeatureFlags)
                     setServerSentModelsEnabled(!!message.configFeatures.serverSentModels)
                     break
                 case 'commands':
@@ -225,18 +223,9 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 telemetryRecorder,
                 chatModelContext,
                 clientState,
-                exportedFeatureFlags,
                 config && authStatus ? { config, authStatus } : undefined
             ),
-        [
-            vscodeAPI,
-            telemetryRecorder,
-            chatModelContext,
-            clientState,
-            exportedFeatureFlags,
-            config,
-            authStatus,
-        ]
+        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, config, authStatus]
     )
 
     const isLoading =
@@ -244,7 +233,6 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         !userAccountInfo ||
         !chatModels ||
         !activeChatID ||
-        !exportedFeatureFlags ||
         initialization !== 'completed' ||
         !config ||
         !view ||
