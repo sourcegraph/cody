@@ -233,6 +233,9 @@ export type ClientRequests = {
     // Returns the current authentication status without making changes to it.
     'extensionConfiguration/status': [null, AuthStatus | null]
 
+    // Returns the json schema of the extension confi
+    'extensionConfiguration/getSettingsSchema': [null, string]
+
     'textDocument/change': [ProtocolTextDocument, { success: boolean }]
 
     // Run attribution search for a code snippet displayed in chat.

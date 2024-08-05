@@ -5,6 +5,7 @@ import type { Polly, Request } from '@pollyjs/core'
 import { type CodyCommand, ModelUsage, isWindows, telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
+import packageJson from '../../vscode/package.json'
 
 import {
     type AuthStatus,
@@ -504,6 +505,17 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerRequest('extensionConfiguration/status', async () => {
             const result = await this.authenticationPromise
             return result ?? null
+        })
+
+        this.registerRequest('extensionConfiguration/getSettingsSchema', async () => {
+            return JSON.stringify({
+                $schema: 'http://json-schema.org/draft-07/schema#',
+                title: 'Schema for Cody settings in the Cody VSCode Extension.',
+                description: 'This prevents invalid Cody specific configuration in the settings file.',
+                type: 'object',
+                allOf: [{ $ref: 'https://json.schemastore.org/package' }],
+                properties: packageJson.contributes.configuration.properties,
+            })
         })
 
         this.registerNotification('progress/cancel', ({ id }) => {
