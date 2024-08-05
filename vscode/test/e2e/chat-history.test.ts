@@ -21,16 +21,16 @@ test.extend<ExpectedV2Events>({
 
     const sidebarChat = getChatSidebarPanel(page)
 
-    const sidebarTabHistoryIcon = sidebarChat.locator('[id="radix-\\:r0\\:-trigger-history"]')
+    const sidebarTabHistoryButton = sidebarChat.getByTestId('tab-history')
 
     // Ensure the chat view is ready before we start typing
-    await expect(sidebarTabHistoryIcon).toBeVisible()
+    await expect(sidebarTabHistoryButton).toBeVisible()
 
     const chatInput = getChatInputs(sidebarChat).first()
     await chatInput.fill('Hey')
     await chatInput.press('Enter')
 
-    await sidebarTabHistoryIcon.getByRole('button').click()
+    await sidebarTabHistoryButton.click()
 
     const newHistoryItem = sidebarChat.getByRole('button', { name: 'Hey' })
     await expect(newHistoryItem).toBeVisible()

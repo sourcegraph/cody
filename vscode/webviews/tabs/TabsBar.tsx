@@ -15,7 +15,7 @@ import {
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
-import { CodyIDE } from '@sourcegraph/cody-shared'
+import { CodyIDE, isDefined } from '@sourcegraph/cody-shared'
 import { forwardRef, useCallback, useMemo } from 'react'
 import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
@@ -25,7 +25,6 @@ interface TabsBarProps {
     IDE: CodyIDE
     currentView: View
     setView: (view: View) => void
-    onlyChatAndHistoryTabs?: boolean
 }
 
 type IconComponent = React.ForwardRefExoticComponent<
@@ -37,7 +36,12 @@ interface TabConfig {
     view: View
     tooltip: React.ReactNode
     command?: string
-    SubIcons?: { tooltip: React.ReactNode; Icon: IconComponent; command: string }[]
+    SubIcons?: {
+        tooltip: React.ReactNode
+        Icon: IconComponent
+        command: string
+        arg?: string | undefined | null
+    }[]
     changesView?: boolean
 }
 
@@ -49,10 +53,11 @@ interface TabButtonProps {
     onClick: () => void
     prominent?: boolean
     tooltip: React.ReactNode
+    'data-testid'?: string
 }
 
 const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
-    ({ Icon, isActive, onClick, tooltip, prominent }, ref) => (
+    ({ Icon, isActive, onClick, tooltip, prominent, 'data-testid': dataTestId }, ref) => (
         <Tooltip>
             <TooltipTrigger asChild>
                 <button
@@ -66,6 +71,7 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
                             '!tw-opacity-100': prominent,
                         }
                     )}
+                    data-testid={dataTestId}
                 >
                     <Icon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
                 </button>
@@ -76,78 +82,90 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
 )
 TabButton.displayName = 'TabButton'
 
-const BASE_TAB_ITEMS: TabConfig[] = [
-    {
-        view: View.Chat,
-        tooltip: 'Chat',
-        Icon: MessagesSquareIcon,
-        SubIcons: [
-            {
-                tooltip: (
-                    <>
-                        New Chat <Kbd macOS="shift+opt+l" linuxAndWindows="shift+alt+l" />
-                    </>
-                ),
-                Icon: MessageSquarePlusIcon,
-                command: 'cody.chat.new',
-            },
-            {
-                tooltip: 'Open in Editor',
-                Icon: ColumnsIcon,
-                command: 'cody.chat.moveToEditor',
-            },
-        ],
-        changesView: true,
-    },
-    {
-        view: View.History,
-        tooltip: 'Chat History',
-        Icon: HistoryIcon,
-        SubIcons: [
-            { tooltip: 'Export History', Icon: DownloadIcon, command: 'cody.chat.history.export' },
-            { tooltip: 'Clear History', Icon: Trash2Icon, command: 'cody.chat.history.clear' },
-        ],
-        changesView: true,
-    },
-    {
-        view: View.Commands,
-        tooltip: 'Commands',
-        Icon: ZapIcon,
-        changesView: true,
-    },
-    {
-        view: View.Settings,
-        tooltip: 'Settings',
-        Icon: SettingsIcon,
-        command: 'cody.status-bar.interacted',
-    },
-    {
-        view: View.Account,
-        tooltip: 'Account',
-        Icon: CircleUserIcon,
-        command: 'cody.auth.account',
-    },
-]
-
-const getTabItemsByIDE = (IDE: CodyIDE): TabConfig[] =>
-    IDE !== CodyIDE.VSCode
-        ? BASE_TAB_ITEMS.map(item =>
-              item.view === View.Account ? { ...item, changesView: true } : item
-          )
-        : BASE_TAB_ITEMS
-
-export const TabsBar: React.FC<TabsBarProps> = ({
-    currentView,
-    setView,
-    IDE,
-    onlyChatAndHistoryTabs,
-}) => {
-    const tabItems = useMemo(
+export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) => {
+    const tabItems = useMemo<TabConfig[]>(
         () =>
-            getTabItemsByIDE(IDE).filter(tab =>
-                onlyChatAndHistoryTabs ? tab.view === View.Chat || tab.view === View.History : true
-            ),
-        [IDE, onlyChatAndHistoryTabs]
+            (
+                [
+                    {
+                        view: View.Chat,
+                        tooltip: 'Chat',
+                        Icon: MessagesSquareIcon,
+                        SubIcons: [
+                            {
+                                tooltip: (
+                                    <>
+                                        New Chat{' '}
+                                        {IDE !== CodyIDE.Web && (
+                                            <Kbd macOS="shift+opt+l" linuxAndWindows="shift+alt+l" />
+                                        )}
+                                    </>
+                                ),
+                                Icon: MessageSquarePlusIcon,
+                                command: 'cody.chat.new',
+                            },
+                            IDE !== CodyIDE.Web
+                                ? {
+                                      tooltip: 'Open in Editor',
+                                      Icon: ColumnsIcon,
+                                      command: 'cody.chat.moveToEditor',
+                                  }
+                                : null,
+                        ].filter(isDefined),
+                        changesView: true,
+                    },
+                    {
+                        view: View.History,
+                        tooltip: 'Chat History',
+                        Icon: HistoryIcon,
+                        SubIcons: [
+                            IDE !== CodyIDE.Web
+                                ? {
+                                      tooltip: 'Export History',
+                                      Icon: DownloadIcon,
+                                      command: 'cody.chat.history.export',
+                                  }
+                                : null,
+                            {
+                                tooltip: 'Clear History',
+                                Icon: Trash2Icon,
+                                command: 'cody.chat.history.clear',
+                                // We don't have a way to request user confirmation in Cody Web
+                                // (vscode.window.showWarningMessage is not implemented), so bypass
+                                // confirmation.
+                                arg: IDE === CodyIDE.Web ? 'clear-all-no-confirm' : undefined,
+                            },
+                        ].filter(isDefined),
+                        changesView: true,
+                    },
+                    IDE !== CodyIDE.Web
+                        ? {
+                              view: View.Commands,
+                              tooltip: 'Commands',
+                              Icon: ZapIcon,
+                              changesView: true,
+                          }
+                        : null,
+                    IDE !== CodyIDE.Web
+                        ? {
+                              view: View.Settings,
+                              tooltip: 'Settings',
+                              Icon: SettingsIcon,
+                              command: 'cody.status-bar.interacted',
+                          }
+                        : null,
+                    IDE !== CodyIDE.Web
+                        ? {
+                              view: View.Account,
+                              tooltip: 'Account',
+                              Icon: CircleUserIcon,
+                              command: 'cody.auth.account',
+                              changesView: IDE !== CodyIDE.VSCode,
+                          }
+                        : null,
+                ] as (TabConfig | null)[]
+            ).filter(isDefined),
+        [IDE]
     )
     const currentViewSubIcons = tabItems.find(tab => tab.view === currentView)?.SubIcons
 
@@ -181,26 +199,25 @@ export const TabsBar: React.FC<TabsBarProps> = ({
                             command={command}
                             isActive={currentView === view}
                             onClick={() => handleClick(view, command, changesView)}
+                            data-testid={`tab-${view}`}
                         />
                     </Tabs.Trigger>
                 ))}
             </div>
-            {!onlyChatAndHistoryTabs && (
-                <div className="tw-flex tw-gap-4">
-                    {currentViewSubIcons?.map(({ Icon, command, tooltip }) => (
-                        <TabButton
-                            key={command}
-                            Icon={Icon}
-                            tooltip={tooltip}
-                            command={command}
-                            onClick={() =>
-                                getVSCodeAPI().postMessage({ command: 'command', id: command })
-                            }
-                            prominent
-                        />
-                    ))}
-                </div>
-            )}
+            <div className="tw-flex tw-gap-4">
+                {currentViewSubIcons?.map(({ Icon, command, tooltip, arg }) => (
+                    <TabButton
+                        key={command}
+                        Icon={Icon}
+                        tooltip={tooltip}
+                        command={command}
+                        onClick={() =>
+                            getVSCodeAPI().postMessage({ command: 'command', id: command, arg })
+                        }
+                        prominent
+                    />
+                ))}
+            </div>
         </Tabs.List>
     )
 }

@@ -160,58 +160,6 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
         telemetryClientName,
     ])
 
-    const vscodeAPI = useMemo<VSCodeWrapper>(() => {
-        if (client && !isErrorLike(client)) {
-            client.rpc.onNotification(
-                'webview/postMessage',
-                ({ id, message }: { id: string; message: ExtensionMessage }) => {
-                    if (
-                        activeWebviewPanelIDRef.current === id ||
-                        GLOBAL_MESSAGE_TYPES.includes(message.type)
-                    ) {
-                        for (const callback of onMessageCallbacksRef.current) {
-                            callback(hydrateAfterPostMessage(message, uri => URI.from(uri as any)))
-                        }
-                    }
-                }
-            )
-        }
-        const vscodeAPI: VSCodeWrapper = {
-            postMessage: message => {
-                if (client && !isErrorLike(client)) {
-                    void client.rpc.sendRequest('webview/receiveMessage', {
-                        id: activeWebviewPanelIDRef.current,
-                        message,
-                    })
-                }
-            },
-            onMessage: callback => {
-                if (client && !isErrorLike(client)) {
-                    onMessageCallbacksRef.current.push(callback)
-                    return () => {
-                        // Remove callback from onMessageCallbacks.
-                        const index = onMessageCallbacksRef.current.indexOf(callback)
-                        if (index >= 0) {
-                            onMessageCallbacksRef.current.splice(index, 1)
-                        }
-                    }
-                }
-                return () => {}
-            },
-            getState: () => {
-                throw new Error('not implemented')
-            },
-            setState: () => {
-                throw new Error('not implemented')
-            },
-        }
-
-        // Runtime sync side effect, ensure that later any cody UI
-        // components will have access to the mocked/synthetic VSCode API
-        setVSCodeWrapper(vscodeAPI)
-        return vscodeAPI
-    }, [client])
-
     const createChat = useCallback(
         async (agent = client) => {
             if (!agent || isErrorLike(agent)) {
@@ -251,6 +199,62 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
         },
         [client, onNewChatCreated, setLastActiveChatID, initialContext]
     )
+
+    const vscodeAPI = useMemo<VSCodeWrapper>(() => {
+        if (client && !isErrorLike(client)) {
+            client.rpc.onNotification(
+                'webview/postMessage',
+                ({ id, message }: { id: string; message: ExtensionMessage }) => {
+                    if (
+                        activeWebviewPanelIDRef.current === id ||
+                        GLOBAL_MESSAGE_TYPES.includes(message.type)
+                    ) {
+                        for (const callback of onMessageCallbacksRef.current) {
+                            callback(hydrateAfterPostMessage(message, uri => URI.from(uri as any)))
+                        }
+                    }
+                }
+            )
+        }
+        const vscodeAPI: VSCodeWrapper = {
+            postMessage: message => {
+                if (client && !isErrorLike(client)) {
+                    if (message.command === 'command' && message.id === 'cody.chat.new') {
+                        void createChat(client)
+                        return
+                    }
+                    void client.rpc.sendRequest('webview/receiveMessage', {
+                        id: activeWebviewPanelIDRef.current,
+                        message,
+                    })
+                }
+            },
+            onMessage: callback => {
+                if (client && !isErrorLike(client)) {
+                    onMessageCallbacksRef.current.push(callback)
+                    return () => {
+                        // Remove callback from onMessageCallbacks.
+                        const index = onMessageCallbacksRef.current.indexOf(callback)
+                        if (index >= 0) {
+                            onMessageCallbacksRef.current.splice(index, 1)
+                        }
+                    }
+                }
+                return () => {}
+            },
+            getState: () => {
+                throw new Error('not implemented')
+            },
+            setState: () => {
+                throw new Error('not implemented')
+            },
+        }
+
+        // Runtime sync side effect, ensure that later any cody UI
+        // components will have access to the mocked/synthetic VSCode API
+        setVSCodeWrapper(vscodeAPI)
+        return vscodeAPI
+    }, [client, createChat])
 
     const selectChat = useCallback(
         async (chat: ChatExportResult, agent = client) => {
