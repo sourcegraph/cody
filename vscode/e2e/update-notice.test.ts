@@ -12,6 +12,11 @@ const testDetails: TestDetails = {
 }
 
 test.describe('update notices', testDetails, () => {
+    // Disable the test but keep the code around for when it's re-enabled.
+    test.skip(
+        true,
+        'This is disabled because we temporarily disabled update notices: https://github.com/sourcegraph/cody/pull/5046'
+    )
     test.use({
         templateWorkspaceDir: 'test/fixtures/workspace',
     })
