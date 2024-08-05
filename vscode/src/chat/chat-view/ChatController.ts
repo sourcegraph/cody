@@ -825,10 +825,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             ]
         }
 
+        // Remove context chips (repo, @-mentions) from the input text for context retrieval.
+        const inputTextWithoutContextChips = editorState
+            ? PromptString.unsafe_fromUserQuery(
+                  inputTextWithoutContextChipsFromPromptEditorState(editorState)
+              )
+            : text
+
         const roots = await codebaseRootsFromHumanInput({ text, mentions }, signal)
         const context = await this.contextFetcher.fetchContext(
             {
-                userQuery: text,
+                userQuery: inputTextWithoutContextChips,
                 mentions,
                 roots,
             },
@@ -836,12 +843,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         )
 
         if (this.contextAPIClient) {
-            // Remove context chips (repo, @-mentions) from the input text for context retrieval.
-            const inputTextWithoutContextChips = editorState
-                ? PromptString.unsafe_fromUserQuery(
-                      inputTextWithoutContextChipsFromPromptEditorState(editorState)
-                  )
-                : text
             const response = await this.contextAPIClient.rankContext(
                 requestID,
                 inputTextWithoutContextChips.toString(),

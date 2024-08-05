@@ -171,13 +171,6 @@ export class ContextFetcher implements vscode.Disposable {
         const contextStrategy = await getContextStrategy(config.useContext)
         // span.setAttribute('strategy', contextStrategy)
 
-        // // Remove context chips (repo, @-mentions) from the input text for context retrieval.
-        // const inputTextWithoutContextChips = editorState
-        //     ? PromptString.unsafe_fromUserQuery(
-        //           inputTextWithoutContextChipsFromPromptEditorState(editorState)
-        //       )
-        //     : text
-
         return (
             await Promise.all([
                 resolveContext({
