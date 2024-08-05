@@ -279,7 +279,7 @@ function modelAvailability(
     if (!userInfo.isDotComUser && !serverSentModelsEnabled) {
         return 'not-selectable-on-enterprise'
     }
-    if (isCodyProModel(model) && !userInfo.isCodyProUser) {
+    if (isCodyProModel(model) && userInfo.isDotComUser && !userInfo.isCodyProUser) {
         return 'needs-cody-pro'
     }
     return 'available'
