@@ -191,7 +191,6 @@ function createCopyButton(
 ): HTMLElement {
     const button = document.createElement('button')
     button.innerHTML = 'Copy'
-    button.title = 'Copy'
     button.className = styles.button
 
     const iconContainer = document.createElement('div')
@@ -232,7 +231,6 @@ function createApplyButton(
 ): HTMLElement {
     const button = document.createElement('button')
     button.innerHTML = 'Apply'
-    button.title = 'Apply'
     button.className = styles.button
 
     const iconContainer = document.createElement('div')
