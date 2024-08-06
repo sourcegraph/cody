@@ -40,21 +40,21 @@ export const SMART_APPLY_PROMPT = {
         - Do not provide any additional commentary about the changes you made.`,
     instruction: psDedent`
         We are in the file: {filePath}
-
-        This file contains the following code:
-        <${SMART_APPLY_TOPICS.FILE_CONTENTS}>{fileContents}</${SMART_APPLY_TOPICS.FILE_CONTENTS}>
-
         We have the following code to apply to the file:
         <${SMART_APPLY_TOPICS.INCOMING}>{incomingText}</${SMART_APPLY_TOPICS.INCOMING}>
 
         We generated this code from the following instruction that the user provided:
         <${SMART_APPLY_TOPICS.INSTRUCTION}>{instruction}</${SMART_APPLY_TOPICS.INSTRUCTION}>
 
+        This file contains the following code:
+        <${SMART_APPLY_TOPICS.FILE_CONTENTS}>{fileContents}</${SMART_APPLY_TOPICS.FILE_CONTENTS}>
+
         You should respond with the original code that should be updated, enclosed in <${SMART_APPLY_TOPICS.REPLACE}></${SMART_APPLY_TOPICS.REPLACE}> XML tags.
 
         Follow these specific rules:
+        - You should first look inside the <${SMART_APPLY_TOPICS.FILE_CONTENTS}></${SMART_APPLY_TOPICS.FILE_CONTENTS}> XML tags to see if there is any code that should be replaced.
         - If you find code that should be replaced, respond with the exact code enclosed within <${SMART_APPLY_TOPICS.REPLACE}></${SMART_APPLY_TOPICS.REPLACE}> XML tags.
-        - If you cannot find code that should be replaced, and believe this code should be inserted into the file, respond with "<${SMART_APPLY_TOPICS.REPLACE}>INSERT</${SMART_APPLY_TOPICS.REPLACE}>"
+        - If you cannot find code that should be replaced, and believe this is new code that should be inserted into the file, respond with "<${SMART_APPLY_TOPICS.REPLACE}>INSERT</${SMART_APPLY_TOPICS.REPLACE}>"
         - If you believe that the entire contents of the file should be replaced, respond with "<${SMART_APPLY_TOPICS.REPLACE}>ENTIRE_FILE</${SMART_APPLY_TOPICS.REPLACE}>"
     `,
 }
