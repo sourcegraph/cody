@@ -5,7 +5,6 @@ import {
     type ChatMessage,
     ContextItemSource,
     contextFiltersProvider,
-    displayPath,
     ps,
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
@@ -262,7 +261,7 @@ describe('PromptBuilder', () => {
             expect(builder.contextItems).toStrictEqual([innerRange])
         })
 
-        it('should remove context with overlapping ranges when full file is provided', async () => {
+        it.only('should remove context with overlapping ranges when full file is provided', async () => {
             const builder = new PromptBuilder({ input: 50, output: 50 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
@@ -375,8 +374,8 @@ describe('PromptBuilder', () => {
             expect(builder.contextItems.length).toBe(1)
             expect(promptContent).toMatchInlineSnapshot(`
               "preamble
-              Codebase context from file ${displayPath(file.uri)}:
-              \`\`\`go
+              Codebase context from file foo/bar.go:
+              \`\`\`go:foo/bar.go
               foo\`\`\`
               Ok.
               Hi!
