@@ -173,7 +173,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     useEffect(() => {
         // On macOS, suppress the '¬' character emitted by default for alt+L
         const handleKeyDown = (event: KeyboardEvent) => {
-            const suppressedKeys = ['¬', 'Ò', '¿']
+            const suppressedKeys = ['¬', 'Ò', '¿', '÷']
             if (event.altKey && suppressedKeys.includes(event.key)) {
                 event.preventDefault()
             }
