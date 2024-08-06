@@ -105,8 +105,8 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
 
 export async function handleSmartApply(
     code: string,
-    instruction?: string,
-    fileUri?: string
+    instruction?: string | null,
+    fileUri?: string | null
 ): Promise<void> {
     const activeEditor = getEditor()?.active
     const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
