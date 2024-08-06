@@ -33,7 +33,7 @@ import {
     webviewViewOrPanelViewColumn,
 } from './ChatController'
 import { chatHistory } from './ChatHistoryManager'
-import type { ContextFetcher } from './ContextFetcher'
+import type { ContextRetriever } from './ContextRetriever'
 
 export const CodyChatEditorViewType = 'cody.editorPanel'
 
@@ -64,7 +64,7 @@ export class ChatsController implements vscode.Disposable {
         private readonly localEmbeddings: LocalEmbeddingsController | null,
         private readonly symf: SymfWrapper,
 
-        private readonly contextFetcher: ContextFetcher,
+        private readonly contextRetriever: ContextRetriever,
 
         private readonly guardrails: Guardrails,
         private readonly contextAPIClient: ContextAPIClient | null
@@ -473,7 +473,7 @@ export class ChatsController implements vscode.Disposable {
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,
             contextAPIClient: this.contextAPIClient,
-            contextFetcher: this.contextFetcher,
+            contextRetriever: this.contextRetriever,
         })
     }
 

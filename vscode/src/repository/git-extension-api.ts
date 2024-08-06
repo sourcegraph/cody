@@ -87,7 +87,10 @@ export async function gitLocallyModifiedFiles(uri: vscode.Uri, signal?: AbortSig
     }
     let diffBase = repo.state.HEAD.commit
     if (repo.state.HEAD?.upstream) {
-        diffBase = await repo.getMergeBase(repo.state.HEAD.upstream.name, repo.state.HEAD.commit)
+        diffBase = await repo.getMergeBase(
+            `${repo.state.HEAD.upstream.remote}/${repo.state.HEAD.upstream.name}`,
+            repo.state.HEAD.commit
+        )
         signal?.throwIfAborted()
     }
 

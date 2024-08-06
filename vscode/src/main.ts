@@ -19,7 +19,7 @@ import {
 import type { CommandResult } from './CommandResult'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
-import { ContextFetcher } from './chat/chat-view/ContextFetcher'
+import { ContextRetriever } from './chat/chat-view/ContextRetriever'
 import type { ContextAPIClient } from './chat/context/contextAPIClient'
 import {
     ACCOUNT_LIMITS_INFO_URL,
@@ -208,7 +208,7 @@ const register = async (
     }, disposables)
 
     const editor = new VSCodeEditor()
-    const contextFetcher = new ContextFetcher(editor, symf, completionsClient)
+    const contextRetriever = new ContextRetriever(editor, symf, completionsClient)
 
     const { chatsController } = registerChat(
         {
@@ -222,7 +222,7 @@ const register = async (
             localEmbeddings,
             symf,
             contextAPIClient,
-            contextFetcher,
+            contextRetriever,
         },
         disposables
     )
@@ -723,7 +723,7 @@ interface RegisterChatOptions {
     localEmbeddings?: LocalEmbeddingsController
     symf: SymfWrapper
     contextAPIClient?: ContextAPIClient
-    contextFetcher: ContextFetcher
+    contextRetriever: ContextRetriever
 }
 
 function registerChat(
@@ -738,7 +738,7 @@ function registerChat(
         localEmbeddings,
         symf,
         contextAPIClient,
-        contextFetcher,
+        contextRetriever,
     }: RegisterChatOptions,
     disposables: vscode.Disposable[]
 ): {
@@ -762,7 +762,7 @@ function registerChat(
         enterpriseContextFactory,
         localEmbeddings || null,
         symf || null,
-        contextFetcher,
+        contextRetriever,
         guardrails,
         contextAPIClient || null
     )
