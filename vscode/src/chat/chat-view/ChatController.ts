@@ -566,11 +566,23 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
     }
 
+    private async isSmartApplyEnabled(): Promise<boolean> {
+        const config = await getFullConfig()
+        const isSmartApplyEnabled = await featureFlagProvider.evaluateFeatureFlag(
+            FeatureFlag.CodyExperimentalSmartApply
+        )
+        // Smart apply is only available in VS Code right now
+        return Boolean(isSmartApplyEnabled && config.isRunningInsideAgent)
+    }
+
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
-        const [config, experimentalUnitTest] = await Promise.all([
+        const [config, experimentalUnitTest, experimentalSmartApply] = await Promise.all([
             getFullConfig(),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalUnitTest),
+            this.isSmartApplyEnabled(),
         ])
+
+        const enableSmartApply = experimentalSmartApply && !config.isRunningInsideAgent
 
         return {
             agentIDE: config.isRunningInsideAgent ? config.agentIDE : CodyIDE.VSCode,
@@ -581,6 +593,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             serverEndpoint: config.serverEndpoint,
             experimentalNoodle: config.experimentalNoodle,
             experimentalUnitTest,
+            experimentalSmartApply: enableSmartApply,
             webviewType: this.webviewPanelOrView?.viewType === 'cody.editorPanel' ? 'editor' : 'sidebar',
         }
     }
@@ -1234,9 +1247,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         requestID: string,
         sendTelemetry?: (contextSummary: any, privateContextSummary?: any) => void
     ): Promise<Message[]> {
+        const experimentalSmartApplyEnabled = await this.isSmartApplyEnabled()
         const { prompt, context } = await prompter.makePrompt(
             this.chatModel,
-            this.authProvider.getAuthStatus().codyApiVersion
+            this.authProvider.getAuthStatus().codyApiVersion,
+            { experimentalSmartApplyEnabled }
         )
         abortSignal.throwIfAborted()
 

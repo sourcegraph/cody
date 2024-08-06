@@ -313,6 +313,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                     isTranscriptError={isTranscriptError}
                                     guardrails={attributionEnabled ? guardrails : undefined}
                                     experimentalUnitTestEnabled={config.experimentalUnitTest}
+                                    experimentalSmartApplyEnabled={config.experimentalSmartApply}
                                 />
                             </>
                         )}

@@ -42,6 +42,8 @@ export const AssistantMessageCell: FunctionComponent<{
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+
+    experimentalSmartApplyEnabled?: boolean
     smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
 
     postMessage?: ApiPostMessage
@@ -59,6 +61,7 @@ export const AssistantMessageCell: FunctionComponent<{
     smartApplyButtonOnSubmit,
     postMessage,
     guardrails,
+    experimentalSmartApplyEnabled,
 }) => {
     const displayMarkdown = useMemo(
         () => reformatBotMessageForChat(message.text ?? ps``).toString(),
@@ -107,8 +110,9 @@ export const AssistantMessageCell: FunctionComponent<{
                             humanMessage={humanMessage}
                             copyButtonOnSubmit={copyButtonOnSubmit}
                             insertButtonOnSubmit={insertButtonOnSubmit}
-                            smartApplyButtonOnSubmit={smartApplyButtonOnSubmit}
                             guardrails={guardrails}
+                            experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
+                            smartApplyButtonOnSubmit={smartApplyButtonOnSubmit}
                         />
                     ) : (
                         isLoading && <LoadingDots />

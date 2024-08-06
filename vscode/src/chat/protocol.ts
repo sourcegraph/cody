@@ -289,6 +289,7 @@ export interface ConfigurationSubsetForWebview
         'experimentalNoodle' | 'serverEndpoint' | 'agentIDE' | 'agentExtensionVersion'
     > {
     experimentalUnitTest: boolean
+    experimentalSmartApply: boolean
     webviewType?: WebviewType | undefined | null
 }
 

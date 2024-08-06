@@ -42,7 +42,11 @@ export class DefaultPrompter {
     //
     // Returns the reverse prompt and the new context that was used in the prompt for the current message.
     // If user-context added at the last message is ignored, returns the items in the newContextIgnored array.
-    public async makePrompt(chat: ChatModel, codyApiVersion: number): Promise<PromptInfo> {
+    public async makePrompt(
+        chat: ChatModel,
+        codyApiVersion: number,
+        options?: { experimentalSmartApplyEnabled?: boolean }
+    ): Promise<PromptInfo> {
         return wrapInActiveSpan('chat.prompter', async () => {
             const promptBuilder = new PromptBuilder(chat.contextWindow)
             const preInstruction: PromptString | undefined = PromptString.fromConfig(
@@ -71,7 +75,9 @@ export class DefaultPrompter {
                 !this.isCommand &&
                 Boolean(this.explicitContext.length || historyItems.length || this.getEnhancedContext)
             ) {
-                reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0], chat.modelID)
+                reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0], chat.modelID, {
+                    experimentalSmartApplyEnabled: options?.experimentalSmartApplyEnabled,
+                })
             }
 
             const messagesIgnored = promptBuilder.tryAddMessages(reverseTranscript)

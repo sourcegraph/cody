@@ -30,35 +30,19 @@ interface ChatMessageContentProps {
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+
+    experimentalSmartApplyEnabled?: boolean
     smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
 
     guardrails?: Guardrails
     className?: string
 }
 
-/**
- * TODO: Implement feature flag logic
- */
-const ENABLE_V2_BUTTONS = true
-
 function createButtons(
     preText: string,
-    humanMessage: PriorHumanMessageInfo | null,
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
-    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
-    smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit'],
-    fileName?: string
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 ): HTMLElement {
-    if (ENABLE_V2_BUTTONS) {
-        return createButtonsV2(
-            preText,
-            humanMessage,
-            fileName,
-            copyButtonOnSubmit,
-            smartApplyButtonOnSubmit
-        )
-    }
-
     const container = document.createElement('div')
     container.className = styles.buttonsContainer
 
@@ -113,7 +97,7 @@ function createButtons(
     return container
 }
 
-function createButtonsV2(
+function createButtonsExperimentalUI(
     preText: string,
     humanMessage: PriorHumanMessageInfo | null,
     fileName?: string,
@@ -392,9 +376,10 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     humanMessage,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
-    smartApplyButtonOnSubmit,
     guardrails,
     className,
+    experimentalSmartApplyEnabled,
+    smartApplyButtonOnSubmit,
 }) => {
     const rootRef = useRef<HTMLDivElement>(null)
 
@@ -423,17 +408,17 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 const codeElement = preElement.querySelectorAll('code')?.[0]
                 const fileName = codeElement?.getAttribute('data-file-path') || undefined
 
-                // TODO: Consider using the feature flag here.
-                const buttons = createButtons(
-                    preText,
-                    humanMessage,
-                    copyButtonOnSubmit,
-                    insertButtonOnSubmit,
-                    smartApplyButtonOnSubmit,
-                    fileName
-                )
+                const buttons = experimentalSmartApplyEnabled
+                    ? createButtonsExperimentalUI(
+                          preText,
+                          humanMessage,
+                          fileName,
+                          copyButtonOnSubmit,
+                          smartApplyButtonOnSubmit
+                      )
+                    : createButtons(preText, copyButtonOnSubmit, insertButtonOnSubmit)
 
-                if (fileName?.length) {
+                if (experimentalSmartApplyEnabled && fileName?.length) {
                     const fileNameContainer = document.createElement('div')
                     fileNameContainer.className = styles.fileNameContainer
                     fileNameContainer.textContent = getFileName(fileName)
@@ -474,7 +459,15 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
             }
         }
-    }, [copyButtonOnSubmit, insertButtonOnSubmit, guardrails, displayMarkdown, isMessageLoading])
+    }, [
+        copyButtonOnSubmit,
+        insertButtonOnSubmit,
+        experimentalSmartApplyEnabled,
+        smartApplyButtonOnSubmit,
+        guardrails,
+        displayMarkdown,
+        isMessageLoading,
+    ])
 
     return (
         <div ref={rootRef} data-testid="chat-message-content">

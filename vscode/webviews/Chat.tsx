@@ -35,6 +35,7 @@ interface ChatboxProps {
     showIDESnippetActions?: boolean
     className?: string
     experimentalUnitTestEnabled?: boolean
+    experimentalSmartApplyEnabled?: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -51,6 +52,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showIDESnippetActions = true,
     className,
     experimentalUnitTestEnabled,
+    experimentalSmartApplyEnabled,
 }) => {
     const { reload: reloadMentionProviders } = useChatContextMentionProviders()
     const telemetryRecorder = useTelemetryRecorder()
@@ -203,6 +205,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 chatEnabled={chatEnabled}
                 postMessage={postMessage}
                 guardrails={guardrails}
+                experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
             />
             {showUnitTestsButton && <GenerateUnitTestsButton postMessage={postMessage} />}
             {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage IDE={userInfo.ide} />}

@@ -5,7 +5,6 @@ import type { ActiveTextEditorDiagnostic } from '../editor'
 import { displayPath } from '../editor/displayPath'
 import { PromptString, ps } from './prompt-string'
 
-// TODO: Make this work with a feature flag
 export function populateCodeContextTemplate(
     code: PromptString,
     fileUri: URI,

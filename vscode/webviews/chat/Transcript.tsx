@@ -39,6 +39,7 @@ export const Transcript: React.FunctionComponent<{
     chatEnabled: boolean
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
+    experimentalSmartApplyEnabled?: boolean
 }> = ({ chatID, transcript, messageInProgress, ...props }) => {
     const interactions = useMemo(
         () => transcriptToInteractionPairs(transcript, messageInProgress),
