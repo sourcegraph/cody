@@ -169,6 +169,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         guardrails,
         insertButtonOnSubmit,
         copyButtonOnSubmit,
+        smartApplyButtonOnSubmit,
+        experimentalSmartApplyEnabled,
     } = props
 
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
@@ -241,6 +243,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         !assistantMessage.error &&
                         isLastSentInteraction
                     }
+                    smartApplyButtonOnSubmit={smartApplyButtonOnSubmit}
+                    experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
                 />
             )}
         </>

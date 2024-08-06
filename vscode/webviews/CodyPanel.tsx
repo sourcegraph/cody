@@ -55,6 +55,7 @@ export const CodyPanel: FunctionComponent<
     showWelcomeMessage,
     userHistory,
     commands,
+    experimentalSmartApplyEnabled,
 }) => {
     return (
         <TabRoot
@@ -82,6 +83,7 @@ export const CodyPanel: FunctionComponent<
                         showIDESnippetActions={showIDESnippetActions}
                         showWelcomeMessage={showWelcomeMessage}
                         scrollableParent={scrollableParent}
+                        experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
                     />
                 )}
                 {view === View.History && <HistoryTab userHistory={userHistory} />}
