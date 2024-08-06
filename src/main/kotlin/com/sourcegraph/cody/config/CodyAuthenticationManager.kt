@@ -210,7 +210,7 @@ class CodyAuthenticationManager(val project: Project) :
       val previousUrl = previousAccount?.server?.url
       val previousTier = previousAccount?.isDotcomAccount()
 
-      this.account = newAccount
+      account = newAccount
       tier = null
       isTokenInvalid = null
 

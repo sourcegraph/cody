@@ -140,7 +140,7 @@ object ConfigUtil {
           val jsonObj = JsonParser.parseString(text).asJsonObject
           jsonObj.keySet().associateWith { jsonObj[it] }
         } catch (e: Exception) {
-          logger.warn("Failed to read settings file", e)
+          logger.info("No user defined settings file found. Proceeding with empty custom config")
           emptyMap()
         }
     // Needed by Edit commands to trigger smart-selection; without it things break.

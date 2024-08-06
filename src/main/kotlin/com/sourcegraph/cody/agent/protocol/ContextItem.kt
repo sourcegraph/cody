@@ -8,7 +8,8 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonSerializer
 import com.intellij.openapi.vfs.StandardFileSystems
 import com.intellij.openapi.vfs.VfsUtil
-import com.sourcegraph.cody.agent.protocol_extensions.*
+import com.sourcegraph.cody.agent.protocol_extensions.intellijRange
+import com.sourcegraph.cody.agent.protocol_extensions.toSearchRange
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import java.io.File
 import java.lang.reflect.Type
@@ -86,9 +87,8 @@ data class ContextItemFile(
           "@${uri.path.removePrefix(projectPath ?: "")}"
         } else {
           val repo = repoName?.split("/")?.lastOrNull()
-          val file = title
           return if (repo != null && title != null) {
-            "$repo $file"
+            "$repo $title"
           } else return uri.path
         }
 

@@ -169,7 +169,7 @@ class CodyAgentService(private val project: Project) : Disposable {
               throw (CodyAgentException(msg))
             }
 
-        val agent = future.get(45, TimeUnit.SECONDS)
+        val agent = future.get(secondsTimeout, TimeUnit.SECONDS)
         if (!agent.isConnected()) {
           val msg = "Failed to connect to agent Cody agent"
           logger.error(msg)
