@@ -2,8 +2,6 @@ import { type CodyCommand, type ContextItem, isFileURI } from '@sourcegraph/cody
 
 import * as vscode from 'vscode'
 import { CodyCommandMenuItems } from '..'
-import { getContextFileFromGitLog } from '../context/git-log'
-import { getContextFileFromShell } from '../context/shell'
 import { executeExplainHistoryCommand } from '../execute/explain-history'
 import { showCommandMenu } from '../menus'
 import type { CodyCommandArgs } from '../types'
@@ -99,6 +97,7 @@ export class CommandsProvider implements vscode.Disposable {
      * Used for retreiving context for the command field in custom command
      */
     public async runShell(shell: string): Promise<ContextItem[]> {
+        const { getContextFileFromShell } = await import('../context/shell')
         return getContextFileFromShell(shell)
     }
 
@@ -127,6 +126,7 @@ export class CommandsProvider implements vscode.Disposable {
         if (!isFileURI(uri)) {
             throw new Error('history only supported on local file paths')
         }
+        const { getContextFileFromGitLog } = await import('../context/git-log')
         return getContextFileFromGitLog(uri, options)
     }
 
