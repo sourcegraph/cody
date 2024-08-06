@@ -99,7 +99,8 @@ export async function createProviderConfig(
      * Look for the autocomplete provider in VSCode settings and return matching provider config.
      */
     const providerAndModelFromVSCodeConfig = await resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
-        config.autocompleteAdvancedProvider
+        config.autocompleteAdvancedProvider,
+        authStatus.isDotCom
     )
     if (providerAndModelFromVSCodeConfig) {
         const { provider, model } = providerAndModelFromVSCodeConfig
@@ -240,7 +241,8 @@ async function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<
 }
 
 async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
-    configuredProvider: string | null
+    configuredProvider: string | null,
+    isDotCom: boolean,
 ): Promise<{
     provider: string
     model?: FireworksOptions['model'] | AnthropicOptions['model']
@@ -266,7 +268,7 @@ async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
         .getConfiguration()
         .get<boolean>('cody.advanced.agent.running', false)
 
-    if (!isFinetuningExperimentDisabled && fimModelExperimentFlag) {
+    if (!isFinetuningExperimentDisabled && fimModelExperimentFlag && isDotCom) {
         // The traffic in this feature flag is interpreted as a traffic allocated to the fine-tuned experiment.
         return resolveFIMModelExperimentFromFeatureFlags()
     }
