@@ -1,10 +1,18 @@
-import type { Client, ProviderMethodOptions } from '@openctx/client'
+import type { Client, EachWithProviderUri, Mention, ProviderMethodOptions } from '@openctx/client'
 import type * as vscode from 'vscode'
+import type { MentionWithContextItemData } from './internalProvider'
 
 type OpenCtxController = Pick<
     Client<vscode.Range>,
-    'meta' | 'metaChanges__asyncGenerator' | 'mentions' | 'mentionsChanges__asyncGenerator' | 'items'
+    'meta' | 'metaChanges__asyncGenerator' | 'mentionsChanges__asyncGenerator' | 'items'
 > & {
+    /**
+     * Annotate that our internal `mentions` methods can return {@link MentionWithContextItemData}.
+     */
+    mentions: (
+        ...args: Parameters<Client<vscode.Range>['mentions']>
+    ) => Promise<EachWithProviderUri<(Mention | MentionWithContextItemData)[]>>
+
     annotationsChanges__asyncGenerator(
         doc: Pick<vscode.TextDocument, 'uri' | 'getText'>,
         opts?: ProviderMethodOptions,

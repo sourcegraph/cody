@@ -85,6 +85,7 @@ export async function getFileContextFiles(options: FileContextItemsOptions): Pro
             size: range ? 100 : item.file.byteSize,
             source: ContextItemSource.User,
             remoteRepositoryName: item.repository.name,
+            remoteFilePath: item.file.path,
             isIgnored: contextFiltersProvider.isRepoNameIgnored(item.repository.name),
             uri: URI.file(item.repository.name + item.file.path),
         }))
@@ -192,6 +193,7 @@ export async function getSymbolContextFiles(
             item.symbols.map(symbol => ({
                 type: 'symbol',
                 remoteRepositoryName: item.repository.name,
+                remoteFilePath: symbol.location.resource.path,
                 uri: URI.file(item.repository.name + symbol.location.resource.path),
                 isIgnored: contextFiltersProvider.isRepoNameIgnored(item.repository.name),
                 source: ContextItemSource.User,
@@ -382,18 +384,19 @@ async function resolveContextItem(
     input: PromptString,
     signal?: AbortSignal
 ): Promise<ContextItemWithContent[]> {
-    const resolvedItems: ContextItemWithContent[] = item.provider
-        ? await resolveContextMentionProviderContextItem(item, input, signal)
-        : item.type === 'file' || item.type === 'symbol'
-          ? [await resolveFileOrSymbolContextItem(item, editor, signal)]
-          : []
+    const resolvedItems: ContextItemWithContent[] =
+        item.type === 'openctx'
+            ? await resolveOpenCtxContextItem(item, input, signal)
+            : item.type === 'file' || item.type === 'symbol'
+              ? [await resolveFileOrSymbolContextItem(item, editor, signal)]
+              : []
     return resolvedItems.map(resolvedItem => ({
         ...resolvedItem,
         size: resolvedItem.size ?? TokenCounter.countTokens(resolvedItem.content),
     }))
 }
 
-async function resolveContextMentionProviderContextItem(
+async function resolveOpenCtxContextItem(
     { provider: providerUri, ...item }: ContextItem,
     input: PromptString,
     signal?: AbortSignal
@@ -445,10 +448,10 @@ async function resolveFileOrSymbolContextItem(
     editor: Editor,
     signal?: AbortSignal
 ): Promise<ContextItemWithContent> {
-    if (contextItem.remoteRepositoryName) {
+    if (contextItem.remoteRepositoryName && contextItem.remoteFilePath) {
         // Get only actual file path without repository name
         const repository = contextItem.remoteRepositoryName
-        const path = contextItem.uri.path.slice(repository.length + 1, contextItem.uri.path.length)
+        const path = contextItem.remoteFilePath
         const ranges = contextItem.range
             ? { startLine: contextItem.range.start.line, endLine: contextItem.range.end.line + 1 }
             : undefined
