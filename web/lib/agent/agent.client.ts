@@ -87,7 +87,6 @@ export async function createAgentClient({
             telemetryClientName,
             customHeaders: customHeaders ?? {},
             customConfiguration: {
-                'cody.experimental.noodle': true,
                 'cody.autocomplete.enabled': false,
                 'cody.experimental.urlContext': true,
                 'cody.web': true,

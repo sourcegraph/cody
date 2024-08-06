@@ -1,5 +1,6 @@
-## Next
+## 0.3.7
 - Adds support for the full panel (not just chat) to the CodyWebPanel component (renamed from CodyWebChat).
+- Sets experimental.noodle flag to false (default).
 
 ## 0.3.6
 - Adds fix that chat UI doesn't include context repository as background 
