@@ -46,6 +46,7 @@ import {
 
 import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
+import open from 'open'
 import { AgentDiagnostics } from './AgentDiagnostics'
 import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'
@@ -934,6 +935,13 @@ _commands?.registerCommand?.('vscode.executeDocumentSymbolProvider', uri => {
 _commands?.registerCommand?.('vscode.executeFormatDocumentProvider', uri => {
     return Promise.resolve([])
 })
+_commands?.registerCommand?.('vscode.open', async (uri: vscode.Uri) => {
+    const result = toUri(uri?.path)
+    if (result) {
+        return _window.showTextDocument(result)
+    }
+    return open(uri.toString())
+})
 
 function promisify(value: any): Promise<any> {
     return value instanceof Promise ? value : Promise.resolve(value)
@@ -949,6 +957,10 @@ const _env: Partial<typeof vscode.env> = {
     clipboard: {
         readText: () => Promise.resolve(''),
         writeText: () => Promise.resolve(),
+    },
+    openExternal: async (uri: vscode.Uri) => {
+        open(uri.toString())
+        return true
     },
 }
 export const env = _env as typeof vscode.env
