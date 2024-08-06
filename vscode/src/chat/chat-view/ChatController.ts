@@ -684,7 +684,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     mentions = mentions.concat(selectionContext)
                 }
 
-                const contextAlternatives = await this.assembleContext(
+                const contextAlternatives = await this.computeContext(
                     { text: inputText, mentions },
                     requestID,
                     editorState,
@@ -759,7 +759,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
     }
 
-    private async assembleContext(
+    private async computeContext(
         { text, mentions }: HumanInput,
         requestID: string,
         editorState: SerializedPromptEditorState | null,
@@ -792,12 +792,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             retrievedContextPromise,
             openCtxContextPromise,
         ])
+
+        // This is the manual ordering of the different retrieved and explicit context sources
         const context = [
-            priorityContext,
-            retrievedContext,
             structuredMentions.symbols,
             structuredMentions.files,
             openCtxContext,
+            priorityContext,
+            retrievedContext,
         ].flat()
 
         if (this.contextAPIClient && context.length > 0) {
