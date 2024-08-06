@@ -1,5 +1,3 @@
-//@ts-nocheck
-
 // This is a modified and sligthly stripped down version of
 // https://github.com/microsoft/playwright/commit/9943bcfcd862963fc2ae4b221d904fe4f6af8368
 // The original seems no longer maintained and has a critical bug
@@ -33,21 +31,86 @@
  * THE SOFTWARE.
  */
 import path from 'node:path'
-import fs from 'graceful-fs'
+import defaultFsImplementation from 'graceful-fs'
 import { onExit } from 'signal-exit'
-const locks = {}
-const cacheSymbol = Symbol()
 
-interface LockOptions {
+type FS = typeof defaultFsImplementation
+
+const locks: Record<string, LockObject> = {}
+const pendingTimeouts = new Set<NodeJS.Timeout>()
+
+type LOCK_ERROR_CODE = 'ELOCKED' | 'ECOMPROMISED'
+
+type Precision = 's' | 'ms'
+interface LockObject {
+    file: string
+    lockfilePath: string
+    mtime: Date
+    mtimePrecision: Precision
+    options: InternalLockOptions
+    lastUpdate: number
+    released: boolean
+    updateDelay?: number
+    updateTimeout?: NodeJS.Timeout
+}
+
+export interface LockOptions {
     stale?: number
     update?: number
     realpath?: boolean
     lockfilePath?: string
 }
-export async function lock(file: string, options?: LockOptions): Promise<() => void> {
+
+type CallbackFn<Result, ErrorType = Error> = Result extends void
+    ? (err?: ErrorType | null | undefined) => void
+    : Result extends Array<any>
+      ? ((err: null | undefined, ...result: Result) => void) &
+            ((err: ErrorType, ...result: never[]) => void)
+      : CallbackFn<[Result], ErrorType>
+
+interface InternalLockOptions {
+    update: number
+    lockfilePath?: string
+    stale: number
+    realpath: boolean
+    fs: FS
+    onCompromised: (error: Error) => void
+}
+
+const defaultLockOptions: Pick<InternalLockOptions, 'stale' | 'realpath' | 'fs' | 'onCompromised'> = {
+    stale: 10000,
+    realpath: true,
+    fs: defaultFsImplementation,
+    onCompromised: err => {
+        throw err
+    },
+}
+export async function lock(
+    file: string,
+    options?: LockOptions
+): Promise<(error?: Error) => Promise<void>> {
     ensureCleanup()
-    const release = await toPromise(_lock)(file, options)
-    return toPromise(release)
+    // options.stale = Math.max(options.stale || 0, 2000)
+    // options.update =
+    // options.update = Math.max(Math.min(options.update, options.stale / 2), 1000)
+    const mergedOptions = { ...defaultLockOptions, ...options }
+    const stale = Math.max(mergedOptions.stale || 0, 2000)
+    const defaultUpdate = mergedOptions.update == null ? stale / 2 : mergedOptions.update || 0
+    const update = Math.max(Math.min(defaultUpdate, stale / 2), 1000)
+    const internalOptions: InternalLockOptions = {
+        ...mergedOptions,
+        stale,
+        update,
+    }
+    return new Promise((resolve, reject) => {
+        doLock(file, internalOptions, (err, unlockFn) => {
+            if (err) {
+                reject(err)
+            } else {
+                resolve(unlockFn)
+            }
+        })
+    })
 }
 
 interface WaitForLockOptions extends LockOptions {
@@ -58,10 +121,11 @@ interface WaitForLockOptions extends LockOptions {
 export async function waitForLock(
     file: string,
     { delay, signal, ...opts }: WaitForLockOptions
-): Promise<() => void> {
-    while (!signal?.aborted) {
+): Promise<() => Promise<void>> {
+    while (true) {
+        signal?.throwIfAborted()
         const unlockFn = await lock(file, opts).catch(err => {
-            if (err.code === 'ELOCKED') {
+            if (err && <LOCK_ERROR_CODE>err.code === 'ELOCKED') {
                 return undefined
             }
             throw err
@@ -69,50 +133,68 @@ export async function waitForLock(
         if (unlockFn) {
             return unlockFn
         }
-        await new Promise(resolve => setTimeout(resolve, delay))
+        await sleep(delay)
     }
 }
 
-function probe(file, fs, callback) {
-    const cachedPrecision = fs[cacheSymbol]
+// waits the configured amount of time and (un)registers the timeout so
+// that it can be cleaned on shutdown.
+function sleep(options: number | { ms: number; unref?: boolean }): Promise<void> {
+    const { ms, unref } =
+        typeof options === 'number' ? { ms: options, unref: true } : { unref: true, ...options }
 
-    if (cachedPrecision) {
-        return fs.stat(file, (err, stat) => {
-            /* istanbul ignore if */
-            if (err) {
-                return callback(err)
-            }
+    return new Promise(resolve => {
+        const timeout = setTimeout(() => {
+            pendingTimeouts.delete(timeout)
+            resolve()
+        }, ms)
+        pendingTimeouts.add(timeout)
+        timeout.unref && unref && timeout.unref()
+    })
+}
 
-            callback(null, stat.mtime, cachedPrecision)
-        })
-    }
+function schedule(options: number | { ms: number; unref?: boolean }, fn: () => void): NodeJS.Timeout {
+    const { ms, unref } =
+        typeof options === 'number' ? { ms: options, unref: true } : { unref: true, ...options }
+    const timeout = setTimeout(() => {
+        pendingTimeouts.delete(timeout)
+        fn()
+    }, ms)
+    pendingTimeouts.add(timeout)
 
+    timeout.unref && unref && timeout.unref()
+    return timeout
+}
+
+let cachedPrecision: 's' | 'ms' | undefined
+function probe(
+    file: string,
+    { fs }: Pick<InternalLockOptions, 'fs'>,
+    callback: CallbackFn<[Date, 's' | 'ms']>
+) {
     // Set mtime by ceiling Date.now() to seconds + 5ms so that it's "not on the second"
     const mtime = new Date(Math.ceil(Date.now() / 1000) * 1000 + 5)
 
     fs.utimes(file, mtime, mtime, err => {
-        /* istanbul ignore if */
         if (err) {
             return callback(err)
         }
 
         fs.stat(file, (err, stat) => {
-            /* istanbul ignore if */
             if (err) {
                 return callback(err)
             }
 
-            const precision = stat.mtime.getTime() % 1000 === 0 ? 's' : 'ms'
-
-            // Cache the precision in a non-enumerable way
-            Object.defineProperty(fs, cacheSymbol, { value: precision })
-
+            const precision = cachedPrecision ?? stat.mtime.getTime() % 1000 === 0 ? 's' : 'ms'
+            if (!cachedPrecision) {
+                cachedPrecision = precision
+            }
             callback(null, stat.mtime, precision)
         })
     })
 }
 
-function getMtime(precision) {
+function getMtime(precision: Precision) {
     let now = Date.now()
 
     if (precision === 's') {
@@ -122,21 +204,34 @@ function getMtime(precision) {
     return new Date(now)
 }
 
-function getLockFile(file, options) {
+function getLockFile(file: string, options: InternalLockOptions) {
     return options.lockfilePath || `${file}.lock`
 }
 
-function resolveCanonicalPath(file, options, callback) {
+function resolveCanonicalPath(
+    file: string,
+    options: InternalLockOptions,
+    callback: CallbackFn<[string]>
+) {
     if (!options.realpath) {
         return callback(null, path.resolve(file))
     }
 
     // Use realpath to resolve symlinks
     // It also resolves relative paths
-    options.fs.realpath(file, callback)
+    options.fs.realpath(file, (err, resolvedPath) => {
+        if (err) {
+            return callback(err)
+        }
+        callback(null, resolvedPath)
+    })
 }
 
-function acquireLock(file, options, callback) {
+function acquireLock(
+    file: string,
+    options: InternalLockOptions,
+    callback: CallbackFn<[Date, Precision]>
+) {
     const lockfilePath = getLockFile(file, options)
 
     // Use mkdir to create the lockfile (atomic operation)
@@ -144,9 +239,8 @@ function acquireLock(file, options, callback) {
         if (!err) {
             // At this point, we acquired the lock!
             // Probe the mtime precision
-            return probe(lockfilePath, options.fs, (err, mtime, mtimePrecision) => {
+            return probe(lockfilePath, options, (err, mtime, mtimePrecision) => {
                 // If it failed, try to remove the lock..
-                /* istanbul ignore if */
                 if (err) {
                     options.fs.rmdir(lockfilePath, () => {})
 
@@ -165,7 +259,10 @@ function acquireLock(file, options, callback) {
         // Otherwise, check if lock is stale by analyzing the file mtime
         if (options.stale <= 0) {
             return callback(
-                Object.assign(new Error('Lock file is already being held'), { code: 'ELOCKED', file })
+                Object.assign(new Error('Lock file is already being held'), {
+                    code: 'ELOCKED',
+                    file,
+                })
             )
         }
 
@@ -202,11 +299,11 @@ function acquireLock(file, options, callback) {
     })
 }
 
-function isLockStale(stat, options) {
+function isLockStale(stat: defaultFsImplementation.Stats, options: InternalLockOptions) {
     return stat.mtime.getTime() < Date.now() - options.stale
 }
 
-function removeLock(file, options, callback) {
+function removeLock(file: string, options: InternalLockOptions, callback: CallbackFn<void>) {
     // Remove lockfile, ignoring ENOENT errors
     options.fs.rmdir(getLockFile(file, options), err => {
         if (err && err.code !== 'ENOENT') {
@@ -217,18 +314,20 @@ function removeLock(file, options, callback) {
     })
 }
 
-function updateLock(file, options) {
+/**
+ * Ensures the lock file doesn't go stale.
+ */
+function hydrateLock(file: string, options: InternalLockOptions) {
     const lock = locks[file]
 
     // Just for safety, should never happen
-    /* istanbul ignore if */
-    if (lock.updateTimeout) {
+    if (!lock || lock.updateTimeout) {
         return
     }
 
     lock.updateDelay = lock.updateDelay || options.update
-    lock.updateTimeout = setTimeout(() => {
-        lock.updateTimeout = null
+    lock.updateTimeout = schedule(lock.updateDelay, () => {
+        lock.updateTimeout = undefined
 
         // Stat the file to check if mtime is still ours
         // If it is, we can still recover from a system sleep or a busy event loop
@@ -239,23 +338,20 @@ function updateLock(file, options) {
             // the lockfile was deleted or we are over the threshold
             if (err) {
                 if (err.code === 'ENOENT' || isOverThreshold) {
-                    return setLockAsCompromised(file, lock, Object.assign(err, { code: 'ECOMPROMISED' }))
+                    return clearLockObject(lock, err)
                 }
 
                 lock.updateDelay = 1000
 
-                return updateLock(file, options)
+                return hydrateLock(file, options)
             }
 
             const isMtimeOurs = lock.mtime.getTime() === stat.mtime.getTime()
 
             if (!isMtimeOurs) {
-                return setLockAsCompromised(
-                    file,
+                return clearLockObject(
                     lock,
-                    Object.assign(new Error('Unable to update lock within the stale threshold'), {
-                        code: 'ECOMPROMISED',
-                    })
+                    new Error('Unable to update lock within the stale threshold')
                 )
             }
 
@@ -273,77 +369,59 @@ function updateLock(file, options) {
                 // the lockfile was deleted or we are over the threshold
                 if (err) {
                     if (err.code === 'ENOENT' || isOverThreshold) {
-                        return setLockAsCompromised(
-                            file,
-                            lock,
-                            Object.assign(err, { code: 'ECOMPROMISED' })
-                        )
+                        return clearLockObject(lock, err)
                     }
 
                     lock.updateDelay = 1000
 
-                    return updateLock(file, options)
+                    return hydrateLock(file, options)
                 }
 
                 // All ok, keep updating..
                 lock.mtime = mtime
                 lock.lastUpdate = Date.now()
-                lock.updateDelay = null
-                updateLock(file, options)
+                lock.updateDelay = undefined
+                hydrateLock(file, options)
             })
         })
-    }, lock.updateDelay)
-
-    // Unref the timer so that the nodejs process can exit freely
-    // This is safe because all acquired locks will be automatically released
-    // on process exit
-
-    // We first check that `lock.updateTimeout.unref` exists because some users
-    // may be using this module outside of NodeJS (e.g., in an electron app),
-    // and in those cases `setTimeout` return an integer.
-    /* istanbul ignore else */
-    if (lock.updateTimeout.unref) {
-        lock.updateTimeout.unref()
-    }
+    })
 }
 
-function setLockAsCompromised(file, lock, err) {
-    // Signal the lock has been released
+function clearLockObject(lock: LockObject, compromised?: Error) {
     lock.released = true
-
-    // Cancel lock mtime update
-    // Just for safety, at this point updateTimeout should be null
-    /* istanbul ignore if */
     if (lock.updateTimeout) {
         clearTimeout(lock.updateTimeout)
+        pendingTimeouts.delete(lock.updateTimeout)
+        lock.updateTimeout = undefined
+    }
+    if (locks[lock.file] === lock) {
+        delete locks[lock.file]
     }
 
-    if (locks[file] === lock) {
-        delete locks[file]
-    }
-
-    lock.options.onCompromised(err)
+    compromised && lock.options.onCompromised?.(Object.assign(compromised, { code: 'ECOMPROMISED' }))
 }
+
+// function setLockAsCompromised(file, lock, err) {
+//     // Signal the lock has been released
+//     lock.released = true
+
+//     // Cancel lock mtime update
+//     // Just for safety, at this point updateTimeout should be null
+//     /* istanbul ignore if */
+//     if (lock.updateTimeout) {
+//         clearTimeout(lock.updateTimeout)
+//     }
+
+//     if (locks[file] === lock) {
+//         delete locks[file]
+//     }
+
+//     lock.options.onCompromised(err)
+// }
 
 // ----------------------------------------------------------
 
-function _lock(file, options, callback) {
-    /* istanbul ignore next */
-    options = {
-        stale: 10000,
-        update: null,
-        realpath: true,
-        fs,
-        onCompromised: err => {
-            throw err
-        },
-        ...options,
-    }
-
-    options.stale = Math.max(options.stale || 0, 2000)
-    options.update = options.update == null ? options.stale / 2 : options.update || 0
-    options.update = Math.max(Math.min(options.update, options.stale / 2), 1000)
-
+function doLock(file: string, options: InternalLockOptions, callback: CallbackFn<() => Promise<void>>) {
     // Resolve to a canonical file path
     resolveCanonicalPath(file, options, (err, file) => {
         if (err) {
@@ -358,40 +436,42 @@ function _lock(file, options, callback) {
 
             // We now own the lock
             const lockObj = {
+                file,
                 lockfilePath: getLockFile(file, options),
                 mtime,
                 mtimePrecision,
                 options,
                 lastUpdate: Date.now(),
+                released: false,
             }
             locks[file] = lockObj
 
             // We must keep the lock fresh to avoid staleness
-            updateLock(file, options)
+            hydrateLock(file, options)
 
-            callback(null, releasedCallback => {
+            const releaseFn = async () => {
                 if (lockObj.released) {
-                    return releasedCallback?.(
-                        Object.assign(new Error('Lock is already released'), {
-                            code: 'ERELEASED',
-                        })
-                    )
+                    throw Object.assign(new Error('Lock is already released'), {
+                        code: 'ERELEASED',
+                    })
                 }
 
                 // Not necessary to use realpath twice when unlocking
-                unlock(file, { ...options, realpath: false }, releasedCallback)
-            })
+                await new Promise((resolve, reject) => {
+                    unlock(file, { ...options, realpath: false }, err => {
+                        if (err) {
+                            return reject(err)
+                        }
+                        resolve(null)
+                    })
+                })
+            }
+            callback(null, releaseFn)
         })
     })
 }
 
-function unlock(file, options, callback) {
-    options = {
-        fs,
-        realpath: true,
-        ...options,
-    }
-
+function unlock(file: string, options: InternalLockOptions, callback: CallbackFn<void>) {
     // Resolve to a canonical file path
     resolveCanonicalPath(file, options, (err, file) => {
         if (err) {
@@ -415,22 +495,7 @@ function unlock(file, options, callback) {
     })
 }
 
-function toPromise(method) {
-    return (...args) =>
-        new Promise((resolve, reject) => {
-            args.push((err, result) => {
-                if (err) {
-                    reject(err)
-                } else {
-                    resolve(result)
-                }
-            })
-            method(...args)
-        })
-}
-
 // Remove acquired locks on exit
-/* istanbul ignore next */
 let cleanupInitialized = false
 function ensureCleanup() {
     if (cleanupInitialized) {
@@ -438,6 +503,13 @@ function ensureCleanup() {
     }
     cleanupInitialized = true
     onExit(() => {
+        for (const timer in pendingTimeouts) {
+            try {
+                clearTimeout(timer)
+            } catch (e) {
+                /* Empty */
+            }
+        }
         for (const file in locks) {
             const options = locks[file].options
 
