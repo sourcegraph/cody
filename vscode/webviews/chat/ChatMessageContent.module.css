@@ -37,6 +37,8 @@
     margin-right: 0.25rem
 }
 
+.copy-button,
+.insert-button,
 .attribution-icon,
 .status {
     all: unset;
