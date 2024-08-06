@@ -36,6 +36,7 @@ import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 import { copyFileSync, mkdirSync, statSync } from 'node:fs'
 import { PassThrough } from 'node:stream'
 import type { Har } from '@pollyjs/persister'
+import { TESTING_TELEMETRY_EXPORTER } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
@@ -661,6 +662,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 requests: requests.map(req => ({ url: req.url, body: req.body })),
             }
         })
+        this.registerAuthenticatedRequest('testing/exportedTelemetryEvents', async () => {
+            const events = TESTING_TELEMETRY_EXPORTER.getExported()
+            return {
+                events: events.map(event => ({ feature: event.feature, action: event.action })),
+            }
+        })
+
         this.registerAuthenticatedRequest('testing/closestPostData', async ({ url, postData }) => {
             const polly = this.params.polly
             let closestDistance = Number.MAX_VALUE

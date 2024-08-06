@@ -2,6 +2,8 @@
 
 import type { Command } from 'commander'
 import { registerLocalCertificates } from './certs'
+import { snapshot } from 'v8'
+
 
 console.log = console.error
 

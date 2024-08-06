@@ -201,6 +201,7 @@ export type ClientRequests = {
     // endpoint to emulate the scenario where the server creates a progress bar.
     'testing/progress': [{ title: string }, { result: string }]
     'testing/networkRequests': [null, { requests: NetworkRequest[] }]
+    'testing/exportedTelemetryEvents': [null, { events: TestingTelemetryEvent[] }]
     'testing/requestErrors': [null, { errors: NetworkRequest[] }]
     'testing/closestPostData': [{ url: string; postData: string }, { closestBody: string }]
     'testing/memoryUsage': [null, { usage: MemoryUsage }]
@@ -852,6 +853,10 @@ export interface ProtocolCommand {
     arguments?: any[] | undefined | null
 }
 
+export interface TestingTelemetryEvent {
+    feature: string
+    action: string
+}
 export interface NetworkRequest {
     url: string
     body?: string | undefined | null

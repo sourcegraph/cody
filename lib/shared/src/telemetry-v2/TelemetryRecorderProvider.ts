@@ -79,7 +79,7 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
                 clientVersion: extensionDetails.version,
             },
             process.env.CODY_TELEMETRY_EXPORTER === 'testing'
-                ? new TestTelemetryExporter()
+                ? TESTING_TELEMETRY_EXPORTER
                 : new GraphQLTelemetryExporter(client, anonymousUserID, legacyBackcompatLogEventMode),
             [
                 new ConfigurationMetadataProcessor(config, authStatusProvider),
@@ -93,6 +93,8 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
         )
     }
 }
+
+export const TESTING_TELEMETRY_EXPORTER = new TestTelemetryExporter()
 
 /**
  * TelemetryRecorder is the type of recorders returned by
