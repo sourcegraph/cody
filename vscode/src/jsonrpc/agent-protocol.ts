@@ -465,19 +465,9 @@ export type ServerNotifications = {
                 preserveFocus: boolean
                 viewColumn: number
             }
-            options: {
-                // WebviewOptions
-                enableScripts: boolean
-                enableForms: boolean
-                enableCommandUris: boolean | readonly string[]
-                // Note, we model "missing" here because interpreting the default
-                // depends on the current workspace root.
-                localResourceRoots: readonly string[] | null | undefined // Note, in vscode, ? readonly Uri[]
-                portMapping: readonly { webviewPort: number; extensionHostPort: number }[]
-                // WebviewPanelOptions
-                enableFindWidget: boolean
-                retainContextWhenHidden: boolean
-            }
+            // VSCode API 'options' but bindings generator does not handle fields
+            // with the same name.
+            options: WebviewCreateWebviewPanelOptions
         },
     ]
     'webview/dispose': [{ handle: string }]
@@ -488,6 +478,23 @@ export type ServerNotifications = {
     'webview/setHtml': [{ handle: string; html: string }]
 }
 
+export interface WebviewCreateWebviewPanelOptions {
+    enableScripts: boolean
+    enableForms: boolean
+    // Note, here, null has a surprising interpretation of "all commands are enabled"
+    // whereas an empty array means no commands are enabled. This lets us model all
+    // states (all enabled, all disabled, only specific commands enabled) with one
+    // field and avoid any redundant or inconsistent states.
+    enableOnlyCommandUris: readonly string[] | null
+    // Note, we model "missing" here because interpreting the default
+    // depends on the current workspace root.
+    localResourceRoots: readonly string[] | null | undefined // Note, in vscode, ? readonly Uri[]
+    portMapping: readonly { webviewPort: number; extensionHostPort: number }[]
+    // WebviewPanelOptions
+    enableFindWidget: boolean
+    retainContextWhenHidden: boolean
+}
+
 /**
  * vscode.WebviewOptions with defaults applied so each option is present. Agent
  * native webviews use this type so defaults are handled in TypeScript and the
@@ -496,7 +503,7 @@ export type ServerNotifications = {
 export interface DefiniteWebviewOptions {
     enableScripts: boolean
     enableForms: boolean
-    enableCommandUris: boolean | readonly string[]
+    enableOnlyCommandUris: readonly string[] | null
     localResourceRoots: readonly string[] | undefined
     portMapping: readonly { webviewPort: number; extensionHostPort: number }[]
     enableFindWidget: boolean
@@ -591,11 +598,13 @@ export interface ClientCapabilities {
     // AgentWebViewPanel which just delegates bidirectional postMessage over
     // the Agent protocol. If 'native', implements a larger subset of the VSCode
     // WebView API and expects the client to run web content in the webview.
-    webview?:
-        | 'agentic'
-        | { type: 'native'; cspSource: string; webviewBundleServingPrefix: string }
-        | undefined
-        | null
+    // Defaults to 'agentic'.
+    webview?: 'agentic' | 'native',
+    // If webview === 'native', describes how the client has configured webview resources.
+    // cspSource is passed to the extension as the Webview cspSource property.
+    // webviewBundleServingPrefix is prepended to resource paths under 'dist' in
+    // asWebviewUri (note, multiple prefixes are not yet implemented.)
+    webviewNativeConfig?: { cspSource: string; webviewBundleServingPrefix: string },
 }
 
 export interface ServerInfo {
