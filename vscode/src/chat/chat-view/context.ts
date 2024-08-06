@@ -313,7 +313,7 @@ function getVisibleEditorContext(editor: VSCodeEditor): ContextItem[] {
     })
 }
 
-async function getPriorityContext(
+export async function getPriorityContext(
     text: PromptString,
     editor: VSCodeEditor,
     retrievedContext: ContextItem[]

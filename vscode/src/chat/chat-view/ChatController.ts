@@ -111,10 +111,10 @@ import { chatHistory } from './ChatHistoryManager'
 import { ChatModel, prepareChatMessage } from './ChatModel'
 import { CodyChatEditorViewType } from './ChatsController'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
-import type { ContextFetcher } from './ContextFetcher'
+import { type ContextRetriever, toStructuredMentions } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, openFile } from './chat-helpers'
-import { type HumanInput, getContextStrategy, resolveContext } from './context'
+import { type HumanInput, getContextStrategy, getPriorityContext, resolveContext } from './context'
 import { DefaultPrompter } from './prompt'
 
 interface ChatControllerOptions {
@@ -126,7 +126,7 @@ interface ChatControllerOptions {
     symf: SymfRunner | null
     enterpriseContext: EnterpriseContextFactory | null
 
-    contextFetcher: ContextFetcher
+    contextRetriever: ContextRetriever
     contextAPIClient: ContextAPIClient | null
 
     editor: VSCodeEditor
@@ -176,7 +176,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly symf: SymfRunner | null
     private readonly remoteSearch: RemoteSearch | null
 
-    private readonly contextFetcher: ContextFetcher
+    private readonly contextRetriever: ContextRetriever
 
     private readonly contextStatusAggregator = new ContextStatusAggregator()
     private readonly editor: VSCodeEditor
@@ -203,7 +203,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         enterpriseContext,
         startTokenReceiver,
         contextAPIClient,
-        contextFetcher,
+        contextRetriever,
     }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
@@ -214,7 +214,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
 
-        this.contextFetcher = contextFetcher
+        this.contextRetriever = contextRetriever
 
         this.chatModel = new ChatModel(getDefaultModelID())
 
@@ -684,7 +684,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     mentions = mentions.concat(selectionContext)
                 }
 
-                const contextAlternatives = await this.fetchContext(
+                const contextAlternatives = await this.assembleContext(
                     { text: inputText, mentions },
                     requestID,
                     editorState,
@@ -759,7 +759,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
     }
 
-    private async fetchContext(
+    private async assembleContext(
         { text, mentions }: HumanInput,
         requestID: string,
         editorState: SerializedPromptEditorState | null,
@@ -776,15 +776,29 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                   inputTextWithoutContextChipsFromPromptEditorState(editorState)
               )
             : text
-        const context = await this.contextFetcher.fetchContext(
-            {
-                text,
-                mentions,
-                inputTextWithoutContextChips,
-            },
+        const structuredMentions = toStructuredMentions(mentions)
+        const retrievedContextPromise = this.contextRetriever.retrieveContext(
+            structuredMentions,
+            inputTextWithoutContextChips,
             span,
             signal
         )
+        const priorityContextPromise = retrievedContextPromise.then(p =>
+            getPriorityContext(text, this.editor, p)
+        )
+        const openCtxContextPromise = getContextForChatMessage(text.toString(), signal)
+        const [priorityContext, retrievedContext, openCtxContext] = await Promise.all([
+            priorityContextPromise,
+            retrievedContextPromise,
+            openCtxContextPromise,
+        ])
+        const context = [
+            priorityContext,
+            retrievedContext,
+            structuredMentions.symbols,
+            structuredMentions.files,
+            openCtxContext,
+        ].flat()
 
         if (this.contextAPIClient && context.length > 0) {
             const response = await this.contextAPIClient.rankContext(

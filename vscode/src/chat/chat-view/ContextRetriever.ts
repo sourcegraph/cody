@@ -2,8 +2,11 @@ import path from 'node:path'
 import type { Span } from '@opentelemetry/api'
 import {
     type ContextItem,
+    type ContextItemFile,
+    type ContextItemOpenCtx,
     type ContextItemRepository,
     ContextItemSource,
+    type ContextItemSymbol,
     type ContextItemTree,
     type ContextSearchResult,
     type FileURI,
@@ -21,22 +24,22 @@ import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { gitLocallyModifiedFiles } from '../../repository/git-extension-api'
 import { repoNameResolver } from '../../repository/repo-name-resolver'
-import { type HumanInput, getContextStrategy, retrieveContextGracefully, searchSymf } from './context'
-
-interface Input extends HumanInput {
-    inputTextWithoutContextChips: PromptString
-}
+import { getContextStrategy, retrieveContextGracefully, searchSymf } from './context'
 
 interface StructuredMentions {
     repos: ContextItemRepository[]
     trees: ContextItemTree[]
-    other: Exclude<ContextItem, ContextItemRepository | ContextItemTree>[]
+    files: ContextItemFile[]
+    symbols: ContextItemSymbol[]
+    openCtx: ContextItemOpenCtx[]
 }
 
-function toStructuredMentions(mentions: ContextItem[]): StructuredMentions {
+export function toStructuredMentions(mentions: ContextItem[]): StructuredMentions {
     const repos: ContextItemRepository[] = []
     const trees: ContextItemTree[] = []
-    const other: Exclude<ContextItem, ContextItemRepository | ContextItemTree>[] = []
+    const files: ContextItemFile[] = []
+    const symbols: ContextItemSymbol[] = []
+    const openCtx: ContextItemOpenCtx[] = []
     for (const mention of mentions) {
         switch (mention.type) {
             case 'repository':
@@ -45,12 +48,18 @@ function toStructuredMentions(mentions: ContextItem[]): StructuredMentions {
             case 'tree':
                 trees.push(mention)
                 break
-            default:
-                other.push(mention)
+            case 'file':
+                files.push(mention)
+                break
+            case 'symbol':
+                symbols.push(mention)
+                break
+            case 'openctx':
+                openCtx.push(mention)
                 break
         }
     }
-    return { repos, trees, other }
+    return { repos, trees, files, symbols, openCtx }
 }
 
 /**
@@ -134,7 +143,10 @@ async function codebaseRootsFromMentions(
     return [...remoteRepos, ...localRoots]
 }
 
-export class ContextFetcher implements vscode.Disposable {
+/**
+ * ContextRetriever is a class responsible for retrieving broader context from the codebase
+ */
+export class ContextRetriever implements vscode.Disposable {
     constructor(
         private editor: VSCodeEditor,
         private symf: SymfRunner | undefined,
@@ -145,25 +157,17 @@ export class ContextFetcher implements vscode.Disposable {
         this.symf?.dispose()
     }
 
-    public async fetchContext(
-        { mentions, inputTextWithoutContextChips }: Input,
+    public async retrieveContext(
+        mentions: StructuredMentions,
+        inputTextWithoutContextChips: PromptString,
         span: Span,
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
-        const structuredMentions = toStructuredMentions(mentions)
-        const roots = await codebaseRootsFromMentions(structuredMentions, signal)
-
-        console.log(
-            '# TODO(beyang): incorporate explicit @-mentions into context',
-            structuredMentions.other
-        )
-
-        console.log("# TODO(beyang): include 'priority context' (getPriorityContext)")
-
-        return this._fetchContext(roots, inputTextWithoutContextChips, span, signal)
+        const roots = await codebaseRootsFromMentions(mentions, signal)
+        return this._retrieveContext(roots, inputTextWithoutContextChips, span, signal)
     }
 
-    private async _fetchContext(
+    private async _retrieveContext(
         roots: Root[],
         query: PromptString,
         span: Span,
@@ -175,7 +179,7 @@ export class ContextFetcher implements vscode.Disposable {
             rewritten,
         }
 
-        // Fetch context from locally edited files
+        // Retrieve context from locally edited files
         const localRoots: vscode.Uri[] = []
         for (const root of roots) {
             if (!root.local) {
@@ -190,8 +194,8 @@ export class ContextFetcher implements vscode.Disposable {
         const changedFiles = changedFilesByRoot.flat()
 
         const [liveContext, indexedContext] = await Promise.all([
-            this.fetchLiveContext(query, rewrittenQuery.rewritten, changedFiles, signal),
-            this.fetchIndexedContext(roots, query, rewrittenQuery.rewritten, span, signal),
+            this.retrieveLiveContext(query, rewrittenQuery.rewritten, changedFiles, signal),
+            this.retrieveIndexedContext(roots, query, rewrittenQuery.rewritten, span, signal),
         ])
 
         const { keep: filteredIndexedContext } = filterLocallyModifiedFilesOutOfRemoteContext(
@@ -203,7 +207,7 @@ export class ContextFetcher implements vscode.Disposable {
         return [...liveContext, ...filteredIndexedContext]
     }
 
-    private async fetchLiveContext(
+    private async retrieveLiveContext(
         originalQuery: PromptString,
         rewrittenQuery: string,
         files: string[],
@@ -213,7 +217,7 @@ export class ContextFetcher implements vscode.Disposable {
             return []
         }
         if (!this.symf) {
-            logDebug('ContextFetcher', 'symf not available, skipping live context')
+            logDebug('ContextRetriever', 'symf not available, skipping live context')
             return []
         }
         const results = await this.symf.getLiveResults(originalQuery, rewrittenQuery, files, signal)
@@ -246,7 +250,7 @@ export class ContextFetcher implements vscode.Disposable {
         ).flat()
     }
 
-    private async fetchIndexedContext(
+    private async retrieveIndexedContext(
         roots: Root[],
         originalQuery: PromptString,
         rewrittenQuery: string,
@@ -275,12 +279,12 @@ export class ContextFetcher implements vscode.Disposable {
             }
         }
 
-        const remoteResultsPromise = this.fetchIndexedContextFromRemote(
+        const remoteResultsPromise = this.retrieveIndexedContextFromRemote(
             [...repoIDsOnRemote],
             rewrittenQuery,
             signal
         )
-        const localResultsPromise = this.fetchIndexedContextLocally(
+        const localResultsPromise = this.retrieveIndexedContextLocally(
             [...localRootURIs.values()],
             originalQuery,
             span
@@ -293,7 +297,7 @@ export class ContextFetcher implements vscode.Disposable {
         return remoteResults.concat(localResults)
     }
 
-    private async fetchIndexedContextFromRemote(
+    private async retrieveIndexedContextFromRemote(
         repoIDs: string[],
         query: string,
         signal?: AbortSignal
@@ -311,7 +315,7 @@ export class ContextFetcher implements vscode.Disposable {
         return remoteResult?.flatMap(r => contextSearchResultToContextItem(r) ?? []) ?? []
     }
 
-    private async fetchIndexedContextLocally(
+    private async retrieveIndexedContextLocally(
         localRootURIs: vscode.Uri[],
         originalQuery: PromptString,
         span: Span
@@ -320,18 +324,18 @@ export class ContextFetcher implements vscode.Disposable {
             return []
         }
 
-        // Fetch using legacy context retrieval
+        // Legacy context retrieval
         const config = getConfiguration()
         const contextStrategy = await getContextStrategy(config.useContext)
         span.setAttribute('strategy', contextStrategy)
 
-        // symf fetching
+        // symf retrieval
         const symf = this.symf
         if (symf && contextStrategy !== 'embeddings' && localRootURIs.length > 0) {
             const localRootResults = await Promise.all(
                 localRootURIs.map(rootURI =>
                     // TODO(beyang): retire searchSymf and retrieveContextGracefully
-                    // (see invocation of symf in fetchLiveContext)
+                    // (see invocation of symf in retrieveLiveContext)
                     retrieveContextGracefully(
                         searchSymf(symf, this.editor, rootURI, originalQuery),
                         `symf ${rootURI.path}`
@@ -348,7 +352,7 @@ export class ContextFetcher implements vscode.Disposable {
 function contextSearchResultToContextItem(result: ContextSearchResult): ContextItem | undefined {
     if (result.startLine < 0 || result.endLine < 0) {
         logDebug(
-            'ContextFetcher',
+            'ContextRetriever',
             'ignoring server context result with invalid range',
             result.repoName,
             result.uri.toString()
