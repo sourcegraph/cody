@@ -146,10 +146,6 @@ export interface ChatSession {
     sessionID: string
 }
 
-export interface CodeBlockActionArgs {
-    text: string
-}
-
 /**
  * ChatController is the view controller class for the chat panel.
  * It handles all events sent from the view, keeps track of the underlying chat model,
@@ -300,18 +296,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             chatHistory.onHistoryChanged(chatHistory => {
                 this.postMessage({ type: 'history', localHistory: chatHistory })
             })
-        )
-
-        // Register commands for the codeblock actions
-        this.disposables.push(
-            vscode.commands.registerCommand(
-                'cody.command.insertCodeToCursor',
-                (args: CodeBlockActionArgs) => handleCodeFromInsertAtCursor(args.text)
-            ),
-            vscode.commands.registerCommand(
-                'cody.command.insertCodeToNewFile',
-                (args: CodeBlockActionArgs) => handleCodeFromSaveToNewFile(args.text, this.editor)
-            )
         )
     }
 

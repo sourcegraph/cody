@@ -23,6 +23,10 @@ import { getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { type ChatLocation, localStorage } from '../../services/LocalStorageProvider'
+import {
+    handleCodeFromInsertAtCursor,
+    handleCodeFromSaveToNewFile,
+} from '../../services/utils/codeblock-action-tracker'
 import type { ContextAPIClient } from '../context/contextAPIClient'
 import {
     ChatController,
@@ -204,6 +208,16 @@ export class ChatsController implements vscode.Disposable {
             ),
             vscode.commands.registerCommand('cody.mention.file', uri =>
                 this.sendEditorContextToChat(uri)
+            ),
+
+            // Codeblock commands
+            vscode.commands.registerCommand(
+                'cody.command.insertCodeToCursor',
+                (args: { text: string }) => handleCodeFromInsertAtCursor(args.text)
+            ),
+            vscode.commands.registerCommand(
+                'cody.command.insertCodeToNewFile',
+                (args: { text: string }) => handleCodeFromSaveToNewFile(args.text, this.options.editor)
             )
         )
     }
