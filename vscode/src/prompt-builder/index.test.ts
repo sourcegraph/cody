@@ -5,6 +5,7 @@ import {
     type ChatMessage,
     ContextItemSource,
     contextFiltersProvider,
+    displayPath,
     ps,
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
@@ -374,8 +375,8 @@ describe('PromptBuilder', () => {
             expect(builder.contextItems.length).toBe(1)
             expect(promptContent).toMatchInlineSnapshot(`
               "preamble
-              Codebase context from file foo/bar.go:
-              \`\`\`go:foo/bar.go
+              Codebase context from file ${displayPath(file.uri)}:
+              \`\`\`go:${displayPath(file.uri)}
               foo\`\`\`
               Ok.
               Hi!
