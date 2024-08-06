@@ -9,7 +9,6 @@ import com.sourcegraph.cody.agent.protocol_extensions.PositionFactory
 import com.sourcegraph.cody.agent.protocol_generated.Position
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.cody.listeners.EditorChangesBus
-import junit.framework.TestCase
 
 class ProtocolTextDocumentTest : BasePlatformTestCase() {
   private val content = "Start line 1\nline 2\nline 3\nline 4\nline 5 End"
@@ -18,8 +17,6 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
 
   override fun setUp() {
     super.setUp()
-    // We need to specify the provider so that the created editor has EditorKind.MAIN_EDITOR.
-    // Without putting that data, the default is UNTYPED - that breaks some tests.
     file.putUserData(FileEditorProvider.KEY, TextEditorProvider.getInstance())
     myFixture.openFileInEditor(file)
   }
@@ -39,7 +36,7 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
   fun test_singleLineSelection() {
     myFixture.editor.testing_selectSubstring("ine 1")
     val range = ProtocolTextDocument.fromEditor(myFixture.editor)!!.selection!!
-    TestCase.assertEquals(0, range.start.line) // should be zero-based
+    assertEquals(0, range.start.line) // should be zero-based
     assertEquals(
         myFixture.editor.selectionModel.selectedText, myFixture.editor.testing_substring(range))
   }
@@ -47,8 +44,8 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
   fun test_multiLineSelection() {
     myFixture.editor.testing_selectSubstring("ine 1\nli")
     val range = ProtocolTextDocument.fromEditor(myFixture.editor)!!.selection!!
-    TestCase.assertEquals(0, range.start.line)
-    TestCase.assertEquals(1, range.end.line) // should be zero-based
+    assertEquals(0, range.start.line)
+    assertEquals(1, range.end.line) // should be zero-based
     assertEquals(
         myFixture.editor.selectionModel.selectedText, myFixture.editor.testing_substring(range))
   }
@@ -202,9 +199,8 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
     fun insert(afterSubstring: String, insertSubstring: String) {
       val currentContent = myFixture.editor.document.text
       val startOffset = currentContent.indexOf(afterSubstring)
-      val endOffset = startOffset
       val startPosition = PositionFactory.fromOffset(myFixture.editor.document, startOffset)
-      val endPosition = PositionFactory.fromOffset(myFixture.editor.document, endOffset)
+      val endPosition = PositionFactory.fromOffset(myFixture.editor.document, startOffset)
 
       val newContent =
           StringBuilder(currentContent).apply { insert(startOffset, insertSubstring) }.toString()
@@ -222,5 +218,70 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
     insert("4\nline ", "\n\n\n\n\n\n\n")
     insert(" End", "this is the \n end\n\n\n\n")
     insert("Start ", "@@@\n\n")
+  }
+
+  fun test_normalized_uri_or_path() {
+    val testCases =
+        listOf(
+            "\\\\wsl$\\Ubuntu\\home\\person" to "//wsl.localhost/Ubuntu/home/person",
+            "//wsl$/Ubuntu/home/person" to "//wsl.localhost/Ubuntu/home/person",
+            "c:/home/person" to "c:/home/person",
+            "D:/home/person" to "d:/home/person",
+            "file://\\\\wsl$\\Ubuntu\\home\\person" to "file:////wsl.localhost/Ubuntu/home/person",
+            "file://c:/home/person" to "file:///c:/home/person",
+            "/home/person/documents" to "/home/person/documents",
+            "file:///home/person/documents" to "file:///home/person/documents")
+
+    for ((input, expected) in testCases) {
+      assertEquals(expected, ProtocolTextDocument.normalizeUriOrPath(input))
+    }
+  }
+
+  fun test_wsl_path_with_backslashes() {
+    val input = "\\\\wsl$\\Ubuntu\\home\\person"
+    val expected = "//wsl.localhost/Ubuntu/home/person"
+    assertEquals(expected, ProtocolTextDocument.normalizeUriOrPath(input))
+  }
+
+  fun test_wsl_path_with_forward_slashes() {
+    val input = "//wsl$/Ubuntu/home/person"
+    val expected = "//wsl.localhost/Ubuntu/home/person"
+    assertEquals(expected, ProtocolTextDocument.normalizeUriOrPath(input))
+  }
+
+  fun testWindowsPathLowerCase() {
+    val input = "c:/home/person"
+    val expected = "c:/home/person"
+    assertEquals(expected, ProtocolTextDocument.normalizeUriOrPath(input))
+  }
+
+  fun testWindowsPathUpperCase() {
+    val input = "D:/home/person"
+    val expected = "d:/home/person"
+    assertEquals(expected, ProtocolTextDocument.normalizeUriOrPath(input))
+  }
+
+  fun testWslPathWithFileScheme() {
+    val input = "file://\\\\wsl$\\Ubuntu\\home\\person"
+    val expected = "file:////wsl.localhost/Ubuntu/home/person"
+    assertEquals(expected, ProtocolTextDocument.normalizeUriOrPath(input))
+  }
+
+  fun testWindowsPathWithFileScheme() {
+    val input = "file://c:/home/person"
+    val expected = "file:///c:/home/person"
+    assertEquals(expected, ProtocolTextDocument.normalizeUriOrPath(input))
+  }
+
+  fun testLinuxPath() {
+    val input = "/home/person/documents"
+    val expected = "/home/person/documents"
+    assertEquals(expected, ProtocolTextDocument.normalizeUriOrPath(input))
+  }
+
+  fun testLinuxPathWithFileScheme() {
+    val input = "file:///home/person/documents"
+    val expected = "file:///home/person/documents"
+    assertEquals(expected, ProtocolTextDocument.normalizeUriOrPath(input))
   }
 }

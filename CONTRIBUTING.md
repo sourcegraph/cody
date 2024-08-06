@@ -66,12 +66,6 @@ run `sdk use java 11.0.15-tem`. Confirm that you have Java 11 installed with `ja
 | Reformat Java and Kotlin sources                                                                                                    | `./gradlew spotlessApply`                                                |
 | Debug agent JSON-RPC communication                                                                                                  | `tail -f build/sourcegraph/cody-agent-trace.json`                        |
 
-> 🤞 On Windows (ARM64 specific?), there's some problem with codesearch's svelte packages. Skip the code search build by setting this environment variable:
->
-> ```
-> $env:SKIP_CODE_SEARCH_BUILD="true"
-> ```
-
 ### Editor config
 
 - Install the following two IntelliJ plugins to format Java and Kotlin on file save
@@ -94,6 +88,21 @@ Few tips and tricks regarding versioning of the tooling:
   can fix it by running `./gradlew -PplatformVersion=X.Y :runIde` once - even if compilation fails it fixes your caches.
 - IF you get error 134 while building different things with jetbrains its because java process doesn't have enough
   memory to build so you might need to get into your activity monitor to close other processes.
+
+### Building on Windows
+
+You should build everything in PowerShell. Git Bash, Ubuntu and MinGW all offer unique challenges. If you get it to build and run, add instructions here.
+
+- Install JDK 11 from https://www.oracle.com/java/technologies/javase/jdk11-archive-downloads.html
+  - Oracle will make you create an account in order to download it. 🙄 
+- Install the pnpm version in `./tool-versions`
+  - Set `PNPM_HOME` env var for whole system (not just for your account) to the path where `pnpm.cmd` is.
+- Install the node version in `./tool-versions`
+
+🤞 On Windows (ARM64 specific?), there's some problem with codesearch's svelte packages. Skip the code search build by setting this environment variable:
+```
+$env:SKIP_CODE_SEARCH_BUILD="true"
+```
 
 ## Using Nightly channel releases
 

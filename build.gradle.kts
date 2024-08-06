@@ -239,6 +239,14 @@ fun Test.sharedIntegrationTestConfig(buildCodyDir: File, mode: String) {
   dependsOn("buildCody")
 }
 
+val isWindows = System.getProperty("os.name").lowercase().contains("win")
+val pnpmPath =
+    if (isWindows) {
+      "pnpm.cmd"
+    } else {
+      "pnpm"
+    }
+
 tasks {
   val codeSearchCommit = "9d86a4f7d183e980acfe5d6b6468f06aaa0d8acf"
   fun downloadCodeSearch(): File {
@@ -266,15 +274,15 @@ tasks {
     val sourcegraphDir = unzipCodeSearch()
     exec {
       workingDir(sourcegraphDir.toString())
-      commandLine("pnpm", "install", "--frozen-lockfile")
+      commandLine(pnpmPath, "install", "--frozen-lockfile")
     }
     exec {
       workingDir(sourcegraphDir.toString())
-      commandLine("pnpm", "generate")
+      commandLine(pnpmPath, "generate")
     }
     val jetbrainsDir = sourcegraphDir.resolve("client").resolve("jetbrains")
     exec {
-      commandLine("pnpm", "build")
+      commandLine(pnpmPath, "build")
       workingDir(jetbrainsDir)
     }
     val buildOutput =
@@ -325,12 +333,12 @@ tasks {
     println("Using cody from codyDir=$codyDir")
     exec {
       workingDir(codyDir)
-      commandLine("pnpm", "install", "--frozen-lockfile")
+      commandLine(pnpmPath, "install", "--frozen-lockfile")
     }
     val agentDir = codyDir.resolve("agent")
     exec {
       workingDir(agentDir)
-      commandLine("pnpm", "run", "build:agent")
+      commandLine(pnpmPath, "run", "build:agent")
     }
     copy {
       from(agentDir.resolve("dist"))

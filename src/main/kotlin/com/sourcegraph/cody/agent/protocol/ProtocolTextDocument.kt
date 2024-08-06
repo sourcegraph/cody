@@ -2,6 +2,7 @@ package com.sourcegraph.cody.agent.protocol
 
 import com.intellij.codeInsight.codeVision.ui.popup.layouter.bottom
 import com.intellij.codeInsight.codeVision.ui.popup.layouter.right
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.DocumentEvent
@@ -15,7 +16,7 @@ import com.sourcegraph.cody.agent.protocol_extensions.Position
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import java.awt.Point
 import java.nio.file.FileSystems
-import java.util.Locale
+import java.util.*
 import kotlin.math.max
 import kotlin.math.min
 
@@ -28,6 +29,13 @@ private constructor(
     val contentChanges: List<ProtocolTextDocumentContentChangeEvent>? = null,
     val testing: TestingParams? = null,
 ) {
+
+  init {
+    if (!ApplicationManager.getApplication().isDispatchThread) {
+      throw IllegalStateException("ProtocolTextDocument must be be created on EDT")
+    }
+  }
+
   companion object {
     @RequiresEdt
     private fun getTestingParams(
@@ -186,12 +194,36 @@ private constructor(
 
     @JvmStatic
     fun uriFor(file: VirtualFile): String {
-      val uri = FileSystems.getDefault().getPath(file.path).toUri().toString()
-      return uri.replace(Regex("file:///(\\w):/")) {
-        val driveLetter =
-            it.groups[1]?.value?.lowercase(Locale.getDefault()) ?: return@replace it.value
-        "file:///$driveLetter%3A/"
+      val uriString = FileSystems.getDefault().getPath(file.path).toUri().toString()
+      return normalizeUriOrPath(uriString)
+    }
+
+    @JvmStatic
+    fun normalizeUriOrPath(uriString: String): String {
+      val hasScheme = uriString.startsWith("file://")
+      val path =
+          (if (hasScheme) uriString.removePrefix("file://") else uriString).replace("\\", "/")
+
+      // Normalize WSL paths
+      val wslPrefix = "//wsl$"
+      if (path.startsWith(wslPrefix)) {
+        val newPath = "//wsl.localhost${path.removePrefix(wslPrefix)}"
+        return if (hasScheme) "file://$newPath" else newPath
       }
+
+      // Normalize drive letters for Windows
+      val driveLetterPattern = """^(\w):/""".toRegex()
+      val normalizedPath =
+          driveLetterPattern.replace(path) { matchResult ->
+            val driveLetter = matchResult.groupValues[1].lowercase(Locale.getDefault())
+            "${driveLetter}:/"
+          }
+
+      if (!hasScheme) return normalizedPath
+      if (path.matches(Regex("^/[^/].*"))) {
+        return "file://$normalizedPath"
+      }
+      return "file:///$normalizedPath"
     }
   }
 }

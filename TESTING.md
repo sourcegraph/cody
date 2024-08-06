@@ -508,6 +508,40 @@ all of the following should be true for each test:
 3. When the current file's policy changes back to non-ignored, inline edits, commands, and context fetching
    should start working normally again.
 
+## Windows and WSL
+
+Cody should work correctly on Microsoft Windows setups that are configured with Windows Subsystem for Linux ("WSL").
+
+The main thing to check is that a project or repo cloned onto a WSL volume should work. WSL volumes/drives have
+paths that begin with either `\\wsl.localhost\` or `\\wsl$\` for short. Both are correct.
+
+For these tests, make sure you have a WSL-enabled Windows setup, and clone a repo onto the WSL drive.
+As an example, I cloned `github.com/redisson/redisson` (a medium-sized Java project) into my WSL home
+directory: `\\wsl.localhost\Ubuntu\home\stevey\redisson`
+
+1. Open the WSL project in IDEA.
+  - The project should open correctly.
+  - You should be able to browse and navigate to source files.
+2. Check that Cody started up and has no errors.
+3. Verify that Cody can explain some code from the project.
+4. Verify that autocompletions work in the source code.
+5. Verify that Inline Edits work in the source code. (Just checking one edit should be enough.)
+6. Verify that Cody can explain open files inside jar files:
+   - From the `Navigate` IDEA menu, `Symbol...` and verify that the Navigation dialog opens
+     (with tabs for All, Class, Files, Symbols, ...)
+   - Choose "Projects and Libraries" from the menu in the upper-right corner
+   - Choose the Symbols tab
+   - Type `Project` and from the dropdown, choose `Project of com.intellij.openapi.Project`
+   - Verify that this opens the Project interface class in an editor tab
+   - Locate the method in the interface, `getBaseDir()`:
+
+```
+     @Deprecated
+     VirtualFile getBaseDir();
+```
+   - Select the whole second line (`VirtualFile getBaseDir()`)
+   - Ask Cody to explain it. Cody should give a sensible explanation involving virtual files.
+
 ## Multi-repo context
 
 ### Free/pro accounts:
