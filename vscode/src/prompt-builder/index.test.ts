@@ -261,8 +261,8 @@ describe('PromptBuilder', () => {
             expect(builder.contextItems).toStrictEqual([innerRange])
         })
 
-        it.only('should remove context with overlapping ranges when full file is provided', async () => {
-            const builder = new PromptBuilder({ input: 50, output: 50 })
+        it('should remove context with overlapping ranges when full file is provided', async () => {
+            const builder = new PromptBuilder({ input: 100, output: 100 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
