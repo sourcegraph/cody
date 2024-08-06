@@ -114,12 +114,7 @@ import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import type { ContextFetcher } from './ContextFetcher'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, openFile } from './chat-helpers'
-import {
-    type HumanInput,
-    codebaseRootsFromHumanInput,
-    getContextStrategy,
-    resolveContext,
-} from './context'
+import { type HumanInput, codebaseRootsFromHumanInput, resolveContext } from './context'
 import { DefaultPrompter } from './prompt'
 
 interface ChatControllerOptions {
@@ -774,7 +769,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (!vscode.workspace.getConfiguration().get<boolean>('cody.internal.serverSideContext')) {
             // Fetch using legacy context retrieval
             const config = getConfiguration()
-            const contextStrategy = await getContextStrategy(config.useContext)
+            const contextStrategy = config.useContext
             span.setAttribute('strategy', contextStrategy)
 
             // Remove context chips (repo, @-mentions) from the input text for context retrieval.
