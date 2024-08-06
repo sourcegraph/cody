@@ -242,7 +242,7 @@ async function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<
 
 async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
     configuredProvider: string | null,
-    isDotCom: boolean,
+    isDotCom: boolean
 ): Promise<{
     provider: string
     model?: FireworksOptions['model'] | AnthropicOptions['model']
