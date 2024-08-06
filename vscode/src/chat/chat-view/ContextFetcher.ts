@@ -64,11 +64,21 @@ function toStructuredMentions(mentions: ContextItem[]): StructuredMentions {
  * It is possible for both fields to be set, if the codebase exists on Sourcegraph and is checked out locally.
  */
 export interface Root {
+    /**
+     * The absolute path on local disk
+     */
     local?: vscode.Uri
-    remoteRepo?: {
+
+    /**
+     * List of repository remotes associated with the codebase.
+     * If this list is empty, then we were unable to discover a remote.
+     * If it contains more than one element, then there are multiple remotes associated
+     * with the codebase checked out to the local path.
+     */
+    remoteRepos: {
         name: string
         id: string
-    }
+    }[]
 }
 
 /**
@@ -79,51 +89,45 @@ async function codebaseRootsFromMentions(
     signal?: AbortSignal
 ): Promise<Root[]> {
     const remoteRepos: Root[] = repos.map(r => ({
-        remoteRepo: {
-            id: r.repoID,
-            name: r.repoName,
-        },
+        remoteRepos: [
+            {
+                id: r.repoID,
+                name: r.repoName,
+            },
+        ],
     }))
 
-    const g = await Promise.all(
-        trees.map(async tree => {
-            const repoURIs = await repoNameResolver.getRepoNamesFromWorkspaceUri(tree.uri, signal)
-            if (repoURIs.length === 0) {
-                return []
-            }
-            // TODO(beyang): pass through all remotes? Should ensure we select the origin first?
-            return {
-                repoURI: repoURIs[0],
-                local: tree.uri,
-            }
-            // return repoURIs.map(repoURI => ({
-            //     repoURI,
-            //     local: tree.uri,
-            // }))
-        })
+    const treesToRepoNames = await Promise.all(
+        trees.map(async tree => ({
+            tree,
+            names: await repoNameResolver.getRepoNamesFromWorkspaceUri(tree.uri, signal),
+        }))
     )
-    const localRepoURIs = Array.from(new Set(g.flat()))
-    const localRepoIDs = await graphqlClient.getRepoIds(
-        localRepoURIs.map(({ repoURI }) => repoURI),
-        localRepoURIs.length,
-        signal
-    )
+    const localRepoNames = treesToRepoNames.flatMap(t => t.names)
+    const localRepoIDs = await graphqlClient.getRepoIds(localRepoNames, localRepoNames.length, signal)
     if (isError(localRepoIDs)) {
+        console.error('### TODO(beyang): may need to handle this error if some do not exist')
         throw localRepoIDs
     }
     const uriToId: { [uri: string]: string } = {}
     for (const r of localRepoIDs) {
         uriToId[r.name] = r.id
     }
+
+    const seenLocalURIs = new Set<string>()
     const localRoots: Root[] = []
-    for (const repoWithURI of localRepoURIs) {
+    for (const { tree, names } of treesToRepoNames) {
+        if (seenLocalURIs.has(tree.uri.toString())) {
+            continue
+        }
         localRoots.push({
-            local: repoWithURI.local,
-            remoteRepo: {
-                id: uriToId[repoWithURI.repoURI],
-                name: repoWithURI.repoURI,
-            },
+            local: tree.uri,
+            remoteRepos: names.map(name => ({
+                id: uriToId[name],
+                name,
+            })),
         })
+        seenLocalURIs.add(tree.uri.toString())
     }
 
     return [...remoteRepos, ...localRoots]
@@ -251,8 +255,11 @@ export class ContextFetcher implements vscode.Disposable {
         const repoIDsOnRemote = new Set<string>()
         const localRootURIs = new Map<string, FileURI>()
         for (const root of roots) {
-            if (root.remoteRepo?.id) {
-                repoIDsOnRemote.add(root.remoteRepo.id)
+            if (root.remoteRepos.length > 0) {
+                // Note: we just take the first remote. In the future,
+                // we could try to choose the best remote or query each
+                // in succession.
+                repoIDsOnRemote.add(root.remoteRepos[0].id)
             } else if (root.local && isFileURI(root.local)) {
                 localRootURIs.set(root.local.toString(), root.local)
             } else {
@@ -317,7 +324,8 @@ export class ContextFetcher implements vscode.Disposable {
         if (symf && contextStrategy !== 'embeddings' && localRootURIs.length > 0) {
             const localRootResults = await Promise.all(
                 localRootURIs.map(rootURI =>
-                    // TODO(beyang): break out of searchSymf and retrieveContextGracefully
+                    // TODO(beyang): retire searchSymf and retrieveContextGracefully
+                    // (see invocation of symf in fetchLiveContext)
                     retrieveContextGracefully(
                         searchSymf(symf, this.editor, rootURI, originalQuery),
                         `symf ${rootURI.path}`
@@ -326,8 +334,6 @@ export class ContextFetcher implements vscode.Disposable {
             )
             return localRootResults.flat()
         }
-
-        // TODO(beyang): local embeddings
 
         return []
     }
@@ -367,13 +373,13 @@ export function filterLocallyModifiedFilesOutOfRemoteContext(
     // Construct map from repo name to local files to filter out of remote context
     const repoNameToLocalFiles: Map<string, Set<string>> = new Map()
     for (let i = 0; i < roots.length; i++) {
-        const remoteRepo = roots[i].remoteRepo
-        if (!remoteRepo) {
+        const localRoot = roots[i].local
+        if (!localRoot || !isFileURI(localRoot)) {
             continue
         }
 
-        const localRoot = roots[i].local
-        if (!localRoot || !isFileURI(localRoot)) {
+        const remoteRepos = roots[i].remoteRepos
+        if (remoteRepos.length === 0) {
             continue
         }
 
@@ -381,7 +387,9 @@ export function filterLocallyModifiedFilesOutOfRemoteContext(
         for (const localFile of localFilesByRoot[i]) {
             relLocalFiles.add(path.relative(localRoot.fsPath, localFile))
         }
-        repoNameToLocalFiles.set(remoteRepo.name, relLocalFiles)
+        for (const remoteRepo of remoteRepos) {
+            repoNameToLocalFiles.set(remoteRepo.name, relLocalFiles)
+        }
     }
 
     const keep: ContextItem[] = []

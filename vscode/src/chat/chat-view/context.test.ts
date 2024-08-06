@@ -15,10 +15,12 @@ describe('filterLocallyModifiedFilesOutOfRemoteContext', () => {
                 roots: [
                     {
                         local: vscode.Uri.file('/tmp/my/repo'),
-                        remoteRepo: {
-                            name: 'github.com/my/repo',
-                            id: '==myrepoid',
-                        },
+                        remoteRepos: [
+                            {
+                                name: 'github.com/my/repo',
+                                id: '==myrepoid',
+                            },
+                        ],
                     },
                 ],
                 localModifiedFilesByRoot: [['/tmp/my/repo/README.md']],
