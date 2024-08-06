@@ -106,8 +106,6 @@ async function codebaseRootsFromMentions(
     const localRepoNames = treesToRepoNames.flatMap(t => t.names)
     const localRepoIDs = await graphqlClient.getRepoIds(localRepoNames, localRepoNames.length, signal)
     if (isError(localRepoIDs)) {
-        // NEXT
-        console.error('### TODO(beyang): may need to handle this error if some do not exist')
         throw localRepoIDs
     }
     const uriToId: { [uri: string]: string } = {}
@@ -123,10 +121,12 @@ async function codebaseRootsFromMentions(
         }
         localRoots.push({
             local: tree.uri,
-            remoteRepos: names.map(name => ({
-                id: uriToId[name],
-                name,
-            })),
+            remoteRepos: names
+                .filter(name => uriToId[name])
+                .map(name => ({
+                    id: uriToId[name],
+                    name,
+                })),
         })
         seenLocalURIs.add(tree.uri.toString())
     }
@@ -260,7 +260,12 @@ export class ContextFetcher implements vscode.Disposable {
                 // Note: we just take the first remote. In the future,
                 // we could try to choose the best remote or query each
                 // in succession.
-                repoIDsOnRemote.add(root.remoteRepos[0].id)
+                for (const rr of root.remoteRepos) {
+                    if (rr.id) {
+                        repoIDsOnRemote.add(rr.id)
+                        break
+                    }
+                }
             } else if (root.local && isFileURI(root.local)) {
                 localRootURIs.set(root.local.toString(), root.local)
             } else {
