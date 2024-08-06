@@ -64,9 +64,6 @@ export enum FeatureFlag {
     /** Interactive tutorial, primarily for onboarding */
     CodyInteractiveTutorial = 'cody-interactive-tutorial',
 
-    /** Automatically start indexing using embeddings. */
-    CodyEmbeddingsAutoIndexing = 'cody-embeddings-auto-indexing',
-
     /** Whether to use generated metadata to power embeddings. */
     CodyEmbeddingsGenerateMetadata = 'cody-embeddings-generate-metadata',
 
