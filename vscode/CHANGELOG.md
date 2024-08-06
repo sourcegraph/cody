@@ -10,6 +10,24 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## 1.28.1
+
+Chat: Cody is now defaulted to run in the sidebar for both Enterprise and Non-Enterprise users. [pull/5039](https://github.com/sourcegraph/cody/pull/5039)
+
+### Fixed
+
+- Edit: Fixed an issue where we would generate an inefficient diff due to a mismatch in the end-of-line sequence between the user and the LLM. [pull/5069](https://github.com/sourcegraph/cody/pull/5069)
+- Chat: Fixed an issue where buttons to start a new Cody chat and show Chat History were visible in non-Cody views. [pull/5106](https://github.com/sourcegraph/cody/pull/5106)
+
+### Changed
+
+- Autocomplete: Ignores leading empty new lines for autocomplete suggestions to reduce the number of cases when Cody doesn't suggest anything. [pull/4864](https://github.com/sourcegraph/cody/pull/4864)
+- Autocomplete: Preload completions on cursor movement. [pull/4901](https://github.com/sourcegraph/cody/pull/4901)
+- Chat: The shortcuts for starting starting and toggling the chat have changed:
+  - `Alt+L`: Toggles between the chat view and the last text editor. If a chat view doesn't exist, it opens a new one. From a text editor with an active selection, it adds the active selection to the chat.
+  - `Shift+Alt+L`: starts a new chat session.
+  - The `cody.chat.defaultLocation` setting controls the default location of chat sessions. The values are "sidebar", "editor", or "sticky". The default is "sticky", which defaults to the sidebar but switches whenever the user moves the chat to the editor panel, or vice versa.
+
 ## 1.28.0
 
 ### Added

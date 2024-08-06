@@ -1,5 +1,4 @@
 import type { Prompt } from '@sourcegraph/cody-shared'
-import type { PromptsClient } from './promptsClient'
 
 export const FIXTURE_PROMPTS: Prompt[] = [
     {
@@ -52,17 +51,3 @@ export const FIXTURE_PROMPTS: Prompt[] = [
         url: 'https://example.com',
     },
 ]
-
-/**
- * For storybooks only.
- * @internal
- */
-export const dummyPromptsClient: PromptsClient = {
-    async queryPrompts({ query }) {
-        await new Promise<void>(resolve => setTimeout(resolve, 250))
-        const queryTextLower = query.toLowerCase()
-        return {
-            result: FIXTURE_PROMPTS.filter(prompt => prompt.name.toLowerCase().includes(queryTextLower)),
-        }
-    },
-}

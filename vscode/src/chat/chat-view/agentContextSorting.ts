@@ -14,10 +14,12 @@ const sortLocale = new Intl.Locale('en-US')
  *
  * @param files - The array of `ContextItem` objects to sort.
  */
-export function sortContextItems(files: ContextItem[]): void {
+export function sortContextItemsIfInTest(files: ContextItem[]): ContextItem[] {
     if (!isAgentTesting) {
-        return
+        return files
     }
+    files = [...files]
+
     // Sort results for deterministic ordering for stable tests. Ideally, we
     // could sort by some numerical score from symf based on how relevant
     // the matches are for the query.
@@ -40,4 +42,5 @@ export function sortContextItems(files: ContextItem[]): void {
         const selection = files.splice(selectionIndex, 1)[0]
         files.unshift(selection)
     }
+    return files
 }

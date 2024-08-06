@@ -71,6 +71,34 @@ export function gitRemoteUrlsFromGitExtension(uri: vscode.Uri): string[] | undef
 }
 
 /**
+ * Gets the list of locally modified files in the Git repository for the given URI.
+ * This is defined as the list of files modified since the merge base of the current
+ * branch with its upstream. If the upstream doesn't exist, then we use the list of
+ * files modified since the last commit.
+ */
+export async function gitLocallyModifiedFiles(uri: vscode.Uri, signal?: AbortSignal): Promise<string[]> {
+    const repo = vscodeGitAPI?.getRepository(uri)
+    if (!repo) {
+        throw new Error(`repository does not exist at ${uri.toString}`)
+    }
+
+    if (!repo.state.HEAD?.commit) {
+        throw new Error('could not get locally modified files, HEAD commit was undefined')
+    }
+    let diffBase = repo.state.HEAD.commit
+    if (repo.state.HEAD?.upstream) {
+        diffBase = await repo.getMergeBase(repo.state.HEAD.upstream.name, repo.state.HEAD.commit)
+        signal?.throwIfAborted()
+    }
+
+    const changes = await repo?.diffWith(diffBase)
+    signal?.throwIfAborted()
+    const modifiedFileURIs = changes.map(change => change.renameUri ?? change.uri)
+
+    return modifiedFileURIs.map(u => u.fsPath)
+}
+
+/**
  * ❗️ The Git extension API instance is only available in the VS Code extension. ️️❗️
  * TODO: implement agent support in https://github.com/sourcegraph/cody/issues/4139
  */

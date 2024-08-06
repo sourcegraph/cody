@@ -1,4 +1,7 @@
+import type { Event } from 'vscode'
 import { logDebug } from '../logger'
+import { asyncGeneratorFromVSCodeEvent } from '../misc/asyncGenerator'
+import { isAbortError } from '../sourcegraph-api/errors'
 import { type SourcegraphGraphQLAPIClient, graphqlClient } from '../sourcegraph-api/graphql'
 import { wrapInActiveSpan } from '../tracing'
 import { isError } from '../utils'
@@ -42,6 +45,11 @@ export enum FeatureFlag {
     //              Enable smart-throttling for more aggressive request cancellation and lower initial latencies
     CodyAutocompleteHotStreakAndSmartThrottle = 'cody-autocomplete-hot-streak-and-smart-throttle',
 
+    CodyAutocompletePreloadingExperimentBaseFeatureFlag = 'cody-autocomplete-preloading-experiment-flag',
+    CodyAutocompletePreloadingExperimentVariant1 = 'cody-autocomplete-preloading-experiment-variant-1',
+    CodyAutocompletePreloadingExperimentVariant2 = 'cody-autocomplete-preloading-experiment-variant-2',
+    CodyAutocompletePreloadingExperimentVariant3 = 'cody-autocomplete-preloading-experiment-variant-3',
+
     // When enabled, it will extend the number of languages considered for context (e.g. React files
     // will be able to use CSS files as context).
     CodyAutocompleteContextExtendLanguagePool = 'cody-autocomplete-context-extend-language-pool',
@@ -62,9 +70,6 @@ export enum FeatureFlag {
     /** Whether to use generated metadata to power embeddings. */
     CodyEmbeddingsGenerateMetadata = 'cody-embeddings-generate-metadata',
 
-    /** Enable experimental generate unit test prompt template */
-    CodyExperimentalUnitTest = 'cody-experimental-unit-test',
-
     /** Enhanced context experiment */
     CodyEnhancedContextExperiment = 'cody-enhanced-context-experiment',
 
@@ -77,10 +82,9 @@ export enum FeatureFlag {
     /** Whether to use server-side Context API. */
     CodyServerSideContextAPI = 'cody-server-side-context-api-enabled',
 
-    /** Chat in sidebar */
-    CodyChatInSidebar = 'cody-chat-in-sidebar',
-
     ChatPromptSelector = 'chat-prompt-selector',
+
+    GitMentionProvider = 'git-mention-provider',
 
     /** Enable experimental smart apply and chat codeblock UI */
     CodyExperimentalSmartApply = 'cody-experimental-smart-apply',
@@ -111,11 +115,7 @@ export class FeatureFlagProvider {
     constructor(private apiClient: SourcegraphGraphQLAPIClient) {}
 
     public getFromCache(flagName: FeatureFlag, endpoint = this.apiClient.endpoint): boolean | undefined {
-        const now = Date.now()
-        if (now - this.lastRefreshTimestamp > ONE_HOUR) {
-            // Cache expired, refresh
-            void this.refreshFeatureFlags()
-        }
+        void this.refreshIfStale()
 
         const exposedValue = this.exposedFeatureFlags[endpoint]?.[flagName]
         if (exposedValue !== undefined) {
@@ -167,10 +167,58 @@ export class FeatureFlagProvider {
         })
     }
 
+    /**
+     * Observe the evaluated value of a feature flag.
+     */
+    public async *evaluatedFeatureFlag(
+        flagName: FeatureFlag,
+        signal?: AbortSignal,
+        endpoint = this.apiClient.endpoint
+    ): AsyncGenerator<boolean | undefined> {
+        if (process.env.DISABLE_FEATURE_FLAGS) {
+            yield undefined
+            return
+        }
+
+        const initialValue = await this.evaluateFeatureFlag(flagName, endpoint)
+
+        const onChangeEvent: Event<boolean | undefined> = (
+            listener: (value: boolean | undefined) => void
+        ) => {
+            const dispose = this.onFeatureFlagChanged(
+                '',
+                () => listener(this.getFromCache(flagName, endpoint)),
+                endpoint
+            )
+            return { dispose }
+        }
+        const generator = asyncGeneratorFromVSCodeEvent(onChangeEvent, initialValue, signal)
+        signal?.throwIfAborted()
+
+        try {
+            for await (const value of generator) {
+                yield value
+            }
+        } catch (error) {
+            if (signal?.aborted && isAbortError(error)) {
+                return
+            }
+            throw error
+        }
+    }
+
     public async refresh(): Promise<void> {
         this.exposedFeatureFlags = {}
         this.unexposedFeatureFlags = {}
         await this.refreshFeatureFlags()
+    }
+
+    public async refreshIfStale(): Promise<void> {
+        const now = Date.now()
+        if (now - this.lastRefreshTimestamp > ONE_HOUR) {
+            // Cache expired, refresh
+            await this.refreshFeatureFlags()
+        }
     }
 
     private async refreshFeatureFlags(): Promise<void> {
@@ -251,7 +299,10 @@ export class FeatureFlagProvider {
             const currentSnapshot = this.computeFeatureFlagSnapshot(endpoint, prefixFilter)
             // We only care about flags being changed that we previously already captured. A new
             // evaluation should not trigger a change event unless that new value is later changed.
-            if (computeIfExistingFlagChanged(subs.lastSnapshot, currentSnapshot)) {
+            if (
+                subs.lastSnapshot === NO_FLAGS ||
+                computeIfExistingFlagChanged(subs.lastSnapshot, currentSnapshot)
+            ) {
                 for (const callback of subs.callbacks) {
                     callbacksToTrigger.push(callback)
                 }
@@ -270,7 +321,7 @@ export class FeatureFlagProvider {
     private computeFeatureFlagSnapshot(endpoint: string, prefixFilter: string): Record<string, boolean> {
         const featureFlags = this.exposedFeatureFlags[endpoint]
         if (!featureFlags) {
-            return {}
+            return NO_FLAGS
         }
         const keys = Object.keys(featureFlags)
         const filteredKeys = keys.filter(key => key.startsWith(prefixFilter))
@@ -281,6 +332,8 @@ export class FeatureFlagProvider {
         return filteredFeatureFlags
     }
 }
+
+const NO_FLAGS: Record<string, never> = {}
 
 export const featureFlagProvider = new FeatureFlagProvider(graphqlClient)
 

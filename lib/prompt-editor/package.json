@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/prompt-editor",
-  "version": "0.0.0-dev",
+  "version": "0.0.1",
   "description": "Shared prompt editor UI component",
   "license": "Apache-2.0",
   "repository": {

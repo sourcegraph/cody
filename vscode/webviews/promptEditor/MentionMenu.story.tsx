@@ -4,6 +4,7 @@ import { URI } from 'vscode-uri'
 import {
     type ContextItem,
     type ContextItemOpenCtx,
+    ContextItemSource,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
@@ -24,7 +25,7 @@ const meta: Meta<typeof MentionMenu> = {
     // Render something that looks like the editor to make the storybook look nicer.
     render: args => {
         return (
-            <div>
+            <div style={{ margin: '20px' }}>
                 <div
                     style={{
                         border: 'solid 1px var(--vscode-input-border)',
@@ -55,11 +56,13 @@ function toParams(query: string, parentItem?: ContextMentionProviderMetadata): M
 
 function toData(
     items: ContextItem[] | undefined,
-    providers: ContextMentionProviderMetadata[] = []
+    providers: ContextMentionProviderMetadata[] = [],
+    initialContextItems: MentionMenuData['initialContextItems'] = []
 ): MentionMenuData {
     return {
-        providers,
         items,
+        providers,
+        initialContextItems,
     }
 }
 
@@ -97,32 +100,48 @@ export const Default: StoryObj<typeof MentionMenu> = {
                     uri: URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`),
                 },
             ],
-            [FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER]
-        ),
-    },
-}
-
-export const WithExperimentalProviders: StoryObj<typeof MentionMenu> = {
-    args: {
-        params: toParams(''),
-        data: toData(
+            [FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER],
             [
                 {
-                    uri: URI.file('a/b/x.go'),
-                    type: 'file',
+                    type: 'tree',
+                    isWorkspaceRoot: true,
+                    name: 'my-repo',
+                    description: 'my-repo',
+                    title: 'Current Repository',
+                    source: ContextItemSource.Initial,
+                    content: null,
+                    uri: URI.file('a/b'),
+                    icon: 'folder',
                 },
                 {
-                    uri: URI.file('a/b/foo.go'),
+                    uri: URI.file('a/b/initial.go'),
                     type: 'file',
-                    range: { start: { line: 3, character: 5 }, end: { line: 7, character: 9 } },
+                    description: 'initial.go:8-13',
+                    title: 'Current Selection',
+                    source: ContextItemSource.Initial,
+                    range: { start: { line: 7, character: 5 }, end: { line: 12, character: 9 } },
+                    icon: 'list-selection',
                 },
-            ],
-            [FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER]
+            ]
         ),
     },
 }
 
-export const Loading: StoryObj<typeof MentionMenu> = {
+export const WithError: StoryObj<typeof MentionMenu> = {
+    args: {
+        params: toParams('', undefined),
+        data: { ...toData([{ uri: URI.file('a/b/c.go'), type: 'file' }]), error: 'my error' },
+    },
+}
+
+export const LoadingNoProvider: StoryObj<typeof MentionMenu> = {
+    args: {
+        params: toParams('', undefined),
+        data: toData(undefined),
+    },
+}
+
+export const LoadingSingleProvider: StoryObj<typeof MentionMenu> = {
     args: {
         params: toParams('', FILE_CONTEXT_MENTION_PROVIDER),
         data: toData(undefined),

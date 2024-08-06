@@ -11,7 +11,8 @@ import {
     serializedPromptEditorStateFromChatMessage,
 } from '@sourcegraph/cody-shared'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
-import { type FunctionComponent, type RefObject, useMemo } from 'react'
+import isEqual from 'lodash/isEqual'
+import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
@@ -48,110 +49,113 @@ export const AssistantMessageCell: FunctionComponent<{
 
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
-}> = ({
-    message,
-    humanMessage,
-    userInfo,
-    chatEnabled,
-    isLoading,
-    showFeedbackButtons,
-    feedbackButtonsOnSubmit,
-    copyButtonOnSubmit,
-    insertButtonOnSubmit,
-    smartApplyButtonOnSubmit,
-    postMessage,
-    guardrails,
-    experimentalSmartApplyEnabled,
-}) => {
-    const displayMarkdown = useMemo(
-        () => reformatBotMessageForChat(message.text ?? ps``).toString(),
-        [message]
-    )
+}> = memo(
+    ({
+        message,
+        humanMessage,
+        userInfo,
+        chatEnabled,
+        isLoading,
+        showFeedbackButtons,
+        feedbackButtonsOnSubmit,
+        copyButtonOnSubmit,
+        insertButtonOnSubmit,
+        postMessage,
+        guardrails,
+        smartApplyButtonOnSubmit,
+        experimentalSmartApplyEnabled,
+    }) => {
+        const displayMarkdown = useMemo(
+            () => reformatBotMessageForChat(message.text ?? ps``).toString(),
+            [message]
+        )
 
-    const chatModel = useChatModelByID(message.model)
-    const ModelIcon = chatModel ? chatModelIconComponent(chatModel.model) : null
-    const isAborted = isAbortErrorOrSocketHangUp(message.error)
+        const chatModel = useChatModelByID(message.model)
+        const ModelIcon = chatModel ? chatModelIconComponent(chatModel.model) : null
+        const isAborted = isAbortErrorOrSocketHangUp(message.error)
 
-    return (
-        <BaseMessageCell
-            speaker={message.speaker}
-            speakerIcon={
-                chatModel && ModelIcon ? (
-                    <span>
-                        <Tooltip>
-                            <TooltipTrigger
-                                className="tw-cursor-default"
-                                data-testid="chat-message-model-icon"
-                            >
-                                <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} />
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">{`${chatModel.title} by ${chatModel.provider}`}</TooltipContent>
-                        </Tooltip>
-                    </span>
-                ) : null
-            }
-            content={
-                <>
-                    {message.error && !isAborted ? (
-                        typeof message.error === 'string' ? (
-                            <RequestErrorItem error={message.error} />
-                        ) : (
-                            <ErrorItem
-                                error={message.error}
-                                userInfo={userInfo}
-                                postMessage={postMessage}
+        return (
+            <BaseMessageCell
+                speaker={message.speaker}
+                speakerIcon={
+                    chatModel && ModelIcon ? (
+                        <span>
+                            <Tooltip>
+                                <TooltipTrigger
+                                    className="tw-cursor-default"
+                                    data-testid="chat-message-model-icon"
+                                >
+                                    <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} />
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">{`${chatModel.title} by ${chatModel.provider}`}</TooltipContent>
+                            </Tooltip>
+                        </span>
+                    ) : null
+                }
+                content={
+                    <>
+                        {message.error && !isAborted ? (
+                            typeof message.error === 'string' ? (
+                                <RequestErrorItem error={message.error} />
+                            ) : (
+                                <ErrorItem
+                                    error={message.error}
+                                    userInfo={userInfo}
+                                    postMessage={postMessage}
+                                />
+                            )
+                        ) : null}
+                        {displayMarkdown ? (
+                            <ChatMessageContent
+                                displayMarkdown={displayMarkdown}
+                                isMessageLoading={isLoading}
+                                copyButtonOnSubmit={copyButtonOnSubmit}
+                                insertButtonOnSubmit={insertButtonOnSubmit}
+                                guardrails={guardrails}
+                                humanMessage={humanMessage}
+                                experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
+                                smartApplyButtonOnSubmit={smartApplyButtonOnSubmit}
                             />
-                        )
-                    ) : null}
-                    {displayMarkdown ? (
-                        <ChatMessageContent
-                            displayMarkdown={displayMarkdown}
-                            isMessageLoading={isLoading}
-                            humanMessage={humanMessage}
-                            copyButtonOnSubmit={copyButtonOnSubmit}
-                            insertButtonOnSubmit={insertButtonOnSubmit}
-                            guardrails={guardrails}
-                            experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
-                            smartApplyButtonOnSubmit={smartApplyButtonOnSubmit}
-                        />
-                    ) : (
-                        isLoading && <LoadingDots />
-                    )}
-                </>
-            }
-            footer={
-                chatEnabled &&
-                humanMessage && (
-                    <div className="tw-py-3 tw-flex tw-flex-col tw-gap-2">
-                        {isAborted && (
-                            <div className="tw-text-sm tw-text-muted-foreground tw-mt-4">
-                                Output stream stopped
-                            </div>
+                        ) : (
+                            isLoading && <LoadingDots />
                         )}
-                        <div className="tw-flex tw-items-center tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
-                            {showFeedbackButtons && feedbackButtonsOnSubmit && (
-                                <FeedbackButtons
-                                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                                    className="tw-pr-4"
-                                />
+                    </>
+                }
+                footer={
+                    chatEnabled &&
+                    humanMessage && (
+                        <div className="tw-py-3 tw-flex tw-flex-col tw-gap-2">
+                            {isAborted && (
+                                <div className="tw-text-sm tw-text-muted-foreground tw-mt-4">
+                                    Output stream stopped
+                                </div>
                             )}
-                            {!isLoading && (!message.error || isAborted) && (
-                                <ContextFocusActions
-                                    humanMessage={humanMessage}
-                                    className={
-                                        showFeedbackButtons && feedbackButtonsOnSubmit
-                                            ? 'tw-pl-5'
-                                            : undefined
-                                    }
-                                />
-                            )}
+                            <div className="tw-flex tw-items-center tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
+                                {showFeedbackButtons && feedbackButtonsOnSubmit && (
+                                    <FeedbackButtons
+                                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                                        className="tw-pr-4"
+                                    />
+                                )}
+                                {!isLoading && (!message.error || isAborted) && (
+                                    <ContextFocusActions
+                                        humanMessage={humanMessage}
+                                        className={
+                                            showFeedbackButtons && feedbackButtonsOnSubmit
+                                                ? 'tw-pl-5'
+                                                : undefined
+                                        }
+                                    />
+                                )}
+                            </div>
                         </div>
-                    </div>
-                )
-            }
-        />
-    )
-}
+                    )
+                }
+            />
+        )
+    },
+    isEqual
+)
 
 export const NON_HUMAN_CELL_AVATAR_SIZE =
     MESSAGE_CELL_AVATAR_SIZE * 0.83 /* make them "look" the same size as the human avatar icons */

@@ -35,7 +35,7 @@ describe('Edit', () => {
         })
         await client.taskHasReachedAppliedPhase(task)
         const lenses = client.codeLenses.get(uri.toString()) ?? []
-        expect(lenses).toHaveLength(0)
+        expect(lenses).toHaveLength(2)
         await client.request('editTask/accept', { id: task.id })
         const newContent = client.workspace.getDocument(uri)?.content
         expect(trimEndOfLine(newContent)).toMatchInlineSnapshot(

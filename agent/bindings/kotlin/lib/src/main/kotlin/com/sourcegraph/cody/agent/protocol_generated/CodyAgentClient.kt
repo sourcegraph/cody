@@ -15,7 +15,7 @@ interface CodyAgentClient {
   @JsonRequest("textDocument/edit")
   fun textDocument_edit(params: TextDocumentEditParams): CompletableFuture<Boolean>
   @JsonRequest("textDocument/openUntitledDocument")
-  fun textDocument_openUntitledDocument(params: UntitledTextDocument): CompletableFuture<Boolean>
+  fun textDocument_openUntitledDocument(params: UntitledTextDocument): CompletableFuture<ProtocolTextDocument?>
   @JsonRequest("textDocument/show")
   fun textDocument_show(params: TextDocument_ShowParams): CompletableFuture<Boolean>
   @JsonRequest("workspace/edit")
@@ -36,8 +36,6 @@ interface CodyAgentClient {
   fun codeLenses_display(params: DisplayCodeLensParams)
   @JsonNotification("ignore/didChange")
   fun ignore_didChange(params: Null?)
-  @JsonNotification("webview/postMessage")
-  fun webview_postMessage(params: WebviewPostMessageParams)
   @JsonNotification("webview/postMessageStringEncoded")
   fun webview_postMessageStringEncoded(params: Webview_PostMessageStringEncodedParams)
   @JsonNotification("progress/start")

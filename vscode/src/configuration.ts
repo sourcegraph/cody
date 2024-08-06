@@ -145,8 +145,6 @@ export function getConfiguration(
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
         experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),
 
-        experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
-
         experimentalGuardrailsTimeoutSeconds: getHiddenSetting('experimental.guardrailsTimeoutSeconds'),
 
         autocompleteExperimentalOllamaOptions: getHiddenSetting(
@@ -167,6 +165,10 @@ export function getConfiguration(
         autocompleteExperimentalHotStreakAndSmartThrottle: getHiddenSetting(
             'autocomplete.experimental.hotStreakAndSmartThrottle',
             false
+        ),
+        autocompleteExperimentalPreloadDebounceInterval: getHiddenSetting(
+            'autocomplete.experimental.preloadDebounceInterval',
+            0
         ),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.

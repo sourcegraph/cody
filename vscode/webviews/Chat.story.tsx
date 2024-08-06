@@ -35,4 +35,6 @@ export default meta
 
 export const Default: StoryObj<typeof meta> = {}
 
+export const Empty: StoryObj<typeof meta> = { args: { transcript: [] } }
+
 export const Disabled: StoryObj<typeof meta> = { args: { chatEnabled: false } }

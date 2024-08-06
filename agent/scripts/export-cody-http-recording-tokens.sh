@@ -11,7 +11,7 @@
 #  - Use 1Password to find account passwords
 #  - Use no expiration dates when creating access tokens
 #  - You need to update the REDACTED_ access token in
-#    agent/src/testing-tokens.ts.  There's no automatic way to do this for now,
+#    agent/src/testing-credentials.ts.  There's no automatic way to do this for now,
 #    you need to re-record with the new token, manually copy the updated REDACTED_
 #    token from the recording file and paste it into agent/src/testing-tokens.ts.
 

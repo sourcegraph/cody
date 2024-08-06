@@ -10,7 +10,8 @@ export const CustomCommandsList: FunctionComponent<{
     commands: CodyCommand[]
     IDE?: CodyIDE
     setView: (view: View) => void
-}> = ({ commands, IDE, setView }) => {
+    initialOpen: boolean
+}> = ({ commands, IDE, setView, initialOpen }) => {
     const customCommandsList = commands.filter(
         c => c.type === CustomCommandType.Workspace || c.type === CustomCommandType.User
     )
@@ -20,7 +21,7 @@ export const CustomCommandsList: FunctionComponent<{
     }
 
     return (
-        <CollapsiblePanel title="Custom Commands">
+        <CollapsiblePanel title="Custom Commands" initialOpen={initialOpen}>
             {customCommandsList.map(({ key, prompt, description }) => (
                 <Button
                     key={key}

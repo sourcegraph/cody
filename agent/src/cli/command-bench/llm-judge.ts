@@ -1,4 +1,4 @@
-import { ModelsService, type PromptString } from '@sourcegraph/cody-shared'
+import type { PromptString } from '@sourcegraph/cody-shared'
 import { SourcegraphNodeCompletionsClient } from '../../../../vscode/src/completions/nodeClient'
 import type { CodyBenchOptions } from './command-bench'
 
@@ -32,7 +32,7 @@ export class LlmJudge {
                 temperature: 0,
                 topK: 1,
                 fast: true,
-                model: ModelsService.getModelByIDSubstringOrError('claude-3-opus').model,
+                model: 'anthropic/claude-3-5-sonnet-20240620',
             },
             { apiVersion: 0 }
         )

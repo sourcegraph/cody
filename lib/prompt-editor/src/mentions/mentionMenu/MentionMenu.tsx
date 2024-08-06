@@ -197,11 +197,17 @@ export const MentionMenu: FunctionComponent<
     // We use `cmdk` Command as a controlled component, so we need to supply its `value`. We track
     // `value` in state, but when the options change, our state `value` may refer to a row that no
     // longer exists in the list. In that case, we want the first row to be selected.
-    const firstRow = data.initialContextItems?.at(0) ?? data.providers.at(0) ?? data.items?.at(0)
+    const firstProviderRow = data.providers.at(0)
+    const firstInitialContextItemRow = data.initialContextItems?.at(0)
+    const firstItemRow = data.items?.at(0)
+    const firstRow = params.parentItem
+        ? firstItemRow
+        : firstProviderRow ?? firstInitialContextItemRow ?? firstItemRow
+
     const valueRow = useMemo(
         () =>
-            data.initialContextItems?.find(item => commandRowValue(item) === value) ??
             data.providers.find(provider => commandRowValue(provider) === value) ??
+            data.initialContextItems?.find(item => commandRowValue(item) === value) ??
             data.items?.find(item => commandRowValue(item) === value),
         [data.providers, data.items, data.initialContextItems, value]
     )
@@ -217,7 +223,6 @@ export const MentionMenu: FunctionComponent<
             CommandItem,
             CommandList,
             CommandLoading,
-            CommandSeparator,
         },
     } = usePromptEditorConfig()
 
@@ -227,7 +232,7 @@ export const MentionMenu: FunctionComponent<
             key={commandRowValue(provider)}
             value={commandRowValue(provider)}
             onSelect={onProviderSelect}
-            className={styles.item}
+            className={clsx(styles.item, COMMAND_ROW_CLASS_NAME)}
         >
             <MentionMenuProviderItemContent provider={provider} />
         </CommandItem>
@@ -239,21 +244,29 @@ export const MentionMenu: FunctionComponent<
             shouldFilter={false}
             value={effectiveValueRow ? commandRowValue(effectiveValueRow) : undefined}
             onValueChange={setValue}
-            className={styles.container}
+            className={clsx(styles.container, COMMAND_CLASS_NAME)}
             label="@-mention context"
             ref={ref}
         >
             <CommandList>
+                {providers.length > 0 && (
+                    <CommandGroup className={COMMAND_GROUP_CLASS_NAME}>{providers}</CommandGroup>
+                )}
+
                 {!params.parentItem &&
                     data.initialContextItems &&
                     data.initialContextItems.length > 0 && (
-                        <CommandGroup>
+                        <CommandGroup className={COMMAND_GROUP_CLASS_NAME}>
                             {data.initialContextItems.map(item => (
                                 <CommandItem
                                     key={commandRowValue(item)}
                                     value={commandRowValue(item)}
                                     onSelect={onInitialContextItemSelect}
-                                    className={clsx(styles.item, styles.contextItem)}
+                                    className={clsx(
+                                        styles.item,
+                                        styles.contextItem,
+                                        COMMAND_ROW_CLASS_NAME
+                                    )}
                                 >
                                     <MentionMenuContextItemContent query={mentionQuery} item={item} />
                                 </CommandItem>
@@ -261,18 +274,15 @@ export const MentionMenu: FunctionComponent<
                         </CommandGroup>
                     )}
 
-                {providers.length > 0 && <CommandGroup>{providers}</CommandGroup>}
-
                 {(heading || (data.items && data.items.length > 0)) && (
-                    <CommandGroup heading={heading}>
-                        {heading && data.items && data.items.length > 0 && <CommandSeparator />}
+                    <CommandGroup heading={heading} className={COMMAND_GROUP_CLASS_NAME}>
                         {data.items?.map(item => (
                             <CommandItem
                                 key={commandRowValue(item)}
                                 value={commandRowValue(item)}
                                 disabled={item.isIgnored}
                                 onSelect={onCommandSelect}
-                                className={clsx(styles.item, styles.contextItem)}
+                                className={clsx(styles.item, styles.contextItem, COMMAND_ROW_CLASS_NAME)}
                             >
                                 <MentionMenuContextItemContent query={mentionQuery} item={item} />
                             </CommandItem>
@@ -280,11 +290,18 @@ export const MentionMenu: FunctionComponent<
                     </CommandGroup>
                 )}
 
-                {data.items === undefined ? (
-                    <CommandLoading>Loading...</CommandLoading>
-                ) : data.items.length === 0 ? (
-                    <CommandEmpty>{getEmptyLabel(params.parentItem, mentionQuery)}</CommandEmpty>
+                {data.items && data.items.length === 0 ? (
+                    <CommandEmpty className={clsx(COMMAND_ROW_CLASS_NAME, COMMAND_ROW_TEXT_CLASS_NAME)}>
+                        {getEmptyLabel(params.parentItem, mentionQuery)}
+                    </CommandEmpty>
                 ) : null}
+                {data.error && (
+                    <CommandLoading
+                        className={clsx(COMMAND_ROW_CLASS_NAME, COMMAND_ROW_TEXT_CLASS_NAME)}
+                    >
+                        Error: {data.error}
+                    </CommandLoading>
+                )}
             </CommandList>
         </Command>
     )
@@ -342,3 +359,28 @@ function getItemsHeading(
     }
     return parentItem.title ?? parentItem.id
 }
+
+/**
+ * This max-height value MUST be an integer multiple of the {@link COMMAND_ROW_CLASS_NAME} height
+ * plus 2px (for the top and bottom border).
+ */
+const COMMAND_CLASS_NAME = '!tw-max-h-[392px]'
+
+/**
+ * Use the same padding and text size for all command rows so that there is no partially obscured
+ * row (i.e., each row is the same height, and the height of the Command is an integer multiple of
+ * the row height).
+ *
+ * If you change this, also update {@link COMMAND_GROUP_CLASS_NAME}'s `[&_[cmd-group-heading]]:`
+ * styles.
+ */
+const COMMAND_ROW_CLASS_NAME = '!tw-p-3 !tw-text-md !tw-leading-[1.2] !tw-h-[30px] !tw-rounded-none'
+
+const COMMAND_ROW_TEXT_CLASS_NAME = '!tw-text-muted-foreground'
+
+/**
+ * Don't add padding around groups or show borders below groups, because that makes the total height not an integer multiple of
+ * the row height.
+ */
+const COMMAND_GROUP_CLASS_NAME =
+    '!tw-p-0 !tw-border-b-0 [&_[cmdk-group-heading]]:!tw-p-3 [&_[cmdk-group-heading]]:!tw-text-md [&_[cmdk-group-heading]]:!tw-leading-[1.2] [&_[cmdk-group-heading]]:!tw-h-[30px]'

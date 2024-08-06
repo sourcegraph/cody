@@ -26,10 +26,7 @@ function composeWrappers(wrappers: Wrapper[], children: ReactNode): ReactNode {
         if ('provider' in wrapper) {
             return <wrapper.provider value={wrapper.value}>{acc}</wrapper.provider>
         }
-        return (
-            <wrapper.component key={0} {...wrapper.props}>
-                {acc}
-            </wrapper.component>
-        )
+        // biome-ignore lint/correctness/useJsxKeyInIterable: This is a nested tree, not a list, of components.
+        return <wrapper.component {...wrapper.props}>{acc}</wrapper.component>
     }, children)
 }

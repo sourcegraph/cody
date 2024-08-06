@@ -99,4 +99,42 @@ describe('AgentTextDocument', () => {
         assert.equal(indentation.lineAt(0).firstNonWhitespaceCharacterIndex, 2)
         assert.equal(indentationTab.lineAt(0).firstNonWhitespaceCharacterIndex, 2)
     })
+
+    describe('validatePosition', () => {
+        it('should return the same position if it is within the document range', () => {
+            const content = 'Hello\nWorld\n!'
+            const document = AgentTextDocument.from(vscode.Uri.parse('file:///test.txt'), content)
+            const position = new vscode.Position(1, 2)
+            const validatedPosition = document.validatePosition(position)
+            assert.strictEqual(validatedPosition.line, 1)
+            assert.strictEqual(validatedPosition.character, 2)
+        })
+
+        it('should adjust the line number if it is outside the document range', () => {
+            const content = 'Hello\nWorld\n!'
+            const document = AgentTextDocument.from(vscode.Uri.parse('file:///test.txt'), content)
+            const position = new vscode.Position(5, 2)
+            const validatedPosition = document.validatePosition(position)
+            assert.strictEqual(validatedPosition.line, 2)
+            assert.strictEqual(validatedPosition.character, 1)
+        })
+
+        it('should adjust the character position if it is outside the line range', () => {
+            const content = 'Hello\nWorld\n!'
+            const document = AgentTextDocument.from(vscode.Uri.parse('file:///test.txt'), content)
+            const position = new vscode.Position(1, 10)
+            const validatedPosition = document.validatePosition(position)
+            assert.strictEqual(validatedPosition.line, 1)
+            assert.strictEqual(validatedPosition.character, 5)
+        })
+
+        it('should handle negative line numbers and character positions', () => {
+            const content = 'Hello\nWorld\n!'
+            const document = AgentTextDocument.from(vscode.Uri.parse('file:///test.txt'), content)
+            const position = new vscode.Position(-2, -5)
+            const validatedPosition = document.validatePosition(position)
+            assert.strictEqual(validatedPosition.line, 0)
+            assert.strictEqual(validatedPosition.character, 0)
+        })
+    })
 })

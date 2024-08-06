@@ -14,10 +14,10 @@ export const FAST_CHAT_INPUT_TOKEN_BUDGET = 4096
 export const CHAT_OUTPUT_TOKEN_BUDGET = 4000
 
 /**
- * Enhanced context takes up to 60% of the total context window for chat.
+ * Corpus context takes up to 60% of the total context window for chat.
  * The % is the same for both fast and regular chat models.
  */
-export const ENHANCED_CONTEXT_ALLOCATION = 0.6
+export const CORPUS_CONTEXT_ALLOCATION = 0.6
 
 /**
  * NOTE: Reserved for models with large context windows and good recall.

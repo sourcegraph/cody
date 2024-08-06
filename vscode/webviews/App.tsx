@@ -17,25 +17,23 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { AuthMethod, ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 import type { UserAccountInfo } from './Chat'
-import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
-import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
 import { ConnectionIssuesPage } from './Troubleshooting'
 import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
 import { useClientActionDispatcher } from './client/clientState'
 
-import { ClientStateContextProvider } from '@sourcegraph/prompt-editor'
-import { PromptsClientProviderFromVSCodeAPI } from './components/promptSelectField/promptsClient'
-import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
-import { ChatContextClientProviderFromVSCodeAPI } from './openctxClient'
-import { AccountTab, CommandsTab, HistoryTab, SettingsTab, TabsBar, View } from './tabs'
+import {
+    ClientStateContextProvider,
+    ExtensionAPIProviderFromVSCodeAPI,
+} from '@sourcegraph/prompt-editor'
+import { CodyPanel } from './CodyPanel'
+import { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
 import { type Config, ConfigProvider } from './utils/useConfig'
-import { FeatureFlagsProvider } from './utils/useFeatureFlags'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
@@ -59,7 +57,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
     const [commandList, setCommandList] = useState<CodyCommand[]>([])
     const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
-    const [exportedFeatureFlags, setExportedFeatureFlags] = useState<Record<string, boolean>>()
 
     const [clientState, setClientState] = useState<ClientStateForWebview>({
         initialContext: [],
@@ -124,7 +121,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         }
                         break
                     case 'setConfigFeatures':
-                        setExportedFeatureFlags(message.exportedFeatureFlags)
                         setChatEnabled(message.configFeatures.chat)
                         setAttributionEnabled(message.configFeatures.attribution)
                         setServerSentModelsEnabled(message.configFeatures.serverSentModels)
@@ -139,7 +135,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setClientState(message.value)
                         break
                     case 'errors':
-                        setErrorMessages([...errorMessages, message.errors].slice(-5))
+                        setErrorMessages(prev => [...prev, message.errors].slice(-5))
                         break
                     case 'view':
                         setView(message.view)
@@ -171,13 +167,14 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                 }
             }),
-        [errorMessages, view, vscodeAPI, guardrails, dispatchClientAction]
+        [view, vscodeAPI, guardrails, dispatchClientAction]
     )
 
     useEffect(() => {
         // On macOS, suppress the '¬' character emitted by default for alt+L
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.altKey && event.key === '¬') {
+            const suppressedKeys = ['¬', 'Ò', '¿']
+            if (event.altKey && suppressedKeys.includes(event.key)) {
                 event.preventDefault()
             }
         }
@@ -216,9 +213,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
-    // Is this user a new installation?
-    const isNewInstall = useMemo(() => !userHistory?.some(c => c?.interactions?.length), [userHistory])
-
     const onCurrentChatModelChange = useCallback(
         (selected: Model): void => {
             vscodeAPI.postMessage({
@@ -240,18 +234,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 telemetryRecorder,
                 chatModelContext,
                 clientState,
-                exportedFeatureFlags,
                 config && authStatus ? { config, authStatus } : undefined
             ),
-        [
-            vscodeAPI,
-            telemetryRecorder,
-            chatModelContext,
-            clientState,
-            exportedFeatureFlags,
-            config,
-            authStatus,
-        ]
+        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, config, authStatus]
     )
 
     // Wait for all the data to be loaded before rendering Chat View
@@ -268,7 +253,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         vscodeAPI={vscodeAPI}
                     />
                 </div>
-            ) : view === 'login' || !authStatus.isLoggedIn || !userAccountInfo ? (
+            ) : view === View.Login || !authStatus.isLoggedIn || !userAccountInfo ? (
                 <div className={styles.outerContainer}>
                     <LoginSimplified
                         simplifiedLoginRedirect={loginRedirect}
@@ -277,99 +262,46 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     />
                 </div>
             ) : (
-                <TabRoot
-                    defaultValue={View.Chat}
-                    value={view}
-                    orientation="vertical"
-                    className={styles.outerContainer}
-                >
-                    {/* NOTE: Display tabs to PLG users only until Universal Cody is ready. */}
-                    {/* Shows tab bar for sidebar chats only. */}
-                    {userAccountInfo.isDotComUser && config.webviewType !== 'editor' && (
-                        <TabsBar
-                            currentView={view}
-                            setView={setView}
-                            IDE={config.agentIDE || CodyIDE.VSCode}
-                        />
-                    )}
-                    {errorMessages && (
-                        <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />
-                    )}
-                    <TabContainer value={view}>
-                        {view === 'chat' && (
-                            <>
-                                <Notices
-                                    probablyNewInstall={isNewInstall}
-                                    IDE={config.agentIDE}
-                                    version={config.agentExtensionVersion}
-                                />
-                                <Chat
-                                    chatID={chatID}
-                                    chatEnabled={chatEnabled}
-                                    userInfo={userAccountInfo}
-                                    messageInProgress={messageInProgress}
-                                    transcript={transcript}
-                                    vscodeAPI={vscodeAPI}
-                                    isTranscriptError={isTranscriptError}
-                                    guardrails={attributionEnabled ? guardrails : undefined}
-                                    experimentalUnitTestEnabled={config.experimentalUnitTest}
-                                    experimentalSmartApplyEnabled={config.experimentalSmartApply}
-                                />
-                            </>
-                        )}
-                        {view === 'history' && <HistoryTab userHistory={userHistory} />}
-                        {view === 'commands' && (
-                            <CommandsTab
-                                setView={setView}
-                                IDE={config.agentIDE}
-                                commands={commandList}
-                            />
-                        )}
-                        {view === 'account' && <AccountTab userInfo={userAccountInfo} />}
-                        {view === 'settings' && <SettingsTab userInfo={userAccountInfo} />}
-                    </TabContainer>
-                </TabRoot>
+                <CodyPanel
+                    view={view}
+                    setView={setView}
+                    config={config}
+                    errorMessages={errorMessages}
+                    setErrorMessages={setErrorMessages}
+                    attributionEnabled={attributionEnabled}
+                    chatID={chatID}
+                    chatEnabled={chatEnabled}
+                    userInfo={userAccountInfo}
+                    messageInProgress={messageInProgress}
+                    transcript={transcript}
+                    vscodeAPI={vscodeAPI}
+                    isTranscriptError={isTranscriptError}
+                    guardrails={guardrails}
+                    userHistory={userHistory}
+                    commands={commandList}
+                    experimentalSmartApplyEnabled={config.experimentalSmartApply}
+                />
             )}
         </ComposedWrappers>
     )
 }
-
-const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (errors: string[]) => void }> =
-    ({ errors, setErrors }) => (
-        <div className={styles.errorContainer}>
-            {errors.map((error, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: error strings might not be unique, so we have no natural id
-                <div key={i} className={styles.error}>
-                    <span>{error}</span>
-                    <button
-                        type="button"
-                        className={styles.closeBtn}
-                        onClick={() => setErrors(errors.filter(e => e !== error))}
-                    >
-                        ×
-                    </button>
-                </div>
-            ))}
-        </div>
-    )
 
 export function getAppWrappers(
     vscodeAPI: VSCodeWrapper,
     telemetryRecorder: TelemetryRecorder,
     chatModelContext: ChatModelContext,
     clientState: ClientStateForWebview,
-    exportedFeatureFlags: Record<string, boolean> | undefined,
     config: Config | undefined
 ): Wrapper[] {
     return [
         {
-            component: ChatContextClientProviderFromVSCodeAPI,
-            props: { vscodeAPI },
-        } satisfies Wrapper<any, ComponentProps<typeof ChatContextClientProviderFromVSCodeAPI>>,
-        {
             provider: TelemetryRecorderContext.Provider,
             value: telemetryRecorder,
         } satisfies Wrapper<ComponentProps<typeof TelemetryRecorderContext.Provider>['value']>,
+        {
+            component: ExtensionAPIProviderFromVSCodeAPI,
+            props: { vscodeAPI },
+        } satisfies Wrapper<any, ComponentProps<typeof ExtensionAPIProviderFromVSCodeAPI>>,
         {
             provider: ChatModelContextProvider,
             value: chatModelContext,
@@ -379,16 +311,8 @@ export function getAppWrappers(
             value: clientState,
         } satisfies Wrapper<ComponentProps<typeof ClientStateContextProvider>['value']>,
         {
-            component: FeatureFlagsProvider,
-            props: { value: exportedFeatureFlags },
-        } satisfies Wrapper<any, ComponentProps<typeof FeatureFlagsProvider>>,
-        {
             component: ConfigProvider,
             props: { value: config },
         } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,
-        {
-            component: PromptsClientProviderFromVSCodeAPI,
-            props: { vscodeAPI },
-        } satisfies Wrapper<any, ComponentProps<typeof PromptsClientProviderFromVSCodeAPI>>,
     ]
 }

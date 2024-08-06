@@ -14,10 +14,6 @@ import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-
 import { activate as activateCommon } from './extension.common'
 import { initializeNetworkAgent, setCustomAgent } from './fetch.node'
 import {
-    type ContextRankerConfig,
-    createContextRankingController,
-} from './local-context/context-ranking'
-import {
     type LocalEmbeddingsConfig,
     type LocalEmbeddingsController,
     createLocalEmbeddingsController,
@@ -68,8 +64,6 @@ export function activate(
             ? undefined
             : (config: LocalEmbeddingsConfig): Promise<LocalEmbeddingsController> =>
                   createLocalEmbeddingsController(context, config),
-        createContextRankingController: (config: ContextRankerConfig) =>
-            createContextRankingController(context, config),
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         createCommandsProvider: () => new CommandsProvider(),
         createSymfRunner: isSymfEnabled ? (...args) => new SymfRunner(...args) : undefined,

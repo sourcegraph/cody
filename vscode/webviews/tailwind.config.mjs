@@ -5,7 +5,7 @@ const plugin = require('tailwindcss/plugin')
 export default {
     content: {
         relative: true,
-        files: ['**/*.{ts,tsx}'],
+        files: ['**/*.{ts,tsx}', '../../lib/**/**/*.{ts,tsx}'],
     },
     prefix: 'tw-',
     theme: {

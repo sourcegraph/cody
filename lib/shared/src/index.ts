@@ -43,6 +43,7 @@ export type {
     ChatMessage,
     UserLocalHistory,
     SerializedChatMessage,
+    RankedContext,
 } from './chat/transcript/messages'
 export {
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
@@ -136,6 +137,7 @@ export type {
 export {
     displayPath,
     displayPathBasename,
+    uriHasPrefix,
     displayPathDirname,
     displayPathWithoutWorkspaceFolderPrefix,
     setDisplayPathEnvInfo,
@@ -148,9 +150,10 @@ export {
     FeatureFlagProvider,
     featureFlagProvider,
 } from './experimentation/FeatureFlagProvider'
-export { GuardrailsPost, summariseAttribution } from './guardrails'
+export { GuardrailsPost } from './guardrails'
 export type { Attribution, Guardrails } from './guardrails'
-export { SourcegraphGuardrailsClient, type GuardrailsClientConfig } from './guardrails/client'
+export { SourcegraphGuardrailsClient } from './guardrails/client'
+export type { GuardrailsClientConfig } from './guardrails/client'
 export {
     CompletionStopReason,
     type CodeCompletionsClient,
@@ -214,6 +217,7 @@ export {
     TracedError,
     isAbortError,
     isAbortErrorOrSocketHangUp,
+    isContextWindowLimitError,
     isAuthError,
     isNetworkError,
     isRateLimitError,
@@ -284,7 +288,7 @@ export {
     type ContextMentionProviderMetadata,
 } from './mentions/api'
 export { TokenCounter } from './token/counter'
-export { ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
+export { CORPUS_CONTEXT_ALLOCATION as ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
 export { tokensToChars, charsToTokens } from './token/utils'
 export * from './prompt/prompt-string'
 export { getCompletionsModelConfig } from './llm-providers/utils'
@@ -299,12 +303,14 @@ export * from './token'
 export * from './token/constants'
 export * from './configuration'
 export {
-    setOpenCtxClient,
+    setOpenCtx,
     openCtx,
     REMOTE_REPOSITORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     WEB_PROVIDER_URI,
+    GIT_OPENCTX_PROVIDER_URI,
 } from './context/openctx/api'
+export * from './context/openctx/context'
 export { type ClientStateForWebview } from './clientState'
 export * from './lexicalEditor/editorState'
 export * from './lexicalEditor/nodes'
@@ -314,9 +320,15 @@ export {
     UNKNOWN_NODES_EDITOR_STATE_FIXTURE,
 } from './lexicalEditor/fixtures'
 export { getSerializedParams } from './sourcegraph-api/completions/utils'
+export { type WebviewToExtensionAPI, type FeatureFlagUsedInWebview } from './misc/rpc/webviewAPI'
 export {
+    proxyExtensionAPI,
+    addMessageListenersForExtensionAPI,
+    createMessageAPIForWebview,
+    type ResponseMessage,
+    type RequestMessage,
     type GenericVSCodeWrapper,
     type GenericWebviewAPIWrapper,
-    createExtensionAPIProxyInWebview,
-    handleExtensionAPICallFromWebview,
-} from './misc/rpc/proxy'
+    createMessageAPIForExtension,
+} from './misc/rpc/rpc'
+export * from './misc/asyncGenerator'
