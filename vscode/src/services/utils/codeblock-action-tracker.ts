@@ -103,21 +103,6 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
     setLastStoredCode(text, eventName)
 }
 
-export async function replaceSelectionWithCode(text: string): Promise<void> {
-    const editor = getEditor()
-    const activeEditor = editor.active
-    const selectionRange = activeEditor?.selection
-    if (!activeEditor || !selectionRange) {
-        throw new Error('No editor or selection found to insert text')
-    }
-
-    const edit = new vscode.WorkspaceEdit()
-    edit.replace(activeEditor.document.uri, selectionRange, `${text}\n`)
-    await vscode.workspace.applyEdit(edit)
-
-    setLastStoredCode(text, 'replaceButton')
-}
-
 export async function handleSmartApply(
     code: string,
     instruction?: string,

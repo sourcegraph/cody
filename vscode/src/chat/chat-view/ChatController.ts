@@ -94,7 +94,6 @@ import {
     handleCodeFromSaveToNewFile,
     handleCopiedCode,
     handleSmartApply,
-    replaceSelectionWithCode,
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
@@ -323,10 +322,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             vscode.commands.registerCommand(
                 'cody.command.insertCodeToNewFile',
                 (args: CodeBlockActionArgs) => handleCodeFromSaveToNewFile(args.text, this.editor)
-            ),
-            vscode.commands.registerCommand(
-                'cody.command.replaceSelectionWithCode',
-                (args: CodeBlockActionArgs) => replaceSelectionWithCode(args.text)
             )
         )
     }
@@ -568,11 +563,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private async isSmartApplyEnabled(): Promise<boolean> {
         const config = await getFullConfig()
-        const isSmartApplyEnabled = await featureFlagProvider.evaluateFeatureFlag(
+        const isSmartApplyEnabled = config.internalUnstable || await featureFlagProvider.evaluateFeatureFlag(
             FeatureFlag.CodyExperimentalSmartApply
         )
         // Smart apply is only available in VS Code right now
-        return Boolean(isSmartApplyEnabled && config.isRunningInsideAgent)
+        return Boolean(isSmartApplyEnabled && !config.isRunningInsideAgent)
     }
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {

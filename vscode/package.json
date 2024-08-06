@@ -615,11 +615,6 @@
         "enablement": "cody.activated"
       },
       {
-        "command": "cody.command.replaceSelectionWithCode",
-        "title": "Replace Selection with Code",
-        "enablement": "cody.activated"
-      },
-      {
         "command": "cody.command.insertCodeToNewFile",
         "title": "Save Code to New File...",
         "enablement": "cody.activated"
@@ -1050,10 +1045,6 @@
       "webview/context": [
         {
           "command": "cody.command.insertCodeToCursor",
-          "when": "webviewSection == 'codeblock-actions'"
-        },
-        {
-          "command": "cody.command.replaceSelectionWithCode",
           "when": "webviewSection == 'codeblock-actions'"
         },
         {
