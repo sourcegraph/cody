@@ -204,6 +204,6 @@ body[data-vscode-theme-kind='vscode-light'] .content pre > code {
 }
 
 .file-name-container {
-    color: var(--vscode-input-placeholderForeground);
+    color: var(--vscode-descriptionForeground);
     margin-left: auto;
 }
