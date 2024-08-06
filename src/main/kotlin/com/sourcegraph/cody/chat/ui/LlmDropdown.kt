@@ -71,16 +71,15 @@ class LlmDropdown(
     val availableModels = models.filterNot { it.isDeprecated() }
     availableModels.sortedBy { it.isCodyProOnly() }.forEach(::addItem)
 
-    val selectedFromState = chatModelProviderFromState
+    val selectedFromChatState = chatModelProviderFromState
     val selectedFromHistory = HistoryService.getInstance(project).getDefaultLlm()
-    val selectedModel =
-        availableModels.find { it.model == selectedFromState?.model || it.model == model }
-            ?: availableModels.find { it.model == selectedFromHistory?.model }
 
     selectedItem =
-        if (selectedModel?.isCodyProOnly() == true && isCurrentUserFree())
-            availableModels.getOrNull(0)
-        else selectedModel
+        models.find {
+          it.model == model ||
+              it.model == selectedFromChatState?.model ||
+              it.model == selectedFromHistory?.model
+        } ?: models.firstOrNull()
 
     val isEnterpriseAccount =
         CodyAuthenticationManager.getInstance(project).account?.isEnterpriseAccount() ?: false
