@@ -4,7 +4,7 @@ import type { Agent } from './agent'
 import type { DefiniteWebviewOptions } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
 
-export type NativeWebviewCapabilities = { cspSource: string; webviewBundleServingPrefix: string }
+export type NativeWebviewConfig = { cspSource: string; webviewBundleServingPrefix: string }
 
 type NativeWebviewHandle = string
 
@@ -88,15 +88,15 @@ export function resolveWebviewView(
 export function registerNativeWebviewHandlers(
     agent: Agent,
     extensionUri: vscode.Uri,
-    capabilities: NativeWebviewCapabilities
+    config: NativeWebviewConfig
 ): void {
     webviewProtocolDelegate = {
         // TODO: When we want to serve resources outside dist/, make Agent
         // include 'dist' in its bundle paths, and simply set this to
         // extensionUri.
         webviewBundleLocalPrefix: extensionUri.with({ path: `${extensionUri.path}/dist` }),
-        webviewBundleServingPrefix: capabilities.webviewBundleServingPrefix,
-        cspSource: capabilities.cspSource,
+        webviewBundleServingPrefix: config.webviewBundleServingPrefix,
+        cspSource: config.cspSource,
         createWebviewPanel: (handle, viewType, title, showOptions, options) => {
             agent.notify('webview/createWebviewPanel', {
                 handle,
@@ -170,7 +170,7 @@ export function registerNativeWebviewHandlers(
             },
             {
                 enableScripts: options?.enableScripts ?? false,
-                enableCommandUris: options?.enableCommandUris ?? false,
+                enableCommandUris: options?.enableCommandUris,
                 localResourceRoots: [webviewProtocolDelegate!.webviewBundleLocalPrefix],
             }
         )
@@ -179,6 +179,9 @@ export function registerNativeWebviewHandlers(
                 viewColumn: showOptions,
             }
         }
+
+        const enableOnlyCommandUris = vscodeEnableCommandUrisToAgentEnableOnlyCommandUris(options?.enableCommandUris)
+
         webviewProtocolDelegate!.createWebviewPanel(
             panel.handle,
             viewType,
@@ -191,7 +194,7 @@ export function registerNativeWebviewHandlers(
                 enableScripts: panel.webview.options.enableScripts ?? false,
                 enableForms:
                     panel.webview.options.enableForms ?? panel.webview.options.enableScripts ?? false,
-                enableCommandUris: panel.webview.options.enableCommandUris ?? false,
+                enableOnlyCommandUris,
                 localResourceRoots: (panel.webview.options.localResourceRoots || []).map(uri =>
                     uri.toString()
                 ),
@@ -212,7 +215,27 @@ export function registerNativeWebviewHandlers(
     })
 }
 
-// TODO: Add support for WebviewView
+// Converts VSCode API Webview options.enableCommandUris to Agent
+// protocol's enableOnlyCommandUris.
+//
+// What vscode API's options.enableCommandUris means:
+// If options?.enableCommandUris is not specified => enable no command URIs.
+// If false => enable no command URIs.
+// If true => enable all command URIs.
+// If an array => enable only the commands in that array.
+// The array may be empty, disabling all commands.
+//
+// How agent protocol models these with enableOnlyCommandUris:
+// null => ALL commands enabled.
+// an array => ONLY commands in the array are enabled.
+//
+// Agent protocol does it this way because the bindings generator does not
+// handle the union type VSCode uses.
+function vscodeEnableCommandUrisToAgentEnableOnlyCommandUris(enableCommandUris: boolean | readonly string[] | undefined): readonly string[] | null {
+    return enableCommandUris instanceof Array
+        ? enableCommandUris
+        : (!enableCommandUris ? [] : null)
+}
 
 class NativeWebview implements vscode.Webview {
     readonly didReceiveMessageEmitter = new vscode.EventEmitter<vscode.Event<any>>()
@@ -245,7 +268,7 @@ class NativeWebview implements vscode.Webview {
             // TODO: Support retainContextWhenHidden
             retainContextWhenHidden: true,
             enableScripts: value.enableScripts ?? false,
-            enableCommandUris: value.enableCommandUris ?? false,
+            enableOnlyCommandUris: vscodeEnableCommandUrisToAgentEnableOnlyCommandUris(value.enableCommandUris),
             enableForms: value.enableForms ?? false,
             localResourceRoots: value.localResourceRoots ?? [],
             portMapping: value.portMapping || [],

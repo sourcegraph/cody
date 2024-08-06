@@ -54,7 +54,7 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE; setView: (view: V
 
     return (
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-pt-4 tw-px-8 tw-gap-10 sm:tw-pl-21 tw-transition-all">
-            <CollapsiblePanel title="&#x1F6A7; This is an Experimental UI Build" initialOpen={false}>
+            <CollapsiblePanel title="&#x1F6A7; This is an Experimental UI Build" initialOpen={false} storageKey="experimentalWebUi">
                 We relish &#x1F32D;&nbsp;your feedback. Known issues:
                 <p>
                     <b>Chat</b>

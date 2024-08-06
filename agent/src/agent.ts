@@ -417,14 +417,16 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this
                 )
 
-                const webviewCapabilities = clientInfo.capabilities?.webview
-                const useNativeWebviews =
-                    webviewCapabilities instanceof Object && webviewCapabilities.type === 'native'
-                if (useNativeWebviews) {
+                const webviewKind = clientInfo.capabilities?.webview || 'agentic'
+                const nativeWebviewConfig = clientInfo.capabilities?.webviewNativeConfig
+                if (webviewKind === 'native') {
+                    if (!nativeWebviewConfig) {
+                        throw new Error('client configured with webview "native" must set webviewNativeConfig')
+                    }
                     registerNativeWebviewHandlers(
                         this,
                         vscode.Uri.file(codyPaths().config), // the extension root URI, for locating Webview resources
-                        webviewCapabilities
+                        nativeWebviewConfig
                     )
                 } else {
                     this.registerWebviewHandlers()
