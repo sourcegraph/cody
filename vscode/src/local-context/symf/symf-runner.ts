@@ -28,7 +28,8 @@ import {
 import { logDebug } from '../../log'
 
 import path from 'node:path'
-import { getEditor } from '../editor/active-editor'
+import { getEditor } from '../../editor/active-editor'
+import { rewriteKeywordQuery } from '../rewrite-keyword-query'
 import { getSymfPath } from './download-symf'
 
 const execFile = promisify(_execFile)
@@ -51,33 +52,6 @@ function parseJSONToCorpusDiff(json: string): CorpusDiff {
 interface IndexOptions {
     retryIfLastAttemptFailed: boolean
     ignoreExisting: boolean
-}
-
-export class SymfWrapper implements vscode.Disposable {
-    public runner: SymfRunner | undefined
-    private hasRun = false
-
-    constructor(private ctor: () => SymfRunner | undefined) {}
-
-    public syncAuthStatus(status: AuthStatus) {
-        if (!this.hasRun && isAuthenticated(status) && !isEnterpriseUser(status)) {
-            this.hasRun = true
-            this.runner = this.ctor()
-        }
-        this.runner?.setSourcegraphAuth(status.endpoint)
-    }
-
-    public onConfigurationChange(
-        config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken'>
-    ) {
-        if (this.runner) {
-            this.runner.setSourcegraphAuth(config.serverEndpoint, config.accessToken)
-        }
-    }
-
-    public dispose() {
-        this.runner?.dispose()
-    }
 }
 
 export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposable {

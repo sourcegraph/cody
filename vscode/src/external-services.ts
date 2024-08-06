@@ -31,7 +31,7 @@ interface ExternalServices {
     symf: SymfWrapper
     contextAPIClient: ContextAPIClient | undefined
     /** Update configuration for all of the services in this interface. */
-    onConfigurationChange: (newConfig: ExternalServicesConfiguration) => Promise<void>
+    onConfigurationChange: (newConfig: ExternalServicesConfiguration) => void
 }
 
 type ExternalServicesConfiguration = Pick<
@@ -98,7 +98,6 @@ export async function configureExternalServices(
             codeCompletionsClient.onConfigurationChange(newConfig)
             guardrails.onConfigurationChange(newConfig)
             void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
-            symf.onConfigurationChange(newConfig)
         },
     }
 }

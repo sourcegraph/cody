@@ -12,7 +12,7 @@ import { isError } from 'lodash'
 import * as vscode from 'vscode'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { rewriteKeywordQuery } from '../../local-context/rewrite-keyword-query'
-import type { SymfRunner } from '../../local-context/symf'
+import type { SymfWrapper } from '../../local-context/symf/symf-wrapper'
 import { logDebug, logError } from '../../log'
 import { gitLocallyModifiedFiles } from '../../repository/git-extension-api'
 import type { Root } from './context'
@@ -29,7 +29,7 @@ interface RewrittenQuery extends ContextQuery {
 export class ContextFetcher implements vscode.Disposable {
     constructor(
         private editor: VSCodeEditor,
-        private symf: SymfRunner | undefined,
+        private symf: SymfWrapper,
         private llms: SourcegraphCompletionsClient
     ) {}
 
@@ -79,11 +79,16 @@ export class ContextFetcher implements vscode.Disposable {
         if (files.length === 0) {
             return []
         }
-        if (!this.symf) {
+        if (!this.symf.runner) {
             logDebug('ContextFetcher', 'symf not available, skipping live context')
             return []
         }
-        const results = await this.symf.getLiveResults(query.userQuery, query.rewritten, files, signal)
+        const results = await this.symf.runner.getLiveResults(
+            query.userQuery,
+            query.rewritten,
+            files,
+            signal
+        )
         return (
             await Promise.all(
                 results.map(async (r): Promise<ContextItem | ContextItem[]> => {

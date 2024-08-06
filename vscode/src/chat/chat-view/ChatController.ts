@@ -216,7 +216,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.localEmbeddings = localEmbeddings
         this.symf = symf
         this.repoPicker = enterpriseContext?.repoPicker || null
-        this.remoteSearch = enterpriseContext?.createRemoteSearch()
+        this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
 
         this.contextFetcher = contextFetcher
@@ -230,9 +230,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (TestSupport.instance) {
             TestSupport.instance.chatPanelProvider.set(this)
         }
-
-        // Advise local embeddings to start up if necessary.
-        void this.localEmbeddings?.start()
 
         // Push context status to the webview when it changes.
         this.disposables.push(

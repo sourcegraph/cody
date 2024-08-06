@@ -25,7 +25,7 @@ export function startClientStateBroadcaster({
     postMessage: rawPostMessage,
     chatModel,
 }: {
-    remoteSearch?: RemoteSearch
+    remoteSearch: RemoteSearch | null
     postMessage: PostMessage
     chatModel: ChatModel
 }): vscode.Disposable {

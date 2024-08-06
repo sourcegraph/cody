@@ -135,8 +135,8 @@ export async function resolveContext({
     input: HumanInput
     providers: {
         symf: SymfWrapper
-        localEmbeddings?: LocalEmbeddingsController
-        remoteSearch?: RemoteSearch
+        localEmbeddings: LocalEmbeddingsController | null
+        remoteSearch: RemoteSearch | null
     }
     signal?: AbortSignal
 }): Promise<ContextItem[]> {
@@ -177,11 +177,11 @@ export async function resolveContext({
 
         // Symf search:
         const treeContextSymfSearchResults =
-            symf && strategy !== 'embeddings' && treeMentions.length > 0
+            symf.runner && strategy !== 'embeddings' && treeMentions.length > 0
                 ? Promise.all(
                       treeMentions.map(tree =>
                           retrieveContextGracefully(
-                              searchSymf(symf, editor, tree.uri, input.text),
+                              searchSymf(editor, tree.uri, input.text, symf.runner),
                               `symf ${tree.name}`
                           )
                       )
