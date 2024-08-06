@@ -36,7 +36,7 @@ export const DefaultCommandsList: FunctionComponent<{
     )
 
     return (
-        <CollapsiblePanel title="Commands" initialOpen={initialOpen}>
+        <CollapsiblePanel storageKey="defaultCommands" title="Commands" initialOpen={initialOpen}>
             {commandList.map(({ key, title, icon: Icon }) => (
                 <Button
                     key={key}
