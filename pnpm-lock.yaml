@@ -594,9 +594,6 @@ importers:
       marked:
         specifier: ^4.0.16
         version: 4.3.0
-      mdast:
-        specifier: ^3.0.0
-        version: 3.0.0
       mkdirp:
         specifier: ^3.0.1
         version: 3.0.1
@@ -12041,11 +12038,6 @@ packages:
     resolution: {integrity: sha512-0H44vDimn51F0YwvxSJSm0eCDOJTRlmN0R1yBh4HLj9wiV1Dn0QoXGbvFAWj2hSItVTlCmBF1hqKlIyUBVFLPg==}
     dependencies:
       '@types/mdast': 4.0.4
-    dev: false
-
-  /mdast@3.0.0:
-    resolution: {integrity: sha512-xySmf8g4fPKMeC07jXGz971EkLbWAJ83s4US2Tj9lEdnZ142UP5grN73H1Xd3HzrdbU5o9GYYP/y8F9ZSwLE9g==}
-    deprecated: '`mdast` was renamed to `remark`'
     dev: false
 
   /mdn-data@2.0.28:

@@ -7,6 +7,7 @@ data class ConfigParams(
   val agentExtensionVersion: String? = null,
   val serverEndpoint: String,
   val experimentalUnitTest: Boolean,
+  val experimentalSmartApply: Boolean,
   val webviewType: WebviewType? = null, // Oneof: sidebar, editor
   val uiKindIsWeb: Boolean,
 )

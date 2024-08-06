@@ -38,6 +38,7 @@ sealed class WebviewMessage {
           "insert" -> context.deserialize<InsertWebviewMessage>(element, InsertWebviewMessage::class.java)
           "newFile" -> context.deserialize<NewFileWebviewMessage>(element, NewFileWebviewMessage::class.java)
           "copy" -> context.deserialize<CopyWebviewMessage>(element, CopyWebviewMessage::class.java)
+          "smartApply" -> context.deserialize<SmartApplyWebviewMessage>(element, SmartApplyWebviewMessage::class.java)
           "auth" -> context.deserialize<AuthWebviewMessage>(element, AuthWebviewMessage::class.java)
           "abort" -> context.deserialize<AbortWebviewMessage>(element, AbortWebviewMessage::class.java)
           "simplified-onboarding" -> context.deserialize<`simplified-onboardingWebviewMessage`>(element, `simplified-onboardingWebviewMessage`::class.java)
@@ -321,6 +322,18 @@ data class CopyWebviewMessage(
   enum class EventTypeEnum {
     @SerializedName("Button") Button,
     @SerializedName("Keydown") Keydown,
+  }
+}
+
+data class SmartApplyWebviewMessage(
+  val command: CommandEnum, // Oneof: smartApply
+  val instruction: String? = null,
+  val code: String,
+  val fileName: String? = null,
+) : WebviewMessage() {
+
+  enum class CommandEnum {
+    @SerializedName("smartApply") SmartApply,
   }
 }
 

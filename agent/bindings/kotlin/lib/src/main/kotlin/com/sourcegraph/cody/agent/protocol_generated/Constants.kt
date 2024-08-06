@@ -141,6 +141,7 @@ object Constants {
   const val copy = "copy"
   const val Button = "Button"
   const val Keydown = "Keydown"
+  const val smartApply = "smartApply"
   const val auth = "auth"
   const val signin = "signin"
   const val signout = "signout"
