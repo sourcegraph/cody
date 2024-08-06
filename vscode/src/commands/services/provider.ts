@@ -5,10 +5,20 @@ import { CodyCommandMenuItems } from '..'
 import { executeExplainHistoryCommand } from '../execute/explain-history'
 import { showCommandMenu } from '../menus'
 import type { CodyCommandArgs } from '../types'
-import { getDefaultCommandsMap } from '../utils/get-commands'
 import { CustomCommandsManager, openCustomCommandDocsLink } from './custom-commands'
 
-const vscodeDefaultCommands = getDefaultCommandsMap(CodyCommandMenuItems as CodyCommand[])
+const vscodeDefaultCommands: CodyCommand[] = CodyCommandMenuItems.filter(
+    ({ isBuiltin }) => isBuiltin === true
+).map(
+    c =>
+        ({
+            key: c.key,
+            description: c.description,
+            prompt: c.prompt ?? '',
+            type: c.isBuiltin ? 'default' : 'experimental',
+            mode: c.mode,
+        }) satisfies CodyCommand
+)
 
 /**
  * Provides management and interaction capabilities for both default and custom Cody commands.
@@ -18,16 +28,15 @@ const vscodeDefaultCommands = getDefaultCommandsMap(CodyCommandMenuItems as Cody
  */
 export class CommandsProvider implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
-    protected readonly defaultCommands = vscodeDefaultCommands
+    protected readonly commands = new Map<string, CodyCommand>()
     protected customCommandsStore = new CustomCommandsManager()
-
-    // The commands grouped with default commands and custom commands
-    private allCommands = new Map<string, CodyCommand>()
 
     constructor() {
         this.disposables.push(this.customCommandsStore)
-        // adds the default commands to the all commands map
-        this.groupCommands(this.defaultCommands)
+
+        for (const c of vscodeDefaultCommands) {
+            this.commands.set(c.key, c)
+        }
 
         // Cody Command Menus
         this.disposables.push(
@@ -44,12 +53,11 @@ export class CommandsProvider implements vscode.Disposable {
         )
 
         this.customCommandsStore.init()
-        this.refresh()
+        void this.customCommandsStore.refresh()
     }
 
     private async menu(type: 'custom' | 'config' | 'default', args?: CodyCommandArgs): Promise<void> {
-        const customCommands = await this.getCustomCommands()
-        const commandArray = [...customCommands].map(command => command[1])
+        const commandArray = this.list()
         if (type === 'custom' && !commandArray.length) {
             return showCommandMenu('config', commandArray, args)
         }
@@ -58,38 +66,14 @@ export class CommandsProvider implements vscode.Disposable {
     }
 
     public list(): CodyCommand[] {
-        return [...this.allCommands.values()]
+        return [...this.customCommandsStore.commands.values(), ...this.commands.values()]
     }
 
     /**
      * Find a command by its id
      */
     public get(id: string): CodyCommand | undefined {
-        return this.allCommands.get(id)
-    }
-
-    protected async getCustomCommands(): Promise<Map<string, CodyCommand>> {
-        const commands = this.customCommandsStore.commands
-        this.groupCommands(commands)
-        return commands
-    }
-
-    /**
-     * Group the default commands with the custom commands and add a separator
-     */
-    protected groupCommands(customCommands = new Map<string, CodyCommand>()): void {
-        const defaultCommands = [...this.defaultCommands]
-        const combinedMap = new Map([...defaultCommands])
-        // Add the custom commands to the all commands map
-        this.allCommands = new Map([...customCommands, ...combinedMap].sort())
-    }
-
-    /**
-     * Refresh the custom commands from store before combining with default commands
-     */
-    protected async refresh(): Promise<void> {
-        const { commands } = await this.customCommandsStore.refresh()
-        this.groupCommands(commands)
+        return this.commands.get(id) ?? this.customCommandsStore.commands.get(id)
     }
 
     /**
