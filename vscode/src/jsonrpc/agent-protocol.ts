@@ -323,6 +323,7 @@ export type ClientRequests = {
 // ================
 export type ServerRequests = {
     'window/showMessage': [ShowWindowMessageParams, string | null]
+    'window/showSaveDialog': [null, string | undefined | null]
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
     'textDocument/openUntitledDocument': [UntitledTextDocument, ProtocolTextDocument | undefined | null]

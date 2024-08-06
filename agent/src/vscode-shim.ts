@@ -755,8 +755,12 @@ const _window: typeof vscode.window = {
         throw new Error('Not implemented: vscode.window.showOpenDialog')
     },
     showSaveDialog: () => {
-        console.log(new Error().stack)
-        throw new Error('Not implemented: vscode.window.showSaveDialog')
+        if (agent) {
+            return agent.request('window/showSaveDialog', null).then(result => {
+                return result ? Uri.parse(result) : undefined
+            })
+        }
+        return Promise.resolve(undefined)
     },
     showInputBox: () => {
         console.log(new Error().stack)
