@@ -312,6 +312,7 @@ export type ClientRequests = {
 // ================
 export type ServerRequests = {
     'window/showMessage': [ShowWindowMessageParams, string | null]
+    'window/showSaveDialog': [SaveDialogOptionsParams, string | undefined | null]
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
     'textDocument/openUntitledDocument': [UntitledTextDocument, ProtocolTextDocument | undefined | null]
@@ -974,4 +975,8 @@ export interface GetDocumentsParams {
 
 export interface GetDocumentsResult {
     documents: ProtocolTextDocument[]
+}
+export interface SaveDialogOptionsParams {
+    defaultUri?: string | undefined | null
+    filters?: Record<string, string[]> | undefined | null
 }
