@@ -761,7 +761,7 @@ function registerChat(
         authProvider,
         enterpriseContextFactory,
         localEmbeddings || null,
-        symf || null,
+        symf,
         contextRetriever,
         guardrails,
         contextAPIClient || null
