@@ -1,7 +1,7 @@
 //@ts-nocheck
 
 // This is a modified and sligthly stripped down version of
-// https://github.com/microsoft/playwright/commit/8f62aa933562d37f344015cf4e43775fbf81716b
+// https://github.com/microsoft/playwright/commit/9943bcfcd862963fc2ae4b221d904fe4f6af8368
 // The original seems no longer maintained and has a critical bug
 // https://github.com/moxystudio/node-proper-lockfile/issues/111 It was stripped
 // to keep dependencies minimal. TODO: This doesn't seem like a very clean
@@ -45,6 +45,7 @@ interface LockOptions {
     lockfilePath?: string
 }
 export async function lock(file: string, options?: LockOptions): Promise<() => void> {
+    ensureCleanup()
     const release = await toPromise(_lock)(file, options)
     return toPromise(release)
 }
@@ -430,14 +431,21 @@ function toPromise(method) {
 
 // Remove acquired locks on exit
 /* istanbul ignore next */
-onExit(() => {
-    for (const file in locks) {
-        const options = locks[file].options
-
-        try {
-            options.fs.rmdirSync(getLockFile(file, options))
-        } catch (e) {
-            /* Empty */
-        }
+let cleanupInitialized = false
+function ensureCleanup() {
+    if (cleanupInitialized) {
+        return
     }
-})
+    cleanupInitialized = true
+    onExit(() => {
+        for (const file in locks) {
+            const options = locks[file].options
+
+            try {
+                options.fs.rmdirSync(getLockFile(file, options))
+            } catch (e) {
+                /* Empty */
+            }
+        }
+    })
+}
