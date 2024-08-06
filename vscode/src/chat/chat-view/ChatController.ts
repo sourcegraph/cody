@@ -766,10 +766,34 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         span: Span,
         signal?: AbortSignal
     ): Promise<RankedContext[]> {
+        const legacyContextPromise = this.legacyComputeContext(
+            { text, mentions },
+            requestID,
+            editorState,
+            span,
+            signal
+        )
         if (!vscode.workspace.getConfiguration().get<boolean>('cody.internal.serverSideContext')) {
-            return this.legacyFetchContext({ text, mentions }, requestID, editorState, span, signal)
+            return legacyContextPromise
         }
 
+        const contextPromise = this._computeContext(
+            { text, mentions },
+            requestID,
+            editorState,
+            span,
+            signal
+        )
+        return (await Promise.all([contextPromise, legacyContextPromise])).flat()
+    }
+
+    private async _computeContext(
+        { text, mentions }: HumanInput,
+        requestID: string,
+        editorState: SerializedPromptEditorState | null,
+        span: Span,
+        signal?: AbortSignal
+    ): Promise<RankedContext[]> {
         // Remove context chips (repo, @-mentions) from the input text for context retrieval.
         const inputTextWithoutContextChips = editorState
             ? PromptString.unsafe_fromUserQuery(
@@ -835,7 +859,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return [{ strategy: 'local+remote', items: context }]
     }
 
-    private async legacyFetchContext(
+    private async legacyComputeContext(
         { text, mentions }: HumanInput,
         requestID: string,
         editorState: SerializedPromptEditorState | null,
@@ -889,7 +913,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         return [
             {
-                strategy: 'legacy, symf',
+                strategy: `(legacy)${contextStrategy}`,
                 items: context.flat(),
             },
         ]
