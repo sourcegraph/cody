@@ -55,10 +55,8 @@ export interface CodyWebPanelProps {
 export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const { className } = props
 
-    const { vscodeAPI, client, activeChatID, activeWebviewPanelID, initialContext } = useWebAgentClient()
+    const { vscodeAPI, client, activeChatID, initialContext } = useWebAgentClient()
     const dispatchClientAction = useClientActionDispatcher()
-
-    const [initialization, setInitialization] = useState<'init' | 'completed'>('init')
 
     const [rootElement, setRootElement] = useState<HTMLElement | null>()
     const [errorMessages, setErrorMessages] = useState<string[]>([])
@@ -130,27 +128,6 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
             }
         })
     }, [vscodeAPI, dispatchClientAction])
-
-    useLayoutEffect(() => {
-        if (initialization === 'completed') {
-            return
-        }
-
-        if (client && !isErrorLike(client) && activeChatID && activeWebviewPanelID) {
-            // Notify the extension host that we are ready to receive events.
-            vscodeAPI.postMessage({ command: 'ready' })
-            vscodeAPI.postMessage({ command: 'initialized' })
-
-            client.rpc
-                .sendRequest('webview/receiveMessage', {
-                    id: activeWebviewPanelID,
-                    message: { command: 'restoreHistory', chatID: activeChatID },
-                })
-                .then(() => {
-                    setInitialization('completed')
-                })
-        }
-    }, [initialization, vscodeAPI, activeChatID, activeWebviewPanelID, client])
 
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
@@ -229,14 +206,7 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     )
 
     const isLoading =
-        !client ||
-        !userAccountInfo ||
-        !chatModels ||
-        !activeChatID ||
-        initialization !== 'completed' ||
-        !config ||
-        !view ||
-        !userHistory
+        !client || !userAccountInfo || !chatModels || !activeChatID || !config || !view || !userHistory
 
     return (
         <div className={className} data-cody-web-chat={true} ref={setRootElement}>
