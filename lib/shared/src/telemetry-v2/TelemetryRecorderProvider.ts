@@ -2,6 +2,7 @@ import {
     TelemetryRecorderProvider as BaseTelemetryRecorderProvider,
     NoOpTelemetryExporter,
     type TelemetryEventInput,
+    type TelemetryExporter,
     type TelemetryProcessor,
     TestTelemetryExporter,
     TimestampTelemetryProcessor,
@@ -94,7 +95,14 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
     }
 }
 
-export const TESTING_TELEMETRY_EXPORTER = new TestTelemetryExporter()
+export class DelegateTelemetryExporter implements TelemetryExporter {
+    constructor(public delegate: TestTelemetryExporter) {}
+    exportEvents(events: TelemetryEventInput[]): Promise<void> {
+        return this.delegate.exportEvents(events)
+    }
+}
+
+export const TESTING_TELEMETRY_EXPORTER = new DelegateTelemetryExporter(new TestTelemetryExporter())
 
 /**
  * TelemetryRecorder is the type of recorders returned by
@@ -113,6 +121,7 @@ export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider
         super({ client: '' }, new NoOpTelemetryExporter(), processors || [])
     }
 }
+
 /**
  * noOpTelemetryRecorder should ONLY be used in tests - it discards all recorded events and does nothing with them.
  */
@@ -154,6 +163,7 @@ class ConfigurationMetadataProcessor implements TelemetryProcessor {
     ) {}
 
     public processEvent(event: TelemetryEventInput): void {
+        console.log(event)
         if (!event.parameters.metadata) {
             event.parameters.metadata = []
         }

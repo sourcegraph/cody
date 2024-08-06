@@ -25,7 +25,7 @@ import {
     logError,
     setUserAgent,
 } from '@sourcegraph/cody-shared'
-import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
+import { type TelemetryEventParameters, TestTelemetryExporter } from '@sourcegraph/telemetry'
 
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import { ChatModel } from '../../vscode/src/chat/chat-view/ChatModel'
@@ -662,6 +662,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 requests: requests.map(req => ({ url: req.url, body: req.body })),
             }
         })
+
         this.registerAuthenticatedRequest('testing/exportedTelemetryEvents', async () => {
             const events = TESTING_TELEMETRY_EXPORTER.getExported()
             return {
@@ -757,6 +758,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('testing/reset', async () => {
             await this.workspace.reset()
             globalState.reset()
+            TESTING_TELEMETRY_EXPORTER.delegate = new TestTelemetryExporter()
             return null
         })
 
