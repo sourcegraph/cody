@@ -371,7 +371,7 @@ describe('Agent', () => {
             // is not a git directory and symf reports some git-related error.
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "Certainly! Here's a Dog class that implements the Animal interface:
+              "Certainly! Here's a class Dog that implements the Animal interface based on the provided context:
 
               \`\`\`typescript
               export class Dog implements Animal {
@@ -388,7 +388,7 @@ describe('Agent', () => {
               }
               \`\`\`
 
-              This class fulfills all the requirements of the Animal interface defined in your workspace."
+              This implementation fulfills all the requirements of the Animal interface as defined in the src/animal.ts file."
             `,
                 explainPollyError
             )

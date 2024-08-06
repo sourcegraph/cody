@@ -725,11 +725,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 1d6b7417dc13e78cf0704907809a5532
+    - _id: a5bda55d441db87cb314f17b78be1e60
       _order: 0
       cache: {}
       request:
-        bodySize: 2126
+        bodySize: 2315
         cookies: []
         headers:
           - name: content-type
@@ -742,7 +742,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-4f4b8bc5510c96ab7ce9c2c5c75f11d5-dc0051f0c1a1aead-01
+            value: 00-6a35abb56b0253b0f0f9ebe38620f83b-b1b6f999eb7d8919-01
           - name: connection
             value: keep-alive
           - name: host
@@ -762,7 +762,7 @@ log:
                 text: >-
                   Codebase context from file src/squirrel.ts:
 
-                  ```typescript
+                  ```typescript:src/squirrel.ts
 
                   /**
                    * Squirrel is an interface that mocks something completely unrelated to squirrels.
@@ -776,7 +776,7 @@ log:
               - speaker: human
                 text: |-
                   Codebase context from file src/multiple-selections.ts:
-                  ```typescript
+                  ```typescript:src/multiple-selections.ts
                   function outer() {
                       /* SELECTION_START */
                       return function inner() {}
@@ -792,7 +792,7 @@ log:
               - speaker: human
                 text: |-
                   Codebase context from file src/Heading.tsx:
-                  ```typescript
+                  ```typescript:src/Heading.tsx
                   import React = require("react");
 
                   interface HeadingProps {
@@ -807,7 +807,7 @@ log:
               - speaker: human
                 text: |-
                   Codebase context from file src/ChatColumn.tsx:
-                  ```typescript
+                  ```typescript:src/ChatColumn.tsx
                   import { useEffect } from "react";
                   import React = require("react");
 
@@ -833,7 +833,7 @@ log:
               - speaker: human
                 text: |-
                   Codebase context from file src/animal.ts:
-                  ```typescript
+                  ```typescript:src/animal.ts
                   /* SELECTION_START */
                   export interface Animal {
                       name: string
@@ -847,10 +847,10 @@ log:
               - speaker: human
                 text: >-
                   You have access to the provided codebase context. Answer
-                  positively without apologizing.
+                  positively without apologizing. 
 
 
-                  Question: What is Squirrel?
+                  Question: Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.
             model: anthropic/claude-3-5-sonnet-20240620
             temperature: 0
             topK: -1
@@ -864,14 +864,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 12671
+        bodySize: 8192
         content:
           mimeType: text/event-stream
-          size: 12671
+          size: 8192
           text: >+
             event: completion
 
-            data: {"completion":"According to the codebase context, Squirrel is an interface defined in the file src/squirrel.ts. Despite its name, it's not actually related to squirrels. The interface is described as mocking something completely unrelated to squirrels and is associated with the implementation of precise code navigation in Sourcegraph. The interface is currently empty in the provided code snippet, suggesting it might be a placeholder or used for type checking purposes in the larger codebase.","stopReason":"end_turn"}
+            data: {"completion":"Certainly! Here's a class Dog that implements the Animal interface based on the provided context:\n\n```typescript\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis implementation fulfills all the requirements of the Animal interface as defined in the src/animal.ts file.","stopReason":"end_turn"}
 
 
             event: done
@@ -881,7 +881,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 09 Jul 2024 17:21:59 GMT
+            value: Tue, 06 Aug 2024 09:28:19 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -910,7 +910,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-09T17:21:57.420Z
+      startedDateTime: 2024-08-06T09:28:17.372Z
       time: 0
       timings:
         blocked: -1
@@ -920,11 +920,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 6e875382e1f1709d69ff99d85a33c52e
+    - _id: a6225f6a0d2ba765346887d3c39fcb39
       _order: 0
       cache: {}
       request:
-        bodySize: 2223
+        bodySize: 2218
         cookies: []
         headers:
           - name: content-type
@@ -937,7 +937,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-1e1a61c62dd3c76045d160ec121932f4-9fbd1daa97603c6c-01
+            value: 00-2fe2df9ec2422b84624a091fc7fceccf-0de3b6c5d632e3a1-01
           - name: connection
             value: keep-alive
           - name: host
@@ -957,7 +957,7 @@ log:
                 text: >-
                   Codebase context from file src/squirrel.ts:
 
-                  ```typescript
+                  ```typescript:src/squirrel.ts
 
                   /**
                    * Squirrel is an interface that mocks something completely unrelated to squirrels.
@@ -971,7 +971,7 @@ log:
               - speaker: human
                 text: |-
                   Codebase context from file src/multiple-selections.ts:
-                  ```typescript
+                  ```typescript:src/multiple-selections.ts
                   function outer() {
                       /* SELECTION_START */
                       return function inner() {}
@@ -987,7 +987,7 @@ log:
               - speaker: human
                 text: |-
                   Codebase context from file src/Heading.tsx:
-                  ```typescript
+                  ```typescript:src/Heading.tsx
                   import React = require("react");
 
                   interface HeadingProps {
@@ -1002,7 +1002,7 @@ log:
               - speaker: human
                 text: |-
                   Codebase context from file src/ChatColumn.tsx:
-                  ```typescript
+                  ```typescript:src/ChatColumn.tsx
                   import { useEffect } from "react";
                   import React = require("react");
 
@@ -1028,7 +1028,7 @@ log:
               - speaker: human
                 text: |-
                   Codebase context from file src/animal.ts:
-                  ```typescript
+                  ```typescript:src/animal.ts
                   /* SELECTION_START */
                   export interface Animal {
                       name: string
@@ -1042,10 +1042,10 @@ log:
               - speaker: human
                 text: >-
                   You have access to the provided codebase context. Answer
-                  positively without apologizing.
+                  positively without apologizing. 
 
 
-                  Question: Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.
+                  Question: What is Squirrel?
             model: anthropic/claude-3-5-sonnet-20240620
             temperature: 0
             topK: -1
@@ -1059,14 +1059,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 9108
+        bodySize: 6389
         content:
           mimeType: text/event-stream
-          size: 9108
+          size: 6389
           text: >+
             event: completion
 
-            data: {"completion":"Certainly! Here's a Dog class that implements the Animal interface:\n\n```typescript\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis class fulfills all the requirements of the Animal interface defined in your workspace.","stopReason":"end_turn"}
+            data: {"completion":"Squirrel is an interface defined in the codebase that, despite its name, is not actually related to squirrels. According to the comment in the src/squirrel.ts file, it is used in the implementation of precise code navigation in Sourcegraph. The interface is currently empty, serving as a placeholder or mock for this functionality.","stopReason":"end_turn"}
 
 
             event: done
@@ -1076,15 +1076,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 30 Jul 2024 17:17:03 GMT
+            value: Tue, 06 Aug 2024 09:28:21 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "194"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1102,12 +1100,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-30T17:17:00.721Z
+      startedDateTime: 2024-08-06T09:28:20.220Z
       time: 0
       timings:
         blocked: -1
@@ -3301,103 +3299,6 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-07-03T06:24:15.015Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: ff15c1591a827be177c7c2adca6e207e
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 144
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "144"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 332
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-              
-              query ContextFilters {
-                  site {
-                      codyContextFilters(version: V1) {
-                          raw
-                      }
-                  }
-              }
-            variables: {}
-        queryString:
-          - name: ContextFilters
-            value: null
-        url: https://sourcegraph.com/.api/graphql?ContextFilters
-      response:
-        bodySize: 22
-        content:
-          mimeType: text/plain; charset=utf-8
-          size: 22
-          text: |
-            Invalid access token.
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 30 Jul 2024 18:17:43 GMT
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "22"
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1263
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 401
-        statusText: Unauthorized
-      startedDateTime: 2024-07-30T18:17:42.819Z
       time: 0
       timings:
         blocked: -1
