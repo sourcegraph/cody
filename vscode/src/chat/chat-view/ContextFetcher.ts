@@ -106,6 +106,7 @@ async function codebaseRootsFromMentions(
     const localRepoNames = treesToRepoNames.flatMap(t => t.names)
     const localRepoIDs = await graphqlClient.getRepoIds(localRepoNames, localRepoNames.length, signal)
     if (isError(localRepoIDs)) {
+        // NEXT
         console.error('### TODO(beyang): may need to handle this error if some do not exist')
         throw localRepoIDs
     }
