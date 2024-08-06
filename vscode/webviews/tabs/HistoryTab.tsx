@@ -1,6 +1,6 @@
 import type { SerializedChatTranscript } from '@sourcegraph/cody-shared'
-import { MessageSquareTextIcon } from 'lucide-react'
-import { useMemo } from 'react'
+import { MessageSquareTextIcon, TrashIcon } from 'lucide-react'
+import { useCallback, useMemo } from 'react'
 import { getRelativeChatPeriod } from '../../src/common/time-date'
 import { CollapsiblePanel } from '../components/CollapsiblePanel'
 import { Button } from '../components/shadcn/ui/button'
@@ -24,6 +24,19 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
         [userHistory]
     )
 
+    const onDeleteButtonClick = useCallback(
+        (id: string) => {
+            if (userHistory.find(chat => chat.id === id)) {
+                getVSCodeAPI().postMessage({
+                    command: 'command',
+                    id: 'cody.chat.history.clear',
+                    arg: id,
+                })
+            }
+        },
+        [userHistory]
+    )
+
     return (
         <div className="tw-flex tw-flex-col tw-gap-8 tw-px-8 tw-py-6">
             {Array.from(chatByPeriod, ([period, chats]) => (
@@ -32,25 +45,39 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
                         const lastMessage =
                             interactions[interactions.length - 1]?.humanMessage?.text?.trim()
                         return (
-                            <Button
-                                key={id}
-                                variant="ghost"
-                                title={lastMessage}
-                                onClick={() =>
-                                    getVSCodeAPI().postMessage({
-                                        command: 'restoreHistory',
-                                        chatID: id,
-                                    })
-                                }
-                                className="tw-text-left tw-truncate"
-                            >
-                                <MessageSquareTextIcon
-                                    className="tw-w-8 tw-h-8 tw-opacity-80"
-                                    size={16}
-                                    strokeWidth="1.25"
-                                />
-                                <span className="tw-truncate tw-w-full">{lastMessage}</span>
-                            </Button>
+                            <div key={id} className="tw-inline-flex tw-justify-between">
+                                <Button
+                                    key={id}
+                                    variant="ghost"
+                                    title={lastMessage}
+                                    onClick={() =>
+                                        getVSCodeAPI().postMessage({
+                                            command: 'restoreHistory',
+                                            chatID: id,
+                                        })
+                                    }
+                                    className="tw-text-left tw-truncate"
+                                >
+                                    <MessageSquareTextIcon
+                                        className="tw-w-8 tw-h-8 tw-opacity-80"
+                                        size={16}
+                                        strokeWidth="1.25"
+                                    />
+                                    <span className="tw-truncate tw-w-full">{lastMessage}</span>
+                                </Button>
+                                <Button
+                                    key={id}
+                                    variant="ghost"
+                                    title="Delete chat"
+                                    onClick={() => onDeleteButtonClick(id)}
+                                >
+                                    <TrashIcon
+                                        className="tw-w-8 tw-h-8 tw-opacity-80"
+                                        size={16}
+                                        strokeWidth="1.25"
+                                    />
+                                </Button>
+                            </div>
                         )
                     })}
                 </CollapsiblePanel>

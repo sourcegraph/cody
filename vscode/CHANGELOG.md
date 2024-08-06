@@ -13,6 +13,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ## 1.28.1
 
 Chat: Cody is now defaulted to run in the sidebar for both Enterprise and Non-Enterprise users. [pull/5039](https://github.com/sourcegraph/cody/pull/5039)
+Chat: Added ability to remove individual chats from chat history in the sidebar.
 
 ### Fixed
 
