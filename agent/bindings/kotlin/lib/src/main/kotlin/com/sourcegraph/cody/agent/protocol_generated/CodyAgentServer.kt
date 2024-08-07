@@ -140,6 +140,8 @@ interface CodyAgentServer {
   fun exit(params: Null?)
   @JsonNotification("extensionConfiguration/didChange")
   fun extensionConfiguration_didChange(params: ExtensionConfiguration)
+  @JsonNotification("workspaceFolder/didChange")
+  fun workspaceFolder_didChange(params: WorkspaceFolder_DidChangeParams)
   @JsonNotification("textDocument/didOpen")
   fun textDocument_didOpen(params: ProtocolTextDocument)
   @JsonNotification("textDocument/didChange")

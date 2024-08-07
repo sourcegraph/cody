@@ -354,6 +354,9 @@ export type ClientNotifications = {
     // should no longer be used.
     'extensionConfiguration/didChange': [ExtensionConfiguration]
 
+    // The user has switched to a different workspace folder.
+    'workspaceFolder/didChange': [{ uri: string }]
+
     // Lifecycle notifications for the client to notify the server about text
     // contents of documents and to notify which document is currently focused.
     'textDocument/didOpen': [ProtocolTextDocument]
