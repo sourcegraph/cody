@@ -1,4 +1,9 @@
-import { type CodyCommand, type ContextItem, isFileURI } from '@sourcegraph/cody-shared'
+import {
+    type CodyCommand,
+    type ContextItem,
+    CustomCommandType,
+    isFileURI,
+} from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
 import { CodyCommandMenuItems } from '..'
@@ -57,7 +62,12 @@ export class CommandsProvider implements vscode.Disposable {
     }
 
     private async menu(type: 'custom' | 'config' | 'default', args?: CodyCommandArgs): Promise<void> {
-        const commandArray = this.list()
+        const commandArray = this.list().filter(
+            c =>
+                type !== 'custom' ||
+                c.type === CustomCommandType.User ||
+                c.type === CustomCommandType.Workspace
+        )
         if (type === 'custom' && !commandArray.length) {
             return showCommandMenu('config', commandArray, args)
         }

@@ -1,12 +1,11 @@
-import type { Prompt } from '@sourcegraph/cody-shared'
 import { useCallback } from 'react'
 import { useTelemetryRecorder } from '../../utils/telemetry'
-import { PromptList } from '../promptList/PromptList'
+import { PromptList, type PromptOrDeprecatedCommand } from '../promptList/PromptList'
 import { ToolbarPopoverItem } from '../shadcn/ui/toolbar'
 import { cn } from '../shadcn/utils'
 
 export const PromptSelectField: React.FunctionComponent<{
-    onSelect: (prompt: Prompt) => void
+    onSelect: (item: PromptOrDeprecatedCommand) => void
     onCloseByEscape?: () => void
     className?: string
 
@@ -43,17 +42,20 @@ export const PromptSelectField: React.FunctionComponent<{
             aria-label="Insert prompt"
             popoverContent={close => (
                 <PromptList
-                    onSelect={prompt => {
-                        onSelect(prompt)
+                    onSelect={item => {
+                        onSelect(item)
                         close()
                     }}
+                    onSelectActionLabels={{ prompt: 'insert', command: 'insert' }}
+                    showSearch={true}
+                    showOnlyPromptInsertableCommands={true}
+                    showPromptLibraryUnsupportedMessage={true}
                     telemetryLocation="PromptSelectField"
-                    className="tw-max-w-[min(500px,90vw)]"
                 />
             )}
             popoverRootProps={{ onOpenChange }}
             popoverContentProps={{
-                className: 'tw-min-w-[325px] tw-w-[unset] tw-max-w-[90%] !tw-p-0',
+                className: 'tw-min-w-[325px] tw-w-[75vw] tw-max-w-[550px] !tw-p-0',
                 onKeyDown: onKeyDown,
                 onCloseAutoFocus: event => {
                     // Prevent the popover trigger from stealing focus after the user selects an

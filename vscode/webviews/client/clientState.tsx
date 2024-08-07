@@ -49,9 +49,9 @@ export const ClientActionListenersContextProvider: FunctionComponent<{ children:
                     }
                 }
             },
-            dispatch: (arg: ClientActionArg, { buffer = true }: { buffer?: boolean }): void => {
+            dispatch: (arg: ClientActionArg, opts?: { buffer?: boolean }): void => {
                 // If no listeners, then buffer it until there is one.
-                if (buffer && listeners.length === 0) {
+                if (opts?.buffer && listeners.length === 0) {
                     actionBuffer.push(arg)
                 }
 

@@ -5,7 +5,6 @@ import {
     type AuthStatus,
     type ChatMessage,
     type ClientStateForWebview,
-    type CodyCommand,
     CodyIDE,
     type ContextItem,
     type ContextItemRepository,
@@ -69,7 +68,6 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
-    const [commandList, setCommandList] = useState<CodyCommand[]>([])
     const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
 
     useLayoutEffect(() => {
@@ -118,9 +116,6 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     break
                 case 'setConfigFeatures':
                     setServerSentModelsEnabled(!!message.configFeatures.serverSentModels)
-                    break
-                case 'commands':
-                    setCommandList(message.commands)
                     break
                 case 'history':
                     setUserHistory(Object.values(message.localHistory?.chat ?? {}))
@@ -223,7 +218,6 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                                     errorMessages={errorMessages}
                                     setErrorMessages={setErrorMessages}
                                     attributionEnabled={false}
-                                    commands={commandList}
                                     config={config}
                                     userHistory={userHistory}
                                     chatID={activeChatID}

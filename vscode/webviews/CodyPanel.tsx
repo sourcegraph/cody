@@ -32,8 +32,7 @@ export const CodyPanel: FunctionComponent<
         | 'showIDESnippetActions'
         | 'scrollableParent'
     > &
-        Pick<ComponentProps<typeof HistoryTab>, 'userHistory'> &
-        Pick<ComponentProps<typeof PromptsTab>, 'commands'>
+        Pick<ComponentProps<typeof HistoryTab>, 'userHistory'>
 > = ({
     view,
     setView,
@@ -53,7 +52,6 @@ export const CodyPanel: FunctionComponent<
     scrollableParent,
     showWelcomeMessage,
     userHistory,
-    commands,
 }) => {
     return (
         <TabRoot
@@ -81,12 +79,11 @@ export const CodyPanel: FunctionComponent<
                         showIDESnippetActions={showIDESnippetActions}
                         showWelcomeMessage={showWelcomeMessage}
                         scrollableParent={scrollableParent}
+                        setView={setView}
                     />
                 )}
                 {view === View.History && <HistoryTab userHistory={userHistory} />}
-                {view === View.Prompts && (
-                    <PromptsTab setView={setView} IDE={config.agentIDE} commands={commands} />
-                )}
+                {view === View.Prompts && <PromptsTab setView={setView} />}
                 {view === View.Account && <AccountTab userInfo={userInfo} />}
                 {view === View.Settings && <SettingsTab userInfo={userInfo} />}
             </TabContainer>

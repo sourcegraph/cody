@@ -1,17 +1,66 @@
-import type { CodyCommand, CodyIDE } from '@sourcegraph/cody-shared'
-import type { View } from '../tabs/types'
-import { CustomCommandsList } from './CustomCommandsList'
-import { DefaultCommandsList } from './DefaultCommandsList'
+import type { ComponentProps } from 'react'
+import { useClientActionDispatcher } from '../client/clientState'
+import {
+    type PromptList,
+    PromptListSuitedForNonPopover,
+    type PromptOrDeprecatedCommand,
+} from '../components/promptList/PromptList'
+import { View } from '../tabs/types'
+import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 export const PromptsTab: React.FC<{
     setView: (view: View) => void
-    commands: CodyCommand[]
-    IDE?: CodyIDE
-}> = ({ commands, IDE, setView }) => (
-    <div className="tw-flex tw-flex-col tw-gap-8 tw-px-8 tw-py-6">
-        <DefaultCommandsList IDE={IDE} setView={setView} initialOpen={true} />
-        {commands.length > 0 && (
-            <CustomCommandsList commands={commands} IDE={IDE} setView={setView} initialOpen={true} />
-        )}
-    </div>
-)
+}> = ({ setView }) => {
+    const dispatchClientAction = useClientActionDispatcher()
+    return (
+        <div className="tw-flex tw-flex-col tw-gap-8 tw-p-8">
+            <PromptListSuitedForNonPopover
+                onSelect={item => onPromptSelectInPanel(item, setView, dispatchClientAction)}
+                onSelectActionLabels={onPromptSelectInPanelActionLabels}
+                showCommandOrigins={true}
+                showPromptLibraryUnsupportedMessage={true}
+                showOnlyPromptInsertableCommands={false}
+                telemetryLocation="PromptsTab"
+                className="tw-border tw-border-border"
+            />
+        </div>
+    )
+}
+
+export function onPromptSelectInPanel(
+    item: PromptOrDeprecatedCommand,
+    setView: (view: View) => void,
+    dispatchClientAction: ReturnType<typeof useClientActionDispatcher>
+): void {
+    switch (item.type) {
+        case 'prompt': {
+            setView(View.Chat)
+            dispatchClientAction(
+                { appendTextToLastPromptEditor: item.value.definition.text },
+                // Buffer because PromptEditor is not guaranteed to be mounted after the `setView`
+                // call above, and it needs to be mounted to receive the action.
+                { buffer: true }
+            )
+            break
+        }
+        case 'command': {
+            getVSCodeAPI().postMessage({
+                command: 'command',
+                id: 'cody.action.command',
+                arg: item.value.key,
+            })
+            if (item.value.mode === 'ask' && item.value.type === 'default') {
+                // Chat response will show up in the same panel, so make the chat view visible.
+                setView(View.Chat)
+            }
+            break
+        }
+    }
+}
+
+export const onPromptSelectInPanelActionLabels: NonNullable<
+    ComponentProps<typeof PromptList>['onSelectActionLabels']
+> = {
+    command: 'run',
+    prompt: 'insert',
+}

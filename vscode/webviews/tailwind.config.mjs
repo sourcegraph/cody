@@ -15,6 +15,7 @@ export default {
                 md: 'var(--vscode-font-size)', // = 13px
                 sm: 'calc(calc(12/13)*var(--vscode-font-size))', // = 12px
                 xs: 'calc(calc(11/13)*var(--vscode-font-size))', // = 11px
+                xxs: 'calc(calc(10/13)*var(--vscode-font-size))', // = 10px
             },
             fontFamily: {
                 codyicons: ['cody-icons'],

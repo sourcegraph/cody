@@ -1,5 +1,7 @@
-import type { CodyCommand } from '@sourcegraph/cody-shared'
+import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
+import { FIXTURE_COMMANDS, makePromptsAPIWithData } from '../components/promptList/fixtures'
+import { FIXTURE_PROMPTS } from '../components/promptSelectField/fixtures'
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
 import { PromptsTab } from './PromptsTab'
 
@@ -18,42 +20,34 @@ export default meta
 
 type Story = StoryObj<typeof PromptsTab>
 
-export const DefaultOnly: Story = {
-    args: {
-        commands: [
-            {
-                key: 'explain',
-                prompt: 'Explain this code',
-                description: 'Explain Code',
-                type: 'default',
-            },
-            {
-                key: 'test',
-                prompt: 'Write a test for this code',
-                description: 'Write Test',
-                type: 'default',
-            },
-        ] as CodyCommand[],
-    },
+export const WithPromptsAndCommands: Story = {
+    render: args => (
+        <ExtensionAPIProviderForTestsOnly
+            value={{
+                ...MOCK_API,
+                prompts: makePromptsAPIWithData({
+                    prompts: { type: 'results', results: FIXTURE_PROMPTS },
+                    commands: FIXTURE_COMMANDS,
+                }),
+            }}
+        >
+            <PromptsTab {...args} />
+        </ExtensionAPIProviderForTestsOnly>
+    ),
 }
 
-export const WithCustom: Story = {
-    args: {
-        commands: [
-            {
-                key: 'explain',
-                prompt: 'Explain this code',
-                description: 'Explain Code',
-                type: 'default',
-            },
-            { key: 'custom1', prompt: 'Custom command 1', description: 'Custom 1', type: 'user' },
-            {
-                key: 'test',
-                prompt: 'Write a test for this code',
-                description: 'Write Test',
-                type: 'default',
-            },
-            { key: 'custom2', prompt: 'Custom command 2', description: 'Custom 2', type: 'user' },
-        ] as CodyCommand[],
-    },
+export const WithOnlyCommands: Story = {
+    render: args => (
+        <ExtensionAPIProviderForTestsOnly
+            value={{
+                ...MOCK_API,
+                prompts: makePromptsAPIWithData({
+                    prompts: { type: 'unsupported' },
+                    commands: FIXTURE_COMMANDS,
+                }),
+            }}
+        >
+            <PromptsTab {...args} />
+        </ExtensionAPIProviderForTestsOnly>
+    ),
 }

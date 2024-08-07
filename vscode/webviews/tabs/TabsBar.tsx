@@ -140,7 +140,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                     },
                     {
                         view: View.Prompts,
-                        tooltip: 'Prompts',
+                        tooltip: 'Prompts & Commands',
                         Icon: BookTextIcon,
                         changesView: true,
                     },

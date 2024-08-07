@@ -1,4 +1,4 @@
-import type { Prompt } from '@sourcegraph/cody-shared'
+import type { PromptsResult } from '@sourcegraph/cody-shared'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import {
     type UseAsyncGeneratorResult,
@@ -9,7 +9,7 @@ import { useCallback } from 'react'
 /**
  * React hook to query for prompts in the prompt library.
  */
-export function usePromptsQuery(query: string): UseAsyncGeneratorResult<Prompt[]> {
+export function usePromptsQuery(query: string): UseAsyncGeneratorResult<PromptsResult> {
     const prompts = useExtensionAPI().prompts
     return useAsyncGenerator(
         useCallback((signal: AbortSignal) => prompts(query, signal), [prompts, query])

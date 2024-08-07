@@ -10,6 +10,7 @@ interface CollapsiblePanelProps {
     title: string
     children: React.ReactNode
     className?: string
+    contentClassName?: string
     initialOpen?: boolean
 }
 
@@ -18,6 +19,7 @@ export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
     title,
     children,
     className,
+    contentClassName,
     initialOpen,
 }) => {
     const [isOpen, setIsOpen] = useCollapsiblePanelOpenState(storageKey, initialOpen)
@@ -43,7 +45,12 @@ export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
                 </CollapsibleTrigger>
             </div>
             <CollapsibleContent>
-                <div className="tw-px-2 tw-py-2 tw-flex tw-flex-col tw-bg-popover tw-border tw-border-border tw-rounded-lg">
+                <div
+                    className={clsx(
+                        'tw-px-2 tw-py-2 tw-flex tw-flex-col tw-bg-popover tw-border tw-border-border tw-rounded-lg',
+                        contentClassName
+                    )}
+                >
                     {children}
                 </div>
             </CollapsibleContent>

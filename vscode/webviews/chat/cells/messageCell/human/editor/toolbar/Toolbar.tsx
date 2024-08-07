@@ -1,8 +1,9 @@
-import { FeatureFlag, type Model, type Prompt } from '@sourcegraph/cody-shared'
+import { FeatureFlag, type Model } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
+import type { PromptOrDeprecatedCommand } from '../../../../../../components/promptList/PromptList'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
 import { useFeatureFlag } from '../../../../../../utils/useFeatureFlags'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
@@ -104,8 +105,8 @@ const PromptSelectFieldToolbarItem: FunctionComponent<{
     className?: string
 }> = ({ focusEditor, appendTextToEditor, className }) => {
     const onSelect = useCallback(
-        (prompt: Prompt) => {
-            appendTextToEditor(prompt.definition.text)
+        (item: PromptOrDeprecatedCommand) => {
+            appendTextToEditor(item.type === 'prompt' ? item.value.definition.text : item.value.prompt)
             focusEditor?.()
         },
         [appendTextToEditor, focusEditor]

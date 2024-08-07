@@ -1,6 +1,9 @@
+import { asyncGeneratorWithValues } from '@sourcegraph/cody-shared'
+import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
 import { Chat } from './Chat'
 import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO } from './chat/fixtures'
+import { FIXTURE_COMMANDS, makePromptsAPIWithData } from './components/promptList/fixtures'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 
 const meta: Meta<typeof Chat> = {
@@ -26,6 +29,7 @@ const meta: Meta<typeof Chat> = {
             onMessage: () => () => {},
         },
         isTranscriptError: false,
+        setView: () => {},
     } satisfies React.ComponentProps<typeof Chat>,
 
     decorators: [VSCodeWebview],
@@ -36,5 +40,41 @@ export default meta
 export const Default: StoryObj<typeof meta> = {}
 
 export const Empty: StoryObj<typeof meta> = { args: { transcript: [] } }
+
+export const EmptyWithPromptLibraryUnsupported: StoryObj<typeof meta> = {
+    args: { transcript: [] },
+    render: args => (
+        <ExtensionAPIProviderForTestsOnly
+            value={{
+                ...MOCK_API,
+                prompts: makePromptsAPIWithData({
+                    prompts: { type: 'unsupported' },
+                    commands: FIXTURE_COMMANDS,
+                }),
+                evaluatedFeatureFlag: _flag => asyncGeneratorWithValues(true),
+            }}
+        >
+            <Chat {...args} />
+        </ExtensionAPIProviderForTestsOnly>
+    ),
+}
+
+export const EmptyWithNoPrompts: StoryObj<typeof meta> = {
+    args: { transcript: [] },
+    render: args => (
+        <ExtensionAPIProviderForTestsOnly
+            value={{
+                ...MOCK_API,
+                prompts: makePromptsAPIWithData({
+                    prompts: { type: 'results', results: [] },
+                    commands: FIXTURE_COMMANDS,
+                }),
+                evaluatedFeatureFlag: _flag => asyncGeneratorWithValues(true),
+            }}
+        >
+            <Chat {...args} />
+        </ExtensionAPIProviderForTestsOnly>
+    ),
+}
 
 export const Disabled: StoryObj<typeof meta> = { args: { chatEnabled: false } }

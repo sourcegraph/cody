@@ -1,4 +1,5 @@
 import type { ContextItem } from '../../codebase-context/messages'
+import type { CodyCommand } from '../../commands/types'
 import { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
 import type { ContextMentionProviderMetadata } from '../../mentions/api'
 import type { MentionQuery } from '../../mentions/query'
@@ -17,7 +18,32 @@ export interface WebviewToExtensionAPI {
         signal: AbortSignal
     ): AsyncGenerator<boolean | undefined>
 
-    prompts(query: string, signal: AbortSignal): AsyncGenerator<Prompt[]>
+    /**
+     * Observe the results of querying prompts in the Prompt Library. For backcompat, it also
+     * includes matching builtin commands and custom commands (which are both deprecated in favor of
+     * the Prompt Library).
+     */
+    prompts(query: string, signal: AbortSignal): AsyncGenerator<PromptsResult>
+}
+
+export interface PromptsResult {
+    /**
+     * `undefined` means the Sourcegraph endpoint is an older Sourcegraph version that doesn't
+     * support the Prompt Library.
+     */
+    prompts:
+        | { type: 'results'; results: Prompt[] }
+        | { type: 'error'; error: string }
+        | { type: 'unsupported' }
+
+    /**
+     * `undefined` means that commands should not be shown at all (not even as an empty
+     * list). Builtin and custom commands are deprecated in favor of the Prompt Library.
+     */
+    commands: CodyCommand[]
+
+    /** The original query used to fetch this result. */
+    query: string
 }
 
 /**
