@@ -21,7 +21,7 @@ export const CustomCommandsList: FunctionComponent<{
     }
 
     return (
-        <CollapsiblePanel title="Custom Commands" initialOpen={initialOpen}>
+        <CollapsiblePanel storageKey="customCommands" title="Custom Commands" initialOpen={initialOpen}>
             {customCommandsList.map(({ key, prompt, description }) => (
                 <Button
                     key={key}

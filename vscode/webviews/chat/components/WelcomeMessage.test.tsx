@@ -5,9 +5,9 @@ import { WelcomeMessage } from './WelcomeMessage'
 
 describe('WelcomeMessage', () => {
     function openCollapsiblePanels(): void {
-        const collapsibleTriggers = screen.getAllByTestId('collapsible-trigger')
-        for (const trigger of collapsibleTriggers) {
-            fireEvent.click(trigger)
+        const closedPanelButtons = document.querySelectorAll('button[data-state="closed"]')
+        for (const button of closedPanelButtons) {
+            fireEvent.click(button)
         }
     }
     test('renders for CodyIDE.VSCode', () => {
