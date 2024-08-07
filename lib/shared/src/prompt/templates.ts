@@ -14,14 +14,12 @@ export function populateCodeContextTemplate(
     const template =
         type === 'edit'
             ? ps`Codebase context from file {filePath}{inRepo}:\n{text}`
-            : ps`Codebase context from file {filePath}{inRepo}:\n\`\`\`{languageID}{filePathMeta}\n{text}\`\`\``
+            : ps`Codebase context from file {filePath}{inRepo}:\n\`\`\`{languageID}\n{text}\`\`\``
 
-    const filePath = PromptString.fromDisplayPath(fileUri)
     return template
         .replaceAll('{inRepo}', repoName ? ps` in repository ${repoName}` : ps``)
-        .replaceAll('{filePath}', filePath)
+        .replaceAll('{filePath}', PromptString.fromDisplayPath(fileUri))
         .replaceAll('{languageID}', PromptString.fromMarkdownCodeBlockLanguageIDForFilename(fileUri))
-        .replaceAll('{filePathMeta}', ps`:${filePath}`)
         .replaceAll('{text}', code)
 }
 
