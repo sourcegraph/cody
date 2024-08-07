@@ -153,7 +153,10 @@ class CodyFixHighlightPass(val file: PsiFile, val editor: Editor) :
 class CodyFixHighlightPassFactory : TextEditorHighlightingPassFactoryRegistrar {
   private val factory: TextEditorHighlightingPassFactory =
       TextEditorHighlightingPassFactory { file, editor ->
-        CodyFixHighlightPass(file, editor)
+        when (file.virtualFile.fileSystem.protocol) {
+          "mock" -> null
+          else -> CodyFixHighlightPass(file, editor)
+        }
       }
 
   override fun registerHighlightingPassFactory(
