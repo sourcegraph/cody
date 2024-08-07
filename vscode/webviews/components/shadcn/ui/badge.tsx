@@ -8,7 +8,7 @@ const badgeVariants = cva(
         variants: {
             variant: {
                 secondary: 'tw-border tw-border-border tw-bg-badge-background tw-text-badge-foreground',
-                outline: 'tw-border tw-border-border tw-bg-[unset] tw-text-muted-foreground',
+                outline: 'tw-border tw-border-muted-transparent tw-bg-[unset] tw-text-muted-foreground',
             },
         },
         defaultVariants: {
