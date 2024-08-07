@@ -54,7 +54,7 @@ export interface CodyWebPanelProps {
 export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const { className } = props
 
-    const { vscodeAPI, client, activeChatID, initialContext } = useWebAgentClient()
+    const { vscodeAPI, client, initialContext } = useWebAgentClient()
     const dispatchClientAction = useClientActionDispatcher()
 
     const [rootElement, setRootElement] = useState<HTMLElement | null>()
@@ -200,8 +200,7 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         [vscodeAPI, telemetryRecorder, chatModelContext, clientState, config, authStatus]
     )
 
-    const isLoading =
-        !client || !userAccountInfo || !chatModels || !activeChatID || !config || !view || !userHistory
+    const isLoading = !client || !userAccountInfo || !chatModels || !config || !view || !userHistory
 
     return (
         <div className={className} data-cody-web-chat={true} ref={setRootElement}>
@@ -220,7 +219,6 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                                     attributionEnabled={false}
                                     config={config}
                                     userHistory={userHistory}
-                                    chatID={activeChatID}
                                     chatEnabled={true}
                                     showWelcomeMessage={true}
                                     showIDESnippetActions={true}
