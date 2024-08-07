@@ -1,5 +1,5 @@
 export { AccountTab } from './AccountTab'
-export { CommandsTab } from './CommandsTab'
+export { PromptsTab } from '../prompts/PromptsTab'
 export { HistoryTab } from './HistoryTab'
 export { SettingsTab } from './SettingsTab'
 export { TabsBar } from './TabsBar'

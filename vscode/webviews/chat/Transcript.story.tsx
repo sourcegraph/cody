@@ -28,7 +28,6 @@ const meta: Meta<typeof Transcript> = {
         },
     },
     args: {
-        chatID: 'test',
         transcript: FIXTURE_TRANSCRIPT.simple,
         messageInProgress: null,
         feedbackButtonsOnSubmit: () => {},

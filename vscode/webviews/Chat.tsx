@@ -11,10 +11,10 @@ import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/cons
 import styles from './Chat.module.css'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
+import type { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
 
 interface ChatboxProps {
-    chatID: string
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
@@ -25,11 +25,11 @@ interface ChatboxProps {
     scrollableParent?: HTMLElement | null
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
+    setView: (view: View) => void
     className?: string
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
-    chatID,
     messageInProgress,
     transcript,
     vscodeAPI,
@@ -40,6 +40,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     scrollableParent,
     showWelcomeMessage = true,
     showIDESnippetActions = true,
+    setView,
     className,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
@@ -164,7 +165,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 </div>
             )}
             <Transcript
-                chatID={chatID}
                 transcript={transcript}
                 messageInProgress={messageInProgress}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
@@ -176,7 +176,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 postMessage={postMessage}
                 guardrails={guardrails}
             />
-            {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage IDE={userInfo.ide} />}
+            {transcript.length === 0 && showWelcomeMessage && (
+                <WelcomeMessage IDE={userInfo.ide} setView={setView} />
+            )}
             <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
         </div>
     )

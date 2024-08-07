@@ -247,6 +247,7 @@ export const MentionMenu: FunctionComponent<
             className={clsx(styles.container, COMMAND_CLASS_NAME)}
             label="@-mention context"
             ref={ref}
+            data-testid="mention-menu"
         >
             <CommandList>
                 {providers.length > 0 && (

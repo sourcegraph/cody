@@ -219,21 +219,37 @@ export const HumanMessageEditor: FunctionComponent<{
         })
     }, [telemetryRecorder.recordEvent, isFirstMessage, isSent])
 
-    // Set up the message listener for adding new context from user's editor to chat from the "Cody
-    // > Add Selection to Cody Chat" command. Only add to the last human input.
+    // Set up the message listener so the extension can control the input field.
     useClientActionListener(
         useCallback<ClientActionListener>(
-            ({ addContextItemsToLastHumanInput }) => {
-                if (isSent) {
-                    return
+            ({ addContextItemsToLastHumanInput, appendTextToLastPromptEditor }) => {
+                if (addContextItemsToLastHumanInput) {
+                    // Add new context to chat from the "Cody Add Selection to Cody Chat"
+                    // command, etc. Only add to the last human input field.
+                    if (isSent) {
+                        return
+                    }
+                    if (
+                        !addContextItemsToLastHumanInput ||
+                        addContextItemsToLastHumanInput.length === 0
+                    ) {
+                        return
+                    }
+                    const editor = editorRef.current
+                    if (editor) {
+                        editor.addMentions(addContextItemsToLastHumanInput)
+                        editor.setFocus(true)
+                    }
                 }
-                if (!addContextItemsToLastHumanInput || addContextItemsToLastHumanInput.length === 0) {
-                    return
-                }
-                const editor = editorRef.current
-                if (editor) {
-                    editor.addMentions(addContextItemsToLastHumanInput)
-                    editor.setFocus(true)
+
+                if (appendTextToLastPromptEditor) {
+                    // Append text to the last human input field.
+                    if (isSent) {
+                        return
+                    }
+                    if (editorRef.current) {
+                        editorRef.current.appendText(appendTextToLastPromptEditor)
+                    }
                 }
             },
             [isSent]
