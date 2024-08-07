@@ -151,6 +151,7 @@ const configuration = new AgentWorkspaceConfiguration(
     () => extensionConfiguration
 )
 
+export const onDidChangeWorkspaceFolders = new EventEmitter<vscode.WorkspaceFoldersChangeEvent>()
 export const onDidChangeTextEditorSelection = new EventEmitter<vscode.TextEditorSelectionChangeEvent>() // TODO: implement this
 export const onDidChangeVisibleTextEditors = new EventEmitter<readonly vscode.TextEditor[]>()
 export const onDidChangeActiveTextEditor = new EventEmitter<vscode.TextEditor | undefined>()
@@ -176,16 +177,24 @@ export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments)
                 .map(wf => wf.uri.toString())
                 .includes(newWorkspaceDocuments.workspaceRootUri.toString())
         ) {
-            workspaceFolders.push({
-                name: path.basename(newWorkspaceDocuments.workspaceRootUri.fsPath),
-                uri: newWorkspaceDocuments.workspaceRootUri,
-                index: 0,
-            })
+            setWorkspaceFolders(newWorkspaceDocuments.workspaceRootUri)
         }
     }
 }
 
-export const workspaceFolders: vscode.WorkspaceFolder[] = []
+export let workspaceFolders: vscode.WorkspaceFolder[] = []
+export function setWorkspaceFolders(workspaceRootUri: vscode.Uri): vscode.WorkspaceFolder[] {
+    // Active workspace folder is always at the start of the array.
+    const newWorkspaceFolder = {
+        name: path.basename(workspaceRootUri.fsPath),
+        uri: workspaceRootUri,
+        index: 0,
+    }
+    // Recreate array with updated indices.
+    workspaceFolders = [newWorkspaceFolder, ...workspaceFolders].map((wf, i) => ({ ...wf, index: i }))
+    return workspaceFolders
+}
+
 export const workspaceTextDocuments: vscode.TextDocument[] = []
 
 // vscode.workspace.onDidChangeConfiguration
@@ -327,7 +336,7 @@ const _workspace: typeof vscode.workspace = {
     },
     // TODO: used by `WorkspaceRepoMapper` and will be used by `git.onDidOpenRepository`
     // https://github.com/sourcegraph/cody/issues/4136
-    onDidChangeWorkspaceFolders: emptyEvent(),
+    onDidChangeWorkspaceFolders: onDidChangeWorkspaceFolders.event,
     onDidOpenTextDocument: onDidOpenTextDocument.event,
     onDidChangeConfiguration: onDidChangeConfiguration.event,
     onDidChangeTextDocument: onDidChangeTextDocument.event,
