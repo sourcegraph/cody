@@ -1,5 +1,6 @@
 import {
     type CodyCommand,
+    CodyIDE,
     type ContextItem,
     CustomCommandType,
     isFileURI,
@@ -7,6 +8,7 @@ import {
 
 import * as vscode from 'vscode'
 import { CodyCommandMenuItems } from '..'
+import { getConfiguration } from '../../configuration'
 import { executeExplainHistoryCommand } from '../execute/explain-history'
 import { showCommandMenu } from '../menus'
 import type { CodyCommandArgs } from '../types'
@@ -39,8 +41,10 @@ export class CommandsProvider implements vscode.Disposable {
     constructor() {
         this.disposables.push(this.customCommandsStore)
 
-        for (const c of vscodeDefaultCommands) {
-            this.commands.set(c.key, c)
+        if (getConfiguration().agentIDE !== CodyIDE.Web) {
+            for (const c of vscodeDefaultCommands) {
+                this.commands.set(c.key, c)
+            }
         }
 
         // Cody Command Menus
