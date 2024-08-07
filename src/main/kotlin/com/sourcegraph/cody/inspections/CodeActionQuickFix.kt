@@ -54,6 +54,10 @@ class CodeActionQuickFix(private val params: CodeActionQuickFixParams) :
     return params.title.lowercase() == "ask cody to explain"
   }
 
+  private fun isKnownAction(): Boolean {
+    return isFixAction() || isExplainAction()
+  }
+
   override fun getFamilyName(): String {
     return FAMILY_NAME
   }
@@ -63,7 +67,12 @@ class CodeActionQuickFix(private val params: CodeActionQuickFixParams) :
       return false
     }
 
-    if (!(isFixAction() || isExplainAction())) {
+    if (isExplainAction()) {
+      // TODO: Temporarily disable explain action since it's not implemented
+      return false
+    }
+
+    if (!isKnownAction()) {
       // TODO: We temporarily disable unknown actions until we've verified they work.
       return false
     }
