@@ -338,11 +338,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'get-chat-models':
                 this.postChatModels()
                 break
-            case 'getUserContext':
-                await this.handleGetUserContextFilesCandidates({
+            case 'getUserContext': {
+                const result = await this.handleGetUserContextFilesCandidates({
                     query: parseMentionQuery(message.query, null),
                 })
+                await this.postMessage({
+                    type: 'userContextFiles',
+                    userContextFiles: result.userContextFiles,
+                })
                 break
+            }
             case 'insert':
                 await handleCodeFromInsertAtCursor(message.text)
                 break
