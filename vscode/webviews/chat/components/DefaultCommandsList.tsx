@@ -44,7 +44,10 @@ export const DefaultCommandsList: FunctionComponent<{
                     className="tw-text-left"
                     onClick={() => {
                         getVSCodeAPI().postMessage({ command: 'command', id: key })
-                        setView?.(View.Chat)
+                        // Opening Custom Commands quick pick menu should not change the view.
+                        if (key !== 'cody.menu.custom-commands') {
+                            setView?.(View.Chat)
+                        }
                     }}
                 >
                     <Icon className="tw-w-8 tw-h-8 tw-opacity-80" size={16} strokeWidth="1.25" />
