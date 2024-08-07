@@ -218,6 +218,11 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
   ) {
     synchronized(lensSubscribers) {
       lensSubscribers.removeAll { (checkFunc, future) ->
+        if (codeLenses.find { it.command?.command == "cody.fixup.codelens.error" } != null) {
+          future.completeExceptionally(IllegalStateException("Error group shown"))
+          return@removeAll true
+        }
+
         val hasLensAppeared = checkFunc(codeLenses)
         if (hasLensAppeared) future.complete(lensWidgetGroup)
         hasLensAppeared
