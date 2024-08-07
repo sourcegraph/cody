@@ -1,11 +1,10 @@
-import { FeatureFlag, type Model } from '@sourcegraph/cody-shared'
+import type { Model } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import type { PromptOrDeprecatedCommand } from '../../../../../../components/promptList/PromptList'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
-import { useFeatureFlag } from '../../../../../../utils/useFeatureFlags'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
 import { AddContextButton } from './AddContextButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
@@ -59,8 +58,6 @@ export const Toolbar: FunctionComponent<{
         [onGapClick]
     )
 
-    const showChatPromptLibrarySelector = useFeatureFlag(FeatureFlag.ChatPromptSelector) ?? false
-
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <menu
@@ -76,13 +73,11 @@ export const Toolbar: FunctionComponent<{
                 {onMentionClick && (
                     <AddContextButton onClick={onMentionClick} className="tw-opacity-60 tw-mr-2" />
                 )}
-                {showChatPromptLibrarySelector && (
-                    <PromptSelectFieldToolbarItem
-                        focusEditor={focusEditor}
-                        appendTextToEditor={appendTextToEditor}
-                        className="tw-ml-1 tw-mr-1"
-                    />
-                )}
+                <PromptSelectFieldToolbarItem
+                    focusEditor={focusEditor}
+                    appendTextToEditor={appendTextToEditor}
+                    className="tw-ml-1 tw-mr-1"
+                />
                 <ModelSelectFieldToolbarItem
                     userInfo={userInfo}
                     focusEditor={focusEditor}
