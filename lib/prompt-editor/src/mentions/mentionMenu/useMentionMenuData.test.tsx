@@ -89,6 +89,7 @@ describe('useMentionMenuData', () => {
             useMentionMenuData({ query: '', parentItem: null }, { remainingTokenBudget: 100, limit: 10 })
         )
         await waitForAsyncGeneratorInTest()
+        await waitForAsyncGeneratorInTest() // reduce flakiness
         expect(result.current).toEqual<typeof result.current>({
             items: undefined,
             providers: mockProviders,
