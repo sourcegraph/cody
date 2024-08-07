@@ -5,7 +5,14 @@ import {
     toSerializedPromptEditorValue,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { $createTextNode, $getRoot, $getSelection, $insertNodes, type LexicalEditor } from 'lexical'
+import {
+    $createTextNode,
+    $getRoot,
+    $getSelection,
+    $insertNodes,
+    $setSelection,
+    type LexicalEditor,
+} from 'lexical'
 import type { EditorState, SerializedEditorState, SerializedLexicalNode } from 'lexical'
 import { isEqual } from 'lodash'
 import { type FunctionComponent, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
@@ -148,10 +155,15 @@ export const PromptEditor: FunctionComponent<Props> = ({
 
                 editor.update(() => {
                     if (!hasSetInitialContext.current || isEditorContentOnlyInitialContext(editor)) {
-                        $getRoot().clear()
+                        if (isEditorContentOnlyInitialContext(editor)) {
+                            // Only clear in this case so that we don't clobber any text that was
+                            // inserted before initial context was received.
+                            $getRoot().clear()
+                        }
                         const nodesToInsert = lexicalNodesForContextItems(items, {
                             isFromInitialContext: true,
                         })
+                        $setSelection($getRoot().selectStart()) // insert at start
                         $insertNodes(nodesToInsert)
                         $selectEnd()
                         hasSetInitialContext.current = true

@@ -192,7 +192,11 @@ export type ExtensionMessage =
           userContextFiles?: ContextItem[] | undefined | null
       }
     | { type: 'clientState'; value: ClientStateForWebview }
-    | { type: 'clientAction'; addContextItemsToLastHumanInput: ContextItem[] }
+    | {
+          type: 'clientAction'
+          addContextItemsToLastHumanInput?: ContextItem[] | null | undefined
+          appendTextToLastPromptEditor?: string | null | undefined
+      }
     /**
      * The current default model will always be the first one on the list.
      */
