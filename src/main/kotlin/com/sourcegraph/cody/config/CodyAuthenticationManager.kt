@@ -2,6 +2,7 @@ package com.sourcegraph.cody.config
 
 import com.intellij.collaboration.async.CompletableFutureUtil.submitIOTask
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
@@ -83,7 +84,7 @@ class CodyAuthenticationManager(val project: Project) :
         object : WindowAdapter() {
           override fun windowActivated(e: WindowEvent?) {
             super.windowActivated(e)
-            getAuthenticationState()
+            ApplicationManager.getApplication().executeOnPooledThread { getAuthenticationState() }
           }
         }
     frame?.addWindowListener(listener)
