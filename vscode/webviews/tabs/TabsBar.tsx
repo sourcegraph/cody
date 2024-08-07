@@ -34,10 +34,14 @@ type IconComponent = React.ForwardRefExoticComponent<
 interface TabConfig {
     Icon: IconComponent
     view: View
-    tooltip: React.ReactNode
+    title: string
     command?: string
     SubIcons?: {
-        tooltip: React.ReactNode
+        /** Extra content to display in the tooltip (in addition to the title). */
+        tooltipExtra?: React.ReactNode
+
+        title: string
+        alwaysShowTitle?: boolean
         Icon: IconComponent
         command: string
         arg?: string | undefined | null
@@ -52,12 +56,29 @@ interface TabButtonProps {
     isActive?: boolean
     onClick: () => void
     prominent?: boolean
-    tooltip: React.ReactNode
+    title: string
+    alwaysShowTitle?: boolean
+
+    /** Extra content to display in the tooltip (in addition to the title). */
+    tooltipExtra?: React.ReactNode
+
     'data-testid'?: string
 }
 
 const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
-    ({ Icon, isActive, onClick, tooltip, prominent, 'data-testid': dataTestId }, ref) => (
+    (
+        {
+            Icon,
+            isActive,
+            onClick,
+            title,
+            alwaysShowTitle,
+            tooltipExtra,
+            prominent,
+            'data-testid': dataTestId,
+        },
+        ref
+    ) => (
         <Tooltip>
             <TooltipTrigger asChild>
                 <button
@@ -65,7 +86,7 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
                     onClick={onClick}
                     ref={ref}
                     className={clsx(
-                        'tw-py-3 tw-px-2 tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
+                        'tw-flex tw-gap-3 tw-items-center tw-leading-none tw-py-3 tw-px-2 tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
                         {
                             '!tw-opacity-100 !tw-border-[var(--vscode-tab-activeBorderTop)]': isActive,
                             '!tw-opacity-100': prominent,
@@ -74,9 +95,12 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
                     data-testid={dataTestId}
                 >
                     <Icon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
+                    <span className={alwaysShowTitle ? '' : 'tw-hidden md:tw-inline'}>{title}</span>
                 </button>
             </TooltipTrigger>
-            <TooltipContent>{tooltip}</TooltipContent>
+            <TooltipContent className="md:tw-hidden">
+                {title} {tooltipExtra}
+            </TooltipContent>
         </Tooltip>
     )
 )
@@ -89,13 +113,14 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                 [
                     {
                         view: View.Chat,
-                        tooltip: 'Chat',
+                        title: 'Chat',
                         Icon: MessagesSquareIcon,
                         SubIcons: [
                             {
-                                tooltip: (
+                                title: 'New Chat',
+                                alwaysShowTitle: true,
+                                tooltipExtra: (
                                     <>
-                                        New Chat{' '}
                                         {IDE !== CodyIDE.Web && (
                                             <Kbd macOS="shift+opt+l" linuxAndWindows="shift+alt+l" />
                                         )}
@@ -106,7 +131,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                             },
                             IDE !== CodyIDE.Web
                                 ? {
-                                      tooltip: 'Open in Editor',
+                                      title: 'Open in Editor',
                                       Icon: ColumnsIcon,
                                       command: 'cody.chat.moveToEditor',
                                   }
@@ -116,18 +141,18 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                     },
                     {
                         view: View.History,
-                        tooltip: 'Chat History',
+                        title: 'History',
                         Icon: HistoryIcon,
                         SubIcons: [
                             IDE !== CodyIDE.Web
                                 ? {
-                                      tooltip: 'Export History',
+                                      title: 'Export History',
                                       Icon: DownloadIcon,
                                       command: 'cody.chat.history.export',
                                   }
                                 : null,
                             {
-                                tooltip: 'Clear History',
+                                title: 'Clear Chat History',
                                 Icon: Trash2Icon,
                                 command: 'cody.chat.history.clear',
                                 // We don't have a way to request user confirmation in Cody Web
@@ -140,14 +165,14 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                     },
                     {
                         view: View.Prompts,
-                        tooltip: 'Prompts & Commands',
+                        title: IDE === CodyIDE.Web ? 'Prompts' : 'Prompts & Commands',
                         Icon: BookTextIcon,
                         changesView: true,
                     },
                     IDE !== CodyIDE.Web
                         ? {
                               view: View.Settings,
-                              tooltip: 'Settings',
+                              title: 'Settings',
                               Icon: SettingsIcon,
                               command: 'cody.status-bar.interacted',
                           }
@@ -155,7 +180,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                     IDE !== CodyIDE.Web
                         ? {
                               view: View.Account,
-                              tooltip: 'Account',
+                              title: 'Account',
                               Icon: CircleUserIcon,
                               command: 'cody.auth.account',
                               changesView: IDE !== CodyIDE.VSCode,
@@ -188,12 +213,12 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
             )}
         >
             <div className="tw-flex tw-gap-1">
-                {tabItems.map(({ Icon, view, command, tooltip, changesView }) => (
+                {tabItems.map(({ Icon, view, command, title, changesView }) => (
                     <Tabs.Trigger key={view} value={view} asChild={true}>
                         <TabButton
                             Icon={Icon}
                             view={view}
-                            tooltip={tooltip}
+                            title={title}
                             command={command}
                             isActive={currentView === view}
                             onClick={() => handleClick(view, command, changesView)}
@@ -203,18 +228,22 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                 ))}
             </div>
             <div className="tw-flex tw-gap-4">
-                {currentViewSubIcons?.map(({ Icon, command, tooltip, arg }) => (
-                    <TabButton
-                        key={command}
-                        Icon={Icon}
-                        tooltip={tooltip}
-                        command={command}
-                        onClick={() =>
-                            getVSCodeAPI().postMessage({ command: 'command', id: command, arg })
-                        }
-                        prominent
-                    />
-                ))}
+                {currentViewSubIcons?.map(
+                    ({ Icon, command, title, alwaysShowTitle, tooltipExtra, arg }) => (
+                        <TabButton
+                            key={command}
+                            Icon={Icon}
+                            title={title}
+                            alwaysShowTitle={alwaysShowTitle}
+                            tooltipExtra={tooltipExtra}
+                            command={command}
+                            onClick={() =>
+                                getVSCodeAPI().postMessage({ command: 'command', id: command, arg })
+                            }
+                            prominent
+                        />
+                    )
+                )}
             </div>
         </Tabs.List>
     )
