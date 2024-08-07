@@ -95,6 +95,11 @@ export interface PreloadCompletionContext extends vscode.InlineCompletionContext
 export class InlineCompletionItemProvider
     implements vscode.InlineCompletionItemProvider, vscode.Disposable
 {
+    // This field is going to be set if you use the keyboard shortcut to manually trigger a
+    // multiline completion.
+    // VSCode does not allow to send additional parameters with suggestion triggers, so we
+    // need to keep this intent outside of the message.
+    public forceNextCompletionIsMultiline = false
     private latestCompletionRequest: CompletionRequest | null = null
     // This field is going to be set if you use the keyboard shortcut to manually trigger a
     // completion. Since VS Code does not provide a way to distinguish manual vs automatic
@@ -303,6 +308,10 @@ export class InlineCompletionItemProvider
         return wrapInActiveSpan(`autocomplete.${spanNamePrefix}InlineCompletionItems`, async span => {
             const stageRecorder = new CompletionLogger.AutocompleteStageRecorder({ isPreloadRequest })
 
+            const forceMultiline = this.forceNextCompletionIsMultiline === true
+            // Reset intent state.
+            this.forceNextCompletionIsMultiline = false
+
             const isManualCompletion = Boolean(
                 this.lastManualCompletionTimestamp &&
                     this.lastManualCompletionTimestamp > Date.now() - 500
@@ -408,7 +417,12 @@ export class InlineCompletionItemProvider
                 takeSuggestWidgetSelectionIntoAccount
             )
 
+            if (forceMultiline) {
+                docContext.multilineTrigger = 'manual'
+            }
+
             stageRecorder.record('preCompletionIntent')
+
             const completionIntent = getCompletionIntent({
                 document,
                 position: invokedPosition,
@@ -852,9 +866,16 @@ export class InlineCompletionItemProvider
     }
 
     public async manuallyTriggerCompletion(): Promise<void> {
+        // We hide the current suggestion, otherwise VSCode will not trigger a new
+        // suggestion request.
         await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
         this.lastManualCompletionTimestamp = Date.now()
         await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
+    }
+
+    public async manuallyTriggerMultiLine(): Promise<void> {
+        this.forceNextCompletionIsMultiline = true
+        return this.manuallyTriggerCompletion()
     }
 
     /**
