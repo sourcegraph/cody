@@ -182,19 +182,22 @@ export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments)
     }
 }
 
-export let workspaceFolders: vscode.WorkspaceFolder[] = []
 export function setWorkspaceFolders(workspaceRootUri: vscode.Uri): vscode.WorkspaceFolder[] {
-    // Active workspace folder is always at the start of the array.
-    const newWorkspaceFolder = {
-        name: path.basename(workspaceRootUri.fsPath),
+    // TODO: Update this when we support multiple workspace roots
+    while (workspaceFolders.pop()) {
+        // clear workspaceFolders array
+    }
+
+    workspaceFolders.push({
+        name: path.basename(workspaceRootUri.toString()),
         uri: workspaceRootUri,
         index: 0,
-    }
-    // Recreate array with updated indices.
-    workspaceFolders = [newWorkspaceFolder, ...workspaceFolders].map((wf, i) => ({ ...wf, index: i }))
+    })
+
     return workspaceFolders
 }
 
+export const workspaceFolders: vscode.WorkspaceFolder[] = []
 export const workspaceTextDocuments: vscode.TextDocument[] = []
 
 // vscode.workspace.onDidChangeConfiguration
