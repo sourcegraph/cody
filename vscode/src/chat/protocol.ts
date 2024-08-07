@@ -269,7 +269,7 @@ export interface ConfigurationSubsetForWebview
         ConfigurationWithAccessToken,
         'experimentalNoodle' | 'serverEndpoint' | 'agentIDE' | 'agentExtensionVersion'
     > {
-    webviewType?: WebviewType | undefined | null
+    supportsTabs: boolean
 }
 
 /**

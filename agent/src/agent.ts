@@ -355,6 +355,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 '*',
                 new IndentationBasedFoldingRangeProvider()
             )
+            if (clientInfo.capabilities?.persistencePath) {
+                globalState.setPersistencePath(clientInfo.capabilities.persistencePath)
+            }
             if (clientInfo.extensionConfiguration?.baseGlobalState) {
                 for (const key in clientInfo.extensionConfiguration.baseGlobalState) {
                     const value = clientInfo.extensionConfiguration.baseGlobalState[key]

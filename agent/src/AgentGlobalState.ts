@@ -11,9 +11,9 @@ import * as vscode_shim from './vscode-shim'
  */
 export class AgentGlobalState implements vscode.Memento {
     private globalStorage = new Map<string, any>()
+    private path: string | null = null
 
-    constructor(private path = '/tmp/agent-global-state.json') {
-        this.readFromDisk()
+    constructor() {
         // Disable the feature that opens a webview when the user accepts their first
         // autocomplete request.  Removing this line should fail the agent integration
         // tests with the following error message "chat/new: command finished executing
@@ -24,26 +24,46 @@ export class AgentGlobalState implements vscode.Memento {
         this.globalStorage.set('extension.hasActivatedPreviously', 'true')
     }
 
+    public setPersistencePath(path: string): void {
+        this.path = path
+        const storage = this.readFromDisk(path)
+        for (const [key, value] of storage ?? []) {
+            if (this.globalStorage.has(key) && this.globalStorage.get(key) !== value) {
+                throw new Error(
+                    `Global state key ${key} already exists with a different value: (local) ${this.globalStorage.get(
+                        key
+                    )}, (disk) ${value}`
+                )
+            }
+            this.globalStorage.set(key, value)
+        }
+    }
+
     // Write the contents of the globalStorage to the file at `this.path`
     // in a format that can be deserialized later back into a Map.
     private syncToDisk(): void {
-        const json = JSON.stringify([...this.globalStorage])
-        fs.writeFileSync(this.path, json)
+        if (this.path) {
+            const json = JSON.stringify([...this.globalStorage])
+            fs.writeFileSync(this.path, json)
+        }
     }
 
     // deserialize the contents of the file at `this.path` into the globalStorage
-    private readFromDisk(): void {
+    private readFromDisk(path: string): Map<string, any> | undefined {
         try {
-            const json = fs.readFileSync(this.path, 'utf8')
+            const json = fs.readFileSync(path, 'utf8')
             const entries = JSON.parse(json)
-            this.globalStorage = new Map(entries)
+            return new Map(entries)
         } catch (e) {
-            // Ignore errors reading the file
+            return undefined
         }
     }
 
     public reset(): void {
         this.globalStorage.clear()
+        if (this.path) {
+            fs.truncateSync(this.path)
+        }
     }
 
     public keys(): readonly string[] {
