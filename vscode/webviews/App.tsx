@@ -6,7 +6,6 @@ import {
     type AuthStatus,
     type ChatMessage,
     type ClientStateForWebview,
-    type CodyCommand,
     CodyIDE,
     GuardrailsPost,
     type Model,
@@ -55,7 +54,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const [chatEnabled, setChatEnabled] = useState<boolean>(true)
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
-    const [commandList, setCommandList] = useState<CodyCommand[]>([])
     const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
 
     const [clientState, setClientState] = useState<ClientStateForWebview>({
@@ -142,9 +140,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'transcript-errors':
                         setIsTranscriptError(message.isTranscriptError)
-                        break
-                    case 'commands':
-                        setCommandList(message.commands)
                         break
                     case 'chatModels':
                         setChatModels(message.models)
@@ -278,7 +273,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     isTranscriptError={isTranscriptError}
                     guardrails={guardrails}
                     userHistory={userHistory}
-                    commands={commandList}
                 />
             )}
         </ComposedWrappers>

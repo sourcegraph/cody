@@ -1,6 +1,7 @@
 import * as Tabs from '@radix-ui/react-tabs'
 import clsx from 'clsx'
 import {
+    BookTextIcon,
     CircleUserIcon,
     ColumnsIcon,
     DownloadIcon,
@@ -10,7 +11,6 @@ import {
     MessagesSquareIcon,
     SettingsIcon,
     Trash2Icon,
-    ZapIcon,
 } from 'lucide-react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
@@ -138,14 +138,12 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                         ].filter(isDefined),
                         changesView: true,
                     },
-                    IDE !== CodyIDE.Web
-                        ? {
-                              view: View.Commands,
-                              tooltip: 'Commands',
-                              Icon: ZapIcon,
-                              changesView: true,
-                          }
-                        : null,
+                    {
+                        view: View.Prompts,
+                        tooltip: 'Prompts & Commands',
+                        Icon: BookTextIcon,
+                        changesView: true,
+                    },
                     IDE !== CodyIDE.Web
                         ? {
                               view: View.Settings,

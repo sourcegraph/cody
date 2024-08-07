@@ -34,7 +34,6 @@ import {
     createMessageAPIForExtension,
     featureFlagProvider,
     getContextForChatMessage,
-    graphqlClient,
     hydrateAfterPostMessage,
     inputTextWithoutContextChipsFromPromptEditorState,
     isAbortError,
@@ -65,7 +64,6 @@ import {
     startAuthProgressIndicator,
 } from '../../auth/auth-progress-indicator'
 import type { startTokenReceiver } from '../../auth/token-receiver'
-import { getCodyCommandList } from '../../commands/CommandsController'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
 import { getConfiguration, getFullConfig } from '../../configuration'
@@ -81,6 +79,7 @@ import { rewriteChatQuery } from '../../local-context/rewrite-chat-query'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
+import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
 import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
@@ -575,10 +574,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
-        })
-        await this.postMessage({
-            type: 'commands',
-            commands: getCodyCommandList(),
         })
     }
 
@@ -1663,9 +1658,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         ),
                     evaluatedFeatureFlag: (flag, signal) =>
                         featureFlagProvider.evaluatedFeatureFlag(flag, signal),
-                    prompts: async function* (query, signal) {
-                        yield await graphqlClient.queryPrompts(query, signal)
-                    },
+                    prompts: mergedPromptsAndLegacyCommands,
                 }
             )
         )

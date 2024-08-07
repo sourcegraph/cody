@@ -5,7 +5,7 @@ import type { ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protoc
 import styles from './App.module.css'
 import { Chat } from './Chat'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
-import { AccountTab, CommandsTab, HistoryTab, SettingsTab, TabsBar, View } from './tabs'
+import { AccountTab, HistoryTab, PromptsTab, SettingsTab, TabsBar, View } from './tabs'
 
 /**
  * The Cody tab panel, with tabs for chat, history, prompts, etc.
@@ -32,8 +32,7 @@ export const CodyPanel: FunctionComponent<
         | 'showIDESnippetActions'
         | 'scrollableParent'
     > &
-        Pick<ComponentProps<typeof HistoryTab>, 'userHistory'> &
-        Pick<ComponentProps<typeof CommandsTab>, 'commands'>
+        Pick<ComponentProps<typeof HistoryTab>, 'userHistory'>
 > = ({
     view,
     setView,
@@ -53,7 +52,6 @@ export const CodyPanel: FunctionComponent<
     scrollableParent,
     showWelcomeMessage,
     userHistory,
-    commands,
 }) => {
     return (
         <TabRoot
@@ -81,12 +79,11 @@ export const CodyPanel: FunctionComponent<
                         showIDESnippetActions={showIDESnippetActions}
                         showWelcomeMessage={showWelcomeMessage}
                         scrollableParent={scrollableParent}
+                        setView={setView}
                     />
                 )}
                 {view === View.History && <HistoryTab userHistory={userHistory} />}
-                {view === View.Commands && (
-                    <CommandsTab setView={setView} IDE={config.agentIDE} commands={commands} />
-                )}
+                {view === View.Prompts && <PromptsTab setView={setView} />}
                 {view === View.Account && <AccountTab userInfo={userInfo} />}
                 {view === View.Settings && <SettingsTab userInfo={userInfo} />}
             </TabContainer>

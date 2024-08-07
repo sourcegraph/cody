@@ -26,6 +26,7 @@ const buttonVariants = cva(
 
             size: {
                 default: 'tw-px-4 tw-py-2',
+                xs: 'tw-rounded-sm tw-px-2 tw-text-xs',
                 sm: 'tw-rounded-md tw-px-2 tw-py-[.1rem]',
                 lg: 'tw-rounded-md tw-px-8',
                 icon: 'tw-rounded-lg tw-w-[1.375rem] tw-h-[1.375rem]', // Match VS Code’s 22px icon buttons

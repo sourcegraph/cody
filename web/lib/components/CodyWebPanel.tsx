@@ -5,7 +5,6 @@ import {
     type AuthStatus,
     type ChatMessage,
     type ClientStateForWebview,
-    type CodyCommand,
     CodyIDE,
     type ContextItem,
     type ContextItemRepository,
@@ -55,10 +54,8 @@ export interface CodyWebPanelProps {
 export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const { className } = props
 
-    const { vscodeAPI, client, activeChatID, activeWebviewPanelID, initialContext } = useWebAgentClient()
+    const { vscodeAPI, client, activeChatID, initialContext } = useWebAgentClient()
     const dispatchClientAction = useClientActionDispatcher()
-
-    const [initialization, setInitialization] = useState<'init' | 'completed'>('init')
 
     const [rootElement, setRootElement] = useState<HTMLElement | null>()
     const [errorMessages, setErrorMessages] = useState<string[]>([])
@@ -71,7 +68,6 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
-    const [commandList, setCommandList] = useState<CodyCommand[]>([])
     const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
 
     useLayoutEffect(() => {
@@ -121,36 +117,12 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 case 'setConfigFeatures':
                     setServerSentModelsEnabled(!!message.configFeatures.serverSentModels)
                     break
-                case 'commands':
-                    setCommandList(message.commands)
-                    break
                 case 'history':
                     setUserHistory(Object.values(message.localHistory?.chat ?? {}))
                     break
             }
         })
     }, [vscodeAPI, dispatchClientAction])
-
-    useLayoutEffect(() => {
-        if (initialization === 'completed') {
-            return
-        }
-
-        if (client && !isErrorLike(client) && activeChatID && activeWebviewPanelID) {
-            // Notify the extension host that we are ready to receive events.
-            vscodeAPI.postMessage({ command: 'ready' })
-            vscodeAPI.postMessage({ command: 'initialized' })
-
-            client.rpc
-                .sendRequest('webview/receiveMessage', {
-                    id: activeWebviewPanelID,
-                    message: { command: 'restoreHistory', chatID: activeChatID },
-                })
-                .then(() => {
-                    setInitialization('completed')
-                })
-        }
-    }, [initialization, vscodeAPI, activeChatID, activeWebviewPanelID, client])
 
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
@@ -229,14 +201,7 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     )
 
     const isLoading =
-        !client ||
-        !userAccountInfo ||
-        !chatModels ||
-        !activeChatID ||
-        initialization !== 'completed' ||
-        !config ||
-        !view ||
-        !userHistory
+        !client || !userAccountInfo || !chatModels || !activeChatID || !config || !view || !userHistory
 
     return (
         <div className={className} data-cody-web-chat={true} ref={setRootElement}>
@@ -253,7 +218,6 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                                     errorMessages={errorMessages}
                                     setErrorMessages={setErrorMessages}
                                     attributionEnabled={false}
-                                    commands={commandList}
                                     config={config}
                                     userHistory={userHistory}
                                     chatID={activeChatID}
