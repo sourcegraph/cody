@@ -3,6 +3,7 @@ import {
     AtSignIcon,
     type LucideProps,
     MessageSquarePlusIcon,
+    PencilRulerIcon,
     SettingsIcon,
     TextIcon,
 } from 'lucide-react'
@@ -46,6 +47,15 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => 
 
     return (
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-pt-4 tw-px-8 tw-gap-10 sm:tw-pl-21 tw-transition-all">
+            <CollapsiblePanel title="Commands are now Prompts!" initialOpen={true}>
+                <FeatureRow icon={PencilRulerIcon}>
+                    Prompts (formerly known as Commands) allow you to quickly chat with Cody with repeatable prompts. 
+                    Read our <a href="https://sourcegraph.com/prompts">docs</a> to learn more.
+                    <br/> 
+                    <br/>Create your own Prompts in the <a href="https://sourcegraph.com/prompts">Prompt Library</a>
+
+                </FeatureRow>
+            </CollapsiblePanel>
             <DefaultCommandsList IDE={IDE} initialOpen={false} />
             <CollapsiblePanel title="Chat Help">
                 <FeatureRow icon={AtSignIcon}>
