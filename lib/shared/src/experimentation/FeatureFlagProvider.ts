@@ -82,8 +82,6 @@ export enum FeatureFlag {
     /** Whether to use server-side Context API. */
     CodyServerSideContextAPI = 'cody-server-side-context-api-enabled',
 
-    ChatPromptSelector = 'chat-prompt-selector',
-
     GitMentionProvider = 'git-mention-provider',
 }
 

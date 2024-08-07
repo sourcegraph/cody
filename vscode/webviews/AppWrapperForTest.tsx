@@ -13,6 +13,7 @@ import { ClientStateContextProvider, ExtensionAPIProviderForTestsOnly } from '@s
 import { type ComponentProps, type FunctionComponent, type ReactNode, useMemo } from 'react'
 import { URI } from 'vscode-uri'
 import { COMMON_WRAPPERS } from './AppWrapper'
+import { FIXTURE_COMMANDS, makePromptsAPIWithData } from './components/promptList/fixtures'
 import { FIXTURE_PROMPTS } from './components/promptSelectField/fixtures'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
 import { TelemetryRecorderContext } from './utils/telemetry'
@@ -66,15 +67,11 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                                 emptyLabel: 'No results found from My Context Source',
                             },
                         ]),
-                    evaluatedFeatureFlag: () => asyncGeneratorWithValues(undefined),
-                    prompts: query =>
-                        asyncGeneratorFromAsyncFunction(async () => {
-                            await new Promise<void>(resolve => setTimeout(resolve, 250))
-                            const queryTextLower = query.toLowerCase()
-                            return FIXTURE_PROMPTS.filter(prompt =>
-                                prompt.name.toLowerCase().includes(queryTextLower)
-                            )
-                        }),
+                    evaluatedFeatureFlag: _flag => asyncGeneratorWithValues(true),
+                    prompts: makePromptsAPIWithData({
+                        prompts: { type: 'results', results: FIXTURE_PROMPTS },
+                        commands: FIXTURE_COMMANDS,
+                    }),
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
             {

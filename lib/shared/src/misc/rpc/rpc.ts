@@ -351,7 +351,7 @@ export function addMessageListenersForExtensionAPI(
                 messageAPI.postMessage({
                     streamId,
                     streamEvent: 'error',
-                    data: error,
+                    data: error instanceof Error ? error.message : String(error),
                 })
             } finally {
                 disposeAbortListener()

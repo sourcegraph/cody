@@ -6,7 +6,6 @@ import {
     type AuthStatus,
     type ChatMessage,
     type ClientStateForWebview,
-    type CodyCommand,
     CodyIDE,
     GuardrailsPost,
     type Model,
@@ -46,7 +45,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
 
     const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
-    const [chatID, setChatID] = useState<string>('[no-chat]')
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
@@ -55,7 +53,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const [chatEnabled, setChatEnabled] = useState<boolean>(true)
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
-    const [commandList, setCommandList] = useState<CodyCommand[]>([])
     const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
 
     const [clientState, setClientState] = useState<ClientStateForWebview>({
@@ -98,7 +95,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setTranscript(deserializedMessages)
                             setMessageInProgress(null)
                         }
-                        setChatID(message.chatID)
                         vscodeAPI.setState(message.chatID)
                         break
                     }
@@ -142,9 +138,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'transcript-errors':
                         setIsTranscriptError(message.isTranscriptError)
-                        break
-                    case 'commands':
-                        setCommandList(message.commands)
                         break
                     case 'chatModels':
                         setChatModels(message.models)
@@ -269,7 +262,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     errorMessages={errorMessages}
                     setErrorMessages={setErrorMessages}
                     attributionEnabled={attributionEnabled}
-                    chatID={chatID}
                     chatEnabled={chatEnabled}
                     userInfo={userAccountInfo}
                     messageInProgress={messageInProgress}
@@ -278,7 +270,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     isTranscriptError={isTranscriptError}
                     guardrails={guardrails}
                     userHistory={userHistory}
-                    commands={commandList}
                 />
             )}
         </ComposedWrappers>

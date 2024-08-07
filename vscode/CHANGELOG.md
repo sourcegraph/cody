@@ -6,6 +6,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+Chat: Added ability to remove individual chats from chat history in the sidebar. [pull/5114](https://github.com/sourcegraph/cody/pull/5114)
+
 ### Fixed
 
 ### Changed

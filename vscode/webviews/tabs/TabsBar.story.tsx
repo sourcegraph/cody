@@ -37,9 +37,9 @@ export const HistoryTab: Story = {
     },
 }
 
-export const CommandsTab: Story = {
+export const PromptsTab: Story = {
     args: {
-        currentView: View.Commands,
+        currentView: View.Prompts,
         setView: () => {},
     },
 }
