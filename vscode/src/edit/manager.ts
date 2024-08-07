@@ -239,6 +239,8 @@ export class EditManager implements vscode.Disposable {
             return
         }
 
+        telemetryRecorder.recordEvent('cody.command.smart-apply', 'executed')
+
         const editor = await vscode.window.showTextDocument(document.uri)
         // Apply some decorations to the editor, this showcases that Cody is working on the full file range
         // of the document. We will narrow it down to a selection soon.
@@ -268,8 +270,11 @@ export class EditManager implements vscode.Disposable {
             void vscode.window.showErrorMessage(
                 'Unable to apply this change to the file. Please try applying this code manually'
             )
+            telemetryRecorder.recordEvent('cody.smart-apply.selection', 'not-found')
             return
         }
+
+        telemetryRecorder.recordEvent('cody.smart-apply.selection', selection.type)
 
         // Move focus to the determined selection
         editor.revealRange(selection.range, vscode.TextEditorRevealType.InCenter)
