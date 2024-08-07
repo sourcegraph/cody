@@ -41,6 +41,7 @@ interface TabConfig {
         tooltipExtra?: React.ReactNode
 
         title: string
+        alwaysShowTitle?: boolean
         Icon: IconComponent
         command: string
         arg?: string | undefined | null
@@ -56,6 +57,7 @@ interface TabButtonProps {
     onClick: () => void
     prominent?: boolean
     title: string
+    alwaysShowTitle?: boolean
 
     /** Extra content to display in the tooltip (in addition to the title). */
     tooltipExtra?: React.ReactNode
@@ -64,7 +66,19 @@ interface TabButtonProps {
 }
 
 const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
-    ({ Icon, isActive, onClick, title, tooltipExtra, prominent, 'data-testid': dataTestId }, ref) => (
+    (
+        {
+            Icon,
+            isActive,
+            onClick,
+            title,
+            alwaysShowTitle,
+            tooltipExtra,
+            prominent,
+            'data-testid': dataTestId,
+        },
+        ref
+    ) => (
         <Tooltip>
             <TooltipTrigger asChild>
                 <button
@@ -81,7 +95,7 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
                     data-testid={dataTestId}
                 >
                     <Icon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
-                    <span className="tw-hidden md:tw-inline">{title}</span>
+                    <span className={alwaysShowTitle ? '' : 'tw-hidden md:tw-inline'}>{title}</span>
                 </button>
             </TooltipTrigger>
             <TooltipContent className="md:tw-hidden">
@@ -104,6 +118,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                         SubIcons: [
                             {
                                 title: 'New Chat',
+                                alwaysShowTitle: true,
                                 tooltipExtra: (
                                     <>
                                         {IDE !== CodyIDE.Web && (
@@ -213,19 +228,22 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                 ))}
             </div>
             <div className="tw-flex tw-gap-4">
-                {currentViewSubIcons?.map(({ Icon, command, title, tooltipExtra, arg }) => (
-                    <TabButton
-                        key={command}
-                        Icon={Icon}
-                        title={title}
-                        tooltipExtra={tooltipExtra}
-                        command={command}
-                        onClick={() =>
-                            getVSCodeAPI().postMessage({ command: 'command', id: command, arg })
-                        }
-                        prominent
-                    />
-                ))}
+                {currentViewSubIcons?.map(
+                    ({ Icon, command, title, alwaysShowTitle, tooltipExtra, arg }) => (
+                        <TabButton
+                            key={command}
+                            Icon={Icon}
+                            title={title}
+                            alwaysShowTitle={alwaysShowTitle}
+                            tooltipExtra={tooltipExtra}
+                            command={command}
+                            onClick={() =>
+                                getVSCodeAPI().postMessage({ command: 'command', id: command, arg })
+                            }
+                            prominent
+                        />
+                    )
+                )}
             </div>
         </Tabs.List>
     )
