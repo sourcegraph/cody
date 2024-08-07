@@ -3,7 +3,6 @@ import type { URI } from 'vscode-uri'
 import type {
     AuthStatus,
     ClientStateForWebview,
-    CodyCommand,
     CodyIDE,
     ConfigurationWithAccessToken,
     ContextItem,
@@ -189,7 +188,6 @@ export type ExtensionMessage =
     | { type: 'view'; view: View }
     | { type: 'errors'; errors: string }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
-    | { type: 'commands'; commands: CodyCommand[] }
     /**
      * Context files returned from a @-mention search
      */
@@ -198,7 +196,11 @@ export type ExtensionMessage =
           userContextFiles?: ContextItem[] | undefined | null
       }
     | { type: 'clientState'; value: ClientStateForWebview }
-    | { type: 'clientAction'; addContextItemsToLastHumanInput: ContextItem[] }
+    | {
+          type: 'clientAction'
+          addContextItemsToLastHumanInput?: ContextItem[] | null | undefined
+          appendTextToLastPromptEditor?: string | null | undefined
+      }
     /**
      * The current default model will always be the first one on the list.
      */

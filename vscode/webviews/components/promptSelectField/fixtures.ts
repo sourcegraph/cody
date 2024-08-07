@@ -8,7 +8,7 @@ export const FIXTURE_PROMPTS: Prompt[] = [
         owner: { namespaceName: 'alice' },
         description: 'Generate unit tests for a given function',
         draft: false,
-        definition: { text: '' },
+        definition: { text: 'Generate unit tests for vitest' },
         url: 'https://example.com',
     },
     {
@@ -18,7 +18,7 @@ export const FIXTURE_PROMPTS: Prompt[] = [
         owner: { namespaceName: 'alice' },
         description: 'Suggest improvements for an OpenCtx provider',
         draft: true,
-        definition: { text: '' },
+        definition: { text: 'Review the following OpenCtx provider code' },
         url: 'https://example.com',
     },
     {
@@ -27,7 +27,7 @@ export const FIXTURE_PROMPTS: Prompt[] = [
         nameWithOwner: 'myorg/generate-junit-integration-test',
         owner: { namespaceName: 'myorg' },
         draft: false,
-        definition: { text: '' },
+        definition: { text: 'Generate a JUnit integration test' },
         url: 'https://example.com',
     },
     {
@@ -36,7 +36,7 @@ export const FIXTURE_PROMPTS: Prompt[] = [
         nameWithOwner: 'myorg/fix-bazel-build-file',
         owner: { namespaceName: 'myorg' },
         draft: false,
-        definition: { text: '' },
+        definition: { text: 'Fix common issues in this Bazel BUILD file' },
         url: 'https://example.com',
     },
     {
@@ -45,9 +45,9 @@ export const FIXTURE_PROMPTS: Prompt[] = [
         nameWithOwner: 'abc-corp/convert-from-react-class-to-fc',
         owner: { namespaceName: 'abc-corp' },
         // Long text to test wrapping.
-        description: 'Convert from a React class component to a functional component',
+        description: 'Convert from a React class component to a function component',
         draft: false,
-        definition: { text: '' },
+        definition: { text: 'Convert from a React class component to a function component' },
         url: 'https://example.com',
     },
 ]

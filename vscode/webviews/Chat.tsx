@@ -17,6 +17,7 @@ import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/cons
 import styles from './Chat.module.css'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
+import type { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
 
 interface ChatboxProps {
@@ -31,6 +32,7 @@ interface ChatboxProps {
     scrollableParent?: HTMLElement | null
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
+    setView: (view: View) => void
     className?: string
     experimentalSmartApplyEnabled?: boolean
 }
@@ -47,6 +49,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     scrollableParent,
     showWelcomeMessage = true,
     showIDESnippetActions = true,
+    setView,
     className,
     experimentalSmartApplyEnabled,
 }) => {
@@ -199,7 +202,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 guardrails={guardrails}
                 experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
             />
-            {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage IDE={userInfo.ide} />}
+            {transcript.length === 0 && showWelcomeMessage && (
+                <WelcomeMessage IDE={userInfo.ide} setView={setView} />
+            )}
             <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
         </div>
     )

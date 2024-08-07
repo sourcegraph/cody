@@ -8,9 +8,12 @@ import {
 } from 'lucide-react'
 import type { FunctionComponent } from 'react'
 import type React from 'react'
+import { useClientActionDispatcher } from '../../client/clientState'
 import { CollapsiblePanel } from '../../components/CollapsiblePanel'
 import { Kbd } from '../../components/Kbd'
-import { DefaultCommandsList } from './DefaultCommandsList'
+import { PromptListSuitedForNonPopover } from '../../components/promptList/PromptList'
+import { onPromptSelectInPanel, onPromptSelectInPanelActionLabels } from '../../prompts/PromptsTab'
+import type { View } from '../../tabs'
 
 const MenuExample: FunctionComponent<{ children: React.ReactNode }> = ({ children }) => (
     <span className="tw-p-1 tw-rounded tw-text-keybinding-foreground tw-border tw-border-keybinding-border tw-bg-keybinding-background tw-whitespace-nowrap">
@@ -40,14 +43,34 @@ const FeatureRow: FunctionComponent<{
 
 export const localStorageKey = 'chat.welcome-message-dismissed'
 
-export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE }> = ({ IDE }) => {
+export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE; setView: (view: View) => void }> = ({
+    IDE,
+    setView,
+}) => {
     // Remove the old welcome message dismissal key that is no longer used.
     localStorage.removeItem(localStorageKey)
 
+    const dispatchClientAction = useClientActionDispatcher()
+
     return (
-        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-pt-4 tw-px-8 tw-gap-10 sm:tw-pl-21 tw-transition-all">
-            <DefaultCommandsList IDE={IDE} initialOpen={false} />
-            <CollapsiblePanel title="Chat Help">
+        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-pt-4 tw-px-8 sm:tw-pl-21 tw-transition-all">
+            <CollapsiblePanel
+                storageKey="prompts"
+                title="Prompts & Commands"
+                className="tw-mb-6 tw-mt-2"
+                contentClassName="!tw-p-0 tw-overflow-clip"
+            >
+                <PromptListSuitedForNonPopover
+                    onSelect={item => onPromptSelectInPanel(item, setView, dispatchClientAction)}
+                    onSelectActionLabels={onPromptSelectInPanelActionLabels}
+                    telemetryLocation="PromptsTab"
+                    showCommandOrigins={true}
+                    showPromptLibraryUnsupportedMessage={false}
+                    showOnlyPromptInsertableCommands={false}
+                    className="tw-rounded-none"
+                />
+            </CollapsiblePanel>
+            <CollapsiblePanel storageKey="chat-help" title="Chat Help" className="tw-mb-6 tw-mt-2">
                 <FeatureRow icon={AtSignIcon}>
                     Type <Kbd macOS="@" linuxAndWindows="@" /> to add context to your chat
                 </FeatureRow>
