@@ -78,7 +78,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           plugin-location: '*.zip'
-          verifier-version: '1.371'
           ide-versions: |
             ideaIC:2021.1
             ideaIC:2024.1
