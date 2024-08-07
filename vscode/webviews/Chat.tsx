@@ -15,7 +15,6 @@ import type { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
 
 interface ChatboxProps {
-    chatID: string
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
@@ -31,7 +30,6 @@ interface ChatboxProps {
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
-    chatID,
     messageInProgress,
     transcript,
     vscodeAPI,
@@ -167,7 +165,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 </div>
             )}
             <Transcript
-                chatID={chatID}
                 transcript={transcript}
                 messageInProgress={messageInProgress}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
