@@ -370,8 +370,8 @@ function lexicalEditorStateFromPromptString(
 }
 
 /**
- * walks the tree calling callbackfn for each node. callbackfn is called in
- * "pre-order". IE a parent is called before its children are called in order.
+ * Walk the tree calling {@link callbackfn} for each node. {@link callbackfn} is called in
+ * "pre-order"; i.e., a parent is called before its children are called in order.
  */
 function forEachPreOrder(
     node: SerializedLexicalNode,
