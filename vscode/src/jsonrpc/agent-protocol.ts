@@ -53,6 +53,12 @@ export type ClientRequests = {
     // chat id. Main difference compared to the chat/new is that we return chatId.
     'chat/web/new': [null, { panelId: string; chatId: string }]
 
+    // Start a new chat session and returns panel id and chat id that later can
+    // be used to reference to the session with panel id and restore chat with
+    // chat id. Main difference compared to the chat/web/new is that the chat
+    // this created has sidebar view type v.s. editor view type.
+    'chat/sidebar/new': [null, { panelId: string; chatId: string }]
+
     // Deletes chat by its ID and returns newly updated chat history list
     // Primary is used only in cody web client
     'chat/delete': [{ chatId: string }, ChatExportResult[]]
