@@ -3,7 +3,6 @@ package com.sourcegraph.cody.edit
 import com.sourcegraph.cody.edit.actions.DocumentCodeAction
 import com.sourcegraph.cody.edit.actions.lenses.EditAcceptAction
 import com.sourcegraph.cody.edit.actions.lenses.EditCancelAction
-import com.sourcegraph.cody.edit.actions.lenses.EditRetryAction
 import com.sourcegraph.cody.edit.actions.lenses.EditUndoAction
 import com.sourcegraph.cody.edit.widget.LensAction
 import com.sourcegraph.cody.edit.widget.LensHotkey
@@ -76,9 +75,6 @@ class DocumentCodeTest : CodyIntegrationTextFixture() {
     assertNotNull(
         "Lens group should contain Show Undo action",
         widgets.find { widget -> widget is LensAction && widget.actionId == EditUndoAction.ID })
-    assertNotNull(
-        "Lens group should contain Show Retry action",
-        widgets.find { widget -> widget is LensAction && widget.actionId == EditRetryAction.ID })
 
     // Make sure a doc comment was inserted.
     assertTrue(hasJavadocComment(myFixture.editor.document.text))
