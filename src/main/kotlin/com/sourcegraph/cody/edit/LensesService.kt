@@ -62,7 +62,8 @@ class LensesService(val project: Project) {
       val vf = CodyEditorUtil.findFileOrScratch(project, uri) ?: return@runInEdt
       val fileDesc = OpenFileDescriptor(project, vf)
       val editor =
-          FileEditorManager.getInstance(project).openTextEditor(fileDesc, true) ?: return@runInEdt
+          FileEditorManager.getInstance(project).openTextEditor(fileDesc, /* focusEditor = */ false)
+              ?: return@runInEdt
 
       val ranges = codeLens.groupBy { it.range }.keys.sortedBy { it.start.line }
       ranges.zipWithNext { r1, r2 ->

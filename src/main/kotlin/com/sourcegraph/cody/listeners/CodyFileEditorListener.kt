@@ -11,6 +11,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentService.Companion.withAgent
+import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument.Companion.fromVirtualEditorFile
 
 class CodyFileEditorListener : FileEditorManagerListener {
@@ -33,12 +34,10 @@ class CodyFileEditorListener : FileEditorManagerListener {
 
   override fun fileClosed(source: FileEditorManager, file: VirtualFile) {
     try {
-      source.selectedTextEditor?.let { editor ->
-        val protocolTextFile = fromVirtualEditorFile(editor, file)
-        EditorChangesBus.documentChanged(editor.project, protocolTextFile)
-        withAgent(source.project) { agent: CodyAgent ->
-          agent.server.textDocumentDidClose(protocolTextFile)
-        }
+      val protocolTextFile = ProtocolTextDocument.fromVirtualFile(file)
+      EditorChangesBus.documentChanged(source.project, protocolTextFile)
+      withAgent(source.project) { agent: CodyAgent ->
+        agent.server.textDocumentDidClose(protocolTextFile)
       }
     } catch (x: Exception) {
       logger.warn("Error in fileClosed method for file: ${file.path}", x)
