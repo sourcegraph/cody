@@ -104,6 +104,7 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
 }
 
 export async function handleSmartApply(
+    id: string,
     code: string,
     instruction?: string | null,
     fileUri?: string | null
@@ -132,6 +133,7 @@ export async function handleSmartApply(
     const DEFAULT_MODEL = 'anthropic/claude-3-5-sonnet-20240620'
     await executeSmartApply({
         configuration: {
+            id,
             document: editor.document,
             instruction: PromptString.unsafe_fromUserQuery(instruction || ''),
             model: DEFAULT_MODEL,

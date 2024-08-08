@@ -1,6 +1,6 @@
 import { type Guardrails, type PromptString, isError } from '@sourcegraph/cody-shared'
 import type React from 'react'
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
     CheckCodeBlockIcon,
@@ -9,10 +9,11 @@ import {
     InsertCodeBlockIcon,
     SaveCodeBlockIcon,
     ShieldIcon,
-    SparkleIcon,
 } from '../icons/CodeBlockActionIcons'
 
 import { clsx } from 'clsx'
+import { CodyTaskState } from '../../src/non-stop/state'
+import { type ClientActionListener, useClientActionListener } from '../client/clientState'
 import { MarkdownFromCody } from '../components/MarkdownFromCody'
 import styles from './ChatMessageContent.module.css'
 import type { PriorHumanMessageInfo } from './cells/messageCell/assistant/AssistantMessageCell'
@@ -20,7 +21,12 @@ import type { PriorHumanMessageInfo } from './cells/messageCell/assistant/Assist
 export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
     insertButtonOnSubmit: (text: string, newFile?: boolean) => void
-    smartApplyButtonOnSubmit: (text: string, instruction?: PromptString, fileName?: string) => void
+    smartApplyButtonOnSubmit: (
+        id: string,
+        text: string,
+        instruction?: PromptString,
+        fileName?: string
+    ) => void
 }
 
 interface ChatMessageContentProps {
@@ -102,31 +108,48 @@ function createButtonsExperimentalUI(
     humanMessage: PriorHumanMessageInfo | null,
     fileName?: string,
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
-    smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
+    smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit'],
+    smartApplyState?: CodyTaskState
 ): HTMLElement {
-    // The container will contain the buttons and the <pre> element with the code.
-    // This allows us to position the buttons independent of the code.
     const container = document.createElement('div')
     container.className = styles.buttonsContainer
-    if (!copyButtonOnSubmit) {
-        return container
-    }
 
     const buttons = document.createElement('div')
     buttons.className = styles.buttons
 
-    const copyButton = createCopyButton(preText, copyButtonOnSubmit)
-    buttons.append(copyButton)
+    if (smartApplyState === 'Applied') {
+        const acceptButton = createAcceptButton(preText, fileName)
+        const discardButton = createDiscardButton(preText, fileName)
+        buttons.append(acceptButton, discardButton)
+    } else {
+        if (copyButtonOnSubmit) {
+            const copyButton = createCopyButton(preText, copyButtonOnSubmit)
+            buttons.append(copyButton)
+        }
 
-    if (smartApplyButtonOnSubmit) {
-        const applyButton = createApplyButton(preText, humanMessage, smartApplyButtonOnSubmit, fileName)
-        buttons.append(applyButton)
+        if (smartApplyButtonOnSubmit) {
+            const applyButton = createApplyButton(
+                preText,
+                humanMessage,
+                smartApplyButtonOnSubmit,
+                smartApplyState,
+                fileName
+            )
+            buttons.append(applyButton)
+        }
+
+        const actionsDropdown = createActionsDropdown(preText)
+        buttons.append(actionsDropdown)
     }
 
-    const actionsDropdown = createActionsDropdown(preText)
-    buttons.append(actionsDropdown)
-
     container.append(buttons)
+
+    if (fileName) {
+        const fileNameContainer = document.createElement('div')
+        fileNameContainer.className = styles.fileNameContainer
+        fileNameContainer.textContent = getFileName(fileName)
+        container.append(fileNameContainer)
+    }
 
     return container
 }
@@ -227,19 +250,51 @@ function createApplyButton(
     preText: string,
     humanMessage: PriorHumanMessageInfo | null,
     onApply: CodeBlockActionsProps['smartApplyButtonOnSubmit'],
+    applyState?: CodyTaskState,
     fileName?: string
 ): HTMLElement {
     const button = document.createElement('button')
-    button.innerHTML = 'Apply'
     button.className = styles.button
 
-    const iconContainer = document.createElement('div')
-    iconContainer.className = styles.iconContainer
-    iconContainer.innerHTML = SparkleIcon
-    button.prepend(iconContainer)
+    switch (applyState) {
+        case 'Working':
+            button.innerHTML = 'Applying...'
+            button.disabled = true
+            break
+        case 'Error':
+            button.innerHTML = 'Error'
+            button.disabled = true
+            break
+        default:
+            button.innerHTML = 'Apply'
+            button.addEventListener('click', () => {
+                const smartApplyId = preText.trim()
+                onApply(smartApplyId, preText, humanMessage?.text, fileName)
+            })
+    }
 
-    button.addEventListener('click', () => onApply(preText, humanMessage?.text, fileName))
+    return button
+}
 
+function createAcceptButton(preText: string, fileName?: string): HTMLElement {
+    const button = document.createElement('button')
+    button.className = styles.button
+    button.innerHTML = 'Accept'
+    button.addEventListener('click', () => {
+        console.log('Accept clicked', { preText, fileName })
+        // TODO: Implement accept logic
+    })
+    return button
+}
+
+function createDiscardButton(preText: string, fileName?: string): HTMLElement {
+    const button = document.createElement('button')
+    button.className = styles.button
+    button.innerHTML = 'Discard'
+    button.addEventListener('click', () => {
+        console.log('Discard clicked', { preText, fileName })
+        // TODO: Implement discard logic
+    })
     return button
 }
 
@@ -379,7 +434,31 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     experimentalSmartApplyEnabled,
     smartApplyButtonOnSubmit,
 }) => {
+    const [smartApplyStates, setSmartApplyStates] = useState<Record<string, CodyTaskState>>({})
     const rootRef = useRef<HTMLDivElement>(null)
+
+    const smartApplyInterceptor = useMemo<CodeBlockActionsProps['smartApplyButtonOnSubmit']>(
+        () => (id, text, instruction, fileName) => {
+            if (!smartApplyButtonOnSubmit) {
+                return
+            }
+
+            setSmartApplyStates(prev => ({ ...prev, [id]: CodyTaskState.Working }))
+            return smartApplyButtonOnSubmit(id, text, instruction, fileName)
+        },
+        [smartApplyButtonOnSubmit, setSmartApplyStates]
+    )
+
+    useClientActionListener(
+        useCallback<ClientActionListener>(({ smartApplyResult }) => {
+            if (smartApplyResult) {
+                setSmartApplyStates(prev => ({
+                    ...prev,
+                    [smartApplyResult.taskId]: smartApplyResult.taskState,
+                }))
+            }
+        }, [])
+    )
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: needs to run when `displayMarkdown` changes or else the buttons won't show up.
     useEffect(() => {
@@ -405,16 +484,22 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 // This allows us to intelligently apply code to the suitable file.
                 const codeElement = preElement.querySelectorAll('code')?.[0]
                 const fileName = codeElement?.getAttribute('data-file-path') || undefined
+                let buttons: HTMLElement
 
-                const buttons = experimentalSmartApplyEnabled
-                    ? createButtonsExperimentalUI(
-                          preText,
-                          humanMessage,
-                          fileName,
-                          copyButtonOnSubmit,
-                          smartApplyButtonOnSubmit
-                      )
-                    : createButtons(preText, copyButtonOnSubmit, insertButtonOnSubmit)
+                if (experimentalSmartApplyEnabled) {
+                    const smartApplyId = preText.trim() // Use preText as a unique identifier
+                    const state = smartApplyStates[smartApplyId]
+                    buttons = createButtonsExperimentalUI(
+                        preText,
+                        humanMessage,
+                        fileName,
+                        copyButtonOnSubmit,
+                        smartApplyInterceptor,
+                        state
+                    )
+                } else {
+                    buttons = createButtons(preText, copyButtonOnSubmit, insertButtonOnSubmit)
+                }
 
                 if (experimentalSmartApplyEnabled && fileName?.length) {
                     const fileNameContainer = document.createElement('div')
@@ -465,6 +550,9 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         guardrails,
         displayMarkdown,
         isMessageLoading,
+        humanMessage,
+        smartApplyInterceptor,
+        smartApplyStates,
     ])
 
     return (

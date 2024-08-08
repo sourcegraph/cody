@@ -123,9 +123,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             return
         }
 
-        return (text: string, instruction?: PromptString, fileName?: string) => {
+        return (id: string, text: string, instruction?: PromptString, fileName?: string): void => {
             vscodeAPI.postMessage({
                 command: 'smartApply',
+                id,
                 instruction: instruction?.toString(),
                 // remove the additional /n added by the text area at the end of the text
                 code: text.replace(/\n$/, ''),

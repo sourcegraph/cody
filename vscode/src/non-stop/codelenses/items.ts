@@ -4,7 +4,7 @@ import { isRateLimitError } from '@sourcegraph/cody-shared'
 
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { FixupTask } from '../FixupTask'
-import { CodyTaskState } from '../utils'
+import { CodyTaskState } from '../state'
 
 // Create Lenses based on state
 export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {

@@ -161,7 +161,8 @@ export class EditManager implements vscode.Disposable {
                 source,
                 configuration.destinationFile,
                 configuration.insertionPoint,
-                telemetryMetadata
+                telemetryMetadata,
+                configuration.id
             )
         } else {
             task = await this.controller.promptUserForTask(
@@ -173,7 +174,8 @@ export class EditManager implements vscode.Disposable {
                 model,
                 intent,
                 source,
-                telemetryMetadata
+                telemetryMetadata,
+                configuration.id
             )
         }
 
@@ -294,7 +296,8 @@ export class EditManager implements vscode.Disposable {
                 source,
                 configuration.document.uri,
                 undefined,
-                {}
+                {},
+                configuration.id
             )
 
             const legacyMetadata = {
@@ -322,6 +325,7 @@ export class EditManager implements vscode.Disposable {
         // e.g. // ...
         return this.executeEdit({
             configuration: {
+                id: configuration.id,
                 document: configuration.document,
                 range: selection.range,
                 mode: 'edit',
