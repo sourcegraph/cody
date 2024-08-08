@@ -24,6 +24,8 @@ Chat: Added ability to remove individual chats from chat history in the sidebar.
 
 ### Changed
 
+- Chat: the local search index is now rebuilt more frequently when many files are changed since the last index (such as when the user checks out a revision that differs from the current revision).
+
 ## 1.28.1
 
 Chat: Cody is now defaulted to run in the sidebar for both Enterprise and Non-Enterprise users. [pull/5039](https://github.com/sourcegraph/cody/pull/5039)

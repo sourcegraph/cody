@@ -35,12 +35,16 @@ import { getSymfPath } from './download-symf'
 import { rewriteKeywordQuery } from './rewrite-keyword-query'
 
 const execFile = promisify(_execFile)
-const oneDayMillis = 1000 * 60 * 60 * 24
 
-interface CorpusDiff {
+export interface CorpusDiff {
     maybeChangedFiles?: boolean
     changedFiles?: string[]
+
+    // milliseconds elapsed since last index
     millisElapsed?: number
+
+    // milliseconds of last indexing duration
+    lastTimeToIndexMillis?: number
 }
 
 function parseJSONToCorpusDiff(json: string): CorpusDiff {
@@ -225,8 +229,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     }
 
     /**
-     * Check index freshness and reindex if needed. Currently reindexes daily if changes
-     * have been detected.
+     * Check index freshness and reindex if needed.
      */
     public async reindexIfStale(scopeDir: FileURI): Promise<void> {
         logDebug('SymfRunner', 'reindexIfStale', scopeDir.fsPath)
@@ -239,10 +242,8 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
                 })
                 return
             }
-            if (
-                (diff.millisElapsed === undefined || diff.millisElapsed > oneDayMillis) &&
-                (diff.maybeChangedFiles || (diff.changedFiles && diff.changedFiles.length > 0))
-            ) {
+
+            if (shouldReindex(diff)) {
                 // reindex targeting a temporary directory
                 // atomically replace index
                 await this.ensureIndex(scopeDir, {
@@ -870,4 +871,68 @@ class IndexManager implements vscode.Disposable {
             this.currentlyRefreshing.delete(scopeDir.toString())
         }
     }
+}
+
+/**
+ * Determines whether the search index should be refreshed based on whether we're past a staleness threshold
+ * that depends on the time since last index, time it took to create the last index, and the number of files changed.
+ */
+export function shouldReindex(diff: CorpusDiff): boolean {
+    if (diff.millisElapsed === undefined) {
+        return true
+    }
+
+    const numChangedFiles = diff.changedFiles
+        ? diff.changedFiles.length
+        : diff.maybeChangedFiles
+          ? 9999999
+          : 0
+    if (numChangedFiles === 0) {
+        return false
+    }
+
+    const stalenessThresholds = [
+        {
+            // big change thresholds
+            changedFiles: 20,
+            thresholds: [
+                { lastTimeToIndexMillis: 1000 * 60 * 5, maxMillisStale: 30 * 1000 }, // 5m -> 30s
+                { lastTimeToIndexMillis: 1000 * 60 * 5, maxMillisStale: 60 * 1000 }, // 10m -> 1m
+            ],
+        },
+        {
+            // small change thresholds
+            changedFiles: 0,
+            thresholds: [
+                { lastTimeToIndexMillis: 1000 * 30, maxMillisStale: 1000 * 60 * 5 }, // 30s -> 5m
+                { lastTimeToIndexMillis: 1000 * 60, maxMillisStale: 1000 * 60 * 15 }, // 1m -> 15m
+                { lastTimeToIndexMillis: 1000 * 60 * 5, maxMillisStale: 1000 * 60 * 60 }, // 5m -> 1h
+                { lastTimeToIndexMillis: 1000 * 60 * 10, maxMillisStale: 1000 * 60 * 60 * 2 }, // 10m -> 2h
+            ],
+        },
+    ]
+
+    const fallbackThreshold = 1000 * 60 * 60 * 24 // 1 day
+
+    let t0 = undefined
+    for (const thresh of stalenessThresholds) {
+        if (numChangedFiles >= thresh.changedFiles) {
+            t0 = thresh
+            break
+        }
+    }
+    if (!t0) {
+        // should never happen given last changedFiles is 0
+        return diff.millisElapsed >= fallbackThreshold
+    }
+    if (diff.lastTimeToIndexMillis === undefined) {
+        return true
+    }
+
+    for (const thresh of t0.thresholds) {
+        if (diff.lastTimeToIndexMillis <= thresh.lastTimeToIndexMillis) {
+            return diff.millisElapsed >= thresh.maxMillisStale
+        }
+    }
+    return diff.millisElapsed >= fallbackThreshold
 }
