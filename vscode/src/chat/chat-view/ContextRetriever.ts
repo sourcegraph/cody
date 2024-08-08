@@ -24,7 +24,7 @@ import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { gitLocallyModifiedFiles } from '../../repository/git-extension-api'
 import { repoNameResolver } from '../../repository/repo-name-resolver'
-import { getContextStrategy, retrieveContextGracefully, searchSymf } from './context'
+import { getContextStrategy, retrieveContextGracefully, searchSymf, truncateSymfResult } from './context'
 
 interface StructuredMentions {
     repos: ContextItemRepository[]
@@ -234,6 +234,7 @@ export class ContextRetriever implements vscode.Disposable {
                     let text: string | undefined
                     try {
                         text = await this.editor.getTextEditorContentForFile(r.file, range)
+                        text = truncateSymfResult(text)
                     } catch (error) {
                         logError('ChatController.searchSymf', `Error getting file contents: ${error}`)
                         return []

@@ -10,7 +10,6 @@ import * as vscode from 'vscode'
 import {
     AbortError,
     type FileURI,
-    type IndexedKeywordContextFetcher,
     type PromptString,
     type Result,
     type SourcegraphCompletionsClient,
@@ -54,7 +53,7 @@ interface IndexOptions {
     ignoreExisting: boolean
 }
 
-export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposable {
+export class SymfRunner implements vscode.Disposable {
     // The root of all symf index directories
     private indexRoot: FileURI
     private indexLocks: Map<string, RWLock> = new Map()

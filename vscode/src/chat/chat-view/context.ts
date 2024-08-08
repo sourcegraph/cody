@@ -236,6 +236,7 @@ export async function searchSymf(
                     let text: string | undefined
                     try {
                         text = await editor.getTextEditorContentForFile(result.file, range)
+                        text = truncateSymfResult(text)
                     } catch (error) {
                         logError('ChatController.searchSymf', `Error getting file contents: ${error}`)
                         return []
@@ -456,4 +457,16 @@ export async function retrieveContextGracefully<T>(
     } finally {
         logDebug('ChatController', `resolveContext > ${strategy} (end)`)
     }
+}
+
+const maxSymfBytes = 2_048
+export function truncateSymfResult(text: string): string {
+    if (text.length >= maxSymfBytes) {
+        text = text.slice(0, maxSymfBytes)
+        const j = text.lastIndexOf('\n')
+        if (j !== -1) {
+            text = text.slice(0, j)
+        }
+    }
+    return text
 }

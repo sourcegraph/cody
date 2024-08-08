@@ -163,7 +163,6 @@ export {
     type CompletionResponseWithMetaData,
 } from './inferenceClient/misc'
 export type {
-    IndexedKeywordContextFetcher,
     LocalEmbeddingsFetcher,
     Result,
 } from './local-context'
