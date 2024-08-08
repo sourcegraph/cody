@@ -436,6 +436,8 @@ export type ServerNotifications = {
     // complete, or errored, the results from remoteRepo/list will not change.
     // When configuration changes, repo fetching may re-start.
     'remoteRepo/didChangeState': [RemoteRepoFetchState]
+
+    'authentication/didChange': [AuthStatus | undefined]
 }
 
 interface CancelParams {

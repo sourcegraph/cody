@@ -1502,6 +1502,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         // functionality), we return true to always triggger the callback.
                         true,
                 })
+                this.notify('authentication/didChange', authStatus)
                 // await new Promise<void>(resolve => setTimeout(resolve, 3_000))
                 // TODO(#56621): JetBrains: persistent chat history:
                 // This is a temporary workaround to ensure that a new chat panel is created and properly initialized after the auth change.
