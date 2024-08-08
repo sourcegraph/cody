@@ -188,10 +188,13 @@ export async function getSmartApplySelection(
             client,
             codyApiVersion
         )
-    } catch (error: any) {
+    } catch (error: unknown) {
         // We erred when asking the LLM to produce the original code.
         // Surface this error back to the user
-        vscode.window.showErrorMessage(`Error: ${error.message}`)
+        if (error instanceof Error) {
+            vscode.window.showErrorMessage(`Error: ${error.message}`)
+        }
+
         return null
     }
 
