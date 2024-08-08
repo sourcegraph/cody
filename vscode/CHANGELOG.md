@@ -10,6 +10,18 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+
+## 1.30.1
+
+### Added
+
+Autocomplete: Add a feature flag for DeepSeek-coder-v2 lite base model. [pull/5151](https://github.com/sourcegraph/cody/pull/5079)
+
+### Fixed
+
+### Changed
+
+
 ## 1.30.0
 
 ### Added
