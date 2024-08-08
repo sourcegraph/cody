@@ -59,6 +59,7 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE; setView: (view: V
                 title="Prompts & Commands"
                 className="tw-mb-6 tw-mt-2"
                 contentClassName="!tw-p-0 tw-overflow-clip"
+                initialOpen={true}
             >
                 <PromptListSuitedForNonPopover
                     onSelect={item => onPromptSelectInPanel(item, setView, dispatchClientAction)}
@@ -70,7 +71,12 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE; setView: (view: V
                     className="tw-rounded-none"
                 />
             </CollapsiblePanel>
-            <CollapsiblePanel storageKey="chat-help" title="Chat Help" className="tw-mb-6 tw-mt-2">
+            <CollapsiblePanel
+                storageKey="chat-help"
+                title="Chat Help"
+                className="tw-mb-6 tw-mt-2"
+                initialOpen={true}
+            >
                 <FeatureRow icon={AtSignIcon}>
                     Type <Kbd macOS="@" linuxAndWindows="@" /> to add context to your chat
                 </FeatureRow>

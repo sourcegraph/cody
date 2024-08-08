@@ -359,14 +359,11 @@ export class ChatsController implements vscode.Disposable {
         }
     }
 
-    private async clearHistory(arg?: vscode.TreeItem | 'clear-all-no-confirm'): Promise<void> {
-        const treeItem = arg && arg !== 'clear-all-no-confirm' ? arg : undefined
-        const clearAllNoConfirm = arg === 'clear-all-no-confirm'
+    private async clearHistory(chatID?: string): Promise<void> {
+        const clearAllNoConfirm = chatID === 'clear-all-no-confirm'
 
         const authProvider = this.options.authProvider
         const authStatus = authProvider.getAuthStatus()
-
-        const chatID = treeItem?.id
 
         // delete single chat
         if (chatID) {
@@ -376,7 +373,7 @@ export class ChatsController implements vscode.Disposable {
         }
 
         // delete all chats
-        if (!treeItem) {
+        if (!chatID || clearAllNoConfirm) {
             logDebug('ChatsController:clearHistory', 'userConfirmation')
 
             if (!clearAllNoConfirm) {

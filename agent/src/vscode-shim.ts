@@ -151,6 +151,7 @@ const configuration = new AgentWorkspaceConfiguration(
     () => extensionConfiguration
 )
 
+export const onDidChangeWorkspaceFolders = new EventEmitter<vscode.WorkspaceFoldersChangeEvent>()
 export const onDidChangeTextEditorSelection = new EventEmitter<vscode.TextEditorSelectionChangeEvent>() // TODO: implement this
 export const onDidChangeVisibleTextEditors = new EventEmitter<readonly vscode.TextEditor[]>()
 export const onDidChangeActiveTextEditor = new EventEmitter<vscode.TextEditor | undefined>()
@@ -176,13 +177,24 @@ export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments)
                 .map(wf => wf.uri.toString())
                 .includes(newWorkspaceDocuments.workspaceRootUri.toString())
         ) {
-            workspaceFolders.push({
-                name: path.basename(newWorkspaceDocuments.workspaceRootUri.fsPath),
-                uri: newWorkspaceDocuments.workspaceRootUri,
-                index: 0,
-            })
+            setWorkspaceFolders(newWorkspaceDocuments.workspaceRootUri)
         }
     }
+}
+
+export function setWorkspaceFolders(workspaceRootUri: vscode.Uri): vscode.WorkspaceFolder[] {
+    // TODO: Update this when we support multiple workspace roots
+    while (workspaceFolders.pop()) {
+        // clear workspaceFolders array
+    }
+
+    workspaceFolders.push({
+        name: path.basename(workspaceRootUri.toString()),
+        uri: workspaceRootUri,
+        index: 0,
+    })
+
+    return workspaceFolders
 }
 
 export const workspaceFolders: vscode.WorkspaceFolder[] = []
@@ -327,7 +339,7 @@ const _workspace: typeof vscode.workspace = {
     },
     // TODO: used by `WorkspaceRepoMapper` and will be used by `git.onDidOpenRepository`
     // https://github.com/sourcegraph/cody/issues/4136
-    onDidChangeWorkspaceFolders: emptyEvent(),
+    onDidChangeWorkspaceFolders: onDidChangeWorkspaceFolders.event,
     onDidOpenTextDocument: onDidOpenTextDocument.event,
     onDidChangeConfiguration: onDidChangeConfiguration.event,
     onDidChangeTextDocument: onDidChangeTextDocument.event,

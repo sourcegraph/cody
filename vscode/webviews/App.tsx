@@ -45,7 +45,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
 
     const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
-    const [chatID, setChatID] = useState<string>('[no-chat]')
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
@@ -96,7 +95,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setTranscript(deserializedMessages)
                             setMessageInProgress(null)
                         }
-                        setChatID(message.chatID)
                         vscodeAPI.setState(message.chatID)
                         break
                     }
@@ -264,7 +262,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     errorMessages={errorMessages}
                     setErrorMessages={setErrorMessages}
                     attributionEnabled={attributionEnabled}
-                    chatID={chatID}
                     chatEnabled={chatEnabled}
                     userInfo={userAccountInfo}
                     messageInProgress={messageInProgress}

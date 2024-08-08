@@ -15,20 +15,11 @@ import { URI } from 'vscode-uri'
 
 import { hydrateAfterPostMessage, isErrorLike } from '@sourcegraph/cody-shared'
 import type { ExtensionMessage } from 'cody-ai/src/chat/protocol'
-import type { ChatExportResult } from 'cody-ai/src/jsonrpc/agent-protocol'
 import { AppWrapper } from 'cody-ai/webviews/AppWrapper'
 import { type VSCodeWrapper, setVSCodeWrapper } from 'cody-ai/webviews/utils/VSCodeApi'
 
 import { createAgentClient } from '../agent/agent.client'
 import type { InitialContext } from '../types'
-import { useLocalStorage } from '../utils/use-local-storage'
-
-/**
- * Local storage key for storing last active chat id, preserving
- * chat id in the local storage allows us to restore the last active chat
- * as you open/render Cody Web.
- */
-const ACTIVE_CHAT_ID_KEY = 'cody-web.last-active-chat-id'
 
 // Usually the CodyWebPanelProvider VSCode API wrapper listens only to messages from the Extension host
 // which matches the current active panel id. But this message id check can be corrupted
@@ -44,7 +35,6 @@ interface AgentClient {
 
 interface CodyWebPanelContextData {
     client: AgentClient | Error | null
-    activeChatID: string | null
     activeWebviewPanelID: string
     vscodeAPI: VSCodeWrapper
     initialContext: InitialContext | undefined
@@ -52,7 +42,6 @@ interface CodyWebPanelContextData {
 
 export const CodyWebPanelContext = createContext<CodyWebPanelContextData>({
     client: null,
-    activeChatID: null,
     activeWebviewPanelID: '',
     initialContext: undefined,
 
@@ -65,11 +54,9 @@ export const CodyWebPanelContext = createContext<CodyWebPanelContextData>({
 interface CodyWebPanelProviderProps {
     serverEndpoint: string
     accessToken: string | null
-    chatID?: string | null
     telemetryClientName?: string
     initialContext?: InitialContext
     customHeaders?: Record<string, string>
-    onNewChatCreated?: (chatId: string) => void
 }
 
 /**
@@ -82,9 +69,7 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
     initialContext,
     telemetryClientName,
     children,
-    chatID: initialChatId,
     customHeaders,
-    onNewChatCreated,
 }) => {
     // In order to avoid multiple client creation during dev runs
     // since useEffect can be fired multiple times during dev builds
@@ -94,10 +79,6 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
 
     const [activeWebviewPanelID, setActiveWebviewPanelID] = useState<string>('')
     const [client, setClient] = useState<AgentClient | Error | null>(null)
-    const [lastActiveChatID, setLastActiveChatID] = useLocalStorage<string | null>(
-        ACTIVE_CHAT_ID_KEY,
-        null
-    )
 
     activeWebviewPanelIDRef.current = activeWebviewPanelID
 
@@ -119,26 +100,8 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
                     accessToken: accessToken ?? '',
                 })
 
-                // Fetch existing chats from the agent chat storage
-                const chatHistory = await client.rpc.sendRequest<ChatExportResult[]>('chat/export', {
-                    fullHistory: true,
-                })
-
-                const initialChat = chatHistory.find(chat => chat.chatID === initialChatId)
-
-                // In case of no chats we should create initial empty chat
-                // Also when we have a context
-                if (chatHistory.length === 0 || (initialChatId !== undefined && !initialChat)) {
-                    await createChat(client)
-                } else {
-                    // Activate either last active chat by ID from local storage or
-                    // set the last created chat from the history
-                    const lastUsedChat = chatHistory.find(chat => chat.chatID === lastActiveChatID)
-                    const lastActiveChat =
-                        initialChat ?? lastUsedChat ?? chatHistory[chatHistory.length - 1]
-
-                    await selectChat(lastActiveChat, client)
-                }
+                // Create an new chat each time.
+                await createChat(client)
 
                 setClient(client)
             } catch (error) {
@@ -146,14 +109,7 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
                 setClient(() => error as Error)
             }
         })()
-    }, [
-        initialChatId,
-        accessToken,
-        serverEndpoint,
-        lastActiveChatID,
-        customHeaders,
-        telemetryClientName,
-    ])
+    }, [accessToken, serverEndpoint, customHeaders, telemetryClientName])
 
     const createChat = useCallback(
         async (agent = client) => {
@@ -169,7 +125,6 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
             activeWebviewPanelIDRef.current = panelId
 
             setActiveWebviewPanelID(panelId)
-            setLastActiveChatID(chatId)
 
             await agent.rpc.sendRequest('webview/receiveMessage', {
                 id: activeWebviewPanelIDRef.current,
@@ -187,12 +142,8 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
                     },
                 })
             }
-
-            if (onNewChatCreated) {
-                onNewChatCreated(chatId)
-            }
         },
-        [client, onNewChatCreated, setLastActiveChatID, initialContext]
+        [client, initialContext]
     )
 
     const vscodeAPI = useMemo<VSCodeWrapper | null>(() => {
@@ -254,38 +205,6 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
         return vscodeAPI
     }, [client, createChat])
 
-    const selectChat = useCallback(
-        async (chat: ChatExportResult, agent = client) => {
-            if (!agent || isErrorLike(agent)) {
-                return
-            }
-
-            // Notify main root provider about chat selection
-            setLastActiveChatID(chat.chatID)
-
-            // Restore chat with chat history (transcript data) and set the newly
-            // restored panel ID to be able to listen event from only this panel
-            // in the vscode API
-            const nextPanelId = await agent.rpc.sendRequest<string>('chat/restore', {
-                chatID: chat.chatID,
-                messages: chat.transcript.interactions.flatMap(interaction =>
-                    // Ignore incomplete messages from bot, this might be possible
-                    // if chat was closed before LLM responded with a final message chunk
-                    [interaction.humanMessage, interaction.assistantMessage].filter(message => message)
-                ),
-            })
-            activeWebviewPanelIDRef.current = nextPanelId
-            setActiveWebviewPanelID(nextPanelId)
-
-            // Make sure that agent will reset the internal state and
-            // sends all necessary events with transcript to switch active chat
-            if (vscodeAPI) {
-                vscodeAPI.postMessage({ chatID: chat.chatID, command: 'restoreHistory' })
-            }
-        },
-        [client, vscodeAPI, setLastActiveChatID]
-    )
-
     const contextInfo = useMemo<CodyWebPanelContextData | null>(
         () =>
             vscodeAPI
@@ -293,12 +212,10 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
                       client,
                       vscodeAPI,
                       activeWebviewPanelID,
-                      activeChatID: lastActiveChatID,
-                      setLastActiveChatID,
                       initialContext,
                   }
                 : null,
-        [client, vscodeAPI, activeWebviewPanelID, lastActiveChatID, setLastActiveChatID, initialContext]
+        [client, vscodeAPI, activeWebviewPanelID, initialContext]
     )
 
     const [initialization, setInitialization] = useState<'init' | 'completed'>('init')
@@ -307,7 +224,7 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
             return
         }
 
-        if (client && !isErrorLike(client) && lastActiveChatID && activeWebviewPanelID && vscodeAPI) {
+        if (client && !isErrorLike(client) && activeWebviewPanelID && vscodeAPI) {
             // Notify the extension host that we are ready to receive events.
             vscodeAPI.postMessage({ command: 'ready' })
             vscodeAPI.postMessage({ command: 'initialized' })
@@ -315,13 +232,13 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
             client.rpc
                 .sendRequest('webview/receiveMessage', {
                     id: activeWebviewPanelID,
-                    message: { command: 'restoreHistory', chatID: lastActiveChatID },
+                    message: { command: 'restoreHistory', chatID: null },
                 })
                 .then(() => {
                     setInitialization('completed')
                 })
         }
-    }, [initialization, vscodeAPI, lastActiveChatID, activeWebviewPanelID, client])
+    }, [initialization, vscodeAPI, activeWebviewPanelID, client])
 
     return contextInfo ? (
         <AppWrapper>

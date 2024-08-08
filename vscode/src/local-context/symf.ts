@@ -18,6 +18,7 @@ import {
     displayPath,
     isAbortError,
     isDefined,
+    isEnterpriseUser,
     isFileURI,
     isWindows,
     telemetryRecorder,
@@ -29,6 +30,7 @@ import { logDebug } from '../log'
 
 import path from 'node:path'
 import { getEditor } from '../editor/active-editor'
+import type { AuthProvider } from '../services/AuthProvider'
 import { getSymfPath } from './download-symf'
 import { rewriteKeywordQuery } from './rewrite-keyword-query'
 
@@ -65,7 +67,8 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
 
     constructor(
         private context: vscode.ExtensionContext,
-        private completionsClient: SourcegraphCompletionsClient
+        private completionsClient: SourcegraphCompletionsClient,
+        authProvider: AuthProvider
     ) {
         const indexRoot = vscode.Uri.joinPath(context.globalStorageUri, 'symf', 'indexroot').with(
             // On VS Code Desktop, this is a `vscode-userdata:` URI that actually just refers to
@@ -78,7 +81,17 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         }
         this.indexRoot = indexRoot
 
-        this.disposables.push(initializeSymfIndexManagement(this))
+        let isInitialized = false
+        authProvider.onChange(
+            authStatus => {
+                if (!isInitialized && authStatus.isLoggedIn && !isEnterpriseUser(authStatus)) {
+                    // Only initialize symf after the user has authenticated AND it's not an enterprise account.
+                    isInitialized = true
+                    this.disposables.push(initializeSymfIndexManagement(this))
+                }
+            },
+            { runImmediately: true }
+        )
     }
 
     public dispose(): void {

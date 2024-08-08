@@ -14,6 +14,15 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Chat: Improved how Cody associates code to existing files in chat responses. [pull/5038](https://github.com/sourcegraph/cody/pull/5038)
 - Chat: Added an experimental simpler code block UI, that can accomodate the "Smart Apply" button. [pull/5038](https://github.com/sourcegraph/cody/pull/5038)
+## 1.30.0
+
+### Added
+
+Chat: Added ability to remove individual chats from chat history in the sidebar. [pull/5114](https://github.com/sourcegraph/cody/pull/5114)
+
+### Fixed
+
+### Changed
 
 ## 1.28.1
 

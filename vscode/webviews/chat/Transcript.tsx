@@ -20,7 +20,6 @@ import {
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 interface TranscriptProps {
-    chatID: string
     chatEnabled: boolean
     transcript: ChatMessage[]
     userInfo: UserAccountInfo
@@ -39,7 +38,6 @@ interface TranscriptProps {
 
 export const Transcript: FC<TranscriptProps> = props => {
     const {
-        chatID,
         chatEnabled,
         transcript,
         userInfo,
@@ -64,8 +62,7 @@ export const Transcript: FC<TranscriptProps> = props => {
             {interactions.map((interaction, i) => (
                 <TranscriptInteraction
                     // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-                    key={`${chatID}-${i}`}
-                    chatID={chatID}
+                    key={i}
                     chatEnabled={chatEnabled}
                     userInfo={userInfo}
                     interaction={interaction}
@@ -146,7 +143,8 @@ export function transcriptToInteractionPairs(
     return pairs
 }
 
-interface TranscriptInteractionProps extends Omit<TranscriptProps, 'transcript' | 'messageInProgress'> {
+interface TranscriptInteractionProps
+    extends Omit<TranscriptProps, 'transcript' | 'messageInProgress' | 'chatID'> {
     interaction: Interaction
     isFirstInteraction: boolean
     isLastInteraction: boolean
