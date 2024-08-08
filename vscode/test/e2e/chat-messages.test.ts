@@ -15,14 +15,14 @@ test('chat assistant response code buttons', async ({ page, sidebar, context, co
     await expect(assistantRow).toContainText('Hello! Here is a code snippet:')
     await expect(assistantRow).toContainText('def fib(n):')
 
-    const copyButton = assistantRow.getByRole('button', { name: 'Copy' })
-    const smartApplyButton = assistantRow.getByRole('button', { name: 'Apply' })
-    const actionsDropdown = assistantRow.getByRole('button', { name: 'More Actions' })
+    const copyButton = assistantRow.getByRole('button', { name: 'Copy Code' })
+    const insertButton = assistantRow.getByRole('button', { name: 'Insert Code at Cursor' })
+    const saveToNewFileButton = assistantRow.getByRole('button', { name: 'Save Code to New File' })
 
     expect(await copyButton.count()).toBe(1)
     await expect(copyButton).toBeVisible()
-    await expect(smartApplyButton).toBeVisible()
-    await expect(actionsDropdown).toBeVisible()
+    await expect(insertButton).toBeVisible()
+    await expect(saveToNewFileButton).toBeVisible()
 
     // When using Playwright for VS Code tests, the clipboard-read and clipboard-write permissions
     // don't work, and attempting to read the clipboard from Playwright throws a DOMException. So,
