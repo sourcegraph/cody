@@ -216,8 +216,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     }
 
     /**
-     * Check index freshness and reindex if needed. Currently reindexes daily if changes
-     * have been detected.
+     * Check index freshness and reindex if needed.
      */
     public async reindexIfStale(scopeDir: FileURI): Promise<void> {
         logDebug('SymfRunner', 'reindexIfStale', scopeDir.fsPath)
