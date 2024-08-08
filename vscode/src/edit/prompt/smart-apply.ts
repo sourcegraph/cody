@@ -149,6 +149,10 @@ export async function promptModelForOriginalCode(
                 void multiplexer.notifyTurnComplete()
                 break
             }
+            case 'error': {
+                console.log('GOT AN ERROR', message.error)
+                throw message.error
+            }
         }
     }
 
@@ -175,14 +179,20 @@ export async function getSmartApplySelection(
     client: ChatClient,
     codyApiVersion: number
 ): Promise<SmartSelection | null> {
-    const originalCode = await promptModelForOriginalCode(
-        instruction,
-        replacement,
-        document,
-        model,
-        client,
-        codyApiVersion
-    )
+    let originalCode: string
+    try {
+        originalCode = await promptModelForOriginalCode(
+            instruction,
+            replacement,
+            document,
+            model,
+            client,
+            codyApiVersion
+        )
+    } catch (error) {
+        // Cody told us we need to replace some code, but we couldn't find where to replace it
+        return null
+    }
 
     if (originalCode.trim().length === 0 || originalCode.trim() === 'INSERT') {
         // Insert flow. Cody thinks that this code should be inserted into the document.
