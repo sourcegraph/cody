@@ -796,8 +796,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // Remove context chips (repo, @-mentions) from the input text for context retrieval.
         const inputTextWithoutContextChips = editorState
             ? PromptString.unsafe_fromUserQuery(
-                inputTextWithoutContextChipsFromPromptEditorState(editorState)
-            )
+                  inputTextWithoutContextChipsFromPromptEditorState(editorState)
+              )
             : text
         const structuredMentions = toStructuredMentions(mentions)
         const retrievedContextPromise = this.contextRetriever.retrieveContext(
@@ -873,10 +873,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // Remove context chips (repo, @-mentions) from the input text for context retrieval.
         const inputTextWithoutContextChips = editorState
             ? PromptString.unsafe_fromUserQuery(
-                inputTextWithoutContextChipsFromPromptEditorState(editorState)
-            )
+                  inputTextWithoutContextChipsFromPromptEditorState(editorState)
+              )
             : text
-
 
         const context = (
             await Promise.all([
@@ -1047,16 +1046,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             type: 'clientAction',
             addContextItemsToLastHumanInput: contextItem
                 ? [
-                    {
-                        ...contextItem,
-                        type: 'file',
-                        // Remove content to avoid sending large data to the webview
-                        content: undefined,
-                        isTooLarge: contextItem.size ? contextItem.size > userContextSize : undefined,
-                        source: ContextItemSource.User,
-                        range: contextItem.range,
-                    } satisfies ContextItem,
-                ]
+                      {
+                          ...contextItem,
+                          type: 'file',
+                          // Remove content to avoid sending large data to the webview
+                          content: undefined,
+                          isTooLarge: contextItem.size ? contextItem.size > userContextSize : undefined,
+                          source: ContextItemSource.User,
+                          range: contextItem.range,
+                      } satisfies ContextItem,
+                  ]
                 : [],
         })
 
@@ -1830,7 +1829,7 @@ export function webviewViewOrPanelOnDidChangeViewState(
     // Return a no-op (this means the provider is for the sidebar)
     return () => {
         return {
-            dispose: () => { },
+            dispose: () => {},
         }
     }
 }
