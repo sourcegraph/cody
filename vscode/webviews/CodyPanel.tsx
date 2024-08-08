@@ -30,6 +30,7 @@ export const CodyPanel: FunctionComponent<
         | 'showWelcomeMessage'
         | 'showIDESnippetActions'
         | 'scrollableParent'
+        | 'experimentalSmartApplyEnabled'
     > &
         Pick<ComponentProps<typeof HistoryTab>, 'userHistory'>
 > = ({
@@ -50,6 +51,7 @@ export const CodyPanel: FunctionComponent<
     scrollableParent,
     showWelcomeMessage,
     userHistory,
+    experimentalSmartApplyEnabled,
 }) => {
     return (
         <TabRoot
@@ -76,6 +78,7 @@ export const CodyPanel: FunctionComponent<
                         showIDESnippetActions={showIDESnippetActions}
                         showWelcomeMessage={showWelcomeMessage}
                         scrollableParent={scrollableParent}
+                        experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
                         setView={setView}
                     />
                 )}

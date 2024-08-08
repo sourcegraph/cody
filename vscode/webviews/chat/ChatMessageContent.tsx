@@ -1,42 +1,51 @@
-import { type Guardrails, isError } from '@sourcegraph/cody-shared'
+import { type Guardrails, type PromptString, isError } from '@sourcegraph/cody-shared'
 import type React from 'react'
 import { useEffect, useRef } from 'react'
 
 import {
     CheckCodeBlockIcon,
     CopyCodeBlockIcon,
+    EllipsisIcon,
     InsertCodeBlockIcon,
     SaveCodeBlockIcon,
     ShieldIcon,
+    SparkleIcon,
 } from '../icons/CodeBlockActionIcons'
 
 import { clsx } from 'clsx'
 import { MarkdownFromCody } from '../components/MarkdownFromCody'
 import styles from './ChatMessageContent.module.css'
+import type { PriorHumanMessageInfo } from './cells/messageCell/assistant/AssistantMessageCell'
 
 export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
     insertButtonOnSubmit: (text: string, newFile?: boolean) => void
+    smartApplyButtonOnSubmit: (text: string, instruction?: PromptString, fileName?: string) => void
 }
 
 interface ChatMessageContentProps {
     displayMarkdown: string
     isMessageLoading: boolean
+    humanMessage: PriorHumanMessageInfo | null
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+
+    experimentalSmartApplyEnabled?: boolean
+    smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
 
     guardrails?: Guardrails
     className?: string
 }
 
 function createButtons(
-    text: string,
+    preText: string,
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 ): HTMLElement {
     const container = document.createElement('div')
     container.className = styles.buttonsContainer
+
     if (!copyButtonOnSubmit) {
         return container
     }
@@ -53,7 +62,7 @@ function createButtons(
 
     const copyButton = createCodeBlockActionButton(
         'copy',
-        text,
+        preText,
         'Copy Code',
         CopyCodeBlockIcon,
         codeBlockActions
@@ -65,7 +74,7 @@ function createButtons(
         buttons.append(
             createCodeBlockActionButton(
                 'insert',
-                text,
+                preText,
                 'Insert Code at Cursor',
                 InsertCodeBlockIcon,
                 codeBlockActions
@@ -75,13 +84,47 @@ function createButtons(
         buttons.append(
             createCodeBlockActionButton(
                 'new',
-                text,
+                preText,
                 'Save Code to New File...',
                 SaveCodeBlockIcon,
                 codeBlockActions
             )
         )
     }
+
+    container.append(buttons)
+
+    return container
+}
+
+function createButtonsExperimentalUI(
+    preText: string,
+    humanMessage: PriorHumanMessageInfo | null,
+    fileName?: string,
+    copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
+    smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
+): HTMLElement {
+    // The container will contain the buttons and the <pre> element with the code.
+    // This allows us to position the buttons independent of the code.
+    const container = document.createElement('div')
+    container.className = styles.buttonsContainer
+    if (!copyButtonOnSubmit) {
+        return container
+    }
+
+    const buttons = document.createElement('div')
+    buttons.className = styles.buttons
+
+    const copyButton = createCopyButton(preText, copyButtonOnSubmit)
+    buttons.append(copyButton)
+
+    if (smartApplyButtonOnSubmit) {
+        const applyButton = createApplyButton(preText, humanMessage, smartApplyButtonOnSubmit, fileName)
+        buttons.append(applyButton)
+    }
+
+    const actionsDropdown = createActionsDropdown(preText)
+    buttons.append(actionsDropdown)
 
     container.append(buttons)
 
@@ -138,6 +181,95 @@ function createCodeBlockActionButton(
             button.addEventListener('click', () => insertOnSubmit(text, true))
             break
     }
+
+    return button
+}
+
+function createCopyButton(
+    preText: string,
+    onCopy: CodeBlockActionsProps['copyButtonOnSubmit']
+): HTMLElement {
+    const button = document.createElement('button')
+    button.innerHTML = 'Copy'
+    button.className = styles.button
+
+    const iconContainer = document.createElement('div')
+    iconContainer.className = styles.iconContainer
+    iconContainer.innerHTML = CopyCodeBlockIcon
+    button.prepend(iconContainer)
+
+    button.addEventListener('click', () => {
+        iconContainer.innerHTML = CheckCodeBlockIcon
+        iconContainer.className = styles.iconContainer
+        button.innerHTML = 'Copied'
+        button.className = styles.button
+        button.prepend(iconContainer)
+
+        navigator.clipboard.writeText(preText).catch(error => console.error(error))
+        onCopy(preText, 'Button')
+        setTimeout(() => {
+            // Reset the icon to the original.
+            iconContainer.innerHTML = CopyCodeBlockIcon
+            iconContainer.className = styles.iconContainer
+            button.innerHTML = 'Copy'
+            button.className = styles.button
+            button.prepend(iconContainer)
+        }, 5000)
+
+        // Log for `chat assistant response code buttons` e2e test.
+        console.log('Code: Copy to Clipboard', preText)
+    })
+
+    return button
+}
+
+function createApplyButton(
+    preText: string,
+    humanMessage: PriorHumanMessageInfo | null,
+    onApply: CodeBlockActionsProps['smartApplyButtonOnSubmit'],
+    fileName?: string
+): HTMLElement {
+    const button = document.createElement('button')
+    button.innerHTML = 'Apply'
+    button.className = styles.button
+
+    const iconContainer = document.createElement('div')
+    iconContainer.className = styles.iconContainer
+    iconContainer.innerHTML = SparkleIcon
+    button.prepend(iconContainer)
+
+    button.addEventListener('click', () => onApply(preText, humanMessage?.text, fileName))
+
+    return button
+}
+
+function createActionsDropdown(preText: string): HTMLElement {
+    const button = document.createElement('button')
+    button.innerHTML = EllipsisIcon
+    button.title = 'More Actions...'
+    button.className = styles.button
+
+    const vscodeContext = {
+        webviewSection: 'codeblock-actions',
+        preventDefaultContextMenuItems: true,
+        text: preText,
+    }
+
+    // Attach `data-vscode-context`, this is also provided when the commands are executed,
+    // so serves as a way for us to pass `vscodeContext.text` to each relevant command
+    button.setAttribute('data-vscode-context', JSON.stringify(vscodeContext))
+
+    button.addEventListener('click', event => {
+        event.preventDefault()
+        event.target?.dispatchEvent(
+            new MouseEvent('contextmenu', {
+                bubbles: true,
+                clientX: event.clientX,
+                clientY: event.clientY,
+            })
+        )
+        event.stopPropagation()
+    })
 
     return button
 }
@@ -239,10 +371,13 @@ class GuardrailsStatusController {
 export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps> = ({
     displayMarkdown,
     isMessageLoading,
+    humanMessage,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
     guardrails,
     className,
+    experimentalSmartApplyEnabled,
+    smartApplyButtonOnSubmit,
 }) => {
     const rootRef = useRef<HTMLDivElement>(null)
 
@@ -264,8 +399,30 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
 
         for (const preElement of preElements) {
             const preText = preElement.textContent
+
             if (preText?.trim() && preElement.parentNode) {
-                const buttons = createButtons(preText, copyButtonOnSubmit, insertButtonOnSubmit)
+                // Extract the <code> element and attached `data-file-path` if present.
+                // This allows us to intelligently apply code to the suitable file.
+                const codeElement = preElement.querySelectorAll('code')?.[0]
+                const fileName = codeElement?.getAttribute('data-file-path') || undefined
+
+                const buttons = experimentalSmartApplyEnabled
+                    ? createButtonsExperimentalUI(
+                          preText,
+                          humanMessage,
+                          fileName,
+                          copyButtonOnSubmit,
+                          smartApplyButtonOnSubmit
+                      )
+                    : createButtons(preText, copyButtonOnSubmit, insertButtonOnSubmit)
+
+                if (experimentalSmartApplyEnabled && fileName?.length) {
+                    const fileNameContainer = document.createElement('div')
+                    fileNameContainer.className = styles.fileNameContainer
+                    fileNameContainer.textContent = getFileName(fileName)
+                    buttons.append(fileNameContainer)
+                }
+
                 if (guardrails) {
                     const container = document.createElement('div')
                     container.classList.add(styles.attributionContainer)
@@ -300,7 +457,15 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
             }
         }
-    }, [copyButtonOnSubmit, insertButtonOnSubmit, guardrails, displayMarkdown, isMessageLoading])
+    }, [
+        copyButtonOnSubmit,
+        insertButtonOnSubmit,
+        experimentalSmartApplyEnabled,
+        smartApplyButtonOnSubmit,
+        guardrails,
+        displayMarkdown,
+        isMessageLoading,
+    ])
 
     return (
         <div ref={rootRef} data-testid="chat-message-content">
@@ -309,4 +474,8 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
             </MarkdownFromCody>
         </div>
     )
+}
+
+function getFileName(filePath: string): string {
+    return filePath.split('/').pop() || filePath
 }

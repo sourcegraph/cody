@@ -1,4 +1,5 @@
 import { decode } from 'he'
+import type * as vscode from 'vscode'
 import type { FixupTask } from '../../non-stop/FixupTask'
 import { PROMPT_TOPICS } from '../prompt/constants'
 import { matchIndentation } from './match-indentation'
@@ -53,26 +54,29 @@ export function responseTransformer(
     const decodedText = decode(strippedText)
 
     if (!isMessageInProgress) {
-        const formattedToMatchLanguage = matchLanguage(decodedText, task)
-
         if (task.mode === 'insert') {
             // For insertions, we want to always ensure we include a new line at the end of the response
             // We do not attempt to match indentation, as we don't have any original text to compare to
-            return formattedToMatchLanguage.endsWith('\n')
-                ? formattedToMatchLanguage
-                : formattedToMatchLanguage + '\n'
+            return decodedText.endsWith('\n') ? decodedText : decodedText + '\n'
         }
 
-        // LLMs have a tendency to complete the response with a final new line, but we don't want to
-        // include this unless necessary, as we already trim the users' selection, and any additional whitespace will
-        // hurt the readability of the diff.
-        const trimmedReplacement =
-            task.original.trimEnd().length === task.original.length
-                ? formattedToMatchLanguage.trimEnd()
-                : formattedToMatchLanguage
-        // Attempt to match the indentation of the replacement with the original text
-        return matchIndentation(trimmedReplacement, task.original)
+        return formatToMatchOriginal(decodedText, task.original, task.fixupFile.uri)
     }
 
     return decodedText
+}
+
+export function formatToMatchOriginal(incoming: string, original: string, uri: vscode.Uri): string {
+    const formattedToMatchLanguage = matchLanguage(incoming, original, uri)
+
+    // LLMs have a tendency to complete the response with a final new line, but we don't want to
+    // include this unless necessary, as we already trim the users' selection, and any additional whitespace will
+    // hurt the readability of the diff.
+    const trimmedReplacement =
+        original.trimEnd().length === original.length
+            ? formattedToMatchLanguage.trimEnd()
+            : formattedToMatchLanguage
+
+    // Attempt to match the indentation of the replacement with the original text
+    return matchIndentation(trimmedReplacement, original)
 }

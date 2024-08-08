@@ -16,6 +16,7 @@ import {
     DOTCOM_URL,
     type DefaultChatCommands,
     type EventSource,
+    FeatureFlag,
     type Guardrails,
     type MentionQuery,
     type Message,
@@ -87,6 +88,7 @@ import {
     handleCodeFromInsertAtCursor,
     handleCodeFromSaveToNewFile,
     handleCopiedCode,
+    handleSmartApply,
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
@@ -136,6 +138,7 @@ export interface ChatSession {
     webviewPanelOrView: vscode.WebviewView | vscode.WebviewPanel | undefined
     sessionID: string
 }
+
 /**
  * ChatController is the view controller class for the chat panel.
  * It handles all events sent from the view, keeps track of the underlying chat model,
@@ -353,6 +356,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'copy':
                 await handleCopiedCode(message.text, message.eventType === 'Button')
                 break
+            case 'smartApply':
+                await handleSmartApply(message.code, message.instruction, message.fileName)
+                break
             case 'openURI':
                 vscode.commands.executeCommand('vscode.open', message.uri)
                 break
@@ -372,8 +378,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await openLocalFileWithRange(message.filePath, message.range ?? undefined)
                 break
             case 'newFile':
-                handleCodeFromSaveToNewFile(message.text)
-                await this.editor.createWorkspaceFile(message.text)
+                await handleCodeFromSaveToNewFile(message.text, this.editor)
                 break
             case 'context/get-remote-search-repos': {
                 await this.postMessage({
@@ -523,8 +528,29 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
     }
 
-    private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
+    private async isSmartApplyEnabled(): Promise<boolean> {
+        if (!this.authProvider.getAuthStatus().isDotCom) {
+            // Only supported on Sourcegraph.com right now, until we support more than just Claude 3.5 Sonnet.
+            return false
+        }
+
         const config = await getFullConfig()
+        if (config.isRunningInsideAgent) {
+            // Only supported in VS Code right now, until we test and iterate on the UI for other clients.
+            return false
+        }
+
+        return (
+            config.internalUnstable ||
+            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalSmartApply))
+        )
+    }
+
+    private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
+        const [config, experimentalSmartApply] = await Promise.all([
+            getFullConfig(),
+            this.isSmartApplyEnabled(),
+        ])
 
         const webviewType =
             this.webviewPanelOrView?.viewType === 'cody.editorPanel' ? 'editor' : 'sidebar'
@@ -537,6 +563,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: config.serverEndpoint,
             experimentalNoodle: config.experimentalNoodle,
+            experimentalSmartApply,
             webviewType,
         }
     }
@@ -1224,9 +1251,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         sendTelemetry?: (contextSummary: any, privateContextSummary?: any) => void,
         contextAlternatives?: RankedContext[]
     ): Promise<Message[]> {
+        const experimentalSmartApplyEnabled = await this.isSmartApplyEnabled()
         const { prompt, context } = await prompter.makePrompt(
             this.chatModel,
-            this.authProvider.getAuthStatus().codyApiVersion
+            this.authProvider.getAuthStatus().codyApiVersion,
+            { experimentalSmartApplyEnabled }
         )
         abortSignal.throwIfAborted()
 

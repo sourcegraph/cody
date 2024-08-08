@@ -2,7 +2,13 @@ import { clsx } from 'clsx'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 
-import type { AuthStatus, ChatMessage, CodyIDE, Guardrails } from '@sourcegraph/cody-shared'
+import type {
+    AuthStatus,
+    ChatMessage,
+    CodyIDE,
+    Guardrails,
+    PromptString,
+} from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -27,6 +33,7 @@ interface ChatboxProps {
     showIDESnippetActions?: boolean
     setView: (view: View) => void
     className?: string
+    experimentalSmartApplyEnabled?: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -42,6 +49,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showIDESnippetActions = true,
     setView,
     className,
+    experimentalSmartApplyEnabled,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -98,19 +106,32 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         if (showIDESnippetActions) {
             return (text: string, newFile = false) => {
                 const op = newFile ? 'newFile' : 'insert'
-                const eventType = 'Button'
-                // remove the additional /n added by the text area at the end of the text
-                const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
                 // Log the event type and text to telemetry in chat view
                 vscodeAPI.postMessage({
                     command: op,
-                    eventType,
-                    text: code,
+                    // remove the additional /n added by the text area at the end of the text
+                    text: text.replace(/\n$/, ''),
                 })
             }
         }
 
         return
+    }, [vscodeAPI, showIDESnippetActions])
+
+    const smartApplyButtonOnSubmit = useMemo(() => {
+        if (!showIDESnippetActions) {
+            return
+        }
+
+        return (text: string, instruction?: PromptString, fileName?: string) => {
+            vscodeAPI.postMessage({
+                command: 'smartApply',
+                instruction: instruction?.toString(),
+                // remove the additional /n added by the text area at the end of the text
+                code: text.replace(/\n$/, ''),
+                fileName,
+            })
+        }
     }, [vscodeAPI, showIDESnippetActions])
 
     const postMessage = useCallback<ApiPostMessage>(msg => vscodeAPI.postMessage(msg), [vscodeAPI])
@@ -170,11 +191,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                 copyButtonOnSubmit={copyButtonOnSubmit}
                 insertButtonOnSubmit={insertButtonOnSubmit}
+                smartApplyButtonOnSubmit={smartApplyButtonOnSubmit}
                 isTranscriptError={isTranscriptError}
                 userInfo={userInfo}
                 chatEnabled={chatEnabled}
                 postMessage={postMessage}
                 guardrails={guardrails}
+                experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
             />
             {transcript.length === 0 && showWelcomeMessage && (
                 <WelcomeMessage IDE={userInfo.ide} setView={setView} />

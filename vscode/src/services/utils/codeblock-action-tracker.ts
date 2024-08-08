@@ -1,8 +1,12 @@
 import * as vscode from 'vscode'
 
-import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import { PromptString, telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 
+import { Utils } from 'vscode-uri'
+import { doesFileExist } from '../../commands/utils/workspace-files'
+import { executeSmartApply } from '../../edit/smart-apply'
+import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { countCode, matchCodeSnippets } from './code-count'
 
 /**
@@ -99,12 +103,59 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
     setLastStoredCode(text, eventName)
 }
 
+export async function handleSmartApply(
+    code: string,
+    instruction?: string | null,
+    fileUri?: string | null
+): Promise<void> {
+    const activeEditor = getEditor()?.active
+    const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
+    const uri =
+        fileUri && workspaceUri ? Utils.joinPath(workspaceUri, fileUri) : activeEditor?.document.uri
+
+    if (uri && !(await doesFileExist(uri))) {
+        return handleNewFileWithCode(code, uri)
+    }
+
+    const document = uri ? await vscode.workspace.openTextDocument(uri) : activeEditor?.document
+    const editor = document && (await vscode.window.showTextDocument(document))
+    if (!editor || !document) {
+        throw new Error('No editor found to insert text')
+    }
+
+    /**
+     * TODO: We currently only support 3.5 Sonnet for Smart Apply.
+     * This is because it is the most reliable way to apply these changes to files.
+     * We should also support OpenAI models and update the prompt to ensure we get reliable results.
+     * We will need this for enterprise.
+     */
+    const DEFAULT_MODEL = 'anthropic/claude-3-5-sonnet-20240620'
+    await executeSmartApply({
+        configuration: {
+            document: editor.document,
+            instruction: PromptString.unsafe_fromUserQuery(instruction || ''),
+            model: DEFAULT_MODEL,
+            replacement: code,
+        },
+        source: 'chat',
+    })
+}
+
+export async function handleNewFileWithCode(code: string, uri: vscode.Uri): Promise<void> {
+    const workspaceEditor = new vscode.WorkspaceEdit()
+    workspaceEditor.createFile(uri, { ignoreIfExists: false })
+    const range = new vscode.Range(0, 0, 0, 0)
+    workspaceEditor.replace(uri, range, code.trimEnd())
+    await vscode.workspace.applyEdit(workspaceEditor)
+    return vscode.commands.executeCommand('vscode.open', uri)
+}
+
 /**
  * Handles insert event to insert text from code block to new file
  */
-export function handleCodeFromSaveToNewFile(text: string): void {
-    const eventName = 'saveButton'
-    setLastStoredCode(text, eventName)
+export async function handleCodeFromSaveToNewFile(text: string, editor: VSCodeEditor): Promise<void> {
+    setLastStoredCode(text, 'saveButton')
+    return editor.createWorkspaceFile(text)
 }
 
 /**

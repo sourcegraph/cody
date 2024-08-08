@@ -2,6 +2,7 @@ import {
     type ChatMessage,
     ContextItemSource,
     type Guardrails,
+    type PromptString,
     contextItemsFromPromptEditorValue,
     filterContextItemsFromPromptEditorValue,
     isAbortErrorOrSocketHangUp,
@@ -43,6 +44,9 @@ export const AssistantMessageCell: FunctionComponent<{
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
+    experimentalSmartApplyEnabled?: boolean
+    smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
+
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
 }> = memo(
@@ -58,6 +62,8 @@ export const AssistantMessageCell: FunctionComponent<{
         insertButtonOnSubmit,
         postMessage,
         guardrails,
+        smartApplyButtonOnSubmit,
+        experimentalSmartApplyEnabled,
     }) => {
         const displayMarkdown = useMemo(
             () => reformatBotMessageForChat(message.text ?? ps``).toString(),
@@ -106,6 +112,9 @@ export const AssistantMessageCell: FunctionComponent<{
                                 copyButtonOnSubmit={copyButtonOnSubmit}
                                 insertButtonOnSubmit={insertButtonOnSubmit}
                                 guardrails={guardrails}
+                                humanMessage={humanMessage}
+                                experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
+                                smartApplyButtonOnSubmit={smartApplyButtonOnSubmit}
                             />
                         ) : (
                             isLoading && <LoadingDots />
@@ -157,6 +166,7 @@ export interface HumanMessageInitialContextInfo {
 }
 
 export interface PriorHumanMessageInfo {
+    text?: PromptString
     hasInitialContext: HumanMessageInitialContextInfo
     rerunWithDifferentContext: (withInitialContext: HumanMessageInitialContextInfo) => void
 
@@ -176,6 +186,7 @@ export function makeHumanMessageInfo(
     const contextItems = contextItemsFromPromptEditorValue(editorValue)
 
     return {
+        text: humanMessage.text,
         hasInitialContext: {
             repositories: Boolean(
                 contextItems.some(item => item.type === 'repository' || item.type === 'tree')
