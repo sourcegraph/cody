@@ -52,7 +52,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         title: 'Claude 3.5 Sonnet',
         model: 'anthropic/claude-3-5-sonnet-20240620',
         provider: 'Anthropic',
-        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        usage: [], // Temporarily disabled due to INC-319: #inc-319-cody-connection-closed-without-receiving-any-events
         contextWindow: expandedContextWindow,
         tags: [ModelTag.Gateway, ModelTag.Accuracy, ModelTag.Recommended, ModelTag.Free],
     },
