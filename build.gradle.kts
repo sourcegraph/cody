@@ -33,7 +33,7 @@ val isForceCodeSearchBuild = isForceBuild || properties("forceCodeSearchBuild") 
 // Update gradle.properties pluginSinceBuild, pluginUntilBuild to match the min, max versions in
 // this list.
 val versionsOfInterest =
-    listOf("2022.1", "2022.2", "2022.3", "2023.1", "2023.2", "2023.3", "2024.1").sorted()
+    listOf("2022.1", "2022.2", "2022.3", "2023.1", "2023.2", "2023.3", "2024.1", "2024.2").sorted()
 val versionsToValidate =
     when (project.properties["validation"]?.toString()) {
       "lite" -> listOf(versionsOfInterest.first(), versionsOfInterest.last())
@@ -47,6 +47,7 @@ val skippedFailureLevels =
     EnumSet.of(
         FailureLevel.COMPATIBILITY_PROBLEMS, // blocked by: compatibility hack for IJ 2022.1 / 2024+
         FailureLevel.DEPRECATED_API_USAGES,
+        FailureLevel.INTERNAL_API_USAGES,
         FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES, // blocked by: Kotlin UI DSL Cell.align
         FailureLevel.EXPERIMENTAL_API_USAGES,
         FailureLevel.NOT_DYNAMIC)!!
