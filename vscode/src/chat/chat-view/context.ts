@@ -241,12 +241,21 @@ export async function searchSymf(
                         logError('ChatController.searchSymf', `Error getting file contents: ${error}`)
                         return []
                     }
+
+                    const metadata: string[] = [
+                        'source:symf-index',
+                        'score:' + result.blugeScore.toFixed(0),
+                    ]
+                    if (result.heuristicBoostID) {
+                        metadata.push('boost:' + result.heuristicBoostID)
+                    }
                     return {
                         type: 'file',
                         uri: result.file,
                         range,
                         source: ContextItemSource.Search,
                         content: text,
+                        metadata,
                     }
                 }
             )

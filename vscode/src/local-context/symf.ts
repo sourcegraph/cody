@@ -597,7 +597,19 @@ function parseSymfStdout(stdout: string): Result[] {
     }
     const results = JSON.parse(stdout) as RawSymfResult[]
     return results.map(result => {
-        const { fqname, name, type, doc, exported, lang, file: fsPath, range, summary } = result
+        const {
+            fqname,
+            name,
+            type,
+            doc,
+            exported,
+            lang,
+            file: fsPath,
+            range,
+            summary,
+            blugeScore,
+            heuristicBoostID,
+        } = result
 
         const { row: startRow, col: startColumn } = range.startPoint
         const { row: endRow, col: endColumn } = range.endPoint
@@ -626,6 +638,8 @@ function parseSymfStdout(stdout: string): Result[] {
                     col: endColumn,
                 },
             },
+            blugeScore,
+            heuristicBoostID,
         } satisfies Result
     })
 }
