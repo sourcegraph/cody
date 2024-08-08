@@ -68,6 +68,7 @@ export interface Configuration {
      * Unstable Features for internal testing only
      */
     internalUnstable: boolean
+    internalDebugContext: boolean
 
     /**
      * Experimental autocomplete

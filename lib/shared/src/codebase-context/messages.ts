@@ -72,6 +72,12 @@ interface ContextItemCommon {
      * Lucid icon name for the context item
      */
     icon?: string
+
+    /**
+     * Optional metadata about where this context item came from or how it was scored, which
+     * can help a user or dev working on Cody understand why this item is appearing in context.
+     */
+    metadata?: string[]
 }
 
 /**
