@@ -424,26 +424,30 @@ class CodyAutocompleteManager {
 
     var inlay: Inlay<*>? = null
     if (startsInline) {
-      val renderer =
-          CodyAutocompleteSingleLineRenderer(
-              completionText.lines().first(), items, editor, AutocompleteRendererType.INLINE)
-      inlay =
-          inlayModel.addInlineElement(cursorOffset, /* relatesToPrecedingText = */ true, renderer)
+      val text = completionText.lines().first()
+      if (text.isNotEmpty()) {
+        val renderer =
+            CodyAutocompleteSingleLineRenderer(text, items, editor, AutocompleteRendererType.INLINE)
+        inlay =
+            inlayModel.addInlineElement(cursorOffset, /* relatesToPrecedingText = */ true, renderer)
+      }
     }
     val lines = completionText.lines()
     if (lines.size > 1) {
       val text =
           (if (startsInline) lines.drop(1) else lines).dropWhile { it.isBlank() }.joinToString("\n")
-      val renderer = CodyAutocompleteBlockElementRenderer(text, items, editor)
-      val inlay2 =
-          inlayModel.addBlockElement(
-              /* offset = */ cursorOffset,
-              /* relatesToPrecedingText = */ true,
-              /* showAbove = */ false,
-              /* priority = */ Int.MAX_VALUE,
-              /* renderer = */ renderer)
-      if (inlay == null) {
-        inlay = inlay2
+      if (text.isNotEmpty()) {
+        val renderer = CodyAutocompleteBlockElementRenderer(text, items, editor)
+        val inlay2 =
+            inlayModel.addBlockElement(
+                /* offset = */ cursorOffset,
+                /* relatesToPrecedingText = */ true,
+                /* showAbove = */ false,
+                /* priority = */ Int.MAX_VALUE,
+                /* renderer = */ renderer)
+        if (inlay == null) {
+          inlay = inlay2
+        }
       }
     }
 
