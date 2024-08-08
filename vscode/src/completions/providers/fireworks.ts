@@ -59,6 +59,7 @@ export interface FireworksOptions {
     model: FireworksModel
     maxContextTokens?: number
     client: CodeCompletionsClient
+    anonymousUserID?: string
     timeouts: AutocompleteTimeouts
     config: Pick<
         ConfigurationWithAccessToken,
@@ -182,10 +183,19 @@ class FireworksProvider extends Provider {
     // Todo: This variable is used to introduce an additional delay to collect the data on impact of latency on user experience.
     // Todo: Delete this variable once the data is collected.
     private shouldAddArtificialDelayForExperiment = false
+    private anonymousUserID: string | undefined
 
     constructor(
         options: ProviderOptions,
-        { model, maxContextTokens, client, timeouts, config, authStatus }: Required<FireworksOptions>
+        {
+            model,
+            maxContextTokens,
+            client,
+            timeouts,
+            config,
+            authStatus,
+            anonymousUserID,
+        }: Required<Omit<FireworksOptions, 'anonymousUserID'>> & { anonymousUserID?: string }
     ) {
         super(options)
         this.timeouts = timeouts
@@ -197,6 +207,7 @@ class FireworksProvider extends Provider {
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
         this.authStatus = authStatus
+        this.anonymousUserID = anonymousUserID
         this.isLocalInstance = Boolean(
             this.authStatus.endpoint?.includes('sourcegraph.test') ||
                 this.authStatus.endpoint?.includes('localhost')
@@ -537,6 +548,7 @@ class FireworksProvider extends Provider {
                     ],
                     stream: true,
                     languageId: self.options.document.languageId,
+                    anonymousUserID: self.anonymousUserID,
                 }
 
                 const headers = new Headers(self.getCustomHeaders())
@@ -722,7 +734,9 @@ export function createProviderConfig({
 }): ProviderConfig {
     const clientModel =
         model === null || model === ''
-            ? 'starcoder-hybrid'
+            ? otherOptions.authStatus.isDotCom
+                ? DEEPSEEK_CODER_V2_LITE_BASE
+                : 'starcoder-hybrid'
             : ['starcoder-hybrid', 'starcoder2-hybrid'].includes(model)
               ? (model as FireworksModel)
               : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
