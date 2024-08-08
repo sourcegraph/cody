@@ -42,6 +42,9 @@ export class FixupDecorator {
     }
 
     private updateTaskDecorations(task: FixupTask, decorations?: Decorations): void {
+        if (task.instruction.includes('REFACTORING_835')) {
+            return
+        }
         const isEmpty =
             !decorations ||
             (decorations.linesAdded.length === 0 &&

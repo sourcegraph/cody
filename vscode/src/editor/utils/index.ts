@@ -24,12 +24,17 @@ import { getSelectionAroundLine } from './document-sections'
  */
 export async function getSmartSelection(
     documentOrUri: vscode.TextDocument | vscode.Uri,
-    target: vscode.Position
+    target: vscode.Position,
+    shouldUseEnclosingFunction?: false
 ): Promise<vscode.Selection | undefined> {
     const document =
         documentOrUri instanceof vscode.Uri
             ? await vscode.workspace.openTextDocument(documentOrUri)
             : documentOrUri
+
+    if (shouldUseEnclosingFunction === false) {
+        return getSelectionAroundLine(document, target.line)
+    }
 
     const [enclosingFunction] = execQueryWrapper({
         document,

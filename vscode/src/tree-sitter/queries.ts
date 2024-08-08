@@ -13,6 +13,7 @@ export type QueryName =
     | 'singlelineTriggers'
     | 'intents'
     | 'documentableNodes'
+    | 'refactorableNodes'
     | 'graphContextIdentifiers'
     | 'identifiers'
     | 'enclosingFunction'

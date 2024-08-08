@@ -8,25 +8,25 @@ export class EditCodeAction implements vscode.CodeActionProvider {
     public provideCodeActions(document: vscode.TextDocument): vscode.CodeAction[] {
         const editor = vscode.window.activeTextEditor
 
-        if (!editor) {
-            return []
-        }
+        // if (!editor) {
+        //     return []
+        // }
 
-        if (
-            editor.selection.isEmpty &&
-            !document.lineAt(editor.selection.start.line).isEmptyOrWhitespace
-        ) {
-            // Empty selection but a non-empty line, show nothing as the user likely won't want to generate here.
-            return []
-        }
+        // if (
+        //     editor.selection.isEmpty &&
+        //     !document.lineAt(editor.selection.start.line).isEmptyOrWhitespace
+        // ) {
+        //     // Empty selection but a non-empty line, show nothing as the user likely won't want to generate here.
+        //     return []
+        // }
 
-        if (editor.selection.isEmpty) {
-            // Empty selection and empty line, show generate action
-            return [this.createGenerateCodeAction(document, editor.selection)]
-        }
+        // if (editor.selection.isEmpty) {
+        //     // Empty selection and empty line, show generate action
+        //     return [this.createGenerateCodeAction(document, editor.selection)]
+        // }
 
         // Non-empty selection, show edit action
-        return [this.createEditCommandCodeAction(document, editor.selection)]
+        return [this.createEditCommandCodeAction(document, editor!.selection)]
     }
 
     private createGenerateCodeAction(
