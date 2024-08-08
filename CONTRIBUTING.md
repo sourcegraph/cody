@@ -104,10 +104,10 @@ You should build everything in PowerShell. Git Bash, Ubuntu and MinGW all offer 
 $env:SKIP_CODE_SEARCH_BUILD="true"
 ```
 
-## Using Nightly channel releases
+## Using Nightly/Experimental channel releases
 
 - Open "Sourcegraph & Cody" settings
-- Change to "Nightly" update channel
+- Change to "Nightly"/"Experimental" update channel
 - Open "Plugins"
 - Update Sourcegraph plugin
 - Restart IDE
@@ -168,7 +168,7 @@ We trigger the stable channel release only after the nightly channel release pas
 
 ```mermaid
 graph TD;
-    Title --> nightly["Nightly Release"];
+    Title --> nightly["Nightly Release / Experimental Release"];
     Title["JetBrains Plugin Release"] --> stable["Stable Release"];
     stable -->  trigger_stable["Manually trigger 'Stable Release' workflow\nin GitHub Actions"];
     release_stable --> marketplace_approval["Wait for JetBrains approval"];
@@ -176,9 +176,9 @@ graph TD;
     unhide --> available_to_end_users_stable["Available for download"];
     marketplace_approval --> |Manual quick-approve| slack_approval["Request JetBrains Marketplace team\nto manually approve it via Slack"];
     slack_approval --> unhide["Unhide the approved release\n(requires admin access)"];
-    nightly --> push_nightly["Run `push-git-tag-for-next-release.sh`"];
+    nightly --> push_tag["Run `push-git-tag-for-next-release.sh`"];
     trigger_stable --> release_stable["Wait for 'Stable Release' workflow to complete"];
-    push_nightly --> release_nightly["Wait for 'Nightly Release' workflow to complete"];
+    push_tag --> release_nightly["Wait for 'Nightly Release' / 'Experimental Release'\nworkflow to complete"];
     release_nightly --> available_to_end_users_nightly["Available for download"];
 ```
 
