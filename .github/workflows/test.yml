@@ -79,7 +79,7 @@ jobs:
         with:
           plugin-location: '*.zip'
           ide-versions: |
-            ideaIC:2021.1
+            ideaIC:2022.1
             ideaIC:2024.2
           failure-levels: |
             COMPATIBILITY_WARNINGS
