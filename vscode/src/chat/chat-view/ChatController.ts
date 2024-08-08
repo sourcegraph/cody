@@ -530,12 +530,21 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async isSmartApplyEnabled(): Promise<boolean> {
+        if (!this.authProvider.getAuthStatus().isDotCom) {
+            // Only supported on Sourcegraph.com right now, until we support more than just Claude 3.5 Sonnet.
+            return false
+        }
+
         const config = await getFullConfig()
-        const isSmartApplyEnabled =
+        if (config.isRunningInsideAgent) {
+            // Only supported in VS Code right now, until we test and iterate on the UI for other clients.
+            return false
+        }
+
+        return (
             config.internalUnstable ||
             (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalSmartApply))
-        // Smart apply is only available in VS Code right now
-        return Boolean(isSmartApplyEnabled && !config.isRunningInsideAgent)
+        )
     }
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
