@@ -983,6 +983,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('editTask/accept', async (params: any) => {
+            console.log('JM: editTask/accept called: ', params)
             const { id, range } = params
             if (!id || !range) {
                 throw new Error('editTask/accept: missing required parameters')
@@ -992,6 +993,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('editTask/acceptAll', async ({ id }) => {
+            console.log('JM: editTask/acceptAll called: ', params)
             this.fixups?.acceptAll(id)
             return null
         })
