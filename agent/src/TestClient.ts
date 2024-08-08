@@ -1,7 +1,4 @@
 import assert from 'node:assert'
-import stable_stringify from 'fast-json-stable-stringify'
-
-import { createPatch } from 'diff'
 
 import { execSync, spawn } from 'node:child_process'
 import fspromises from 'node:fs/promises'
@@ -829,68 +826,6 @@ export class TestClient extends MessageHandler {
         return customConfiguration?.['cody.experimental.symf.enabled'] === false
     }
 
-    // Given the following missing recording, tries to find an existing
-    // recording that has the closest levenshtein distance and prints out a
-    // unified diff. This could save a lot of time trying to debug a test
-    // failure caused by missing recordings for common scenarios like 1) leaking
-    // an absolute file path into the prompt or 2) forgetting to sort context
-    // files.
-    private async printDiffAgainstClosestMatchingRecording(
-        missingRecording: NetworkRequest
-    ): Promise<void> {
-        const message = missingRecording.error ?? ''
-        const jsonText = message.split('\n').slice(1).join('\n')
-        const json = JSON.parse(jsonText)
-        const bodyText = json?.body ?? '{}'
-        const body = JSON.parse(bodyText)
-        const { closestBody } = await this.request('testing/closestPostData', {
-            url: json?.url ?? '',
-            postData: bodyText,
-        })
-
-        if (closestBody) {
-            // Need to go through stable_stringify to get meaningful diffs.
-            // Without this step, we get noisy diffs about different object
-            // property ordering.
-            const oldChange = JSON.stringify(JSON.parse(stable_stringify(body)), null, 2)
-            const newChange = JSON.stringify(
-                JSON.parse(stable_stringify(JSON.parse(closestBody))),
-                null,
-                2
-            )
-            if (oldChange === newChange) {
-                console.log(
-                    dedent`There exists a recording with exactly the same request body, but for some reason the recordings did not match.
-                           This only really happens in exceptional cases like
-                           - There is a bug in how Polly computes HTTP request identifiers
-                           - Somebody manually edited the HTTP recording file
-                           Possible ways to fix the problem:
-                           - Confirm tests run in passthrough mode: CODY_RECORDING_MODE=passthrough pnpm test agent/src/index.test.ts
-                           - Reset recordings and re-record everything: rm -rf agent/recordings && pnpm update-agent-recordings
-                           `
-                )
-            } else {
-                const patch = createPatch(
-                    missingRecording.url,
-                    oldChange,
-                    newChange,
-                    'the request in this test that has no matching recording',
-                    'the closest matching recording in the recording file'
-                )
-                console.log(
-                    `
-Found a recording in the recording file that looks similar to this request that has no matching recording.
-Sometimes this happens when our prompt construction logic is non-determinic. For example, if we expose
-an absolute file path in the recording, then the tests fail in CI because the absolutely file path in CI
-is different from the one in the recording file. Another example, sometimes the ordering of context files
-is non-deterministic resulting in failing tests in CI because the ordering of context files in CI is different.
-Closely inspect the diff below to non-determinic prompt construction is the reason behind this failure.
-${patch}`
-                )
-            }
-        }
-    }
-
     public async beforeAll(additionalConfig?: Partial<ExtensionConfiguration>) {
         const info = await this.initialize(additionalConfig)
         if (!info.authStatus?.isLoggedIn) {
@@ -902,24 +837,7 @@ ${patch}`
     }
     public async shutdownAndExit() {
         if (this.isAlive()) {
-            const { errors } = await this.request('testing/requestErrors', null)
-            const missingRecordingErrors = errors.filter(({ error }) =>
-                error?.includes?.('`recordIfMissing` is')
-            )
-            if (missingRecordingErrors.length > 0) {
-                for (const error of missingRecordingErrors) {
-                    await this.printDiffAgainstClosestMatchingRecording(error)
-                }
-                const errorMessage = missingRecordingErrors[0].error?.split?.('\n')?.[0]
-                throw new Error(
-                    dedent`${errorMessage}.
-
-                           To fix this problem, run the following commands to update the HTTP recordings:
-
-                             source agent/scripts/export-cody-http-recording-tokens.sh
-                             pnpm update-agent-recordings`
-                )
-            }
+            await this.request('testing/requestErrors', null)
             await this.request('shutdown', null)
             this.notify('exit', null)
         } else {

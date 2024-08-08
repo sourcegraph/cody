@@ -3,9 +3,12 @@ import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
 import { type CodyCommand, ModelUsage, isWindows, telemetryRecorder } from '@sourcegraph/cody-shared'
+import dedent from 'dedent'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 import packageJson from '../../vscode/package.json'
+
+import stable_stringify from 'fast-json-stable-stringify'
 
 import {
     type AuthStatus,
@@ -26,6 +29,7 @@ import {
     setUserAgent,
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
+import { createPatch } from 'diff'
 
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import { ChatModel } from '../../vscode/src/chat/chat-view/ChatModel'
@@ -48,6 +52,7 @@ import type { QuickPickInput } from '../../vscode/src/edit/input/get-input'
 import { getModelOptionItems } from '../../vscode/src/edit/input/get-items/model'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient, ExtensionObjects } from '../../vscode/src/extension-client'
+import type { NetworkRequest } from '../../vscode/src/jsonrpc/agent-protocol'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
@@ -658,42 +663,45 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('testing/networkRequests', async () => {
             const requests = this.params.networkRequests ?? []
             return {
-                requests: requests.map(req => ({ url: req.url, body: req.body })),
-            }
-        })
-        this.registerAuthenticatedRequest('testing/closestPostData', async ({ url, postData }) => {
-            const polly = this.params.polly
-            let closestDistance = Number.MAX_VALUE
-            let closest = ''
-            if (!polly) {
-                throw new Error('testing/closestPostData: Polly is not enabled')
-            }
-            // @ts-ignore
-            const persister = polly.persister._cache as Map<string, Promise<Har>>
-            for (const [, har] of persister) {
-                for (const entry of (await har)?.log?.entries ?? []) {
-                    if (entry.request.url !== url) {
-                        continue
-                    }
-                    const entryPostData = entry.request.postData?.text ?? ''
-                    const distance = levenshtein(postData, entryPostData)
-                    if (distance < closestDistance) {
-                        closest = entryPostData
-                        closestDistance = distance
-                    }
-                }
-            }
-            return { closestBody: closest }
-        })
-        this.registerAuthenticatedRequest('testing/requestErrors', async () => {
-            const requests = this.params.requestErrors ?? []
-            return {
-                errors: requests.map(({ request, error }) => ({
-                    url: request.url,
-                    error,
+                requests: requests.map(req => ({
+                    url: req.url,
+                    body: req.body,
                 })),
             }
         })
+        this.registerAuthenticatedRequest('testing/closestPostData', async ({ url, postData }) => {
+            const closest = await this.getClosestPostData(url, postData)
+            return { closestBody: closest }
+        })
+
+        this.registerAuthenticatedRequest('testing/requestErrors', async () => {
+            const requests = this.params.requestErrors ?? []
+            const errors = requests.map(({ request, error }) => ({
+                url: request.url,
+                error,
+            }))
+
+            const missingRecordingErrors = errors.filter(({ error }) =>
+                error?.includes?.('`recordIfMissing` is')
+            )
+            if (missingRecordingErrors.length > 0) {
+                for (const error of missingRecordingErrors) {
+                    await this.printDiffAgainstClosestMatchingRecording(error)
+                }
+                const errorMessage = missingRecordingErrors[0].error?.split?.('\n')?.[0]
+                throw new Error(
+                    dedent`${errorMessage}.
+
+                           To fix this problem, run the following commands to update the HTTP recordings:
+
+                             source agent/scripts/export-cody-http-recording-tokens.sh
+                             pnpm update-agent-recordings`
+                )
+            }
+
+            return { errors: errors }
+        })
+
         this.registerAuthenticatedRequest('testing/progress', async ({ title }) => {
             const thenable = await vscode.window.withProgress(
                 {
@@ -1615,7 +1623,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
     }
 
     private async createEditTask(commandResult: Thenable<CommandResult | undefined>): Promise<EditTask> {
-        const result = (await commandResult) ?? { type: 'empty-command-result' }
+        const result = (await commandResult) ?? {
+            type: 'empty-command-result',
+        }
         if (result?.type !== 'edit' || result.task === undefined) {
             throw new TypeError(
                 `Expected a non-empty edit command result. Got ${JSON.stringify(result)}`
@@ -1625,7 +1635,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
     }
 
     private async createChatPanel(commandResult: Thenable<CommandResult | undefined>): Promise<string> {
-        const result = (await commandResult) ?? { type: 'empty-command-result' }
+        const result = (await commandResult) ?? {
+            type: 'empty-command-result',
+        }
         if (result?.type !== 'chat') {
             throw new TypeError(`Expected chat command result, got ${result.type}`)
         }
@@ -1653,7 +1665,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
     private async executeCustomCommand(
         commandResult: Thenable<CommandResult | undefined>
     ): Promise<CustomCommandResult> {
-        const result = (await commandResult) ?? { type: 'empty-command-result' }
+        const result = (await commandResult) ?? {
+            type: 'empty-command-result',
+        }
 
         if (result?.type === 'chat') {
             return {
@@ -1709,5 +1723,89 @@ export class Agent extends MessageHandler implements ExtensionClient {
         }
 
         throw new TypeError(`Expected AgentWorkspaceEdit, got ${edit}`)
+    }
+
+    // Given the following missing recording, tries to find an existing
+    // recording that has the closest levenshtein distance and prints out a
+    // unified diff. This could save a lot of time trying to debug a test
+    // failure caused by missing recordings for common scenarios like 1) leaking
+    // an absolute file path into the prompt or 2) forgetting to sort context
+    // files.
+    private async printDiffAgainstClosestMatchingRecording(
+        missingRecording: NetworkRequest
+    ): Promise<void> {
+        const message = missingRecording.error ?? ''
+        const jsonText = message.split('\n').slice(1).join('\n')
+        const json = JSON.parse(jsonText)
+        const postData = json?.body ?? '{}'
+        const body = JSON.parse(postData)
+        const closestBody = await this.getClosestPostData(json?.url ?? '', postData)
+
+        if (closestBody) {
+            // Need to go through stable_stringify to get meaningful diffs.
+            // Without this step, we get noisy diffs about different object
+            // property ordering.
+            const oldChange = JSON.stringify(JSON.parse(stable_stringify(body)), null, 2)
+            const newChange = JSON.stringify(
+                JSON.parse(stable_stringify(JSON.parse(closestBody))),
+                null,
+                2
+            )
+            if (oldChange === newChange) {
+                console.log(
+                    dedent`There exists a recording with exactly the same request body, but for some reason the recordings did not match.
+                           This only really happens in exceptional cases like
+                           - There is a bug in how Polly computes HTTP request identifiers
+                           - Somebody manually edited the HTTP recording file
+                           Possible ways to fix the problem:
+                           - Confirm tests run in passthrough mode: CODY_RECORDING_MODE=passthrough pnpm test agent/src/index.test.ts
+                           - Reset recordings and re-record everything: rm -rf agent/recordings && pnpm update-agent-recordings
+                           `
+                )
+            } else {
+                const patch = createPatch(
+                    missingRecording.url,
+                    oldChange,
+                    newChange,
+                    'the request in this test that has no matching recording',
+                    'the closest matching recording in the recording file'
+                )
+                console.log(
+                    `
+Found a recording in the recording file that looks similar to this request that has no matching recording.
+Sometimes this happens when our prompt construction logic is non-determinic. For example, if we expose
+an absolute file path in the recording, then the tests fail in CI because the absolutely file path in CI
+is different from the one in the recording file. Another example, sometimes the ordering of context files
+is non-deterministic resulting in failing tests in CI because the ordering of context files in CI is different.
+Closely inspect the diff below to non-determinic prompt construction is the reason behind this failure.
+${patch}`
+                )
+            }
+        }
+    }
+
+    private async getClosestPostData(url: string, postData: any) {
+        const polly = this.params.polly
+        let closestDistance = Number.MAX_VALUE
+        let closestBody = ''
+        if (!polly) {
+            throw new Error('getClosestPostData: Polly is not enabled')
+        }
+        // @ts-ignore
+        const persister = polly.persister._cache as Map<string, Promise<Har>>
+        for (const [, har] of persister) {
+            for (const entry of (await har)?.log?.entries ?? []) {
+                if (entry.request.url !== url) {
+                    continue
+                }
+                const entryPostData = entry.request.postData?.text ?? ''
+                const distance = levenshtein(postData, entryPostData)
+                if (distance < closestDistance) {
+                    closestBody = entryPostData
+                    closestDistance = distance
+                }
+            }
+        }
+        return closestBody
     }
 }
