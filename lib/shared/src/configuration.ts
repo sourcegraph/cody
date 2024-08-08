@@ -62,7 +62,7 @@ export interface Configuration {
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean
     experimentalMinionAnthropicKey: string | undefined
-    experimentalPreREnabled: boolean
+    experimentalCodyLintEnabled: boolean
     experimentalGuardrailsTimeoutSeconds: number | undefined
 
     /**

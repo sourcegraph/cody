@@ -26,16 +26,6 @@ export const ONBOARDING_RULES_ITEM = {
     description: 'There are no cody lint files in the workspace yet.',
 } satisfies vscode.QuickPickItem
 
-// export const DOCUMENT_ITEM: vscode.QuickPickItem = {
-//     label: 'Document Code',
-//     alwaysShow: true,
-// }
-
-// export const TEST_ITEM: vscode.QuickPickItem = {
-//     label: 'Generate Tests',
-//     alwaysShow: true,
-// }
-
 const POST_SUBMIT_SEPARATOR: vscode.QuickPickItem = {
     label: 'change',
     kind: vscode.QuickPickItemKind.Separator,
@@ -53,16 +43,7 @@ export function getLintInputItems(
     showModelSelector: boolean
 ): GetItemsResult {
     const submitItems = activeFiles && activeRules ? [SUBMIT_ITEM, POST_SUBMIT_SEPARATOR] : []
-    // const commandItems = hasActiveValue
-    //     ? []
-    //     : [
-    //           {
-    //               label: 'edit commands',
-    //               kind: vscode.QuickPickItemKind.Separator,
-    //           },
-    //           DOCUMENT_ITEM,
-    //           TEST_ITEM,
-    //       ]
+
     const lintItems = [
         {
             ...RULES_ITEM,

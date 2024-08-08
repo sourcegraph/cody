@@ -9,6 +9,12 @@ import { lintCommand } from './command-lint'
 
 import { version } from '../../package.json'
 
+// This is just a quick way to hide certain commands while experimental
+const experimental = {
+    all: isTruthyEnv(process.env.CODY_CLI_EXPERIMENTAL_ENABLED),
+    lint: isTruthyEnv(process.env.CODY_CLI_EXPERIMENTAL_LINT_ENABLED),
+}
+
 export const rootCommand = new Command()
     .name('cody')
     .version(version, '-v, --version')
@@ -17,6 +23,12 @@ export const rootCommand = new Command()
     )
     .addCommand(authCommand())
     .addCommand(chatCommand())
-    .addCommand(lintCommand())
+    .addCommand(lintCommand(), {
+        hidden: !(experimental.all || experimental.lint),
+    })
     .addCommand(new Command('api').addCommand(serverCommand).addCommand(jsonrpcCommand))
     .addCommand(new Command('internal').addCommand(benchCommand))
+
+function isTruthyEnv(value: string | undefined) {
+    return ['true', '1' /*'' arguably*/].includes(value?.toLowerCase() ?? 'false')
+}

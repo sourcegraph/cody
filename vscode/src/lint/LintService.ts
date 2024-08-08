@@ -1,9 +1,8 @@
-// biome-ignore lint/style/useImportType: <explanation>
 import {
-    ChatClient,
-    ChatModel,
-    ContextItem,
-    ContextItemWithContent,
+    type ChatClient,
+    type ChatModel,
+    type ContextItem,
+    type ContextItemWithContent,
     ModelsService,
     PromptString,
     getSimplePreamble,
@@ -22,6 +21,9 @@ export interface LintOptions {
 
 //@ts-ignore
 export interface LintRule {
+    source?: {
+        file?: URI
+    }
     title: string
     description: {
         human: string
@@ -46,11 +48,18 @@ export const codylintFileSchema = z.object({
     ),
 })
 
-export function lintRulesFromCodylintFile(fileContent: string): LintRule[] {
-    const parsedYaml = parse(fileContent)
-    const lintFile = codylintFileSchema.parse(parsedYaml)
-    return lintFile.rules.map(rule => {
+export function lintRulesFromCodylintFile(lintFile?: { file: URI; content: string }): LintRule[] {
+    if (!lintFile) {
+        return []
+    }
+    //TODO: Handle errors
+    const parsedYaml = parse(lintFile.content)
+    const parsedLintFile = codylintFileSchema.parse(parsedYaml)
+    return parsedLintFile.rules.map(rule => {
         return {
+            source: {
+                file: lintFile.file,
+            },
             title: rule.title,
             description: {
                 human: typeof rule.description === 'string' ? rule.description : rule.description.human,
@@ -61,59 +70,19 @@ export function lintRulesFromCodylintFile(fileContent: string): LintRule[] {
     })
 }
 
-/**TODO:
- *
- *
- * detail: activeRules ? `${activeRules} files` : undefined,
- *
- * use pluralize instead
- */
-
-//TODO: lints on things that should be booleans but are actually arrays!
-/**
- * if (ignored || limitReached) {
-    return null
-    }
- */
-
-/**
- *
- * .find(code =>
-                        lints[code]
-                    )
- */
-
-/**
- * Make sure that ignore comments have meaningful reason
- */
-
-/**
- *  promptBuilder.tryAddMessages([
- *     { speaker: 'human', text: ps`execute` },
- *     {
- *         speaker: 'assistant',
- *         text: ps`Understood. Once you give me the \`execute\` command I will review the file \`@indexer/src/main.rs\` and report any issues found that are enabled in the configuration file \`@config://linter.json\`. I will take extra care to strictlly follow the response format."`,
- *     },
- *     { speaker: 'human', text: lintPrompt(targetFile, this.lintConfig) },
- * ])
- */
-
-// Also handles things like `// cody-ignore: lint/bleh/blah: <explanation>`
 export class LintService implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
 
-    constructor(private readonly chatClient: ChatClient) {
-        // Register commands
-    }
+    constructor(private readonly chatClient: ChatClient) {}
 
     public dispose(): void {
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
+        this.disposables = []
     }
 
     //TODO: Linting sessions CODY-3121
-
     async apply(files: URI[], options: LintOptions) {
         if (files.length === 0) {
             return []
@@ -188,6 +157,7 @@ export class LintService implements vscode.Disposable {
                             if (ignored.length || limitReached) {
                                 return null
                             }
+
                             // const newEnhancedContextItems = await getEnhancedContext()
                             // await promptBuilder.tryAddContext('enhanced', [])
 
@@ -232,14 +202,6 @@ export class LintService implements vscode.Disposable {
                                 increment: processedFiles / files.length,
                             })
                         }
-
-                        // return executeChat({
-                        //     submitType: 'user',
-                        //     text: lintPrompt(targetFile, config),
-                        //     source: 'fuzzy-linter',
-                        //     addEnhancedContext: true,
-                        //     contextFiles: [config],
-                        // })
                     })
                 )
 

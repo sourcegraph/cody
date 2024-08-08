@@ -128,7 +128,7 @@ describe('getConfiguration', () => {
             commandCodeLenses: true,
             experimentalSupercompletions: false,
             experimentalMinionAnthropicKey: undefined,
-            experimentalPreREnabled: true,
+            experimentalCodyLintEnabled: true,
             experimentalTracing: true,
             experimentalCommitMessage: true,
             experimentalNoodle: false,

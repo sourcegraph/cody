@@ -35,12 +35,21 @@ const loginInstruction = 'Sign in with the command: cody auth login --web'
 
 export const lintCommand = () =>
     new Command('lint')
+        .summary('Apply custom lint rules to your code')
         .description(
-            `Apply custom lint rules to your codebase.
+            `Use Cody to apply custom lint rules to your code.
 
 Examples:
-  cody lint ...
-    `
+
+- Validate your rule files:
+    cody lint --rule '/path/to/broken-rules.codylint.yaml'
+
+- Apply multiple rules to individual files:
+    cody lint --rule '/path/to/pr-pr-rules.codylint.yaml' --rule 'path/to/security.codylint.yaml' --file 'path/to/file1.ts' --file 'path/to/file2.ts'
+
+- Apply rules to a diff:
+    git diff --name-only | cody lint --rule '/path/to/my-rules.codylint.yaml.' --stdin
+`
         )
         .option('-i, --file <files...>', 'Code files to lint')
         .option('-r, --rule <rules...>', 'Codylint files listing rules')
@@ -134,7 +143,6 @@ export async function lintAction(options: LintOptions): Promise<number> {
     //@ts-ignore
     const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
 
-    // console.log('models', JSON.stringify(models, undefined, 2))
     if (options.debug) {
         messageHandler.registerNotification('debug/message', message => {
             console.log(`${message.channel}: ${message.message}`)

@@ -49,13 +49,22 @@ export const createQuickPick = <T extends vscode.QuickPickItem = vscode.QuickPic
         //TODO: This is an artifact from that we can dynamically switch single/multi select
         if (canSelectMany) {
             if (quickPick.canSelectMany) {
-                onDidAccept(quickPick.selectedItems)
+                // if there are no selected items but the user still pressed
+                // enter with a item selected we assume they just wanted to pick
+                // that one
+                if (quickPick.selectedItems.length === 0) {
+                    onDidAccept([quickPick.activeItems[0]])
+                } else {
+                    onDidAccept(quickPick.selectedItems)
+                }
             } else {
                 onDidAccept([quickPick.activeItems[0]])
             }
         } else {
             if (quickPick.canSelectMany) {
-                throw new Error("Can't have canSelectMany false and onDidAccept")
+                throw new Error(
+                    'QuickPick does not have canSelectMany enabled but multiple items could be selected'
+                )
             }
             onDidAccept(quickPick.activeItems[0])
         }

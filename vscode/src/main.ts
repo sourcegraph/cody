@@ -262,6 +262,8 @@ const register = async (
         authProvider,
         platform.createOpenCtxController
     )
+    const lintSetup = registerCodyLint(configWatcher, chatClient, authProvider, editor, disposables)
+
     registerCodyCommands(configWatcher, statusBar, sourceControl, chatClient, disposables)
     registerAuthCommands(authProvider, disposables)
     registerChatCommands(authProvider, disposables)
@@ -271,7 +273,6 @@ const register = async (
     if (isExtensionModeDevOrTest) {
         await registerTestCommands(context, authProvider, disposables)
     }
-    await registerCodyLint(configWatcher, chatClient, authProvider, editor, disposables)
     registerUpgradeHandlers(configWatcher, authProvider, disposables)
     disposables.push(new CharactersLogger())
 
@@ -286,6 +287,7 @@ const register = async (
         autocompleteSetup,
         openCtxSetup,
         tutorialSetup,
+        lintSetup,
         registerMinion(context, configWatcher, authProvider, symfRunner, disposables),
     ])
     disposables.push(extensionClientDispose)
@@ -700,10 +702,10 @@ async function registerCodyLint(
     editor: VSCodeEditor,
     disposables: vscode.Disposable[]
 ): Promise<void> {
-    if (config.get().experimentalPreREnabled) {
-        const fuzzyLintsProvider = new LintService(chatClient)
-        const preRController = new LintController(fuzzyLintsProvider, authProvider, editor)
-        disposables.push(preRController, fuzzyLintsProvider)
+    if (config.get().experimentalCodyLintEnabled === true) {
+        const lintService = new LintService(chatClient)
+        const lintController = new LintController(lintService, authProvider, editor)
+        disposables.push(lintController, lintService)
     }
 }
 
