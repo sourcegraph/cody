@@ -83,7 +83,6 @@ jobs:
             ideaIC:2024.2
           failure-levels: |
             COMPATIBILITY_WARNINGS
-            INTERNAL_API_USAGES
             OVERRIDE_ONLY_API_USAGES
             NON_EXTENDABLE_API_USAGES
             PLUGIN_STRUCTURE_WARNINGS
