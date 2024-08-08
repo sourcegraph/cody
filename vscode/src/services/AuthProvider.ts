@@ -184,6 +184,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
     public async signoutMenu(): Promise<void> {
         telemetryRecorder.recordEvent('cody.auth.logout', 'clicked')
         const { endpoint } = this.getAuthStatus()
+        logDebug('AuthProvider:logout', 'endpoint', endpoint)
 
         if (endpoint) {
             await this.signout(endpoint)
@@ -380,6 +381,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
     // Set auth status and share it with chatview
     private async setAuthStatus(authStatus: AuthStatus): Promise<void> {
+        logDebug('AuthProvider', 'setAuthStatus', authStatus)
         if (this.status === authStatus) {
             return
         }

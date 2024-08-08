@@ -1482,6 +1482,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         config: ExtensionConfiguration,
         params?: { forceAuthentication: boolean }
     ): Promise<AuthStatus | undefined> {
+        logDebug('Agent', 'handleConfigChanges', { verbose: config })
         const isAuthChange = vscode_shim.isAuthenticationChange(config)
         vscode_shim.setExtensionConfiguration(config)
         // If this is an authentication change we need to reauthenticate prior to firing events
@@ -1502,6 +1503,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         // functionality), we return true to always triggger the callback.
                         true,
                 })
+                logDebug('Agent', 'notifiying did change', { verbose: authStatus })
                 this.notify('authentication/didChange', authStatus)
                 // await new Promise<void>(resolve => setTimeout(resolve, 3_000))
                 // TODO(#56621): JetBrains: persistent chat history:
