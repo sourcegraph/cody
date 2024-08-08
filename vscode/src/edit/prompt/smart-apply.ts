@@ -150,7 +150,6 @@ export async function promptModelForOriginalCode(
                 break
             }
             case 'error': {
-                console.log('GOT AN ERROR', message.error)
                 throw message.error
             }
         }
@@ -189,8 +188,10 @@ export async function getSmartApplySelection(
             client,
             codyApiVersion
         )
-    } catch (error) {
-        // Cody told us we need to replace some code, but we couldn't find where to replace it
+    } catch (error: any) {
+        // We erred when asking the LLM to produce the original code.
+        // Surface this error back to the user
+        vscode.window.showErrorMessage(`Error: ${error.message}`)
         return null
     }
 
