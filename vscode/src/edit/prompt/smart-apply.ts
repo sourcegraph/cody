@@ -146,7 +146,7 @@ export async function promptModelForOriginalCode(
                 break
             }
             case 'complete': {
-                void multiplexer.notifyTurnComplete()
+                await multiplexer.notifyTurnComplete()
                 break
             }
             case 'error': {
@@ -191,10 +191,9 @@ export async function getSmartApplySelection(
     } catch (error: unknown) {
         // We erred when asking the LLM to produce the original code.
         // Surface this error back to the user
-        if (error instanceof Error) {
-            vscode.window.showErrorMessage(`Error: ${error.message}`)
-        }
-
+        vscode.window.showErrorMessage(
+            `Error: ${error instanceof Error ? error.message : 'An unknown error occurred'}`
+        )
         return null
     }
 
