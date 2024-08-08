@@ -75,7 +75,6 @@ import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
-import { rewriteChatQuery } from '../../local-context/rewrite-chat-query'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
@@ -878,21 +877,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
               )
             : text
 
-        const rewrite = config.experimentalNoodle
-            ? await rewriteChatQuery({
-                  query: text,
-                  contextItems: mentions,
-                  chatClient: this.chatClient,
-                  chatModel: this.chatModel,
-              })
-            : inputTextWithoutContextChips
-
         const context = (
             await Promise.all([
                 resolveContext({
                     strategy: contextStrategy,
                     editor: this.editor,
-                    input: { text: rewrite, mentions },
+                    input: { text: inputTextWithoutContextChips, mentions },
                     providers: {
                         localEmbeddings: this.localEmbeddings,
                         symf: this.symf,
