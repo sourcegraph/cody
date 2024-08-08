@@ -75,7 +75,6 @@ import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
-import { rewriteChatQuery } from '../../local-context/rewrite-chat-query'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
@@ -797,8 +796,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // Remove context chips (repo, @-mentions) from the input text for context retrieval.
         const inputTextWithoutContextChips = editorState
             ? PromptString.unsafe_fromUserQuery(
-                  inputTextWithoutContextChipsFromPromptEditorState(editorState)
-              )
+                inputTextWithoutContextChipsFromPromptEditorState(editorState)
+            )
             : text
         const structuredMentions = toStructuredMentions(mentions)
         const retrievedContextPromise = this.contextRetriever.retrieveContext(
@@ -874,25 +873,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // Remove context chips (repo, @-mentions) from the input text for context retrieval.
         const inputTextWithoutContextChips = editorState
             ? PromptString.unsafe_fromUserQuery(
-                  inputTextWithoutContextChipsFromPromptEditorState(editorState)
-              )
+                inputTextWithoutContextChipsFromPromptEditorState(editorState)
+            )
             : text
 
-        const rewrite = config.experimentalNoodle
-            ? await rewriteChatQuery({
-                  query: text,
-                  contextItems: mentions,
-                  chatClient: this.chatClient,
-                  chatModel: this.chatModel,
-              })
-            : inputTextWithoutContextChips
 
         const context = (
             await Promise.all([
                 resolveContext({
                     strategy: contextStrategy,
                     editor: this.editor,
-                    input: { text: rewrite, mentions },
+                    input: { text: inputTextWithoutContextChips, mentions },
                     providers: {
                         localEmbeddings: this.localEmbeddings,
                         symf: this.symf,
@@ -1056,16 +1047,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             type: 'clientAction',
             addContextItemsToLastHumanInput: contextItem
                 ? [
-                      {
-                          ...contextItem,
-                          type: 'file',
-                          // Remove content to avoid sending large data to the webview
-                          content: undefined,
-                          isTooLarge: contextItem.size ? contextItem.size > userContextSize : undefined,
-                          source: ContextItemSource.User,
-                          range: contextItem.range,
-                      } satisfies ContextItem,
-                  ]
+                    {
+                        ...contextItem,
+                        type: 'file',
+                        // Remove content to avoid sending large data to the webview
+                        content: undefined,
+                        isTooLarge: contextItem.size ? contextItem.size > userContextSize : undefined,
+                        source: ContextItemSource.User,
+                        range: contextItem.range,
+                    } satisfies ContextItem,
+                ]
                 : [],
         })
 
@@ -1839,7 +1830,7 @@ export function webviewViewOrPanelOnDidChangeViewState(
     // Return a no-op (this means the provider is for the sidebar)
     return () => {
         return {
-            dispose: () => {},
+            dispose: () => { },
         }
     }
 }
