@@ -34,6 +34,17 @@ const expandedContextWindow: ModelContextWindow = {
  * @deprecated This will be replaced with server-sent models
  */
 export const DEFAULT_DOT_COM_MODELS = [
+    // Note: GPT-4o is temporary set to the default model due to INC-319
+    // #inc-319-cody-connection-closed-without-receiving-any-events
+    {
+        title: 'GPT-4o',
+        model: 'openai/gpt-4o',
+        provider: 'OpenAI',
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: expandedContextWindow,
+        tags: [ModelTag.Gateway, ModelTag.Pro, ModelTag.Recommended, ModelTag.Accuracy],
+    },
+
     // --------------------------------
     // Anthropic models
     // --------------------------------
@@ -73,14 +84,6 @@ export const DEFAULT_DOT_COM_MODELS = [
     // --------------------------------
     // OpenAI models
     // --------------------------------
-    {
-        title: 'GPT-4o',
-        model: 'openai/gpt-4o',
-        provider: 'OpenAI',
-        usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: expandedContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Pro, ModelTag.Recommended, ModelTag.Accuracy],
-    },
     {
         title: 'GPT-4 Turbo',
         model: 'openai/gpt-4-turbo',
