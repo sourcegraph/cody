@@ -46,11 +46,14 @@
 - [ ] Run the `Edit Code` command with instructions for how Cody should edit the selected code.
 - [ ] Verify that Cody automatically applies edits to the selected code, per the user’s instructions.
 - [ ] Verify that there is a notification that "Cody is working..." while edits are being applied.
-- [ ] Verify that you can see a list of code lenses with a Cody icon above the generated code: `Show diff`, `Accept`, `Retry`, and `Undo`.
+- [ ] Verify that you can see a list of code lenses with a Cody icon above the first block of the generated code: `Show diff`, `Accept All`, `Retry`, `Undo`, `Accept`, and `Reject`
+- [ ] Verify that you see `Accept` and `Reject` code lens for each block of code that Cody has modified.
 - [ ] Verify that you can see a diff view of the edit in a new tab by clicking `Show diff`.
 - [ ] Verify that you can prompt Cody to retry the command by clicking `Retry` and entering new instructions.
 - [ ] Verify that you can undo the edit by clicking `Undo`.
-- [ ] Verify that the ghost text disappears by clicking `Accept`.
+- [ ] Verify that the ghost text disappears by clicking `AcceptAll`.
+- [ ] Verify that individual blocks ghost text disappears when clicking `Accept`
+- [ ] Verify that invidual blocks are reverted when clicking `Reject`
 
 #### Editing code (Additional Configuration)
 
@@ -74,7 +77,7 @@
 - [ ] Verify that you can see a diff view of the edit in a new tab by clicking `Show diff`.
 - [ ] Verify that you can prompt Cody to retry the command by clicking `Retry` and entering new instructions.
 - [ ] Verify that you can undo the edit by clicking `Undo`.
-- [ ] Verify that the ghost text disappears by clicking `Accept`.
+- [ ] Verify that the ghost text disappears by clicking `Accept All`.
 
 ### Test
 
@@ -155,7 +158,7 @@
 - [ ] Verify that you can see a diff view of the edit in a new tab by clicking `Show diff`.
 - [ ] Verify that you can prompt Cody to retry the command by clicking `Retry` and entering new instructions.
 - [ ] Verify that you can undo the edit by clicking `Undo`.
-- [ ] Verify that the ghost text disappears by clicking `Accept`.
+- [ ] Verify that the ghost text disappears by clicking `Accept All`.
 
 #### Generating code
 
