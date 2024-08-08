@@ -146,8 +146,11 @@ export async function promptModelForOriginalCode(
                 break
             }
             case 'complete': {
-                void multiplexer.notifyTurnComplete()
+                await multiplexer.notifyTurnComplete()
                 break
+            }
+            case 'error': {
+                throw message.error
             }
         }
     }
@@ -175,14 +178,24 @@ export async function getSmartApplySelection(
     client: ChatClient,
     codyApiVersion: number
 ): Promise<SmartSelection | null> {
-    const originalCode = await promptModelForOriginalCode(
-        instruction,
-        replacement,
-        document,
-        model,
-        client,
-        codyApiVersion
-    )
+    let originalCode: string
+    try {
+        originalCode = await promptModelForOriginalCode(
+            instruction,
+            replacement,
+            document,
+            model,
+            client,
+            codyApiVersion
+        )
+    } catch (error: unknown) {
+        // We erred when asking the LLM to produce the original code.
+        // Surface this error back to the user
+        vscode.window.showErrorMessage(
+            `Error: ${error instanceof Error ? error.message : 'An unknown error occurred'}`
+        )
+        return null
+    }
 
     if (originalCode.trim().length === 0 || originalCode.trim() === 'INSERT') {
         // Insert flow. Cody thinks that this code should be inserted into the document.
