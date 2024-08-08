@@ -10,6 +10,7 @@ import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_generated.CodeActions_ProvideParams
 import com.sourcegraph.cody.agent.protocol_generated.CodeActions_TriggerParams
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolLocation
+import com.sourcegraph.cody.edit.actions.EditCodeAction
 
 data class CodeActionQuickFixParams(
     val title: String,
@@ -102,7 +103,8 @@ class CodeActionQuickFix(private val params: CodeActionQuickFixParams) :
         throw Exception("Could not find action")
       }
       // TODO: Need to refactor agent to not return edit session for every action CODY-3125
-      agent.server.codeActions_trigger(CodeActions_TriggerParams(id = action.id))
+      val result = agent.server.codeActions_trigger(CodeActions_TriggerParams(id = action.id)).get()
+      EditCodeAction.completedEditTasks[result.id] = result
     }
   }
 }
