@@ -10,7 +10,7 @@ pushd $INDEXER_DIR
 git fetch origin
 git checkout olafurpg/signatures-rebase1
 git pull origin olafurpg/signatures-rebase1
-yarn --ignore-engines install
+yarn install
 popd
 
 pnpm install --prefer-offline
