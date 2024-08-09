@@ -33,12 +33,13 @@ import { onExit } from 'signal-exit'
 import zod from 'zod'
 import { waitForLock } from '../../../src/lockfile'
 import { CodyPersister, redactAuthorizationHeader } from '../../../src/testutils/CodyPersisterV2'
-import {
-    type DOTCOM_TESTING_CREDENTIALS,
-    type ENTERPRISE_TESTING_CREDENTIALS,
-    TESTING_CREDENTIALS,
+import type {
+    DOTCOM_TESTING_CREDENTIALS,
+    ENTERPRISE_TESTING_CREDENTIALS,
 } from '../../../src/testutils/testing-credentials'
+import { TESTING_CREDENTIALS } from '../../../src/testutils/testing-credentials'
 import { CODY_VSCODE_ROOT_DIR, retry, stretchTimeout } from '../helpers'
+
 import {
     MITM_AUTH_TOKEN_PLACEHOLDER,
     MITM_PROXY_AUTH_AVAILABLE_HEADER,
@@ -95,12 +96,12 @@ export interface MitMProxyConfig {
         dotcom: {
             readonly endpoint: string
             readonly proxyTarget: string
-            readonly authName: keyof typeof DOTCOM_TESTING_CREDENTIALS
+            authName: keyof typeof DOTCOM_TESTING_CREDENTIALS
         }
         enterprise: {
             readonly endpoint: string
             readonly proxyTarget: string
-            readonly authName: keyof typeof ENTERPRISE_TESTING_CREDENTIALS
+            authName: keyof typeof ENTERPRISE_TESTING_CREDENTIALS
         }
     }
 }
@@ -145,6 +146,7 @@ onExit(
     },
     { alwaysLast: true }
 )
+
 // We split out the options fixutre from the implementation fixture so that in
 // the implementaiton fixture we don't accidentally use any options directly,
 // instead having to use validated options
@@ -339,6 +341,9 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                         get authName() {
                             return state.authName.dotcom
                         },
+                        set authName(value: MitMProxyConfig['sourcegraph']['dotcom']['authName']) {
+                            state.authName.dotcom = value
+                        },
                         endpoint: `http://127.0.0.1:${sgEnterprisePort}`,
                         get proxyTarget() {
                             return TESTING_CREDENTIALS[state.authName.dotcom].serverEndpoint
@@ -347,6 +352,9 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                     enterprise: {
                         get authName() {
                             return state.authName.enterprise
+                        },
+                        set authName(value: MitMProxyConfig['sourcegraph']['enterprise']['authName']) {
+                            state.authName.enterprise = value
                         },
                         endpoint: `http://127.0.0.1:${sgDotComPort}`,
                         get proxyTarget() {
@@ -381,9 +389,11 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 ejectPlugins: true,
                 prependPath: false,
                 preserveHeaderKeyCase: false,
+                secure: false,
                 plugins: [proxyEventsPlugin],
                 router: req => {
                     try {
+                        //TODO: convert this to a regex instead
                         const hostPrefix = `http://${req.headers.host}`
                         if (hostPrefix.startsWith(config.sourcegraph.dotcom.endpoint)) {
                             return new URL(req.url ?? '', config.sourcegraph.dotcom.proxyTarget)
