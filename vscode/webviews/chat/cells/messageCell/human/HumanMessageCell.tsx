@@ -25,6 +25,9 @@ export const HumanMessageCell: FunctionComponent<{
     /** Whether this editor is for a message that has been sent already. */
     isSent: boolean
 
+    /** Wether this editor has an in-progress assistant reposponse */
+    isPendingResponse: boolean
+
     /** Whether this editor is for a followup message to a still-in-progress assistant response. */
     isPendingPriorResponse: boolean
 
@@ -48,6 +51,7 @@ export const HumanMessageCell: FunctionComponent<{
         chatEnabled = true,
         isFirstMessage,
         isSent,
+        isPendingResponse,
         isPendingPriorResponse,
         onChange,
         onSubmit,
@@ -82,6 +86,7 @@ export const HumanMessageCell: FunctionComponent<{
                         placeholder={isFirstMessage ? 'Ask...' : 'Ask a followup...'}
                         isFirstMessage={isFirstMessage}
                         isSent={isSent}
+                        isPendingResponse={isPendingResponse}
                         isPendingPriorResponse={isPendingPriorResponse}
                         onChange={onChange}
                         onSubmit={onSubmit}
