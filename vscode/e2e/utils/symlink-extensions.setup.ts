@@ -50,7 +50,6 @@ setup.extend<{}, SymlinkExtensions>({
                 if (path.basename(extension).startsWith(`${publisher}.${name}-`)) {
                     // check if this is a symlink or a directory
                     const extensionPath = path.join(vscodeExtensionCacheDir, extension)
-                    console.log(extensionPath)
                     removePromises.push(
                         fs.lstat(extensionPath).then(async stat => {
                             if (stat.isSymbolicLink()) {

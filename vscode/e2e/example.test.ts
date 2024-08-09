@@ -2,6 +2,7 @@ import { expect } from '@playwright/test'
 import { fixture as test, uix } from './utils/vscody'
 
 test.describe('Demonstrations', () => {
+    test.skip(true, "This isn't an actual working test. Just here to show what the API looks like")
     test.use({
         templateWorkspaceDir: 'test/fixtures/workspace',
     })
@@ -27,7 +28,7 @@ test.describe('Demonstrations', () => {
             { workspaceDir }
         )
         await uix.vscode.startSession({ page, vscodeUI, executeCommand, workspaceDir })
-        await uix.cody.waitForStartup()
+        await uix.cody.waitForStartup({ page })
 
         await executeCommand('workbench.action.closeAllEditors')
         await executeCommand('workbench.action.showRuntimeExtensions')
