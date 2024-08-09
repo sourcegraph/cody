@@ -420,6 +420,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     const fileNameContainer = document.createElement('div')
                     fileNameContainer.className = styles.fileNameContainer
                     fileNameContainer.textContent = getFileName(fileName)
+                    fileNameContainer.title = fileName
                     buttons.append(fileNameContainer)
                 }
 
