@@ -48,4 +48,6 @@ interface CodyAgentClient {
   fun remoteRepo_didChange(params: Null?)
   @JsonNotification("remoteRepo/didChangeState")
   fun remoteRepo_didChangeState(params: RemoteRepoFetchState)
+  @JsonNotification("authentication/didChange")
+  fun authentication_didChange(params: AuthStatus?)
 }
