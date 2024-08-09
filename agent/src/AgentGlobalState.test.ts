@@ -59,7 +59,7 @@ describe('AgentGlobalState', () => {
     describe('persistence', () => {
         const PATH = 'testPath'
         beforeEach(() => {
-            globalState.setPersistencePath(PATH)
+            globalState = new AgentGlobalState(PATH)
         })
 
         afterEach(() => {
@@ -69,28 +69,17 @@ describe('AgentGlobalState', () => {
         it('should persist values to disk', () => {
             globalState.update('persistedKey', 'persistedValue')
 
-            const newGlobalState = new AgentGlobalState()
-            newGlobalState.setPersistencePath(PATH)
+            const newGlobalState = new AgentGlobalState(PATH)
 
             expect(newGlobalState.get('persistedKey')).toBe('persistedValue')
-        })
-
-        it('should throw if conflicting state exists', () => {
-            globalState.update('conflictKey', 'initialValue')
-
-            const newGlobalState = new AgentGlobalState()
-            newGlobalState.update('conflictKey', 'some other value')
-            expect(() => newGlobalState.setPersistencePath(PATH)).toThrow()
         })
 
         it('should merge disk state with in-memory state', () => {
             globalState.update('key-1', 'value-1')
             globalState.update('key-2', 'value-2')
 
-            const newGlobalState = new AgentGlobalState()
-            newGlobalState.update('key-1', 'value-1')
+            const newGlobalState = new AgentGlobalState(PATH)
             newGlobalState.update('key-3', 'value-3')
-            newGlobalState.setPersistencePath(PATH)
 
             expect(newGlobalState.get('key-1')).toBe('value-1')
             expect(newGlobalState.get('key-2')).toBe('value-2')

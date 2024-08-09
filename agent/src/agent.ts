@@ -85,7 +85,7 @@ import * as vscode_shim from './vscode-shim'
 import { vscodeLocation, vscodeRange } from './vscode-type-converters'
 
 const inMemorySecretStorageMap = new Map<string, string>()
-const globalState = new AgentGlobalState()
+// const globalState = new AgentGlobalState()
 
 /** The VS Code extension's `activate` function. */
 type ExtensionActivate = (
@@ -125,7 +125,8 @@ function copyWinCaRootsBinary(extensionPath: string): void {
 export async function initializeVscodeExtension(
     workspaceRoot: vscode.Uri,
     extensionActivate: ExtensionActivate,
-    extensionClient: ExtensionClient
+    extensionClient: ExtensionClient,
+    globalState: AgentGlobalState
 ): Promise<void> {
     const paths = codyPaths()
     const extensionPath = paths.config
@@ -339,6 +340,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
     private clientInfo: ClientInfo | null = null
 
+    private globalState: AgentGlobalState | null = null
+
     constructor(
         private readonly params: {
             polly?: Polly | undefined
@@ -355,15 +358,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 '*',
                 new IndentationBasedFoldingRangeProvider()
             )
-            if (clientInfo.capabilities?.globalState === 'server-managed') {
-                globalState.setPersistencePath(
-                    clientInfo.globalStatePath ?? join(codyPaths().data, 'globalState.json')
-                )
-            }
+            this.globalState = this.newGlobalState(clientInfo)
             if (clientInfo.extensionConfiguration?.baseGlobalState) {
                 for (const key in clientInfo.extensionConfiguration.baseGlobalState) {
                     const value = clientInfo.extensionConfiguration.baseGlobalState[key]
-                    globalState.update(key, value)
+                    this.globalState?.update(key, value)
                 }
             }
             this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
@@ -414,7 +413,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 await initializeVscodeExtension(
                     this.workspace.workspaceRootUri,
                     params.extensionActivate,
-                    this
+                    this,
+                    this.globalState
                 )
                 this.registerWebviewHandlers()
 
@@ -753,7 +753,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('testing/reset', async () => {
             await this.workspace.reset()
-            globalState.reset()
+            this.globalState?.reset()
             return null
         })
 
@@ -1323,6 +1323,15 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.pendingPromises.add(pendingPromise)
             pendingPromise.finally(() => this.pendingPromises.delete(pendingPromise))
         }
+    }
+
+    private newGlobalState(clientInfo: ClientInfo): AgentGlobalState {
+        if (clientInfo.capabilities?.globalState === 'server-managed') {
+            return new AgentGlobalState(
+                clientInfo.globalStatePath ?? join(codyPaths().data, 'globalState.json')
+            )
+        }
+        return new AgentGlobalState()
     }
 
     // ExtensionClient callbacks.

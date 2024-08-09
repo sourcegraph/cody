@@ -12,9 +12,11 @@ import * as vscode_shim from './vscode-shim'
  */
 export class AgentGlobalState implements vscode.Memento {
     private globalStorage = new Map<string, any>()
-    private path: string | null = null
 
-    constructor() {
+    constructor(private path?: string) {
+        if (path) {
+            this.globalStorage = this.readFromDisk(path)
+        }
         // Disable the feature that opens a webview when the user accepts their first
         // autocomplete request.  Removing this line should fail the agent integration
         // tests with the following error message "chat/new: command finished executing
@@ -23,21 +25,6 @@ export class AgentGlobalState implements vscode.Memento {
         this.globalStorage.set('notification.setupDismissed', 'true')
         this.globalStorage.set('completion.inline.hasAcceptedFirstCompletion', true)
         this.globalStorage.set('extension.hasActivatedPreviously', 'true')
-    }
-
-    public setPersistencePath(path: string): void {
-        this.path = path
-        const storage = this.readFromDisk(path)
-        for (const [key, value] of storage ?? []) {
-            if (this.globalStorage.has(key) && this.globalStorage.get(key) !== value) {
-                throw new Error(
-                    `Global state key ${key} already exists with a different value: (local) ${this.globalStorage.get(
-                        key
-                    )}, (disk) ${value}`
-                )
-            }
-            this.globalStorage.set(key, value)
-        }
     }
 
     // Write the contents of the globalStorage to the file at `this.path`
@@ -50,14 +37,14 @@ export class AgentGlobalState implements vscode.Memento {
     }
 
     // deserialize the contents of the file at `this.path` into the globalStorage
-    private readFromDisk(path: string): Map<string, any> | undefined {
+    private readFromDisk(path: string): Map<string, any> {
         try {
             const json = fs.readFileSync(path, 'utf8')
             const entries = JSON.parse(json)
             return new Map(entries)
         } catch (e) {
             logError('AgentGlobalState', 'Failed to read global state from disk', String(e))
-            return undefined
+            return new Map()
         }
     }
 
