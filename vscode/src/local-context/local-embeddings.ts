@@ -14,6 +14,7 @@ import {
     type LocalEmbeddingsProvider,
     type PromptString,
     featureFlagProvider,
+    isDefined,
     isDotCom,
     isFileURI,
     recordErrorToSpan,
@@ -25,6 +26,7 @@ import {
 import type { IndexHealthResultFound, IndexRequest } from '../jsonrpc/embeddings-protocol'
 import type { MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'
+import { vscodeGitAPI } from '../repository/git-extension-api'
 import { captureException } from '../services/sentry/sentry'
 import { CodyEngineService } from './cody-engine'
 
@@ -532,7 +534,7 @@ export class LocalEmbeddingsController
     }
 
     // After loading a repo, we asynchronously check whether the repository
-    // still needs embeddings.
+    // still needs embeddings or if the embeddings are stale.
     private async onHealthReport(repoDir: FileURI, health: IndexHealthResultFound): Promise<void> {
         if (repoDir.toString() !== this.lastRepo?.dir.toString()) {
             // We've loaded a different repo since this health report; ignore it.
@@ -554,6 +556,39 @@ export class LocalEmbeddingsController
                 await vscode.commands.executeCommand('setContext', 'cody.embeddings.hasIssue', hasIssue)
                 this.updateIssueStatusBar()
             }
+        }
+
+        // Check if the embeddings are stale.
+        const currentCommitHash = vscodeGitAPI?.repositories[0]?.state.HEAD?.commit ?? ''
+        const lastEmbeddingsCommit = await vscodeGitAPI?.repositories[0]?.getCommit(health.commit)
+        const currentCommit = await vscodeGitAPI?.repositories[0]?.getCommit(currentCommitHash)
+
+        // The embeddings are stale if:
+        // the current commit and the last embeddings commit are different
+        // and the current commit is at least 24 hours newer than the last embeddings commit.
+        if (
+            currentCommitHash !== health.commit &&
+            isDefined(lastEmbeddingsCommit?.commitDate) &&
+            isDefined(currentCommit?.commitDate) &&
+            currentCommit?.commitDate.getTime() - lastEmbeddingsCommit?.commitDate.getTime() >
+                1000 * 3600 * 24
+        ) {
+            logDebug(
+                'LocalEmbeddingsController',
+                'reindexing',
+                'currentCommit',
+                currentCommitHash,
+                'lastEmbeddingsCommit',
+                health.commit
+            )
+            await this.indexRequest({
+                repoPath: this.lastRepo.dir.fsPath,
+                mode: {
+                    type: 'new',
+                    model: this.modelConfig.model,
+                    dimension: this.modelConfig.dimension,
+                },
+            })
         }
     }
 
