@@ -159,11 +159,15 @@ class CodyAgentService(private val project: Project) : Disposable {
     synchronized(startupActions) { startupActions.add(action) }
   }
 
-  fun startAgent(project: Project, secondsTimeout: Long = 45): CompletableFuture<CodyAgent> {
+  fun startAgent(
+      project: Project,
+      secondsTimeout: Long = 45,
+      additionalEnvs: Map<String, String> = emptyMap()
+  ): CompletableFuture<CodyAgent> {
     ApplicationManager.getApplication().executeOnPooledThread {
       try {
         val future =
-            CodyAgent.create(project).exceptionally { err ->
+            CodyAgent.create(project, additionalEnvs).exceptionally { err ->
               val msg = "Creating agent unsuccessful: ${err.localizedMessage}"
               logger.error(msg)
               throw (CodyAgentException(msg))

@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.chat.ui
 
+import com.intellij.openapi.Disposable
 import com.intellij.util.ui.UIUtil
 import java.awt.Dimension
 import java.awt.Font
@@ -7,7 +8,7 @@ import java.awt.Graphics
 import javax.swing.JPanel
 import javax.swing.Timer
 
-class BlinkingCursorComponent private constructor() : JPanel() {
+class BlinkingCursorComponent : JPanel(), Disposable {
   private var showCursor = true
 
   private val timer: Timer =
@@ -34,7 +35,7 @@ class BlinkingCursorComponent private constructor() : JPanel() {
     return Dimension(30, 30)
   }
 
-  companion object {
-    var instance = BlinkingCursorComponent()
+  override fun dispose() {
+    timer.stop()
   }
 }

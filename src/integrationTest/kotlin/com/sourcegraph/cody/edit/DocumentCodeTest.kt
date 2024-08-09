@@ -1,5 +1,10 @@
 package com.sourcegraph.cody.edit
 
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.ex.EditorEx
 import com.sourcegraph.cody.edit.actions.DocumentCodeAction
 import com.sourcegraph.cody.edit.actions.lenses.EditAcceptAction
 import com.sourcegraph.cody.edit.actions.lenses.EditCancelAction
@@ -10,15 +15,35 @@ import com.sourcegraph.cody.edit.widget.LensIcon
 import com.sourcegraph.cody.edit.widget.LensLabel
 import com.sourcegraph.cody.edit.widget.LensSpinner
 import com.sourcegraph.cody.edit.widget.LensWidgetGroup
-import com.sourcegraph.cody.util.CodyIntegrationTextFixture
+import com.sourcegraph.cody.util.CodyIntegrationTestFixture
 import com.sourcegraph.cody.util.CustomJunitClassRunner
+import com.sourcegraph.cody.util.TestingCredentials
 import org.hamcrest.Matchers.startsWith
 import org.junit.Assert.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(CustomJunitClassRunner::class)
-class DocumentCodeTest : CodyIntegrationTextFixture() {
+class DocumentCodeTest : CodyIntegrationTestFixture() {
+  override fun recordingName() = "documentCode"
+
+  override fun credentials() = TestingCredentials.dotcom
+
+  override fun checkSuiteSpecificInitialConditions() {
+    // Check the initial state of the action's presentation
+    val action = ActionManager.getInstance().getAction("cody.documentCodeAction")
+    val event =
+        AnActionEvent.createFromAnAction(action, null, "", createEditorContext(myFixture.editor))
+    action.update(event)
+    val presentation = event.presentation
+    assertTrue("Action should be enabled", presentation.isEnabled)
+    assertTrue("Action should be visible", presentation.isVisible)
+  }
+
+  private fun createEditorContext(editor: Editor): DataContext {
+    return (editor as? EditorEx)?.dataContext ?: DataContext.EMPTY_CONTEXT
+  }
+
   @Test
   fun testGetsWorkingGroupLens() {
     val codeLensGroup = runAndWaitForLenses(DocumentCodeAction.ID, EditCancelAction.ID)

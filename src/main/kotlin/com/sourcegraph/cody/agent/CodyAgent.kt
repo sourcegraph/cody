@@ -98,9 +98,12 @@ private constructor(
 
     private fun shouldSpawnDebuggableAgent() = System.getenv("CODY_AGENT_DEBUG_INSPECT") == "true"
 
-    fun create(project: Project): CompletableFuture<CodyAgent> {
+    fun create(
+        project: Project,
+        additionalEnvs: Map<String, String>
+    ): CompletableFuture<CodyAgent> {
       try {
-        val conn = startAgentProcess()
+        val conn = startAgentProcess(additionalEnvs)
         val client = CodyAgentClient()
         client.onSetConfigFeatures = project.service<CurrentConfigFeatures>()
         val launcher = startAgentLauncher(conn, client)
@@ -142,7 +145,7 @@ private constructor(
       }
     }
 
-    private fun startAgentProcess(): AgentConnection {
+    private fun startAgentProcess(additionalEnvs: Map<String, String>): AgentConnection {
       if (ConfigUtil.shouldConnectToDebugAgent()) {
         return connectToDebugAgent()
       }
@@ -203,6 +206,9 @@ private constructor(
           processBuilder.environment()["HTTPS_PROXY"] = "http://$proxyUrl"
         }
       }
+
+      // Add optional environment variables
+      additionalEnvs.forEach { (key, value) -> processBuilder.environment()[key] = value }
 
       logger.info("starting Cody agent ${command.joinToString(" ")}")
       logger.info(

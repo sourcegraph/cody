@@ -227,7 +227,6 @@ fun Test.sharedIntegrationTestConfig(buildCodyDir: File, mode: String) {
 
   environment(
       "CODY_RECORDING_MODE" to mode,
-      "CODY_RECORDING_NAME" to "integration-test",
       "CODY_RECORDING_DIRECTORY" to resourcesDir.resolve("recordings").absolutePath,
       "CODY_SHIM_TESTING" to "true",
       "CODY_TEMPERATURE_ZERO" to "true",
