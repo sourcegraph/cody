@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.30.0",
+  "version": "1.30.2",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -576,6 +576,16 @@
         "command": "cody.test.set-context-filters",
         "title": "[Internal] Set Context Filters Overwrite",
         "enablement": "cody.activated && cody.devOrTest"
+      },
+      {
+        "command": "cody.command.insertCodeToCursor",
+        "title": "Insert Code at Cursor",
+        "enablement": "cody.activated"
+      },
+      {
+        "command": "cody.command.insertCodeToNewFile",
+        "title": "Save Code to New File...",
+        "enablement": "cody.activated"
       }
     ],
     "keybindings": [
@@ -589,7 +599,6 @@
         "key": "alt+l",
         "when": "!cody.activated"
       },
-
       {
         "command": "cody.chat.new",
         "key": "shift+alt+/",
@@ -600,7 +609,6 @@
         "key": "shift+alt+l",
         "when": "cody.activated"
       },
-
       {
         "command": "cody.chat.toggle",
         "key": "alt+l",
@@ -633,7 +641,6 @@
           "editorFocus": false
         }
       },
-
       {
         "command": "cody.mention.selection",
         "key": "alt+/",
@@ -644,7 +651,6 @@
         "key": "alt+l",
         "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
-
       {
         "command": "cody.tutorial.chat",
         "key": "alt+l",
@@ -956,6 +962,16 @@
           "command": "cody.command.abort-commit",
           "when": "cody.activated && scmProvider == git && cody.isGeneratingCommit",
           "group": "navigation@1"
+        }
+      ],
+      "webview/context": [
+        {
+          "command": "cody.command.insertCodeToCursor",
+          "when": "webviewSection == 'codeblock-actions'"
+        },
+        {
+          "command": "cody.command.insertCodeToNewFile",
+          "when": "webviewSection == 'codeblock-actions'"
         }
       ]
     },
@@ -1370,6 +1386,9 @@
     "@sourcegraph/telemetry": "^0.16.0",
     "@sourcegraph/tree-sitter-wasms": "^0.1.9",
     "@types/he": "^1.2.3",
+    "@types/mdast": "^4.0.4",
+    "@types/react": "18.2.79",
+    "@types/react-dom": "18.2.25",
     "@vscode/codicons": "^0.0.35",
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "async-mutex": "^0.4.0",
@@ -1410,10 +1429,12 @@
     "socks-proxy-agent": "^8.0.1",
     "tailwind-merge": "^2.3.0",
     "tailwindcss": "^3.4.3",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.0.0",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
-    "vscode-uri": "^3.0.7",
+    "vscode-uri": "^3.0.8",
     "web-tree-sitter": "^0.21.0",
     "wink-nlp-utils": "^2.1.0"
   },

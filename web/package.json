@@ -41,6 +41,6 @@
     "tailwindcss": "^3.4.3",
     "util": "^0.12.5",
     "vite-plugin-svgr": "^4.2.0",
-    "vscode-uri": "^3.0.7"
+    "vscode-uri": "^3.0.8"
   }
 }

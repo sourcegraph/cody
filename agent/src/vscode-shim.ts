@@ -475,7 +475,7 @@ const defaultTreeView: vscode.TreeView<any> = {
 }
 
 function toUri(
-    uriOrString: string | vscode.Uri | { language?: string; content?: string } | undefined
+    uriOrString: string | UriString | vscode.Uri | { language?: string; content?: string } | undefined
 ): Uri | undefined {
     if (typeof uriOrString === 'string') {
         return Uri.parse(uriOrString)
@@ -495,6 +495,14 @@ function toUri(
         })
     }
     return
+}
+
+// This opaque type prevents strings from being mistakenly used as URIs.
+export type UriString = string & { __tag: 'vscode.Uri' }
+export namespace UriString {
+    export function fromUri(uri: vscode.Uri): UriString {
+        return uri.toString() as UriString
+    }
 }
 
 function outputChannel(name: string): vscode.LogOutputChannel {

@@ -130,6 +130,12 @@ export type WebviewMessage =
           text: string
       }
     | {
+          command: 'smartApply'
+          instruction?: string | undefined | null
+          code: string
+          fileName?: string | undefined | null
+      }
+    | {
           command: 'auth'
           authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding' | 'offline'
           endpoint?: string | undefined | null
@@ -271,6 +277,7 @@ export interface ConfigurationSubsetForWebview
         ConfigurationWithAccessToken,
         'experimentalNoodle' | 'serverEndpoint' | 'agentIDE' | 'agentExtensionVersion'
     > {
+    experimentalSmartApply: boolean
     webviewType?: WebviewType | undefined | null
 }
 

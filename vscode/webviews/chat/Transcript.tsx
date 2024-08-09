@@ -32,6 +32,8 @@ interface TranscriptProps {
     feedbackButtonsOnSubmit: (text: string) => void
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+    smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
+    experimentalSmartApplyEnabled?: boolean
 }
 
 export const Transcript: FC<TranscriptProps> = props => {
@@ -46,6 +48,8 @@ export const Transcript: FC<TranscriptProps> = props => {
         feedbackButtonsOnSubmit,
         copyButtonOnSubmit,
         insertButtonOnSubmit,
+        smartApplyButtonOnSubmit,
+        experimentalSmartApplyEnabled,
     } = props
 
     const interactions = useMemo(
@@ -76,6 +80,8 @@ export const Transcript: FC<TranscriptProps> = props => {
                     priorAssistantMessageIsLoading={Boolean(
                         messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
                     )}
+                    smartApplyButtonOnSubmit={smartApplyButtonOnSubmit}
+                    experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
                 />
             ))}
         </div>
@@ -161,6 +167,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         guardrails,
         insertButtonOnSubmit,
         copyButtonOnSubmit,
+        smartApplyButtonOnSubmit,
+        experimentalSmartApplyEnabled,
     } = props
 
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
@@ -233,6 +241,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         !assistantMessage.error &&
                         isLastSentInteraction
                     }
+                    smartApplyButtonOnSubmit={smartApplyButtonOnSubmit}
+                    experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
                 />
             )}
         </>
