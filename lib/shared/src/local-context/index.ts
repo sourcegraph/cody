@@ -28,7 +28,3 @@ export interface Result {
     range: Range
     summary: string
 }
-
-export interface IndexedKeywordContextFetcher {
-    getResults(query: PromptString, scopeDirs: URI[]): Promise<Promise<Result[]>[]>
-}

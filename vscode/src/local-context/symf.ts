@@ -10,7 +10,6 @@ import * as vscode from 'vscode'
 import {
     AbortError,
     type FileURI,
-    type IndexedKeywordContextFetcher,
     type PromptString,
     type Result,
     type SourcegraphCompletionsClient,
@@ -60,7 +59,7 @@ interface IndexOptions {
     ignoreExisting: boolean
 }
 
-export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposable {
+export class SymfRunner implements vscode.Disposable {
     // The root of all symf index directories
     private indexRoot: FileURI
     private indexLocks: Map<string, RWLock> = new Map()
@@ -317,27 +316,25 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     ): Promise<string> {
         const { indexDir } = this.getIndexDir(scopeDir)
         const symfPath = await this.mustSymfPath()
+        const symfArgs = [
+            '--index-root',
+            indexDir.fsPath,
+            'query',
+            '--scopes',
+            scopeDir.fsPath,
+            '--fmt',
+            'json',
+            '--boosted-keywords',
+            `"${userQuery}"`,
+            `${keywordQuery}`,
+        ]
+        logDebug('SymfRunner', 'running symf', symfPath, symfArgs.join(' '))
         try {
-            const { stdout } = await execFile(
-                symfPath,
-                [
-                    '--index-root',
-                    indexDir.fsPath,
-                    'query',
-                    '--scopes',
-                    scopeDir.fsPath,
-                    '--fmt',
-                    'json',
-                    '--boosted-keywords',
-                    `"${userQuery}"`,
-                    `${keywordQuery}`,
-                ],
-                {
-                    env: { HOME: process.env.HOME },
-                    maxBuffer: 1024 * 1024 * 1024,
-                    timeout: 1000 * 30, // timeout in 30 seconds
-                }
-            )
+            const { stdout } = await execFile(symfPath, symfArgs, {
+                env: { HOME: process.env.HOME },
+                maxBuffer: 1024 * 1024 * 1024,
+                timeout: 1000 * 30, // timeout in 30 seconds
+            })
             return stdout
         } catch (error) {
             throw toSymfError(error)
