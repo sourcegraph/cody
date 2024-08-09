@@ -599,12 +599,12 @@ export interface ClientCapabilities {
     // the Agent protocol. If 'native', implements a larger subset of the VSCode
     // WebView API and expects the client to run web content in the webview.
     // Defaults to 'agentic'.
-    webview?: 'agentic' | 'native'
+    webview?: 'agentic' | 'native' | undefined | null
     // If webview === 'native', describes how the client has configured webview resources.
     // cspSource is passed to the extension as the Webview cspSource property.
     // webviewBundleServingPrefix is prepended to resource paths under 'dist' in
     // asWebviewUri (note, multiple prefixes are not yet implemented.)
-    webviewNativeConfig?: { cspSource: string; webviewBundleServingPrefix: string }
+    webviewNativeConfig?: { cspSource: string; webviewBundleServingPrefix: string } | undefined | null
 }
 
 export interface ServerInfo {
