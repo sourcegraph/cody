@@ -915,6 +915,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     debugFilter: null,
     telemetryLevel: 'all',
     internalUnstable: false,
+    internalDebugContext: false,
     autocompleteAdvancedProvider: null,
     autocompleteAdvancedModel: null,
     autocompleteCompleteSuggestWidgetSelection: true,
