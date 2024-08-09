@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { test as setup } from '@playwright/test'
+import { CODY_VSCODE_ROOT_DIR } from './helpers'
 
 //TODO: make options with nice descriptions and validation
 export type SymlinkExtensions =
@@ -28,7 +29,7 @@ setup.extend<{}, SymlinkExtensions>({
         throw new TypeError('vscodeTmpDir is required to symlink extensions')
     }
     for (const extension of symlinkExtensions) {
-        const absoluteDir = path.resolve(process.cwd(), extension)
+        const absoluteDir = path.resolve(CODY_VSCODE_ROOT_DIR, extension)
         //read the package.json as json
         const packageJsonPath = await fs.readFile(path.join(absoluteDir, 'package.json'))
         const packageJson = JSON.parse(packageJsonPath.toString())
