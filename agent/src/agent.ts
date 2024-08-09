@@ -574,7 +574,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         for (const diagnostic of vscAction.diagnostics ?? []) {
                             diagnostics.push({
                                 location: {
-                                    uri: params.location.uri,
+                                    uri: document.uri.toString(),
                                     range: diagnostic.range,
                                 },
                                 severity: 'error',
@@ -615,13 +615,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('diagnostics/publish', async params => {
-            const result = new Map<string, vscode.Diagnostic[]>()
+            const result = new Map<vscode_shim.UriString, vscode.Diagnostic[]>()
             for (const diagnostic of params.diagnostics) {
-                let diagnostics = result.get(diagnostic.location.uri)
-                if (diagnostics === undefined) {
-                    diagnostics = []
-                    result.set(diagnostic.location.uri, diagnostics)
-                }
+                const location = vscodeLocation(diagnostic.location)
+
+                const diagnostics = result.get(vscode_shim.UriString.fromUri(location.uri)) ?? []
+
                 const relatedInformation: vscode.DiagnosticRelatedInformation[] = []
                 for (const related of diagnostic.relatedInformation ?? []) {
                     relatedInformation.push({
@@ -631,12 +630,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 }
                 diagnostics.push({
                     message: diagnostic.message,
-                    range: vscodeRange(diagnostic.location.range),
+                    range: location.range,
                     severity: vscode.DiagnosticSeverity.Error,
                     code: diagnostic.code ?? undefined,
                     source: diagnostic.source ?? undefined,
                     relatedInformation,
                 })
+                //this ensures it's added to the map if it didn't already
+                result.set(vscode_shim.UriString.fromUri(location.uri), diagnostics)
             }
             vscode_shim.diagnostics.publish(result)
             return null
