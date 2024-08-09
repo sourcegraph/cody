@@ -38,17 +38,10 @@ enum SourceMetadataMapping {
  */
 function setLastStoredCode(
     code: string,
-    eventName: string,
+    eventName: 'copyButton' | 'keyDown.Copy' | 'applyButton' | 'insertButton' | 'saveButton',
     source = 'chat',
     requestID = ''
-): {
-    code: string
-    lineCount: number
-    charCount: number
-    eventName: string
-    source: string
-    requestID?: string
-} {
+): void {
     // All non-copy events are considered as insertions since we don't need to listen for paste events
     insertInProgress = !eventName.includes('copy')
     const { lineCount, charCount } = countCode(code)
@@ -56,8 +49,24 @@ function setLastStoredCode(
 
     lastStoredCode = codeCount
 
-    // Currently supported events are: copy, insert, save
-    const op = eventName.includes('copy') ? 'copy' : eventName.startsWith('insert') ? 'insert' : 'save'
+    let operation: string
+    switch (eventName) {
+        case 'copyButton':
+            operation = 'copy'
+            break
+        case 'keyDown.Copy':
+            operation = 'paste'
+            break
+        case 'applyButton':
+            operation = 'apply'
+            break
+        case 'insertButton':
+            operation = 'insert'
+            break
+        case 'saveButton':
+            operation = 'save'
+            break
+    }
 
     telemetryRecorder.recordEvent(`cody.${eventName}`, 'clicked', {
         metadata: {
@@ -68,11 +77,9 @@ function setLastStoredCode(
         interactionID: requestID,
         privateMetadata: {
             source,
-            op,
+            op: operation,
         },
     })
-
-    return codeCount
 }
 
 async function setLastTextFromClipboard(clipboardText?: string): Promise<void> {
@@ -95,12 +102,8 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
     const edit = new vscode.WorkspaceEdit()
     // trimEnd() to remove new line added by Cody
     edit.insert(activeEditor.document.uri, selectionRange.start, `${text}\n`)
+    setLastStoredCode(text, 'insertButton')
     await vscode.workspace.applyEdit(edit)
-
-    // Log insert event
-    const op = 'insert'
-    const eventName = `${op}Button`
-    setLastStoredCode(text, eventName)
 }
 
 export async function handleSmartApply(
@@ -123,6 +126,7 @@ export async function handleSmartApply(
         throw new Error('No editor found to insert text')
     }
 
+    setLastStoredCode(code, 'applyButton')
     /**
      * TODO: We currently only support 3.5 Sonnet for Smart Apply.
      * This is because it is the most reliable way to apply these changes to files.
@@ -146,6 +150,7 @@ export async function handleNewFileWithCode(code: string, uri: vscode.Uri): Prom
     workspaceEditor.createFile(uri, { ignoreIfExists: false })
     const range = new vscode.Range(0, 0, 0, 0)
     workspaceEditor.replace(uri, range, code.trimEnd())
+    setLastStoredCode(code, 'applyButton')
     await vscode.workspace.applyEdit(workspaceEditor)
     return vscode.commands.executeCommand('vscode.open', uri)
 }
