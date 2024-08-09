@@ -565,6 +565,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             experimentalNoodle: config.experimentalNoodle,
             experimentalSmartApply,
             webviewType,
+            internalDebugContext: config.internalDebugContext,
         }
     }
 
@@ -1259,18 +1260,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         )
         abortSignal.throwIfAborted()
 
-        // Update UI based on prompt construction
-        // Includes the excluded context items to display in the UI
-        if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.showContextAlternatives')) {
-            this.chatModel.setLastMessageContext(
-                [...context.used, ...context.ignored],
-                contextAlternatives
-            )
-        } else {
-            this.chatModel.setLastMessageContext([...context.used, ...context.ignored])
-        }
+        // Update UI based on prompt construction. Includes the excluded context items to display in the UI
+        this.chatModel.setLastMessageContext([...context.used, ...context.ignored], contextAlternatives)
 
-        // this is not awaited, so we kick the call off but don't block on it returning
+        // This is not awaited, so we kick the call off but don't block on it returning
         this.contextAPIClient?.recordContext(requestID, context.used, context.ignored)
 
         if (sendTelemetry) {

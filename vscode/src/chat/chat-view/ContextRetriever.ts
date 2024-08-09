@@ -244,6 +244,7 @@ export class ContextRetriever implements vscode.Disposable {
                         range,
                         source: ContextItemSource.Search,
                         content: text,
+                        metadata: ['source:symf-live'],
                     }
                 })
             )
@@ -312,7 +313,11 @@ export class ContextRetriever implements vscode.Disposable {
         if (isError(remoteResult)) {
             throw remoteResult
         }
-        return remoteResult?.flatMap(r => contextSearchResultToContextItem(r) ?? []) ?? []
+        const finalResults = remoteResult?.flatMap(r => contextSearchResultToContextItem(r) ?? []) ?? []
+        for (const r of finalResults) {
+            r.metadata = (r.metadata ?? []).concat(['source:sourcegraph'])
+        }
+        return finalResults
     }
 
     private async retrieveIndexedContextLocally(

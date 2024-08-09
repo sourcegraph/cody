@@ -27,6 +27,8 @@ export interface Result {
     file: URI
     range: Range
     summary: string
+    blugeScore: number
+    heuristicBoostID?: string
 }
 
 export interface IndexedKeywordContextFetcher {

@@ -275,7 +275,11 @@ export interface ExtensionTranscriptMessage {
 export interface ConfigurationSubsetForWebview
     extends Pick<
         ConfigurationWithAccessToken,
-        'experimentalNoodle' | 'serverEndpoint' | 'agentIDE' | 'agentExtensionVersion'
+        | 'experimentalNoodle'
+        | 'serverEndpoint'
+        | 'agentIDE'
+        | 'agentExtensionVersion'
+        | 'internalDebugContext'
     > {
     experimentalSmartApply: boolean
     webviewType?: WebviewType | undefined | null
