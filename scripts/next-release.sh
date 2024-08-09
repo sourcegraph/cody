@@ -10,7 +10,7 @@ fi
 LAST_MAJOR_MINOR_ZERO_RELEASE=$(git tag -l | grep "v\d*\\.\d*\\.\d*" | uniq | sort -V | tail -1)
 MAJOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | sed 's/v//' | cut -d. -f1)
 MINOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | sed 's/v//' | cut -d. -f2)
-PATCH=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | sed 's/v//' | cut -d. -f3)
+PATCH=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | sed 's/v//' | cut -d. -f3 | sed 's/-nightly//' | sed 's/-experimental//')
 
 NEXT_RELEASE_ARG="$1"
 # Check the argument and take appropriate action
