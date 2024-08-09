@@ -52,10 +52,8 @@ function setLastStoredCode(
     let operation: string
     switch (eventName) {
         case 'copyButton':
-            operation = 'copy'
-            break
         case 'keyDown.Copy':
-            operation = 'paste'
+            operation = 'copy'
             break
         case 'applyButton':
             operation = 'apply'
