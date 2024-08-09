@@ -14,7 +14,7 @@
     "build:root": "pnpm -C .. run -s build",
     "build:agent": "node src/esbuild.mjs",
     "build:webviews": "pnpm -C ../vscode _build:webviews --mode production && cp -R ../vscode/dist/webviews dist/webviews",
-    "build": "pnpm run -s build:root && pnpm run -s build:agent && pnpm run -s build:webviews",
+    "build": "pnpm run -s build:root && pnpm run -s build:webviews && pnpm run -s build:agent",
     "build-minify": "pnpm run build --minify",
     "agent": "pnpm run build && node --enable-source-maps dist/index.js",
     "agent:skip-root-build": "pnpm run build:agent && node --enable-source-maps dist/index.js",
