@@ -255,21 +255,16 @@ async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
     if (configuredProvider) {
         return { provider: configuredProvider }
     }
-    const [
-        starCoder2Hybrid,
-        starCoderHybrid,
-        claude3,
-        fimModelExperimentFlag,
-        deepseekV2LiteBase,
-    ] = await Promise.all([
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
-        featureFlagProvider.evaluateFeatureFlag(
-            FeatureFlag.CodyAutocompleteFIMModelExperimentBaseFeatureFlag
-        ),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase),
-    ])
+    const [starCoder2Hybrid, starCoderHybrid, claude3, fimModelExperimentFlag, deepseekV2LiteBase] =
+        await Promise.all([
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
+            featureFlagProvider.evaluateFeatureFlag(
+                FeatureFlag.CodyAutocompleteFIMModelExperimentBaseFeatureFlag
+            ),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase),
+        ])
 
     // We run fine tuning experiment for VSC client only.
     // We disable for all agent clients like the JetBrains plugin.

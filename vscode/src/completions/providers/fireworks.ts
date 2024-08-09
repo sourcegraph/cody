@@ -100,7 +100,6 @@ export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192 = 'deepseek-coder-v2-lite-b
 export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384 = 'deepseek-coder-v2-lite-base-context-16383'
 export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768 = 'deepseek-coder-v2-lite-base-context-32768'
 
-
 // Huggingface link (https://huggingface.co/Qwen/CodeQwen1.5-7B)
 export const CODE_QWEN_7B = 'code-qwen-7b'
 
@@ -131,8 +130,10 @@ const MODEL_MAP = {
     [CODE_QWEN_7B]: 'accounts/sourcegraph/models/code-qwen-1p5-7b',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
-    [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
-    [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
+    [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384]:
+        'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
+    [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768]:
+        'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
 }
 
 type FireworksModel =
