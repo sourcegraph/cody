@@ -421,7 +421,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 const nativeWebviewConfig = clientInfo.capabilities?.webviewNativeConfig
                 if (webviewKind === 'native') {
                     if (!nativeWebviewConfig) {
-                        throw new Error('client configured with webview "native" must set webviewNativeConfig')
+                        throw new Error(
+                            'client configured with webview "native" must set webviewNativeConfig'
+                        )
                     }
                     registerNativeWebviewHandlers(
                         this,

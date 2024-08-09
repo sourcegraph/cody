@@ -180,7 +180,9 @@ export function registerNativeWebviewHandlers(
             }
         }
 
-        const enableOnlyCommandUris = vscodeEnableCommandUrisToAgentEnableOnlyCommandUris(options?.enableCommandUris)
+        const enableOnlyCommandUris = vscodeEnableCommandUrisToAgentEnableOnlyCommandUris(
+            options?.enableCommandUris
+        )
 
         webviewProtocolDelegate!.createWebviewPanel(
             panel.handle,
@@ -231,10 +233,10 @@ export function registerNativeWebviewHandlers(
 //
 // Agent protocol does it this way because the bindings generator does not
 // handle the union type VSCode uses.
-function vscodeEnableCommandUrisToAgentEnableOnlyCommandUris(enableCommandUris: boolean | readonly string[] | undefined): readonly string[] | null {
-    return enableCommandUris instanceof Array
-        ? enableCommandUris
-        : (!enableCommandUris ? [] : null)
+function vscodeEnableCommandUrisToAgentEnableOnlyCommandUris(
+    enableCommandUris: boolean | readonly string[] | undefined
+): readonly string[] | null {
+    return Array.isArray(enableCommandUris) ? enableCommandUris : !enableCommandUris ? [] : null
 }
 
 class NativeWebview implements vscode.Webview {
@@ -268,7 +270,9 @@ class NativeWebview implements vscode.Webview {
             // TODO: Support retainContextWhenHidden
             retainContextWhenHidden: true,
             enableScripts: value.enableScripts ?? false,
-            enableOnlyCommandUris: vscodeEnableCommandUrisToAgentEnableOnlyCommandUris(value.enableCommandUris),
+            enableOnlyCommandUris: vscodeEnableCommandUrisToAgentEnableOnlyCommandUris(
+                value.enableCommandUris
+            ),
             enableForms: value.enableForms ?? false,
             localResourceRoots: value.localResourceRoots ?? [],
             portMapping: value.portMapping || [],
