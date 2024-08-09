@@ -473,7 +473,7 @@ export type ServerNotifications = {
     'webview/dispose': [{ handle: string }]
     'webview/reveal': [{ handle: string; viewColumn: number; preserveFocus: boolean }]
     'webview/setTitle': [{ handle: string; title: string }]
-    'webview/setIconPath': [{ handle: string; iconPathUri: string | null | undefined }]
+    'webview/setIconPath': [{ handle: string; iconPathUri?: string | null | undefined }]
     'webview/setOptions': [{ handle: string; options: DefiniteWebviewOptions }]
     'webview/setHtml': [{ handle: string; html: string }]
 }
@@ -485,10 +485,10 @@ export interface WebviewCreateWebviewPanelOptions {
     // whereas an empty array means no commands are enabled. This lets us model all
     // states (all enabled, all disabled, only specific commands enabled) with one
     // field and avoid any redundant or inconsistent states.
-    enableOnlyCommandUris: readonly string[] | null
+    enableOnlyCommandUris?: readonly string[] | undefined | null
     // Note, we model "missing" here because interpreting the default
     // depends on the current workspace root.
-    localResourceRoots: readonly string[] | null | undefined // Note, in vscode, ? readonly Uri[]
+    localResourceRoots?: readonly string[] | undefined | null // Note, in vscode, ? readonly Uri[]
     portMapping: readonly { webviewPort: number; extensionHostPort: number }[]
     // WebviewPanelOptions
     enableFindWidget: boolean
@@ -503,8 +503,8 @@ export interface WebviewCreateWebviewPanelOptions {
 export interface DefiniteWebviewOptions {
     enableScripts: boolean
     enableForms: boolean
-    enableOnlyCommandUris: readonly string[] | null
-    localResourceRoots: readonly string[] | undefined
+    enableOnlyCommandUris?: readonly string[] | undefined | null
+    localResourceRoots?: readonly string[] | undefined | null
     portMapping: readonly { webviewPort: number; extensionHostPort: number }[]
     enableFindWidget: boolean
     retainContextWhenHidden: boolean
