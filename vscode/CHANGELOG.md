@@ -15,6 +15,17 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Improved how Cody associates code to existing files in chat responses. [pull/5038](https://github.com/sourcegraph/cody/pull/5038)
 - Chat: Added an experimental simpler code block UI, that can accomodate the "Smart Apply" button. [pull/5038](https://github.com/sourcegraph/cody/pull/5038)
 
+
+## 1.30.2
+
+### Added
+
+Autocomplete: Experiment flag for deepseek context increase experiment. [pull/5159](https://github.com/sourcegraph/cody/pull/5159)
+
+### Fixed
+
+### Changed
+
 ## 1.30.1
 
 ### Added
