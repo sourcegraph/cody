@@ -90,6 +90,8 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'cody.internal.unstable':
                         return false
+                    case 'cody.internal.debug.context':
+                        return false
                     case 'cody.experimental.supercompletions':
                         return false
                     case 'cody.experimental.noodle':
@@ -134,6 +136,7 @@ describe('getConfiguration', () => {
             isRunningInsideAgent: false,
             agentIDE: undefined,
             internalUnstable: false,
+            internalDebugContext: false,
             debugVerbose: true,
             debugFilter: /.*/,
             telemetryLevel: 'off',
