@@ -1,3 +1,4 @@
+import * as fs from 'node:fs'
 import type * as vscode from 'vscode'
 
 import { localStorage } from '../../vscode/src/services/LocalStorageProvider'
@@ -10,6 +11,7 @@ import * as vscode_shim from './vscode-shim'
  */
 export class AgentGlobalState implements vscode.Memento {
     private globalStorage = new Map<string, any>()
+    private path: string | null = null
 
     constructor() {
         // Disable the feature that opens a webview when the user accepts their first
@@ -21,8 +23,47 @@ export class AgentGlobalState implements vscode.Memento {
         this.globalStorage.set('completion.inline.hasAcceptedFirstCompletion', true)
         this.globalStorage.set('extension.hasActivatedPreviously', 'true')
     }
+
+    public setPersistencePath(path: string): void {
+        this.path = path
+        const storage = this.readFromDisk(path)
+        for (const [key, value] of storage ?? []) {
+            if (this.globalStorage.has(key) && this.globalStorage.get(key) !== value) {
+                throw new Error(
+                    `Global state key ${key} already exists with a different value: (local) ${this.globalStorage.get(
+                        key
+                    )}, (disk) ${value}`
+                )
+            }
+            this.globalStorage.set(key, value)
+        }
+    }
+
+    // Write the contents of the globalStorage to the file at `this.path`
+    // in a format that can be deserialized later back into a Map.
+    private syncToDisk(): void {
+        if (this.path) {
+            const json = JSON.stringify([...this.globalStorage])
+            fs.writeFileSync(this.path, json)
+        }
+    }
+
+    // deserialize the contents of the file at `this.path` into the globalStorage
+    private readFromDisk(path: string): Map<string, any> | undefined {
+        try {
+            const json = fs.readFileSync(path, 'utf8')
+            const entries = JSON.parse(json)
+            return new Map(entries)
+        } catch (e) {
+            return undefined
+        }
+    }
+
     public reset(): void {
         this.globalStorage.clear()
+        if (this.path) {
+            fs.truncateSync(this.path)
+        }
     }
 
     public keys(): readonly string[] {
@@ -46,6 +87,7 @@ export class AgentGlobalState implements vscode.Memento {
 
     public update(key: string, value: any): Promise<void> {
         this.globalStorage.set(key, value)
+        this.syncToDisk()
         return Promise.resolve()
     }
 

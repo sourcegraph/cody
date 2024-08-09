@@ -439,6 +439,8 @@ export type ServerNotifications = {
     // complete, or errored, the results from remoteRepo/list will not change.
     // When configuration changes, repo fetching may re-start.
     'remoteRepo/didChangeState': [RemoteRepoFetchState]
+
+    'authentication/didChange': [AuthStatus | undefined]
 }
 
 interface CancelParams {
@@ -525,6 +527,9 @@ export interface ClientCapabilities {
     // convenient for clients that forward the string directly to an underlying
     // webview container.
     webviewMessages?: 'object-encoded' | 'string-encoded' | undefined | null
+    // when a file path is provided, the agent will attempt to deserialize extension state
+    // from the path and append all global state (such as chat interactions) to the path
+    persistencePath?: string | undefined | null
 }
 
 export interface ServerInfo {

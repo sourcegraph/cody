@@ -1,7 +1,13 @@
 import { execSync } from 'node:child_process'
 import path from 'node:path'
 
-import { extensionForLanguage, logDebug, logError, setClientNameVersion } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    extensionForLanguage,
+    logDebug,
+    logError,
+    setClientNameVersion,
+} from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
@@ -921,6 +927,9 @@ const _commands: Partial<typeof vscode.commands> = {
     },
 }
 
+_commands?.registerCommand?.('auth.changed', (authStatus: AuthStatus) => {
+    agent?.notify('authentication/didChange', authStatus)
+})
 _commands?.registerCommand?.('workbench.action.reloadWindow', () => {
     // Do nothing
 })

@@ -40,7 +40,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({ userInfo }) => {
         },
         {
             text: 'Sign Out',
-            onClick: () => getVSCodeAPI().postMessage({ command: 'command', id: 'cody.auth.signout' }),
+            onClick: () => getVSCodeAPI().postMessage({ command: 'auth', authKind: 'signout' }),
         },
     ]
 
