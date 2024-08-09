@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import path from 'node:path'
+import path, { join } from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
 import { type CodyCommand, ModelUsage, isWindows, telemetryRecorder } from '@sourcegraph/cody-shared'
@@ -355,8 +355,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 '*',
                 new IndentationBasedFoldingRangeProvider()
             )
-            if (clientInfo.capabilities?.persistencePath) {
-                globalState.setPersistencePath(clientInfo.capabilities.persistencePath)
+            if (clientInfo.capabilities?.globalState === 'server-managed') {
+                globalState.setPersistencePath(
+                    clientInfo.globalStatePath ?? join(codyPaths().data, 'globalState.json')
+                )
             }
             if (clientInfo.extensionConfiguration?.baseGlobalState) {
                 for (const key in clientInfo.extensionConfiguration.baseGlobalState) {

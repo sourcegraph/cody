@@ -1,11 +1,23 @@
+import { afterEach } from 'node:test'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AgentGlobalState } from './AgentGlobalState'
 
+let vfs: { [path: string]: string } = {}
+
 // Mock out fs operations related to readFileSync, writeFileSync, and truncateSync
 vi.mock('fs', () => ({
-    readFileSync: vi.fn(),
-    writeFileSync: vi.fn(),
-    truncateSync: vi.fn(),
+    readFileSync: (path: string) => {
+        if (vfs[path]) {
+            return vfs[path]
+        }
+        throw new Error('File not found')
+    },
+    writeFileSync: (path: string, data: string) => {
+        vfs[path] = data
+    },
+    truncateSync: (path: string) => {
+        delete vfs[path]
+    },
 }))
 
 describe('AgentGlobalState', () => {
@@ -42,5 +54,47 @@ describe('AgentGlobalState', () => {
 
     it('should return default value if key does not exist', () => {
         expect(globalState.get('nonExistentKey', 'defaultValue')).toBe('defaultValue')
+    })
+
+    describe('persistence', () => {
+        const PATH = 'testPath'
+        beforeEach(() => {
+            globalState.setPersistencePath(PATH)
+        })
+
+        afterEach(() => {
+            vfs = {}
+        })
+
+        it('should persist values to disk', () => {
+            globalState.update('persistedKey', 'persistedValue')
+
+            const newGlobalState = new AgentGlobalState()
+            newGlobalState.setPersistencePath(PATH)
+
+            expect(newGlobalState.get('persistedKey')).toBe('persistedValue')
+        })
+
+        it('should throw if conflicting state exists', () => {
+            globalState.update('conflictKey', 'initialValue')
+
+            const newGlobalState = new AgentGlobalState()
+            newGlobalState.update('conflictKey', 'some other value')
+            expect(() => newGlobalState.setPersistencePath(PATH)).toThrow()
+        })
+
+        it('should merge disk state with in-memory state', () => {
+            globalState.update('key-1', 'value-1')
+            globalState.update('key-2', 'value-2')
+
+            const newGlobalState = new AgentGlobalState()
+            newGlobalState.update('key-1', 'value-1')
+            newGlobalState.update('key-3', 'value-3')
+            newGlobalState.setPersistencePath(PATH)
+
+            expect(newGlobalState.get('key-1')).toBe('value-1')
+            expect(newGlobalState.get('key-2')).toBe('value-2')
+            expect(newGlobalState.get('key-3')).toBe('value-3')
+        })
     })
 })

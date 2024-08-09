@@ -485,6 +485,7 @@ export interface ClientInfo {
     version: string // extension version
     ideVersion?: string | undefined | null
     workspaceRootUri: string
+    globalStatePath?: string | undefined | null
 
     /** @deprecated Use `workspaceRootUri` instead. */
     workspaceRootPath?: string | undefined | null
@@ -524,9 +525,15 @@ export interface ClientCapabilities {
     // convenient for clients that forward the string directly to an underlying
     // webview container.
     webviewMessages?: 'object-encoded' | 'string-encoded' | undefined | null
-    // when a file path is provided, the agent will attempt to deserialize extension state
-    // from the path and append all global state (such as chat interactions) to the path
-    persistencePath?: string | undefined | null
+    // How to deal with vscode.ExtensionContext.globalState.
+    // - Stateless: the state does not persist between agent processes. This means the client is
+    // responsible for features like managing chat history.
+    // - Server managed: the server reads and writes the state without informing the client.
+    // The client can optionally customize the file path of the JSON config via `ClientInfo.globalStatePath: string`
+    // - Client managed: not implemented yet. When implemented, clients will be able to implement a
+    // JSON-RPC request to handle the saving of the client state. This is needed to safely share state
+    // between concurrent agent processes (assuming there is one IDE client process managing multiple agent processes).
+    globalState?: 'stateless' | 'server-managed' | 'client-managed' | undefined | null
 }
 
 export interface ServerInfo {

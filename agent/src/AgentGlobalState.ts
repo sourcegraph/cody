@@ -3,6 +3,7 @@ import type * as vscode from 'vscode'
 
 import { localStorage } from '../../vscode/src/services/LocalStorageProvider'
 
+import { logError } from '../../vscode/src/log'
 import * as vscode_shim from './vscode-shim'
 
 /**
@@ -55,6 +56,7 @@ export class AgentGlobalState implements vscode.Memento {
             const entries = JSON.parse(json)
             return new Map(entries)
         } catch (e) {
+            logError('AgentGlobalState', 'Failed to read global state from disk', String(e))
             return undefined
         }
     }
