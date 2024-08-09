@@ -10,12 +10,22 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## 1.30.2
+
+### Added
+
+Autocomplete: Experiment flag to establish the trade-off when context is increased. [pull/5159](https://github.com/sourcegraph/cody/pull/5159)
+
+### Fixed
+
+### Changed
+
 
 ## 1.30.1
 
 ### Added
 
-Autocomplete: Add a feature flag for DeepSeek-coder-v2 lite base model. [pull/5151](https://github.com/sourcegraph/cody/pull/5079)
+Autocomplete: Add a feature flag for DeepSeek-coder-v2 lite base model. [pull/5079](https://github.com/sourcegraph/cody/pull/5079)
 
 ### Fixed
 
