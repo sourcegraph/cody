@@ -29,7 +29,7 @@ export const pollyFixture = _test.extend<TestContext, WorkerContext>({
                 adapters: ['node-http'],
                 recordFailedRequests: true,
                 logLevel: 'SILENT',
-                timing: Timing.relative(1.0), //TODO: Configuration for fuzzy/flake testing
+                timing: Timing.fixed(0), //TODO: Configuration for fuzzy/flake testing
                 matchRequestsBy: {
                     //TODO: Think of a clever way that we can require order on some types of requests
                     order: false,
