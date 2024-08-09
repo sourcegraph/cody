@@ -4,7 +4,7 @@ import type { EventSource } from '@sourcegraph/cody-shared'
 import type { QuickPickInput } from '../edit/input/get-input'
 import type { FixupFile } from './FixupFile'
 import type { FixupTask, FixupTaskID } from './FixupTask'
-import type { CodyTaskState } from './utils'
+import type { CodyTaskState } from './state'
 
 // Role interfaces so that sub-objects of the FixupController can consume a
 // narrow part of the controller.

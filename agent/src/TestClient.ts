@@ -20,7 +20,7 @@ import {
 import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
 import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
-import { CodyTaskState } from '../../vscode/src/non-stop/utils'
+import { CodyTaskState } from '../../vscode/src/non-stop/state'
 import {
     TESTING_CREDENTIALS,
     type TestingCredentials,

@@ -24,6 +24,7 @@ import {
     DEFAULT_EVENT_SOURCE,
     EventSourceTelemetryMetadataMapping,
 } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { SmartApplyResult } from '../chat/protocol'
 import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
 import { type QuickPickInput, getInput } from '../edit/input/get-input'
@@ -36,11 +37,13 @@ import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
+import { TERMINAL_EDIT_STATES } from './codelenses/constants'
 import { FixupDecorator } from './decorations/FixupDecorator'
 import { type Edit, computeDiff, makeDiffEditBuilderCompatible } from './line-diff'
 import { trackRejection } from './rejection-tracker'
 import type { FixupActor, FixupFileCollection, FixupTextChanged } from './roles'
-import { CodyTaskState, expandRangeToInsertedText, getMinimumDistanceToRangeBoundary } from './utils'
+import { CodyTaskState } from './state'
+import { expandRangeToInsertedText, getMinimumDistanceToRangeBoundary } from './utils'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
@@ -365,7 +368,8 @@ export class FixupController
         model: EditModel,
         intent: EditIntent,
         source: EventSource,
-        telemetryMetadata?: FixupTelemetryMetadata
+        telemetryMetadata?: FixupTelemetryMetadata,
+        taskId?: FixupTaskID
     ): Promise<FixupTask | null> {
         const input = await getInput(
             document,
@@ -394,7 +398,8 @@ export class FixupController
             source,
             undefined,
             undefined,
-            telemetryMetadata
+            telemetryMetadata,
+            taskId
         )
 
         // Return focus to the editor
@@ -418,7 +423,8 @@ export class FixupController
         source?: EventSource,
         destinationFile?: vscode.Uri,
         insertionPoint?: vscode.Position,
-        telemetryMetadata?: FixupTelemetryMetadata
+        telemetryMetadata?: FixupTelemetryMetadata,
+        taskId?: FixupTaskID
     ): Promise<FixupTask> {
         const authStatus = this.authProvider.getAuthStatus()
         const overridenModel = getOverridenModelForIntent(intent, model, authStatus)
@@ -435,7 +441,8 @@ export class FixupController
             source,
             destinationFile,
             insertionPoint,
-            telemetryMetadata
+            telemetryMetadata,
+            taskId
         )
         this.tasks.set(task.id, task)
         this.decorator.didCreateTask(task)
@@ -1064,6 +1071,18 @@ export class FixupController
         this.controlApplicator.visibleFilesWithTasksMaybeChanged([...editorsByFile.keys()])
     }
 
+    private async notifyChatTaskState(task: FixupTask): Promise<void> {
+        if (!TERMINAL_EDIT_STATES.includes(task.state)) {
+            // We only update chat when a task reaches a terminal state.
+            return
+        }
+
+        await vscode.commands.executeCommand('cody.command.markSmartApplyComplete', {
+            taskId: task.id,
+            taskState: task.state,
+        } satisfies SmartApplyResult)
+    }
+
     private setTaskState(task: FixupTask, state: CodyTaskState): void {
         const oldState = task.state
         if (oldState === state) {
@@ -1075,6 +1094,12 @@ export class FixupController
 
         if (oldState !== CodyTaskState.Working && task.state === CodyTaskState.Working) {
             task.spinCount++
+        }
+
+        if (task.source === 'chat') {
+            // This task was created through a chat message (smart apply).
+            // We need to notify the chat that the task has changed.
+            this.notifyChatTaskState(task)
         }
 
         if (task.state === CodyTaskState.Finished) {

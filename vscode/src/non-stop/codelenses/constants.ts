@@ -1,4 +1,4 @@
-import { CodyTaskState } from '../utils'
+import { CodyTaskState } from '../state'
 
 export const ACTIVE_TASK_STATES = [
     CodyTaskState.Pending,

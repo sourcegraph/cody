@@ -3,8 +3,8 @@ import * as vscode from 'vscode'
 import { isStreamedIntent } from '../edit/utils/edit-intent'
 import type { Edit } from './line-diff'
 import type { FixupActor, FixupFileCollection, FixupTextChanged } from './roles'
+import { CodyTaskState } from './state'
 import { type TextChange, updateFixedRange, updateRangeMultipleChanges } from './tracked-range'
-import { CodyTaskState } from './utils'
 
 /**
  * Determines of a range, even if it uses different positions, exactly matches

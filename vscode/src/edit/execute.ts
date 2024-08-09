@@ -8,11 +8,18 @@ import type {
     PromptString,
 } from '@sourcegraph/cody-shared'
 
-import type { FixupTask, FixupTelemetryMetadata } from '../non-stop/FixupTask'
+import type { FixupTask, FixupTaskID, FixupTelemetryMetadata } from '../non-stop/FixupTask'
 import type { EditIntent, EditMode } from './types'
 
 export interface ExecuteEditArguments {
     configuration?: {
+        /**
+         * The ID to use when creating the FixupTask.
+         * This is optional, a FixupTask will assign its own id if not provided.
+         * The primary use case is to allow a caller of `executeEdit` to associate
+         * a FixupTask result with their intended task.
+         */
+        id?: FixupTaskID
         /**
          * The document in which to apply the edit.
          * Defaults to the active document.
