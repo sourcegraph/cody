@@ -1,12 +1,18 @@
 import * as vscode from 'vscode'
 
-import { type EditModel, type Model, isCodyProModel, isDefined } from '@sourcegraph/cody-shared'
+import {
+    type ChatModel,
+    type EditModel,
+    type Model,
+    isCodyProModel,
+    isDefined,
+} from '@sourcegraph/cody-shared'
 import {
     QUICK_PICK_ITEM_CHECKED_PREFIX,
     QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX,
 } from '../../../chat/context/constants'
 import type { GetItemsResult } from '../quick-pick'
-import type { EditModelItem } from './types'
+import type { ModelItem } from './types'
 
 const getModelProviderIcon = (provider: string): string => {
     switch (provider) {
@@ -25,14 +31,17 @@ const getModelProviderIcon = (provider: string): string => {
     }
 }
 
-export const getModelOptionItems = (modelOptions: Model[], isCodyPro: boolean): EditModelItem[] => {
+export const getModelOptionItems = <T extends EditModel | ChatModel = EditModel>(
+    modelOptions: Model[],
+    isCodyPro: boolean
+): T extends EditModel ? ModelItem<EditModel>[] : ModelItem<ChatModel>[] => {
     const allOptions = modelOptions
         .map(modelOption => {
             const icon = getModelProviderIcon(modelOption.provider)
             return {
                 label: `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX} ${icon} ${modelOption.title}`,
                 description: `by ${modelOption.provider}`,
-                alwaysShow: true,
+                // alwaysShow: true,
                 model: modelOption.model,
                 modelTitle: modelOption.title,
                 codyProOnly: isCodyProModel(modelOption),
@@ -43,7 +52,7 @@ export const getModelOptionItems = (modelOptions: Model[], isCodyPro: boolean): 
     if (!isCodyPro) {
         return [
             ...allOptions.filter(option => !option.codyProOnly),
-            { label: 'upgrade to cody pro', kind: vscode.QuickPickItemKind.Separator } as EditModelItem,
+            { label: 'upgrade to cody pro', kind: vscode.QuickPickItemKind.Separator } as ModelItem,
             ...allOptions.filter(option => option.codyProOnly),
         ]
     }
@@ -51,11 +60,11 @@ export const getModelOptionItems = (modelOptions: Model[], isCodyPro: boolean): 
     return allOptions
 }
 
-export const getModelInputItems = (
+export const getModelInputItems = <T extends EditModel | ChatModel = EditModel>(
     modelOptions: Model[],
-    activeModel: EditModel,
+    activeModel: T,
     isCodyPro: boolean
-): GetItemsResult => {
+): GetItemsResult<ModelItem> => {
     const modelItems = getModelOptionItems(modelOptions, isCodyPro)
     const activeItem = modelItems.find(item => item.model === activeModel)
 

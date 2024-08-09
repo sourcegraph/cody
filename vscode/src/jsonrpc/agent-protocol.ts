@@ -305,6 +305,10 @@ export type ClientRequests = {
             state: RemoteRepoFetchState
         },
     ]
+    'lint/demo': [
+        { targetFiles: string[]; lintFiles: string[]; model?: string },
+        { success: boolean; diagnostics: { uri: string; diagnostics: ProtocolDiagnostic[] }[] },
+    ]
 }
 
 // ================

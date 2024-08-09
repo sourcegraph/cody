@@ -55,6 +55,8 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
+import { LintController } from './lint/LintController'
+import { LintService } from './lint/LintService'
 import type { LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logError } from './log'
@@ -260,6 +262,7 @@ const register = async (
         authProvider,
         platform.createOpenCtxController
     )
+    const lintSetup = registerCodyLint(configWatcher, chatClient, authProvider, editor, disposables)
 
     registerCodyCommands(configWatcher, statusBar, sourceControl, chatClient, disposables)
     registerAuthCommands(authProvider, disposables)
@@ -284,6 +287,7 @@ const register = async (
         autocompleteSetup,
         openCtxSetup,
         tutorialSetup,
+        lintSetup,
         registerMinion(context, configWatcher, authProvider, symfRunner, disposables),
     ])
     disposables.push(extensionClientDispose)
@@ -689,6 +693,20 @@ function registerAutocomplete(
     }
     void configWatcher.onChange(setupAutocomplete, disposables)
     return setupAutocomplete().catch(() => {})
+}
+
+async function registerCodyLint(
+    config: ConfigWatcher<ConfigurationWithAccessToken>,
+    chatClient: ChatClient,
+    authProvider: AuthProvider,
+    editor: VSCodeEditor,
+    disposables: vscode.Disposable[]
+): Promise<void> {
+    if (config.get().experimentalCodyLintEnabled === true) {
+        const lintService = new LintService(chatClient)
+        const lintController = new LintController(lintService, authProvider, editor)
+        disposables.push(lintController, lintService)
+    }
 }
 
 async function registerMinion(

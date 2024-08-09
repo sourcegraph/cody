@@ -38,6 +38,7 @@ export interface ChatOptions {
 
 export const chatCommand = () =>
     new Command('chat')
+        .summary('Chat with codebase context')
         .description(
             `Chat with codebase context.
 
@@ -47,7 +48,8 @@ Examples:
   git diff | cody chat --stdin -m 'Explain this diff'
 
 Enterprise Only:
-  cody chat --context-repo github.com/sourcegraph/cody --message 'What is the agent?'`
+  cody chat --context-repo github.com/sourcegraph/cody --message 'What is the agent?'
+`
         )
         .option('-m, --message <message>', 'Message to send')
         .option('--stdin', 'Read message from stdin', false)
