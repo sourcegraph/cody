@@ -205,7 +205,7 @@ class EnterpriseEnhancedContextPanel(project: Project, chatSession: ChatSession)
     private const val ENTER_MAP_KEY = "enter"
   }
 
-  val controller =
+  private var controller =
       EnterpriseEnhancedContextStateController(
           project,
           object : ChatEnhancedContextStateProvider {

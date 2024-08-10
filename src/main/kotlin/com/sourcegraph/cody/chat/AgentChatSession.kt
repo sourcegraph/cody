@@ -57,7 +57,7 @@ private constructor(
   private val chatPanel: ChatPanel =
       ChatPanel(project, chatSession = this, chatModelProviderFromState)
   private val cancellationToken = AtomicReference(CancellationToken())
-  val messages = mutableListOf<ChatMessage>()
+  private val messages = mutableListOf<ChatMessage>()
 
   init {
     cancellationToken.get().dispose()

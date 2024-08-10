@@ -4,7 +4,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
-import com.intellij.openapi.util.Disposer
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.Speaker
@@ -46,7 +45,7 @@ class MessagesPanel(private val project: Project, private val chatSession: ChatS
     }
 
     if (message.speaker == Speaker.ASSISTANT && message.actualMessage().isBlank()) {
-      add(BlinkingCursorComponent())
+      add(BlinkingCursorComponent.instance)
     }
 
     revalidate()
@@ -55,12 +54,7 @@ class MessagesPanel(private val project: Project, private val chatSession: ChatS
 
   @RequiresEdt
   fun removeBlinkingCursor() {
-    components
-        .firstNotNullOfOrNull { it as? BlinkingCursorComponent }
-        ?.let {
-          Disposer.dispose(it)
-          remove(it)
-        }
+    components.find { it is BlinkingCursorComponent }?.let { remove(it) }
   }
 
   fun registerCancellationToken(cancellationToken: CancellationToken) {

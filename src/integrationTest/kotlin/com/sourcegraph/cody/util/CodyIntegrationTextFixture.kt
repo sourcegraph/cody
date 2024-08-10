@@ -1,11 +1,16 @@
 package com.sourcegraph.cody.util
 
 import com.intellij.ide.lightEdit.LightEdit
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
@@ -26,8 +31,8 @@ import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import junit.framework.TestCase
 
-abstract class CodyIntegrationTestFixture : BasePlatformTestCase(), LensListener {
-  private val logger = Logger.getInstance(CodyIntegrationTestFixture::class.java)
+open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
+  private val logger = Logger.getInstance(CodyIntegrationTextFixture::class.java)
   private val lensSubscribers =
       mutableListOf<
           Pair<(List<ProtocolCodeLens>) -> Boolean, CompletableFuture<LensWidgetGroup?>>>()
@@ -56,7 +61,23 @@ abstract class CodyIntegrationTestFixture : BasePlatformTestCase(), LensListener
 
       val recordingsFuture = CompletableFuture<Void>()
       CodyAgentService.withAgent(project) { agent ->
-        agent.server.testing_requestErrors(params = null).get()
+        val errors = agent.server.testingRequestErrors().get()
+        // We extract polly.js errors to notify users about the missing recordings, if any
+        val missingRecordings = errors.filter { it.error?.contains("`recordIfMissing` is") == true }
+        missingRecordings.forEach { missing ->
+          logger.error(
+              """Recording is missing: ${missing.error}
+                |
+                |${missing.body}
+                |
+                |------------------------------------------------------------------------------------------
+                |To fix this problem please run `./gradlew :recordingIntegrationTest`.
+                |You need to export access tokens first, using script from the `sourcegraph/cody` repository:
+                |`agent/scripts/export-cody-http-recording-tokens.sh`
+                |------------------------------------------------------------------------------------------
+              """
+                  .trimMargin())
+        }
         recordingsFuture.complete(null)
       }
       recordingsFuture.get(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
@@ -74,14 +95,7 @@ abstract class CodyIntegrationTestFixture : BasePlatformTestCase(), LensListener
   // Methods there are mostly idempotent though, so calling again for every test case should not
   // change anything.
   private fun initCredentialsAndAgent() {
-    assertNotNull(
-        "Unable to start agent in a timely fashion!",
-        CodyAgentService.getInstance(project)
-            .startAgent(project, additionalEnvs = mapOf("CODY_RECORDING_NAME" to recordingName()))
-            .completeOnTimeout(null, ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .get())
-
-    val credentials = credentials()
+    val credentials = TestingCredentials.dotcom
     CodyPersistentAccountsHost(project)
         .addAccount(
             SourcegraphServerPath.from(credentials.serverEndpoint, ""),
@@ -89,11 +103,14 @@ abstract class CodyIntegrationTestFixture : BasePlatformTestCase(), LensListener
             displayName = "Test User",
             token = credentials.token ?: credentials.redactedToken,
             id = "random-unique-testing-id-1337")
+
+    assertNotNull(
+        "Unable to start agent in a timely fashion!",
+        CodyAgentService.getInstance(project)
+            .startAgent(project)
+            .completeOnTimeout(null, ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .get())
   }
-
-  abstract fun recordingName(): String
-
-  abstract fun credentials(): TestingCredentials
 
   private fun checkInitialConditions() {
     // If you don't specify this system property with this setting when running the tests,
@@ -113,10 +130,19 @@ abstract class CodyIntegrationTestFixture : BasePlatformTestCase(), LensListener
     val isLightEditMode = LightEdit.owns(project)
     assertFalse("Project should not be in LightEdit mode", isLightEditMode)
 
-    checkSuiteSpecificInitialConditions()
+    // Check the initial state of the action's presentation
+    val action = ActionManager.getInstance().getAction("cody.documentCodeAction")
+    val event =
+        AnActionEvent.createFromAnAction(action, null, "", createEditorContext(myFixture.editor))
+    action.update(event)
+    val presentation = event.presentation
+    assertTrue("Action should be enabled", presentation.isEnabled)
+    assertTrue("Action should be visible", presentation.isVisible)
   }
 
-  abstract fun checkSuiteSpecificInitialConditions()
+  private fun createEditorContext(editor: Editor): DataContext {
+    return (editor as? EditorEx)?.dataContext ?: DataContext.EMPTY_CONTEXT
+  }
 
   // This provides a crude mechanism for specifying the caret position in the test file.
   private fun initCaretPosition() {

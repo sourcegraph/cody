@@ -342,6 +342,4 @@ class EnterpriseEnhancedContextStateController(
   fun requestUIUpdate() {
     ApplicationManager.getApplication().executeOnPooledThread(this::updateUI)
   }
-
-  fun getConfiguredState() = model_.configured
 }

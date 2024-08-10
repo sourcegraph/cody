@@ -19,6 +19,7 @@ import com.sourcegraph.cody.agent.protocol.IgnorePolicySpec
 import com.sourcegraph.cody.agent.protocol.IgnoreTestParams
 import com.sourcegraph.cody.agent.protocol.IgnoreTestResponse
 import com.sourcegraph.cody.agent.protocol.InlineEditParams
+import com.sourcegraph.cody.agent.protocol.NetworkRequest
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol.RemoteRepoHasParams
 import com.sourcegraph.cody.agent.protocol.RemoteRepoHasResponse
@@ -41,7 +42,6 @@ import com.sourcegraph.cody.agent.protocol_generated.Graphql_GetRepoIdsParams
 import com.sourcegraph.cody.agent.protocol_generated.Graphql_GetRepoIdsResult
 import com.sourcegraph.cody.agent.protocol_generated.Null
 import com.sourcegraph.cody.agent.protocol_generated.ServerInfo
-import com.sourcegraph.cody.agent.protocol_generated.Testing_RequestErrorsResult
 import com.sourcegraph.cody.chat.ConnectionId
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
@@ -82,9 +82,6 @@ interface _SubsetGeneratedCodyAgentServer {
 
   @JsonRequest("extensionConfiguration/getSettingsSchema")
   fun extensionConfiguration_getSettingsSchema(params: Null?): CompletableFuture<String>
-
-  @JsonRequest("testing/requestErrors")
-  fun testing_requestErrors(params: Null?): CompletableFuture<Testing_RequestErrorsResult>
 
   //  // =============
   //  // Notifications
@@ -205,4 +202,7 @@ interface _LegacyAgentServer {
 
   @JsonRequest("testing/ignore/overridePolicy")
   fun testingIgnoreOverridePolicy(params: IgnorePolicySpec?): CompletableFuture<Unit>
+
+  @JsonRequest("testing/requestErrors")
+  fun testingRequestErrors(): CompletableFuture<List<NetworkRequest>>
 }
