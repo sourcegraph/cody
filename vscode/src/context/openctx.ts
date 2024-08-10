@@ -1,7 +1,7 @@
 import {
     type AuthStatus,
     CodyIDE,
-    type ConfigurationWithAccessToken,
+    type Configuration,
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
     WEB_PROVIDER_URI,
@@ -29,7 +29,7 @@ import { createWebProvider } from './openctx/web'
 
 export async function exposeOpenCtxClient(
     context: Pick<vscode.ExtensionContext, 'extension' | 'secrets'>,
-    config: ConfigWatcher<ConfigurationWithAccessToken>,
+    config: ConfigWatcher<Configuration>,
     authProvider: AuthProvider,
     createOpenCtxController: typeof createController | undefined,
     parentSignal?: AbortSignal
@@ -71,7 +71,7 @@ export async function exposeOpenCtxClient(
 }
 
 async function* getOpenCtxProviders(
-    configChanges: AsyncGenerator<ConfigurationWithAccessToken>,
+    configChanges: AsyncGenerator<Configuration>,
     authStatusChanges: AsyncGenerator<AuthStatus>,
     signal?: AbortSignal
 ): AsyncGenerator<ImportedProviderConfiguration[]> {

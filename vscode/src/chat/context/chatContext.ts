@@ -20,7 +20,7 @@ import {
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
-import { getFullConfig } from '../../configuration'
+import { getConfiguration } from '../../configuration'
 import type { RemoteSearch } from '../../context/remote-search'
 import {
     getFileContextFiles,
@@ -64,7 +64,7 @@ export async function* getMentionMenuData(
         },
     }
 
-    const isCodyWeb = (await getFullConfig()).agentIDE === CodyIDE.Web
+    const isCodyWeb = getConfiguration().agentIDE === CodyIDE.Web
     const { input, context } = chatModel.contextWindow
 
     try {

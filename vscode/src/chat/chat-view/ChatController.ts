@@ -63,7 +63,7 @@ import {
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
-import { getConfiguration, getFullConfig } from '../../configuration'
+import { getConfigWithEndpoint, getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
 import type { Repo } from '../../context/repo-fetcher'
@@ -566,10 +566,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
-        const [config, experimentalSmartApply] = await Promise.all([
-            getFullConfig(),
-            this.isSmartApplyEnabled(),
-        ])
+        const config = getConfigWithEndpoint()
+        const experimentalSmartApply = await this.isSmartApplyEnabled()
 
         const webviewType =
             this.webviewPanelOrView?.viewType === 'cody.editorPanel' ? 'editor' : 'sidebar'
