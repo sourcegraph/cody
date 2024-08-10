@@ -12,10 +12,8 @@ import {
     PromptString,
     type SerializedChatTranscript,
     type TelemetryRecorder,
-    isCodyProUser,
 } from '@sourcegraph/cody-shared'
 import type { AuthMethod, ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
-import type { UserAccountInfo } from './Chat'
 import { LoadingPage } from './LoadingPage'
 import { LoginSimplified } from './OnboardingExperiment'
 import { ConnectionIssuesPage } from './Troubleshooting'
@@ -42,7 +40,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
 
     const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
-    const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
 
     const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
 
@@ -101,14 +98,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'config':
                         setConfig(message.config)
                         setAuthStatus(message.authStatus)
-                        setUserAccountInfo({
-                            isCodyProUser: isCodyProUser(message.authStatus),
-                            // Receive this value from the extension backend to make it work
-                            // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
-                            isDotComUser: message.authStatus.isDotCom,
-                            user: message.authStatus,
-                            ide: message.config.agentIDE ?? CodyIDE.VSCode,
-                        })
                         setView(message.authStatus.isLoggedIn ? View.Chat : View.Login)
                         updateDisplayPathEnvInfoForWebview(message.workspaceFolderUris)
                         // Get chat models
@@ -252,8 +241,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         simplifiedLoginRedirect={loginRedirect}
                         uiKindIsWeb={config.uiKindIsWeb}
                         vscodeAPI={vscodeAPI}
-                        codyIDE={userAccountInfo?.ide ?? CodyIDE.VSCode}
-                        authStatus={authStatus}
+                        codyIDE={config.config.agentIDE ?? CodyIDE.VSCode}
                     />
                 </div>
             ) : (
@@ -265,7 +253,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     setErrorMessages={setErrorMessages}
                     attributionEnabled={attributionEnabled}
                     chatEnabled={chatEnabled}
-                    userInfo={userAccountInfo}
                     messageInProgress={messageInProgress}
                     transcript={transcript}
                     vscodeAPI={vscodeAPI}

@@ -18,7 +18,6 @@ import {
 
 import { ChatMentionContext, type ChatMentionsSettings } from '@sourcegraph/prompt-editor'
 import { getAppWrappers } from 'cody-ai/webviews/App'
-import type { UserAccountInfo } from 'cody-ai/webviews/Chat'
 import { ChatEnvironmentContext } from 'cody-ai/webviews/chat/ChatEnvironmentContext'
 import type { ChatModelContext } from 'cody-ai/webviews/chat/models/chatModelContext'
 import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
@@ -61,7 +60,6 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
-    const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
     const [chatModels, setChatModels] = useState<Model[]>()
     const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
     const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
@@ -103,12 +101,6 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 case 'config':
                     setConfig(message.config)
                     setAuthStatus(message.authStatus)
-                    setUserAccountInfo({
-                        isCodyProUser: !message.authStatus.userCanUpgrade,
-                        isDotComUser: message.authStatus.isDotCom,
-                        user: message.authStatus,
-                        ide: CodyIDE.Web,
-                    })
                     break
                 case 'clientAction':
                     dispatchClientAction(message)
@@ -199,7 +191,7 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         [vscodeAPI, telemetryRecorder, chatModelContext, clientState, config, authStatus]
     )
 
-    const isLoading = !client || !userAccountInfo || !chatModels || !config || !view || !userHistory
+    const isLoading = !client || !chatModels || !config || !view || !userHistory
 
     return (
         <div className={className} data-cody-web-chat={true}>
@@ -221,7 +213,6 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                                     chatEnabled={true}
                                     showWelcomeMessage={true}
                                     showIDESnippetActions={true}
-                                    userInfo={userAccountInfo}
                                     messageInProgress={messageInProgress}
                                     transcript={transcript}
                                     vscodeAPI={vscodeAPI}
