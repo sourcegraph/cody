@@ -205,7 +205,6 @@ export type {
 export * from './sourcegraph-api/completions/types'
 export {
     DOTCOM_URL,
-    LOCAL_APP_URL,
     isDotCom,
 } from './sourcegraph-api/environments'
 export {
