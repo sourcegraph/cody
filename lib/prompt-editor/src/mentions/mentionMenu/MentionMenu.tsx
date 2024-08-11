@@ -249,7 +249,7 @@ export const MentionMenu: FunctionComponent<
             ref={ref}
             data-testid="mention-menu"
         >
-            <CommandList>
+            <CommandList className="!tw-max-h-[unset]">
                 {providers.length > 0 && (
                     <CommandGroup className={COMMAND_GROUP_CLASS_NAME}>{providers}</CommandGroup>
                 )}

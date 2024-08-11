@@ -21,6 +21,7 @@ import {
 } from 'lexical'
 import { isEqual } from 'lodash'
 import { type FunctionComponent, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import styles from './atMentions.module.css'
 
 import {
@@ -119,6 +120,7 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
                 : contextWindowSizeInTokens - tokenAdded
 
         const { params, updateQuery, updateMentionMenuParams } = useMentionMenuParams()
+        console.log('params', params)
 
         const data = useMentionMenuData(params, {
             remainingTokenBudget,
@@ -275,30 +277,27 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
                 commandPriority={
                     COMMAND_PRIORITY_NORMAL /* so Enter keypress selects option and doesn't submit form */
                 }
-                onOpen={menuResolution => {
-                    refs.setPositionReference({
-                        getBoundingClientRect: menuResolution.getRect,
-                    })
-                }}
                 menuRenderFn={(anchorElementRef, itemProps) => {
                     const { selectOptionAndCleanUp } = itemProps
                     anchorElementRef2.current = anchorElementRef.current ?? undefined
                     return (
-                        <div
-                            ref={ref => {
-                                refs.setFloating(ref)
-                            }}
-                            style={floatingStyles}
-                            className={clsx(styles.popover)}
-                        >
-                            <MentionMenu
-                                params={params}
-                                updateMentionMenuParams={updateMentionMenuParams}
-                                setEditorQuery={setEditorQuery}
-                                data={data}
-                                selectOptionAndCleanUp={selectOptionAndCleanUp}
-                            />
-                        </div>
+                        anchorElementRef.current &&
+                        createPortal(
+                            <div className={clsx('typeahead-popover', styles.popover)}>
+                                {process.env.FOO === '123' ? (
+                                    <MentionMenu
+                                        params={params}
+                                        updateMentionMenuParams={updateMentionMenuParams}
+                                        setEditorQuery={setEditorQuery}
+                                        data={data}
+                                        selectOptionAndCleanUp={selectOptionAndCleanUp}
+                                    />
+                                ) : (
+                                    <p>hello</p>
+                                )}
+                            </div>,
+                            anchorElementRef.current
+                        )
                     )
                 }}
             />

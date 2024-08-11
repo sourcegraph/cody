@@ -9,7 +9,7 @@ body {
     font-size: var(--vscode-font-size);
     font-family: var(--vscode-font-family);
     color: var(--vscode-editor-foreground);
-    height: 100%;
+    height2: 100%;  /* TODO!(sqs) */
 }
 
 .container a {
@@ -18,7 +18,7 @@ body {
 }
 
 .container--webview {
-    position: relative;
+    position2: relative; /* TODO!(sqs) */
 }
 
 .container--webview, .container--cell {
