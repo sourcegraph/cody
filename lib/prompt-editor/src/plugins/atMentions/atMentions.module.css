@@ -1,11 +1,19 @@
 .popover {
-    overflow: auto;
+    overflow: hidden; /* TODO!(sqs): or auto? */
     background: var(--vscode-sideBar-background);
     color: var(--vscode-sideBar-foreground);
     box-shadow: 0 0 8px 2px var(--vscode-widget-shadow);
     border-radius: 3px;
 
     width: clamp(200px, 100vw, 400px);
+
+    /**
+     * Lexical's `useMenuAnchorRef` tries to set our `top` and `left`, but this
+     * conflicts with our use of @floating-ui/react to position this element,
+     * so disregard it.
+     */
+    top: 0 !important;
+    left: 0 !important;
 }
 
 .reset-anchor {

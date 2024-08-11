@@ -84,11 +84,11 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
             () => ({
                 placement: 'bottom-start',
                 middleware: [
-                    offset(0), // TODO!(sqs): make 6 if last item can be selected
+                    offset(6),
                     shift(),
                     flip(),
                     size({
-                        padding: 0, // TODO!(sqs): make 10 if last item can be selected
+                        padding: 10,
                         apply({ availableWidth, availableHeight, elements }): void {
                             elements.floating.style.maxWidth = `${availableWidth}px`
 
@@ -106,6 +106,7 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
                     }),
                 ],
                 transform: true,
+                strategy: 'fixed',
             }),
             []
         )
