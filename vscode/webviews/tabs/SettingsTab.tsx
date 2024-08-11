@@ -13,7 +13,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ userInfo }) => {
     }
 
     return (
-        <div className="tw-flex tw-flex-col tw-gap-4 tw-px-8 tw-mt-4">
+        <div className="tw-overflow-auto tw-flex tw-flex-col tw-gap-4 tw-px-8 tw-mt-4">
             <Button
                 key="settings"
                 variant="secondary"
