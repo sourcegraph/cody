@@ -59,6 +59,7 @@ export interface FireworksOptions {
     model: FireworksModel
     maxContextTokens?: number
     client: CodeCompletionsClient
+    anonymousUserID?: string
     timeouts: AutocompleteTimeouts
     config: Pick<
         ConfigurationWithAccessToken,
@@ -92,6 +93,13 @@ export const DEEPSEEK_CODER_1P3_B = 'deepseek-coder-1p3b'
 export const DEEPSEEK_CODER_7B = 'deepseek-coder-7b'
 // Huggingface link (https://huggingface.co/deepseek-ai/DeepSeek-Coder-V2-Lite-Base)
 export const DEEPSEEK_CODER_V2_LITE_BASE = 'deepseek-coder-v2-lite-base'
+
+// Context window experiments with DeepSeek Model
+export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096 = 'deepseek-coder-v2-lite-base-context-4096'
+export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192 = 'deepseek-coder-v2-lite-base-context-8192'
+export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384 = 'deepseek-coder-v2-lite-base-context-16383'
+export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768 = 'deepseek-coder-v2-lite-base-context-32768'
+
 // Huggingface link (https://huggingface.co/Qwen/CodeQwen1.5-7B)
 export const CODE_QWEN_7B = 'code-qwen-7b'
 
@@ -120,6 +128,12 @@ const MODEL_MAP = {
     [DEEPSEEK_CODER_7B]: 'fireworks/accounts/sourcegraph/models/deepseek-coder-7b-base',
     [DEEPSEEK_CODER_V2_LITE_BASE]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
     [CODE_QWEN_7B]: 'accounts/sourcegraph/models/code-qwen-1p5-7b',
+    [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
+    [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
+    [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384]:
+        'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
+    [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768]:
+        'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
 }
 
 type FireworksModel =
@@ -156,6 +170,14 @@ function getMaxContextTokens(model: FireworksModel): number {
         case CODE_QWEN_7B: {
             return 2048
         }
+        case DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096:
+            return 4096
+        case DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192:
+            return 8192
+        case DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384:
+            return 16384
+        case DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768:
+            return 32768
         default:
             return 1200
     }
@@ -182,10 +204,19 @@ class FireworksProvider extends Provider {
     // Todo: This variable is used to introduce an additional delay to collect the data on impact of latency on user experience.
     // Todo: Delete this variable once the data is collected.
     private shouldAddArtificialDelayForExperiment = false
+    private anonymousUserID: string | undefined
 
     constructor(
         options: ProviderOptions,
-        { model, maxContextTokens, client, timeouts, config, authStatus }: Required<FireworksOptions>
+        {
+            model,
+            maxContextTokens,
+            client,
+            timeouts,
+            config,
+            authStatus,
+            anonymousUserID,
+        }: Required<Omit<FireworksOptions, 'anonymousUserID'>> & { anonymousUserID?: string }
     ) {
         super(options)
         this.timeouts = timeouts
@@ -197,6 +228,7 @@ class FireworksProvider extends Provider {
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
         this.authStatus = authStatus
+        this.anonymousUserID = anonymousUserID
         this.isLocalInstance = Boolean(
             this.authStatus.endpoint?.includes('sourcegraph.test') ||
                 this.authStatus.endpoint?.includes('localhost')
@@ -537,8 +569,8 @@ class FireworksProvider extends Provider {
                     ],
                     stream: true,
                     languageId: self.options.document.languageId,
+                    anonymousUserID: self.anonymousUserID,
                 }
-
                 const headers = new Headers(self.getCustomHeaders())
                 // Force HTTP connection reuse to reduce latency.
                 // c.f. https://github.com/microsoft/vscode/issues/173861
@@ -722,7 +754,9 @@ export function createProviderConfig({
 }): ProviderConfig {
     const clientModel =
         model === null || model === ''
-            ? 'starcoder-hybrid'
+            ? otherOptions.authStatus.isDotCom
+                ? DEEPSEEK_CODER_V2_LITE_BASE
+                : 'starcoder-hybrid'
             : ['starcoder-hybrid', 'starcoder2-hybrid'].includes(model)
               ? (model as FireworksModel)
               : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)

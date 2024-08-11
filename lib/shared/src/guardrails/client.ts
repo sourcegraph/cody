@@ -37,7 +37,7 @@ export class SourcegraphGuardrailsClient implements Guardrails {
         const timeout =
             (this.config.experimentalGuardrailsTimeoutSeconds ?? defaultTimeoutSeconds) * 1000
 
-        const result = await this.client.searchAttribution(snippet, timeout)
+        const result = await this.client.searchAttribution(snippet, AbortSignal.timeout(timeout))
 
         if (isError(result)) {
             return result

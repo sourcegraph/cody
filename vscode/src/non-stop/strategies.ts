@@ -17,12 +17,3 @@ export interface FixupControlApplicator extends vscode.Disposable {
     // API here.
     visibleFilesWithTasksMaybeChanged(files: readonly FixupFile[]): void
 }
-
-// A FixupControlApplicator which does not present any controls for fixup
-// tasks.
-export class NullFixupControlApplicator implements FixupControlApplicator {
-    public didUpdateTask(task: FixupTask): void {}
-    public didDeleteTask(task: FixupTask): void {}
-    public visibleFilesWithTasksMaybeChanged(files: readonly FixupFile[]): void {}
-    public dispose(): void {}
-}

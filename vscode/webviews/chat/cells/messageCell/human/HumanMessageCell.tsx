@@ -4,7 +4,8 @@ import {
     serializedPromptEditorStateFromChatMessage,
 } from '@sourcegraph/cody-shared'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
-import { type FunctionComponent, useMemo } from 'react'
+import isEqual from 'lodash/isEqual'
+import { type FunctionComponent, memo, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../Chat'
 import { UserAvatar } from '../../../../components/UserAvatar'
 import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
@@ -40,59 +41,62 @@ export const HumanMessageCell: FunctionComponent<{
 
     /** For use in storybooks only. */
     __storybook__focus?: boolean
-}> = ({
-    message,
-    userInfo,
-    chatEnabled = true,
-    isFirstMessage,
-    isSent,
-    isPendingPriorResponse,
-    onChange,
-    onSubmit,
-    onStop,
-    isFirstInteraction,
-    isLastInteraction,
-    isEditorInitiallyFocused,
-    className,
-    editorRef,
-    __storybook__focus,
-}) => {
-    const messageJSON = JSON.stringify(message)
-    const initialEditorState = useMemo(
-        () => serializedPromptEditorStateFromChatMessage(JSON.parse(messageJSON)),
-        [messageJSON]
-    )
+}> = memo(
+    ({
+        message,
+        userInfo,
+        chatEnabled = true,
+        isFirstMessage,
+        isSent,
+        isPendingPriorResponse,
+        onChange,
+        onSubmit,
+        onStop,
+        isFirstInteraction,
+        isLastInteraction,
+        isEditorInitiallyFocused,
+        className,
+        editorRef,
+        __storybook__focus,
+    }) => {
+        const messageJSON = JSON.stringify(message)
+        const initialEditorState = useMemo(
+            () => serializedPromptEditorStateFromChatMessage(JSON.parse(messageJSON)),
+            [messageJSON]
+        )
 
-    return (
-        <BaseMessageCell
-            speaker="human"
-            speakerIcon={
-                <UserAvatar
-                    user={userInfo.user}
-                    size={MESSAGE_CELL_AVATAR_SIZE}
-                    className="tw-mt-[2px]"
-                />
-            }
-            content={
-                <HumanMessageEditor
-                    userInfo={userInfo}
-                    initialEditorState={initialEditorState}
-                    placeholder={isFirstMessage ? 'Ask...' : 'Ask a followup...'}
-                    isFirstMessage={isFirstMessage}
-                    isSent={isSent}
-                    isPendingPriorResponse={isPendingPriorResponse}
-                    onChange={onChange}
-                    onSubmit={onSubmit}
-                    onStop={onStop}
-                    disabled={!chatEnabled}
-                    isFirstInteraction={isFirstInteraction}
-                    isLastInteraction={isLastInteraction}
-                    isEditorInitiallyFocused={isEditorInitiallyFocused}
-                    editorRef={editorRef}
-                    __storybook__focus={__storybook__focus}
-                />
-            }
-            className={className}
-        />
-    )
-}
+        return (
+            <BaseMessageCell
+                speaker="human"
+                speakerIcon={
+                    <UserAvatar
+                        user={userInfo.user}
+                        size={MESSAGE_CELL_AVATAR_SIZE}
+                        className="tw-mt-[2px]"
+                    />
+                }
+                content={
+                    <HumanMessageEditor
+                        userInfo={userInfo}
+                        initialEditorState={initialEditorState}
+                        placeholder={isFirstMessage ? 'Ask...' : 'Ask a followup...'}
+                        isFirstMessage={isFirstMessage}
+                        isSent={isSent}
+                        isPendingPriorResponse={isPendingPriorResponse}
+                        onChange={onChange}
+                        onSubmit={onSubmit}
+                        onStop={onStop}
+                        disabled={!chatEnabled}
+                        isFirstInteraction={isFirstInteraction}
+                        isLastInteraction={isLastInteraction}
+                        isEditorInitiallyFocused={isEditorInitiallyFocused}
+                        editorRef={editorRef}
+                        __storybook__focus={__storybook__focus}
+                    />
+                }
+                className={className}
+            />
+        )
+    },
+    isEqual
+)

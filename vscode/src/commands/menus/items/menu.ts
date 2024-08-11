@@ -9,7 +9,7 @@ import { type CommandMenuButton, CommandMenuButtons } from './buttons'
 
 import { platform } from 'node:os'
 
-export { CommandMenuButton } from './buttons'
+export { type CommandMenuButton } from './buttons'
 export { CommandMenuSeperator } from './seperators'
 export { CommandMenuOption } from './options'
 

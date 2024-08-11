@@ -16,7 +16,7 @@ import type { CommandMenuItem } from './types'
 
 export async function showCommandMenu(
     type: 'default' | 'custom' | 'config',
-    customCommands: CodyCommand[],
+    allCommands: CodyCommand[],
     args?: CodyCommandArgs
 ): Promise<void> {
     const items: CommandMenuItem[] = []
@@ -64,9 +64,9 @@ export async function showCommandMenu(
         }
 
         // Add Custom Commands
-        if (customCommands?.length) {
+        if (allCommands?.length) {
             items.push(CommandMenuSeperator.custom)
-            for (const customCommand of customCommands) {
+            for (const customCommand of allCommands) {
                 const label = `$(tools) ${customCommand.key}`
                 const description = customCommand.description ?? customCommand.prompt
                 const command = customCommand.key
@@ -97,11 +97,11 @@ export async function showCommandMenu(
         quickPick.onDidTriggerButton(async item => {
             // On gear icon click
             if (item.tooltip?.startsWith('Configure')) {
-                await showCommandMenu('config', customCommands)
+                await showCommandMenu('config', allCommands)
                 return
             }
             // On back button click
-            await showCommandMenu('default', customCommands)
+            await showCommandMenu('default', allCommands)
             quickPick.hide()
         })
 

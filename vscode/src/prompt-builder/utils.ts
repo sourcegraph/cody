@@ -71,7 +71,7 @@ export function getContextItemTokenUsageType(item: ContextItem): ContextTokenUsa
         case 'selection':
             return 'user'
         default:
-            return 'enhanced'
+            return 'corpus'
     }
 }
 

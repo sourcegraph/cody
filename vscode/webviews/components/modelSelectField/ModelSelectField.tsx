@@ -177,7 +177,7 @@ export const ModelSelectField: React.FunctionComponent<{
             aria-label="Select a model"
             popoverContent={close => (
                 <Command loop={true} defaultValue={value} tabIndex={0} className="focus:tw-outline-none">
-                    <CommandList>
+                    <CommandList className={'model-selector-popover'}>
                         {optionsByGroup.map(({ group, options }) => (
                             <CommandGroup heading={group} key={group}>
                                 {options.map(option => (
@@ -217,34 +217,36 @@ export const ModelSelectField: React.FunctionComponent<{
                                 </span>
                             </CommandLink>
                         </CommandGroup>
-                        <CommandGroup>
-                            <CommandLink
-                                key="enterprise-model-options"
-                                href={ENTERPRISE_MODEL_DOCS_PAGE}
-                                target="_blank"
-                                rel="noreferrer"
-                                onSelect={() => {
-                                    telemetryRecorder.recordEvent(
-                                        'cody.modelSelector',
-                                        'clickEnterpriseModelOption'
-                                    )
-                                }}
-                                className={styles.modelTitleWithIcon}
-                            >
-                                <span className={styles.modelIcon}>
-                                    {/* wider than normal to fit in with provider icons */}
-                                    <BuildingIcon size={16} strokeWidth={2} />{' '}
-                                </span>
-                                <span className={styles.modelName}>Enterprise Model Options</span>
-                                <span className={styles.rightIcon}>
-                                    <ExternalLinkIcon
-                                        size={16}
-                                        strokeWidth={1.25}
-                                        className="tw-opacity-80"
-                                    />
-                                </span>
-                            </CommandLink>
-                        </CommandGroup>
+                        {userInfo.isDotComUser && (
+                            <CommandGroup>
+                                <CommandLink
+                                    key="enterprise-model-options"
+                                    href={ENTERPRISE_MODEL_DOCS_PAGE}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onSelect={() => {
+                                        telemetryRecorder.recordEvent(
+                                            'cody.modelSelector',
+                                            'clickEnterpriseModelOption'
+                                        )
+                                    }}
+                                    className={styles.modelTitleWithIcon}
+                                >
+                                    <span className={styles.modelIcon}>
+                                        {/* wider than normal to fit in with provider icons */}
+                                        <BuildingIcon size={16} strokeWidth={2} />{' '}
+                                    </span>
+                                    <span className={styles.modelName}>Enterprise Model Options</span>
+                                    <span className={styles.rightIcon}>
+                                        <ExternalLinkIcon
+                                            size={16}
+                                            strokeWidth={1.25}
+                                            className="tw-opacity-80"
+                                        />
+                                    </span>
+                                </CommandLink>
+                            </CommandGroup>
+                        )}
                     </CommandList>
                 </Command>
             )}
@@ -277,7 +279,7 @@ function modelAvailability(
     if (!userInfo.isDotComUser && !serverSentModelsEnabled) {
         return 'not-selectable-on-enterprise'
     }
-    if (isCodyProModel(model) && !userInfo.isCodyProUser) {
+    if (isCodyProModel(model) && userInfo.isDotComUser && !userInfo.isCodyProUser) {
         return 'needs-cody-pro'
     }
     return 'available'

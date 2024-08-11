@@ -121,12 +121,16 @@ export class RemoteSearch implements ContextStatusProvider {
         return Array.from(new Set([...this.reposAuto.keys(), ...this.reposManual.keys()]))
     }
 
-    public async query(query: PromptString, repoIDs: string[]): Promise<ContextSearchResult[]> {
+    public async query(
+        query: PromptString,
+        repoIDs: string[],
+        signal?: AbortSignal
+    ): Promise<ContextSearchResult[]> {
         if (repoIDs.length === 0) {
             return []
         }
-        const rewritten = await rewriteKeywordQuery(this.completions, query)
-        const result = await graphqlClient.contextSearch(repoIDs, rewritten)
+        const rewritten = await rewriteKeywordQuery(this.completions, query, signal)
+        const result = await graphqlClient.contextSearch(repoIDs, rewritten, signal)
         if (isError(result)) {
             throw result
         }

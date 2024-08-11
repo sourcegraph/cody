@@ -213,8 +213,14 @@ export const RANK_CONTEXT_QUERY = `
 query RankContext($interactionId: String!, $query: String!, $contextItems: [InputContextItem!]!) {
     rankContext(interactionId: $interactionId, query:$query, contextItems: $contextItems) {
         ranker
-        used
-        ignored
+        used {
+            index
+            score
+        }
+        ignored {
+            index
+            score
+        }
     }
 }`
 
@@ -449,6 +455,23 @@ query GetRemoteFileQuery($repositoryName: String!, $filePath: String!, $startLin
          content(startLine:$startLine endLine:$endLine)
       }
     }
+  }
+}
+`
+
+export const GET_URL_CONTENT_QUERY = `
+query GetURLContentQuery($url: String!) {
+    urlMentionContext(url: $url) {
+        title
+        content
+    }
+}
+`
+
+export const VIEWER_SETTINGS_QUERY = `
+query ViewerSettings {
+  viewerSettings {
+    final
   }
 }
 `

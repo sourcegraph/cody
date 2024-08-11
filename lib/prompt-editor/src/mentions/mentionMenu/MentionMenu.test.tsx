@@ -12,7 +12,6 @@ import {
     CommandItem,
     CommandList,
     CommandLoading,
-    CommandSeparator,
 } from 'cmdk'
 import type { ComponentProps, FunctionComponent } from 'react'
 import { type Mock, describe, expect, test, vi } from 'vitest'
@@ -68,10 +67,9 @@ const CONFIG: PromptEditorConfig = {
         CommandInput,
         CommandList,
         CommandEmpty,
-        CommandLoading,
         CommandGroup,
-        CommandSeparator,
         CommandItem,
+        CommandLoading,
     },
 }
 const Wrapper: FunctionComponent<{ children: React.ReactNode }> = ({ children }) => (
@@ -86,7 +84,7 @@ describe('MentionMenu', () => {
                     <MentionMenu {...PROPS} data={{ items: undefined, providers: [PROVIDER_P1] }} />,
                     { wrapper: Wrapper }
                 )
-                expectMenu(container, ['>provider p1', '#Loading...'])
+                expectMenu(container, ['>provider p1'])
             })
 
             test('empty items', () => {
@@ -133,6 +131,21 @@ describe('MentionMenu', () => {
                 { wrapper: Wrapper }
             )
             expectMenu(container, ['>provider p1', 'item file file1.go', 'item file file2.ts'])
+        })
+
+        test('with error', () => {
+            const { container } = render(
+                <MentionMenu
+                    {...PROPS}
+                    data={{
+                        items: [ITEM_FILE1, ITEM_FILE2],
+                        providers: [],
+                        error: 'my-error',
+                    }}
+                />,
+                { wrapper: Wrapper }
+            )
+            expectMenu(container, ['>item file file1.go', 'item file file2.ts', '#Error: my-error'])
         })
 
         describe('single provider', () => {

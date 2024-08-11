@@ -1,9 +1,9 @@
 import { getEncoding } from 'js-tiktoken'
-import type { TokenUsage } from '.'
+import type { TokenBudget, TokenUsage } from '.'
 import type { ChatContextTokenUsage, TokenUsageType } from '.'
 import type { ModelContextWindow } from '..'
 import type { Message, PromptString } from '..'
-import { ENHANCED_CONTEXT_ALLOCATION } from './constants'
+import { CORPUS_CONTEXT_ALLOCATION } from './constants'
 
 /**
  * A class to manage the token allocation during prompt building.
@@ -16,13 +16,13 @@ export class TokenCounter {
     /**
      * The maximum number of tokens that can be used by each context type:
      * - User-Context: tokens reserved for User-added context, like `@`-mentions.
-     * - Enhanced-Context: % (defined by ENHANCED_CONTEXT_ALLOCATION) of the latest Chat budget.
+     * - Corpus-Context: % (defined by CORPUS_CONTEXT_ALLOCATION) of the latest Chat budget.
      */
     public readonly maxContextTokens: ChatContextTokenUsage
     /**
      * The number of tokens used by chat and context respectively.
      */
-    private usedTokens: TokenUsage = { preamble: 0, input: 0, user: 0, enhanced: 0 }
+    private usedTokens: TokenUsage = { preamble: 0, input: 0, user: 0, corpus: 0 }
     /**
      * Indicates whether the Chat and User-Context share the same token budget.
      * - If true, all types of messages share the same token budget with Chat.
@@ -38,7 +38,7 @@ export class TokenCounter {
         this.maxChatTokens = contextWindow.input
         this.maxContextTokens = {
             user: contextWindow.context?.user ?? contextWindow.input,
-            enhanced: Math.floor(contextWindow.input * ENHANCED_CONTEXT_ALLOCATION),
+            corpus: Math.floor(contextWindow.input * CORPUS_CONTEXT_ALLOCATION),
         }
     }
 
@@ -49,13 +49,16 @@ export class TokenCounter {
      * @param messages - The messages to calculate the token count for.
      * @returns `true` if the token usage can be allocated, `false` otherwise.
      */
-    public updateUsage(type: TokenUsageType, messages: Message[]): boolean {
+    public updateUsage(
+        type: TokenUsageType,
+        messages: Message[]
+    ): { succeeded: boolean; reason?: string } {
         const count = TokenCounter.getMessagesTokenCount(messages)
-        const isWithinLimit = this.canAllocateTokens(type, count)
+        const { isWithinLimit, reason } = this.canAllocateTokens(type, count)
         if (isWithinLimit) {
             this.usedTokens[type] = this.usedTokens[type] + count
         }
-        return isWithinLimit
+        return { succeeded: isWithinLimit, reason }
     }
 
     /**
@@ -65,10 +68,10 @@ export class TokenCounter {
      *
      * @returns The remaining token budget for chat, User-Context, and Enhanced-Context (if applicable).
      */
-    private get remainingTokens() {
+    private get remainingTokens(): Pick<TokenBudget, 'chat'> & ChatContextTokenUsage {
         const usedChat = this.usedTokens.preamble + this.usedTokens.input
         const usedUser = this.usedTokens.user
-        const usedEnhanced = this.usedTokens.enhanced
+        const usedCorpus = this.usedTokens.corpus
 
         let chat = this.maxChatTokens - usedChat
         let user = this.maxContextTokens.user - usedUser
@@ -76,7 +79,7 @@ export class TokenCounter {
         // When the context shares the same token budget with Chat...
         if (this.shareChatAndUserBudget) {
             // ...subtracts the tokens used by context from Chat.
-            chat -= usedUser + usedEnhanced
+            chat -= usedUser + usedCorpus
             // ...the remaining token budget for User-Context is the same as Chat.
             user = chat
         }
@@ -84,7 +87,7 @@ export class TokenCounter {
         return {
             chat,
             user,
-            enhanced: Math.floor(chat * ENHANCED_CONTEXT_ALLOCATION),
+            corpus: Math.floor(chat * CORPUS_CONTEXT_ALLOCATION),
         }
     }
 
@@ -95,27 +98,61 @@ export class TokenCounter {
      * @param count - The number of tokens to allocate.
      * @returns `true` if the tokens can be allocated, `false` otherwise.
      */
-    private canAllocateTokens(type: TokenUsageType, count: number): boolean {
+    private canAllocateTokens(
+        type: TokenUsageType,
+        count: number
+    ): { isWithinLimit: boolean; reason?: string } {
         switch (type) {
-            case 'preamble':
-                return this.remainingTokens.chat >= count
-            case 'input':
+            case 'preamble': {
+                const isWithinLimit = this.remainingTokens.chat >= count
+                return {
+                    isWithinLimit,
+                    reason: !isWithinLimit
+                        ? `preamble tokens exceeded remaining chat tokens (${count} > ${this.remainingTokens.chat})`
+                        : undefined,
+                }
+            }
+            case 'input': {
                 if (!this.usedTokens.preamble) {
                     throw new Error('Preamble must be updated before Chat input.')
                 }
-                return this.remainingTokens.chat >= count
-            case 'user':
+                const isWithinLimit = this.remainingTokens.chat >= count
+                return {
+                    isWithinLimit,
+                    reason: !isWithinLimit
+                        ? `input tokens exceeded remaining chat tokens (${count} > ${this.remainingTokens.chat})`
+                        : undefined,
+                }
+            }
+            case 'user': {
                 if (!this.usedTokens.input) {
                     throw new Error('Chat token usage must be updated before Context.')
                 }
-                return this.remainingTokens.user >= count
-            case 'enhanced':
+                const isWithinLimit = this.remainingTokens.user >= count
+                return {
+                    isWithinLimit,
+                    reason: !isWithinLimit
+                        ? `user context tokens exceeded remaining user context tokens (${count} > ${this.remainingTokens.user})`
+                        : undefined,
+                }
+            }
+            case 'corpus': {
                 if (!this.usedTokens.input) {
                     throw new Error('Chat token usage must be updated before Context.')
                 }
-                return this.remainingTokens.enhanced >= count
+                const isWithinLimit = this.remainingTokens.corpus >= count
+                return {
+                    isWithinLimit,
+                    reason: !isWithinLimit
+                        ? `corpus context tokens exceeded remaining corpus context tokens (${count} > ${this.remainingTokens.corpus})`
+                        : undefined,
+                }
+            }
             default:
-                return false
+                return {
+                    isWithinLimit: false,
+                    reason: `unrecognized token usage type ${type}`,
+                }
         }
     }
 

@@ -1,4 +1,5 @@
 import {
+    type ContextItem,
     ContextItemSource,
     type Message,
     Model,
@@ -9,6 +10,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
+import { PromptBuilder } from '../../prompt-builder'
 import { ChatModel } from './ChatModel'
 import { DefaultPrompter } from './prompt'
 
@@ -31,7 +33,7 @@ describe('DefaultPrompter', () => {
         const chat = new ChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
-        const { prompt, context } = await new DefaultPrompter([]).makePrompt(chat, 0)
+        const { prompt, context } = await new DefaultPrompter([], []).makePrompt(chat, 0)
 
         expect(prompt).toEqual<Message[]>([
             {
@@ -49,6 +51,39 @@ describe('DefaultPrompter', () => {
         ])
         expect(context.used).toEqual([])
         expect(context.ignored).toEqual([])
+    })
+
+    it('prompt context items are ordered in reverse order of relevance', async () => {
+        const p = new PromptBuilder({ input: 10_000, output: 10_000 })
+        const contextItems: ContextItem[] = [
+            {
+                type: 'file',
+                uri: vscode.Uri.parse('file:///one'),
+                content: 'context one',
+            },
+            {
+                type: 'file',
+                uri: vscode.Uri.parse('file:///two'),
+                content: 'context two',
+            },
+        ]
+        p.tryAddToPrefix([
+            { speaker: 'human', text: ps`preamble` },
+            { speaker: 'assistant', text: ps`preamble response` },
+        ])
+        p.tryAddMessages([{ speaker: 'human', text: ps`user message` }])
+        await p.tryAddContext('corpus', contextItems)
+        const messages = p.build()
+        checkPrompt(messages, [
+            'preamble',
+            'preamble response',
+            'context two',
+            'Ok.',
+            'context one',
+            'Ok.',
+            'user message',
+        ])
+        // expect(messages).toEqual([])
     })
 
     it('adds the cody.chat.preInstruction vscode setting if set', async () => {
@@ -70,7 +105,7 @@ describe('DefaultPrompter', () => {
         const chat = new ChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
-        const { prompt, context } = await new DefaultPrompter([]).makePrompt(chat, 0)
+        const { prompt, context } = await new DefaultPrompter([], []).makePrompt(chat, 0)
 
         expect(prompt).toEqual<Message[]>([
             {
@@ -107,23 +142,18 @@ describe('DefaultPrompter', () => {
                 {
                     uri: vscode.Uri.file('user1.go'),
                     type: 'file',
-                    content: 'import vscode',
+                    content: 'package vscode',
                     source: ContextItemSource.User,
                 },
             ],
-            () =>
-                Promise.resolve([
-                    {
-                        uri: vscode.Uri.file('enhanced1.ts'),
-                        type: 'file',
-                        content: 'import vscode',
-                    },
-                ])
+            [
+                {
+                    uri: vscode.Uri.file('enhanced1.ts'),
+                    type: 'file',
+                    content: 'import vscode',
+                },
+            ]
         ).makePrompt(chat, 0)
-
-        chat.setLastMessageContext(info.context.used)
-        chat.addBotMessage({ text: ps`Oh hello there.` })
-        chat.addHumanMessage({ text: ps`Hello again!` })
 
         checkPrompt(info.prompt, [
             'You are Cody, an AI coding assistant from Sourcegraph.',
@@ -135,24 +165,27 @@ describe('DefaultPrompter', () => {
             'Hello, world!',
         ])
 
+        chat.setLastMessageContext(info.context.used)
+        chat.addBotMessage({ text: ps`Oh hello there.` })
+        chat.addHumanMessage({ text: ps`Hello again!` })
+
         // Second chat should give highest priority to new context (both explicit and enhanced)
         info = await new DefaultPrompter(
             [
                 {
                     uri: vscode.Uri.file('user2.go'),
                     type: 'file',
-                    content: 'import vscode',
+                    content: 'package vscode',
                     source: ContextItemSource.User,
                 },
             ],
-            () =>
-                Promise.resolve([
-                    {
-                        uri: vscode.Uri.file('enhanced2.ts'),
-                        type: 'file',
-                        content: 'import vscode',
-                    },
-                ])
+            [
+                {
+                    uri: vscode.Uri.file('enhanced2.ts'),
+                    type: 'file',
+                    content: 'import vscode',
+                },
+            ]
         ).makePrompt(chat, 0)
 
         checkPrompt(info.prompt, [
@@ -173,13 +206,17 @@ describe('DefaultPrompter', () => {
     })
 
     function checkPrompt(prompt: Message[], expectedPrefixes: string[]): void {
-        expect(prompt.length).toBe(expectedPrefixes.length)
         for (let i = 0; i < expectedPrefixes.length; i++) {
             const actual = prompt[i].text?.toString()
             const expected = expectedPrefixes[i]
             if (!actual?.includes(expected)) {
-                expect.fail(`Message mismatch: expected ${actual} to include ${expectedPrefixes[i]}`)
+                expect.fail(
+                    `Message mismatch: expected ${JSON.stringify(actual)} to include ${JSON.stringify(
+                        expectedPrefixes[i]
+                    )}`
+                )
             }
         }
+        expect(prompt.length).toBe(expectedPrefixes.length)
     }
 })

@@ -58,6 +58,11 @@ interface ContextItemCommon {
     isTooLarge?: boolean
 
     /**
+     * If isTooLarage is true, the reason why the file was deemed too long to be included in the context.
+     */
+    isTooLargeReason?: string
+
+    /**
      * The ID of the {@link ContextMentionProvider} that supplied this context item (or `undefined`
      * if from a built-in context source such as files and symbols).
      */
@@ -67,6 +72,12 @@ interface ContextItemCommon {
      * Lucid icon name for the context item
      */
     icon?: string
+
+    /**
+     * Optional metadata about where this context item came from or how it was scored, which
+     * can help a user or dev working on Cody understand why this item is appearing in context.
+     */
+    metadata?: string[]
 }
 
 /**

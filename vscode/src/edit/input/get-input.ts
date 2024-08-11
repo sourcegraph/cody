@@ -34,7 +34,7 @@ import { getMatchingContext } from './get-matching-context'
 import { createQuickPick } from './quick-pick'
 import { fetchDocumentSymbols, getLabelForContextItem, removeAfterLastAt } from './utils'
 
-interface QuickPickInput {
+export interface QuickPickInput {
     /** The user provided instruction */
     instruction: PromptString
     /** Any user provided context, from @ or @# */

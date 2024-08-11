@@ -75,7 +75,10 @@ async function buildAgent(minify) {
     const distDir = path.join(process.cwd(), '..', 'vscode', 'dist')
     const files = await fs.readdir(distDir)
     for (const file of files) {
-        const shouldCopyFile = file.endsWith('.wasm') || file.endsWith('win-ca-roots.exe')
+        const shouldCopyFile =
+            file.indexOf('/webviews/') !== -1 ||
+            file.endsWith('.wasm') ||
+            file.endsWith('win-ca-roots.exe')
         if (!shouldCopyFile) {
             continue
         }

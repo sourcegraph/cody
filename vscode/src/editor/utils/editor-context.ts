@@ -12,11 +12,13 @@ import {
     type ContextItemWithContent,
     type Editor,
     type PromptString,
+    type RangeData,
     type SymbolKind,
     TokenCounter,
     contextFiltersProvider,
     displayPath,
     graphqlClient,
+    isAbortError,
     isCodyIgnoredFile,
     isDefined,
     isErrorLike,
@@ -30,7 +32,6 @@ import type { OpenCtxClient } from '@sourcegraph/cody-shared/src/context/openctx
 import { URI } from 'vscode-uri'
 import { getOpenTabsUris } from '.'
 import { rangeContainsLines, toVSCodeRange } from '../../common/range'
-import { debouncePromise } from './debounce-promise'
 import { findWorkspaceFiles } from './findWorkspaceFiles'
 
 // Some matches we don't want to ignore because they might be valid code (for example `bin/` in Dart)
@@ -49,11 +50,12 @@ const lowScoringPathSegments = ['bin']
  */
 const throttledFindFiles = throttle(() => findWorkspaceFiles(), 10000)
 
-const debouncedRemoteFindFiles = debouncePromise(graphqlClient.getRemoteFiles.bind(graphqlClient), 500)
-const debouncedRemoteFindSymbols = debouncePromise(
-    graphqlClient.getRemoteSymbols.bind(graphqlClient),
-    500
-)
+interface FileContextItemsOptions {
+    query: string
+    maxResults: number
+    range: RangeData | undefined
+    repositoriesNames?: string[]
+}
 
 /**
  * Searches all workspaces for files matching the given string. VS Code doesn't
@@ -61,26 +63,28 @@ const debouncedRemoteFindSymbols = debouncePromise(
  * it by getting a list of all files across all workspaces and using fuzzysort.
  * Large files over 1MB are filtered.
  */
-export async function getFileContextFiles(
-    query: string,
-    maxResults: number,
-    repositoriesNames?: string[]
-): Promise<ContextItemFile[]> {
+export async function getFileContextFiles(options: FileContextItemsOptions): Promise<ContextItemFile[]> {
+    let { query, maxResults, repositoriesNames, range } = options
+
     if (!query.trim()) {
         return []
     }
 
     // TODO [VK] Support fuzzy find logic that we have for local file resolution
     if (repositoriesNames) {
-        const filesOrError = await debouncedRemoteFindFiles(repositoriesNames, query)
+        const [filePath] = query?.split(':') || []
+        const filesOrError = await graphqlClient.getRemoteFiles(repositoriesNames, filePath)
 
-        if (isErrorLike(filesOrError) || filesOrError === 'skipped') {
+        if (isErrorLike(filesOrError)) {
             return []
         }
 
         return filesOrError.map<ContextItemFile>(item => ({
+            range,
             type: 'file',
-            size: item.file.byteSize,
+            // If range is presented we assume that file content passes size limitation
+            // since we don't have access to file content in this file resolver.
+            size: range ? 100 : item.file.byteSize,
             source: ContextItemSource.User,
             remoteRepositoryName: item.repository.name,
             isIgnored: contextFiltersProvider.isRepoNameIgnored(item.repository.name),
@@ -118,14 +122,28 @@ export async function getFileContextFiles(
         threshold: -100000,
     })
 
-    // Apply a penalty for segments that are in the low scoring list.
+    const openDocuments = new Set<string>()
+    for (const uri of getOpenTabsUris()) {
+        // Using `.path` instead of `Uri.toString()` for performance reasons. This is
+        // a performance sensitive code path so we should void redundant work.
+        openDocuments.add(uri.path)
+    }
+    const LARGE_SCORE = 100000
     const adjustedResults = [...results].map(result => {
+        // Boost results for documents that are open in the editor.
+        if (openDocuments.has(result.obj.uri.path)) {
+            return {
+                ...result,
+                score: result.score + LARGE_SCORE,
+            }
+        }
+        // Apply a penalty for segments that are in the low scoring list.
         const segments = result.obj.uri.path.split(/[\/\\]/).filter(segment => segment !== '')
         for (const lowScoringPathSegment of lowScoringPathSegments) {
             if (segments.includes(lowScoringPathSegment) && !query.includes(lowScoringPathSegment)) {
                 return {
                     ...result,
-                    score: result.score - 100000,
+                    score: result.score - LARGE_SCORE,
                 }
             }
         }
@@ -166,9 +184,9 @@ export async function getSymbolContextFiles(
     }
 
     if (remoteRepositoriesNames) {
-        const symbolsOrError = await debouncedRemoteFindSymbols(remoteRepositoriesNames, query)
+        const symbolsOrError = await graphqlClient.getRemoteSymbols(remoteRepositoriesNames, query)
 
-        if (symbolsOrError === 'skipped' || isErrorLike(symbolsOrError)) {
+        if (isErrorLike(symbolsOrError)) {
             return []
         }
 
@@ -336,14 +354,18 @@ export async function filterContextItemFiles(
 export async function resolveContextItems(
     editor: Editor,
     items: ContextItem[],
-    input: PromptString
+    input: PromptString,
+    signal?: AbortSignal
 ): Promise<ContextItemWithContent[]> {
     return (
         await Promise.all(
             items.map(async (item: ContextItem): Promise<ContextItemWithContent[] | null> => {
                 try {
-                    return await resolveContextItem(item, editor, input)
+                    return await resolveContextItem(item, editor, input, signal)
                 } catch (error) {
+                    if (isAbortError(error)) {
+                        throw error
+                    }
                     void vscode.window.showErrorMessage(
                         `Cody could not include context from ${item.uri}. (Reason: ${error})`
                     )
@@ -359,12 +381,13 @@ export async function resolveContextItems(
 async function resolveContextItem(
     item: ContextItem,
     editor: Editor,
-    input: PromptString
+    input: PromptString,
+    signal?: AbortSignal
 ): Promise<ContextItemWithContent[]> {
     const resolvedItems: ContextItemWithContent[] = item.provider
-        ? await resolveContextMentionProviderContextItem(item, input)
+        ? await resolveContextMentionProviderContextItem(item, input, signal)
         : item.type === 'file' || item.type === 'symbol'
-          ? await resolveFileOrSymbolContextItem(item, editor)
+          ? await resolveFileOrSymbolContextItem(item, editor, signal)
           : []
     return resolvedItems.map(resolvedItem => ({
         ...resolvedItem,
@@ -374,13 +397,14 @@ async function resolveContextItem(
 
 async function resolveContextMentionProviderContextItem(
     { provider: providerUri, ...item }: ContextItem,
-    input: PromptString
+    input: PromptString,
+    signal?: AbortSignal
 ): Promise<ContextItemWithContent[]> {
     if (item.type !== 'openctx') {
         return []
     }
 
-    const openCtxClient = openCtx.client
+    const openCtxClient = openCtx.controller
     if (!openCtxClient) {
         return []
     }
@@ -399,6 +423,8 @@ async function resolveContextMentionProviderContextItem(
         { message: input.toString(), mention },
         { providerUri: item.providerUri }
     )
+    // TODO(sqs): add `signal` arg to openCtxClient.items
+    signal?.throwIfAborted()
 
     return items
         .map((item): (ContextItemWithContent & { providerUri: string }) | null =>
@@ -419,15 +445,18 @@ async function resolveContextMentionProviderContextItem(
 
 async function resolveFileOrSymbolContextItem(
     contextItem: ContextItemFile | ContextItemSymbol,
-    editor: Editor
+    editor: Editor,
+    signal?: AbortSignal
 ): Promise<ContextItemWithContent[]> {
     if (contextItem.remoteRepositoryName) {
         // Get only actual file path without repository name
         const repository = contextItem.remoteRepositoryName
         const path = contextItem.uri.path.slice(repository.length + 1, contextItem.uri.path.length)
+        const ranges = contextItem.range
+            ? { startLine: contextItem.range.start.line, endLine: contextItem.range.end.line + 1 }
+            : undefined
 
-        // TODO [VK]: Support ranges for symbol context items
-        const resultOrError = await graphqlClient.getFileContent(repository, path)
+        const resultOrError = await graphqlClient.getFileContent(repository, path, ranges, signal)
 
         if (!isErrorLike(resultOrError)) {
             return [
@@ -447,6 +476,7 @@ async function resolveFileOrSymbolContextItem(
     const content =
         contextItem.content ??
         (await editor.getTextEditorContentForFile(contextItem.uri, toVSCodeRange(contextItem.range)))
+    signal?.throwIfAborted()
 
     const items = [
         {

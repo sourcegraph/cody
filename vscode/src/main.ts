@@ -19,7 +19,7 @@ import {
 import type { CommandResult } from './CommandResult'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
-import { ContextFetcher } from './chat/chat-view/ContextFetcher'
+import { ContextRetriever } from './chat/chat-view/ContextRetriever'
 import type { ContextAPIClient } from './chat/context/contextAPIClient'
 import {
     ACCOUNT_LIMITS_INFO_URL,
@@ -55,7 +55,6 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
-import type { ContextRankingController } from './local-context/context-ranking'
 import type { LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logError } from './log'
@@ -110,11 +109,6 @@ export async function start(
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
-
-    // HACK to improve e2e test latency
-    if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.chatInSidebar')) {
-        await vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', true)
-    }
 
     // Set internal storage fields for storage provider singletons
     localStorage.setStorage(
@@ -195,7 +189,6 @@ const register = async (
         codeCompletionsClient,
         guardrails,
         localEmbeddings,
-        contextRanking,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
         symfRunner,
         contextAPIClient,
@@ -207,7 +200,6 @@ const register = async (
     if (symfRunner) {
         disposables.push(symfRunner)
     }
-    const contextFetcher = new ContextFetcher(symfRunner, completionsClient)
 
     // Initialize enterprise context
     const enterpriseContextFactory = new EnterpriseContextFactory(completionsClient)
@@ -217,6 +209,7 @@ const register = async (
     }, disposables)
 
     const editor = new VSCodeEditor()
+    const contextRetriever = new ContextRetriever(editor, symfRunner, completionsClient)
 
     const { chatsController } = registerChat(
         {
@@ -228,10 +221,9 @@ const register = async (
             authProvider,
             enterpriseContextFactory,
             localEmbeddings,
-            contextRanking,
             symfRunner,
             contextAPIClient,
-            contextFetcher,
+            contextRetriever,
         },
         disposables
     )
@@ -262,12 +254,11 @@ const register = async (
         disposables
     )
     const tutorialSetup = tryRegisterTutorial(context, disposables)
-    const openCtxSetup = registerOpenCtxClient(
+    const openCtxSetup = exposeOpenCtxClient(
         context,
-        platform,
         configWatcher,
         authProvider,
-        disposables
+        platform.createOpenCtxController
     )
 
     registerCodyCommands(configWatcher, statusBar, sourceControl, chatClient, disposables)
@@ -321,7 +312,7 @@ async function initializeSingletons(
             graphqlClient.setConfig(config)
             promises.push(featureFlagProvider.refresh())
             promises.push(contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri))
-            ModelsService.onConfigChange()
+            void ModelsService.onConfigChange(config)
             upstreamHealthProvider.onConfigurationChange(config)
 
             await Promise.all(promises).then()
@@ -700,31 +691,6 @@ function registerAutocomplete(
     return setupAutocomplete().catch(() => {})
 }
 
-async function registerOpenCtxClient(
-    context: vscode.ExtensionContext,
-    platform: PlatformContext,
-    config: ConfigWatcher<ConfigurationWithAccessToken>,
-    authProvider: AuthProvider,
-    disposables: vscode.Disposable[]
-): Promise<void> {
-    if (authProvider.getAuthStatus().authenticated) {
-        await exposeOpenCtxClient(
-            context,
-            config.get(),
-            authProvider.getAuthStatus().isDotCom,
-            platform.createOpenCtxController
-        )
-    }
-    config.onChange(async newConfig => {
-        await exposeOpenCtxClient(
-            context,
-            newConfig,
-            authProvider.getAuthStatus().isDotCom,
-            platform.createOpenCtxController
-        )
-    }, disposables)
-}
-
 async function registerMinion(
     context: vscode.ExtensionContext,
     config: ConfigWatcher<ConfigurationWithAccessToken>,
@@ -756,10 +722,9 @@ interface RegisterChatOptions {
     authProvider: AuthProvider
     enterpriseContextFactory: EnterpriseContextFactory
     localEmbeddings?: LocalEmbeddingsController
-    contextRanking?: ContextRankingController
     symfRunner?: SymfRunner
     contextAPIClient?: ContextAPIClient
-    contextFetcher: ContextFetcher
+    contextRetriever: ContextRetriever
 }
 
 function registerChat(
@@ -772,10 +737,9 @@ function registerChat(
         authProvider,
         enterpriseContextFactory,
         localEmbeddings,
-        contextRanking,
         symfRunner,
         contextAPIClient,
-        contextFetcher,
+        contextRetriever,
     }: RegisterChatOptions,
     disposables: vscode.Disposable[]
 ): {
@@ -798,9 +762,8 @@ function registerChat(
         authProvider,
         enterpriseContextFactory,
         localEmbeddings || null,
-        contextRanking || null,
         symfRunner || null,
-        contextFetcher,
+        contextRetriever,
         guardrails,
         contextAPIClient || null
     )

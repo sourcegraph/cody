@@ -58,7 +58,6 @@ export interface Configuration {
      * Experimental
      */
     experimentalTracing: boolean
-    experimentalChatContextRanker: boolean | undefined
     experimentalSupercompletions: boolean
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean
@@ -69,6 +68,7 @@ export interface Configuration {
      * Unstable Features for internal testing only
      */
     internalUnstable: boolean
+    internalDebugContext?: boolean
 
     /**
      * Experimental autocomplete
@@ -78,6 +78,7 @@ export interface Configuration {
     autocompleteExperimentalFireworksOptions?: FireworksOptions
     autocompleteExperimentalMultiModelCompletions?: MultimodelSingleModelConfig[]
     autocompleteExperimentalHotStreakAndSmartThrottle?: boolean
+    autocompleteExperimentalPreloadDebounceInterval?: number
 
     /**
      * Hidden settings

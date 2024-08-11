@@ -20,7 +20,7 @@ export enum DefaultEditCommands {
 // The blueprint of a Cody Custom Command
 export interface CodyCommand {
     /**
-     * @deprecated Use 'commandKey' instead.
+     * @deprecated Use 'key' instead.
      */
     slashCommand?: string
     /**

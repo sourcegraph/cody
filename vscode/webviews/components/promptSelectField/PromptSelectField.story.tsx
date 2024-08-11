@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeStandaloneComponent } from '../../storybook/VSCodeStoryDecorator'
 import { PromptSelectField } from './PromptSelectField'
-import { type PromptsClient, PromptsClientProviderForTestsOnly } from './promptsClient'
 
 const meta: Meta<typeof PromptSelectField> = {
     title: 'cody/PromptSelectField',
@@ -12,6 +11,7 @@ const meta: Meta<typeof PromptSelectField> = {
     ],
     args: {
         __storybook__open: true,
+        onSelect: () => {},
     },
 }
 
@@ -21,19 +21,4 @@ type Story = StoryObj<typeof PromptSelectField>
 
 export const Default: Story = {
     args: {},
-}
-
-const ERROR_CLIENT: PromptsClient = {
-    queryPrompts: () => Promise.reject(new Error('my error message')),
-}
-
-export const ErrorMessage: Story = {
-    args: {
-        __storybook__open: true,
-    },
-    render: args => (
-        <PromptsClientProviderForTestsOnly value={ERROR_CLIENT}>
-            <PromptSelectField {...args} />
-        </PromptsClientProviderForTestsOnly>
-    ),
 }

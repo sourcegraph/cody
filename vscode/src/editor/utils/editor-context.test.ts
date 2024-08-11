@@ -51,7 +51,11 @@ describe('getFileContextFiles', () => {
     }
 
     async function runSearch(query: string, maxResults: number): Promise<(string | undefined)[]> {
-        const results = await getFileContextFiles(query, maxResults)
+        const results = await getFileContextFiles({
+            query,
+            maxResults,
+            range: undefined,
+        })
 
         return results.map(f => uriBasename(f.uri))
     }

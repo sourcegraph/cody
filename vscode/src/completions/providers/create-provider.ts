@@ -11,6 +11,7 @@ import {
 
 import * as vscode from 'vscode'
 import { logError } from '../../log'
+import { localStorage } from '../../services/LocalStorageProvider'
 import {
     type AnthropicOptions,
     DEFAULT_PLG_ANTHROPIC_MODEL,
@@ -19,12 +20,11 @@ import {
 import { createProviderConfig as createExperimentalOllamaProviderConfig } from './experimental-ollama'
 import { createProviderConfig as createExperimentalOpenAICompatibleProviderConfig } from './expopenaicompatible'
 import {
-    CODE_QWEN_7B,
-    DEEPSEEK_CODER_7B,
     DEEPSEEK_CODER_V2_LITE_BASE,
-    FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED,
-    FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED,
-    FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID,
+    DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096,
+    DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192,
+    DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384,
+    DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768,
     type FireworksOptions,
     createProviderConfig as createFireworksProviderConfig,
 } from './fireworks'
@@ -48,12 +48,14 @@ export async function createProviderConfigFromVSCodeConfig(
             })
         }
         case 'fireworks': {
+            const { anonymousUserID } = await localStorage.anonymousUserID()
             return createFireworksProviderConfig({
                 client,
                 model: config.autocompleteAdvancedModel ?? model ?? null,
                 timeouts: config.autocompleteTimeouts,
                 authStatus,
                 config,
+                anonymousUserID,
             })
         }
         case 'anthropic': {
@@ -98,8 +100,10 @@ export async function createProviderConfig(
     /**
      * Look for the autocomplete provider in VSCode settings and return matching provider config.
      */
+
     const providerAndModelFromVSCodeConfig = await resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
-        config.autocompleteAdvancedProvider
+        config.autocompleteAdvancedProvider,
+        authStatus.isDotCom
     )
     if (providerAndModelFromVSCodeConfig) {
         const { provider, model } = providerAndModelFromVSCodeConfig
@@ -132,14 +136,17 @@ export async function createProviderConfig(
                 model: provider === 'azure-openai' && modelId ? '' : modelId,
             })
 
-        case 'fireworks':
+        case 'fireworks': {
+            const { anonymousUserID } = await localStorage.anonymousUserID()
             return createFireworksProviderConfig({
                 client,
                 timeouts: config.autocompleteTimeouts,
                 model: modelId ?? null,
                 authStatus,
                 config,
+                anonymousUserID,
             })
+        }
         case 'experimental-openaicompatible':
             // TODO(slimsag): self-hosted-models: deprecate and remove this once customers are upgraded
             // to non-experimental version
@@ -214,33 +221,33 @@ async function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<
             FeatureFlag.CodyAutocompleteFIMModelExperimentCurrentBest
         ),
     ])
-
     if (fimModelVariant1) {
         // Variant 1: Current production model with +200msec latency to quantity the effect of latency increase while keeping same quality
-        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096 }
     }
     if (fimModelVariant2) {
-        return { provider: 'fireworks', model: FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED }
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192 }
     }
     if (fimModelVariant3) {
-        return { provider: 'fireworks', model: CODE_QWEN_7B }
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384 }
     }
     if (fimModelVariant4) {
-        return { provider: 'fireworks', model: FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED }
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768 }
     }
     if (fimModelCurrentBest) {
-        return { provider: 'fireworks', model: DEEPSEEK_CODER_7B }
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
     }
     if (fimModelControl) {
         // Current production model
-        return { provider: 'fireworks', model: 'starcoder-hybrid' }
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
     }
     // Extra free traffic - redirect to the current production model which could be different than control
-    return { provider: 'fireworks', model: 'starcoder-hybrid' }
+    return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
 }
 
 async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
-    configuredProvider: string | null
+    configuredProvider: string | null,
+    isDotCom: boolean
 ): Promise<{
     provider: string
     model?: FireworksOptions['model'] | AnthropicOptions['model']
@@ -248,16 +255,15 @@ async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
     if (configuredProvider) {
         return { provider: configuredProvider }
     }
-
-    const [starCoder2Hybrid, starCoderHybrid, claude3, finetunedFIMModelHybrid, fimModelExperimentFlag] =
+    const [starCoder2Hybrid, starCoderHybrid, claude3, fimModelExperimentFlag, deepseekV2LiteBase] =
         await Promise.all([
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMFineTunedModelHybrid),
             featureFlagProvider.evaluateFeatureFlag(
                 FeatureFlag.CodyAutocompleteFIMModelExperimentBaseFeatureFlag
             ),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase),
         ])
 
     // We run fine tuning experiment for VSC client only.
@@ -266,15 +272,13 @@ async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
         .getConfiguration()
         .get<boolean>('cody.advanced.agent.running', false)
 
-    if (!isFinetuningExperimentDisabled && fimModelExperimentFlag) {
+    if (!isFinetuningExperimentDisabled && fimModelExperimentFlag && isDotCom) {
         // The traffic in this feature flag is interpreted as a traffic allocated to the fine-tuned experiment.
         return resolveFIMModelExperimentFromFeatureFlags()
     }
-
-    if (finetunedFIMModelHybrid) {
-        return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID }
+    if (isDotCom && deepseekV2LiteBase) {
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
     }
-
     if (starCoder2Hybrid) {
         return { provider: 'fireworks', model: 'starcoder2-hybrid' }
     }

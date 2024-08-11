@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/prompt-editor",
-  "version": "0.0.0-dev",
+  "version": "0.0.1",
   "description": "Shared prompt editor UI component",
   "license": "Apache-2.0",
   "repository": {
@@ -31,7 +31,7 @@
     "lodash": "^4.17.21",
     "lru-cache": "^10.0.0",
     "lucide-react": "^0.378.0",
-    "vscode-uri": "^3.0.7"
+    "vscode-uri": "^3.0.8"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.7",

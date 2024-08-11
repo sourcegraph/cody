@@ -18,4 +18,9 @@
   "include": [
     "src"
   ],
+  "references": [
+    {
+      "path": "../shared"
+    },
+  ]
 }
