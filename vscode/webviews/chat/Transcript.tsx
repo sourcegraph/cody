@@ -54,7 +54,7 @@ export const Transcript: FC<TranscriptProps> = props => {
     )
 
     return (
-        <div className="tw-px-8 tw-py-6 tw-pt-8 tw-mt-2 tw-flex tw-flex-col tw-gap-10">
+        <div className="tw-px-8 tw-pt-6 tw-pb-12 tw-flex tw-flex-col tw-gap-10">
             {interactions.map((interaction, i) => (
                 <TranscriptInteraction
                     // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
