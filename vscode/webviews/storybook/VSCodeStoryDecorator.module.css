@@ -12,23 +12,18 @@ body {
     height: 100%;
 }
 
-vscode-button::part(control) {
-    font-size: inherit;
-}
-
 .container a {
     color: var(--vscode-textLink-foreground);
     text-decoration: none;
 }
 
 .container--webview {
-    max-height: max(500px, calc(100vh - 6rem));
-    overflow: auto;
+    position: relative;
 }
 
 .container--webview, .container--cell {
-    max-width: 80%;
-    margin: 2rem auto;
+    max-width2: 80%;
+    margin2: 2rem auto;
     background-color: var(--vscode-editor-background);
     border: solid 1px var(--vscode-tab-border);
 }

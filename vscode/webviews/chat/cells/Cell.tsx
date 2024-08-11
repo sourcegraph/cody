@@ -39,6 +39,7 @@ export const Cell: FunctionComponent<
         >
             {gutterIcon}
         </div>
-        <div className={clsx('tw-flex-1 tw-overflow-auto', contentClassName)}>{children}</div>
+        <div className={clsx('tw-flex-1', contentClassName)}>{children}</div>{' '}
+        {/* TODO!(sqs): ensure wide stuff scrolls */}
     </div>
 )

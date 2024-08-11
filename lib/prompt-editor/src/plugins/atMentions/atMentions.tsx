@@ -1,5 +1,4 @@
 import {
-    FloatingPortal,
     type UseFloatingOptions,
     autoUpdate,
     computePosition,
@@ -106,7 +105,7 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
                     }),
                 ],
                 transform: true,
-                strategy: 'fixed',
+                strategy: 'fixed', // TODO!(sqs)
             }),
             []
         )
@@ -285,25 +284,21 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
                     const { selectOptionAndCleanUp } = itemProps
                     anchorElementRef2.current = anchorElementRef.current ?? undefined
                     return (
-                        anchorElementRef.current && (
-                            <FloatingPortal root={anchorElementRef.current}>
-                                <div
-                                    ref={ref => {
-                                        refs.setFloating(ref)
-                                    }}
-                                    style={floatingStyles}
-                                    className={clsx(styles.popover)}
-                                >
-                                    <MentionMenu
-                                        params={params}
-                                        updateMentionMenuParams={updateMentionMenuParams}
-                                        setEditorQuery={setEditorQuery}
-                                        data={data}
-                                        selectOptionAndCleanUp={selectOptionAndCleanUp}
-                                    />
-                                </div>
-                            </FloatingPortal>
-                        )
+                        <div
+                            ref={ref => {
+                                refs.setFloating(ref)
+                            }}
+                            style={floatingStyles}
+                            className={clsx(styles.popover)}
+                        >
+                            <MentionMenu
+                                params={params}
+                                updateMentionMenuParams={updateMentionMenuParams}
+                                setEditorQuery={setEditorQuery}
+                                data={data}
+                                selectOptionAndCleanUp={selectOptionAndCleanUp}
+                            />
+                        </div>
                     )
                 }}
             />

@@ -6,6 +6,7 @@
     border-radius: 3px;
 
     width: clamp(200px, 100vw, 400px);
+    z-index: 9999;
 
     /**
      * Lexical's `useMenuAnchorRef` tries to set our `top` and `left`, but this
@@ -18,7 +19,9 @@
 
 .reset-anchor {
     /* Without this, the popover position jitters by +/- ~13px. */
-    top2: 0 !important;
-    left2: 0 !important;
+    top222: 0 !important;
+    left222: 0 !important;
+    border: solid 3px red;
+    z-index: 9999;
 }
 
