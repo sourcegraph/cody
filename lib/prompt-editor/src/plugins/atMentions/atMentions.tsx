@@ -6,6 +6,7 @@ import {
     flip,
     offset,
     shift,
+    size,
     useFloating,
 } from '@floating-ui/react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
@@ -20,7 +21,7 @@ import {
     type TextNode,
 } from 'lexical'
 import { isEqual } from 'lodash'
-import { type FunctionComponent, memo, useCallback, useEffect, useRef, useState } from 'react'
+import { type FunctionComponent, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import styles from './atMentions.module.css'
 
 import {
@@ -29,7 +30,7 @@ import {
     toSerializedPromptEditorValue,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { MentionMenu } from '../../mentions/mentionMenu/MentionMenu'
+import { MENTION_MENU_ITEM_HEIGHT_PX, MentionMenu } from '../../mentions/mentionMenu/MentionMenu'
 import { useMentionMenuData, useMentionMenuParams } from '../../mentions/mentionMenu/useMentionMenuData'
 import {
     $createContextItemMentionNode,
@@ -53,12 +54,6 @@ export function createMentionMenuOption(item: ContextItem): MentionMenuOption {
         // noop.
         setRefElement: () => {},
     }
-}
-
-const FLOATING_OPTIONS: UseFloatingOptions = {
-    placement: 'bottom-start',
-    middleware: [offset(6), flip(), shift()],
-    transform: false,
 }
 
 /**
@@ -85,7 +80,38 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
          */
         const [tokenAdded, setTokenAdded] = useState<number>(0)
 
-        const { x, y, refs, strategy } = useFloating(FLOATING_OPTIONS)
+        const floatingOptions = useMemo<UseFloatingOptions>(
+            () => ({
+                placement: 'bottom-start',
+                middleware: [
+                    offset(0), // TODO!(sqs): make 6 if last item can be selected
+                    shift(),
+                    flip(),
+                    size({
+                        padding: 0, // TODO!(sqs): make 10 if last item can be selected
+                        apply({ availableWidth, availableHeight, elements }): void {
+                            elements.floating.style.maxWidth = `${availableWidth}px`
+
+                            // Total height must be a multiple of the item height because it's nicer
+                            // when there are no partially obscured items.
+                            const MAX_ITEMS = 12
+                            const itemsToShow = Math.min(
+                                Math.floor(availableHeight / MENTION_MENU_ITEM_HEIGHT_PX),
+                                MAX_ITEMS
+                            )
+                            elements.floating.style.maxHeight = `${
+                                itemsToShow * MENTION_MENU_ITEM_HEIGHT_PX
+                            }px`
+                        },
+                    }),
+                ],
+                transform: true,
+            }),
+            []
+        )
+
+        const { floatingStyles, refs } = useFloating(floatingOptions)
+        console.log('useFloating', floatingStyles)
 
         const remainingTokenBudget =
             contextWindowSizeInTokens === undefined
@@ -194,18 +220,23 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
                 return undefined
             }
             const cleanup = autoUpdate(referenceEl, floatingEl, async () => {
-                const { x, y } = await computePosition(referenceEl, floatingEl, FLOATING_OPTIONS)
+                const { x, y, strategy } = await computePosition(
+                    referenceEl,
+                    floatingEl,
+                    floatingOptions
+                )
+                console.log('UPDATE', { x, y, strategy })
                 floatingEl.style.left = `${x}px`
                 floatingEl.style.top = `${y}px`
             })
             return cleanup
-        }, [refs.reference.current, refs.floating.current])
+        }, [refs.reference.current, refs.floating.current, floatingOptions])
 
         // Close the menu when the editor loses focus.
         const anchorElementRef2 = useRef<HTMLElement>()
         useEffect(() => {
             return editor.registerCommand(
-                BLUR_COMMAND,
+                BLUR_COMMAND + 'x',
                 event => {
                     // Ignore clicks in the mention menu itself.
                     const isInEditorOrMenu = Boolean(
@@ -259,11 +290,7 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
                                     ref={ref => {
                                         refs.setFloating(ref)
                                     }}
-                                    style={{
-                                        position: strategy,
-                                        top: y,
-                                        left: x,
-                                    }}
+                                    style={floatingStyles}
                                     className={clsx(styles.popover)}
                                 >
                                     <MentionMenu

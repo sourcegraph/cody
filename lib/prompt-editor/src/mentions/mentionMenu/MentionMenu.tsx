@@ -244,7 +244,7 @@ export const MentionMenu: FunctionComponent<
             shouldFilter={false}
             value={effectiveValueRow ? commandRowValue(effectiveValueRow) : undefined}
             onValueChange={setValue}
-            className={clsx(styles.container, COMMAND_CLASS_NAME)}
+            className={styles.container}
             label="@-mention context"
             ref={ref}
             data-testid="mention-menu"
@@ -362,10 +362,10 @@ function getItemsHeading(
 }
 
 /**
- * This max-height value MUST be an integer multiple of the {@link COMMAND_ROW_CLASS_NAME} height
- * plus 2px (for the top and bottom border).
+ * The styles below must be updated if this changes. We can't just interpolate this value because
+ * the Tailwind CSS compiler needs the values to be mentioned in the string literal.
  */
-const COMMAND_CLASS_NAME = '!tw-max-h-[392px]'
+export const MENTION_MENU_ITEM_HEIGHT_PX = 30
 
 /**
  * Use the same padding and text size for all command rows so that there is no partially obscured
