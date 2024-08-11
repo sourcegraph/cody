@@ -8,6 +8,14 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+### Changed
+
+## 1.30.3
+
+### Added
+
+### Fixed
+
 - Chat: Fixed an issue where @-mentions move focus to the chat input box at the top. [pull/5170](https://github.com/sourcegraph/cody/pull/5170)
 
 ### Changed
