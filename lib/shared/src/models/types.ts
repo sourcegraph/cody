@@ -79,7 +79,7 @@ export interface ModelContextWindow {
     context?: {
         /**
          * The token limit reserved for user-added context.
-         * Example: @-mentions.
+         * Example: `@`-mentions.
          */
         user?: number
     }

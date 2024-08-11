@@ -22,6 +22,7 @@
     "@microsoft/fetch-event-source": "^2.0.1",
     "@opentelemetry/api": "^1.7.0",
     "@sourcegraph/telemetry": "^0.16.0",
+    "@openctx/vscode-lib": "^0.0.13",
     "crypto-js": "^4.2.0",
     "date-fns": "^2.30.0",
     "dedent": "^0.7.0",

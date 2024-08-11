@@ -17,3 +17,19 @@ export function toVSCodeRange(
 
     return new vscode.Range(range.start.line, range.start.character, range.end.line, range.end.character)
 }
+
+/**
+ * Checks if the outer range contains the inner range:
+ * - The start of the outer range is less than or equal to the start of the inner range.
+ * - The end of the outer range is greater than or equal to the end of the inner range.
+ */
+export function rangeContainsLines(outerRange: RangeData, innerRange: RangeData): boolean {
+    return outerRange.start.line <= innerRange.start.line && outerRange.end.line >= innerRange.end.line
+}
+
+/**
+ * Checks if both ranges are on the same lines.
+ */
+export function rangesOnSameLines(range1: RangeData, range2: RangeData): boolean {
+    return range1.start?.line === range2.start?.line && range1.end?.line === range2.end?.line
+}

@@ -1,9 +1,12 @@
 import type { Client, ProviderMethodOptions } from '@openctx/client'
 import type * as vscode from 'vscode'
 
+// TODO(dyma): Signature for Controller['annotation'] doesn't make sense for all Cody clients,
+// e.g. Cody CLI cannot directly access VSCode's APIs. The {uri: Uri, getText(): string} interface
+// should be a common abstraction.
 type OpenCtxController = Pick<
     Client<vscode.Range>,
-    'meta' | 'metaChanges__asyncGenerator' | 'mentions' | 'mentionsChanges__asyncGenerator' | 'items'
+    'meta' | 'metaChanges__asyncGenerator' | 'mentions' | 'mentionsChanges__asyncGenerator' | 'items' | 'annotations'
 > & {
     annotationsChanges__asyncGenerator(
         doc: Pick<vscode.TextDocument, 'uri' | 'getText'>,

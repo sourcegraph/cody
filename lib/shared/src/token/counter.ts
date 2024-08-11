@@ -15,7 +15,7 @@ export class TokenCounter {
     public readonly maxChatTokens: number
     /**
      * The maximum number of tokens that can be used by each context type:
-     * - User-Context: tokens reserved for User-added context, like @-mentions.
+     * - User-Context: tokens reserved for User-added context, like `@`-mentions.
      * - Corpus-Context: % (defined by CORPUS_CONTEXT_ALLOCATION) of the latest Chat budget.
      */
     public readonly maxContextTokens: ChatContextTokenUsage

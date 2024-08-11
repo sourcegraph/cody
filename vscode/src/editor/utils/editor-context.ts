@@ -6,6 +6,7 @@ import {
     type ContextFileType,
     type ContextItem,
     type ContextItemFile,
+    type ContextItemOpenCtx,
     ContextItemSource,
     type ContextItemSymbol,
     type ContextItemWithContent,
@@ -27,9 +28,10 @@ import {
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
+import type { OpenCtxClient } from '@sourcegraph/cody-shared/src/context/openctx/api'
 import { URI } from 'vscode-uri'
 import { getOpenTabsUris } from '.'
-import { toVSCodeRange } from '../../common/range'
+import { rangeContainsLines, toVSCodeRange } from '../../common/range'
 import { findWorkspaceFiles } from './findWorkspaceFiles'
 
 // Some matches we don't want to ignore because they might be valid code (for example `bin/` in Dart)
@@ -385,7 +387,7 @@ async function resolveContextItem(
     const resolvedItems: ContextItemWithContent[] = item.provider
         ? await resolveContextMentionProviderContextItem(item, input, signal)
         : item.type === 'file' || item.type === 'symbol'
-          ? [await resolveFileOrSymbolContextItem(item, editor, signal)]
+          ? await resolveFileOrSymbolContextItem(item, editor, signal)
           : []
     return resolvedItems.map(resolvedItem => ({
         ...resolvedItem,
@@ -434,6 +436,7 @@ async function resolveContextMentionProviderContextItem(
                       providerUri: item.providerUri,
                       content: item.ai.content,
                       provider: 'openctx',
+                      kind: 'item',
                   }
                 : null
         )
@@ -444,7 +447,7 @@ async function resolveFileOrSymbolContextItem(
     contextItem: ContextItemFile | ContextItemSymbol,
     editor: Editor,
     signal?: AbortSignal
-): Promise<ContextItemWithContent> {
+): Promise<ContextItemWithContent[]> {
     if (contextItem.remoteRepositoryName) {
         // Get only actual file path without repository name
         const repository = contextItem.remoteRepositoryName
@@ -456,15 +459,17 @@ async function resolveFileOrSymbolContextItem(
         const resultOrError = await graphqlClient.getFileContent(repository, path, ranges, signal)
 
         if (!isErrorLike(resultOrError)) {
-            return {
-                ...contextItem,
-                title: path,
-                uri: URI.parse(`${graphqlClient.endpoint}${repository}/-/blob/${path}`),
-                content: resultOrError,
-                repoName: repository,
-                source: ContextItemSource.Unified,
-                size: TokenCounter.countTokens(resultOrError),
-            }
+            return [
+                {
+                    ...contextItem,
+                    title: path,
+                    uri: URI.parse(`${graphqlClient.endpoint}${repository}/-/blob/${path}`),
+                    content: resultOrError,
+                    repoName: repository,
+                    source: ContextItemSource.Unified,
+                    size: contextItem.size ?? TokenCounter.countTokens(resultOrError),
+                },
+            ]
         }
     }
 
@@ -473,9 +478,60 @@ async function resolveFileOrSymbolContextItem(
         (await editor.getTextEditorContentForFile(contextItem.uri, toVSCodeRange(contextItem.range)))
     signal?.throwIfAborted()
 
-    return {
-        ...contextItem,
-        content,
-        size: contextItem.size ?? TokenCounter.countTokens(content),
+    const items = [
+        {
+            ...contextItem,
+            content,
+            size: contextItem.size ?? TokenCounter.countTokens(content),
+        },
+    ]
+
+    if (contextItem.type === 'symbol') {
+        return items
     }
+
+    const { client: openCtxClient } = openCtx
+    if (!openCtxClient) {
+        return items
+    }
+
+    const annotations: (ContextItemOpenCtx<'annotation'> & { content: string })[] = []
+    let openCtxAnnotations: Awaited<ReturnType<OpenCtxClient['annotations']>> = []
+
+    try {
+        openCtxAnnotations = await openCtxClient.annotations({
+            uri: contextItem.uri,
+            getText: () => content,
+        })
+    } catch (e) {
+        logError('OpenCtx', `fetching annotations for ${contextItem.uri}: ${e}`)
+        return items
+    }
+
+    for (const annotation of openCtxAnnotations) {
+        // By passing the range-limited content ot OpenCtx we are essentially filtering out-of-range annotations,
+        // but we'll do a second pass here just to be sure.
+        //
+        // TODO(dyma): prompt-builder's getUniqueContextItems filters out items with overlapping ranges.
+        // What happens if a provider returns both an item and an annotation for the same range? Should we document this somewhere?
+        const within = contextItem.range
+            ? annotation.range && rangeContainsLines(contextItem.range, annotation.range)
+            : true
+
+        const aiContent = annotation.item.ai?.content
+        if (!aiContent || !within) {
+            continue
+        }
+        annotations.push({
+            type: 'openctx',
+            provider: 'openctx',
+            kind: 'annotation',
+            providerUri: annotation.providerUri,
+            uri: URI.parse(annotation.uri),
+            title: annotation.item.title,
+            content: annotation.item.ai!.content!,
+            range: annotation.range,
+        })
+    }
+    return [...items, ...annotations]
 }

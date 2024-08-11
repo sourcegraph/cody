@@ -189,7 +189,7 @@ export type ExtensionMessage =
     | { type: 'errors'; errors: string }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     /**
-     * Context files returned from a @-mention search
+     * Context files returned from a `@`-mention search
      */
     | {
           type: 'userContextFiles'
