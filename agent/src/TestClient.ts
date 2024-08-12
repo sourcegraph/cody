@@ -980,10 +980,7 @@ ${patch}`
             version: 'v1',
             workspaceRootUri: this.params.workspaceRootUri.toString(),
             workspaceRootPath: this.params.workspaceRootUri.fsPath,
-            capabilities: {
-                ...allClientCapabilitiesEnabled,
-                webview: 'agentic',
-            },
+            capabilities: allClientCapabilitiesEnabled,
             extensionConfiguration: {
                 anonymousUserID: `${this.name}abcde1234`,
                 accessToken: this.params.credentials.token ?? this.params.credentials.redactedToken,

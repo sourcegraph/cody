@@ -363,9 +363,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 new IndentationBasedFoldingRangeProvider()
             )
 
-            if (clientInfo.capabilities?.webview === undefined) {
+            if (clientInfo.capabilities && clientInfo.capabilities?.webview === undefined) {
                 // Make it possible to do `capabilities.webview === 'agentic'`
-                clientInfo.capabilities?.webview === 'agentic'
+                clientInfo.capabilities.webview = 'agentic'
             }
 
             if (clientInfo.extensionConfiguration?.baseGlobalState) {
