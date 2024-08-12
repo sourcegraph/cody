@@ -43,7 +43,7 @@ public class ThemeUtil {
   }
 
   @Nullable
-  private static String getHexString(@Nullable Color color) {
+  public static String getHexString(@Nullable Color color) {
     if (color != null) {
       String colorString = Integer.toHexString(color.getRGB());
       if (colorString.length() > 2) {

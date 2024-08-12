@@ -21,7 +21,7 @@ class CodyAgentClientTest : BasePlatformTestCase() {
   private val condition = lock.newCondition()
 
   private fun client(): CodyAgentClient {
-    val client = CodyAgentClient()
+    val client = CodyAgentClient(StubWebviewProvider())
     client.onSetConfigFeatures = ConfigFeaturesObserver {
       lock.lock()
       try {

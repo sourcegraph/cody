@@ -339,13 +339,12 @@ tasks {
     val agentDir = codyDir.resolve("agent")
     exec {
       workingDir(agentDir)
-      commandLine(pnpmPath, "run", "build:agent")
+      commandLine(pnpmPath, "run", "build")
     }
     copy {
       from(agentDir.resolve("dist"))
       into(buildCodyDir)
     }
-
     copy {
       from(downloadNodeBinaries())
       into(buildCodyDir)
@@ -473,7 +472,10 @@ tasks {
   buildPlugin {
     dependsOn(project.tasks.getByPath("buildCody"))
     from(
-        fileTree(buildCodyDir) { include("*") },
+        fileTree(buildCodyDir) {
+          include("*")
+          include("webviews/**")
+        },
     ) {
       into("agent/")
     }

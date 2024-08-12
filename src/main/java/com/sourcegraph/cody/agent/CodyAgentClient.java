@@ -5,6 +5,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.cody.agent.protocol.*;
 import com.sourcegraph.cody.agent.protocol_generated.DisplayCodeLensParams;
 import com.sourcegraph.cody.agent.protocol_generated.EditTask;
+import com.sourcegraph.cody.ui.NativeWebviewProvider;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -19,9 +20,15 @@ import org.jetbrains.annotations.Nullable;
  */
 @SuppressWarnings("unused")
 public class CodyAgentClient {
-
   private static final Logger logger = Logger.getInstance(CodyAgentClient.class);
 
+  @NotNull NativeWebviewProvider webview;
+
+  CodyAgentClient(@NotNull NativeWebviewProvider webviewProvider) {
+    this.webview = webviewProvider;
+  }
+
+  // TODO: Remove this once we stop sniffing postMessage.
   // Callback that is invoked when the agent sends a "chat/updateMessageInProgress" notification.
   @Nullable Consumer<WebviewPostMessageParams> onNewMessage;
 
@@ -30,7 +37,7 @@ public class CodyAgentClient {
 
   // Callback that is invoked on webview messages which aren't handled by onNewMessage or
   // onSetConfigFeatures
-  @Nullable Consumer<WebviewPostMessageParams> onReceivedWebviewMessage;
+  @Nullable Consumer<WebviewPostMessageParams> onReceivedWebviewMessageTODODeleteThis;
 
   // Callback for the "editTask/didUpdate" notification from the agent.
   @Nullable Consumer<EditTask> onEditTaskDidUpdate;
@@ -68,6 +75,13 @@ public class CodyAgentClient {
   @JsonNotification("codeLenses/display")
   public void codeLensesDisplay(DisplayCodeLensParams params) {
     acceptOnEventThread("codeLenses/display", onCodeLensesDisplay, params);
+  }
+
+  @Nullable Function<OpenExternalParams, Boolean> onOpenExternal;
+
+  @JsonRequest("env/openExternal")
+  public CompletableFuture<Boolean> ignoreTest(@NotNull OpenExternalParams params) {
+    return acceptOnEventThread("env/openExternal", onOpenExternal, params);
   }
 
   @Nullable Consumer<Void> onRemoteRepoDidChange;
@@ -158,6 +172,7 @@ public class CodyAgentClient {
     return acceptOnEventThread(name, fun, params);
   }
 
+  // TODO: Delete this
   // Webviews
   @JsonRequest("webview/create")
   public CompletableFuture<Void> webviewCreate(WebviewCreateParams params) {
@@ -177,6 +192,61 @@ public class CodyAgentClient {
     }
   }
 
+  // ================================================
+  // Webviews, forwarded to the NativeWebviewProvider
+  // ================================================
+
+  @JsonNotification("webview/createWebviewPanel")
+  public void webviewCreateWebviewPanel(@NotNull WebviewCreateWebviewPanelParams params) {
+    this.webview.createPanel(params);
+  }
+
+  @JsonNotification("webview/postMessageStringEncoded")
+  public void webviewPostMessageStringEncoded(
+      @NotNull WebviewPostMessageStringEncodedParams params) {
+    this.webview.receivedPostMessage(params);
+  }
+
+  @JsonNotification("webview/registerWebviewViewProvider")
+  public void webviewRegisterWebviewViewProvider(
+      @NotNull WebviewRegisterWebviewViewProviderParams params) {
+    this.webview.registerViewProvider(params);
+  }
+
+  @JsonNotification("webview/setHtml")
+  public void webviewTitle(@NotNull WebviewSetHtmlParams params) {
+    this.webview.setHtml(params);
+  }
+
+  @JsonNotification("webview/setIconPath")
+  public void webviewSetIconPath(@NotNull WebviewSetIconPathParams params) {
+    // TODO: Implement this.
+    System.out.println("TODO, implement webview/setIconPath");
+  }
+
+  @JsonNotification("webview/setOptions")
+  public void webviewTitle(@NotNull WebviewSetOptionsParams params) {
+    this.webview.setOptions(params);
+  }
+
+  @JsonNotification("webview/setTitle")
+  public void webviewTitle(@NotNull WebviewSetTitleParams params) {
+    this.webview.setTitle(params);
+  }
+
+  @JsonNotification("webview/reveal")
+  public void webviewReveal(@NotNull WebviewRevealParams params) {
+    // TODO: Implement this.
+    System.out.println("TODO, implement webview/reveal");
+  }
+
+  @JsonNotification("webview/dispose")
+  public void webviewDispose(@NotNull WebviewDisposeParams params) {
+    // TODO: Implement this.
+    System.out.println("TODO, implement webview/dispose");
+  }
+
+  // TODO: Remove this
   @JsonNotification("webview/postMessage")
   public void webviewPostMessage(@NotNull WebviewPostMessageParams params) {
     ExtensionMessage extensionMessage = params.getMessage();
@@ -194,9 +264,9 @@ public class CodyAgentClient {
       return;
     }
 
-    if (onReceivedWebviewMessage != null) {
+    if (onReceivedWebviewMessageTODODeleteThis != null) {
       ApplicationManager.getApplication()
-          .invokeLater(() -> onReceivedWebviewMessage.accept(params));
+          .invokeLater(() -> onReceivedWebviewMessageTODODeleteThis.accept(params));
       return;
     }
 

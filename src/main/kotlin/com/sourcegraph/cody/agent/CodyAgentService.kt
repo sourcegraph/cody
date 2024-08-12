@@ -11,7 +11,6 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.util.net.HttpConfigurable
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
-import com.sourcegraph.cody.chat.AgentChatSessionService
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.context.RemoteRepoSearcher
 import com.sourcegraph.cody.edit.EditService
@@ -20,6 +19,7 @@ import com.sourcegraph.cody.error.CodyConsole
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.cody.listeners.CodyFileEditorListener
 import com.sourcegraph.cody.statusbar.CodyStatusService
+import com.sourcegraph.common.BrowserOpener
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.utils.CodyEditorUtil
 import java.util.Timer
@@ -57,20 +57,9 @@ class CodyAgentService(private val project: Project) : Disposable {
         0,
         5000) // Check every 5 seconds
     onStartup { agent ->
-      agent.client.onNewMessage = Consumer { params ->
-        if (!project.isDisposed) {
-          AgentChatSessionService.getInstance(project)
-              .getSession(params.id)
-              ?.receiveMessage(params.message)
-        }
-      }
-
-      agent.client.onReceivedWebviewMessage = Consumer { params ->
-        if (!project.isDisposed) {
-          AgentChatSessionService.getInstance(project)
-              .getSession(params.id)
-              ?.receiveWebviewExtensionMessage(params.message)
-        }
+      agent.client.onOpenExternal = Function { params ->
+        BrowserOpener.openInBrowser(project, params.uri)
+        true
       }
 
       agent.client.onWorkspaceEdit = Function { params ->
@@ -132,7 +121,6 @@ class CodyAgentService(private val project: Project) : Disposable {
       }
 
       if (!project.isDisposed) {
-        AgentChatSessionService.getInstance(project).restoreAllSessions(agent)
         CodyFileEditorListener.registerAllOpenedFiles(project, agent)
       }
     }

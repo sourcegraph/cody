@@ -1,8 +1,3 @@
-/*
- * Generated file - DO NOT EDIT MANUALLY
- * They are copied from the cody agent project using the copyProtocol gradle task.
- * This is only a temporary solution before we fully migrate to generated protocol messages.
- */
 @file:Suppress("FunctionName", "ClassName", "RedundantNullable")
 package com.sourcegraph.cody.agent.protocol_generated;
 
@@ -33,10 +28,6 @@ interface CodyAgentServer {
   fun chat_export(params: Chat_ExportParams?): CompletableFuture<List<ChatExportResult>>
   @JsonRequest("chat/remoteRepos")
   fun chat_remoteRepos(params: Chat_RemoteReposParams): CompletableFuture<Chat_RemoteReposResult>
-  @JsonRequest("chat/submitMessage")
-  fun chat_submitMessage(params: Chat_SubmitMessageParams): CompletableFuture<ExtensionMessage>
-  @JsonRequest("chat/editMessage")
-  fun chat_editMessage(params: Chat_EditMessageParams): CompletableFuture<ExtensionMessage>
   @JsonRequest("commands/explain")
   fun commands_explain(params: Null?): CompletableFuture<String>
   @JsonRequest("commands/test")
@@ -95,8 +86,8 @@ interface CodyAgentServer {
   fun git_codebaseName(params: Git_CodebaseNameParams): CompletableFuture<String?>
   @JsonRequest("webview/didDispose")
   fun webview_didDispose(params: Webview_DidDisposeParams): CompletableFuture<Null?>
-  @JsonRequest("webview/receiveMessage")
-  fun webview_receiveMessage(params: Webview_ReceiveMessageParams): CompletableFuture<Null?>
+  @JsonRequest("webview/resolveWebviewView")
+  fun webview_resolveWebviewView(params: Webview_ResolveWebviewViewParams): CompletableFuture<Null?>
   @JsonRequest("webview/receiveMessageStringEncoded")
   fun webview_receiveMessageStringEncoded(params: Webview_ReceiveMessageStringEncodedParams): CompletableFuture<Null?>
   @JsonRequest("diagnostics/publish")
@@ -151,6 +142,8 @@ interface CodyAgentServer {
   fun exit(params: Null?)
   @JsonNotification("extensionConfiguration/didChange")
   fun extensionConfiguration_didChange(params: ExtensionConfiguration)
+  @JsonNotification("workspaceFolder/didChange")
+  fun workspaceFolder_didChange(params: WorkspaceFolder_DidChangeParams)
   @JsonNotification("textDocument/didOpen")
   fun textDocument_didOpen(params: ProtocolTextDocument)
   @JsonNotification("textDocument/didChange")
@@ -177,4 +170,6 @@ interface CodyAgentServer {
   fun autocomplete_completionAccepted(params: CompletionItemParams)
   @JsonNotification("progress/cancel")
   fun progress_cancel(params: Progress_CancelParams)
+  @JsonNotification("webview/didDisposeNative")
+  fun webview_didDisposeNative(params: Webview_DidDisposeNativeParams)
 }

@@ -1,8 +1,3 @@
-/*
- * Generated file - DO NOT EDIT MANUALLY
- * They are copied from the cody agent project using the copyProtocol gradle task.
- * This is only a temporary solution before we fully migrate to generated protocol messages.
- */
 @file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.agent.protocol_generated;
 
@@ -41,6 +36,7 @@ data class ContextItemFile(
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
   val provider: String? = null,
   val icon: String? = null,
   val type: TypeEnum, // Oneof: file
@@ -64,6 +60,7 @@ data class ContextItemRepository(
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
   val provider: String? = null,
   val icon: String? = null,
   val type: TypeEnum, // Oneof: repository
@@ -87,6 +84,7 @@ data class ContextItemTree(
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
   val provider: String? = null,
   val icon: String? = null,
   val type: TypeEnum, // Oneof: tree
@@ -111,6 +109,7 @@ data class ContextItemSymbol(
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
   val provider: String? = null,
   val icon: String? = null,
   val type: TypeEnum, // Oneof: symbol
@@ -136,6 +135,7 @@ data class ContextItemOpenCtx(
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
   val provider: String? = null,
   val icon: String? = null,
   val type: TypeEnum, // Oneof: openctx

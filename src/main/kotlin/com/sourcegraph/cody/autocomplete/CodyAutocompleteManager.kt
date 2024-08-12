@@ -24,7 +24,6 @@ import com.intellij.openapi.wm.ToolWindowId
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.GotItTooltip
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.AutocompleteItem
@@ -270,9 +269,6 @@ class CodyAutocompleteManager {
                 } else if (result != null && result.items.isNotEmpty()) {
                   UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = false
                   UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
-                  CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
-                    refreshMyAccountTab()
-                  }
                   processAutocompleteResult(editor, offset, triggerKind, result, cancellationToken)
                 }
                 null
@@ -303,7 +299,6 @@ class CodyAutocompleteManager {
         UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = true
         ApplicationManager.getApplication().executeOnPooledThread {
           UpgradeToCodyProNotification.notify(error.toRateLimitError(), project)
-          CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshMyAccountTab() }
         }
       }
     }

@@ -13,6 +13,8 @@ import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.cody.agent.protocol_generated.ClientCapabilities
 import com.sourcegraph.cody.agent.protocol_generated.ClientInfo
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolTypeAdapters
+import com.sourcegraph.cody.agent.protocol_generated.WebviewNativeConfigParams
+import com.sourcegraph.cody.ui.WebUIServiceWebviewProvider
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.config.ConfigUtil
 import java.io.*
@@ -101,7 +103,7 @@ private constructor(
     fun create(project: Project): CompletableFuture<CodyAgent> {
       try {
         val conn = startAgentProcess()
-        val client = CodyAgentClient()
+        val client = CodyAgentClient(WebUIServiceWebviewProvider(project))
         client.onSetConfigFeatures = project.service<CurrentConfigFeatures>()
         val launcher = startAgentLauncher(conn, client)
         val server = launcher.remoteProxy
@@ -125,8 +127,16 @@ private constructor(
                               showDocument = ClientCapabilities.ShowDocumentEnum.Enabled,
                               ignore = ClientCapabilities.IgnoreEnum.Enabled,
                               untitledDocuments = ClientCapabilities.UntitledDocumentsEnum.Enabled,
-                              codeActions = ClientCapabilities.CodeActionsEnum.Enabled),
-                  ))
+                              codeActions = ClientCapabilities.CodeActionsEnum.Enabled,
+                              webview = ClientCapabilities.WebviewEnum.Native,
+                              webviewNativeConfig =
+                                  WebviewNativeConfigParams(
+                                      cspSource = "'self' https://*.sourcegraphstatic.com",
+                                      webviewBundleServingPrefix =
+                                          "https://file+.sourcegraphstatic.com",
+                                  ),
+                              webviewMessages =
+                                  ClientCapabilities.WebviewMessagesEnum.`String-encoded`)))
               .thenApply { info ->
                 logger.warn("Connected to Cody agent " + info.name)
                 server.initialized()
@@ -323,12 +333,20 @@ private constructor(
 
     private fun agentDirectory(): Path? {
       // N.B. this is the default/production setting. CODY_DIR overrides it locally.
+      return pluginDirectory()?.resolve("agent")
+    }
+
+    /**
+     * Gets the plugin path, or null if not found. Can be overridden with the cody-agent.directory
+     * system property. Does not consider CODY_DIR environment variable overrides.
+     */
+    fun pluginDirectory(): Path? {
       val fromProperty = System.getProperty("cody-agent.directory", "")
-      if (fromProperty.isNotEmpty()) {
-        return Paths.get(fromProperty).resolve("agent")
+      return if (fromProperty.isNotEmpty()) {
+        Paths.get(fromProperty)
+      } else {
+        PluginManagerCore.getPlugin(PLUGIN_ID)?.pluginPath
       }
-      val plugin = PluginManagerCore.getPlugin(PLUGIN_ID) ?: return null
-      return plugin.pluginPath.resolve("agent")
     }
 
     @Throws(CodyAgentException::class)

@@ -88,7 +88,15 @@
         <actionPromoter order="last"
                         implementation="com.sourcegraph.cody.autocomplete.action.CodyActionPromoter"/>
 
-        <!-- Remote repo input -->
+        <!-- File type, editor for WebUI-based panels. -->
+        <fileEditorProvider implementation="com.sourcegraph.cody.ui.WebPanelProvider"/>
+        <fileType
+                name="SourcegraphWebPanel"
+                implementationClass="com.sourcegraph.cody.ui.WebPanelFileType"
+                fieldName="INSTANCE"/>
+        <editorTabTitleProvider implementation="com.sourcegraph.cody.ui.WebPanelTabTitleProvider"/>
+
+        <!-- Remote repo input TODO, remove this now we have web UI for chats -->
         <fileType
                 name="SourcegraphRemoteRepoListFile"
                 implementationClass="com.sourcegraph.cody.context.RemoteRepoFileType"
@@ -104,7 +112,23 @@
         <annotator language="SourcegraphRemoteRepoList"
                    implementationClass="com.sourcegraph.cody.context.RemoteRepoAnnotator"/>
 
+
         <keymapExtension implementation="com.sourcegraph.cody.config.CodyKeymapExtension"/>
+
+        <!-- Web UI Sidebar Views
+             For each sourcegraph/cody/vscode/package.json "views" entry with type "webview",
+             add a toolWindow with factoryClass="com.sourcegraph.cody.sidebar.WebUIToolWindowFactory"
+             (or a subtype.) For now, VSCode view "when" conditions need to be manually ported to
+             ToolWindow.isAvailable updates.
+         -->
+        <!-- TODO: Uncomment this when login and onboarding are ported from CodyToolWindowContent to Web UI.
+        <toolWindow
+                id="cody.chat"
+                icon="/icons/codyLogoMonochromatic.svg"
+                anchor="right"
+                secondary="false"
+                factoryClass="com.sourcegraph.cody.ui.WebUIToolWindowFactory" />
+        -->
     </extensions>
 
     <applicationListeners>

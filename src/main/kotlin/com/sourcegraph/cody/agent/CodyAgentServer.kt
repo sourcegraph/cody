@@ -9,7 +9,6 @@ import com.sourcegraph.cody.agent.protocol.AutocompleteResult
 import com.sourcegraph.cody.agent.protocol.ChatHistoryResponse
 import com.sourcegraph.cody.agent.protocol.ChatModelsParams
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
-import com.sourcegraph.cody.agent.protocol.ChatRestoreParams
 import com.sourcegraph.cody.agent.protocol.ChatSubmitMessageParams
 import com.sourcegraph.cody.agent.protocol.CompletionItemParams
 import com.sourcegraph.cody.agent.protocol.CurrentUserCodySubscription
@@ -173,7 +172,20 @@ interface _LegacyAgentServer {
 
   @JsonRequest("editCommands/test") fun commandsTest(): CompletableFuture<EditTask>
 
-  @JsonRequest("chat/new") fun chatNew(): CompletableFuture<String>
+  @JsonRequest("chat/new") fun chatNewTODODeleteMe(): CompletableFuture<String>
+
+  @JsonRequest("chat/web/new") fun chatNew(): CompletableFuture<Any>
+
+  @JsonRequest("webview/receiveMessageStringEncoded")
+  fun webviewReceiveMessageStringEncoded(
+      params: WebviewReceiveMessageStringEncodedParams
+  ): CompletableFuture<Void?>
+
+  @JsonNotification("webview/didDisposeNative")
+  fun webviewDidDisposeNative(webviewDidDisposeParams: WebviewDidDisposeParams)
+
+  @JsonRequest("webview/resolveWebviewView")
+  fun webviewResolveWebviewView(params: WebviewResolveWebviewViewParams): CompletableFuture<Any>
 
   @JsonRequest("chat/submitMessage")
   fun chatSubmitMessage(params: ChatSubmitMessageParams): CompletableFuture<ExtensionMessage>
@@ -182,9 +194,6 @@ interface _LegacyAgentServer {
   fun chatModels(params: ChatModelsParams): CompletableFuture<ChatModelsResponse>
 
   @JsonRequest("chat/export") fun chatExport(): CompletableFuture<List<ChatHistoryResponse>>
-
-  @JsonRequest("chat/restore")
-  fun chatRestore(params: ChatRestoreParams): CompletableFuture<ConnectionId>
 
   @JsonRequest("attribution/search")
   fun attributionSearch(

@@ -1,14 +1,23 @@
 package com.sourcegraph.cody.chat.actions
 
-import com.intellij.openapi.project.Project
-import com.sourcegraph.cody.CodyToolWindowContent
-import com.sourcegraph.cody.chat.AgentChatSession
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.common.CodyBundle
+import com.sourcegraph.common.ui.DumbAwareEDTAction
 
-class NewChatAction : BaseChatAction() {
+class NewChatAction : DumbAwareEDTAction() {
+  override fun actionPerformed(event: AnActionEvent) {
+    CodyAgentService.withAgent(event.project ?: return) { agent -> agent.server.chatNew() }
+  }
 
-  override fun doAction(project: Project) {
-    CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
-      switchToChatSession(AgentChatSession.createNew(project))
+  override fun update(event: AnActionEvent) {
+    val project = event.project ?: return
+    val hasActiveAccount = CodyAuthenticationManager.getInstance(project).hasActiveAccount()
+    event.presentation.isEnabled = hasActiveAccount
+    if (!event.presentation.isEnabled) {
+      event.presentation.description =
+          CodyBundle.getString("action.sourcegraph.disabled.description")
     }
   }
 }

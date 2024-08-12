@@ -9,7 +9,6 @@ import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.protocol.ChatMessage
 import com.sourcegraph.cody.agent.protocol.Speaker
-import com.sourcegraph.cody.chat.AgentChatSession.Companion.restoreChatSession
 import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.MessageState
 import com.sourcegraph.cody.initialization.EndOfTrialNotificationScheduler
@@ -54,7 +53,11 @@ class ExportChatsBackgroundable(
           }
 
       dummyInternalId = UUID.randomUUID().toString()
-      restoreChatSession(agent, chatMessages, chatModelProvider = null, dummyInternalId)
+      // TODO: There was a call to "restore session" here. What we need, instead, is to push chat
+      // state from JetBrains
+      // into the same storage mechanism as VSCode and just use the TypeScript extension's export
+      // mechanism (CODY-2273)
+      TODO("NYI")
       indicator.fraction = ((index + 1.0) / (chats.size + 1.0))
 
       if (indicator.isCanceled) {

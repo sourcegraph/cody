@@ -20,12 +20,6 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
             // Notify JCEF about the config changes
             javaToJSBridge?.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project))
 
-            if (ConfigUtil.isCodyEnabled() && context.accountSwitched()) {
-              CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
-                removeAllChatSessions()
-              }
-            }
-
             UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
             UpgradeToCodyProNotification.chatRateLimitError.set(null)
             CodyStatusService.resetApplication(project)
@@ -33,8 +27,6 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
             if (ConfigUtil.isCodyEnabled()) {
               CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
                 refreshPanelsVisibility()
-                refreshMyAccountTab()
-                refreshChatHistoryPanel()
               }
             }
 
