@@ -983,9 +983,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('editTask/accept', async (params: any) => {
-            console.log('JM: editTask/accept called: ', params)
+            console.warn('JM: editTask/accept called: ', params)
             const { id, range } = params
             if (!id || !range) {
+                console.warn('JM: editTask/accept: missing required parameters')
                 throw new Error('editTask/accept: missing required parameters')
             }
             this.fixups?.accept(id, range)           
@@ -993,13 +994,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('editTask/acceptAll', async ({ id }) => {
-            console.log('JM: editTask/acceptAll called: ', params)
+            console.warn('JM: editTask/acceptAll called: ', params)
             this.fixups?.acceptAll(id)
             return null
         })
 
 
         this.registerAuthenticatedRequest('editTask/reject', async (params: any) => {
+            console.warn('JM: editTask/reject called: ', params)
             const { id, range } = params
             if (!id || !range) {
                 throw new Error('editTask/reject: missing required parameters')
@@ -1009,6 +1011,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('editTask/undo', async ({ id }) => {
+            console.warn('JM: editTask/undo called: ', params)
             this.fixups?.undo(id)
             return null
         })

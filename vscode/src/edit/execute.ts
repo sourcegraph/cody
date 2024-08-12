@@ -51,6 +51,5 @@ export interface ExecuteEditArguments {
  * Wrapper around the `edit-code` command that can be used anywhere but with better type-safety.
  */
 export const executeEdit = async (args: ExecuteEditArguments): Promise<FixupTask | undefined> => {
-    logError('Agent', "JM: executing edit")
     return vscode.commands.executeCommand<FixupTask | undefined>('cody.command.edit-code', args)
 }
