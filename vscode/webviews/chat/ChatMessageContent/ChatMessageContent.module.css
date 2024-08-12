@@ -17,7 +17,7 @@
     display: flex;
     align-items: center;
     padding: 3px;
-    height: 16px;
+    height: 20px;
     background-color: transparent;
     cursor: pointer;
     background: var(--button-icon-background);
