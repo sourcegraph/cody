@@ -4,6 +4,8 @@ import {
     EllipsisIcon,
     InsertCodeBlockIcon,
     SaveCodeBlockIcon,
+    SparkleIcon,
+    SyncSpinIcon,
 } from '../../icons/CodeBlockActionIcons'
 
 import { CodyTaskState } from '../../../src/non-stop/state'
@@ -233,19 +235,37 @@ function createApplyButton(
     button.className = styles.button
 
     switch (smartApplyState) {
-        case 'Working':
+        case 'Working': {
             button.innerHTML = 'Applying...'
             button.disabled = true
+
+            // Add Loading Icon
+            const iconContainer = document.createElement('div')
+            iconContainer.className = styles.iconContainer
+            iconContainer.innerHTML = SyncSpinIcon
+            button.prepend(iconContainer)
+
             break
+        }
         case 'Error':
             button.innerHTML = 'Error'
-            button.disabled = true
+            button.addEventListener('click', () => {
+                smartApply?.onError(smartApplyId)
+            })
             break
-        default:
+        default: {
             button.innerHTML = 'Apply'
+
+            // Add Sparkle Icon
+            const iconContainer = document.createElement('div')
+            iconContainer.className = styles.iconContainer
+            iconContainer.innerHTML = SparkleIcon
+            button.prepend(iconContainer)
+
             button.addEventListener('click', () => {
                 smartApply?.onSubmit(smartApplyId, preText, humanMessage?.text, fileName)
             })
+        }
     }
 
     return button

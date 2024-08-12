@@ -10,7 +10,7 @@ import styles from './ChatMessageContent.module.css'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import { createButtons, createButtonsExperimentalUI } from './create-buttons'
 import { GuardrailsStatusController } from './GuardRailStatusController'
-import { getCodeBlockId, getFileName } from './utils'
+import { getCodeBlockId } from './utils'
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 
 export interface CodeBlockActionsProps {
@@ -125,13 +125,6 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     )
                 } else {
                     buttons = createButtons(preText, copyButtonOnSubmit, insertButtonOnSubmit)
-                }
-
-                if (experimentalSmartApplyEnabled && fileName?.length) {
-                    const fileNameContainer = document.createElement('div')
-                    fileNameContainer.className = styles.fileNameContainer
-                    fileNameContainer.textContent = getFileName(fileName)
-                    buttons.append(fileNameContainer)
                 }
 
                 if (guardrails) {
