@@ -3,15 +3,15 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { clsx } from 'clsx'
+import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import { type ClientActionListener, useClientActionListener } from '../../client/clientState'
 import { MarkdownFromCody } from '../../components/MarkdownFromCody'
-import styles from './ChatMessageContent.module.css'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
-import { createButtons, createButtonsExperimentalUI } from './create-buttons'
+import styles from './ChatMessageContent.module.css'
 import { GuardrailsStatusController } from './GuardRailStatusController'
+import { createButtons, createButtonsExperimentalUI } from './create-buttons'
 import { getCodeBlockId } from './utils'
-import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 
 export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
