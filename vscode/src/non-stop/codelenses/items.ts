@@ -37,7 +37,7 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
 
             // Optional:
             // Retries only makes sense if the user created the prompt
-            const canRetry = task.intent !== 'fix' && task.intent !== 'doc' && !isTest
+            const canRetry = task.intent !== 'fix' && task.intent !== 'doc' && !isTest && !isChatEdit
             const retryLens = canRetry ? getRetryLens(codeLensRange, task.id) : null
 
             // Diffs only if there's code that's changed
