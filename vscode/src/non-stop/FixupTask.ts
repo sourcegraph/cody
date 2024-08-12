@@ -84,8 +84,8 @@ export class FixupTask {
         this.selectionRange = new vscode.Range(
             selectionRange.start.line,
             0,
-            selectionRange.end.line,
-            document.lineAt(selectionRange.end.line).range.end.character
+            selectionRange.end.line+1,
+            0
         )
         this.originalRange = this.selectionRange
     }
