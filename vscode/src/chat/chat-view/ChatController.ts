@@ -73,7 +73,6 @@ import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
 import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
-import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
@@ -575,6 +574,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             experimentalNoodle: config.experimentalNoodle,
             experimentalSmartApply,
             webviewType,
+            internalDebugContext: config.internalDebugContext,
         }
     }
 
@@ -1276,18 +1276,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         )
         abortSignal.throwIfAborted()
 
-        // Update UI based on prompt construction
-        // Includes the excluded context items to display in the UI
-        if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.showContextAlternatives')) {
-            this.chatModel.setLastMessageContext(
-                [...context.used, ...context.ignored],
-                contextAlternatives
-            )
-        } else {
-            this.chatModel.setLastMessageContext([...context.used, ...context.ignored])
-        }
+        // Update UI based on prompt construction. Includes the excluded context items to display in the UI
+        this.chatModel.setLastMessageContext([...context.used, ...context.ignored], contextAlternatives)
 
-        // this is not awaited, so we kick the call off but don't block on it returning
+        // This is not awaited, so we kick the call off but don't block on it returning
         this.contextAPIClient?.recordContext(requestID, context.used, context.ignored)
 
         if (sendTelemetry) {
@@ -1902,9 +1894,6 @@ export async function addWebviewViewHTML(
     extensionUri: vscode.Uri,
     view: vscode.WebviewView | vscode.WebviewPanel
 ): Promise<void> {
-    if (isRunningInsideAgent()) {
-        return
-    }
     const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
     // Create Webview using vscode/index.html
     const root = vscode.Uri.joinPath(webviewPath, 'index.html')

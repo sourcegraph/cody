@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
-import { type CodyCommand, ModelUsage, isWindows, telemetryRecorder } from '@sourcegraph/cody-shared'
+import { type CodyCommand, ModelUsage, telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 import packageJson from '../../vscode/package.json'
@@ -33,9 +33,10 @@ import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/pro
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 
-import { copyFileSync, mkdirSync, statSync } from 'node:fs'
+import { mkdirSync, statSync } from 'node:fs'
 import { PassThrough } from 'node:stream'
 import type { Har } from '@pollyjs/persister'
+import { copySync } from 'fs-extra'
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
@@ -58,6 +59,7 @@ import { AgentGlobalState } from './AgentGlobalState'
 import { AgentProviders } from './AgentProviders'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
+import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
 import { codyPaths } from './codyPaths'
 import {
@@ -100,25 +102,26 @@ type ExtensionActivate = (
 // In the agent, we assume this file is placed next to the bundled `index.js`
 // file, and we copy it over to the `extensionPath` so the VS Code logic works
 // without changes.
-function copyWinCaRootsBinary(extensionPath: string): void {
-    const source = path.join(__dirname, 'win-ca-roots.exe')
-    const target = path.join(extensionPath, 'dist', 'win-ca-roots.exe')
-    try {
-        const stat = statSync(source)
-        if (!stat.isFile()) {
+function copyExtensionRelativeResources(extensionPath: string): void {
+    const relativeSources = ['win-ca-roots.exe', 'webviews']
+    for (const relativeSource of relativeSources) {
+        const source = path.join(__dirname, relativeSource)
+        const target = path.join(extensionPath, 'dist', relativeSource)
+        try {
+            const stat = statSync(source)
+            if (!(stat.isFile() || stat.isDirectory())) {
+                continue
+            }
+        } catch {
+            logDebug('copyExtensionRelativeResources', `Failed to find ${source}, skipping copy`)
             return
         }
-    } catch {
-        if (isWindows()) {
-            logDebug('win-ca', `Failed to find ${source}, skipping copy`)
+        try {
+            mkdirSync(path.dirname(target), { recursive: true })
+            copySync(source, target)
+        } catch (err) {
+            logDebug('copyExtensionRelativeResources', `Failed to copy ${source} to dist ${target}`, err)
         }
-        return
-    }
-    try {
-        mkdirSync(path.dirname(target), { recursive: true })
-        copyFileSync(source, target)
-    } catch (err) {
-        logDebug('win-ca', `Failed to copy ${source} to dist ${target}`, err)
     }
 }
 
@@ -129,7 +132,7 @@ export async function initializeVscodeExtension(
 ): Promise<void> {
     const paths = codyPaths()
     const extensionPath = paths.config
-    copyWinCaRootsBinary(extensionPath)
+    copyExtensionRelativeResources(extensionPath)
 
     const context: vscode.ExtensionContext = {
         asAbsolutePath(relativePath) {
@@ -334,6 +337,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
     })
 
     public webPanels = new AgentWebviewPanels()
+    public webviewViewProviders = new Map<string, vscode.WebviewViewProvider>()
 
     private authenticationPromise: Promise<AuthStatus | undefined> = Promise.resolve(undefined)
 
@@ -405,13 +409,30 @@ export class Agent extends MessageHandler implements ExtensionClient {
                       scheme: 'file',
                       path: clientInfo.workspaceRootPath ?? undefined,
                   })
+
             try {
                 await initializeVscodeExtension(
                     this.workspace.workspaceRootUri,
                     params.extensionActivate,
                     this
                 )
-                this.registerWebviewHandlers()
+
+                const webviewKind = clientInfo.capabilities?.webview || 'agentic'
+                const nativeWebviewConfig = clientInfo.capabilities?.webviewNativeConfig
+                if (webviewKind === 'native') {
+                    if (!nativeWebviewConfig) {
+                        throw new Error(
+                            'client configured with webview "native" must set webviewNativeConfig'
+                        )
+                    }
+                    registerNativeWebviewHandlers(
+                        this,
+                        vscode.Uri.file(codyPaths().config), // the extension root URI, for locating Webview resources
+                        nativeWebviewConfig
+                    )
+                } else {
+                    this.registerWebviewHandlers()
+                }
 
                 this.authenticationPromise = clientInfo.extensionConfiguration
                     ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
@@ -574,7 +595,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         for (const diagnostic of vscAction.diagnostics ?? []) {
                             diagnostics.push({
                                 location: {
-                                    uri: params.location.uri,
+                                    uri: document.uri.toString(),
                                     range: diagnostic.range,
                                 },
                                 severity: 'error',
@@ -615,13 +636,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('diagnostics/publish', async params => {
-            const result = new Map<string, vscode.Diagnostic[]>()
+            const result = new Map<vscode_shim.UriString, vscode.Diagnostic[]>()
             for (const diagnostic of params.diagnostics) {
-                let diagnostics = result.get(diagnostic.location.uri)
-                if (diagnostics === undefined) {
-                    diagnostics = []
-                    result.set(diagnostic.location.uri, diagnostics)
-                }
+                const location = vscodeLocation(diagnostic.location)
+
+                const diagnostics = result.get(vscode_shim.UriString.fromUri(location.uri)) ?? []
+
                 const relatedInformation: vscode.DiagnosticRelatedInformation[] = []
                 for (const related of diagnostic.relatedInformation ?? []) {
                     relatedInformation.push({
@@ -631,12 +651,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 }
                 diagnostics.push({
                     message: diagnostic.message,
-                    range: vscodeRange(diagnostic.location.range),
+                    range: location.range,
                     severity: vscode.DiagnosticSeverity.Error,
                     code: diagnostic.code ?? undefined,
                     source: diagnostic.source ?? undefined,
                     relatedInformation,
                 })
+                //this ensures it's added to the map if it didn't already
+                result.set(vscode_shim.UriString.fromUri(location.uri), diagnostics)
             }
             vscode_shim.diagnostics.publish(result)
             return null
@@ -1141,6 +1163,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { panelId, chatId }
         })
 
+        // TODO: JetBrains no longer uses this, consider deleting it.
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             modelID ??= ModelsService.getDefaultChatModel() ?? ''
@@ -1261,6 +1284,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('chat/submitMessage', submitOrEditHandler)
         this.registerAuthenticatedRequest('chat/editMessage', submitOrEditHandler)
 
+        this.registerAuthenticatedRequest('webview/resolveWebviewView', async params => {
+            await this.resolveWebviewView(params)
+            return null
+        })
+        this.registerNotification('webview/didDisposeNative', async ({ handle }) => {
+            await this.didDisposeNativeWebview(handle)
+        })
         this.registerAuthenticatedRequest('webview/receiveMessage', async ({ id, message }) => {
             await this.receiveWebviewMessage(id, message)
             return null
@@ -1622,7 +1652,28 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
     }
 
+    private async resolveWebviewView({
+        viewId,
+        webviewHandle,
+    }: { viewId: string; webviewHandle: string }): Promise<void> {
+        const provider = this.webviewViewProviders.get(viewId)
+        if (!provider) {
+            return
+        }
+        await resolveWebviewView(provider, viewId, webviewHandle)
+    }
+
+    private async didDisposeNativeWebview(handle: string) {
+        this.webPanels.nativePanels.get(handle)?.didDispose()
+    }
+
     private async receiveWebviewMessage(id: string, message: WebviewMessage): Promise<void> {
+        const nativePanel = this.webPanels.nativePanels.get(id)
+        if (nativePanel) {
+            nativePanel.didReceiveMessage(message)
+            return
+        }
+
         const panel = this.webPanels.panels.get(id)
         if (!panel) {
             console.log(`No panel with id ${id} found`)
@@ -1652,6 +1703,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
             throw new Error('chatID is undefined')
         }
         if (!(webviewPanel instanceof AgentWebviewPanel)) {
+            // TODO: For WebViews we don't want to throw here, nor do we want to set chatID
+            // on the returned object.
             throw new TypeError('')
         }
 

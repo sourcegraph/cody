@@ -3,7 +3,8 @@
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    min-height: 100%;
+    height: 100%;
+    overflow: hidden;
 }
 
 .error-container {

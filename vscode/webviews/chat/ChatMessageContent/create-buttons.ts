@@ -125,6 +125,7 @@ export function createButtonsExperimentalUI(
         const fileNameContainer = document.createElement('div')
         fileNameContainer.className = styles.fileNameContainer
         fileNameContainer.textContent = getFileName(fileName)
+        fileNameContainer.title = fileName
         container.append(fileNameContainer)
     }
 

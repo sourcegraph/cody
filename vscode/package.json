@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.30.0",
+  "version": "1.30.3",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -599,7 +599,6 @@
         "key": "alt+l",
         "when": "!cody.activated"
       },
-
       {
         "command": "cody.chat.new",
         "key": "shift+alt+/",
@@ -610,7 +609,6 @@
         "key": "shift+alt+l",
         "when": "cody.activated"
       },
-
       {
         "command": "cody.chat.toggle",
         "key": "alt+l",
@@ -643,7 +641,6 @@
           "editorFocus": false
         }
       },
-
       {
         "command": "cody.mention.selection",
         "key": "alt+/",
@@ -654,7 +651,6 @@
         "key": "alt+l",
         "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
-
       {
         "command": "cody.tutorial.chat",
         "key": "alt+l",
@@ -1271,12 +1267,6 @@
           "type": "boolean",
           "markdownDescription": "[INTERNAL ONLY] Enable all unstable experimental features.",
           "default": false
-        },
-        "cody.internal.showContextAlternatives": {
-          "order": 999,
-          "type": "boolean",
-          "markdownDescription": "[INTERNAL ONLY] Show alternative context lists in chat",
-          "default": false
         }
       }
     },
@@ -1391,6 +1381,8 @@
     "@sourcegraph/tree-sitter-wasms": "^0.1.9",
     "@types/he": "^1.2.3",
     "@types/mdast": "^4.0.4",
+    "@types/react": "18.2.79",
+    "@types/react-dom": "18.2.25",
     "@vscode/codicons": "^0.0.35",
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "async-mutex": "^0.4.0",
@@ -1436,7 +1428,7 @@
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
-    "vscode-uri": "^3.0.7",
+    "vscode-uri": "^3.0.8",
     "web-tree-sitter": "^0.21.0",
     "wink-nlp-utils": "^2.1.0"
   },
