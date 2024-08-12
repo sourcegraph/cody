@@ -139,7 +139,6 @@ export async function handleSmartApply(
             model: DEFAULT_MODEL,
             replacement: code,
         },
-        source: 'chat',
     })
 }
 

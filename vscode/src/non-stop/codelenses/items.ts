@@ -9,7 +9,7 @@ import { CodyTaskState } from '../utils'
 // Create Lenses based on state
 export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
     const codeLensRange = new vscode.Range(task.selectionRange.start, task.selectionRange.start)
-    const isChatEdit = task.source === 'chat'
+    const isSmartApply = task.source === 'smart-apply'
     const isTest = task.intent === 'test'
     const isEdit = task.mode === 'edit'
     switch (task.state) {
@@ -33,7 +33,7 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
         case CodyTaskState.Applied: {
             // Required:
             const acceptLens = getAcceptLens(codeLensRange, task.id)
-            const undoLens = getUndoLens(codeLensRange, task.id, isChatEdit ? 'Reject' : undefined)
+            const undoLens = getUndoLens(codeLensRange, task.id, isSmartApply ? 'Reject' : undefined)
 
             // Optional:
             // Retries only makes sense if the user created the prompt

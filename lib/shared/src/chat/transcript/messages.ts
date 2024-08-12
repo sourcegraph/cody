@@ -103,6 +103,7 @@ export type EventSource =
     | 'code-lens'
     | 'hover'
     | 'terminal'
+    | 'smart-apply'
 
 /**
  * Create a mapping of all source types to numerical values, so telemetry can be recorded on `metadata`.
@@ -122,6 +123,7 @@ export const EventSourceTelemetryMetadataMapping: Record<EventSource, number> = 
     'code-lens': 11,
     hover: 12,
     terminal: 13,
+    'smart-apply': 14,
 }
 /**
  * Converts an Error to a ChatError. Note that this cannot be done naively,

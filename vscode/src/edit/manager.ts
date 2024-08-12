@@ -225,7 +225,7 @@ export class EditManager implements vscode.Disposable {
     }
 
     public async smartApplyEdit(args: SmartApplyArguments = {}): Promise<FixupTask | undefined> {
-        const { configuration, source = 'chat' } = args
+        const { configuration } = args
         if (!configuration) {
             return
         }
@@ -291,7 +291,7 @@ export class EditManager implements vscode.Disposable {
                 'add',
                 'insert',
                 configuration.model,
-                source,
+                'smart-apply',
                 configuration.document.uri,
                 undefined,
                 {}
@@ -329,7 +329,7 @@ export class EditManager implements vscode.Disposable {
                 model: configuration.model,
                 intent: 'edit',
             },
-            source,
+            source: 'smart-apply',
         })
     }
 

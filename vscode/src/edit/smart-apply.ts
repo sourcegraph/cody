@@ -1,5 +1,4 @@
 import type { EditModel, PromptString } from '@sourcegraph/cody-shared'
-import type { EventSource } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { FixupTask } from '../non-stop/FixupTask'
 
@@ -10,7 +9,6 @@ export interface SmartApplyArguments {
         document: vscode.TextDocument
         model: EditModel
     }
-    source?: EventSource
 }
 
 /**
