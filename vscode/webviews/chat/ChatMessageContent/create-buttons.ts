@@ -237,7 +237,7 @@ function createApplyButton(
 
     switch (smartApplyState) {
         case 'Working': {
-            button.innerHTML = 'Applying...'
+            button.innerHTML = 'Applying'
             button.disabled = true
 
             // Add Loading Icon
