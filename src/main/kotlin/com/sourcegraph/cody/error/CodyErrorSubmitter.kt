@@ -69,7 +69,7 @@ class CodyErrorSubmitter : ErrorReportSubmitter() {
   private fun formatLogs(throwableText: String?, additionalInfo: String?) =
       formatAttributes(
           "Stacktrace" to
-              throwableText?.let { trimPostfix(throwableText, 6500) }, // max total length is 8192
+              throwableText?.let { trimPostfix(throwableText, 6000) }, // max total length is 8192
           "Additional info" to additionalInfo)
 
   private fun trimPostfix(text: String, maxLength: Int): String {
