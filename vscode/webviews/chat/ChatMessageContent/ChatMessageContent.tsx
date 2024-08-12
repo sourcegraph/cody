@@ -16,7 +16,7 @@ import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
     insertButtonOnSubmit: (text: string, newFile?: boolean) => void
-    smartApply?: {
+    smartApply: {
         onSubmit: (id: string, text: string, instruction?: PromptString, fileName?: string) => void
         onAccept: (id: string) => void
         onReject: (id: string) => void
@@ -56,7 +56,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     const rootRef = useRef<HTMLDivElement>(null)
 
     const [smartApplyStates, setSmartApplyStates] = useState<Record<FixupTaskID, CodyTaskState>>({})
-    const smartApplyInterceptor = useMemo<CodeBlockActionsProps['smartApply']>(() => {
+    const smartApplyInterceptor = useMemo<CodeBlockActionsProps['smartApply'] | undefined>(() => {
         if (!smartApply) {
             return
         }

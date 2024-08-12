@@ -251,7 +251,7 @@ function createApplyButton(
         case 'Error':
             button.innerHTML = 'Error'
             button.addEventListener('click', () => {
-                smartApply?.onError(smartApplyId)
+                smartApply.onError(smartApplyId)
             })
             break
         default: {
@@ -264,7 +264,7 @@ function createApplyButton(
             button.prepend(iconContainer)
 
             button.addEventListener('click', () => {
-                smartApply?.onSubmit(smartApplyId, preText, humanMessage?.text, fileName)
+                smartApply.onSubmit(smartApplyId, preText, humanMessage?.text, fileName)
             })
         }
     }
@@ -277,7 +277,7 @@ function createAcceptButton(id: string, smartApply: CodeBlockActionsProps['smart
     button.className = styles.button
     button.innerHTML = 'Accept'
     button.addEventListener('click', () => {
-        smartApply?.onAccept(id)
+        smartApply.onAccept(id)
     })
     return button
 }
