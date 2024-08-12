@@ -270,6 +270,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     isTranscriptError={isTranscriptError}
                     guardrails={guardrails}
                     userHistory={userHistory}
+                    experimentalSmartApplyEnabled={config.experimentalSmartApply}
                 />
             )}
         </ComposedWrappers>

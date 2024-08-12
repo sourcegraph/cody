@@ -180,9 +180,11 @@ describe('vscode.workspace.findFiles', () => {
         const workspaceDocuments = new AgentWorkspaceDocuments()
         while (vscode.workspaceFolders.pop()) {
             // clear
+            // vscode.workspaceFolders will be reset by setWorkspaceDocuments.
         }
         workspaceDocuments.workspaceRootUri = tmpdir
         vscode.setWorkspaceDocuments(workspaceDocuments)
+        expect(vscode.workspaceFolders.length).toEqual(1)
         await fspromises.writeFile(path.join(tmpdir.fsPath, 'README.md'), '# Bananas are great')
         await fspromises.writeFile(path.join(tmpdir.fsPath, 'other.txt'), 'Other file')
         await fspromises.mkdir(path.join(tmpdir.fsPath, 'scripts'))

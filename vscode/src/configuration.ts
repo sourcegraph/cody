@@ -135,6 +135,7 @@ export function getConfiguration(
          */
 
         internalUnstable: getHiddenSetting('internal.unstable', isTesting),
+        internalDebugContext: getHiddenSetting('internal.debug.context', false),
 
         autocompleteExperimentalGraphContext,
         experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', true),

@@ -19,6 +19,7 @@ import { CodyIDE, isDefined } from '@sourcegraph/cody-shared'
 import { forwardRef, useCallback, useMemo } from 'react'
 import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
+import { useConfig } from '../utils/useConfig'
 import styles from './TabsBar.module.css'
 
 interface TabsBarProps {
@@ -107,6 +108,10 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
 TabButton.displayName = 'TabButton'
 
 export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) => {
+    const {
+        config: { webviewType },
+    } = useConfig()
+
     const tabItems = useMemo<TabConfig[]>(
         () =>
             (
@@ -127,7 +132,10 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                                     </>
                                 ),
                                 Icon: MessageSquarePlusIcon,
-                                command: 'cody.chat.new',
+                                command:
+                                    webviewType === 'sidebar'
+                                        ? 'cody.chat.newPanel'
+                                        : 'cody.chat.newEditorPanel',
                             },
                             IDE !== CodyIDE.Web
                                 ? {
@@ -188,7 +196,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                         : null,
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE]
+        [IDE, webviewType]
     )
     const currentViewSubIcons = tabItems.find(tab => tab.view === currentView)?.SubIcons
 

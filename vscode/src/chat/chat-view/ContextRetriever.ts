@@ -24,7 +24,7 @@ import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { gitLocallyModifiedFiles } from '../../repository/git-extension-api'
 import { repoNameResolver } from '../../repository/repo-name-resolver'
-import { getContextStrategy, retrieveContextGracefully, searchSymf } from './context'
+import { getContextStrategy, retrieveContextGracefully, searchSymf, truncateSymfResult } from './context'
 
 interface StructuredMentions {
     repos: ContextItemRepository[]
@@ -234,6 +234,7 @@ export class ContextRetriever implements vscode.Disposable {
                     let text: string | undefined
                     try {
                         text = await this.editor.getTextEditorContentForFile(r.file, range)
+                        text = truncateSymfResult(text)
                     } catch (error) {
                         logError('ChatController.searchSymf', `Error getting file contents: ${error}`)
                         return []
@@ -244,6 +245,7 @@ export class ContextRetriever implements vscode.Disposable {
                         range,
                         source: ContextItemSource.Search,
                         content: text,
+                        metadata: ['source:symf-live'],
                     }
                 })
             )
@@ -312,7 +314,11 @@ export class ContextRetriever implements vscode.Disposable {
         if (isError(remoteResult)) {
             throw remoteResult
         }
-        return remoteResult?.flatMap(r => contextSearchResultToContextItem(r) ?? []) ?? []
+        const finalResults = remoteResult?.flatMap(r => contextSearchResultToContextItem(r) ?? []) ?? []
+        for (const r of finalResults) {
+            r.metadata = (r.metadata ?? []).concat(['source:sourcegraph'])
+        }
+        return finalResults
     }
 
     private async retrieveIndexedContextLocally(

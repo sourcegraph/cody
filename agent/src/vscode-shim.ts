@@ -157,6 +157,7 @@ const configuration = new AgentWorkspaceConfiguration(
     () => extensionConfiguration
 )
 
+export const onDidChangeWorkspaceFolders = new EventEmitter<vscode.WorkspaceFoldersChangeEvent>()
 export const onDidChangeTextEditorSelection = new EventEmitter<vscode.TextEditorSelectionChangeEvent>() // TODO: implement this
 export const onDidChangeVisibleTextEditors = new EventEmitter<readonly vscode.TextEditor[]>()
 export const onDidChangeActiveTextEditor = new EventEmitter<vscode.TextEditor | undefined>()
@@ -182,13 +183,24 @@ export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments)
                 .map(wf => wf.uri.toString())
                 .includes(newWorkspaceDocuments.workspaceRootUri.toString())
         ) {
-            workspaceFolders.push({
-                name: path.basename(newWorkspaceDocuments.workspaceRootUri.fsPath),
-                uri: newWorkspaceDocuments.workspaceRootUri,
-                index: 0,
-            })
+            setWorkspaceFolders(newWorkspaceDocuments.workspaceRootUri)
         }
     }
+}
+
+export function setWorkspaceFolders(workspaceRootUri: vscode.Uri): vscode.WorkspaceFolder[] {
+    // TODO: Update this when we support multiple workspace roots
+    while (workspaceFolders.pop()) {
+        // clear workspaceFolders array
+    }
+
+    workspaceFolders.push({
+        name: path.basename(workspaceRootUri.toString()),
+        uri: workspaceRootUri,
+        index: 0,
+    })
+
+    return workspaceFolders
 }
 
 export const workspaceFolders: vscode.WorkspaceFolder[] = []
@@ -333,7 +345,7 @@ const _workspace: typeof vscode.workspace = {
     },
     // TODO: used by `WorkspaceRepoMapper` and will be used by `git.onDidOpenRepository`
     // https://github.com/sourcegraph/cody/issues/4136
-    onDidChangeWorkspaceFolders: emptyEvent(),
+    onDidChangeWorkspaceFolders: onDidChangeWorkspaceFolders.event,
     onDidOpenTextDocument: onDidOpenTextDocument.event,
     onDidChangeConfiguration: onDidChangeConfiguration.event,
     onDidChangeTextDocument: onDidChangeTextDocument.event,
@@ -469,7 +481,7 @@ const defaultTreeView: vscode.TreeView<any> = {
 }
 
 function toUri(
-    uriOrString: string | vscode.Uri | { language?: string; content?: string } | undefined
+    uriOrString: string | UriString | vscode.Uri | { language?: string; content?: string } | undefined
 ): Uri | undefined {
     if (typeof uriOrString === 'string') {
         return Uri.parse(uriOrString)
@@ -489,6 +501,14 @@ function toUri(
         })
     }
     return
+}
+
+// This opaque type prevents strings from being mistakenly used as URIs.
+export type UriString = string & { __tag: 'vscode.Uri' }
+export namespace UriString {
+    export function fromUri(uri: vscode.Uri): UriString {
+        return uri.toString() as UriString
+    }
 }
 
 function outputChannel(name: string): vscode.LogOutputChannel {
@@ -594,7 +614,28 @@ const _window: typeof vscode.window = {
     onDidCloseTerminal: emptyEvent(),
     onDidOpenTerminal: emptyEvent(),
     registerUriHandler: () => emptyDisposable,
-    registerWebviewViewProvider: () => emptyDisposable,
+    registerWebviewViewProvider: (
+        viewId: string,
+        provider: vscode.WebviewViewProvider,
+        options?: { webviewOptions?: { retainContextWhenHidden?: boolean } }
+    ) => {
+        if (agent?.capabilities?.webview !== 'native') {
+            return emptyDisposable
+        }
+        agent?.webviewViewProviders.set(viewId, provider)
+        options ??= {
+            webviewOptions: undefined,
+        }
+        options.webviewOptions ??= {
+            retainContextWhenHidden: undefined,
+        }
+        options.webviewOptions.retainContextWhenHidden ??= false
+        agent?.notify('webview/registerWebviewViewProvider', {
+            viewId,
+            retainContextWhenHidden: options?.webviewOptions.retainContextWhenHidden,
+        })
+        return emptyDisposable
+    },
     createStatusBarItem: () => statusBarItem,
     visibleTextEditors,
     withProgress: async (options, handler) => {

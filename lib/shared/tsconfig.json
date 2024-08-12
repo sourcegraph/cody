@@ -12,7 +12,7 @@
     "moduleResolution": "Bundler",
   },
   "include": [
-    "src"
+    "src",
   ],
   "exclude": [
     "dist",

@@ -21,8 +21,13 @@ import type { startTokenReceiver } from '../../auth/token-receiver'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import { getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
+import type { ExtensionClient } from '../../extension-client'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { type ChatLocation, localStorage } from '../../services/LocalStorageProvider'
+import {
+    handleCodeFromInsertAtCursor,
+    handleCodeFromSaveToNewFile,
+} from '../../services/utils/codeblock-action-tracker'
 import type { ContextAPIClient } from '../context/contextAPIClient'
 import {
     ChatController,
@@ -67,7 +72,8 @@ export class ChatsController implements vscode.Disposable {
         private readonly contextRetriever: ContextRetriever,
 
         private readonly guardrails: Guardrails,
-        private readonly contextAPIClient: ContextAPIClient | null
+        private readonly contextAPIClient: ContextAPIClient | null,
+        private readonly extensionClient: ExtensionClient
     ) {
         logDebug('ChatsController:constructor', 'init')
         this.panel = this.createChatController()
@@ -204,6 +210,16 @@ export class ChatsController implements vscode.Disposable {
             ),
             vscode.commands.registerCommand('cody.mention.file', uri =>
                 this.sendEditorContextToChat(uri)
+            ),
+
+            // Codeblock commands
+            vscode.commands.registerCommand(
+                'cody.command.insertCodeToCursor',
+                (args: { text: string }) => handleCodeFromInsertAtCursor(args.text)
+            ),
+            vscode.commands.registerCommand(
+                'cody.command.insertCodeToNewFile',
+                (args: { text: string }) => handleCodeFromSaveToNewFile(args.text, this.options.editor)
             )
         )
     }
@@ -471,6 +487,7 @@ export class ChatsController implements vscode.Disposable {
             startTokenReceiver: this.options.startTokenReceiver,
             contextAPIClient: this.contextAPIClient,
             contextRetriever: this.contextRetriever,
+            extensionClient: this.extensionClient,
         })
     }
 
