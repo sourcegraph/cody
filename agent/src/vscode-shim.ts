@@ -613,6 +613,9 @@ const _window: typeof vscode.window = {
         provider: vscode.WebviewViewProvider,
         options?: { webviewOptions?: { retainContextWhenHidden?: boolean } }
     ) => {
+        if (agent?.capabilities?.webview !== 'native') {
+            return emptyDisposable
+        }
         agent?.webviewViewProviders.set(viewId, provider)
         options ??= {
             webviewOptions: undefined,
