@@ -213,7 +213,7 @@ export class ChatsController implements vscode.Disposable {
 
             // Codeblock commands
             vscode.commands.registerCommand(
-                'cody.command.markSmartApplyComplete',
+                'cody.command.markSmartApplyApplied',
                 (result: SmartApplyResult) => this.sendSmartApplyResultToChat(result)
             ),
             vscode.commands.registerCommand(

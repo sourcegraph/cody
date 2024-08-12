@@ -11,7 +11,7 @@ import { type FC, memo, useCallback, useMemo, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-import type { CodeBlockActionsProps } from './ChatMessageContent'
+import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import {
     AssistantMessageCell,

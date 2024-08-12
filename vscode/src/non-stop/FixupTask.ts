@@ -76,7 +76,6 @@ export class FixupTask {
         public readonly telemetryMetadata: FixupTelemetryMetadata = {},
         public readonly id: FixupTaskID = Date.now().toString(36).replaceAll(/\d+/g, '')
     ) {
-        console.log('Set fixup task to id', id, this.id)
         this.instruction = instruction.replace(/^\/(edit|fix)/, ps``).trim()
         // We always expand the range to encompass all characters from the selection lines
         // This is so we can calculate an optimal diff, and the LLM has the best chance at understanding

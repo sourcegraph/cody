@@ -368,8 +368,7 @@ export class FixupController
         model: EditModel,
         intent: EditIntent,
         source: EventSource,
-        telemetryMetadata?: FixupTelemetryMetadata,
-        taskId?: FixupTaskID
+        telemetryMetadata?: FixupTelemetryMetadata
     ): Promise<FixupTask | null> {
         const input = await getInput(
             document,
@@ -398,8 +397,7 @@ export class FixupController
             source,
             undefined,
             undefined,
-            telemetryMetadata,
-            taskId
+            telemetryMetadata
         )
 
         // Return focus to the editor
@@ -1077,7 +1075,7 @@ export class FixupController
             return
         }
 
-        await vscode.commands.executeCommand('cody.command.markSmartApplyComplete', {
+        await vscode.commands.executeCommand('cody.command.markSmartApplyApplied', {
             taskId: task.id,
             taskState: task.state,
         } satisfies SmartApplyResult)

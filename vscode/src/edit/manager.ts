@@ -174,8 +174,7 @@ export class EditManager implements vscode.Disposable {
                 model,
                 intent,
                 source,
-                telemetryMetadata,
-                configuration.id
+                telemetryMetadata
             )
         }
 
