@@ -1889,5 +1889,5 @@ export async function addWebviewViewHTML(
     // 2. Update URIs for content security policy to only allow specific scripts to be run
     view.webview.html = decoded
         .replaceAll('./', `${resources.toString()}/`)
-        .replaceAll('{cspSource}', view.webview.cspSource)
+        .replaceAll("'self'", view.webview.cspSource)
 }
