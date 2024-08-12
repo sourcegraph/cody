@@ -1,19 +1,21 @@
 import {
     CheckCodeBlockIcon,
+    CloseIcon,
     CopyCodeBlockIcon,
     EllipsisIcon,
     InsertCodeBlockIcon,
     SaveCodeBlockIcon,
     SparkleIcon,
     SyncSpinIcon,
+    TickIcon,
 } from '../../icons/CodeBlockActionIcons'
 
+import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
-import styles from './ChatMessageContent.module.css'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
+import styles from './ChatMessageContent.module.css'
 import { getFileName } from './utils'
-import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 
 export function createButtons(
     preText: string,
@@ -94,8 +96,8 @@ export function createButtonsExperimentalUI(
 
     if (smartApply && smartApplyState === CodyTaskState.Applied && smartApplyId) {
         const acceptButton = createAcceptButton(smartApplyId, smartApply)
-        const discardButton = createDiscardButton(smartApplyId, smartApply)
-        buttons.append(acceptButton, discardButton)
+        const rejectButton = createRejectButton(smartApplyId, smartApply)
+        buttons.append(acceptButton, rejectButton)
     } else if (smartApply && smartApplyState === CodyTaskState.Error && smartApplyId) {
         const errorButton = createErrorButton(smartApplyId, smartApply)
         buttons.append(errorButton)
@@ -276,18 +278,30 @@ function createAcceptButton(id: string, smartApply: CodeBlockActionsProps['smart
     const button = document.createElement('button')
     button.className = styles.button
     button.innerHTML = 'Accept'
+
+    const iconContainer = document.createElement('div')
+    iconContainer.className = styles.iconContainer
+    iconContainer.innerHTML = TickIcon
+    button.prepend(iconContainer)
+
     button.addEventListener('click', () => {
         smartApply.onAccept(id)
     })
     return button
 }
 
-function createDiscardButton(id: string, smartApply: CodeBlockActionsProps['smartApply']): HTMLElement {
+function createRejectButton(id: string, smartApply: CodeBlockActionsProps['smartApply']): HTMLElement {
     const button = document.createElement('button')
     button.className = styles.button
-    button.innerHTML = 'Discard'
+    button.innerHTML = 'Reject'
+
+    const iconContainer = document.createElement('div')
+    iconContainer.className = styles.iconContainer
+    iconContainer.innerHTML = CloseIcon
+    button.prepend(iconContainer)
+
     button.addEventListener('click', () => {
-        smartApply?.onReject(id)
+        smartApply.onReject(id)
     })
     return button
 }
@@ -297,7 +311,7 @@ function createErrorButton(id: string, smartApply: CodeBlockActionsProps['smartA
     button.className = styles.button
     button.innerHTML = 'Error'
     button.addEventListener('click', () => {
-        smartApply?.onError(id)
+        smartApply.onError(id)
     })
     return button
 }

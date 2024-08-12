@@ -123,9 +123,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             return
         }
 
-
         return {
-            onSubmit: (id: string, text: string, instruction?: PromptString, fileName?: string): void => {
+            onSubmit: (
+                id: string,
+                text: string,
+                instruction?: PromptString,
+                fileName?: string
+            ): void => {
                 vscodeAPI.postMessage({
                     command: 'smartApplySubmit',
                     id,
@@ -141,7 +145,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     id,
                 })
             },
-            onReject:  (id: string) => {
+            onReject: (id: string) => {
                 vscodeAPI.postMessage({
                     command: 'smartApplyReject',
                     id,
@@ -152,7 +156,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     command: 'smartApplyError',
                     id,
                 })
-            }
+            },
         }
     }, [vscodeAPI, showIDESnippetActions])
 
