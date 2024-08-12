@@ -98,9 +98,6 @@ export function createButtonsExperimentalUI(
         const acceptButton = createAcceptButton(smartApplyId, smartApply)
         const rejectButton = createRejectButton(smartApplyId, smartApply)
         buttons.append(acceptButton, rejectButton)
-    } else if (smartApply && smartApplyState === CodyTaskState.Error && smartApplyId) {
-        const errorButton = createErrorButton(smartApplyId, smartApply)
-        buttons.append(errorButton)
     } else {
         const copyButton = createCopyButton(preText, copyButtonOnSubmit)
         buttons.append(copyButton)
@@ -250,12 +247,6 @@ function createApplyButton(
 
             break
         }
-        case 'Error':
-            button.innerHTML = 'Error'
-            button.addEventListener('click', () => {
-                smartApply.onError(smartApplyId)
-            })
-            break
         default: {
             button.innerHTML = 'Apply'
 
@@ -302,16 +293,6 @@ function createRejectButton(id: string, smartApply: CodeBlockActionsProps['smart
 
     button.addEventListener('click', () => {
         smartApply.onReject(id)
-    })
-    return button
-}
-
-function createErrorButton(id: string, smartApply: CodeBlockActionsProps['smartApply']): HTMLElement {
-    const button = document.createElement('button')
-    button.className = styles.button
-    button.innerHTML = 'Error'
-    button.addEventListener('click', () => {
-        smartApply.onError(id)
     })
     return button
 }

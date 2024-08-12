@@ -365,9 +365,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'smartApplyReject':
                 await vscode.commands.executeCommand('cody.fixup.codelens.undo', message.id)
                 break
-            case 'smartApplyError':
-                await vscode.commands.executeCommand('cody.fixup.codelens.error', message.id)
-                break
             case 'openURI':
                 vscode.commands.executeCommand('vscode.open', message.uri)
                 break

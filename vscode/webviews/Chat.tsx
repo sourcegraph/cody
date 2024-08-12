@@ -151,12 +151,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     id,
                 })
             },
-            onError: (id: string) => {
-                vscodeAPI.postMessage({
-                    command: 'smartApplyError',
-                    id,
-                })
-            },
         }
     }, [vscodeAPI, showIDESnippetActions])
 

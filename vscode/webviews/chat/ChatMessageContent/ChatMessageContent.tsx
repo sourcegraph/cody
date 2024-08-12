@@ -20,7 +20,6 @@ export interface CodeBlockActionsProps {
         onSubmit: (id: string, text: string, instruction?: PromptString, fileName?: string) => void
         onAccept: (id: string) => void
         onReject: (id: string) => void
-        onError: (id: string) => void
     }
 }
 
