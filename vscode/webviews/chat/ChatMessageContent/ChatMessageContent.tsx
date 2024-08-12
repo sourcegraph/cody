@@ -3,7 +3,7 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { clsx } from 'clsx'
-import type { CodyTaskState } from '../../../src/non-stop/state'
+import { CodyTaskState } from '../../../src/non-stop/state'
 import { type ClientActionListener, useClientActionListener } from '../../client/clientState'
 import { MarkdownFromCody } from '../../components/MarkdownFromCody'
 import styles from './ChatMessageContent.module.css'
@@ -53,21 +53,24 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     experimentalSmartApplyEnabled,
     smartApply,
 }) => {
-    const [smartApplyStates, setSmartApplyStates] = useState<Record<FixupTaskID, CodyTaskState>>({})
     const rootRef = useRef<HTMLDivElement>(null)
 
+    const [smartApplyStates, setSmartApplyStates] = useState<Record<FixupTaskID, CodyTaskState>>({})
     const smartApplyInterceptor = useMemo<CodeBlockActionsProps['smartApply']>(() => {
         if (!smartApply) {
             return
         }
 
         return {
+            ...smartApply,
             onSubmit(id, text, instruction, fileName) {
-                // setSmartApplyStates(prev => ({ ...prev, [id]: CodyTaskState.Working }))
+                // We intercept the `onSubmit` to mark this task as working as early as we can.
+                // In reality, this will happen once we determine the task selection and _then_ start the task.
+                // The user does not need to be aware of this, for their purposes this is a single operation.
+                // We can re-use the `Working` state to simplify our UI logic.
+                setSmartApplyStates(prev => ({ ...prev, [id]: CodyTaskState.Working }))
                 return smartApply.onSubmit(id, text, instruction, fileName)
             },
-            onAccept: smartApply.onAccept,
-            onReject: smartApply.onReject,
         }
     }, [smartApply])
 
