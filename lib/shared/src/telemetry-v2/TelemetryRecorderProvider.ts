@@ -2,6 +2,7 @@ import {
     TelemetryRecorderProvider as BaseTelemetryRecorderProvider,
     NoOpTelemetryExporter,
     type TelemetryEventInput,
+    type TelemetryExporter,
     type TelemetryProcessor,
     TestTelemetryExporter,
     TimestampTelemetryProcessor,
@@ -57,7 +58,7 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
                 clientVersion: extensionDetails.version,
             },
             process.env.CODY_TELEMETRY_EXPORTER === 'testing'
-                ? new TestTelemetryExporter()
+                ? TESTING_TELEMETRY_EXPORTER
                 : new GraphQLTelemetryExporter(client, anonymousUserID, legacyBackcompatLogEventMode),
             [
                 new ConfigurationMetadataProcessor(config, authStatusProvider),
@@ -71,6 +72,26 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
         )
     }
 }
+
+// creating a delegate to the TESTING_TELEMETRY_EXPORTER to allow for easy access to exported events
+export class DelegateTelemetryExporter implements TelemetryExporter {
+    private exportedEvents: TelemetryEventInput[] = []
+
+    constructor(public delegate: TestTelemetryExporter) {}
+    async exportEvents(events: TelemetryEventInput[]): Promise<void> {
+        this.exportedEvents.push(...events)
+        await this.delegate.exportEvents(events)
+    }
+
+    getExported(): TelemetryEventInput[] {
+        return [...this.exportedEvents]
+    }
+
+    reset(): void {
+        this.exportedEvents = []
+    }
+}
+export const TESTING_TELEMETRY_EXPORTER = new DelegateTelemetryExporter(new TestTelemetryExporter())
 
 /**
  * TelemetryRecorder is the type of recorders returned by
@@ -130,6 +151,7 @@ class ConfigurationMetadataProcessor implements TelemetryProcessor {
     ) {}
 
     public processEvent(event: TelemetryEventInput): void {
+        // console.log(event)
         if (!event.parameters.metadata) {
             event.parameters.metadata = []
         }
