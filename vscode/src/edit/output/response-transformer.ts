@@ -47,11 +47,13 @@ export function responseTransformer(
         .replaceAll(MARKDOWN_CODE_BLOCK_REGEX, block =>
             block.replace(MARKDOWN_CODE_BLOCK_START, '').replace(MARKDOWN_CODE_BLOCK_END, '')
         )
-        // Trim any leading or trailing spaces
-        .replace(/^\s*\n/, '')
+
+    // Trim any leading spaces when editing
+    const trimmedText =
+        task.intent === 'add' ? strippedText.replace(/^\s*/, '') : strippedText.replace(/^\s*\n/, '')
 
     // Strip the response of any remaining HTML entities such as &lt; and &gt;
-    const decodedText = decode(strippedText)
+    const decodedText = decode(trimmedText)
 
     if (!isMessageInProgress) {
         if (task.mode === 'insert') {

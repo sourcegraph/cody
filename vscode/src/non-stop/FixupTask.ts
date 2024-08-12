@@ -81,12 +81,7 @@ export class FixupTask {
         // We always expand the range to encompass all characters from the selection lines
         // This is so we can calculate an optimal diff, and the LLM has the best chance at understanding
         // the indentation in the returned code.
-        this.selectionRange = new vscode.Range(
-            selectionRange.start.line,
-            0,
-            selectionRange.end.line,
-            document.lineAt(selectionRange.end.line).range.end.character
-        )
+        this.selectionRange = this.getDefaultSelectionRange(selectionRange)
         this.originalRange = this.selectionRange
     }
 
@@ -108,5 +103,22 @@ export class FixupTask {
      */
     public get state(): CodyTaskState {
         return this.state_
+    }
+
+    private getDefaultSelectionRange(proposedRange: vscode.Range): vscode.Range {
+        if (this.intent === 'add') {
+            // We are only adding new code, no need to expand the range
+            return proposedRange
+        }
+
+        // For all other Edits, we always expand the range to encompass all characters from the selection lines
+        // This is so we can calculate an optimal diff, and the LLM has the best chance at understanding
+        // the indentation in the returned code.
+        return new vscode.Range(
+            proposedRange.start.line,
+            0,
+            proposedRange.end.line,
+            this.document.lineAt(proposedRange.end.line).range.end.character
+        )
     }
 }

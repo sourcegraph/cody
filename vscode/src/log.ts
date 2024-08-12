@@ -169,3 +169,5 @@ export const logger: CompletionLogger = {
         }
     },
 }
+
+export const name = 'tom'
