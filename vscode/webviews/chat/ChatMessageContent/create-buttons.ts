@@ -6,10 +6,12 @@ import {
     SaveCodeBlockIcon,
 } from '../../icons/CodeBlockActionIcons'
 
-import type { CodyTaskState } from '../../../src/non-stop/state'
+import { CodyTaskState } from '../../../src/non-stop/state'
 import styles from './ChatMessageContent.module.css'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
+import { getFileName } from './utils'
+import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 
 export function createButtons(
     preText: string,
@@ -88,19 +90,23 @@ export function createButtonsExperimentalUI(
     const buttons = document.createElement('div')
     buttons.className = styles.buttons
 
-    if (smartApplyState === 'Applied' && smartApplyId) {
+    if (smartApply && smartApplyState === CodyTaskState.Applied && smartApplyId) {
         const acceptButton = createAcceptButton(smartApplyId, smartApply)
         const discardButton = createDiscardButton(smartApplyId, smartApply)
         buttons.append(acceptButton, discardButton)
+    } else if (smartApply && smartApplyState === CodyTaskState.Error && smartApplyId) {
+        const errorButton = createErrorButton(smartApplyId, smartApply)
+        buttons.append(errorButton)
     } else {
         const copyButton = createCopyButton(preText, copyButtonOnSubmit)
         buttons.append(copyButton)
 
-        if (smartApply) {
+        if (smartApply && smartApplyId) {
             const applyButton = createApplyButton(
                 preText,
                 humanMessage,
                 smartApply,
+                smartApplyId,
                 smartApplyState,
                 fileName
             )
@@ -219,13 +225,14 @@ function createApplyButton(
     preText: string,
     humanMessage: PriorHumanMessageInfo | null,
     smartApply: CodeBlockActionsProps['smartApply'],
-    applyState?: CodyTaskState,
+    smartApplyId: FixupTaskID,
+    smartApplyState?: CodyTaskState,
     fileName?: string
 ): HTMLElement {
     const button = document.createElement('button')
     button.className = styles.button
 
-    switch (applyState) {
+    switch (smartApplyState) {
         case 'Working':
             button.innerHTML = 'Applying...'
             button.disabled = true
@@ -237,7 +244,6 @@ function createApplyButton(
         default:
             button.innerHTML = 'Apply'
             button.addEventListener('click', () => {
-                const smartApplyId = preText.trim()
                 smartApply?.onSubmit(smartApplyId, preText, humanMessage?.text, fileName)
             })
     }
@@ -261,6 +267,16 @@ function createDiscardButton(id: string, smartApply: CodeBlockActionsProps['smar
     button.innerHTML = 'Discard'
     button.addEventListener('click', () => {
         smartApply?.onReject(id)
+    })
+    return button
+}
+
+function createErrorButton(id: string, smartApply: CodeBlockActionsProps['smartApply']): HTMLElement {
+    const button = document.createElement('button')
+    button.className = styles.button
+    button.innerHTML = 'Error'
+    button.addEventListener('click', () => {
+        smartApply?.onError(id)
     })
     return button
 }

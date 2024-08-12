@@ -3,13 +3,15 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { clsx } from 'clsx'
-import { CodyTaskState } from '../../../src/non-stop/state'
+import type { CodyTaskState } from '../../../src/non-stop/state'
 import { type ClientActionListener, useClientActionListener } from '../../client/clientState'
 import { MarkdownFromCody } from '../../components/MarkdownFromCody'
 import styles from './ChatMessageContent.module.css'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import { createButtons, createButtonsExperimentalUI } from './create-buttons'
 import { GuardrailsStatusController } from './GuardRailStatusController'
+import { getCodeBlockId, getFileName } from './utils'
+import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 
 export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
@@ -18,6 +20,7 @@ export interface CodeBlockActionsProps {
         onSubmit: (id: string, text: string, instruction?: PromptString, fileName?: string) => void
         onAccept: (id: string) => void
         onReject: (id: string) => void
+        onError: (id: string) => void
     }
 }
 
@@ -36,7 +39,6 @@ interface ChatMessageContentProps {
     className?: string
 }
 
-
 /**
  * A component presenting the content of a chat message.
  */
@@ -51,25 +53,23 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     experimentalSmartApplyEnabled,
     smartApply,
 }) => {
-    const [smartApplyStates, setSmartApplyStates] = useState<Record<string, CodyTaskState>>({})
+    const [smartApplyStates, setSmartApplyStates] = useState<Record<FixupTaskID, CodyTaskState>>({})
     const rootRef = useRef<HTMLDivElement>(null)
 
-    const smartApplyInterceptor = useMemo<CodeBlockActionsProps['smartApply']>(
-        () => {
-            if (!smartApply) {
-                return
-            }
-
-            return {
-                onSubmit(id, text, instruction, fileName) {
-                    setSmartApplyStates(prev => ({ ...prev, [id]: CodyTaskState.Working }))
-                    return smartApply.onSubmit(id, text, instruction, fileName)
-                },
-                onAccept: smartApply.onAccept,
-                onReject: smartApply.onReject,
-            }
+    const smartApplyInterceptor = useMemo<CodeBlockActionsProps['smartApply']>(() => {
+        if (!smartApply) {
+            return
         }
-    , [smartApply])
+
+        return {
+            onSubmit(id, text, instruction, fileName) {
+                // setSmartApplyStates(prev => ({ ...prev, [id]: CodyTaskState.Working }))
+                return smartApply.onSubmit(id, text, instruction, fileName)
+            },
+            onAccept: smartApply.onAccept,
+            onReject: smartApply.onReject,
+        }
+    }, [smartApply])
 
     useClientActionListener(
         useCallback<ClientActionListener>(({ smartApplyResult }) => {
@@ -109,7 +109,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 let buttons: HTMLElement
 
                 if (experimentalSmartApplyEnabled) {
-                    const smartApplyId = preText.trim() // Use preText as a unique identifier
+                    const smartApplyId = getCodeBlockId(preText, fileName)
                     const smartApplyState = smartApplyStates[smartApplyId]
                     buttons = createButtonsExperimentalUI(
                         preText,

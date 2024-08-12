@@ -147,6 +147,10 @@ export type WebviewMessage =
           id: FixupTaskID
       }
     | {
+          command: 'smartApplyError'
+          id: FixupTaskID
+      }
+    | {
           command: 'auth'
           authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding' | 'offline'
           endpoint?: string | undefined | null
