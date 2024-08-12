@@ -45,7 +45,7 @@ export const AssistantMessageCell: FunctionComponent<{
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
     experimentalSmartApplyEnabled?: boolean
-    smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
+    smartApply?: CodeBlockActionsProps['smartApply']
 
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
@@ -62,7 +62,7 @@ export const AssistantMessageCell: FunctionComponent<{
         insertButtonOnSubmit,
         postMessage,
         guardrails,
-        smartApplyButtonOnSubmit,
+        smartApply,
         experimentalSmartApplyEnabled,
     }) => {
         const displayMarkdown = useMemo(
@@ -114,7 +114,7 @@ export const AssistantMessageCell: FunctionComponent<{
                                 guardrails={guardrails}
                                 humanMessage={humanMessage}
                                 experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
-                                smartApplyButtonOnSubmit={smartApplyButtonOnSubmit}
+                                smartApply={smartApply}
                             />
                         ) : (
                             isLoading && <LoadingDots />

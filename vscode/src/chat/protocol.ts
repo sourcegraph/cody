@@ -132,11 +132,19 @@ export type WebviewMessage =
           text: string
       }
     | {
-          command: 'smartApply'
+          command: 'smartApplySubmit'
           id: FixupTaskID
           code: string
           instruction?: string | undefined | null
           fileName?: string | undefined | null
+      }
+    | {
+          command: 'smartApplyAccept'
+          id: FixupTaskID
+      }
+    | {
+          command: 'smartApplyReject'
+          id: FixupTaskID
       }
     | {
           command: 'auth'
