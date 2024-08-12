@@ -127,6 +127,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         workspaceRootUri: workspaceRootUri.toString(),
         capabilities: {
             completions: 'none',
+            webview: 'agentic',
         },
         extensionConfiguration: {
             serverEndpoint: options.endpoint,
