@@ -7,14 +7,10 @@ import { type CancellationToken, type MessageConnection, ResponseError, Trace } 
 import { CodyJsonRpcErrorCode } from './CodyJsonRpcErrorCode'
 import type * as agent from './agent-protocol'
 import type * as bfg from './bfg-protocol'
-import type * as contextRanking from './context-ranking-protocol'
 import type * as embeddings from './embeddings-protocol'
 
-type Requests = bfg.Requests & agent.Requests & embeddings.Requests & contextRanking.Requests
-type Notifications = bfg.Notifications &
-    agent.Notifications &
-    embeddings.Notifications &
-    contextRanking.Notifications
+type Requests = bfg.Requests & agent.Requests & embeddings.Requests
+type Notifications = bfg.Notifications & agent.Notifications & embeddings.Notifications
 
 // String literal types for the names of the Cody Agent protocol methods.
 export type RequestMethodName = keyof Requests

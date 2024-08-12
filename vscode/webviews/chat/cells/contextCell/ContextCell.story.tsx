@@ -21,6 +21,17 @@ type Story = StoryObj<typeof ContextCell>
 
 export const Default: Story = {
     args: {
+        contextAlternatives: [
+            {
+                strategy: 'alt-0',
+                items: [
+                    {
+                        type: 'file',
+                        uri: URI.file('/foo/bar.go'),
+                    },
+                ],
+            },
+        ],
         contextItems: [
             { type: 'file', uri: URI.file('/foo/bar.go') },
             { type: 'file', uri: URI.file('/foo/qux.go') },

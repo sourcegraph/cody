@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
-import { createEmptyChatPanel, sidebarSignin } from './common'
-import { type ExpectedV2Events, executeCommandInPalette, test } from './helpers'
+import { getChatInputs, getChatSidebarPanel, sidebarSignin } from './common'
+import { type ExpectedV2Events, test } from './helpers'
 
 test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
@@ -16,28 +16,23 @@ test.extend<ExpectedV2Events>({
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
     ],
-})('shows chat history in sidebar and update chat panel correctly', async ({ page, sidebar }) => {
-    // Sign into Cody
+})('restore chat from sidebar history view', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
-    const getHeyTreeItem = async () => {
-        await executeCommandInPalette(page, 'Cody: Chat History')
+    const sidebarChat = getChatSidebarPanel(page)
 
-        // locator('#quickInput_list
-        return page.locator('#quickInput_list').getByLabel('Hey, today')
-    }
-
-    const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
+    const sidebarTabHistoryButton = sidebarChat.getByTestId('tab-history')
 
     // Ensure the chat view is ready before we start typing
-    await expect(chatPanelFrame.getByText('to add context to your chat')).toBeVisible()
+    await expect(sidebarTabHistoryButton).toBeVisible()
 
+    const chatInput = getChatInputs(sidebarChat).first()
     await chatInput.fill('Hey')
     await chatInput.press('Enter')
 
-    // TODO(beyang): fix bug that prevents immediate history propagation
-    await new Promise(resolve => setTimeout(resolve, 1_000))
+    await sidebarTabHistoryButton.click()
 
-    // Check if chat shows up in sidebar chat history tree view
-    await expect(await getHeyTreeItem()).toBeVisible()
+    const newHistoryItem = sidebarChat.getByRole('button', { name: 'Hey' })
+    await expect(newHistoryItem).toBeVisible()
+    await newHistoryItem.click()
 })

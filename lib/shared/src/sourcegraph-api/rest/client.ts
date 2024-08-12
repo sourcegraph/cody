@@ -1,6 +1,7 @@
-import { Model, type ServerModelConfiguration } from '../../models/index'
+import type { ServerModelConfiguration } from '../../models/index'
 
 import { fetch } from '../../fetch'
+import { logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { addCustomUserAgent, verifyResponseCode } from '../graphql/client'
 
@@ -19,16 +20,19 @@ export class RestClient {
     /**
      * @param endpointUrl URL to the sourcegraph instance, e.g. "https://sourcegraph.acme.com".
      * @param accessToken User access token to contact the sourcegraph instance.
+     * @param customHeaders Custom headers (primary is used by Cody Web case when Sourcegraph client
+     * providers set of custom headers to make sure that auth flow will work properly
      */
     constructor(
         private endpointUrl: string,
-        private accessToken?: string
+        private accessToken: string | undefined,
+        private customHeaders: Record<string, string>
     ) {}
 
     // Make an authenticated HTTP request to the Sourcegraph instance.
     // "name" is a developer-friendly term to label the request's trace span.
     private getRequest<T>(name: string, urlSuffix: string): Promise<T | Error> {
-        const headers = new Headers()
+        const headers = new Headers(this.customHeaders)
         if (this.accessToken) {
             headers.set('Authorization', `token ${this.accessToken}`)
         }
@@ -55,7 +59,7 @@ export class RestClient {
      * IMPORTANT: The list may include models that the current Cody client does not know
      * how to operate.
      */
-    public async getAvailableModels(): Promise<Model[]> {
+    public async getAvailableModels(): Promise<ServerModelConfiguration | undefined> {
         // Fetch the server-side configuration data. This will be in the form of a JSON blob
         // matching the schema defined in the `sourcegraph/llm-model' repo
         //
@@ -69,75 +73,12 @@ export class RestClient {
             '/.api/modelconfig/supported-models.json'
         )
         if (serverSideConfig instanceof Error) {
-            return []
-            // serverSideConfig = testModels
+            logError('RestClient::getAvailableModels', 'failed to fetch available models', {
+                verbose: serverSideConfig,
+            })
+            return
         }
 
-        // TODO(PRIME-323): Do a proper review of the data model we will use to describe
-        // server-side configuration. Once complete, it should match the data types we
-        // use in this repo exactly. Until then, we need to map the "server-side" model
-        // types, to the `Model` types used by Cody clients.
-        return serverSideConfig.models.map(Model.fromApi)
+        return serverSideConfig
     }
 }
-
-// TODO(jsm): delete these
-// these are used for testing the server sent models and should be removed once the real API is available
-/*
-const testModels: ServerModelConfiguration = {
-    schemaVersion: '1.0',
-    revision: '-',
-    providers: [
-        {
-            id: 'anthropic',
-            displayName: 'Provider "anthropic"',
-        },
-    ],
-    models: [
-        {
-            modelRef: 'anthropic::unknown::anthropic.claude-3-opus-20240229-v1_0',
-            displayName: 'anthropic.claude-3-opus-20240229-v1_0',
-            modelName: 'anthropic.claude-3-opus-20240229-v1_0',
-            capabilities: ['autocomplete', 'chat'],
-            category: 'balanced' as ModelCategory,
-            status: 'stable',
-            tier: 'enterprise' as ModelTier,
-            contextWindow: {
-                maxInputTokens: 9000,
-                maxOutputTokens: 4000,
-            },
-        },
-        {
-            modelRef: 'anthropic::unknown::anthropic.claude-instant-v1',
-            displayName: 'anthropic.claude-instant-v1',
-            modelName: 'anthropic.claude-instant-v1',
-            capabilities: ['autocomplete', 'chat'],
-            category: 'balanced' as ModelCategory,
-            status: 'stable',
-            tier: 'enterprise' as ModelTier,
-            contextWindow: {
-                maxInputTokens: 9000,
-                maxOutputTokens: 4000,
-            },
-        },
-        {
-            modelRef: 'anthropic::unknown::amazon.titan-text-lite-v1',
-            displayName: 'amazon.titan-text-lite-v1',
-            modelName: 'amazon.titan-text-lite-v1',
-            capabilities: ['autocomplete', 'chat'],
-            category: 'balanced' as ModelCategory,
-            status: 'stable',
-            tier: 'enterprise' as ModelTier,
-            contextWindow: {
-                maxInputTokens: 9000,
-                maxOutputTokens: 4000,
-            },
-        },
-    ],
-    defaultModels: {
-        chat: 'anthropic::unknown::amazon.titan-text-lite-v1',
-        fastChat: 'anthropic::unknown::anthropic.claude-3-opus-20240229-v1_0',
-        codeCompletion: 'anthropic::unknown::anthropic.claude-instant-v1',
-    },
-}
-*/

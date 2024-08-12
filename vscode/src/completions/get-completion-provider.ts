@@ -41,7 +41,7 @@ export function getCompletionProvider(params: GetCompletionProvidersParams): Pro
 
     // Show more if manually triggered (but only showing 1 is faster, so we use it
     // in the automatic trigger case).
-    const n = triggerKind === TriggerKind.Automatic ? 1 : 3
+    const n = triggerKind === TriggerKind.Automatic || triggerKind === TriggerKind.Preload ? 1 : 3
 
     return providerConfig.create({
         ...sharedProviderOptions,

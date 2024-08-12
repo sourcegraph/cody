@@ -1,8 +1,14 @@
 import { clsx } from 'clsx'
 import type React from 'react'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
-import type { AuthStatus, ChatMessage, CodyIDE, Guardrails } from '@sourcegraph/cody-shared'
+import type {
+    AuthStatus,
+    ChatMessage,
+    CodyIDE,
+    Guardrails,
+    PromptString,
+} from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -11,12 +17,10 @@ import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/cons
 import styles from './Chat.module.css'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
-import { Button } from './components/shadcn/ui/button'
-import { useContextProviders } from './mentions/providers'
+import type { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
 
 interface ChatboxProps {
-    chatID: string
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
@@ -27,12 +31,12 @@ interface ChatboxProps {
     scrollableParent?: HTMLElement | null
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
+    setView: (view: View) => void
     className?: string
-    experimentalUnitTestEnabled?: boolean
+    experimentalSmartApplyEnabled?: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
-    chatID,
     messageInProgress,
     transcript,
     vscodeAPI,
@@ -43,11 +47,15 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     scrollableParent,
     showWelcomeMessage = true,
     showIDESnippetActions = true,
+    setView,
     className,
-    experimentalUnitTestEnabled,
+    experimentalSmartApplyEnabled,
 }) => {
-    const { reload: reloadMentionProviders } = useContextProviders()
     const telemetryRecorder = useTelemetryRecorder()
+
+    const transcriptRef = useRef(transcript)
+    transcriptRef.current = transcript
+
     const feedbackButtonsOnSubmit = useCallback(
         (text: string) => {
             enum FeedbackType {
@@ -57,7 +65,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             telemetryRecorder.recordEvent('cody.feedback', 'submit', {
                 metadata: {
                     feedbackType: text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
-                    lastChatUsedEmbeddings: transcript
+                    lastChatUsedEmbeddings: transcriptRef.current
                         .at(-1)
                         ?.contextFiles?.some(file => file.source === 'embeddings')
                         ? 1
@@ -71,12 +79,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an aditional safegaurd measure
                     responseText: userInfo.isDotComUser
-                        ? truncateTextStart(transcript.toString(), CHAT_INPUT_TOKEN_BUDGET)
+                        ? truncateTextStart(transcriptRef.current.toString(), CHAT_INPUT_TOKEN_BUDGET)
                         : '',
                 },
             })
         },
-        [transcript, userInfo, telemetryRecorder]
+        [userInfo, telemetryRecorder]
     )
 
     const copyButtonOnSubmit = useCallback(
@@ -98,19 +106,32 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         if (showIDESnippetActions) {
             return (text: string, newFile = false) => {
                 const op = newFile ? 'newFile' : 'insert'
-                const eventType = 'Button'
-                // remove the additional /n added by the text area at the end of the text
-                const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
                 // Log the event type and text to telemetry in chat view
                 vscodeAPI.postMessage({
                     command: op,
-                    eventType,
-                    text: code,
+                    // remove the additional /n added by the text area at the end of the text
+                    text: text.replace(/\n$/, ''),
                 })
             }
         }
 
         return
+    }, [vscodeAPI, showIDESnippetActions])
+
+    const smartApplyButtonOnSubmit = useMemo(() => {
+        if (!showIDESnippetActions) {
+            return
+        }
+
+        return (text: string, instruction?: PromptString, fileName?: string) => {
+            vscodeAPI.postMessage({
+                command: 'smartApply',
+                instruction: instruction?.toString(),
+                // remove the additional /n added by the text area at the end of the text
+                code: text.replace(/\n$/, ''),
+                fileName,
+            })
+        }
     }, [vscodeAPI, showIDESnippetActions])
 
     const postMessage = useCallback<ApiPostMessage>(msg => vscodeAPI.postMessage(msg), [vscodeAPI])
@@ -157,16 +178,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
     }, [])
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: needs to run when is dotcom status is changing to update openctx providers
-    useEffect(() => {
-        reloadMentionProviders()
-    }, [userInfo.isDotComUser, reloadMentionProviders])
-    const handleGenerateUnitTest = useCallback(() => {
-        postMessage({
-            command: 'experimental-unit-test-prompt',
-        })
-    }, [postMessage])
-
     return (
         <div className={clsx(styles.container, className, 'tw-relative')}>
             {!chatEnabled && (
@@ -175,24 +186,22 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 </div>
             )}
             <Transcript
-                chatID={chatID}
                 transcript={transcript}
                 messageInProgress={messageInProgress}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                 copyButtonOnSubmit={copyButtonOnSubmit}
                 insertButtonOnSubmit={insertButtonOnSubmit}
+                smartApplyButtonOnSubmit={smartApplyButtonOnSubmit}
                 isTranscriptError={isTranscriptError}
                 userInfo={userInfo}
                 chatEnabled={chatEnabled}
                 postMessage={postMessage}
                 guardrails={guardrails}
+                experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
             />
-            {experimentalUnitTestEnabled && transcript.length === 0 && (
-                <div className="tw-mx-auto tw-text-center">
-                    <Button onClick={handleGenerateUnitTest}>Generate Unit Tests (Experimental)</Button>
-                </div>
+            {transcript.length === 0 && showWelcomeMessage && (
+                <WelcomeMessage IDE={userInfo.ide} setView={setView} />
             )}
-            {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage IDE={userInfo.ide} />}
             <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
         </div>
     )
@@ -201,7 +210,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 export interface UserAccountInfo {
     isDotComUser: boolean
     isCodyProUser: boolean
-    user: Pick<AuthStatus, 'username' | 'displayName' | 'avatarURL'>
+    user: Pick<AuthStatus, 'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail'>
     ide: CodyIDE
 }
 

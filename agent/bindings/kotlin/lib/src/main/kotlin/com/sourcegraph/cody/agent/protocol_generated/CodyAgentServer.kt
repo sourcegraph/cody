@@ -28,10 +28,6 @@ interface CodyAgentServer {
   fun chat_export(params: Chat_ExportParams?): CompletableFuture<List<ChatExportResult>>
   @JsonRequest("chat/remoteRepos")
   fun chat_remoteRepos(params: Chat_RemoteReposParams): CompletableFuture<Chat_RemoteReposResult>
-  @JsonRequest("chat/submitMessage")
-  fun chat_submitMessage(params: Chat_SubmitMessageParams): CompletableFuture<ExtensionMessage>
-  @JsonRequest("chat/editMessage")
-  fun chat_editMessage(params: Chat_EditMessageParams): CompletableFuture<ExtensionMessage>
   @JsonRequest("commands/explain")
   fun commands_explain(params: Null?): CompletableFuture<String>
   @JsonRequest("commands/test")
@@ -54,6 +50,10 @@ interface CodyAgentServer {
   fun editTask_undo(params: EditTask_UndoParams): CompletableFuture<Null?>
   @JsonRequest("editTask/cancel")
   fun editTask_cancel(params: EditTask_CancelParams): CompletableFuture<Null?>
+  @JsonRequest("editTask/retry")
+  fun editTask_retry(params: EditTask_RetryParams): CompletableFuture<EditTask>
+  @JsonRequest("editTask/getTaskDetails")
+  fun editTask_getTaskDetails(params: EditTask_GetTaskDetailsParams): CompletableFuture<EditTask>
   @JsonRequest("editTask/getFoldingRanges")
   fun editTask_getFoldingRanges(params: GetFoldingRangeParams): CompletableFuture<GetFoldingRangeResult>
   @JsonRequest("command/execute")
@@ -86,8 +86,8 @@ interface CodyAgentServer {
   fun git_codebaseName(params: Git_CodebaseNameParams): CompletableFuture<String?>
   @JsonRequest("webview/didDispose")
   fun webview_didDispose(params: Webview_DidDisposeParams): CompletableFuture<Null?>
-  @JsonRequest("webview/receiveMessage")
-  fun webview_receiveMessage(params: Webview_ReceiveMessageParams): CompletableFuture<Null?>
+  @JsonRequest("webview/resolveWebviewView")
+  fun webview_resolveWebviewView(params: Webview_ResolveWebviewViewParams): CompletableFuture<Null?>
   @JsonRequest("webview/receiveMessageStringEncoded")
   fun webview_receiveMessageStringEncoded(params: Webview_ReceiveMessageStringEncodedParams): CompletableFuture<Null?>
   @JsonRequest("diagnostics/publish")
@@ -112,10 +112,14 @@ interface CodyAgentServer {
   fun testing_progressCancelation(params: Testing_ProgressCancelationParams): CompletableFuture<Testing_ProgressCancelationResult>
   @JsonRequest("testing/reset")
   fun testing_reset(params: Null?): CompletableFuture<Null?>
+  @JsonRequest("testing/autocomplete/completionEvent")
+  fun testing_autocomplete_completionEvent(params: CompletionItemParams): CompletableFuture<CompletionBookkeepingEvent?>
   @JsonRequest("extensionConfiguration/change")
   fun extensionConfiguration_change(params: ExtensionConfiguration): CompletableFuture<AuthStatus?>
   @JsonRequest("extensionConfiguration/status")
   fun extensionConfiguration_status(params: Null?): CompletableFuture<AuthStatus?>
+  @JsonRequest("extensionConfiguration/getSettingsSchema")
+  fun extensionConfiguration_getSettingsSchema(params: Null?): CompletableFuture<String>
   @JsonRequest("textDocument/change")
   fun textDocument_change(params: ProtocolTextDocument): CompletableFuture<TextDocument_ChangeResult>
   @JsonRequest("attribution/search")
@@ -138,6 +142,8 @@ interface CodyAgentServer {
   fun exit(params: Null?)
   @JsonNotification("extensionConfiguration/didChange")
   fun extensionConfiguration_didChange(params: ExtensionConfiguration)
+  @JsonNotification("workspaceFolder/didChange")
+  fun workspaceFolder_didChange(params: WorkspaceFolder_DidChangeParams)
   @JsonNotification("textDocument/didOpen")
   fun textDocument_didOpen(params: ProtocolTextDocument)
   @JsonNotification("textDocument/didChange")
@@ -164,4 +170,6 @@ interface CodyAgentServer {
   fun autocomplete_completionAccepted(params: CompletionItemParams)
   @JsonNotification("progress/cancel")
   fun progress_cancel(params: Progress_CancelParams)
+  @JsonNotification("webview/didDisposeNative")
+  fun webview_didDisposeNative(params: Webview_DidDisposeNativeParams)
 }

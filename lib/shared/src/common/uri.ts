@@ -1,5 +1,6 @@
-import type { URI } from 'vscode-uri'
-
+import type { FileURI, URI } from 'vscode-uri'
+// we re-export this type as it doesn't actually exist in the original module.
+export type { FileURI } from 'vscode-uri'
 import { pathFunctionsForURI } from './path'
 
 export const SUPPORTED_URI_SCHEMAS = new Set([
@@ -48,23 +49,6 @@ export function uriParseNameAndExtension(uri: URI): { name: string; ext: string 
     return { ext, name }
 }
 
-/**
- * A file URI.
- *
- * It is helpful to use the {@link FileURI} type instead of just {@link URI} or {@link vscode.Uri}
- * when the URI is known to be `file`-scheme-only.
- */
-export type FileURI = Omit<URI, 'fsPath'> & {
-    scheme: 'file'
-
-    // Re-declare this here so it doesn't pick up the @deprecated tag on URI.fsPath.
-    /**
-     * The platform-specific file system path. Thank you for only using `.fsPath` on {@link FileURI}
-     * types (and not vscode.Uri or URI types)! :-)
-     */
-    fsPath: string
-}
-
 export function isFileURI(uri: URI): uri is FileURI {
     return uri.scheme === 'file'
 }
@@ -74,16 +58,4 @@ export function assertFileURI(uri: URI): FileURI {
         throw new TypeError(`assertFileURI failed on ${uri.toString()}`)
     }
     return uri
-}
-
-declare module 'vscode-uri' {
-    export class URI {
-        public static file(fsPath: string): FileURI
-
-        /**
-         * @deprecated Only call `.fsPath` on {@link FileURI}, which you can create with `URI.file`
-         * or with the {@link isFileURI} and {@link assertFileURI} helpers.
-         */
-        public fsPath: string
-    }
 }

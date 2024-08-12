@@ -40,7 +40,7 @@ export function createClient(
     logger?: CompletionLogger
 ): CodeCompletionsClient {
     function complete(
-        params: CodeCompletionsParams,
+        { timeoutMs, ...params }: CodeCompletionsParams,
         abortController: AbortController,
         providerOptions: CodeCompletionProviderOptions
     ): CompletionResponseGenerator {
@@ -89,6 +89,8 @@ export function createClient(
                 if (enableStreaming) {
                     headers.set('Accept-Encoding', 'gzip;q=0')
                 }
+
+                headers.set('X-Timeout-Ms', timeoutMs.toString())
 
                 const serializedParams: SerializedCodeCompletionsParams & {
                     stream: boolean

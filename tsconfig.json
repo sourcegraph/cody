@@ -27,6 +27,7 @@
   "references": [
     { "path": "agent" },
     { "path": "lib/shared" },
+    { "path": "lib/prompt-editor" },
     { "path": "vscode" },
     { "path": "vscode/test/integration" },
     { "path": "vscode/scripts" },

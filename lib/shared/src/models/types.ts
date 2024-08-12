@@ -3,6 +3,7 @@ import type { DEFAULT_DOT_COM_MODELS } from './dotcom'
 export enum ModelUsage {
     Chat = 'chat',
     Edit = 'edit',
+    Autocomplete = 'autocomplete',
 }
 
 // Utility to narrow a model type to a specific model usage

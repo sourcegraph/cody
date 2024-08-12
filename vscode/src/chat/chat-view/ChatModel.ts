@@ -10,10 +10,11 @@ import {
     type SerializedChatTranscript,
     errorToChatError,
     isCodyIgnoredFile,
+    serializeChatMessage,
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
-import { serializeChatMessage } from '@sourcegraph/cody-shared'
+import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import type { Repo } from '../../context/repo-fetcher'
 import { getChatPanelTitle } from './chat-helpers'
 
@@ -38,7 +39,10 @@ export class ChatModel {
         return this.messages.length === 0
     }
 
-    public setLastMessageContext(newContextUsed: ContextItem[]): void {
+    public setLastMessageContext(
+        newContextUsed: ContextItem[],
+        contextAlternatives?: RankedContext[]
+    ): void {
         const lastMessage = this.messages.at(-1)
         if (!lastMessage) {
             throw new Error('no last message')
@@ -46,7 +50,14 @@ export class ChatModel {
         if (lastMessage.speaker !== 'human') {
             throw new Error('Cannot set new context used for bot message')
         }
+
         lastMessage.contextFiles = newContextUsed.filter(c => !isCodyIgnoredFile(c.uri))
+        lastMessage.contextAlternatives = contextAlternatives?.map(({ items, strategy }) => {
+            return {
+                items: items.filter(c => !isCodyIgnoredFile(c.uri)),
+                strategy,
+            }
+        })
     }
 
     public addHumanMessage(message: Omit<ChatMessage, 'speaker'>): void {
@@ -206,10 +217,18 @@ function messageToSerializedChatInteraction(
 export function prepareChatMessage(message: ChatMessage): ChatMessage {
     return {
         ...message,
-        contextFiles: message.contextFiles?.map(item => ({
-            ...item,
-            // De-hydrate because vscode.Range serializes to `[start, end]` in JSON.
-            range: toRangeData(item.range),
+        contextFiles: message.contextFiles?.map(dehydrateContextItem),
+        contextAlternatives: message.contextAlternatives?.map(({ items, strategy }) => ({
+            strategy,
+            items: items.map(dehydrateContextItem),
         })),
+    }
+}
+
+function dehydrateContextItem(item: ContextItem): ContextItem {
+    return {
+        ...item,
+        // De-hydrate because vscode.Range serializes to `[start, end]` in JSON.
+        range: toRangeData(item.range),
     }
 }

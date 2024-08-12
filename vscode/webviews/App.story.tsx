@@ -26,7 +26,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 serverEndpoint: 'https://example.com',
                 uiKindIsWeb: false,
                 experimentalNoodle: false,
-                experimentalUnitTest: false,
+                experimentalSmartApply: false,
             },
             authStatus: {
                 ...defaultAuthStatus,

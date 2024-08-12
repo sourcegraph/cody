@@ -39,7 +39,7 @@ describe('[getInlineCompletions] hot streak', () => {
                 }`,
                 {
                     configuration: {
-                        autocompleteExperimentalHotStreak: true,
+                        autocompleteExperimentalHotStreakAndSmartThrottle: true,
                         autocompleteAdvancedProvider: 'fireworks',
                     },
                     delayBetweenChunks: 50,
@@ -73,7 +73,7 @@ describe('[getInlineCompletions] hot streak', () => {
                     console.log(4)
                     █
                 }`,
-                { configuration: { autocompleteExperimentalHotStreak: true } }
+                { configuration: { autocompleteExperimentalHotStreakAndSmartThrottle: true } }
             )
 
             expect(request.items[0].insertText).toEqual('console.log(2)')
@@ -98,7 +98,7 @@ describe('[getInlineCompletions] hot streak', () => {
                     console.log(4)
                     return foo█
                 }`,
-                { configuration: { autocompleteExperimentalHotStreak: true } }
+                { configuration: { autocompleteExperimentalHotStreakAndSmartThrottle: true } }
             )
 
             await request.completionResponseGeneratorPromise
@@ -135,7 +135,7 @@ describe('[getInlineCompletions] hot streak', () => {
                 }`,
                 {
                     configuration: {
-                        autocompleteExperimentalHotStreak: true,
+                        autocompleteExperimentalHotStreakAndSmartThrottle: true,
                     },
                 }
             )
@@ -166,7 +166,7 @@ describe('[getInlineCompletions] hot streak', () => {
                 const`,
                 {
                     configuration: {
-                        autocompleteExperimentalHotStreak: true,
+                        autocompleteExperimentalHotStreakAndSmartThrottle: true,
                     },
                     delayBetweenChunks: 20,
                     providerOptions: {

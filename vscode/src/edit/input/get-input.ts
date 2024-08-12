@@ -3,6 +3,8 @@ import {
     type EditModel,
     type EventSource,
     FILE_CONTEXT_MENTION_PROVIDER,
+    GENERAL_HELP_LABEL,
+    LARGE_FILE_WARNING_LABEL,
     ModelUsage,
     ModelsService,
     PromptString,
@@ -15,7 +17,6 @@ import * as vscode from 'vscode'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { EventSourceTelemetryMetadataMapping } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { GENERAL_HELP_LABEL, LARGE_FILE_WARNING_LABEL } from '../../chat/context/constants'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { executeDocCommand, executeTestEditCommand } from '../../commands/execute'
 import { getEditor } from '../../editor/active-editor'
@@ -23,7 +24,6 @@ import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/trac
 import type { AuthProvider } from '../../services/AuthProvider'
 import type { EditIntent, EditMode } from '../types'
 import { isGenerateIntent } from '../utils/edit-intent'
-import { getEditModelsForUser } from '../utils/edit-models'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
 import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
 import { getModelInputItems, getModelOptionItems } from './get-items/model'
@@ -34,7 +34,7 @@ import { getMatchingContext } from './get-matching-context'
 import { createQuickPick } from './quick-pick'
 import { fetchDocumentSymbols, getLabelForContextItem, removeAfterLastAt } from './utils'
 
-interface QuickPickInput {
+export interface QuickPickInput {
     /** The user provided instruction */
     instruction: PromptString
     /** Any user provided context, from @ or @# */
@@ -98,7 +98,7 @@ export const getInput = async (
 
     const authStatus = authProvider.getAuthStatus()
     const isCodyPro = !authStatus.userCanUpgrade
-    const modelOptions = getEditModelsForUser(authStatus)
+    const modelOptions = ModelsService.getModels(ModelUsage.Edit)
     const modelItems = getModelOptionItems(modelOptions, isCodyPro)
     const showModelSelector = modelOptions.length > 1 && authStatus.isDotCom
 
@@ -210,7 +210,7 @@ export const getInput = async (
                     return
                 }
 
-                ModelsService.setDefaultModel(ModelUsage.Edit, acceptedItem.model)
+                ModelsService.setSelectedModel(ModelUsage.Edit, acceptedItem.model)
                 activeModelItem = acceptedItem
                 activeModel = acceptedItem.model
                 activeModelContextWindow = getContextWindowOnModelChange(acceptedItem.model)
@@ -260,7 +260,7 @@ export const getInput = async (
                     document,
                     { ...initialValues, initialCursorPosition },
                     activeRange,
-                    symbolsPromise
+                    activeModelContextWindow
                 ),
             buttons: [vscode.QuickInputButtons.Back],
             onDidTriggerButton: () => editInput.render(editInput.input.value),

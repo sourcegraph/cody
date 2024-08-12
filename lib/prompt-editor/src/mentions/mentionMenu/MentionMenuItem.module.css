@@ -1,0 +1,24 @@
+:root {
+    --description-font-size: 0.9em; /* match VS Code quickpick description */
+}
+
+.title, .description, .warning {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.description, .warning {
+    font-size: var(--description-font-size);
+    opacity: 0.7;
+}
+
+.description {
+    flex: 1;
+}

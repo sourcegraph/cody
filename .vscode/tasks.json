@@ -38,6 +38,9 @@
       "type": "shell",
       "label": "Build Agent",
       "command": "pnpm install && pnpm build",
+      "windows": {
+        "command": "pnpm install; pnpm build",
+      },
       "options": {
         "cwd": "${workspaceFolder}/agent"
       }

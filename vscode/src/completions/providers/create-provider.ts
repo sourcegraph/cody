@@ -3,23 +3,28 @@ import {
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
     FeatureFlag,
+    type Model,
+    ModelUsage,
+    ModelsService,
     featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
 import { logError } from '../../log'
+import { localStorage } from '../../services/LocalStorageProvider'
 import {
     type AnthropicOptions,
+    DEFAULT_PLG_ANTHROPIC_MODEL,
     createProviderConfig as createAnthropicProviderConfig,
 } from './anthropic'
 import { createProviderConfig as createExperimentalOllamaProviderConfig } from './experimental-ollama'
+import { createProviderConfig as createExperimentalOpenAICompatibleProviderConfig } from './expopenaicompatible'
 import {
-    CODE_QWEN_7B,
-    DEEPSEEK_CODER_7B,
     DEEPSEEK_CODER_V2_LITE_BASE,
-    FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED,
-    FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED,
-    FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID,
+    DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096,
+    DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192,
+    DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384,
+    DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768,
     type FireworksOptions,
     createProviderConfig as createFireworksProviderConfig,
 } from './fireworks'
@@ -36,28 +41,37 @@ export async function createProviderConfigFromVSCodeConfig(
     config: ConfigurationWithAccessToken
 ): Promise<ProviderConfig | null> {
     switch (provider) {
+        case 'azure-openai':
         case 'unstable-openai': {
             return createUnstableOpenAIProviderConfig({
                 client,
             })
         }
         case 'fireworks': {
+            const { anonymousUserID } = await localStorage.anonymousUserID()
             return createFireworksProviderConfig({
                 client,
                 model: config.autocompleteAdvancedModel ?? model ?? null,
                 timeouts: config.autocompleteTimeouts,
                 authStatus,
                 config,
+                anonymousUserID,
             })
         }
         case 'anthropic': {
-            return createAnthropicProviderConfig({ client, model })
+            return createAnthropicProviderConfig({
+                client,
+                model: model ?? authStatus.isDotCom ? DEFAULT_PLG_ANTHROPIC_MODEL : undefined,
+            })
         }
+        case 'gemini':
         case 'unstable-gemini': {
             return createGeminiProviderConfig({ client, model })
         }
         case 'experimental-openaicompatible': {
-            return createOpenAICompatibleProviderConfig({
+            // TODO(slimsag): self-hosted-models: deprecate and remove this once customers are upgraded
+            // to non-experimental version
+            return createExperimentalOpenAICompatibleProviderConfig({
                 client,
                 model: config.autocompleteAdvancedModel ?? model ?? null,
                 timeouts: config.autocompleteTimeouts,
@@ -86,87 +100,102 @@ export async function createProviderConfig(
     /**
      * Look for the autocomplete provider in VSCode settings and return matching provider config.
      */
+
     const providerAndModelFromVSCodeConfig = await resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
-        config.autocompleteAdvancedProvider
+        config.autocompleteAdvancedProvider,
+        authStatus.isDotCom
     )
     if (providerAndModelFromVSCodeConfig) {
         const { provider, model } = providerAndModelFromVSCodeConfig
         return createProviderConfigFromVSCodeConfig(client, authStatus, model, provider, config)
     }
-
+    const info = getAutocompleteModelInfo(authStatus)
+    if (!info) {
+        /**
+         * If autocomplete provider is not defined neither in VSCode nor in Sourcegraph instance site config,
+         * use the default provider config ("anthropic").
+         */
+        return createAnthropicProviderConfig({ client })
+    }
+    if (info instanceof Error) {
+        logError('createProviderConfig', info.message)
+        return null
+    }
     /**
      * If autocomplete provider is not defined in the VSCode settings,
      * check the completions provider in the connected Sourcegraph instance site config
      * and return the matching provider config.
      */
-    if (authStatus.configOverwrites?.provider) {
-        const parsed = parseProviderAndModel({
-            provider: authStatus.configOverwrites.provider,
-            model: authStatus.configOverwrites.completionModel,
-        })
-        if (!parsed) {
-            logError(
-                'createProviderConfig',
-                `Failed to parse the model name for '${authStatus.configOverwrites.provider}' completions provider.`
-            )
-            return null
-        }
-        const { provider, model } = parsed
-        switch (provider) {
-            case 'openai':
-            case 'azure-openai':
-                return createUnstableOpenAIProviderConfig({
-                    client,
-                    // Model name for azure openai provider is a deployment name. It shouldn't appear in logs.
-                    model: provider === 'azure-openai' && model ? '' : model,
-                })
+    const { provider, modelId, model } = info
+    switch (provider) {
+        case 'openai':
+        case 'azure-openai':
+            return createUnstableOpenAIProviderConfig({
+                client,
+                // Model name for azure openai provider is a deployment name. It shouldn't appear in logs.
+                model: provider === 'azure-openai' && modelId ? '' : modelId,
+            })
 
-            case 'fireworks':
-                return createFireworksProviderConfig({
-                    client,
-                    timeouts: config.autocompleteTimeouts,
-                    model: model ?? null,
-                    authStatus,
-                    config,
-                })
-            case 'experimental-openaicompatible':
+        case 'fireworks': {
+            const { anonymousUserID } = await localStorage.anonymousUserID()
+            return createFireworksProviderConfig({
+                client,
+                timeouts: config.autocompleteTimeouts,
+                model: modelId ?? null,
+                authStatus,
+                config,
+                anonymousUserID,
+            })
+        }
+        case 'experimental-openaicompatible':
+            // TODO(slimsag): self-hosted-models: deprecate and remove this once customers are upgraded
+            // to non-experimental version
+            return createExperimentalOpenAICompatibleProviderConfig({
+                client,
+                timeouts: config.autocompleteTimeouts,
+                model: modelId ?? null,
+                authStatus,
+                config,
+            })
+        case 'openaicompatible':
+            if (model) {
                 return createOpenAICompatibleProviderConfig({
                     client,
                     timeouts: config.autocompleteTimeouts,
-                    model: model ?? null,
+                    model: model,
                     authStatus,
                     config,
                 })
-            case 'aws-bedrock':
-            case 'anthropic':
+            }
+            logError(
+                'createProviderConfig',
+                'Model definition is missing for openaicompatible provider.',
+                modelId
+            )
+            return null
+        case 'aws-bedrock':
+        case 'anthropic':
+            return createAnthropicProviderConfig({
+                client,
+                // Only pass through the upstream-defined model if we're using Cody Gateway
+                model:
+                    authStatus.configOverwrites?.provider === 'sourcegraph'
+                        ? authStatus.configOverwrites.completionModel
+                        : undefined,
+            })
+        case 'google':
+            if (authStatus.configOverwrites?.completionModel?.includes('claude')) {
                 return createAnthropicProviderConfig({
-                    client,
-                    // Only pass through the upstream-defined model if we're using Cody Gateway
-                    model:
-                        authStatus.configOverwrites.provider === 'sourcegraph'
-                            ? authStatus.configOverwrites.completionModel
-                            : undefined,
+                    client, // Model name for google provider is a deployment name. It shouldn't appear in logs.
+                    model: undefined,
                 })
-            case 'google':
-                if (authStatus.configOverwrites.completionModel?.includes('claude')) {
-                    return createAnthropicProviderConfig({
-                        client, // Model name for google provider is a deployment name. It shouldn't appear in logs.
-                        model: undefined,
-                    })
-                }
-                // Gemini models
-                return createGeminiProviderConfig({ client, model })
-            default:
-                logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
-                return null
-        }
+            }
+            // Gemini models
+            return createGeminiProviderConfig({ client, model: modelId })
+        default:
+            logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
+            return null
     }
-
-    /**
-     * If autocomplete provider is not defined neither in VSCode nor in Sourcegraph instance site config,
-     * use the default provider config ("anthropic").
-     */
-    return createAnthropicProviderConfig({ client })
 }
 
 async function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<
@@ -192,33 +221,33 @@ async function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<
             FeatureFlag.CodyAutocompleteFIMModelExperimentCurrentBest
         ),
     ])
-
     if (fimModelVariant1) {
         // Variant 1: Current production model with +200msec latency to quantity the effect of latency increase while keeping same quality
-        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096 }
     }
     if (fimModelVariant2) {
-        return { provider: 'fireworks', model: FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED }
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192 }
     }
     if (fimModelVariant3) {
-        return { provider: 'fireworks', model: CODE_QWEN_7B }
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384 }
     }
     if (fimModelVariant4) {
-        return { provider: 'fireworks', model: FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED }
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768 }
     }
     if (fimModelCurrentBest) {
-        return { provider: 'fireworks', model: DEEPSEEK_CODER_7B }
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
     }
     if (fimModelControl) {
         // Current production model
-        return { provider: 'fireworks', model: 'starcoder-hybrid' }
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
     }
     // Extra free traffic - redirect to the current production model which could be different than control
-    return { provider: 'fireworks', model: 'starcoder-hybrid' }
+    return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
 }
 
 async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
-    configuredProvider: string | null
+    configuredProvider: string | null,
+    isDotCom: boolean
 ): Promise<{
     provider: string
     model?: FireworksOptions['model'] | AnthropicOptions['model']
@@ -226,16 +255,15 @@ async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
     if (configuredProvider) {
         return { provider: configuredProvider }
     }
-
-    const [starCoder2Hybrid, starCoderHybrid, claude3, finetunedFIMModelHybrid, fimModelExperimentFlag] =
+    const [starCoder2Hybrid, starCoderHybrid, claude3, fimModelExperimentFlag, deepseekV2LiteBase] =
         await Promise.all([
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMFineTunedModelHybrid),
             featureFlagProvider.evaluateFeatureFlag(
                 FeatureFlag.CodyAutocompleteFIMModelExperimentBaseFeatureFlag
             ),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase),
         ])
 
     // We run fine tuning experiment for VSC client only.
@@ -244,15 +272,13 @@ async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
         .getConfiguration()
         .get<boolean>('cody.advanced.agent.running', false)
 
-    if (!isFinetuningExperimentDisabled && fimModelExperimentFlag) {
+    if (!isFinetuningExperimentDisabled && fimModelExperimentFlag && isDotCom) {
         // The traffic in this feature flag is interpreted as a traffic allocated to the fine-tuned experiment.
         return resolveFIMModelExperimentFromFeatureFlags()
     }
-
-    if (finetunedFIMModelHybrid) {
-        return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID }
+    if (isDotCom && deepseekV2LiteBase) {
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
     }
-
     if (starCoder2Hybrid) {
         return { provider: 'fireworks', model: 'starcoder2-hybrid' }
     }
@@ -273,6 +299,31 @@ const delimiters: Record<string, string> = {
     'aws-bedrock': '.',
 }
 
+interface AutocompleteModelInfo {
+    provider: string
+    modelId?: string
+    model?: Model
+}
+
+function getAutocompleteModelInfo(authStatus: AuthStatus): AutocompleteModelInfo | Error | undefined {
+    const model = ModelsService.getDefaultModel(ModelUsage.Autocomplete)
+    if (model) {
+        let provider = model.provider
+        if (model.clientSideConfig?.openAICompatible) {
+            provider = 'openaicompatible'
+        }
+        return { provider, modelId: model.model, model }
+    }
+    if (authStatus.configOverwrites?.provider) {
+        return parseProviderAndModel({
+            provider: authStatus.configOverwrites.provider,
+            modelId: authStatus.configOverwrites.completionModel,
+        })
+    }
+
+    // If no provider info specified, return undefined to fall back to default provider
+    return
+}
 /**
  * For certain completions providers configured in the Sourcegraph instance site config
  * the model name consists MODEL_PROVIDER and MODEL_NAME separated by a specific delimiter (see {@link delimiters}).
@@ -286,24 +337,29 @@ const delimiters: Record<string, string> = {
  */
 function parseProviderAndModel({
     provider,
-    model,
+    modelId,
 }: {
     provider: string
-    model?: string
-}): { provider: string; model?: string } | null {
+    modelId?: string
+}): AutocompleteModelInfo | Error {
     const delimiter = delimiters[provider]
     if (!delimiter) {
-        return { provider, model }
+        return { provider, modelId }
     }
 
-    if (model) {
-        const index = model.indexOf(delimiter)
-        const parsedProvider = model.slice(0, index)
-        const parsedModel = model.slice(index + 1)
+    if (modelId) {
+        const index = modelId.indexOf(delimiter)
+        const parsedProvider = modelId.slice(0, index)
+        const parsedModel = modelId.slice(index + 1)
         if (parsedProvider && parsedModel) {
-            return { provider: parsedProvider, model: parsedModel }
+            return { provider: parsedProvider, modelId: parsedModel }
         }
     }
 
-    return null
+    return new Error(
+        (modelId
+            ? `Failed to parse the model name ${modelId}`
+            : `Model missing but delimiter ${delimiter} expected`) +
+            `for '${provider}' completions provider.`
+    )
 }

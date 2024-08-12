@@ -3,6 +3,8 @@ import clsx from 'clsx'
 import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
+import type { PromptOrDeprecatedCommand } from '../../../../../../components/promptList/PromptList'
+import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
 import { AddContextButton } from './AddContextButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
@@ -24,6 +26,7 @@ export const Toolbar: FunctionComponent<{
     onGapClick?: () => void
 
     focusEditor?: () => void
+    appendTextToEditor: (text: string) => void
 
     hidden?: boolean
     className?: string
@@ -35,6 +38,7 @@ export const Toolbar: FunctionComponent<{
     submitState,
     onGapClick,
     focusEditor,
+    appendTextToEditor,
     hidden,
     className,
 }) => {
@@ -64,13 +68,21 @@ export const Toolbar: FunctionComponent<{
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
         >
-            <div className="tw-flex tw-gap-1 tw-items-center">
+            <div className="tw-flex tw-items-center">
+                {/* Can't use tw-gap-1 because the popover creates an empty element when open. */}
                 {onMentionClick && (
-                    <AddContextButton onClick={onMentionClick} className="tw-opacity-60" />
+                    <AddContextButton onClick={onMentionClick} className="tw-opacity-60 tw-mr-2" />
                 )}
-                <span>
-                    <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
-                </span>
+                <PromptSelectFieldToolbarItem
+                    focusEditor={focusEditor}
+                    appendTextToEditor={appendTextToEditor}
+                    className="tw-ml-1 tw-mr-1"
+                />
+                <ModelSelectFieldToolbarItem
+                    userInfo={userInfo}
+                    focusEditor={focusEditor}
+                    className="tw-mr-1"
+                />
             </div>
             <div className="tw-flex-1" />
             <SubmitButton
@@ -80,6 +92,22 @@ export const Toolbar: FunctionComponent<{
             />
         </menu>
     )
+}
+
+const PromptSelectFieldToolbarItem: FunctionComponent<{
+    focusEditor?: () => void
+    appendTextToEditor: (text: string) => void
+    className?: string
+}> = ({ focusEditor, appendTextToEditor, className }) => {
+    const onSelect = useCallback(
+        (item: PromptOrDeprecatedCommand) => {
+            appendTextToEditor(item.type === 'prompt' ? item.value.definition.text : item.value.prompt)
+            focusEditor?.()
+        },
+        [appendTextToEditor, focusEditor]
+    )
+
+    return <PromptSelectField onSelect={onSelect} onCloseByEscape={focusEditor} className={className} />
 }
 
 const ModelSelectFieldToolbarItem: FunctionComponent<{

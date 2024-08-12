@@ -54,7 +54,8 @@ export async function focusSidebar(page: Page): Promise<void> {
 
 export async function expectAuthenticated(page: Page) {
     await focusSidebar(page)
-    await expect(page.getByLabel('Settings & Support Section')).toBeVisible()
+    // Expect the sign in button to be gone.
+    await expect(page.getByLabel('Sign In to Your Enterprise Instance')).not.toBeVisible()
 }
 
 // Selector for the Explorer button in the sidebar that would match on Mac and Linux
@@ -155,16 +156,18 @@ export async function openMentionsForProvider(
     chatInput: Locator,
     provider: string
 ): Promise<void> {
-    await chatInput.press('@')
+    await chatInput.pressSequentially('@', { delay: 350 })
     await frame.getByRole('option', { name: provider }).click()
 }
 
 export function mentionMenuItems(chatFrame: FrameLocator): Locator {
-    return chatFrame.locator('[cmdk-list] [role="option"]')
+    return chatFrame.locator('[cmdk-root][data-testid="mention-menu"] [role="option"]')
 }
 
 export async function selectMentionMenuItem(chatFrame: FrameLocator, title: string): Promise<void> {
-    const item = chatFrame.locator('[cmdk-list] [role="option"]', { hasText: title })
+    const item = chatFrame.locator('[cmdk-root][data-testid="mention-menu"] [role="option"]', {
+        hasText: title,
+    })
     await item.click()
 }
 
@@ -188,7 +191,10 @@ export async function clickEditorTab(
     title: string,
     options: Partial<Parameters<Page['getByRole']>[1]> = {}
 ): Promise<void> {
-    await page.getByRole('tab', { ...options, name: title }).click()
+    await page
+        .getByRole('tab', { ...options, name: title })
+        .first()
+        .click()
 }
 
 export async function selectLineRangeInEditorTab(
@@ -197,10 +203,13 @@ export async function selectLineRangeInEditorTab(
     endLine?: number
 ): Promise<void> {
     const lineNumbers = page.locator('div[class*="line-numbers"]')
-    await lineNumbers.getByText(startLine.toString(), { exact: true }).click()
+    await lineNumbers.getByText(startLine.toString(), { exact: true }).last().click()
     if (typeof endLine !== 'undefined') {
-        await lineNumbers.getByText(endLine.toString(), { exact: true }).click({
-            modifiers: ['Shift'],
-        })
+        await lineNumbers
+            .getByText(endLine.toString(), { exact: true })
+            .last()
+            .click({
+                modifiers: ['Shift'],
+            })
     }
 }

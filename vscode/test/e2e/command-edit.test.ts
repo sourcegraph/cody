@@ -40,7 +40,7 @@ test.extend<ExpectedV2Events>({
 
     // Open the Edit input
     await page.getByRole('button', { name: 'Cody Commands' }).click()
-    await page.getByRole('option', { name: 'Edit code' }).click()
+    await page.getByRole('option', { name: 'wand Edit code' }).click()
 
     const inputBox = page.getByPlaceholder(/^Enter edit instructions \(type @ to include code/)
     const instruction = 'Replace apple with banana'
@@ -102,7 +102,7 @@ test('edit (fixup) input - range selection', async ({ page, sidebar }) => {
 
     // Open the Edit input
     await page.getByRole('button', { name: 'Cody Commands' }).click()
-    await page.getByRole('option', { name: 'Edit code' }).click()
+    await page.getByRole('option', { name: 'wand Edit code' }).click()
 
     // Check the correct range item is auto-selected
     const rangeItem = page.getByText('Nearest Code Block')
@@ -136,11 +136,11 @@ test('edit (fixup) input - model selection', async ({ page, nap, sidebar }) => {
 
     // Open the Edit input
     await page.getByRole('button', { name: 'Cody Commands' }).click()
-    await page.getByRole('option', { name: 'Edit code' }).click()
+    await page.getByRole('option', { name: 'wand Edit code' }).click()
 
     // Check the correct model item is auto-selected
     await nap()
-    const modelItem = page.getByText('Claude 3.5 Sonnet')
+    const modelItem = page.getByLabel('$(anthropic-logo) Claude 3.5').locator('a')
     await nap()
     expect(modelItem).toBeVisible()
 

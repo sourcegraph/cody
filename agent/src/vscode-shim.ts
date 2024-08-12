@@ -46,6 +46,7 @@ import {
 
 import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
+import open from 'open'
 import { AgentDiagnostics } from './AgentDiagnostics'
 import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'
@@ -150,6 +151,7 @@ const configuration = new AgentWorkspaceConfiguration(
     () => extensionConfiguration
 )
 
+export const onDidChangeWorkspaceFolders = new EventEmitter<vscode.WorkspaceFoldersChangeEvent>()
 export const onDidChangeTextEditorSelection = new EventEmitter<vscode.TextEditorSelectionChangeEvent>() // TODO: implement this
 export const onDidChangeVisibleTextEditors = new EventEmitter<readonly vscode.TextEditor[]>()
 export const onDidChangeActiveTextEditor = new EventEmitter<vscode.TextEditor | undefined>()
@@ -175,13 +177,24 @@ export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments)
                 .map(wf => wf.uri.toString())
                 .includes(newWorkspaceDocuments.workspaceRootUri.toString())
         ) {
-            workspaceFolders.push({
-                name: 'Workspace Root',
-                uri: newWorkspaceDocuments.workspaceRootUri,
-                index: 0,
-            })
+            setWorkspaceFolders(newWorkspaceDocuments.workspaceRootUri)
         }
     }
+}
+
+export function setWorkspaceFolders(workspaceRootUri: vscode.Uri): vscode.WorkspaceFolder[] {
+    // TODO: Update this when we support multiple workspace roots
+    while (workspaceFolders.pop()) {
+        // clear workspaceFolders array
+    }
+
+    workspaceFolders.push({
+        name: path.basename(workspaceRootUri.toString()),
+        uri: workspaceRootUri,
+        index: 0,
+    })
+
+    return workspaceFolders
 }
 
 export const workspaceFolders: vscode.WorkspaceFolder[] = []
@@ -301,16 +314,14 @@ const _workspace: typeof vscode.workspace = {
             throw new Error('workspaceDocuments is uninitialized')
         }
 
-        const result = toUri(uriOrString)
-        if (result) {
-            if (result.uri.scheme === 'untitled' && result.shouldOpenInClient) {
-                await openUntitledDocument(result.uri)
-            }
-            return workspaceDocuments.openTextDocument(result.uri)
-        }
-        return Promise.reject(
-            new Error(`workspace.openTextDocument:unsupported argument ${JSON.stringify(uriOrString)}`)
-        )
+        const uri = toUri(uriOrString)
+        return uri
+            ? workspaceDocuments.openTextDocument(uri)
+            : Promise.reject(
+                  new Error(
+                      `workspace.openTextDocument: unsupported argument ${JSON.stringify(uriOrString)}`
+                  )
+              )
     },
     workspaceFolders,
     getWorkspaceFolder: () => {
@@ -328,7 +339,7 @@ const _workspace: typeof vscode.workspace = {
     },
     // TODO: used by `WorkspaceRepoMapper` and will be used by `git.onDidOpenRepository`
     // https://github.com/sourcegraph/cody/issues/4136
-    onDidChangeWorkspaceFolders: emptyEvent(),
+    onDidChangeWorkspaceFolders: onDidChangeWorkspaceFolders.event,
     onDidOpenTextDocument: onDidOpenTextDocument.event,
     onDidChangeConfiguration: onDidChangeConfiguration.event,
     onDidChangeTextDocument: onDidChangeTextDocument.event,
@@ -463,18 +474,14 @@ const defaultTreeView: vscode.TreeView<any> = {
     title: undefined,
 }
 
-/**
- * @returns An object with a URI and a boolean indicating whether the URI should be opened in the client.
- * This object with UUID path is used only when we want to create in-memory temp files, and those we do not want to send to the clients.
- */
 function toUri(
-    uriOrString: string | vscode.Uri | { language?: string; content?: string } | undefined
-): { uri: Uri; shouldOpenInClient: boolean } | undefined {
+    uriOrString: string | UriString | vscode.Uri | { language?: string; content?: string } | undefined
+): Uri | undefined {
     if (typeof uriOrString === 'string') {
-        return { uri: Uri.file(uriOrString), shouldOpenInClient: true }
+        return Uri.parse(uriOrString)
     }
     if (uriOrString instanceof Uri) {
-        return { uri: uriOrString, shouldOpenInClient: true }
+        return uriOrString
     }
     if (
         typeof uriOrString === 'object' &&
@@ -482,36 +489,19 @@ function toUri(
     ) {
         const language = (uriOrString as any)?.language ?? ''
         const extension = extensionForLanguage(language) ?? language
-        return {
-            uri: Uri.from({
-                scheme: 'untitled',
-                path: `${uuid.v4()}.${extension}`,
-            }),
-            shouldOpenInClient: false,
-        }
+        return Uri.from({
+            scheme: 'untitled',
+            path: `${uuid.v4()}.${extension}`,
+        })
     }
     return
 }
 
-async function openUntitledDocument(uri: Uri, content?: string, language?: string) {
-    if (clientInfo?.capabilities?.untitledDocuments !== 'enabled') {
-        const errorMessage =
-            'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
-        logError('vscode.workspace.openTextDocument', 'unsupported operation', errorMessage)
-        throw new Error(errorMessage)
-    }
-    if (agent) {
-        const result = await agent.request('textDocument/openUntitledDocument', {
-            uri: uri.toString(),
-            content,
-            language,
-        })
-
-        if (!result) {
-            throw new Error(
-                `client returned false from textDocument/openUntitledDocument: ${uri.toString()}`
-            )
-        }
+// This opaque type prevents strings from being mistakenly used as URIs.
+export type UriString = string & { __tag: 'vscode.Uri' }
+export namespace UriString {
+    export function fromUri(uri: vscode.Uri): UriString {
+        return uri.toString() as UriString
     }
 }
 
@@ -618,7 +608,25 @@ const _window: typeof vscode.window = {
     onDidCloseTerminal: emptyEvent(),
     onDidOpenTerminal: emptyEvent(),
     registerUriHandler: () => emptyDisposable,
-    registerWebviewViewProvider: () => emptyDisposable,
+    registerWebviewViewProvider: (
+        viewId: string,
+        provider: vscode.WebviewViewProvider,
+        options?: { webviewOptions?: { retainContextWhenHidden?: boolean } }
+    ) => {
+        agent?.webviewViewProviders.set(viewId, provider)
+        options ??= {
+            webviewOptions: undefined,
+        }
+        options.webviewOptions ??= {
+            retainContextWhenHidden: undefined,
+        }
+        options.webviewOptions.retainContextWhenHidden ??= false
+        agent?.notify('webview/registerWebviewViewProvider', {
+            viewId,
+            retainContextWhenHidden: options?.webviewOptions.retainContextWhenHidden,
+        })
+        return emptyDisposable
+    },
     createStatusBarItem: () => statusBarItem,
     visibleTextEditors,
     withProgress: async (options, handler) => {
@@ -705,6 +713,7 @@ const _window: typeof vscode.window = {
                       selection.end.character
                   )
                 : undefined
+
             const result = await agent.request('textDocument/show', {
                 uri,
                 options: {
@@ -715,6 +724,7 @@ const _window: typeof vscode.window = {
             if (!result) {
                 throw new Error(`showTextDocument: client returned false when trying to show URI ${uri}`)
             }
+
             if (!workspaceDocuments) {
                 throw new Error('workspaceDocuments is undefined')
             }
@@ -929,6 +939,9 @@ const _commands: Partial<typeof vscode.commands> = {
     },
 }
 
+_commands?.registerCommand?.('workbench.action.reloadWindow', () => {
+    // Do nothing
+})
 _commands?.registerCommand?.('setContext', (key, value) => {
     if (typeof key !== 'string') {
         throw new TypeError(`setContext: first argument must be string. Got: ${key}`)
@@ -960,6 +973,13 @@ _commands?.registerCommand?.('vscode.executeDocumentSymbolProvider', uri => {
 _commands?.registerCommand?.('vscode.executeFormatDocumentProvider', uri => {
     return Promise.resolve([])
 })
+_commands?.registerCommand?.('vscode.open', async (uri: vscode.Uri) => {
+    const result = toUri(uri?.path)
+    if (result) {
+        return _window.showTextDocument(result)
+    }
+    return open(uri.toString())
+})
 
 function promisify(value: any): Promise<any> {
     return value instanceof Promise ? value : Promise.resolve(value)
@@ -975,6 +995,14 @@ const _env: Partial<typeof vscode.env> = {
     clipboard: {
         readText: () => Promise.resolve(''),
         writeText: () => Promise.resolve(),
+    },
+    openExternal: (uri: vscode.Uri): Thenable<boolean> => {
+        try {
+            open(uri.toString())
+            return Promise.resolve(true)
+        } catch {
+            return Promise.resolve(false)
+        }
     },
 }
 export const env = _env as typeof vscode.env

@@ -3,8 +3,21 @@ import type { Message } from '../../sourcegraph-api'
 
 import type { SerializedChatTranscript } from '.'
 
+/**
+ * The list of context items (most important first) along with
+ * a string label for the strategy used to obtain the context.
+ * The strategy denotes both the retrieval and reranking mechanism.
+ */
+export type RankedContext = {
+    strategy: string
+    items: ContextItem[]
+}
+
 export interface ChatMessage extends Message {
     contextFiles?: ContextItem[]
+
+    contextAlternatives?: RankedContext[]
+
     error?: ChatError
 
     /**

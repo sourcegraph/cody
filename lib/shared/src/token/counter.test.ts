@@ -3,7 +3,7 @@ import { ps } from '../prompt/prompt-string'
 import type { Message } from '../sourcegraph-api'
 import {
     CHAT_INPUT_TOKEN_BUDGET,
-    ENHANCED_CONTEXT_ALLOCATION,
+    CORPUS_CONTEXT_ALLOCATION,
     EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
 } from './constants'
 import { TokenCounter } from './counter'
@@ -19,16 +19,14 @@ describe('TokenCounter class', () => {
         expect(counter.maxChatTokens).toBe(CHAT_INPUT_TOKEN_BUDGET)
         // Context budget will be shared with chat budget.
         expect(counter.maxContextTokens.user).toBe(CHAT_INPUT_TOKEN_BUDGET)
-        expect(counter.maxContextTokens.enhanced).toBe(
-            CHAT_INPUT_TOKEN_BUDGET * ENHANCED_CONTEXT_ALLOCATION
-        )
+        expect(counter.maxContextTokens.corpus).toBe(CHAT_INPUT_TOKEN_BUDGET * CORPUS_CONTEXT_ALLOCATION)
     })
 
     it('should initialize with the correct token budgets for a customized context window', () => {
         const counter = new TokenCounter({ input: 1234, output: 0 })
         expect(counter.maxChatTokens).toBe(1234)
         expect(counter.maxContextTokens.user).toBe(1234)
-        expect(counter.maxContextTokens.enhanced).toBe(Math.floor(1234 * ENHANCED_CONTEXT_ALLOCATION))
+        expect(counter.maxContextTokens.corpus).toBe(Math.floor(1234 * CORPUS_CONTEXT_ALLOCATION))
     })
 
     it('should initialize with the correct token budgets when user context is provided', () => {
@@ -39,9 +37,7 @@ describe('TokenCounter class', () => {
         })
         expect(counter.maxChatTokens).toBe(CHAT_INPUT_TOKEN_BUDGET)
         expect(counter.maxContextTokens.user).toBe(EXTENDED_USER_CONTEXT_TOKEN_BUDGET)
-        expect(counter.maxContextTokens.enhanced).toBe(
-            CHAT_INPUT_TOKEN_BUDGET * ENHANCED_CONTEXT_ALLOCATION
-        )
+        expect(counter.maxContextTokens.corpus).toBe(CHAT_INPUT_TOKEN_BUDGET * CORPUS_CONTEXT_ALLOCATION)
     })
 
     it('should throw error when adding input without preamble', () => {
@@ -53,7 +49,7 @@ describe('TokenCounter class', () => {
 
     it('should return true when update usage within limits (sharing budget)', () => {
         const counter = new TokenCounter({ input: CHAT_INPUT_TOKEN_BUDGET, output: 0 })
-        expect(counter.updateUsage('preamble', preamble)).toBe(true) // 3 chat tokens needed
+        expect(counter.updateUsage('preamble', preamble)).toEqual({ succeeded: true }) // 3 chat tokens needed
         const messages: Message[] = [
             // 4 chat tokens needed
             { speaker: 'human', text: ps`Hello` },
@@ -61,7 +57,7 @@ describe('TokenCounter class', () => {
         ]
         expect(CHAT_INPUT_TOKEN_BUDGET).toBeGreaterThan(3 + 4)
         // 3 + 4 chat tokens needed = within limit of CHAT_INPUT_TOKEN_BUDGET
-        expect(counter.updateUsage('input', messages)).toBe(true)
+        expect(counter.updateUsage('input', messages)).toEqual({ succeeded: true })
     })
 
     it('should return true when update usage within limits (separated chat & user budgets)', () => {
@@ -70,48 +66,51 @@ describe('TokenCounter class', () => {
             output: 0,
             context: { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET },
         })
-        expect(counter.updateUsage('preamble', preamble)).toBe(true) // 3 chat tokens used
+        expect(counter.updateUsage('preamble', preamble)).toEqual({ succeeded: true }) // 3 chat tokens used
         expect(
             counter.updateUsage('input', [
                 // 4 chat tokens needed
                 { speaker: 'human', text: ps`Hello` },
                 { speaker: 'assistant', text: ps`Hi there!` },
             ])
-        ).toBe(true)
+        ).toEqual({ succeeded: true })
         expect(
             counter.updateUsage('user', [{ speaker: 'system', text: ps`You are a helpful assistant.` }])
-        ).toBe(true)
+        ).toEqual({ succeeded: true })
     })
 
     it('should return false when token usage exceeds limits', () => {
         const counter = new TokenCounter({ input: 5, output: 0 })
-        expect(counter.updateUsage('preamble', preamble)).toBe(true) // 3 chat tokens needed
+        expect(counter.updateUsage('preamble', preamble)).toEqual({ succeeded: true }) // 3 chat tokens needed
         const messages: Message[] = [
             // 4 chat tokens needed
             { speaker: 'human', text: ps`Hello` },
             { speaker: 'assistant', text: ps`Hi there!` },
         ]
         // 3 + 4 chat tokens needed -> exceeds the limit of 5
-        expect(counter.updateUsage('input', messages)).toBe(false)
+        expect(counter.updateUsage('input', messages)).toEqual({
+            succeeded: false,
+            reason: 'input tokens exceeded remaining chat tokens (4 > 2)',
+        })
     })
 
     it('should return true when update usage on the limit', () => {
         const counter = new TokenCounter({ input: 7, output: 0 })
-        expect(counter.updateUsage('preamble', preamble)).toBe(true) // 3 chat tokens used
+        expect(counter.updateUsage('preamble', preamble)).toEqual({ succeeded: true }) // 3 chat tokens used
         const messages: Message[] = [
             // 4 chat tokens needed
             { speaker: 'human', text: ps`Hello` },
             { speaker: 'assistant', text: ps`Hi there!` },
         ]
         // 3 + 4 chat tokens needed = within limit of 7
-        expect(counter.updateUsage('input', messages)).toBe(true)
+        expect(counter.updateUsage('input', messages)).toEqual({ succeeded: true })
     })
 
     it('should throw error when trying to update context token usage before chat input', () => {
         const counter = new TokenCounter({ input: 10, context: { user: 20 }, output: 0 })
-        expect(counter.updateUsage('preamble', preamble)).toBe(true)
+        expect(counter.updateUsage('preamble', preamble)).toEqual({ succeeded: true })
         expect(() => {
-            counter.updateUsage('enhanced', [
+            counter.updateUsage('corpus', [
                 { speaker: 'human', text: ps`Hi` },
                 { speaker: 'assistant', text: ps`ok` },
             ])
@@ -128,7 +127,7 @@ describe('TokenCounter class', () => {
     it('should return false when exceeds limits (sharing budget)', () => {
         const counter = new TokenCounter({ input: 30, output: 0 })
         expect(TokenCounter.getMessagesTokenCount(preamble)).toBe(3)
-        expect(counter.updateUsage('preamble', preamble)).toBe(true)
+        expect(counter.updateUsage('preamble', preamble)).toEqual({ succeeded: true })
         // Remaining tokens: 30 - 3 = 27
 
         const chatInputMessages = [
@@ -136,7 +135,7 @@ describe('TokenCounter class', () => {
             { speaker: 'assistant', text: ps`Hi there!` },
         ] as Message[]
         expect(TokenCounter.getMessagesTokenCount(chatInputMessages)).toBe(4)
-        expect(counter.updateUsage('input', chatInputMessages)).toBe(true)
+        expect(counter.updateUsage('input', chatInputMessages)).toEqual({ succeeded: true })
         // Remaining tokens: 30 - 3 - 4 = 23
 
         const userContextMessages = [
@@ -146,31 +145,34 @@ describe('TokenCounter class', () => {
             { speaker: 'assistant', text: ps`ok` },
         ] as Message[]
         expect(TokenCounter.getMessagesTokenCount(userContextMessages)).toBe(14)
-        expect(counter.updateUsage('user', userContextMessages)).toBe(true)
+        expect(counter.updateUsage('user', userContextMessages)).toEqual({ succeeded: true })
         // ADDED: Remaining tokens: 30 - 3 - 4 - 14 = 9
 
         // Enhanced Token Budget: 9 * 0.6 = Round down to 5
-        // - the remaining chat token budget * ENHANCED_CONTEXT_ALLOCATION
-        const enhancedContextMessages = [
-            { speaker: 'human', text: ps`Here is my enhanced context...` },
+        // - the remaining chat token budget * CORPUS_CONTEXT_ALLOCATION
+        const corpusContextMessages = [
+            { speaker: 'human', text: ps`Here is my corpus context...` },
             { speaker: 'assistant', text: ps`ok` },
         ] as Message[]
-        expect(TokenCounter.getMessagesTokenCount(enhancedContextMessages)).toBe(7)
-        expect(counter.updateUsage('enhanced', enhancedContextMessages)).toBe(false)
-        // FAILED: 7 tokens needed, exceeds the remaining token budget of 5 for Enhanced Context
+        expect(TokenCounter.getMessagesTokenCount(corpusContextMessages)).toBe(7)
+        expect(counter.updateUsage('corpus', corpusContextMessages)).toEqual({
+            succeeded: false,
+            reason: 'corpus context tokens exceeded remaining corpus context tokens (7 > 5)',
+        })
+        // FAILED: 7 tokens needed, exceeds the remaining token budget of 5 for corpus context
 
         const fiveTokensMessages = [
             { speaker: 'human', text: ps`Need 5 tokens` },
             { speaker: 'assistant', text: ps`ok` },
         ] as Message[]
         expect(TokenCounter.getMessagesTokenCount(fiveTokensMessages)).toBe(5)
-        expect(counter.updateUsage('enhanced', fiveTokensMessages)).toBe(true)
+        expect(counter.updateUsage('corpus', fiveTokensMessages)).toEqual({ succeeded: true })
         // ADDED: 5 tokens needed, within the remaining token budget of 5
     })
 
     it('should be able to add messages for message types that have tokens left', () => {
         const counter = new TokenCounter({ input: 20, context: { user: 20 }, output: 0 })
-        expect(counter.updateUsage('preamble', preamble)).toBe(true)
+        expect(counter.updateUsage('preamble', preamble)).toEqual({ succeeded: true })
         // ADDED: Remaining input tokens: 20 - 3 = 17 & Remaining user tokens: 20
 
         const greetings = [
@@ -178,7 +180,7 @@ describe('TokenCounter class', () => {
             { speaker: 'assistant', text: ps`Hi there!` },
         ] as Message[] // 4 tokens needed
         expect(TokenCounter.getMessagesTokenCount(greetings)).toBe(4)
-        expect(counter.updateUsage('input', greetings)).toBe(true)
+        expect(counter.updateUsage('input', greetings)).toEqual({ succeeded: true })
         // ADDED: Remaining input tokens: 17 - 4 = 13 & Remaining user tokens: 20
 
         expect(
@@ -188,7 +190,7 @@ describe('TokenCounter class', () => {
                 { speaker: 'human', text: ps`Here is my selected code...` },
                 { speaker: 'assistant', text: ps`ok` },
             ])
-        ).toBe(true)
+        ).toEqual({ succeeded: true })
         // ADDED: Remaining input tokens: 13 & Remaining user tokens: 20 - 14 = 6
 
         const shortMessages = [
@@ -196,31 +198,37 @@ describe('TokenCounter class', () => {
             { speaker: 'assistant', text: ps`ok` },
         ] as Message[]
         expect(TokenCounter.getMessagesTokenCount(shortMessages)).toBe(2)
-        expect(counter.updateUsage('enhanced', shortMessages)).toBe(true)
+        expect(counter.updateUsage('corpus', shortMessages)).toEqual({ succeeded: true })
         // ADDED: Remaining input tokens: 13 - 2 = 11 & Remaining user tokens: 6
 
-        expect(counter.updateUsage('input', greetings)).toBe(true)
+        expect(counter.updateUsage('input', greetings)).toEqual({ succeeded: true })
         // ADDED: Remaining input tokens: 11 - 4 = 7 &  Remaining user tokens: 6
 
         const longMessages = [
-            { speaker: 'human', text: ps`This is a very long enhanced context with code` },
+            { speaker: 'human', text: ps`This is a very long corpus context with code` },
             { speaker: 'assistant', text: ps`limit exceeded` },
         ] as Message[]
         // 11 exceeds the limit of the Enhanced Token Budget (7 * 0.6 = Round down to 4)
         expect(TokenCounter.getMessagesTokenCount(longMessages)).toBe(11)
-        expect(counter.updateUsage('enhanced', longMessages)).toBe(false)
+        expect(counter.updateUsage('corpus', longMessages)).toEqual({
+            succeeded: false,
+            reason: 'corpus context tokens exceeded remaining corpus context tokens (11 > 5)',
+        })
         // FAILED: Remaining input tokens: 7 & Remaining user tokens: 6
 
         // Can add more messages to input and user context when there are remaining token budgets
-        expect(counter.updateUsage('input', greetings)).toBe(true)
+        expect(counter.updateUsage('input', greetings)).toEqual({ succeeded: true })
         // ADDED: Remaining input tokens: 7 - 4 = 3 & Remaining user tokens: 6
 
-        expect(counter.updateUsage('user', greetings)).toBe(true)
+        expect(counter.updateUsage('user', greetings)).toEqual({ succeeded: true })
         // ADDED: Remaining input tokens: 3 & Remaining user tokens: 6 - 4 = 2
 
-        expect(counter.updateUsage('enhanced', greetings)).toBe(false)
+        expect(counter.updateUsage('corpus', greetings)).toEqual({
+            succeeded: false,
+            reason: 'corpus context tokens exceeded remaining corpus context tokens (4 > 3)',
+        })
         // FAILED: Remaining input tokens: 3 & Remaining user tokens: 2
-        // - because enhanced context only has 3 * 0.6 = 2 tokens left
+        // - because corpus context only has 3 * 0.6 = 2 tokens left
     })
 })
 

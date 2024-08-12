@@ -24,9 +24,7 @@ export enum CompletionStopReason {
 }
 
 export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & { timeoutMs: number }
-export type SerializedCodeCompletionsParams = Omit<SerializedCompletionParameters, 'fast'> & {
-    timeoutMs: number
-}
+export type SerializedCodeCompletionsParams = Omit<SerializedCompletionParameters, 'fast'>
 
 export type CompletionResponseWithMetaData = {
     /**

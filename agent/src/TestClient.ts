@@ -102,7 +102,7 @@ export function buildAgentBinary(): void {
     // To see the full error, run this file in isolation:
     //
     //   pnpm test agent/src/index.test.ts
-    execSync('pnpm run build:agent', {
+    execSync('pnpm run build ', {
         cwd: getAgentDir(),
         stdio: 'inherit',
     })
@@ -257,6 +257,7 @@ export class TestClient extends MessageHandler {
         })
         this.registerNotification('codeLenses/display', async params => {
             this.codeLenses.set(params.uri, params.codeLenses)
+            this.codeLensUpdate.fire(params.codeLenses)
         })
 
         this.registerRequest('workspace/edit', async params => {
@@ -340,9 +341,9 @@ export class TestClient extends MessageHandler {
             return result
         })
         this.registerRequest('textDocument/openUntitledDocument', params => {
-            this.workspace.loadDocument(ProtocolTextDocumentWithUri.fromDocument(params))
+            const doc = this.workspace.loadDocument(ProtocolTextDocumentWithUri.fromDocument(params))
             this.notify('textDocument/didOpen', params)
-            return Promise.resolve(true)
+            return Promise.resolve(doc.protocolDocument.underlying)
         })
         this.registerRequest('textDocument/edit', async params => {
             this.textDocumentEditParams.push(params)
@@ -474,15 +475,7 @@ export class TestClient extends MessageHandler {
     public async documentCode(uri: vscode.Uri): Promise<string> {
         await this.openFile(uri, { removeCursor: false })
         const task = await this.request('editCommands/document', null)
-        await this.taskHasReachedAppliedPhase(task)
-        const lenses = this.codeLenses.get(uri.toString()) ?? []
-        if (lenses.length > 0) {
-            throw new Error(
-                `Code lenses are not supported in this mode ${JSON.stringify(lenses, null, 2)}`
-            )
-        }
-
-        await this.request('editTask/accept', { id: task.id })
+        await this.acceptEditTask(uri, task)
         return this.workspace.getDocument(uri)?.content ?? ''
     }
 
@@ -496,15 +489,7 @@ export class TestClient extends MessageHandler {
         })
 
         const task = await this.request('editCommands/test', null)
-        await this.taskHasReachedAppliedPhase(task)
-        const lenses = this.codeLenses.get(uri.toString()) ?? []
-        if (lenses.length > 0) {
-            throw new Error(
-                `Code lenses are not supported in this mode ${JSON.stringify(lenses, null, 2)}`
-            )
-        }
-
-        await this.request('editTask/accept', { id: task.id })
+        await this.acceptEditTask(uri, task)
         return this.getTestEdit()
     }
 
@@ -580,6 +565,28 @@ export class TestClient extends MessageHandler {
         return `ID_${freshID}`
     }
 
+    public acceptLensWasShown(uri: Uri): Promise<void> {
+        const lenses = this.codeLenses.get(uri.toString()) ?? []
+        if (lenses.find(l => l.command?.command === 'cody.fixup.codelens.accept')) {
+            return Promise.resolve()
+        }
+
+        let disposables: vscode.Disposable[]
+        return new Promise<void>((resolve, reject) => {
+            disposables = [
+                this.onCodeLensUpdate(codeLenses => {
+                    if (codeLenses.find(l => l.command?.command === 'cody.fixup.codelens.accept')) {
+                        return resolve()
+                    }
+                }),
+            ]
+        }).finally(() => {
+            for (const disposable of disposables) {
+                disposable.dispose()
+            }
+        })
+    }
+
     /**
      * Promise that resolves when the provided task has reached the 'applied' state.
      */
@@ -642,6 +649,8 @@ export class TestClient extends MessageHandler {
     }
 
     public codeLenses = new Map<string, ProtocolCodeLens[]>()
+    public codeLensUpdate = new vscode.EventEmitter<ProtocolCodeLens[]>()
+    public onCodeLensUpdate = this.codeLensUpdate.event
     public taskUpdate = new vscode.EventEmitter<EditTask>()
     public onDidUpdateTask = this.taskUpdate.event
     public taskDelete = new vscode.EventEmitter<EditTask>()
@@ -722,10 +731,7 @@ export class TestClient extends MessageHandler {
 
     public async acceptEditTask(uri: vscode.Uri, task: EditTask): Promise<void> {
         await this.taskHasReachedAppliedPhase(task)
-        const lenses = this.codeLenses.get(uri.toString()) ?? []
-        if (lenses.length !== 0) {
-            throw new Error(`Expected no code lenses for ${uri}, but found ${lenses.length}`)
-        }
+        await this.acceptLensWasShown(uri)
         await this.request('editTask/accept', { id: task.id })
     }
 

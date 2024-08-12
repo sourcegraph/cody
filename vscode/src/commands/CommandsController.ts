@@ -10,6 +10,7 @@ import type { CodyCommandArgs } from './types'
 import { fromSlashCommand } from './utils/common'
 
 import {
+    type CodyCommand,
     DefaultChatCommands,
     type DefaultCodyCommands,
     DefaultEditCommands,
@@ -30,7 +31,12 @@ class CommandsController implements vscode.Disposable {
     public init(provider?: CommandsProvider) {
         if (provider) {
             this.provider = provider
+            this.disposables.push(this.provider)
         }
+    }
+
+    public getCommandList(): CodyCommand[] {
+        return this.provider?.list().filter(c => c.key !== 'ask') ?? []
     }
 
     /**
@@ -106,6 +112,7 @@ export const setCommandController = (provider?: CommandsProvider) => controller.
  * This allows the execute method to be called without needing a reference to the controller instance.
  */
 export const executeCodyCommand = controller.execute.bind(controller)
+export const getCodyCommandList = controller.getCommandList.bind(controller)
 
 function convertDefaultCommandsToPromptString(input: DefaultCodyCommands | PromptString): PromptString {
     switch (input) {

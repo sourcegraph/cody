@@ -146,6 +146,7 @@ describe('[getInlineCompletions] completion event', () => {
                   "traceId": undefined,
                   "triggerKind": "Automatic",
                 },
+                "read": false,
               }
             `)
         })
@@ -215,6 +216,7 @@ describe('[getInlineCompletions] completion event', () => {
                   "traceId": undefined,
                   "triggerKind": "Automatic",
                 },
+                "read": false,
               }
             `)
         })

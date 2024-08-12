@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.26.4",
+  "version": "1.30.3",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -30,7 +30,7 @@
     "watch:build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
     "_build:esbuild:desktop": "pnpm download-wasm && pnpm run -s _build:esbuild:uninstall && pnpm run -s _build:esbuild:node",
     "_build:esbuild:node": "esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --external:vscode --external:typescript --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:lexical=./build/lexical-package-fix --format=cjs --platform=node --sourcemap",
-    "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:path=path-browserify --external:typescript --alias:node:path=path-browserify --alias:node:os=os-browserify --external:vscode --external:node:fs/promises --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
+    "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:path=path-browserify --external:typescript --alias:node:path=path-browserify --alias:node:os=os-browserify --external:vscode  --external:node:child_process  --external:node:util --external:node:fs/promises --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
     "_build:esbuild:uninstall": "esbuild ./src/uninstall/post-uninstall.ts --bundle --outfile=dist/post-uninstall.js --external:typescript --format=cjs --platform=node --sourcemap --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:lexical=./build/lexical-package-fix",
     "_build:webviews": "vite -c webviews/vite.config.mts build",
     "release": "ts-node-transpile-only ./scripts/release.ts",
@@ -239,11 +239,6 @@
           "type": "webview",
           "id": "cody.chat",
           "name": "Chat"
-        },
-        {
-          "id": "cody.support.tree.view",
-          "name": "Settings & Support",
-          "when": "cody.activated"
         }
       ]
     },
@@ -429,6 +424,14 @@
         "enablement": "!cody.activated"
       },
       {
+        "command": "cody.chat.new",
+        "category": "Cody",
+        "title": "New Chat",
+        "enablement": "cody.activated",
+        "group": "Cody",
+        "icon": "$(new-comment-icon)"
+      },
+      {
         "command": "cody.chat.newEditorPanel",
         "category": "Cody",
         "title": "New Chat in Editor",
@@ -440,22 +443,15 @@
         "command": "cody.chat.newPanel",
         "category": "Cody",
         "group": "Cody",
-        "title": "New Chat",
+        "title": "New Chat in Sidebar",
         "enablement": "cody.activated",
         "icon": "$(new-comment-icon)"
-      },
-      {
-        "command": "cody.chat.moveToEditor",
-        "category": "Cody",
-        "title": "Move Chat to Editor Panel",
-        "enablement": "cody.activated",
-        "group": "Cody",
-        "icon": "$(layout-sidebar-left-off)"
       },
       {
         "command": "cody.chat.moveFromEditor",
         "category": "Cody",
         "title": "Move Chat from Editor to Main Cody Panel",
+        "when": "cody.activated && view == cody.chat",
         "enablement": "cody.activated",
         "group": "Cody",
         "icon": "$(layout-sidebar-left)"
@@ -489,7 +485,7 @@
         "title": "Delete All Chats",
         "group": "Cody",
         "icon": "$(trash)",
-        "enablement": "cody.activated && cody.hasChatHistory"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.chat.history.delete",
@@ -497,7 +493,7 @@
         "title": "Delete Chat",
         "group": "Cody",
         "icon": "$(trash)",
-        "enablement": "cody.activated && cody.hasChatHistory"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.chat.history.export",
@@ -505,7 +501,7 @@
         "title": "Export Chats as JSON",
         "group": "Cody",
         "icon": "$(arrow-circle-down)",
-        "enablement": "cody.activated && cody.hasChatHistory"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.chat.history.panel",
@@ -513,7 +509,7 @@
         "title": "Chat History",
         "group": "Cody",
         "icon": "$(list-unordered)",
-        "enablement": "cody.activated && cody.hasChatHistory"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.search.index-update",
@@ -580,6 +576,16 @@
         "command": "cody.test.set-context-filters",
         "title": "[Internal] Set Context Filters Overwrite",
         "enablement": "cody.activated && cody.devOrTest"
+      },
+      {
+        "command": "cody.command.insertCodeToCursor",
+        "title": "Insert Code at Cursor",
+        "enablement": "cody.activated"
+      },
+      {
+        "command": "cody.command.insertCodeToNewFile",
+        "title": "Save Code to New File...",
+        "enablement": "cody.activated"
       }
     ],
     "keybindings": [
@@ -594,13 +600,13 @@
         "when": "!cody.activated"
       },
       {
-        "command": "cody.chat.newPanel",
-        "key": "alt+/",
+        "command": "cody.chat.new",
+        "key": "shift+alt+/",
         "when": "cody.activated"
       },
       {
-        "command": "cody.chat.newPanel",
-        "key": "alt+shift+l",
+        "command": "cody.chat.new",
+        "key": "shift+alt+l",
         "when": "cody.activated"
       },
       {
@@ -614,6 +620,22 @@
       {
         "command": "cody.chat.toggle",
         "key": "alt+l",
+        "when": "cody.activated && !editorTextFocus",
+        "args": {
+          "editorFocus": false
+        }
+      },
+      {
+        "command": "cody.chat.toggle",
+        "key": "alt+/",
+        "when": "cody.activated && editorTextFocus",
+        "args": {
+          "editorFocus": true
+        }
+      },
+      {
+        "command": "cody.chat.toggle",
+        "key": "alt+/",
         "when": "cody.activated && !editorTextFocus",
         "args": {
           "editorFocus": false
@@ -784,6 +806,10 @@
         {
           "command": "cody.command.explain-output",
           "when": "false"
+        },
+        {
+          "command": "cody.chat.newEditorPanel",
+          "when": "cody.activated"
         }
       ],
       "editor/context": [
@@ -856,43 +882,28 @@
           "group": "navigation@1"
         },
         {
-          "command": "cody.chat.newPanel",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@2"
-        },
-        {
-          "command": "cody.chat.history.panel",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@3"
-        },
-        {
-          "command": "cody.chat.moveToEditor",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@4"
-        },
-        {
           "command": "cody.welcome",
-          "when": "view == cody.support.tree.view",
+          "when": "view == cody.chat",
           "group": "7_cody@0"
         },
         {
           "command": "cody.debug.export.logs",
-          "when": "view == cody.support.tree.view",
+          "when": "view == cody.chat",
           "group": "8_cody@1"
         },
         {
           "command": "cody.debug.enable.all",
-          "when": "view == cody.support.tree.view && !config.cody.debug.verbose",
+          "when": "view == cody.chat",
           "group": "8_cody@0"
         },
         {
           "command": "cody.debug.outputChannel",
-          "when": "view == cody.support.tree.view",
+          "when": "view == cody.chat",
           "group": "8_cody@2"
         },
         {
           "command": "cody.debug.reportIssue",
-          "when": "view == cody.support.tree.view",
+          "when": "view == cody.chat",
           "group": "9_cody@1"
         }
       ],
@@ -923,7 +934,7 @@
         },
         {
           "command": "cody.chat.view.popOut",
-          "when": "activeWebviewPanelId == cody.editorPanel && cody.activated && !isAuxiliaryEditorPart",
+          "when": "view == cody.chat && cody.activated && !isAuxiliaryEditorPart",
           "group": "navigation@4",
           "visibility": "visible"
         },
@@ -932,13 +943,6 @@
           "when": "activeWebviewPanelId == cody.editorPanel && cody.activated",
           "group": "navigation@5",
           "visibility": "visible"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "cody.copy.version",
-          "when": "view == cody.support.tree.view && viewItem == cody.version",
-          "group": "inline@1"
         }
       ],
       "terminal/context": [
@@ -958,6 +962,16 @@
           "command": "cody.command.abort-commit",
           "when": "cody.activated && scmProvider == git && cody.isGeneratingCommit",
           "group": "navigation@1"
+        }
+      ],
+      "webview/context": [
+        {
+          "command": "cody.command.insertCodeToCursor",
+          "when": "webviewSection == 'codeblock-actions'"
+        },
+        {
+          "command": "cody.command.insertCodeToNewFile",
+          "when": "webviewSection == 'codeblock-actions'"
         }
       ]
     },
@@ -1029,6 +1043,18 @@
           "type": "string",
           "markdownDescription": "A custom instruction to be included at the start of all chat messages (e.g. \"Answer all my questions in Spanish.\")",
           "examples": ["Answer all my questions in Spanish."]
+        },
+        "cody.chat.defaultLocation": {
+          "order": 6,
+          "type": "string",
+          "enum": ["sticky", "sidebar", "editor"],
+          "markdownDescription": "Controls where the Cody chat view opens when the user invokes the `Cody: New Chat` command, or the Alt+L and Alt+/ shortcuts.",
+          "enumDescriptions": [
+            "Opens in the last-activated view location, which is set whenever the user explicitly chooses to open chat in a given location",
+            "Opens in the sidebar",
+            "Opens in an editor panel"
+          ],
+          "default": "sticky"
         },
         "cody.edit.preInstruction": {
           "order": 7,
@@ -1138,11 +1164,6 @@
           "markdownDescription": "Determines the algorithm Cody uses to detect folding ranges. Cody uses folding ranges for several features like the 'Document code' command",
           "default": "all"
         },
-        "cody.autocomplete.experimental.hotStreak": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Preload follow-up completions"
-        },
         "cody.autocomplete.experimental.graphContext": {
           "type": "string",
           "default": null,
@@ -1221,15 +1242,15 @@
             }
           }
         },
-        "cody.autocomplete.experimental.smartThrottle": {
+        "cody.autocomplete.experimental.hotStreakAndSmartThrottle": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "Changes the debounce time for autocomplete requests based on the amount of time since the last request."
         },
-        "cody.autocomplete.experimental.smartThrottleExtended": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Changes the (extended) debounce time for autocomplete requests based on the amount of time since the last request."
+        "cody.autocomplete.experimental.preloadDebounceInterval": {
+          "type": "number",
+          "default": 0,
+          "markdownDescription": "Changes the preload debounce interval for autocomplete requests triggered on cursor movement."
         },
         "openctx.enable": {
           "type": "boolean",
@@ -1331,14 +1352,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.20.8",
-    "@floating-ui/react": "^0.26.9",
-    "@lexical/code": "^0.16.0",
-    "@lexical/react": "^0.16.0",
-    "@lexical/text": "^0.16.0",
-    "@lexical/utils": "^0.16.0",
     "@mdi/js": "^7.2.96",
     "@openctx/provider-linear-issues": "^0.0.6",
-    "@openctx/vscode-lib": "^0.0.13",
+    "@openctx/vscode-lib": "^0.0.18",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/core": "^1.18.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
@@ -1350,17 +1366,23 @@
     "@opentelemetry/sdk-trace-node": "^1.18.1",
     "@opentelemetry/semantic-conventions": "^1.18.1",
     "@radix-ui/react-accordion": "^1.2.0",
+    "@radix-ui/react-collapsible": "^1.1.0",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-popover": "^1.0.7",
     "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-tabs": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.0.7",
     "@sentry/browser": "^7.107.0",
     "@sentry/core": "^7.107.0",
     "@sentry/node": "^7.107.0",
     "@sourcegraph/cody-shared": "workspace:*",
+    "@sourcegraph/prompt-editor": "workspace:*",
     "@sourcegraph/telemetry": "^0.16.0",
     "@sourcegraph/tree-sitter-wasms": "^0.1.9",
     "@types/he": "^1.2.3",
+    "@types/mdast": "^4.0.4",
+    "@types/react": "18.2.79",
+    "@types/react-dom": "18.2.25",
     "@vscode/codicons": "^0.0.35",
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "async-mutex": "^0.4.0",
@@ -1401,10 +1423,12 @@
     "socks-proxy-agent": "^8.0.1",
     "tailwind-merge": "^2.3.0",
     "tailwindcss": "^3.4.3",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.0.0",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
-    "vscode-uri": "^3.0.7",
+    "vscode-uri": "^3.0.8",
     "web-tree-sitter": "^0.21.0",
     "wink-nlp-utils": "^2.1.0"
   },
@@ -1420,7 +1444,7 @@
     "@storybook/preview-api": "^8.0.5",
     "@types/crypto-js": "^4.2.2",
     "@types/dedent": "^0.7.0",
-    "@types/diff": "^5.0.9",
+    "@types/diff": "^5.2.1",
     "@types/express": "^4.17.17",
     "@types/fs-extra": "^11.0.4",
     "@types/glob": "^8.0.0",

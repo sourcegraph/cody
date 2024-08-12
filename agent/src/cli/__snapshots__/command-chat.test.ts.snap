@@ -1,33 +1,36 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`--context-file (animal test) 1`] = `
-"command: cody chat chat --context-file animal.ts -m implement a cow. Only print
-  the code without any explanation.
+"command: cody chat chat --context-file animal.ts --show-context -m implement a
+  cow. Only print the code without any explanation.
 exitCode: 0
 stdout: |+
-  Here's the implementation of a cow based on the provided interface:
+  > Context items:
 
-  \`\`\`typescript
-  class Cow implements StrangeAnimal {
-      makesSound(): 'coo' | 'moo' {
-          return 'moo';
-      }
-  }
+  > 1. WORKING_DIRECTORY/animal.ts
+
+
+
+  Here's a simple implementation of a cow in Python:
+
+  \`\`\`python
+  class Cow:
+      def __init__(self, name):
+          self.name = name
+          self.milk = 0
+
+      def moo(self):
+          return f"{self.name} says: Moo!"
+
+      def produce_milk(self, amount):
+          self.milk += amount
+          return f"{self.name} produced {amount} liters of milk."
+
+      def get_milk(self):
+          milk_produced = self.milk
+          self.milk = 0
+          return f"Collected {milk_produced} liters of milk from {self.name}."
   \`\`\`
-
-stderr: ""
-"
-`;
-
-exports[`--context-repo (squirrel test) 1`] = `
-"command: cody chat chat --context-repo github.com/sourcegraph/sourcegraph -m
-  what is squirrel? Explain as briefly as possible.
-exitCode: 0
-stdout: >+
-  Squirrel is a service within the Sourcegraph codebase that uses tree-sitter
-  and the symbols service to analyze and traverse files to find symbols. It
-  provides functionality for local code intelligence, including symbol search
-  and hover information.
 
 stderr: ""
 "

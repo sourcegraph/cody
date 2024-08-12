@@ -82,6 +82,7 @@
       "**/tsconfig.json",
       ".vscode/*.json",
       "**/fixtures/**",
+      "!vscode/test/fixtures/mock-server.ts",
       "vscode/.schema-cache/*.json"
     ]
   },

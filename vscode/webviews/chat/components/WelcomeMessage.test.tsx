@@ -1,37 +1,58 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, test } from 'vitest'
-import { WelcomeMessage, localStorageKey } from './WelcomeMessage'
+import { describe, expect, test, vi } from 'vitest'
+import { AppWrapperForTest } from '../../AppWrapperForTest'
+import { usePromptsQuery } from '../../components/promptList/usePromptsQuery'
+import { FIXTURE_PROMPTS } from '../../components/promptSelectField/fixtures'
+import { WelcomeMessage } from './WelcomeMessage'
 
-beforeEach(() => {
-    window.localStorage.removeItem(localStorageKey)
-})
-
-afterEach(() => {
-    window.localStorage.removeItem(localStorageKey)
+vi.mock('../../components/promptList/usePromptsQuery')
+vi.mocked(usePromptsQuery).mockReturnValue({
+    value: {
+        query: '',
+        commands: [],
+        prompts: { type: 'results', results: [FIXTURE_PROMPTS[0]] },
+    },
+    done: false,
+    error: null,
 })
 
 describe('WelcomeMessage', () => {
-    test('renders', () => {
-        render(<WelcomeMessage IDE={CodyIDE.VSCode} />)
+    function openCollapsiblePanels(): void {
+        const closedPanelButtons = document.querySelectorAll('button[data-state="closed"]')
+        for (const button of closedPanelButtons) {
+            fireEvent.click(button)
+        }
+    }
+    test('renders for CodyIDE.VSCode', () => {
+        render(<WelcomeMessage IDE={CodyIDE.VSCode} setView={() => {}} />, {
+            wrapper: AppWrapperForTest,
+        })
+        openCollapsiblePanels()
 
-        // Initial render
+        // Check common elements
+        expect(screen.getByText(/Chat Help/)).toBeInTheDocument()
+        expect(screen.getByText(FIXTURE_PROMPTS[0].name)).toBeInTheDocument()
+
+        // Check elements specific to CodyIDE.VSCode
+        expect(screen.getByText(/To add code context from an editor/)).toBeInTheDocument()
+        expect(screen.getByText(/Start a new chat using/)).toBeInTheDocument()
         expect(screen.getByText(/Customize chat settings/)).toBeInTheDocument()
-
-        // Close it
-        fireEvent.click(screen.getByRole('button', { name: 'Close' }))
-        expect(screen.getByRole('button', { name: 'Cody Chat Help' })).toBeInTheDocument()
-        expect(window.localStorage.getItem(localStorageKey)).toBe('true')
-
-        // Reopen it
-        fireEvent.click(screen.getByRole('button', { name: 'Cody Chat Help' }))
-        expect(screen.getByText(/Customize chat settings/)).toBeInTheDocument()
-        expect(window.localStorage.getItem(localStorageKey)).toBeNull()
     })
 
-    test('renders as collapsed if localstorage is set', () => {
-        window.localStorage.setItem(localStorageKey, 'true')
-        render(<WelcomeMessage IDE={CodyIDE.VSCode} />)
-        expect(screen.getByRole('button', { name: 'Cody Chat Help' })).toBeInTheDocument()
+    test('renders for CodyIDE.JetBrains', () => {
+        render(<WelcomeMessage IDE={CodyIDE.JetBrains} setView={() => {}} />, {
+            wrapper: AppWrapperForTest,
+        })
+        openCollapsiblePanels()
+
+        // Check common elements
+        expect(screen.getByText(/Chat Help/)).toBeInTheDocument()
+        expect(screen.getByText(FIXTURE_PROMPTS[0].name)).toBeInTheDocument()
+
+        // Check elements specific to CodyIDE.JetBrains
+        expect(screen.queryByText(/To add code context from an editor/)).not.toBeInTheDocument()
+        expect(screen.queryByText(/Start a new chat using/)).not.toBeInTheDocument()
+        expect(screen.queryByText(/Customize chat settings/)).not.toBeInTheDocument()
     })
 })

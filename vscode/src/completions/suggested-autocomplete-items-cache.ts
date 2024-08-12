@@ -15,6 +15,7 @@ interface AutocompleteItemParams {
     trackedRange: vscode.Range
     requestParams: RequestParams
     completionItem: InlineCompletionItemWithAnalytics
+    context: vscode.InlineCompletionContext
     command?: vscode.Command
     span?: Span
 }
@@ -59,9 +60,23 @@ export class AutocompleteItem extends vscode.InlineCompletionItem {
      */
     public span: Span | undefined
 
+    /**
+     * The completion context used to fetch the completion item.
+     */
+    public context: vscode.InlineCompletionContext
+
     constructor(params: AutocompleteItemParams) {
-        const { insertText, logId, range, trackedRange, requestParams, completionItem, command, span } =
-            params
+        const {
+            insertText,
+            logId,
+            range,
+            trackedRange,
+            requestParams,
+            completionItem,
+            command,
+            span,
+            context,
+        } = params
 
         super(insertText, range, command)
 
@@ -71,6 +86,7 @@ export class AutocompleteItem extends vscode.InlineCompletionItem {
         this.requestParams = requestParams
         this.analyticsItem = completionItem
         this.span = span
+        this.context = context
     }
 }
 
@@ -112,7 +128,7 @@ export function analyticsItemToAutocompleteItem(
     docContext: DocumentContext,
     position: vscode.Position,
     items: InlineCompletionItemWithAnalytics[],
-    context: vscode.InlineCompletionContext | undefined,
+    context: vscode.InlineCompletionContext,
     span: Span
 ): AutocompleteItem[] {
     return items.map(item => {
@@ -155,6 +171,7 @@ export function analyticsItemToAutocompleteItem(
             completionItem: item,
             command,
             span,
+            context,
         })
 
         command.arguments[0].codyCompletion = autocompleteItem

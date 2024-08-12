@@ -9,8 +9,10 @@ import {
     RestClient,
     getDotComDefaultModels,
 } from '@sourcegraph/cody-shared'
+import type { ServerModelConfiguration } from '@sourcegraph/cody-shared/src/models'
 import { ModelTag } from '@sourcegraph/cody-shared/src/models/tags'
 import * as vscode from 'vscode'
+import { getConfiguration } from '../configuration'
 import { logDebug } from '../log'
 import { secretStorage } from '../services/SecretStorageProvider'
 import { getEnterpriseContextWindow } from './utils'
@@ -24,6 +26,7 @@ import { getEnterpriseContextWindow } from './utils'
  */
 export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // Offline mode only support Ollama models, which would be synced seperately.
+    ModelsService.setAuthStatus(authStatus)
     if (authStatus.isOfflineMode) {
         ModelsService.setModels([])
         return
@@ -38,16 +41,20 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // Fetch the LLM models and configuration server-side. See:
     // https://linear.app/sourcegraph/project/server-side-cody-model-selection-cca47c48da6d
     const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
+
     if (clientConfig?.modelsAPIEnabled) {
         logDebug('ModelsService', 'new models API enabled')
         const serverSideModels = await fetchServerSideModels(authStatus.endpoint || '')
-        ModelsService.setModels(serverSideModels)
-        // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't entirely make sense in
-        // a world where LLM models are managed server-side. However, this is how Cody can be extended
-        // to use locally running LLMs such as Ollama. (Though some more testing is needed.)
-        // See: https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
-        registerModelsFromVSCodeConfiguration()
-        return
+        // If the request failed, fall back to using the default models
+        if (serverSideModels) {
+            ModelsService.setServerSentModels(serverSideModels)
+            // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't entirely make sense in
+            // a world where LLM models are managed server-side. However, this is how Cody can be extended
+            // to use locally running LLMs such as Ollama. (Though some more testing is needed.)
+            // See: https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
+            registerModelsFromVSCodeConfiguration()
+            return
+        }
     }
 
     // If you are connecting to Sourcegraph.com, we use the Cody Pro set of models.
@@ -135,16 +142,17 @@ export function registerModelsFromVSCodeConfiguration() {
 // stored.
 //
 // Throws an exception on any errors.
-async function fetchServerSideModels(endpoint: string): Promise<Model[]> {
+async function fetchServerSideModels(endpoint: string): Promise<ServerModelConfiguration | undefined> {
     if (!endpoint) {
         throw new Error('authStatus has no endpoint available. Unable to fetch models.')
     }
 
     // Get the user's access token, assumed to be already saved in the secret store.
     const userAccessToken = await secretStorage.getToken(endpoint)
+    const customHeaders = getConfiguration().customHeaders ?? {}
 
     // Fetch the data via REST API.
     // NOTE: We may end up exposing this data via GraphQL, it's still TBD.
-    const client = new RestClient(endpoint, userAccessToken)
+    const client = new RestClient(endpoint, userAccessToken, customHeaders)
     return await client.getAvailableModels()
 }

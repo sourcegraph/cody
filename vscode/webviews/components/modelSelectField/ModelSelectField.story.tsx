@@ -73,14 +73,6 @@ export const EnterpriseUser: Story = {
             isDotComUser: false,
             isCodyProUser: false,
         },
-    },
-}
-
-export const NewStyleEnterpriseUser: Story = {
-    args: {
-        userInfo: {
-            isDotComUser: false,
-            isCodyProUser: false,
-        },
+        serverSentModelsEnabled: true,
     },
 }
