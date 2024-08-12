@@ -1470,6 +1470,7 @@
     "ajv": "^8.14.0",
     "ajv-errors": "^3.0.0",
     "ajv-formats": "^3.0.1",
+    "buildkite-test-collector": "^1.7.2",
     "chokidar": "^3.6.0",
     "concurrently": "^8.2.0",
     "dedent": "^0.7.0",
