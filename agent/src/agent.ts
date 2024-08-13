@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process'
+import { copyFileSync } from 'node:fs'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
@@ -36,7 +37,6 @@ import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 import { mkdirSync, statSync } from 'node:fs'
 import { PassThrough } from 'node:stream'
 import type { Har } from '@pollyjs/persister'
-import { copySync } from 'fs-extra'
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
@@ -117,7 +117,7 @@ function copyExtensionRelativeResources(extensionPath: string, extensionClient: 
         }
         try {
             mkdirSync(path.dirname(target), { recursive: true })
-            copySync(source, target)
+            copyFileSync(source, target)
         } catch (err) {
             logDebug('copyExtensionRelativeResources', `Failed to copy ${source} to dist ${target}`, err)
         }
@@ -1170,6 +1170,18 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 Promise.resolve({
                     type: 'chat',
                     session: await vscode.commands.executeCommand('cody.chat.newEditorPanel'),
+                })
+            )
+
+            const chatId = this.webPanels.panels.get(panelId)?.chatID ?? ''
+            return { panelId, chatId }
+        })
+
+        this.registerAuthenticatedRequest('chat/sidebar/new', async () => {
+            const panelId = await this.createChatPanel(
+                Promise.resolve({
+                    type: 'chat',
+                    session: await vscode.commands.executeCommand('cody.chat.newPanel'),
                 })
             )
 

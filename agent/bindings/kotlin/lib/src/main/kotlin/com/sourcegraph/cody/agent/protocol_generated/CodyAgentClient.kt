@@ -64,4 +64,6 @@ interface CodyAgentClient {
   fun webview_setOptions(params: Webview_SetOptionsParams)
   @JsonNotification("webview/setHtml")
   fun webview_setHtml(params: Webview_SetHtmlParams)
+  @JsonNotification("window/didChangeContext")
+  fun window_didChangeContext(params: Window_DidChangeContextParams)
 }

@@ -499,6 +499,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     }
                     break
                 }
+                if (message.authKind === 'signin' && message.endpoint && message.value) {
+                    await this.authProvider.auth({ endpoint: message.endpoint, token: message.value })
+                    break
+                }
+                if (message.authKind === 'signout') {
+                    await this.authProvider.signoutMenu()
+                    this.setWebviewView(View.Login)
+                    break
+                }
                 // cody.auth.signin or cody.auth.signout
                 await vscode.commands.executeCommand(`cody.auth.${message.authKind}`)
                 break
