@@ -400,7 +400,6 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
             graphqlClient.setConfig(await getFullConfig())
             await ClientConfigSingleton.getInstance().setAuthStatus(authStatus)
             await syncModels(authStatus)
-            vscode.commands.executeCommand('auth.changed', authStatus)
         } catch (error) {
             logDebug('AuthProvider', 'updateAuthStatus error', error)
         } finally {
