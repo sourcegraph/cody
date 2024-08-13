@@ -270,6 +270,7 @@ const register = async (
     if (isExtensionModeDevOrTest) {
         await registerTestCommands(context, authProvider, disposables)
     }
+    registerDebugCommands(context, disposables)
     registerUpgradeHandlers(configWatcher, authProvider, disposables)
     disposables.push(new CharactersLogger())
 
@@ -583,8 +584,18 @@ async function registerTestCommands(
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (endpoint, token) =>
             authProvider.auth({ endpoint, token })
-        ),
-        // For debugging
+        )
+    )
+}
+
+/**
+ * Register commands used for debugging.
+ */
+async function registerDebugCommands(
+    context: vscode.ExtensionContext,
+    disposables: vscode.Disposable[]
+): Promise<void> {
+    disposables.push(
         vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
         vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
         vscode.commands.registerCommand('cody.debug.enable.all', () => enableVerboseDebugMode()),
