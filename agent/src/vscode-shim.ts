@@ -942,13 +942,12 @@ const _commands: Partial<typeof vscode.commands> = {
 _commands?.registerCommand?.('workbench.action.reloadWindow', () => {
     // Do nothing
 })
-_commands?.registerCommand?.('setContext', (...args) => {
-    const [key, value] = args
+_commands?.registerCommand?.('setContext', (key, value) => {
     if (typeof key !== 'string') {
         throw new TypeError(`setContext: first argument must be string. Got: ${key}`)
     }
     context.set(key, value)
-    agent?.notify('window/didChangeContext', { key, value: `${value}` })
+    agent?.notify('window/didChangeContext', { key, value: value.toString() })
 })
 _commands?.registerCommand?.('vscode.executeFoldingRangeProvider', async uri => {
     const promises: vscode.FoldingRange[] = []
