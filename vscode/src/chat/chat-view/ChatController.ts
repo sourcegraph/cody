@@ -446,11 +446,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
                 break
             case 'auth': {
-                if (message.authKind === 'signout') {
-                    this.authProvider.signoutMenu()
-                    this.setWebviewView(View.Login)
-                    break
-                }
                 if (message.authKind === 'callback' && message.endpoint) {
                     this.authProvider.redirectToEndpointLogin(message.endpoint)
                     break

@@ -2,28 +2,21 @@ import type * as vscode from 'vscode'
 
 import { localStorage } from '../../../vscode/src/services/LocalStorageProvider'
 import * as vscode_shim from '../vscode-shim'
-import schema from './schema.sql'
+import schema from './schema.sql?raw'
 
 import path from 'node:path'
 import Database from 'better-sqlite3'
 
-// Implementation of `vscode.ExtensionContext.globalState` that's persisted to sqlite.
 export class AgentGlobalState implements vscode.Memento {
-    private db: Database.Database
-    private version = 1
-    private path = ':memory:'
+    private db: DB
 
-    constructor(
-        private ide: string,
-        dir?: string
-    ) {
+    constructor(ide: string, dir?: string) {
         // If not provided, will default to an in-memory database
         if (dir) {
-            this.path = path.join(dir, 'globalState.sqlite')
+            this.db = new SqliteDB(ide, dir)
+        } else {
+            this.db = new InMemoryDB()
         }
-
-        this.db = new Database(this.path, { timeout: 1000 })
-        this.initializeDatabase()
 
         // Set default values
         this.set('notification.setupDismissed', 'true')
@@ -31,33 +24,18 @@ export class AgentGlobalState implements vscode.Memento {
         this.set('extension.hasActivatedPreviously', 'true')
     }
 
-    private initializeDatabase(): void {
-        this.db.exec(schema)
-    }
-
     private set(key: string, value: any): void {
-        const stmt = this.db.prepare<InsertParams>(
-            'INSERT OR REPLACE INTO global_storage (key, value, ide, version) VALUES (?, ?, ?, ?)'
-        )
-        stmt.run(key, JSON.stringify(value), this.ide, this.version)
+        this.db.set(key, value)
     }
 
     public reset(): void {
-        if (this.path === ':memory:') {
-            this.db.exec('DELETE FROM global_storage')
+        if (this.db instanceof InMemoryDB) {
+            this.db.clear()
         }
     }
 
     public keys(): readonly string[] {
-        const stmt = this.db.prepare<KeyParams, Row>(
-            'SELECT key FROM global_storage WHERE ide = ? AND version = ?'
-        )
-        const rows = stmt.all(this.ide, this.version)
-        return [
-            localStorage.LAST_USED_ENDPOINT,
-            localStorage.ANONYMOUS_USER_ID_KEY,
-            ...rows.map(row => row.key),
-        ]
+        return [localStorage.LAST_USED_ENDPOINT, localStorage.ANONYMOUS_USER_ID_KEY, ...this.db.keys()]
     }
 
     public get<T>(key: string, defaultValue?: unknown): any {
@@ -66,13 +44,8 @@ export class AgentGlobalState implements vscode.Memento {
                 return vscode_shim.extensionConfiguration?.anonymousUserID
             case localStorage.LAST_USED_ENDPOINT:
                 return vscode_shim.extensionConfiguration?.serverEndpoint
-            default: {
-                const stmt = this.db.prepare<SelectParams, Row>(
-                    'SELECT value FROM global_storage WHERE key = ? AND ide = ? AND version = ?'
-                )
-                const row = stmt.get(key, this.ide, this.version)
-                return row ? JSON.parse(row.value) : defaultValue
-            }
+            default:
+                return this.db.get(key) ?? defaultValue
         }
     }
 
@@ -83,6 +56,68 @@ export class AgentGlobalState implements vscode.Memento {
 
     public setKeysForSync(): void {
         // Not used (yet) by the Cody extension
+    }
+}
+
+interface DB {
+    get(key: string): any
+    set(key: string, value: any): void
+    keys(): readonly string[]
+}
+
+class InMemoryDB implements DB {
+    private store = new Map<string, any>()
+
+    get(key: string): any {
+        return this.store.get(key)
+    }
+
+    set(key: string, value: any): void {
+        this.store.set(key, value)
+    }
+
+    keys(): readonly string[] {
+        return [...this.store.keys()]
+    }
+
+    clear() {
+        this.store.clear()
+    }
+}
+
+class SqliteDB implements DB {
+    private db: Database.Database
+    private version = 1
+
+    constructor(
+        private ide: string,
+        dir: string
+    ) {
+        this.db = new Database(path.join(dir, 'globalState.sqlite'), { timeout: 1000 })
+        this.db.exec(schema)
+    }
+
+    get(key: string) {
+        const stmt = this.db.prepare<SelectParams, Row>(
+            'SELECT value FROM global_storage WHERE key = ? AND ide = ? AND version = ?'
+        )
+        const row = stmt.get(key, this.ide, this.version)
+        return row ? JSON.parse(row.value) : undefined
+    }
+
+    set(key: string, value: any): void {
+        const stmt = this.db.prepare<InsertParams>(
+            'INSERT OR REPLACE INTO global_storage (key, value, ide, version) VALUES (?, ?, ?, ?)'
+        )
+        stmt.run(key, JSON.stringify(value), this.ide, this.version)
+    }
+
+    keys(): readonly string[] {
+        const stmt = this.db.prepare<KeyParams, Row>(
+            'SELECT key FROM global_storage WHERE ide = ? AND version = ?'
+        )
+        const rows = stmt.all(this.ide, this.version)
+        return rows.map(row => row.key)
     }
 }
 
