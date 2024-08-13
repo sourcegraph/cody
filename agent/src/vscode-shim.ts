@@ -950,6 +950,7 @@ _commands?.registerCommand?.('setContext', (key, value) => {
         throw new TypeError(`setContext: first argument must be string. Got: ${key}`)
     }
     context.set(key, value)
+    agent?.notify('window/didChangeContext', { key, value })
 })
 _commands?.registerCommand?.('vscode.executeFoldingRangeProvider', async uri => {
     const promises: vscode.FoldingRange[] = []
