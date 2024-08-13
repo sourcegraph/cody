@@ -280,6 +280,25 @@ export class EditManager implements vscode.Disposable {
         editor.revealRange(selection.range, vscode.TextEditorRevealType.InCenter)
 
         if (selection.range.isEmpty) {
+            let insertionRange = selection.range
+
+            if (
+                selection.type === 'insert' &&
+                document.lineAt(document.lineCount - 1).text.trim().length !== 0
+            ) {
+                // Inserting to the bottom of the file, but the last line is not empty
+                // Inject an additional new line for us to use as the insertion range.
+                await editor.edit(
+                    editBuilder => {
+                        editBuilder.insert(selection.range.start, '\n')
+                    },
+                    { undoStopAfter: false, undoStopBefore: false }
+                )
+
+                // Update the range to reflect the new end of document
+                insertionRange = document.lineAt(document.lineCount - 1).range
+            }
+
             // We determined a selection, but it was empty. This means that we will be _adding_ new code
             // and _inserting_ it into the document. We do not need to re-prompt the LLM for this, let's just
             // add the code directly.
@@ -287,7 +306,7 @@ export class EditManager implements vscode.Disposable {
                 document,
                 configuration.instruction,
                 [],
-                selection.range,
+                insertionRange,
                 'add',
                 'insert',
                 configuration.model,
@@ -312,7 +331,7 @@ export class EditManager implements vscode.Disposable {
             })
 
             const provider = this.getProviderForTask(task)
-            await provider.applyEdit('\n\n' + configuration.replacement)
+            await provider.applyEdit('\n' + configuration.replacement)
             return task
         }
 
