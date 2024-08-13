@@ -184,11 +184,6 @@ export class InlineCompletionItemProvider
         const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
 
-        logDebug(
-            'CodyCompletionProvider:initialized',
-            [this.config.providerConfig.identifier, this.config.providerConfig.model].join('/')
-        )
-
         this.disposables.push(this.contextMixer)
         if (!this.config.noInlineAccept) {
             // We don't want to accept and log items when we are doing completion comparison from different models.
