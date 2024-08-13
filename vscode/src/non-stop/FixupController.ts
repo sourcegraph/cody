@@ -252,7 +252,7 @@ export class FixupController
             if (event.document.getText(task.selectionRange) === task.original) {
                 // The user has undone the edit, discard the task
                 task.diff = undefined
-                this.discard(task)
+                this.setTaskState(task, CodyTaskState.Finished)
                 return listener.dispose()
             }
         })
