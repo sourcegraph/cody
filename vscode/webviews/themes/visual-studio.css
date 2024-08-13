@@ -22,9 +22,9 @@ html[data-ide='VisualStudio'] {
     --vscode-button-background: var(--visualstudio-filetabbackground);
     --vscode-button-hoverBackground: var(--visualstudio-filetabselectedbackground);
     --vscode-button-foreground: var(--visualstudio-filetabparenttext);
-    --vscode-button-secondaryHoverBackground: var(--visualstudio-editorexpansionlink);
-    --vscode-button-secondaryBackground: var(--visualstudio-editorexpansionlink);
-    --vscode-button-secondaryForeground: var(--visualstudio-editorexpansionfill);
+    --vscode-button-secondaryHoverBackground: var(--visualstudio-filetabprovisionalhover);
+    --vscode-button-secondaryBackground: var(--visualstudio-filetabbackground);
+    --vscode-button-secondaryForeground: var(--visualstudio-filetabinactivetext);
     --vscode-button-separator: var(--visualstudio-filetabprimaryseparator);
     --vscode-charts-blue: var(--visualstudio-vizsurfacesoftbluedark);
     --vscode-charts-foreground: var(--visualstudio-);
@@ -107,7 +107,7 @@ html[data-ide='VisualStudio'] {
     --vscode-editor-findMatchHighlightBorder: var(--visualstudio-);
     --vscode-editor-findRangeHighlightBorder: var(--visualstudio-);
     --vscode-editor-focusedStackFrameHighlightBackground: var(--visualstudio-);
-    --vscode-editor-foreground: var(--visualstudio-);
+    --vscode-editor-foreground: var(--visualstudio-toolwindowtext);
     --vscode-editor-hoverHighlightBackground: var(--visualstudio-);
     --vscode-editor-inactiveSelectionBackground: var(--visualstudio-);
     --vscode-editor-inlineValuesBackground: var(--visualstudio-);
@@ -251,7 +251,7 @@ html[data-ide='VisualStudio'] {
     --vscode-editorWidget-background: var(--visualstudio-);
     --vscode-editorWidget-border: var(--visualstudio-);
     --vscode-editorWidget-foreground: var(--visualstudio-);
-    --vscode-errorForeground: var(--visualstudio-);
+    --vscode-errorForeground: var(--visualstudio-toolwindowvalidationerrortext);
     --vscode-extensionBadge-remoteBackground: var(--visualstudio-);
     --vscode-extensionBadge-remoteForeground: var(--visualstudio-);
     --vscode-extensionButton-separator: var(--visualstudio-);
@@ -276,19 +276,20 @@ html[data-ide='VisualStudio'] {
     --vscode-inputValidation-warningBorder: var(--visualstudio-);
     --vscode-interactive-activeCodeBorder: var(--visualstudio-);
     --vscode-interactive-inactiveCodeBorder: var(--visualstudio-);
-    --vscode-keybindingLabel-background: var(--visualstudio-);
-    --vscode-keybindingLabel-border: var(--visualstudio-);
-    --vscode-keybindingLabel-bottomBorder: var(--visualstudio-);
-    --vscode-keybindingLabel-foreground: var(--visualstudio-);
+    --vscode-keybindingLabel-background: var(--visualstudio-helpsearchbackground);
+    --vscode-keybindingLabel-border: var(--visualstudio-helpsearchborder);
+    --vscode-keybindingLabel-bottomBorder: var(--visualstudio-helpsearchfilterborder);
+    --vscode-keybindingLabel-foreground: var(--visualstudio-helpsearchtext);
     --vscode-list-deemphasizedForeground: var(--visualstudio-);
     --vscode-list-filterMatchBorder: var(--visualstudio-);
     --vscode-list-focusHighlightForeground: var(--visualstudio-);
     --vscode-list-focusOutline: var(--visualstudio-);
     --vscode-list-highlightForeground: var(--visualstudio-);
     --vscode-list-hoverBackground: var(--visualstudio-);
-    --vscode-list-invalidItemForeground: var(--visualstudio-);
-    --vscode-list-activeSelectionForeground: var(--visualstudio-);
-    --vscode-list-activeSelectionBackground: var(--visualstudio-);
+    --vscode-list-invalidItemForeground: var(--visualstudio-toolwindowvalidationerrortext);
+    --vscode-list-inactiveSelectionBackground: var(--visualstudio-sortbackground);
+    --vscode-list-activeSelectionForeground: var(--visualstudio-sorttext);
+    --vscode-list-activeSelectionBackground: var(--visualstudio-sortbackground);
     --vscode-listFilterWidget-background: var(--visualstudio-);
     --vscode-listFilterWidget-noMatchesOutline: var(--visualstudio-);
     --vscode-listFilterWidget-outline: var(--visualstudio-);
@@ -394,15 +395,15 @@ html[data-ide='VisualStudio'] {
     --vscode-remoteHub-decorations-modifiedForegroundColor: var(--visualstudio-);
     --vscode-remoteHub-decorations-submoduleForegroundColor: var(--visualstudio-);
     --vscode-remoteHub-decorations-workspaceRepositoriesView-hasUncommittedChangesForegroundColor: var(--visualstudio-);
-    --vscode-scm-historyItemStatisticsBorder: var(--visualstudio-);
+    --vscode-scm-historyItemStatisticsBorder: var(--visualstudio-scrollbararrowglyph);
     --vscode-scrollbar-shadow: var(--visualstudio-scrollbarthumbglyph);
-    --vscode-scrollbarSlider-activeBackground: var(--visualstudio-scrollbarbackground);
+    --vscode-scrollbarSlider-activeBackground: var(--visualstudio-scrollbarthumbpressedbackground);
     --vscode-scrollbarSlider-background: var(--visualstudio-scrollbarbackground);
-    --vscode-scrollbarSlider-hoverBackground: var(--visualstudio-scrollbarbackground);
+    --vscode-scrollbarSlider-hoverBackground: var(--visualstudio-scrollbarthumbmouseoverbackground);
     --vscode-search-resultsInfoForeground: var(--visualstudio-);
     --vscode-searchEditor-findMatchBorder: var(--visualstudio-);
     --vscode-searchEditor-textInputBorder: var(--visualstudio-);
-    --vscode-selection-background: var(--visualstudio-);
+    --vscode-selection-background: var(--visualstudio-ComboBoxSelection);
     --vscode-settings-checkboxBackground: var(--visualstudio-);
     --vscode-settings-checkboxBorder: var(--visualstudio-);
     --vscode-settings-checkboxForeground: var(--visualstudio-);
@@ -593,7 +594,7 @@ html[data-ide='VisualStudio'] {
     --vscode-widget-shadow: var(--visualstudio-buttonshadow);
 
     /* Mimic rules injected by VSCode */
-    scrollbar-color: var(--visualstudio-scrollbarthumbbackground);
+    scrollbar-color: var(--vscode-scrollbarSlider-background) var(--vscode-editor-background);
 
 }
 

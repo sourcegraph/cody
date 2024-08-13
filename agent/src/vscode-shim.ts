@@ -970,6 +970,9 @@ _commands?.registerCommand?.('vscode.executeDocumentSymbolProvider', uri => {
     // location.
     return Promise.resolve([])
 })
+_commands?.registerCommand?.('vscode.executeWorkspaceSymbolProvider', query => {
+    return Promise.resolve([])
+})
 _commands?.registerCommand?.('vscode.executeFormatDocumentProvider', uri => {
     return Promise.resolve([])
 })

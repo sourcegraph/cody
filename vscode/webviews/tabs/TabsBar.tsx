@@ -126,7 +126,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                                 alwaysShowTitle: true,
                                 tooltipExtra: (
                                     <>
-                                        {IDE !== CodyIDE.Web && (
+                                        {IDE === CodyIDE.VSCode && (
                                             <Kbd macOS="shift+opt+l" linuxAndWindows="shift+alt+l" />
                                         )}
                                     </>
