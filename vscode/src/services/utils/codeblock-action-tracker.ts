@@ -119,10 +119,20 @@ export async function handleSmartApply(
     }
 
     const document = uri ? await vscode.workspace.openTextDocument(uri) : activeEditor?.document
-    const editor = document && (await vscode.window.showTextDocument(document))
-    if (!editor || !document) {
+    if (!document) {
         throw new Error('No editor found to insert text')
     }
+
+    const visibleEditor = vscode.window.visibleTextEditors.find(
+        editor => editor.document.uri.toString() === document.uri.toString()
+    )
+
+    // Open the document for the user, so they can immediately see the progress decorations
+    await vscode.window.showTextDocument(document, {
+        // We may have triggered the smart apply from a different view column to the visible document
+        // so re-use the correct view column if we can
+        viewColumn: visibleEditor?.viewColumn,
+    })
 
     setLastStoredCode(code, 'applyButton')
     /**
@@ -134,7 +144,7 @@ export async function handleSmartApply(
     const DEFAULT_MODEL = 'anthropic/claude-3-5-sonnet-20240620'
     await executeSmartApply({
         configuration: {
-            document: editor.document,
+            document,
             instruction: PromptString.unsafe_fromUserQuery(instruction || ''),
             model: DEFAULT_MODEL,
             replacement: code,
