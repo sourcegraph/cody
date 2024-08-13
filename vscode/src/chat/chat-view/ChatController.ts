@@ -73,6 +73,7 @@ import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
 import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
+import type { ExtensionClient } from '../../extension-client'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
@@ -128,6 +129,8 @@ interface ChatControllerOptions {
     contextRetriever: ContextRetriever
     contextAPIClient: ContextAPIClient | null
 
+    extensionClient: ExtensionClient
+
     editor: VSCodeEditor
     guardrails: Guardrails
     startTokenReceiver?: typeof startTokenReceiver
@@ -180,6 +183,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private readonly contextStatusAggregator = new ContextStatusAggregator()
     private readonly editor: VSCodeEditor
+    private readonly extensionClient: ExtensionClient
     private readonly guardrails: Guardrails
     private readonly repoPicker: RemoteRepoPicker | null
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
@@ -204,6 +208,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         startTokenReceiver,
         contextAPIClient,
         contextRetriever,
+        extensionClient,
     }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
@@ -213,6 +218,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.repoPicker = enterpriseContext?.repoPicker || null
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
+        this.extensionClient = extensionClient
 
         this.contextRetriever = contextRetriever
 
@@ -1625,7 +1631,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             enableCommandUris: true,
         }
 
-        await addWebviewViewHTML(this.extensionUri, viewOrPanel)
+        await addWebviewViewHTML(this.extensionClient, this.extensionUri, viewOrPanel)
         this.postContextStatus()
 
         // Dispose panel when the panel is closed
@@ -1874,9 +1880,13 @@ function getDefaultModelID(): string {
  * Set HTML for webview (panel) & webview view (sidebar)
  */
 export async function addWebviewViewHTML(
+    extensionClient: ExtensionClient,
     extensionUri: vscode.Uri,
     view: vscode.WebviewView | vscode.WebviewPanel
 ): Promise<void> {
+    if (extensionClient.capabilities?.webview === 'agentic') {
+        return
+    }
     const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
     // Create Webview using vscode/index.html
     const root = vscode.Uri.joinPath(webviewPath, 'index.html')

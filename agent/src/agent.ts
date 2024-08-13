@@ -102,15 +102,14 @@ type ExtensionActivate = (
 // In the agent, we assume this file is placed next to the bundled `index.js`
 // file, and we copy it over to the `extensionPath` so the VS Code logic works
 // without changes.
-function copyExtensionRelativeResources(extensionPath: string): void {
-    const relativeSources = ['win-ca-roots.exe', 'webviews']
-    for (const relativeSource of relativeSources) {
+function copyExtensionRelativeResources(extensionPath: string, extensionClient: ExtensionClient): void {
+    const copySources = (relativeSource: string): void => {
         const source = path.join(__dirname, relativeSource)
         const target = path.join(extensionPath, 'dist', relativeSource)
         try {
             const stat = statSync(source)
             if (!(stat.isFile() || stat.isDirectory())) {
-                continue
+                return
             }
         } catch {
             logDebug('copyExtensionRelativeResources', `Failed to find ${source}, skipping copy`)
@@ -123,6 +122,10 @@ function copyExtensionRelativeResources(extensionPath: string): void {
             logDebug('copyExtensionRelativeResources', `Failed to copy ${source} to dist ${target}`, err)
         }
     }
+    copySources('win-ca-roots.exe')
+    if (extensionClient.capabilities?.webview === 'native') {
+        copySources('webviews')
+    }
 }
 
 export async function initializeVscodeExtension(
@@ -132,7 +135,7 @@ export async function initializeVscodeExtension(
 ): Promise<void> {
     const paths = codyPaths()
     const extensionPath = paths.config
-    copyExtensionRelativeResources(extensionPath)
+    copyExtensionRelativeResources(extensionPath, extensionClient)
 
     const context: vscode.ExtensionContext = {
         asAbsolutePath(relativePath) {
@@ -359,6 +362,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 '*',
                 new IndentationBasedFoldingRangeProvider()
             )
+
+            if (clientInfo.capabilities && clientInfo.capabilities?.webview === undefined) {
+                // Make it possible to do `capabilities.webview === 'agentic'`
+                clientInfo.capabilities.webview = 'agentic'
+            }
+
             if (clientInfo.extensionConfiguration?.baseGlobalState) {
                 for (const key in clientInfo.extensionConfiguration.baseGlobalState) {
                     const value = clientInfo.extensionConfiguration.baseGlobalState[key]
