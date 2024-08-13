@@ -27,8 +27,6 @@ export interface Result {
     file: URI
     range: Range
     summary: string
-}
-
-export interface IndexedKeywordContextFetcher {
-    getResults(query: PromptString, scopeDirs: URI[]): Promise<Promise<Result[]>[]>
+    blugeScore: number
+    heuristicBoostID?: string
 }

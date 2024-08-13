@@ -130,6 +130,12 @@ export type WebviewMessage =
           text: string
       }
     | {
+          command: 'smartApply'
+          instruction?: string | undefined | null
+          code: string
+          fileName?: string | undefined | null
+      }
+    | {
           command: 'auth'
           authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding' | 'offline'
           endpoint?: string | undefined | null
@@ -269,8 +275,13 @@ export interface ExtensionTranscriptMessage {
 export interface ConfigurationSubsetForWebview
     extends Pick<
         ConfigurationWithAccessToken,
-        'experimentalNoodle' | 'serverEndpoint' | 'agentIDE' | 'agentExtensionVersion'
+        | 'experimentalNoodle'
+        | 'serverEndpoint'
+        | 'agentIDE'
+        | 'agentExtensionVersion'
+        | 'internalDebugContext'
     > {
+    experimentalSmartApply: boolean
     webviewType?: WebviewType | undefined | null
 }
 

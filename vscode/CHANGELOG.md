@@ -6,6 +6,43 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Chat/Edit: Added an experimental "Smart Apply" button to code blocks that will attempt to apply the changes to the correct file via the Edit command. [pull/5038](https://github.com/sourcegraph/cody/pull/5038)
+
+### Fixed
+
+- Edit: Fixed a case where multiple, duplicate, edit commands would be created unintentionally. [pull/5183](https://github.com/sourcegraph/cody/pull/5183)
+
+### Changed
+
+## 1.30.3
+
+### Added
+
+### Fixed
+
+- Chat: Fixed an issue where @-mentions move focus to the chat input box at the top. [pull/5170](https://github.com/sourcegraph/cody/pull/5170)
+
+### Changed
+
+- Chat: Improved how Cody associates code to existing files in chat responses. [pull/5038](https://github.com/sourcegraph/cody/pull/5038)
+- Chat: Added an experimental simpler code block UI, that can accomodate the "Smart Apply" button. [pull/5038](https://github.com/sourcegraph/cody/pull/5038)
+
+## 1.30.2
+
+### Added
+
+Autocomplete: Experiment flag for deepseek context increase experiment. [pull/5159](https://github.com/sourcegraph/cody/pull/5159)
+
+### Fixed
+
+### Changed
+
+## 1.30.1
+
+### Added
+
+Autocomplete: Add a feature flag for DeepSeek-coder-v2 lite base model. [pull/5151](https://github.com/sourcegraph/cody/pull/5079)
+
 ### Fixed
 
 ### Changed
@@ -19,6 +56,8 @@ Chat: Added ability to remove individual chats from chat history in the sidebar.
 ### Fixed
 
 ### Changed
+
+- Chat: the local search index is now rebuilt more frequently when many files are changed since the last index (such as when the user checks out a revision that differs from the current revision).
 
 ## 1.28.1
 

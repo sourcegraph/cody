@@ -16,6 +16,7 @@ import {
     DOTCOM_URL,
     type DefaultChatCommands,
     type EventSource,
+    FeatureFlag,
     type Guardrails,
     type MentionQuery,
     type Message,
@@ -72,10 +73,8 @@ import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
 import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
-import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
-import { rewriteChatQuery } from '../../local-context/rewrite-chat-query'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
@@ -88,6 +87,7 @@ import {
     handleCodeFromInsertAtCursor,
     handleCodeFromSaveToNewFile,
     handleCopiedCode,
+    handleSmartApply,
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
@@ -137,6 +137,7 @@ export interface ChatSession {
     webviewPanelOrView: vscode.WebviewView | vscode.WebviewPanel | undefined
     sessionID: string
 }
+
 /**
  * ChatController is the view controller class for the chat panel.
  * It handles all events sent from the view, keeps track of the underlying chat model,
@@ -354,6 +355,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'copy':
                 await handleCopiedCode(message.text, message.eventType === 'Button')
                 break
+            case 'smartApply':
+                await handleSmartApply(message.code, message.instruction, message.fileName)
+                break
             case 'openURI':
                 vscode.commands.executeCommand('vscode.open', message.uri)
                 break
@@ -373,8 +377,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await openLocalFileWithRange(message.filePath, message.range ?? undefined)
                 break
             case 'newFile':
-                handleCodeFromSaveToNewFile(message.text)
-                await this.editor.createWorkspaceFile(message.text)
+                await handleCodeFromSaveToNewFile(message.text, this.editor)
                 break
             case 'context/get-remote-search-repos': {
                 await this.postMessage({
@@ -524,8 +527,29 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
     }
 
-    private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
+    private async isSmartApplyEnabled(): Promise<boolean> {
+        if (!this.authProvider.getAuthStatus().isDotCom) {
+            // Only supported on Sourcegraph.com right now, until we support more than just Claude 3.5 Sonnet.
+            return false
+        }
+
         const config = await getFullConfig()
+        if (config.isRunningInsideAgent) {
+            // Only supported in VS Code right now, until we test and iterate on the UI for other clients.
+            return false
+        }
+
+        return (
+            config.internalUnstable ||
+            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalSmartApply))
+        )
+    }
+
+    private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
+        const [config, experimentalSmartApply] = await Promise.all([
+            getFullConfig(),
+            this.isSmartApplyEnabled(),
+        ])
 
         const webviewType =
             this.webviewPanelOrView?.viewType === 'cody.editorPanel' ? 'editor' : 'sidebar'
@@ -538,7 +562,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: config.serverEndpoint,
             experimentalNoodle: config.experimentalNoodle,
+            experimentalSmartApply,
             webviewType,
+            internalDebugContext: config.internalDebugContext,
         }
     }
 
@@ -878,21 +904,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
               )
             : text
 
-        const rewrite = config.experimentalNoodle
-            ? await rewriteChatQuery({
-                  query: text,
-                  contextItems: mentions,
-                  chatClient: this.chatClient,
-                  chatModel: this.chatModel,
-              })
-            : inputTextWithoutContextChips
-
         const context = (
             await Promise.all([
                 resolveContext({
                     strategy: contextStrategy,
                     editor: this.editor,
-                    input: { text: rewrite, mentions },
+                    input: { text: inputTextWithoutContextChips, mentions },
                     providers: {
                         localEmbeddings: this.localEmbeddings,
                         symf: this.symf,
@@ -1234,24 +1251,18 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         sendTelemetry?: (contextSummary: any, privateContextSummary?: any) => void,
         contextAlternatives?: RankedContext[]
     ): Promise<Message[]> {
+        const experimentalSmartApplyEnabled = await this.isSmartApplyEnabled()
         const { prompt, context } = await prompter.makePrompt(
             this.chatModel,
-            this.authProvider.getAuthStatus().codyApiVersion
+            this.authProvider.getAuthStatus().codyApiVersion,
+            { experimentalSmartApplyEnabled }
         )
         abortSignal.throwIfAborted()
 
-        // Update UI based on prompt construction
-        // Includes the excluded context items to display in the UI
-        if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.showContextAlternatives')) {
-            this.chatModel.setLastMessageContext(
-                [...context.used, ...context.ignored],
-                contextAlternatives
-            )
-        } else {
-            this.chatModel.setLastMessageContext([...context.used, ...context.ignored])
-        }
+        // Update UI based on prompt construction. Includes the excluded context items to display in the UI
+        this.chatModel.setLastMessageContext([...context.used, ...context.ignored], contextAlternatives)
 
-        // this is not awaited, so we kick the call off but don't block on it returning
+        // This is not awaited, so we kick the call off but don't block on it returning
         this.contextAPIClient?.recordContext(requestID, context.used, context.ignored)
 
         if (sendTelemetry) {
@@ -1866,9 +1877,6 @@ export async function addWebviewViewHTML(
     extensionUri: vscode.Uri,
     view: vscode.WebviewView | vscode.WebviewPanel
 ): Promise<void> {
-    if (isRunningInsideAgent()) {
-        return
-    }
     const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
     // Create Webview using vscode/index.html
     const root = vscode.Uri.joinPath(webviewPath, 'index.html')
@@ -1881,5 +1889,5 @@ export async function addWebviewViewHTML(
     // 2. Update URIs for content security policy to only allow specific scripts to be run
     view.webview.html = decoded
         .replaceAll('./', `${resources.toString()}/`)
-        .replaceAll('{cspSource}', view.webview.cspSource)
+        .replaceAll("'self'", view.webview.cspSource)
 }

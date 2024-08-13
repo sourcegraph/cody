@@ -9,6 +9,7 @@ import { CodyTaskState } from '../utils'
 // Create Lenses based on state
 export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
     const codeLensRange = new vscode.Range(task.selectionRange.start, task.selectionRange.start)
+    const isChatEdit = task.source === 'chat'
     const isTest = task.intent === 'test'
     const isEdit = task.mode === 'edit'
     switch (task.state) {
@@ -30,24 +31,29 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             return [title, cancel]
         }
         case CodyTaskState.Applied: {
-            const accept = getAcceptLens(codeLensRange, task.id)
-            const retry = getRetryLens(codeLensRange, task.id)
-            const undo = getUndoLens(codeLensRange, task.id)
-            if (isTest) {
-                return [accept, undo]
-            }
-            if (isEdit) {
-                const showDiff = getDiffLens(
-                    codeLensRange,
-                    task.id,
-                    // Note: We already show an inline-diff in VS Code, so we change the wording slightly.
-                    // It is still useful to open the diff fully here, as it provides additional controls such as
-                    // reverting specific lines
-                    isRunningInsideAgent() ? 'Show Diff' : 'Open Diff'
-                )
-                return [accept, retry, undo, showDiff]
-            }
-            return [accept, retry, undo]
+            // Required:
+            const acceptLens = getAcceptLens(codeLensRange, task.id)
+            const undoLens = getUndoLens(codeLensRange, task.id, isChatEdit ? 'Reject' : undefined)
+
+            // Optional:
+            // Retries only makes sense if the user created the prompt
+            const canRetry = task.intent !== 'fix' && task.intent !== 'doc' && !isTest && !isChatEdit
+            const retryLens = canRetry ? getRetryLens(codeLensRange, task.id) : null
+
+            // Diffs only if there's code that's changed
+            const canDiff = isEdit && !isTest
+            const diffLens = canDiff
+                ? getDiffLens(
+                      codeLensRange,
+                      task.id,
+                      // Note: We already show an inline-diff in VS Code, so we change the wording slightly.
+                      // It is still useful to open the diff fully here, as it provides additional controls such as
+                      // reverting specific lines
+                      isRunningInsideAgent() ? 'Show Diff' : 'Open Diff'
+                  )
+                : null
+
+            return ([acceptLens, retryLens, undoLens, diffLens] as vscode.CodeLens[]).filter(Boolean) //TODO: Remove type-cast after TS5.5+
         }
         case CodyTaskState.Error: {
             const title = getErrorLens(codeLensRange, task)
@@ -166,11 +172,11 @@ function getRetryLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens 
     return lens
 }
 
-function getUndoLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+function getUndoLens(codeLensRange: vscode.Range, id: string, title = 'Undo'): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     const shortcut = isRunningInsideAgent() ? '' : ` (${process.platform === 'darwin' ? '⌥X' : 'Alt+X'})`
     lens.command = {
-        title: `Undo${shortcut}`,
+        title: `${title}${shortcut}`,
         command: 'cody.fixup.codelens.undo',
         arguments: [id],
     }

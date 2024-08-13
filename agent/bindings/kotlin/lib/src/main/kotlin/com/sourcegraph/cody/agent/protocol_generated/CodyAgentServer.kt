@@ -86,6 +86,8 @@ interface CodyAgentServer {
   fun git_codebaseName(params: Git_CodebaseNameParams): CompletableFuture<String?>
   @JsonRequest("webview/didDispose")
   fun webview_didDispose(params: Webview_DidDisposeParams): CompletableFuture<Null?>
+  @JsonRequest("webview/resolveWebviewView")
+  fun webview_resolveWebviewView(params: Webview_ResolveWebviewViewParams): CompletableFuture<Null?>
   @JsonRequest("webview/receiveMessageStringEncoded")
   fun webview_receiveMessageStringEncoded(params: Webview_ReceiveMessageStringEncodedParams): CompletableFuture<Null?>
   @JsonRequest("diagnostics/publish")
@@ -168,4 +170,6 @@ interface CodyAgentServer {
   fun autocomplete_completionAccepted(params: CompletionItemParams)
   @JsonNotification("progress/cancel")
   fun progress_cancel(params: Progress_CancelParams)
+  @JsonNotification("webview/didDisposeNative")
+  fun webview_didDisposeNative(params: Webview_DidDisposeNativeParams)
 }
