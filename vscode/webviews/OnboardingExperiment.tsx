@@ -51,7 +51,7 @@ const WebLogin: React.FunctionComponent<
                         event.stopPropagation()
                     }}
                 >
-                    Add the Access Token to VS Code
+                    Add Access Token to Cody
                 </a>
             </li>
         </ol>

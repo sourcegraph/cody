@@ -47,8 +47,3 @@
 .editor-content-editable {
     min-height: 1lh;
 }
-
-/* color-mix is not supported on JetBrains webview */
-html[data-ide=JetBrains] .container {
-    background-color: var(--vscode-input-background);
-}

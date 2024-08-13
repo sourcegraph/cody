@@ -1,5 +1,5 @@
 import { ProgrammingLanguage, languageFromFilename } from '@sourcegraph/cody-shared'
-import type { FixupTask } from '../../non-stop/FixupTask'
+import type * as vscode from 'vscode'
 
 export function matchJavascriptFormatting(incoming: string, original: string): string {
     const incomingHasSemiColons = incoming.includes(';')
@@ -13,15 +13,15 @@ export function matchJavascriptFormatting(incoming: string, original: string): s
     return incoming
 }
 
-export function matchLanguage(text: string, task: FixupTask): string {
-    const language = languageFromFilename(task.fixupFile.uri)
+export function matchLanguage(incoming: string, original: string, uri: vscode.Uri): string {
+    const language = languageFromFilename(uri)
 
     // Apply language specific formatting
     switch (language) {
         case ProgrammingLanguage.TypeScript:
         case ProgrammingLanguage.JavaScript:
-            return matchJavascriptFormatting(text, task.original)
+            return matchJavascriptFormatting(incoming, original)
     }
 
-    return text
+    return incoming
 }

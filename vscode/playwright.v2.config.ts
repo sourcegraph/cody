@@ -103,6 +103,11 @@ export default defineConfig<
         ['line', { printSteps: true, includeProjectInTestName: true }],
         ['html', { outputFolder: '.test-reports', fileName: 'report.html', open: 'never' }],
         ['json', { outputFile: '.test-reports/report.json', open: 'never' }],
-        ...(isCI ? [['github', {}] satisfies ReporterDescription] : []),
+        ...(isCI
+            ? [
+                  ['github', {}] satisfies ReporterDescription,
+                  ['buildkite-test-collector/playwright/reporter'] satisfies ReporterDescription,
+              ]
+            : []),
     ],
 })

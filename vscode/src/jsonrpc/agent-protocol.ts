@@ -57,6 +57,7 @@ export type ClientRequests = {
     // Primary is used only in cody web client
     'chat/delete': [{ chatId: string }, ChatExportResult[]]
 
+    // TODO: JetBrains no longer uses this, consider deleting it.
     // Similar to `chat/new` except it starts a new chat session from an
     // existing transcript. The chatID matches the `chatID` property of the
     // `type: 'transcript'` ExtensionMessage that is sent via
@@ -182,9 +183,13 @@ export type ClientRequests = {
     // webview ID (from chat/new).
     'webview/didDispose': [{ id: string }, null]
 
+    // Implements the VSCode Webview View API. Called when the client has
+    // created a native webview for the specified view provider.
+    'webview/resolveWebviewView': [{ viewId: string; webviewHandle: string }, null]
+
     // Low-level API to send a raw WebviewMessage from a specific webview (chat
     // session).  Refrain from using this API in favor of high-level APIs like
-    // `chat/submitMessage`.
+    // `chat/submitMessage` unless using native webviews.
     'webview/receiveMessage': [{ id: string; message: WebviewMessage }, null]
     // Same as `webview/receiveMessage` except the parameter is a JSON-encoded
     // string.  The server processes this message by parsing
@@ -324,11 +329,9 @@ export type ServerRequests = {
     ]
     'workspace/edit': [WorkspaceEditParams, boolean]
 
-    // Low-level API to handle requests from the VS Code extension to create a
-    // webview.  This endpoint should not be needed as long as you use
-    // high-level APIs like chat/new instead. This API only exists to faithfully
-    // expose the VS Code webview API.
-    'webview/create': [{ id: string; data: any }, null]
+    // TODO: Add VSCode support for registerWebviewPanelSerializer.
+
+    'env/openExternal': [{ uri: string }, boolean]
 }
 
 // The JSON-RPC notifications of the Cody Agent protocol. Notifications are
@@ -353,6 +356,9 @@ export type ClientNotifications = {
     // subsequent requests/notifications. The previous extension configuration
     // should no longer be used.
     'extensionConfiguration/didChange': [ExtensionConfiguration]
+
+    // The user has switched to a different workspace folder.
+    'workspaceFolder/didChange': [{ uri: string }]
 
     // Lifecycle notifications for the client to notify the server about text
     // contents of documents and to notify which document is currently focused.
@@ -388,6 +394,12 @@ export type ClientNotifications = {
     // User requested to cancel this progress bar. Only supported for progress
     // bars with `cancelable: true`.
     'progress/cancel': [{ id: string }]
+
+    // Native webviews use handles that are an implementation detail of Agent's
+    // vscode shim, unrelated to the application-level IDs from chat/new.
+    // Consequently they have their own dispose notification. c.f.
+    // webview/dispose client request.
+    'webview/didDisposeNative': [{ handle: string }]
 }
 
 // ================
@@ -437,7 +449,65 @@ export type ServerNotifications = {
     // When configuration changes, repo fetching may re-start.
     'remoteRepo/didChangeState': [RemoteRepoFetchState]
 
-    'authentication/didChange': [AuthStatus | undefined]
+    // Clients with 'native' webview capability.
+    'webview/registerWebviewViewProvider': [
+        {
+            viewId: string
+            retainContextWhenHidden: boolean
+        },
+    ]
+    'webview/createWebviewPanel': [
+        {
+            handle: string
+            viewType: string
+            title: string
+            showOptions: {
+                preserveFocus: boolean
+                viewColumn: number
+            }
+            // VSCode API 'options' but bindings generator does not handle fields
+            // with the same name.
+            options: WebviewCreateWebviewPanelOptions
+        },
+    ]
+    'webview/dispose': [{ handle: string }]
+    'webview/reveal': [{ handle: string; viewColumn: number; preserveFocus: boolean }]
+    'webview/setTitle': [{ handle: string; title: string }]
+    'webview/setIconPath': [{ handle: string; iconPathUri?: string | null | undefined }]
+    'webview/setOptions': [{ handle: string; options: DefiniteWebviewOptions }]
+    'webview/setHtml': [{ handle: string; html: string }]
+}
+
+export interface WebviewCreateWebviewPanelOptions {
+    enableScripts: boolean
+    enableForms: boolean
+    // Note, here, null has a surprising interpretation of "all commands are enabled"
+    // whereas an empty array means no commands are enabled. This lets us model all
+    // states (all enabled, all disabled, only specific commands enabled) with one
+    // field and avoid any redundant or inconsistent states.
+    enableOnlyCommandUris?: readonly string[] | undefined | null
+    // Note, we model "missing" here because interpreting the default
+    // depends on the current workspace root.
+    localResourceRoots?: readonly string[] | undefined | null // Note, in vscode, ? readonly Uri[]
+    portMapping: readonly { webviewPort: number; extensionHostPort: number }[]
+    // WebviewPanelOptions
+    enableFindWidget: boolean
+    retainContextWhenHidden: boolean
+}
+
+/**
+ * vscode.WebviewOptions with defaults applied so each option is present. Agent
+ * native webviews use this type so defaults are handled in TypeScript and the
+ * client simply interprets the fully specified options.
+ */
+export interface DefiniteWebviewOptions {
+    enableScripts: boolean
+    enableForms: boolean
+    enableOnlyCommandUris?: readonly string[] | undefined | null
+    localResourceRoots?: readonly string[] | undefined | null
+    portMapping: readonly { webviewPort: number; extensionHostPort: number }[]
+    enableFindWidget: boolean
+    retainContextWhenHidden: boolean
 }
 
 interface CancelParams {
@@ -534,6 +604,17 @@ export interface ClientCapabilities {
     // JSON-RPC request to handle the saving of the client state. This is needed to safely share state
     // between concurrent agent processes (assuming there is one IDE client process managing multiple agent processes).
     globalState?: 'stateless' | 'server-managed' | 'client-managed' | undefined | null
+    // Whether the client supports the VSCode WebView API. If 'agentic', uses
+    // AgentWebViewPanel which just delegates bidirectional postMessage over
+    // the Agent protocol. If 'native', implements a larger subset of the VSCode
+    // WebView API and expects the client to run web content in the webview.
+    // Defaults to 'agentic'.
+    webview?: 'agentic' | 'native' | undefined | null
+    // If webview === 'native', describes how the client has configured webview resources.
+    // cspSource is passed to the extension as the Webview cspSource property.
+    // webviewBundleServingPrefix is prepended to resource paths under 'dist' in
+    // asWebviewUri (note, multiple prefixes are not yet implemented.)
+    webviewNativeConfig?: { cspSource: string; webviewBundleServingPrefix: string } | undefined | null
 }
 
 export interface ServerInfo {

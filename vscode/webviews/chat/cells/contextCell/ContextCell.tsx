@@ -16,6 +16,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/shadcn/ui/tooltip'
 import { SourcegraphLogo } from '../../../icons/SourcegraphLogo'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
+import { useConfig } from '../../../utils/useConfig'
 import { LoadingDots } from '../../components/LoadingDots'
 import { Cell } from '../Cell'
 import { NON_HUMAN_CELL_AVATAR_SIZE } from '../messageCell/assistant/AssistantMessageCell'
@@ -98,6 +99,10 @@ export const ContextCell: FunctionComponent<{
             })
         }
 
+        const {
+            config: { internalDebugContext },
+        } = useConfig()
+
         return contextItemsToDisplay === undefined || contextItemsToDisplay.length !== 0 ? (
             <Cell
                 style="context"
@@ -134,7 +139,7 @@ export const ContextCell: FunctionComponent<{
                                 </span>
                             </AccordionTrigger>
                             <AccordionContent>
-                                {contextAlternatives && (
+                                {internalDebugContext && contextAlternatives && (
                                     <div>
                                         <button onClick={prevSelectedAlternative} type="button">
                                             &larr;
@@ -170,6 +175,13 @@ export const ContextCell: FunctionComponent<{
                                                 className={clsx(styles.contextItem, MENTION_CLASS_NAME)}
                                                 linkClassName={styles.contextItemLink}
                                             />
+                                            {internalDebugContext &&
+                                                item.metadata &&
+                                                item.metadata.length > 0 && (
+                                                    <span className={styles.contextItemMetadata}>
+                                                        {item.metadata.join(', ')}
+                                                    </span>
+                                                )}
                                         </li>
                                     ))}
                                     {!isForFirstMessage && (
