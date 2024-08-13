@@ -917,15 +917,12 @@ const _commands: Partial<typeof vscode.commands> = {
             }
         })
     },
-    executeCommand: (command, args) => {
+    executeCommand: (command, ...args) => {
         const registered = registeredCommands.get(command)
         if (registered) {
             try {
                 if (args) {
-                    if (typeof args === 'object' && typeof args[Symbol.iterator] === 'function') {
-                        return promisify(registered.callback(...args))
-                    }
-                    return promisify(registered.callback(args))
+                    return promisify(registered.callback(...args))
                 }
                 return promisify(registered.callback())
             } catch (error) {
@@ -945,12 +942,13 @@ const _commands: Partial<typeof vscode.commands> = {
 _commands?.registerCommand?.('workbench.action.reloadWindow', () => {
     // Do nothing
 })
-_commands?.registerCommand?.('setContext', (key, value) => {
+_commands?.registerCommand?.('setContext', (...args) => {
+    const [key, value] = args
     if (typeof key !== 'string') {
         throw new TypeError(`setContext: first argument must be string. Got: ${key}`)
     }
     context.set(key, value)
-    agent?.notify('window/didChangeContext', { key, value })
+    agent?.notify('window/didChangeContext', { key, value: `${value}` })
 })
 _commands?.registerCommand?.('vscode.executeFoldingRangeProvider', async uri => {
     const promises: vscode.FoldingRange[] = []
