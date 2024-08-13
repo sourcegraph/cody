@@ -2,7 +2,7 @@ import assert from 'node:assert'
 import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
     type ContextItem,
@@ -22,7 +22,6 @@ import { TestClient, asTranscriptMessage } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 import { decodeURIs } from './decodeURIs'
 import { explainPollyError } from './explainPollyError'
-import type { Requests, TestingTelemetryEvent } from './protocol-alias'
 import { trimEndOfLine } from './trimEndOfLine'
 const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
 
