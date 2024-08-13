@@ -115,6 +115,8 @@ export class LocalEmbeddingsController
     private lastRepo: { dir: FileURI; repoName: string | false } | undefined
     // The last health report, if any.
     private lastHealth: IndexHealthResultFound | undefined
+    // The time of the last health report, if any.
+    private lastHealthTime: number | undefined
     // The last error from indexing, if any.
     private lastError: string | undefined
     // Map of cached states for loaded indexes.
@@ -461,36 +463,7 @@ export class LocalEmbeddingsController
                 })
 
                 // Start a health check on the index.
-                void (async () => {
-                    wrapInActiveSpan('embeddings.index-health', async span => {
-                        try {
-                            const health = await (await this.getService()).request(
-                                'embeddings/index-health',
-                                {
-                                    repoName,
-                                }
-                            )
-                            logDebug('LocalEmbeddingsController', 'index-health', JSON.stringify(health))
-                            span.setAttribute('repoHealthSucceeded', true)
-                            span.setAttribute('repoFound', health.type === 'found')
-                            if (health.type !== 'found') {
-                                return
-                            }
-                            span.setAttribute('numItems', health.numItems)
-                            span.setAttribute('numFiles', health.numFiles)
-                            span.setAttribute('needsEmbedding', health.numItemsNeedEmbedding > 0)
-                            await this.onHealthReport(repoDir, health)
-                        } catch (error) {
-                            logDebug(
-                                'LocalEmbeddingsController',
-                                'index-health',
-                                captureException(error),
-                                JSON.stringify(error)
-                            )
-                            span.setAttribute('repoHealthSucceeded', false)
-                        }
-                    })
-                })()
+                void this.healthCheck(repoName, repoDir)
             } catch (error: any) {
                 logDebug(
                     'LocalEmbeddingsController',
@@ -533,6 +506,39 @@ export class LocalEmbeddingsController
         return !!this.lastRepo?.repoName
     }
 
+    private async healthCheck(repoName: string, repoDir: FileURI): Promise<void> {
+        // Do a health check only if we haven't done it in the last minute.
+        if (this.lastHealth && Date.now() - (this.lastHealthTime ?? Date.now()) < 1000 * 60) {
+            return
+        }
+
+        await wrapInActiveSpan('embeddings.index-health', async span => {
+            try {
+                const health = await (await this.getService()).request('embeddings/index-health', {
+                    repoName,
+                })
+                logDebug('LocalEmbeddingsController', 'index-health', JSON.stringify(health))
+                span.setAttribute('repoHealthSucceeded', true)
+                span.setAttribute('repoFound', health.type === 'found')
+                if (health.type !== 'found') {
+                    return
+                }
+                span.setAttribute('numItems', health.numItems)
+                span.setAttribute('numFiles', health.numFiles)
+                span.setAttribute('needsEmbedding', health.numItemsNeedEmbedding > 0)
+                await this.onHealthReport(repoDir, health)
+            } catch (error) {
+                logDebug(
+                    'LocalEmbeddingsController',
+                    'index-health',
+                    captureException(error),
+                    JSON.stringify(error)
+                )
+                span.setAttribute('repoHealthSucceeded', false)
+            }
+        })
+    }
+
     // After loading a repo, we asynchronously check whether the repository
     // still needs embeddings or if the embeddings are stale.
     private async onHealthReport(repoDir: FileURI, health: IndexHealthResultFound): Promise<void> {
@@ -541,6 +547,7 @@ export class LocalEmbeddingsController
             return
         }
         this.lastHealth = health
+        this.lastHealthTime = Date.now()
         const hasIssue = health.numItemsNeedEmbedding > 0
         if (hasIssue) {
             const canRetry = this.canAutoIndex() && !this.lastError
@@ -559,21 +566,33 @@ export class LocalEmbeddingsController
         }
 
         // Check if the embeddings are stale.
-        const currentCommitHash = vscodeGitAPI?.repositories[0]?.state.HEAD?.commit ?? ''
-        const lastEmbeddingsCommit = await vscodeGitAPI?.repositories[0]?.getCommit(health.commit)
-        const currentCommit = await vscodeGitAPI?.repositories[0]?.getCommit(currentCommitHash)
+        const repo = vscodeGitAPI?.getRepository(repoDir.toString())
+        const currentCommitHash = repo?.state.HEAD?.commit ?? ''
 
-        // The embeddings are stale if:
-        // the current commit and the last embeddings commit are different
-        // and the current commit is at least 24 hours newer than the last embeddings commit.
-        if (
-            isDefined(this.lastRepo) &&
-            currentCommitHash !== health.commit &&
-            isDefined(lastEmbeddingsCommit?.commitDate) &&
-            isDefined(currentCommit?.commitDate) &&
-            currentCommit?.commitDate.getTime() - lastEmbeddingsCommit?.commitDate.getTime() >
-                1000 * 3600 * 24
-        ) {
+        const changedFiles = (await repo?.diffBetween(currentCommitHash, health.commit))?.length ?? 0
+        if (!isDefined(this.lastRepo) || changedFiles === 0) {
+            return
+        }
+
+        // Compute the time difference since the last commit that was indexed.
+        const currentCommitTime = (await repo?.getCommit(currentCommitHash))?.commitDate?.getTime()
+        const lastEmbeddingsCommitTime = (await repo?.getCommit(health.commit))?.commitDate?.getTime()
+        const timeDiff =
+            currentCommitTime && lastEmbeddingsCommitTime
+                ? currentCommitTime - lastEmbeddingsCommitTime
+                : 0
+
+        const stalenessThresholds = [
+            { changedFiles: 100, timeDiff: 60 * 60 }, // 1 hour
+            { changedFiles: 10, timeDiff: 60 * 60 * 24 }, // 1 day
+        ]
+
+        // The embeddings are stale if the number of changed files and the time between the indexed commits surpass a threshold.
+        const isStale = stalenessThresholds.some(threshold => {
+            return changedFiles > threshold.changedFiles && timeDiff >= threshold.timeDiff
+        })
+
+        if (isStale) {
             logDebug(
                 'LocalEmbeddingsController',
                 'reindexing',
@@ -692,6 +711,7 @@ export class LocalEmbeddingsController
                     'query',
                     `returning ${resp.results.length} results`
                 )
+                void this.healthCheck(lastRepo.repoName, lastRepo.dir)
                 return resp.results.map(result => ({
                     ...result,
                     uri: vscode.Uri.joinPath(lastRepo.dir, result.fileName),

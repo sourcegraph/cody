@@ -24,7 +24,6 @@ import { localStorage } from './services/LocalStorageProvider'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { getExtensionDetails } from './services/telemetry-v2'
 import { serializeConfigSnapshot } from './uninstall/serializeConfig'
-import {logDebug} from "./log";
 
 /**
  * Activation entrypoint for the VS Code extension when running VS Code as a desktop app
