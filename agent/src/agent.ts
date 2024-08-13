@@ -1172,6 +1172,18 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { panelId, chatId }
         })
 
+        this.registerAuthenticatedRequest('chat/sidebar/new', async () => {
+            const panelId = await this.createChatPanel(
+                Promise.resolve({
+                    type: 'chat',
+                    session: await vscode.commands.executeCommand('cody.chat.newPanel'),
+                })
+            )
+
+            const chatId = this.webPanels.panels.get(panelId)?.chatID ?? ''
+            return { panelId, chatId }
+        })
+
         // TODO: JetBrains no longer uses this, consider deleting it.
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
