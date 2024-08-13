@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { clsx } from 'clsx'
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
+import type { UserAccountInfo } from '../../Chat'
 import { type ClientActionListener, useClientActionListener } from '../../client/clientState'
 import { MarkdownFromCody } from '../../components/MarkdownFromCody'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
@@ -27,6 +28,7 @@ interface ChatMessageContentProps {
     displayMarkdown: string
     isMessageLoading: boolean
     humanMessage: PriorHumanMessageInfo | null
+    userInfo: UserAccountInfo
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
@@ -51,6 +53,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     className,
     experimentalSmartApplyEnabled,
     smartApply,
+    userInfo,
 }) => {
     const rootRef = useRef<HTMLDivElement>(null)
 
@@ -116,8 +119,10 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     buttons = createButtonsExperimentalUI(
                         preText,
                         humanMessage,
+                        userInfo,
                         fileName,
                         copyButtonOnSubmit,
+                        insertButtonOnSubmit,
                         smartApplyInterceptor,
                         smartApplyId,
                         smartApplyState
