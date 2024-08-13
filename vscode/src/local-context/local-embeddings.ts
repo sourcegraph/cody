@@ -508,7 +508,7 @@ export class LocalEmbeddingsController
 
     private async healthCheck(repoName: string, repoDir: FileURI): Promise<void> {
         // Do a health check only if we haven't done it in the last minute.
-        if (this.lastHealth && Date.now() - (this.lastHealthTime ?? Date.now()) < 1000 * 60) {
+        if (this.lastHealth && this.lastHealthTime && Date.now() - this.lastHealthTime < 1000 * 60) {
             return
         }
 
@@ -565,31 +565,37 @@ export class LocalEmbeddingsController
             }
         }
 
-        // Check if the embeddings are stale.
-        const repo = vscodeGitAPI?.getRepository(repoDir.toString())
-        const currentCommitHash = repo?.state.HEAD?.commit ?? ''
+        await this.checkIndexStaleness(repoDir, health)
+    }
 
-        const changedFiles = (await repo?.diffBetween(currentCommitHash, health.commit))?.length ?? 0
+    // Check if the embeddings are stale and refresh the index if needed.
+    private async checkIndexStaleness(repoDir: FileURI, health: IndexHealthResultFound): Promise<void> {
+        const repo = vscodeGitAPI?.getRepository(repoDir)
+        const currentCommit = repo?.state.HEAD?.commit ?? ''
+        const changedFiles = (await repo?.diffBetween(health.commit, currentCommit))?.length ?? 0
+
         if (!isDefined(this.lastRepo) || changedFiles === 0) {
             return
         }
 
-        // Compute the time difference since the last commit that was indexed.
-        const currentCommitTime = (await repo?.getCommit(currentCommitHash))?.commitDate?.getTime()
-        const lastEmbeddingsCommitTime = (await repo?.getCommit(health.commit))?.commitDate?.getTime()
-        const timeDiff =
-            currentCommitTime && lastEmbeddingsCommitTime
-                ? currentCommitTime - lastEmbeddingsCommitTime
-                : 0
+        // Compute the time since the last commit that was indexed.
+        const currentCommitTime = (await repo?.getCommit(currentCommit))?.commitDate?.getTime()
+        const lastIndexCommitTime = (await repo?.getCommit(health.commit))?.commitDate?.getTime()
+        const timeSinceLastIndexedCommit =
+            currentCommitTime && lastIndexCommitTime ? currentCommitTime - lastIndexCommitTime : 0
 
         const stalenessThresholds = [
-            { changedFiles: 100, timeDiff: 60 * 60 }, // 1 hour
-            { changedFiles: 10, timeDiff: 60 * 60 * 24 }, // 1 day
+            { changedFiles: 100, timeSince: 1000 * 60 * 60 }, // 1 hour
+            { changedFiles: 10, timeSince: 1000 * 60 * 60 * 24 }, // 1 day
+            { changedFiles: 1, timeSince: 1000 * 60 }, // 1 minute for testing
         ]
 
         // The embeddings are stale if the number of changed files and the time between the indexed commits surpass a threshold.
         const isStale = stalenessThresholds.some(threshold => {
-            return changedFiles > threshold.changedFiles && timeDiff >= threshold.timeDiff
+            return (
+                changedFiles >= threshold.changedFiles &&
+                timeSinceLastIndexedCommit >= threshold.timeSince
+            )
         })
 
         if (isStale) {
@@ -597,9 +603,13 @@ export class LocalEmbeddingsController
                 'LocalEmbeddingsController',
                 'reindexing',
                 'currentCommit',
-                currentCommitHash,
+                currentCommit,
                 'lastEmbeddingsCommit',
-                health.commit
+                health.commit,
+                'timeSinceLastIndexedCommit',
+                timeSinceLastIndexedCommit / 1000,
+                'changedFiles',
+                changedFiles
             )
             await this.indexRequest({
                 repoPath: this.lastRepo.dir.fsPath,

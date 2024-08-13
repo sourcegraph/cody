@@ -46,12 +46,6 @@ export function activate(
         .getConfiguration()
         .get<boolean>('cody.advanced.agent.running', false)
 
-    // Disable local embeddings for enterprise users.
-    const authStatus = AuthProvider.instance?.getAuthStatus() ?? defaultAuthStatus
-    if (!authStatus.isDotCom) {
-        isLocalEmbeddingsDisabled = true
-    }
-
     // Optional override for local testing.
     isLocalEmbeddingsDisabled = vscode.workspace
         .getConfiguration()
