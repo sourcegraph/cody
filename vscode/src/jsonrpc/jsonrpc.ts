@@ -110,9 +110,14 @@ export class MessageHandler {
     public async request<M extends RequestMethodName>(
         method: M,
         params: ParamsOf<M>,
-        token?: vscode.CancellationToken
+        extra?: { token?: vscode.CancellationToken }
     ): Promise<ResultOf<M>> {
-        return await this.conn.sendRequest(method, params, token)
+        if (extra?.token !== undefined) {
+            return await this.conn.sendRequest(method, params, extra.token)
+        }
+        // Strangely enough: the tests will fail with a cryptic error if we pass
+        // an undefined `token` variable as the third parameter to `sendRequest`.
+        return await this.conn.sendRequest(method, params)
     }
 
     public notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): void {
@@ -134,10 +139,11 @@ export class MessageHandler {
             request: async <M extends RequestMethodName>(
                 method: M,
                 params: ParamsOf<M>,
-                cancelToken: vscode.CancellationToken = new vscode.CancellationTokenSource().token
+                extra?: { token?: vscode.CancellationToken }
             ) => {
                 const handler = this.requestHandlers.get(method)
                 if (handler) {
+                    const cancelToken = extra?.token ?? new vscode.CancellationTokenSource().token
                     return await handler(params, cancelToken)
                 }
                 throw new Error(`No such request handler: ${method}`)

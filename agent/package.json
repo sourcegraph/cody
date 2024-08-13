@@ -13,6 +13,7 @@
   "scripts": {
     "build:root": "pnpm -C .. run -s build",
     "build:agent": "node src/esbuild.mjs",
+    "build:for-tests": "pnpm run -s build:root && pnpm run -s build:agent",
     "build:webviews": "pnpm -C ../vscode _build:webviews --mode production --outDir ../../agent/dist/webviews",
     "build": "pnpm run -s build:root && pnpm run -s build:webviews && pnpm run -s build:agent",
     "build-minify": "pnpm run build --minify",

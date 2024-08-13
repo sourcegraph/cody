@@ -274,7 +274,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
                 addEnhancedContext,
             },
         },
-        tokenSource.token
+        { token: tokenSource.token }
     )
 
     if (token.isCancellationRequested) {
