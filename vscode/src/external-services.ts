@@ -76,6 +76,7 @@ export async function configureExternalServices(
         )
     }
 
+    // Disable local embeddings for enterprise users.
     const localEmbeddings = authProvider.getAuthStatus().isDotCom
         ? await platform.createLocalEmbeddingsController?.(initialConfig)
         : undefined
