@@ -567,6 +567,7 @@ export class LocalEmbeddingsController
         // the current commit and the last embeddings commit are different
         // and the current commit is at least 24 hours newer than the last embeddings commit.
         if (
+            isDefined(this.lastRepo) &&
             currentCommitHash !== health.commit &&
             isDefined(lastEmbeddingsCommit?.commitDate) &&
             isDefined(currentCommit?.commitDate) &&

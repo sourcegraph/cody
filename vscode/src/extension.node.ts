@@ -24,6 +24,7 @@ import { localStorage } from './services/LocalStorageProvider'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { getExtensionDetails } from './services/telemetry-v2'
 import { serializeConfigSnapshot } from './uninstall/serializeConfig'
+import {logDebug} from "./log";
 
 /**
  * Activation entrypoint for the VS Code extension when running VS Code as a desktop app
@@ -45,6 +46,12 @@ export function activate(
     let isLocalEmbeddingsDisabled = vscode.workspace
         .getConfiguration()
         .get<boolean>('cody.advanced.agent.running', false)
+
+    // Disable local embeddings for enterprise users.
+    const authStatus = AuthProvider.instance?.getAuthStatus() ?? defaultAuthStatus
+    if (!authStatus.isDotCom) {
+        isLocalEmbeddingsDisabled = true
+    }
 
     // Optional override for local testing.
     isLocalEmbeddingsDisabled = vscode.workspace
