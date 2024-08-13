@@ -15,7 +15,6 @@ import { CodyTaskState } from '../../../src/non-stop/state'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 import styles from './ChatMessageContent.module.css'
-import { getFileName } from './utils'
 
 export function createButtons(
     preText: string,
@@ -119,14 +118,6 @@ export function createButtonsExperimentalUI(
     }
 
     container.append(buttons)
-
-    if (fileName) {
-        const fileNameContainer = document.createElement('div')
-        fileNameContainer.className = styles.fileNameContainer
-        fileNameContainer.textContent = getFileName(fileName)
-        fileNameContainer.title = fileName
-        container.append(fileNameContainer)
-    }
 
     return container
 }

@@ -9,7 +9,7 @@ export interface SmartApplyArguments {
         instruction: PromptString
         replacement: string
         document: vscode.TextDocument
-        model: EditModel
+        model?: EditModel
     }
     source?: EventSource
 }

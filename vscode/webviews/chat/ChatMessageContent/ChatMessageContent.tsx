@@ -11,7 +11,7 @@ import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/Assis
 import styles from './ChatMessageContent.module.css'
 import { GuardrailsStatusController } from './GuardRailStatusController'
 import { createButtons, createButtonsExperimentalUI } from './create-buttons'
-import { getCodeBlockId } from './utils'
+import { getCodeBlockId, getFileName } from './utils'
 
 export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
@@ -126,10 +126,14 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     buttons = createButtons(preText, copyButtonOnSubmit, insertButtonOnSubmit)
                 }
 
+                const metadataContainer = document.createElement('div')
+                metadataContainer.classList.add(styles.metadataContainer)
+                buttons.append(metadataContainer)
+
                 if (guardrails) {
                     const container = document.createElement('div')
                     container.classList.add(styles.attributionContainer)
-                    buttons.append(container)
+                    metadataContainer.append(container)
 
                     if (!isMessageLoading) {
                         const g = new GuardrailsStatusController(container)
@@ -154,6 +158,14 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                                 return
                             })
                     }
+                }
+
+                if (fileName) {
+                    const fileNameContainer = document.createElement('div')
+                    fileNameContainer.className = styles.fileNameContainer
+                    fileNameContainer.textContent = getFileName(fileName)
+                    fileNameContainer.title = fileName
+                    metadataContainer.append(fileNameContainer)
                 }
 
                 // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
