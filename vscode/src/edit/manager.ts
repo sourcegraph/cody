@@ -188,8 +188,8 @@ export class EditManager implements vscode.Disposable {
         const activeTask = this.controller.tasksForFile(task.fixupFile).find(activeTask => {
             return (
                 ACTIVE_TASK_STATES.includes(activeTask.state) &&
-                activeTask.instruction === task!.instruction &&
-                activeTask.selectionRange.isEqual(task!.selectionRange)
+                activeTask.instruction.toString() === task.instruction.toString() &&
+                activeTask.selectionRange.isEqual(task.selectionRange)
             )
         })
 
