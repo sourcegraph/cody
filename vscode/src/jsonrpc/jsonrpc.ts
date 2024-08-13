@@ -109,9 +109,10 @@ export class MessageHandler {
 
     public async request<M extends RequestMethodName>(
         method: M,
-        params: ParamsOf<M>
+        params: ParamsOf<M>,
+        token?: vscode.CancellationToken
     ): Promise<ResultOf<M>> {
-        return await this.conn.sendRequest(method, params)
+        return await this.conn.sendRequest(method, params, token)
     }
 
     public notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): void {
