@@ -136,6 +136,9 @@ importers:
         specifier: ^2.2.3
         version: 2.2.3
     devDependencies:
+      '@types/better-sqlite3':
+        specifier: ^7.6.11
+        version: 7.6.11
       '@types/dedent':
         specifier: ^0.7.0
         version: 0.7.0
@@ -175,6 +178,9 @@ importers:
       '@types/ws':
         specifier: ^8.5.10
         version: 8.5.10
+      better-sqlite3:
+        specifier: ^11.1.2
+        version: 11.1.2
       chalk:
         specifier: ^5.3.0
         version: 5.3.0
@@ -6927,6 +6933,12 @@ packages:
       '@babel/types': 7.24.5
     dev: true
 
+  /@types/better-sqlite3@7.6.11:
+    resolution: {integrity: sha512-i8KcD3PgGtGBLl3+mMYA8PdKkButvPyARxA7IQAd6qeslht13qxb1zzO8dRCtE7U3IoJS782zDBAeoKiM695kg==}
+    dependencies:
+      '@types/node': 20.12.7
+    dev: true
+
   /@types/body-parser@1.19.5:
     resolution: {integrity: sha512-fB3Zu92ucau0iQ0JMCFQE7b/dv8Ot07NI3KaZIkIUNXq82k4eBAqUaneXfleGY9JWskeS9y+u0nXMyspcuQrCg==}
     dependencies:
@@ -8130,6 +8142,14 @@ packages:
       open: 8.4.2
     dev: true
 
+  /better-sqlite3@11.1.2:
+    resolution: {integrity: sha512-gujtFwavWU4MSPT+h9B+4pkvZdyOUkH54zgLdIrMmmmd4ZqiBIrRNBzNzYVFO417xo882uP5HBu4GjOfaSrIQw==}
+    requiresBuild: true
+    dependencies:
+      bindings: 1.5.0
+      prebuild-install: 7.1.2
+    dev: true
+
   /big-integer@1.6.52:
     resolution: {integrity: sha512-QxD8cf2eVqJOOz63z6JIN9BzvVs/dlySa5HGSBH5xtR8dPteIRQnBxxKqkNTiT6jbDTF6jAfrd4oMcND9RGbQg==}
     engines: {node: '>=0.6'}
@@ -8153,7 +8173,6 @@ packages:
     resolution: {integrity: sha512-p2q/t/mhvuOj/UeLlV6566GD/guowlr0hHxClI0W9m7MWYkL1F0hLo+0Aexs9HSPCtR1SXQ0TD3MMKrXZajbiQ==}
     dependencies:
       file-uri-to-path: 1.0.0
-    dev: false
 
   /bl@4.1.0:
     resolution: {integrity: sha512-1W07cM9gS6DcLperZfFSj+bWLtaPGSOHWhPiGzXmvVJbRLdG82sH/Kn8EtW1VqWVA54AKf2h5k5BbnIbwF3h6w==}
@@ -9165,7 +9184,6 @@ packages:
     dependencies:
       mimic-response: 3.1.0
     dev: true
-    optional: true
 
   /dedent@0.7.0:
     resolution: {integrity: sha512-Q6fKUPqnAHAyhiUgFU7BUzLiv0kd8saH9al7tnu5Q/okj6dnupxyTgFIBjVzJATdfIAm9NAsvXNzjaKa+bxVyA==}
@@ -9219,7 +9237,6 @@ packages:
     engines: {node: '>=4.0.0'}
     requiresBuild: true
     dev: true
-    optional: true
 
   /deep-freeze@0.0.1:
     resolution: {integrity: sha512-Z+z8HiAvsGwmjqlphnHW5oz6yWlOwu6EQfFTjmeTWlDeda3FS2yv3jhq35TX/ewmsnqB+RX2IdsIOyjJCQN5tg==}
@@ -9357,7 +9374,6 @@ packages:
     engines: {node: '>=8'}
     requiresBuild: true
     dev: true
-    optional: true
 
   /detect-node-es@1.1.0:
     resolution: {integrity: sha512-ypdmJU/TbBby2Dxibuv7ZLW3Bs1QEmM7nHjEANfohJLvE0XVujisn1qPJcZxg+qDucsr+bP6fLD1rPS3AhJ7EQ==}
@@ -9897,7 +9913,6 @@ packages:
     engines: {node: '>=6'}
     requiresBuild: true
     dev: true
-    optional: true
 
   /exponential-backoff@3.1.1:
     resolution: {integrity: sha512-dX7e/LHVJ6W3DE1MHWi9S1EYzDESENfLrYohG2G++ovZrYOkm4Knwa0mc1cn84xJOR4KEU0WSchhLbd0UklbHw==}
@@ -10119,7 +10134,6 @@ packages:
 
   /file-uri-to-path@1.0.0:
     resolution: {integrity: sha512-0Zt+s3L7Vf1biwWZ29aARiVYLx7iMGnEUl9x33fbB/j3jR81u/O2LbqK+Bm1CDSNDKVtJ/YjwY7TUd5SkeLQLw==}
-    dev: false
 
   /filelist@1.0.4:
     resolution: {integrity: sha512-w1cEuf3S+DrLCQL7ET6kz+gmlJdbq9J7yXCSjK/OZCPA+qEN1WyF4ZAf0YYJa4/shHJra2t/d/r8SV4Ji+x+8Q==}
@@ -10514,7 +10528,6 @@ packages:
     resolution: {integrity: sha512-SyHy3T1v2NUXn29OsWdxmK6RwHD+vkj3v8en8AOBZ1wBQ/hCAQ5bAQTD02kW4W9tUp/3Qh6J8r9EvntiyCmOOw==}
     requiresBuild: true
     dev: true
-    optional: true
 
   /github-slugger@2.0.0:
     resolution: {integrity: sha512-IaOQ9puYtjrkq7Y0Ygl9KDZnrf/aiUJYUpVf89y8kyaxbRG7Y1SrX/jaumrv81vc61+kiMempujsM3Yw7w5qcw==}
@@ -12977,7 +12990,6 @@ packages:
     engines: {node: '>=10'}
     requiresBuild: true
     dev: true
-    optional: true
 
   /min-indent@1.0.1:
     resolution: {integrity: sha512-I9jwMn07Sy/IwOj3zVkVik2JTvgpaykDZEigL6Rx6N9LbMywwUSMtxET+7lVoDLLd3O3IXwJwvuuns8UB/HeAg==}
@@ -13248,7 +13260,6 @@ packages:
     resolution: {integrity: sha512-ONmRUqK7zj7DWX0D9ADe03wbwOBZxNAfF20PlGfCWQcD3+/MakShIHrMqx9YwPTfxDdF1zLeL+RGZiR9kGMLdg==}
     requiresBuild: true
     dev: true
-    optional: true
 
   /negotiator@0.6.3:
     resolution: {integrity: sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==}
@@ -13292,7 +13303,6 @@ packages:
     dependencies:
       semver: 7.6.0
     dev: true
-    optional: true
 
   /node-addon-api@4.3.0:
     resolution: {integrity: sha512-73sE9+3UaLYYFmDsFZnqCInzPyh3MqIwZO9cw58yIqAZhONrrabrYyYe3TuIqtIiOuTXVhsGau8hcrhhwSsDIQ==}
@@ -14090,7 +14100,6 @@ packages:
       tar-fs: 2.1.1
       tunnel-agent: 0.6.0
     dev: true
-    optional: true
 
   /prelude-ls@1.1.2:
     resolution: {integrity: sha512-ESF23V4SKG6lVSGZgYNpbsiaAkdab6ZgOxe52p7+Kid3W3u3bxR4Vfd/o21dmN7jSt0IwgZ4v5MUd26FEtXE9w==}
@@ -14398,7 +14407,6 @@ packages:
       minimist: 1.2.8
       strip-json-comments: 2.0.1
     dev: true
-    optional: true
 
   /re2js@0.4.1:
     resolution: {integrity: sha512-Kxb+OKXrEPowP4bXAF07NDXtgYX07S8HeVGgadx5/D/R41LzWg1kgTD2szIv2iHJM3vrAPnDKaBzfUE/7QWX9w==}
@@ -15359,7 +15367,6 @@ packages:
     resolution: {integrity: sha512-cSFtAPtRhljv69IK0hTVZQ+OfE9nePi/rtJmw5UjHeVyVroEqJXP1sFztKUy1qU+xvz3u/sfYJLa947b7nAN2Q==}
     requiresBuild: true
     dev: true
-    optional: true
 
   /simple-get@4.0.1:
     resolution: {integrity: sha512-brv7p5WgH0jmQJr1ZDDfKDOSeWWg+OVypG99A/5vYGPqJ6pxiaHLy8nxtFjBA7oMa01ebA9gfh1uMCFqOuXxvA==}
@@ -15369,7 +15376,6 @@ packages:
       once: 1.4.0
       simple-concat: 1.0.1
     dev: true
-    optional: true
 
   /sisteransi@1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
@@ -15756,7 +15762,6 @@ packages:
     engines: {node: '>=0.10.0'}
     requiresBuild: true
     dev: true
-    optional: true
 
   /strip-json-comments@3.1.1:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
@@ -16399,7 +16404,6 @@ packages:
     dependencies:
       safe-buffer: 5.2.1
     dev: true
-    optional: true
 
   /tunnel@0.0.6:
     resolution: {integrity: sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg==}

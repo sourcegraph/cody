@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import path, { join } from 'node:path'
+import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
 import { type CodyCommand, ModelUsage, telemetryRecorder } from '@sourcegraph/cody-shared'
@@ -55,13 +55,13 @@ import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategie
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import { AgentFixupControls } from './AgentFixupControls'
-import { AgentGlobalState } from './AgentGlobalState'
 import { AgentProviders } from './AgentProviders'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
 import { codyPaths } from './codyPaths'
+import { AgentGlobalState } from './global-state/AgentGlobalState'
 import {
     MessageHandler,
     type RequestCallback,
@@ -1383,11 +1383,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
     private newGlobalState(clientInfo: ClientInfo): AgentGlobalState {
         if (clientInfo.capabilities?.globalState === 'server-managed') {
-            return new AgentGlobalState(
-                clientInfo.globalStatePath ?? join(codyPaths().data, 'globalState.json')
-            )
+            return new AgentGlobalState(clientInfo.name, clientInfo.globalStateDir ?? codyPaths().data)
         }
-        return new AgentGlobalState()
+        return new AgentGlobalState(clientInfo.name)
     }
 
     // ExtensionClient callbacks.

@@ -555,7 +555,7 @@ export interface ClientInfo {
     version: string // extension version
     ideVersion?: string | undefined | null
     workspaceRootUri: string
-    globalStatePath?: string | undefined | null
+    globalStateDir?: string | undefined | null
 
     /** @deprecated Use `workspaceRootUri` instead. */
     workspaceRootPath?: string | undefined | null
