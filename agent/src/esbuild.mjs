@@ -68,6 +68,10 @@ async function buildAgent(minify) {
             '@sourcegraph/cody-shared': '@sourcegraph/cody-shared/src/index',
             '@sourcegraph/cody-shared/src': '@sourcegraph/cody-shared/src',
         },
+
+        loader: {
+            ".sql": "text",
+        }
     }
     const res = await build(esbuildOptions)
 
