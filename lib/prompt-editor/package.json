@@ -19,7 +19,6 @@
     "prepublishOnly": "tsc --build --clean && pnpm run build"
   },
   "dependencies": {
-    "@floating-ui/react": "^0.26.9",
     "@lexical/code": "^0.16.0",
     "@lexical/react": "^0.16.0",
     "@lexical/text": "^0.16.0",
