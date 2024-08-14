@@ -10,6 +10,15 @@ This is a log of all notable changes to the Cody command-line tool. [Unreleased]
 
 ### Changed
 
+## 5.5.12
+
+### Fixed
+
+- `cody chat --context-file` will now fail fast if the provided file is too
+  large to fit into the context window. Previously, `cody chat` silently ignored
+  this error and the LLM would respond with a confusing message about missing
+  context. To bypass this check, use `--ignore-context-window-errors`.
+
 ## 5.5.11
 
 ### Fixed

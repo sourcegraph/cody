@@ -102,7 +102,7 @@ export function buildAgentBinary(): void {
     // To see the full error, run this file in isolation:
     //
     //   pnpm test agent/src/index.test.ts
-    execSync('pnpm run build ', {
+    execSync('pnpm run build:for-tests ', {
         cwd: getAgentDir(),
         stdio: 'inherit',
     })
