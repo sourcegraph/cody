@@ -50,13 +50,6 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
                 const task = this.controller.taskForId(id)
                 return task ? this.controller.undo(task) : Promise.resolve()
             }),
-            vscode.commands.registerCommand('cody.fixup.codelens.accept', (id, range) => {
-                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'accept')
-                const task = this.controller.taskForId(id)
-                if (task) {
-                    this.controller.accept(task, range)
-                }
-            }),
             vscode.commands.registerCommand('cody.fixup.codelens.acceptAll', id => {
                 telemetryRecorder.recordEvent('cody.fixup.codeLens', 'acceptAll')
                 const task = this.controller.taskForId(id)
@@ -64,11 +57,18 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
                     this.controller.acceptAll(task)
                 }
             }),
-            vscode.commands.registerCommand('cody.fixup.codelens.reject', (id, range) => {
-                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'reject');
-                const task = this.controller.taskForId(id);
+            vscode.commands.registerCommand('cody.fixup.codelens.accept', (id, range) => {
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'accept')
+                const task = this.controller.taskForId(id)
                 if (task) {
-                    this.controller.reject(task, range);
+                    this.controller.accept(task, range)
+                }
+            }),
+            vscode.commands.registerCommand('cody.fixup.codelens.reject', (id, range) => {
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'reject')
+                const task = this.controller.taskForId(id)
+                if (task) {
+                    this.controller.reject(task, range)
                 }
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.error', id => {
@@ -104,10 +104,6 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
                 return vscode.commands.executeCommand('cody.fixup.codelens.undo', nearestTask.id)
             })
         )
-    }
-
-    public refresh(): void {
-        this._onDidChangeCodeLenses.fire()
     }
 
     private showError(id: FixupTaskID): void {
@@ -219,6 +215,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
         if (!diff) {
             return
         }
+
         // show diff view between the current document and replacement
         // Add replacement content to the temp document
         if (!isRunningInsideAgent()) {
