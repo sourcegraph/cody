@@ -17,7 +17,7 @@
     display: flex;
     align-items: center;
     padding: 3px;
-    height: 16px;
+    height: 20px;
     background-color: transparent;
     cursor: pointer;
     background: var(--button-icon-background);
@@ -65,6 +65,16 @@
 .status {
     font-size: 12px;
     line-height: 1;
+}
+
+.metadata-container {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+}
+
+.metadata-container > :not(:last-child) {
+    margin-right: 0.25rem;
 }
 
 .attribution-container {

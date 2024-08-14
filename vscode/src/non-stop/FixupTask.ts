@@ -12,7 +12,7 @@ import type { EditIntent, EditMode } from '../edit/types'
 
 import type { FixupFile } from './FixupFile'
 import type { Edit } from './line-diff'
-import { CodyTaskState } from './utils'
+import { CodyTaskState } from './state'
 
 export type FixupTaskID = string
 
@@ -24,7 +24,6 @@ export type FixupTelemetryMetadata = {
 }
 
 export class FixupTask {
-    public id: FixupTaskID
     public state_: CodyTaskState = CodyTaskState.Idle
     private stateChanges = new vscode.EventEmitter<CodyTaskState>()
     public onDidStateChange = this.stateChanges.event
@@ -74,19 +73,11 @@ export class FixupTask {
         public destinationFile?: vscode.Uri,
         /* The position where the Edit should start. Defaults to the start of the selection range. */
         public insertionPoint: vscode.Position = selectionRange.start,
-        public readonly telemetryMetadata: FixupTelemetryMetadata = {}
+        public readonly telemetryMetadata: FixupTelemetryMetadata = {},
+        public readonly id: FixupTaskID = Date.now().toString(36).replaceAll(/\d+/g, '')
     ) {
-        this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, ps``).trim()
-        // We always expand the range to encompass all characters from the selection lines
-        // This is so we can calculate an optimal diff, and the LLM has the best chance at understanding
-        // the indentation in the returned code.
-        this.selectionRange = new vscode.Range(
-            selectionRange.start.line,
-            0,
-            selectionRange.end.line,
-            document.lineAt(selectionRange.end.line).range.end.character
-        )
+        this.selectionRange = this.getDefaultSelectionRange(selectionRange)
         this.originalRange = this.selectionRange
     }
 
@@ -114,5 +105,22 @@ export class FixupTask {
      */
     public get state(): CodyTaskState {
         return this.state_
+    }
+
+    private getDefaultSelectionRange(proposedRange: vscode.Range): vscode.Range {
+        if (this.intent === 'add') {
+            // We are only adding new code, no need to expand the range
+            return proposedRange
+        }
+
+        // For all other Edits, we always expand the range to encompass all characters from the selection lines
+        // This is so we can calculate an optimal diff, and the LLM has the best chance at understanding
+        // the indentation in the returned code.
+        return new vscode.Range(
+            proposedRange.start.line,
+            0,
+            proposedRange.end.line,
+            this.document.lineAt(proposedRange.end.line).range.end.character
+        )
     }
 }
