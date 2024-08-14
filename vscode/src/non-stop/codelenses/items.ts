@@ -5,6 +5,7 @@ import { isRateLimitError } from '@sourcegraph/cody-shared'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { FixupTask } from '../FixupTask'
 import { CodyTaskState } from '../utils'
+import { getChunkedEditRanges } from './utils'
 
 // Create Lenses based on state
 export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
@@ -201,32 +202,30 @@ function getUndoLens(codeLensRange: vscode.Range, id: string, title = 'Undo'): v
 
 function getRejectLenses(task: FixupTask): vscode.CodeLens[] {
     const lenses = []
-    if (task.diff) {
-        for (const edit of task.diff) {
-            const acceptBlockLens = new vscode.CodeLens(edit.range)
-            acceptBlockLens.command = {
-                title: 'Reject',
-                command: 'cody.fixup.codelens.rejectChange',
-                arguments: [task.id, edit.range],
-            }
-            lenses.push(acceptBlockLens)
+    const chunkedRanges = getChunkedEditRanges(task.diff)
+    for (const range of chunkedRanges) {
+        const acceptBlockLens = new vscode.CodeLens(range)
+        acceptBlockLens.command = {
+            title: 'Reject',
+            command: 'cody.fixup.codelens.rejectChange',
+            arguments: [task.id, range],
         }
+        lenses.push(acceptBlockLens)
     }
     return lenses
 }
 
 function getAcceptLenses(task: FixupTask): vscode.CodeLens[] {
     const lenses = []
-    if (task.diff) {
-        for (const edit of task.diff) {
-            const acceptBlockLens = new vscode.CodeLens(edit.range)
-            acceptBlockLens.command = {
-                title: 'Accept',
-                command: 'cody.fixup.codelens.acceptChange',
-                arguments: [task.id, edit.range],
-            }
-            lenses.push(acceptBlockLens)
+    const chunkedRanges = getChunkedEditRanges(task.diff)
+    for (const range of chunkedRanges) {
+        const acceptBlockLens = new vscode.CodeLens(range)
+        acceptBlockLens.command = {
+            title: 'Accept',
+            command: 'cody.fixup.codelens.acceptChange',
+            arguments: [task.id, range],
         }
+        lenses.push(acceptBlockLens)
     }
     return lenses
 }

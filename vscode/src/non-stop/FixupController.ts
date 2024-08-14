@@ -131,69 +131,30 @@ export class FixupController
     // FixupActor
 
     public async acceptChange(task: FixupTask, range: vscode.Range): Promise<void> {
-        this.markBlockAsAccepted(task, range)
-        this.refreshCodeLenses(task)
-        this.controlApplicator.didUpdateTask(task)
-    }
-
-    public async rejectChange(task: FixupTask, range: vscode.Range): Promise<void> {
-        // Check if the range corresponds to an addition or deletion block
-        const edit = task.diff?.find(edit => edit.range.isEqual(range))
-        if (!edit) {
+        const affectedChanges = task.diff?.filter(edit => range.contains(edit.range))
+        if (!affectedChanges) {
             return
         }
 
-        if (edit.type === 'insertion') {
-            // Remove the added code
-            await this.removeAddedCode(task, range)
-        } else if (edit.type === 'decoratedReplacement') {
-            // Re-add the original code
-            await this.restoreOriginalCode(task, range, edit.oldText)
-        }
-
-        // Remove the edit from the task's diff
-        task.removeDiffChangeByRange(range)
-
-        this.refreshCodeLenses(task)
-        this.controlApplicator.didUpdateTask(task)
-    }
-
-    private refreshCodeLenses(task: FixupTask): void {
-        // Trigger a refresh of the code lenses
-        vscode.commands.executeCommand('vscode.executeCodeLensProvider', task.document.uri)
-    }
-
-    private async removeAddedCode(task: FixupTask, range: vscode.Range): Promise<boolean> {
         const editor = vscode.window.visibleTextEditors.find(
             editor => editor.document.uri.toString() === task.fixupFile.uri.toString()
         )
         if (!editor) {
-            return false
+            return
         }
 
-        return editor.edit(editBuilder => {
-            editBuilder.delete(range)
-        })
-    }
-
-    private async restoreOriginalCode(
-        task: FixupTask,
-        range: vscode.Range,
-        originalText: string
-    ): Promise<boolean> {
-        const editor = vscode.window.visibleTextEditors.find(
-            editor => editor.document.uri.toString() === task.fixupFile.uri.toString()
-        )
-        if (!editor) {
-            return false
+        const affectedInsertion = affectedChanges.find(change => change.type === 'insertion')
+        const affectedDeletion = affectedChanges.find(change => change.type === 'decoratedReplacement')
+        if (affectedInsertion && affectedDeletion) {
+            // Accepting a chunked insertion/deletion. Only remove the deletion range
+            await editor.edit(
+                editBuilder => {
+                    editBuilder.delete(affectedDeletion.range)
+                },
+                { undoStopAfter: false, undoStopBefore: false }
+            )
         }
 
-        return editor.edit(editBuilder => {
-            editBuilder.replace(range, originalText)
-        })
-    }
-
-    private markBlockAsAccepted(task: FixupTask, range: vscode.Range): void {
         // Remove the edit from the task's diff
         task.removeDiffChangeByRange(range)
 
@@ -204,6 +165,57 @@ export class FixupController
         if (!task.diff || task.diff.length === 0) {
             this.accept(task)
         }
+
+        this.refreshCodeLenses(task)
+        this.controlApplicator.didUpdateTask(task)
+    }
+
+    public async rejectChange(task: FixupTask, range: vscode.Range): Promise<void> {
+        // Check if the range corresponds to an addition or deletion block
+        const affectedChanges = task.diff?.filter(edit => range.contains(edit.range))
+        if (!affectedChanges) {
+            return
+        }
+
+        const editor = vscode.window.visibleTextEditors.find(
+            editor => editor.document.uri.toString() === task.fixupFile.uri.toString()
+        )
+        if (!editor) {
+            return
+        }
+
+        const affectedInsertion = affectedChanges.find(change => change.type === 'insertion')
+        const affectedDeletion = affectedChanges.find(change => change.type === 'decoratedReplacement')
+        if (affectedInsertion && affectedDeletion) {
+            // Rejecting a chunked insertion/deletion. Replace full range with deleted text
+            await editor.edit(editBuilder => {
+                editBuilder.replace(range, affectedDeletion.oldText)
+            })
+        } else if (affectedInsertion) {
+            // Rejecting an insertion only. Delete the insertion
+            await editor.edit(editBuilder => {
+                editBuilder.delete(range)
+            })
+        } else if (affectedDeletion) {
+            // Rejecting a deletion only. Restore the original text
+            await editor.edit(editBuilder => {
+                editBuilder.replace(range, affectedDeletion.oldText)
+            })
+        }
+
+        // Remove the edit from the task's diff
+        task.removeDiffChangeByRange(range)
+
+        // Update the decorations
+        this.decorator.didApplyTask(task)
+
+        this.refreshCodeLenses(task)
+        this.controlApplicator.didUpdateTask(task)
+    }
+
+    private refreshCodeLenses(task: FixupTask): void {
+        // Trigger a refresh of the code lenses
+        vscode.commands.executeCommand('vscode.executeCodeLensProvider', task.document.uri)
     }
 
     public accept(task: FixupTask): void {

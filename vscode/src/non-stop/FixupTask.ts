@@ -103,7 +103,7 @@ export class FixupTask {
 
     public removeDiffChangeByRange(range: vscode.Range): void {
         if (this.diff) {
-            this.diff = this.diff.filter(change => !change.range.isEqual(range))
+            this.diff = this.diff.filter(change => !range.contains(change.range))
         }
     }
 
