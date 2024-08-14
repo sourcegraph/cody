@@ -58,12 +58,14 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             const chunkedRanges = canShowIndividualAcceptRejectLenses
                 ? getChunkedEditRanges(task.diff)
                 : []
-            const acceptChangeLenses = canShowIndividualAcceptRejectLenses
-                ? getAcceptLenses(task, chunkedRanges)
-                : []
-            const rejectChangeLenses = canShowIndividualAcceptRejectLenses
-                ? getRejectLenses(task, chunkedRanges)
-                : []
+            const acceptChangeLenses =
+                canShowIndividualAcceptRejectLenses && chunkedRanges.length > 1
+                    ? getAcceptLenses(task, chunkedRanges)
+                    : []
+            const rejectChangeLenses =
+                canShowIndividualAcceptRejectLenses && chunkedRanges.length > 1
+                    ? getRejectLenses(task, chunkedRanges)
+                    : []
 
             // Required:
             // Accept: If we are in VS Code and we have multiple chunked ranges, we will show multiple accept/reject lenses.

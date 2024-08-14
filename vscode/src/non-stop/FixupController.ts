@@ -180,7 +180,10 @@ export class FixupController
                 // Rejecting a deletion, we must restore the oldText
                 await editor.edit(
                     editBuilder => {
-                        editBuilder.replace(change.range, change.oldText)
+                        editBuilder.replace(
+                            change.range,
+                            change.oldText + '\n' // The oldText does not include the line break, so re-add it here
+                        )
                     },
                     { undoStopAfter: false, undoStopBefore: false }
                 )
