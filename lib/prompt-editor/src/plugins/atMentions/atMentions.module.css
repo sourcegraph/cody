@@ -1,10 +1,15 @@
 .popover {
-    overflow: hidden;
+    overflow: auto;
     background: var(--vscode-sideBar-background);
     color: var(--vscode-sideBar-foreground);
     box-shadow: 0 0 8px 2px var(--vscode-widget-shadow);
     border-radius: 3px;
 
-    width: clamp(200px, 100vw, 400px);
-    max-height: 482px;
+    margin-top: 20px; /* show on the line below the cursor */
+
+    width: clamp(200px, 65vw, 440px);
+    --max-items: 12;
+    --mention-item-height: 30px;
+    /* Max height is either 12 items, or 90vh. */
+    max-height: min(calc(var(--max-items)*var(--mention-item-height) + 2px), 90vh);
 }

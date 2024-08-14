@@ -362,18 +362,11 @@ function getItemsHeading(
 }
 
 /**
- * The styles below must be updated if this changes. We can't just interpolate this value because
- * the Tailwind CSS compiler needs the values to be mentioned in the string literal.
- */
-export const MENTION_MENU_ITEM_HEIGHT_PX = 30
-
-/**
  * Use the same padding and text size for all command rows so that there is no partially obscured
  * row (i.e., each row is the same height, and the height of the Command is an integer multiple of
  * the row height).
  *
- * If you change this, also update {@link COMMAND_GROUP_CLASS_NAME}'s `[&_[cmd-group-heading]]:`
- * styles.
+ * If you change the height of an item from 30px, also update the `--mention-item-height` CSS variable.
  */
 const COMMAND_ROW_CLASS_NAME = '!tw-p-3 !tw-text-md !tw-leading-[1.2] !tw-h-[30px] !tw-rounded-none'
 
