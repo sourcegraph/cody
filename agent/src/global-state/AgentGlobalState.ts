@@ -2,10 +2,8 @@ import type * as vscode from 'vscode'
 
 import { LocalStorage } from 'node-localstorage'
 import * as vscode_shim from '../vscode-shim'
-import schema from './schema.sql?raw'
 
 import path from 'node:path'
-import Database from 'better-sqlite3'
 import { localStorage } from '../../../vscode/src/services/LocalStorageProvider'
 
 export class AgentGlobalState implements vscode.Memento {
@@ -109,48 +107,3 @@ class LocalStorageDB implements DB {
         return keys
     }
 }
-
-class SqliteDB implements DB {
-    private db: Database.Database
-    private version = 1
-
-    constructor(
-        private ide: string,
-        dir: string
-    ) {
-        this.db = new Database(path.join(dir, 'globalState.sqlite'), { timeout: 1000 })
-        this.db.exec(schema)
-    }
-
-    get(key: string) {
-        const stmt = this.db.prepare<SelectParams, Row>(
-            'SELECT value FROM global_storage WHERE key = ? AND ide = ? AND version = ?'
-        )
-        const row = stmt.get(key, this.ide, this.version)
-        return row ? JSON.parse(row.value) : undefined
-    }
-
-    set(key: string, value: any): void {
-        const stmt = this.db.prepare<InsertParams>(
-            'INSERT OR REPLACE INTO global_storage (key, value, ide, version) VALUES (?, ?, ?, ?)'
-        )
-        stmt.run(key, JSON.stringify(value), this.ide, this.version)
-    }
-
-    keys(): readonly string[] {
-        const stmt = this.db.prepare<KeyParams, Row>(
-            'SELECT key FROM global_storage WHERE ide = ? AND version = ?'
-        )
-        const rows = stmt.all(this.ide, this.version)
-        return rows.map(row => row.key)
-    }
-}
-
-interface Row {
-    key: string
-    value: string
-}
-
-type InsertParams = [string, string, string, number]
-type SelectParams = [string, string, number]
-type KeyParams = [string, number]
