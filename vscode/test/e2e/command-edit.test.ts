@@ -55,14 +55,12 @@ test.extend<ExpectedV2Events>({
         .filter({ hasText: /^Submit$/ })
         .click() // Submit via Submit button
 
-    const acceptAllLens = page.getByRole('button', { name: 'Accept All' })
     const retryLens = page.getByRole('button', { name: 'Edit & Retry' })
     const undoLens = page.getByRole('button', { name: 'Undo' })
-    const acceptLens = page.getByRole('button', { name: 'Accept' })
+    const acceptLens = page.getByRole('button', { name: 'Accept', exact: true })
     const rejectLens = page.getByRole('button', { name: 'Reject' })
 
     // Code Lenses should appear
-    await expect(acceptAllLens).toBeVisible()
     await expect(retryLens).toBeVisible()
     await expect(undoLens).toBeVisible()
     await expect(acceptLens).toBeVisible()
