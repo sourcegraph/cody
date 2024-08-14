@@ -73,6 +73,7 @@ import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
 import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
+import type { ExtensionClient } from '../../extension-client'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
@@ -103,6 +104,7 @@ import type {
     ConfigurationSubsetForWebview,
     ExtensionMessage,
     LocalEnv,
+    SmartApplyResult,
     WebviewMessage,
 } from '../protocol'
 import { countGeneratedCode } from '../utils'
@@ -127,6 +129,8 @@ interface ChatControllerOptions {
 
     contextRetriever: ContextRetriever
     contextAPIClient: ContextAPIClient | null
+
+    extensionClient: ExtensionClient
 
     editor: VSCodeEditor
     guardrails: Guardrails
@@ -180,6 +184,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private readonly contextStatusAggregator = new ContextStatusAggregator()
     private readonly editor: VSCodeEditor
+    private readonly extensionClient: ExtensionClient
     private readonly guardrails: Guardrails
     private readonly repoPicker: RemoteRepoPicker | null
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
@@ -204,6 +209,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         startTokenReceiver,
         contextAPIClient,
         contextRetriever,
+        extensionClient,
     }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
@@ -213,6 +219,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.repoPicker = enterpriseContext?.repoPicker || null
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
+        this.extensionClient = extensionClient
 
         this.contextRetriever = contextRetriever
 
@@ -355,8 +362,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'copy':
                 await handleCopiedCode(message.text, message.eventType === 'Button')
                 break
-            case 'smartApply':
-                await handleSmartApply(message.code, message.instruction, message.fileName)
+            case 'smartApplySubmit':
+                await handleSmartApply(message.id, message.code, message.instruction, message.fileName)
+                break
+            case 'smartApplyAccept':
+                await vscode.commands.executeCommand('cody.fixup.codelens.accept', message.id)
+                break
+            case 'smartApplyReject':
+                await vscode.commands.executeCommand('cody.fixup.codelens.undo', message.id)
                 break
             case 'openURI':
                 vscode.commands.executeCommand('vscode.open', message.uri)
@@ -488,6 +501,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     }
                     break
                 }
+                if (message.authKind === 'signin' && message.endpoint && message.value) {
+                    await this.authProvider.auth({ endpoint: message.endpoint, token: message.value })
+                    break
+                }
+                if (message.authKind === 'signout') {
+                    await this.authProvider.signoutMenu()
+                    this.setWebviewView(View.Login)
+                    break
+                }
                 // cody.auth.signin or cody.auth.signout
                 await vscode.commands.executeCommand(`cody.auth.${message.authKind}`)
                 break
@@ -555,7 +577,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             this.webviewPanelOrView?.viewType === 'cody.editorPanel' ? 'editor' : 'sidebar'
 
         return {
-            agentIDE: config.isRunningInsideAgent ? config.agentIDE : CodyIDE.VSCode,
+            agentIDE: config.agentIDE ?? CodyIDE.VSCode,
             agentExtensionVersion: config.isRunningInsideAgent
                 ? config.agentExtensionVersion
                 : VSCEVersion,
@@ -1092,6 +1114,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
     }
 
+    public async handleSmartApplyResult(result: SmartApplyResult): Promise<void> {
+        void this.postMessage({
+            type: 'clientAction',
+            smartApplyResult: result,
+        })
+    }
+
     private async handleSymfIndex(): Promise<void> {
         const codebase = await this.codebaseStatusProvider.currentCodebase()
         if (codebase && isFileURI(codebase.localFolder)) {
@@ -1625,7 +1654,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             enableCommandUris: true,
         }
 
-        await addWebviewViewHTML(this.extensionUri, viewOrPanel)
+        await addWebviewViewHTML(this.extensionClient, this.extensionUri, viewOrPanel)
         this.postContextStatus()
 
         // Dispose panel when the panel is closed
@@ -1874,9 +1903,13 @@ function getDefaultModelID(): string {
  * Set HTML for webview (panel) & webview view (sidebar)
  */
 export async function addWebviewViewHTML(
+    extensionClient: ExtensionClient,
     extensionUri: vscode.Uri,
     view: vscode.WebviewView | vscode.WebviewPanel
 ): Promise<void> {
+    if (extensionClient.capabilities?.webview === 'agentic') {
+        return
+    }
     const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
     // Create Webview using vscode/index.html
     const root = vscode.Uri.joinPath(webviewPath, 'index.html')
@@ -1890,4 +1923,5 @@ export async function addWebviewViewHTML(
     view.webview.html = decoded
         .replaceAll('./', `${resources.toString()}/`)
         .replaceAll("'self'", view.webview.cspSource)
+        .replaceAll('{cspSource}', view.webview.cspSource)
 }

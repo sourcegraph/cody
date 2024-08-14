@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process'
+import { copyFileSync } from 'node:fs'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
@@ -36,7 +37,6 @@ import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 import { mkdirSync, statSync } from 'node:fs'
 import { PassThrough } from 'node:stream'
 import type { Har } from '@pollyjs/persister'
-import { copySync } from 'fs-extra'
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
@@ -102,15 +102,14 @@ type ExtensionActivate = (
 // In the agent, we assume this file is placed next to the bundled `index.js`
 // file, and we copy it over to the `extensionPath` so the VS Code logic works
 // without changes.
-function copyExtensionRelativeResources(extensionPath: string): void {
-    const relativeSources = ['win-ca-roots.exe', 'webviews']
-    for (const relativeSource of relativeSources) {
+function copyExtensionRelativeResources(extensionPath: string, extensionClient: ExtensionClient): void {
+    const copySources = (relativeSource: string): void => {
         const source = path.join(__dirname, relativeSource)
         const target = path.join(extensionPath, 'dist', relativeSource)
         try {
             const stat = statSync(source)
             if (!(stat.isFile() || stat.isDirectory())) {
-                continue
+                return
             }
         } catch {
             logDebug('copyExtensionRelativeResources', `Failed to find ${source}, skipping copy`)
@@ -118,10 +117,14 @@ function copyExtensionRelativeResources(extensionPath: string): void {
         }
         try {
             mkdirSync(path.dirname(target), { recursive: true })
-            copySync(source, target)
+            copyFileSync(source, target)
         } catch (err) {
             logDebug('copyExtensionRelativeResources', `Failed to copy ${source} to dist ${target}`, err)
         }
+    }
+    copySources('win-ca-roots.exe')
+    if (extensionClient.capabilities?.webview === 'native') {
+        copySources('webviews')
     }
 }
 
@@ -132,7 +135,7 @@ export async function initializeVscodeExtension(
 ): Promise<void> {
     const paths = codyPaths()
     const extensionPath = paths.config
-    copyExtensionRelativeResources(extensionPath)
+    copyExtensionRelativeResources(extensionPath, extensionClient)
 
     const context: vscode.ExtensionContext = {
         asAbsolutePath(relativePath) {
@@ -359,6 +362,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 '*',
                 new IndentationBasedFoldingRangeProvider()
             )
+
+            if (clientInfo.capabilities && clientInfo.capabilities?.webview === undefined) {
+                // Make it possible to do `capabilities.webview === 'agentic'`
+                clientInfo.capabilities.webview = 'agentic'
+            }
+
             if (clientInfo.extensionConfiguration?.baseGlobalState) {
                 for (const key in clientInfo.extensionConfiguration.baseGlobalState) {
                     const value = clientInfo.extensionConfiguration.baseGlobalState[key]
@@ -1156,6 +1165,18 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 Promise.resolve({
                     type: 'chat',
                     session: await vscode.commands.executeCommand('cody.chat.newEditorPanel'),
+                })
+            )
+
+            const chatId = this.webPanels.panels.get(panelId)?.chatID ?? ''
+            return { panelId, chatId }
+        })
+
+        this.registerAuthenticatedRequest('chat/sidebar/new', async () => {
+            const panelId = await this.createChatPanel(
+                Promise.resolve({
+                    type: 'chat',
+                    session: await vscode.commands.executeCommand('cody.chat.newPanel'),
                 })
             )
 

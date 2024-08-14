@@ -21,6 +21,7 @@ import type { startTokenReceiver } from '../../auth/token-receiver'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import { getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
+import type { ExtensionClient } from '../../extension-client'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { type ChatLocation, localStorage } from '../../services/LocalStorageProvider'
 import {
@@ -28,6 +29,7 @@ import {
     handleCodeFromSaveToNewFile,
 } from '../../services/utils/codeblock-action-tracker'
 import type { ContextAPIClient } from '../context/contextAPIClient'
+import type { SmartApplyResult } from '../protocol'
 import {
     ChatController,
     type ChatSession,
@@ -71,7 +73,8 @@ export class ChatsController implements vscode.Disposable {
         private readonly contextRetriever: ContextRetriever,
 
         private readonly guardrails: Guardrails,
-        private readonly contextAPIClient: ContextAPIClient | null
+        private readonly contextAPIClient: ContextAPIClient | null,
+        private readonly extensionClient: ExtensionClient
     ) {
         logDebug('ChatsController:constructor', 'init')
         this.panel = this.createChatController()
@@ -212,6 +215,10 @@ export class ChatsController implements vscode.Disposable {
 
             // Codeblock commands
             vscode.commands.registerCommand(
+                'cody.command.markSmartApplyApplied',
+                (result: SmartApplyResult) => this.sendSmartApplyResultToChat(result)
+            ),
+            vscode.commands.registerCommand(
                 'cody.command.insertCodeToCursor',
                 (args: { text: string }) => handleCodeFromInsertAtCursor(args.text)
             ),
@@ -249,6 +256,11 @@ export class ChatsController implements vscode.Disposable {
             await vscode.commands.executeCommand('cody.chat.focus')
         }
         await provider.handleGetUserEditorContext(uri)
+    }
+
+    private async sendSmartApplyResultToChat(result: SmartApplyResult): Promise<void> {
+        const provider = await this.getActiveChatController()
+        await provider.handleSmartApplyResult(result)
     }
 
     /**
@@ -485,6 +497,7 @@ export class ChatsController implements vscode.Disposable {
             startTokenReceiver: this.options.startTokenReceiver,
             contextAPIClient: this.contextAPIClient,
             contextRetriever: this.contextRetriever,
+            extensionClient: this.extensionClient,
         })
     }
 

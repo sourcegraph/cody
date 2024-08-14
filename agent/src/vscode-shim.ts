@@ -613,6 +613,9 @@ const _window: typeof vscode.window = {
         provider: vscode.WebviewViewProvider,
         options?: { webviewOptions?: { retainContextWhenHidden?: boolean } }
     ) => {
+        if (agent?.capabilities?.webview !== 'native') {
+            return emptyDisposable
+        }
         agent?.webviewViewProviders.set(viewId, provider)
         options ??= {
             webviewOptions: undefined,
@@ -914,16 +917,22 @@ const _commands: Partial<typeof vscode.commands> = {
             }
         })
     },
-    executeCommand: (command, args) => {
+    executeCommand: (command, ...args) => {
         const registered = registeredCommands.get(command)
         if (registered) {
             try {
-                if (args) {
-                    if (typeof args === 'object' && typeof args[Symbol.iterator] === 'function') {
-                        return promisify(registered.callback(...args))
+                // Handle the case where a single object is passed
+                if (args.length === 1) {
+                    if (typeof args[0] === 'object' && typeof args[0][Symbol.iterator] === 'function') {
+                        return promisify(registered.callback(...args[0]))
                     }
-                    return promisify(registered.callback(args))
+                    return promisify(registered.callback(args[0]))
                 }
+                // Handle multiple arguments or a single non-object argument
+                if (args?.length > 1) {
+                    return promisify(registered.callback(...args))
+                }
+                // Handle command with no argument
                 return promisify(registered.callback())
             } catch (error) {
                 console.error(error)
@@ -947,6 +956,7 @@ _commands?.registerCommand?.('setContext', (key, value) => {
         throw new TypeError(`setContext: first argument must be string. Got: ${key}`)
     }
     context.set(key, value)
+    agent?.notify('window/didChangeContext', { key, value: value.toString() })
 })
 _commands?.registerCommand?.('vscode.executeFoldingRangeProvider', async uri => {
     const promises: vscode.FoldingRange[] = []
@@ -968,6 +978,9 @@ _commands?.registerCommand?.('vscode.executeDocumentSymbolProvider', uri => {
     // symbols. However, the test cases show that we may want to incorporate
     // document symbol data to improve the quality of the inferred selection
     // location.
+    return Promise.resolve([])
+})
+_commands?.registerCommand?.('vscode.executeWorkspaceSymbolProvider', query => {
     return Promise.resolve([])
 })
 _commands?.registerCommand?.('vscode.executeFormatDocumentProvider', uri => {

@@ -142,8 +142,12 @@ jobs:
       - run: pnpm install
       - run: xvfb-run -a pnpm -C vscode run test:e2e --shard=${{ matrix.shard }}
         if: matrix.runner == 'ubuntu'
+        env:
+          BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
       - run: pnpm -C vscode run test:e2e
         if: matrix.runner != 'ubuntu'
+        env:
+          BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
       - uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
