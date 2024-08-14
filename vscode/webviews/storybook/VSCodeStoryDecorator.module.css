@@ -9,7 +9,6 @@ body {
     font-size: var(--vscode-font-size);
     font-family: var(--vscode-font-family);
     color: var(--vscode-editor-foreground);
-    height: 100%;
 }
 
 .container a {
