@@ -104,6 +104,7 @@ import type {
     ConfigurationSubsetForWebview,
     ExtensionMessage,
     LocalEnv,
+    SmartApplyResult,
     WebviewMessage,
 } from '../protocol'
 import { countGeneratedCode } from '../utils'
@@ -361,8 +362,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'copy':
                 await handleCopiedCode(message.text, message.eventType === 'Button')
                 break
-            case 'smartApply':
-                await handleSmartApply(message.code, message.instruction, message.fileName)
+            case 'smartApplySubmit':
+                await handleSmartApply(message.id, message.code, message.instruction, message.fileName)
+                break
+            case 'smartApplyAccept':
+                await vscode.commands.executeCommand('cody.fixup.codelens.accept', message.id)
+                break
+            case 'smartApplyReject':
+                await vscode.commands.executeCommand('cody.fixup.codelens.undo', message.id)
                 break
             case 'openURI':
                 vscode.commands.executeCommand('vscode.open', message.uri)
@@ -1105,6 +1112,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (this._webviewPanelOrView) {
             revealWebviewViewOrPanel(this._webviewPanelOrView)
         }
+    }
+
+    public async handleSmartApplyResult(result: SmartApplyResult): Promise<void> {
+        void this.postMessage({
+            type: 'clientAction',
+            smartApplyResult: result,
+        })
     }
 
     private async handleSymfIndex(): Promise<void> {

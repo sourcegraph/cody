@@ -16,7 +16,10 @@ import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
-import { ChatMessageContent, type CodeBlockActionsProps } from '../../../ChatMessageContent'
+import {
+    ChatMessageContent,
+    type CodeBlockActionsProps,
+} from '../../../ChatMessageContent/ChatMessageContent'
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
 import { type Interaction, editHumanMessage } from '../../../Transcript'
 import { FeedbackButtons } from '../../../components/FeedbackButtons'
@@ -45,7 +48,7 @@ export const AssistantMessageCell: FunctionComponent<{
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
     experimentalSmartApplyEnabled?: boolean
-    smartApplyButtonOnSubmit?: CodeBlockActionsProps['smartApplyButtonOnSubmit']
+    smartApply?: CodeBlockActionsProps['smartApply']
 
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
@@ -62,7 +65,7 @@ export const AssistantMessageCell: FunctionComponent<{
         insertButtonOnSubmit,
         postMessage,
         guardrails,
-        smartApplyButtonOnSubmit,
+        smartApply,
         experimentalSmartApplyEnabled,
     }) => {
         const displayMarkdown = useMemo(
@@ -114,7 +117,7 @@ export const AssistantMessageCell: FunctionComponent<{
                                 guardrails={guardrails}
                                 humanMessage={humanMessage}
                                 experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
-                                smartApplyButtonOnSubmit={smartApplyButtonOnSubmit}
+                                smartApply={smartApply}
                             />
                         ) : (
                             isLoading && <LoadingDots />

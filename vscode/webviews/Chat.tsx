@@ -118,19 +118,39 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         return
     }, [vscodeAPI, showIDESnippetActions])
 
-    const smartApplyButtonOnSubmit = useMemo(() => {
+    const smartApply = useMemo(() => {
         if (!showIDESnippetActions) {
             return
         }
 
-        return (text: string, instruction?: PromptString, fileName?: string) => {
-            vscodeAPI.postMessage({
-                command: 'smartApply',
-                instruction: instruction?.toString(),
-                // remove the additional /n added by the text area at the end of the text
-                code: text.replace(/\n$/, ''),
-                fileName,
-            })
+        return {
+            onSubmit: (
+                id: string,
+                text: string,
+                instruction?: PromptString,
+                fileName?: string
+            ): void => {
+                vscodeAPI.postMessage({
+                    command: 'smartApplySubmit',
+                    id,
+                    instruction: instruction?.toString(),
+                    // remove the additional /n added by the text area at the end of the text
+                    code: text.replace(/\n$/, ''),
+                    fileName,
+                })
+            },
+            onAccept: (id: string) => {
+                vscodeAPI.postMessage({
+                    command: 'smartApplyAccept',
+                    id,
+                })
+            },
+            onReject: (id: string) => {
+                vscodeAPI.postMessage({
+                    command: 'smartApplyReject',
+                    id,
+                })
+            },
         }
     }, [vscodeAPI, showIDESnippetActions])
 
@@ -191,7 +211,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                 copyButtonOnSubmit={copyButtonOnSubmit}
                 insertButtonOnSubmit={insertButtonOnSubmit}
-                smartApplyButtonOnSubmit={smartApplyButtonOnSubmit}
+                smartApply={smartApply}
                 isTranscriptError={isTranscriptError}
                 userInfo={userInfo}
                 chatEnabled={chatEnabled}
