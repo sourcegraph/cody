@@ -6,17 +6,17 @@ import { cn } from '../utils'
 const roundedIconStyles = 'tw-flex tw-items-center tw-justify-center !tw-rounded-full !tw-p-2 tw-border'
 
 const buttonVariants = cva(
-    'tw-inline-flex tw-items-center tw-justify-center tw-whitespace-nowrap tw-rounded-md focus-visible:tw-border-ring focus-visible:tw-outline-none disabled:tw-pointer-events-none disabled:tw-opacity-50 tw-transition',
+    'tw-inline-flex tw-items-center tw-justify-center tw-whitespace-nowrap tw-rounded-md focus-visible:tw-border-ring focus-visible:tw-outline-none disabled:tw-pointer-events-none disabled:tw-opacity-50 tw-gap-3 tw-transition tw-duration-75 tw-cursor-pointer',
     {
         variants: {
             variant: {
                 default:
                     'tw-bg-button-background tw-text-button-foreground hover:tw-bg-button-background-hover focus-visible:tw-bg-primary-hover',
                 outline:
-                    'tw-border tw-border-border tw-bg-background hover:tw-bg-muted-transparent hover:tw-text-foreground',
+                    'tw-border tw-border-border tw-bg-background hover:tw-bg-muted hover:tw-text-foreground',
                 secondary:
                     'tw-bg-button-secondary-background tw-text-button-secondary-foreground hover:tw-bg-button-secondary-background-hover disabled:tw-opacity-75',
-                ghost: 'tw-opacity-80 hover:tw-opacity-100',
+                ghost: 'hover:tw-bg-muted-transparent',
                 text: 'tw-text-foreground tw-bg-transparent tw-items-end tw-border-none tw-transition-all tw-items-center tw-px-0 tw-w-full tw-text-left',
                 link: 'tw-text-link tw-underline-offset-4 hover:tw-underline hover:tw-text-link-hover',
                 primaryRoundedIcon: `${roundedIconStyles} tw-border tw-border-button-border tw-bg-button-background tw-text-button-foreground hover:tw-bg-button-background-hover disabled:tw-bg-current-25 disabled:tw-text-current`,
@@ -26,8 +26,9 @@ const buttonVariants = cva(
 
             size: {
                 default: 'tw-px-4 tw-py-2',
-                sm: 'tw-rounded-md tw-px-2 tw-py-[.1rem] tw-text-sm',
-                lg: 'tw-rounded-md tw-px-8 tw-text-lg',
+                xs: 'tw-rounded-sm tw-px-2 tw-text-xs',
+                sm: 'tw-rounded-md tw-px-2 tw-py-[.1rem]',
+                lg: 'tw-rounded-md tw-px-8',
                 icon: 'tw-rounded-lg tw-w-[1.375rem] tw-h-[1.375rem]', // Match VS Code’s 22px icon buttons
                 none: 'tw-p-0',
             },

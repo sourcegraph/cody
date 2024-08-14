@@ -1,9 +1,7 @@
-import type { DialogProps } from '@radix-ui/react-dialog'
 import { Command as CommandPrimitive } from 'cmdk'
 import * as React from 'react'
 
 import { cn } from '../utils'
-import { Dialog, DialogContent } from './dialog'
 
 const Command = React.forwardRef<
     React.ElementRef<typeof CommandPrimitive>,
@@ -20,20 +18,6 @@ const Command = React.forwardRef<
 ))
 Command.displayName = CommandPrimitive.displayName
 
-interface CommandDialogProps extends DialogProps {}
-
-const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
-    return (
-        <Dialog {...props}>
-            <DialogContent className="tw-overflow-hidden tw-p-0 tw-shadow-lg">
-                <Command className="[&_[cmdk-group-heading]]:tw-px-2 [&_[cmdk-group-heading]]:tw-font-medium [&_[cmdk-group-heading]]:tw-text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:tw-pt-0 [&_[cmdk-group]]:tw-px-2 [&_[cmdk-input-wrapper]_svg]:tw-h-5 [&_[cmdk-input-wrapper]_svg]:tw-w-5 [&_[cmdk-input]]:tw-h-12 [&_[cmdk-item]]:tw-px-2 [&_[cmdk-item]]:tw-py-3 [&_[cmdk-item]_svg]:tw-h-5 [&_[cmdk-item]_svg]:tw-w-5">
-                    {children}
-                </Command>
-            </DialogContent>
-        </Dialog>
-    )
-}
-
 const CommandInput = React.forwardRef<
     React.ElementRef<typeof CommandPrimitive.Input>,
     React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
@@ -42,7 +26,7 @@ const CommandInput = React.forwardRef<
         <CommandPrimitive.Input
             ref={ref}
             className={cn(
-                'tw-flex tw-w-full tw-border-solid tw-border tw-border-transparent tw-bg-transparent tw-p-3 tw-pt-4 tw-text-md tw-leading-none placeholder:tw-text-muted-foreground disabled:tw-cursor-not-allowed disabled:tw-opacity-50 focus:tw-outline-none',
+                'tw-flex tw-w-full tw-border-solid tw-border tw-border-transparent tw-bg-transparent tw-pt-4 tw-pb-3 tw-px-3 tw-text-md tw-leading-none placeholder:tw-text-muted-foreground disabled:tw-cursor-not-allowed disabled:tw-opacity-50 focus:tw-outline-none',
                 className
             )}
             inputMode="search"
@@ -59,7 +43,7 @@ const CommandList = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <CommandPrimitive.List
         ref={ref}
-        className={cn('tw-max-h-[400px] tw-overflow-y-auto tw-overflow-x-hidden', className)}
+        className={cn('tw-max-h-[500px] tw-overflow-y-auto tw-overflow-x-hidden', className)}
         {...props}
     />
 ))
@@ -69,10 +53,10 @@ CommandList.displayName = CommandPrimitive.List.displayName
 const CommandEmpty = React.forwardRef<
     React.ElementRef<typeof CommandPrimitive.Empty>,
     React.ComponentPropsWithoutRef<typeof CommandPrimitive.Empty>
->((props, ref) => (
+>(({ className, ...props }, ref) => (
     <CommandPrimitive.Empty
         ref={ref}
-        className="tw-pt-3 tw-pb-0 tw-px-2 tw-text-muted-foreground tw-font-medium tw-text-xs"
+        className={cn('tw-py-3 tw-px-2 tw-text-muted-foreground tw-font-medium tw-text-xs', className)}
         {...props}
     />
 ))
@@ -82,10 +66,10 @@ CommandEmpty.displayName = CommandPrimitive.Empty.displayName
 const CommandLoading = React.forwardRef<
     React.ElementRef<typeof CommandPrimitive.Loading>,
     React.ComponentPropsWithoutRef<typeof CommandPrimitive.Loading>
->((props, ref) => (
+>(({ className, ...props }, ref) => (
     <CommandPrimitive.Loading
         ref={ref}
-        className="tw-pt-3 tw-pb-0 tw-px-2 tw-text-muted-foreground tw-font-medium tw-text-xs"
+        className={cn('tw-py-3 tw-px-2 tw-text-muted-foreground tw-font-medium tw-text-xs', className)}
         {...props}
     />
 ))
@@ -112,7 +96,7 @@ const CommandSeparator = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <CommandPrimitive.Separator
         ref={ref}
-        className={cn('tw--mx-1 tw-my-2 tw-h-px tw-bg-border', className)}
+        className={cn('tw--mx-2 tw-my-2 tw-h-px tw-bg-border', className)}
         {...props}
     />
 ))
@@ -138,6 +122,18 @@ const CommandItem = React.forwardRef<
 })
 
 CommandItem.displayName = CommandPrimitive.Item.displayName
+
+const CommandRow: React.FunctionComponent<
+    React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>
+> = ({ className, ...props }) => (
+    <div
+        className={cn(
+            'tw-flex tw-flex-wrap tw-select-none tw-items-center tw-gap-x-3 tw-gap-y-1 tw-text-md tw-outline-none [&:not(:last-child)]:tw-border-border [&:not(:last-child)]:tw-border-b [&_[cmdk-item]]:tw-whitespace-nowrap',
+            className
+        )}
+        {...props}
+    />
+)
 
 const CommandShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => {
     return (
@@ -221,13 +217,13 @@ export const CommandLink: React.FunctionComponent<
 
 export {
     Command,
-    CommandDialog,
     CommandInput,
     CommandList,
     CommandEmpty,
     CommandLoading,
     CommandGroup,
     CommandItem,
+    CommandRow,
     CommandShortcut,
     CommandSeparator,
 }

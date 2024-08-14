@@ -1,6 +1,6 @@
 import { URI } from 'vscode-uri'
 
-import { hydrateAfterPostMessage } from '@sourcegraph/cody-shared'
+import { type GenericVSCodeWrapper, hydrateAfterPostMessage } from '@sourcegraph/cody-shared'
 
 import type { ExtensionMessage, WebviewMessage } from '../../src/chat/protocol'
 
@@ -37,13 +37,6 @@ export function getVSCodeAPI(): VSCodeWrapper {
 
 export function setVSCodeWrapper(value: VSCodeWrapper): void {
     api = value
-}
-
-export interface GenericVSCodeWrapper<W, E> {
-    postMessage(message: W): void
-    onMessage(callback: (message: E) => void): () => void
-    getState(): unknown
-    setState(newState: unknown): void
 }
 
 let genericApi: GenericVSCodeWrapper<any, any>

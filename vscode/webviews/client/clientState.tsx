@@ -1,4 +1,3 @@
-import type { ClientStateForWebview } from '@sourcegraph/cody-shared'
 import {
     type FunctionComponent,
     type ReactNode,
@@ -9,28 +8,13 @@ import {
 } from 'react'
 import type { ExtensionMessage } from '../../src/chat/protocol'
 
-const ClientStateContext = createContext<ClientStateForWebview | null>(null)
-
-export const ClientStateContextProvider = ClientStateContext.Provider
-
-/**
- * Get the {@link ClientState} stored in React context.
- */
-export function useClientState(): ClientStateForWebview {
-    const clientState = useContext(ClientStateContext)
-    if (!clientState) {
-        throw new Error('no clientState')
-    }
-    return clientState
-}
-
 type ClientActionArg = Omit<Extract<ExtensionMessage, { type: 'clientAction' }>, 'type'>
 
 export type ClientActionListener = (arg: ClientActionArg) => void
 
 interface ClientActionListenersInWebview {
     listen(listener: ClientActionListener): () => void
-    dispatch(arg: ClientActionArg): void
+    dispatch(arg: ClientActionArg, opts?: { buffer?: boolean }): void
 }
 
 const ClientActionListenersContext = createContext<ClientActionListenersInWebview | null>(null)
@@ -44,9 +28,20 @@ export const ClientActionListenersContextProvider: FunctionComponent<{ children:
 }) => {
     const clientActionListeners = useMemo<ClientActionListenersInWebview>(() => {
         const listeners: ClientActionListener[] = []
+        const actionBuffer: ClientActionArg[] = []
         return {
             listen: (listener: (arg: ClientActionArg) => void) => {
                 listeners.push(listener)
+
+                // Replay buffer. (`listener` is the only listener at this point.)
+                while (true) {
+                    const action = actionBuffer.shift()
+                    if (!action) {
+                        break
+                    }
+                    listener(action)
+                }
+
                 return () => {
                     const i = listeners.indexOf(listener)
                     if (i !== -1) {
@@ -54,7 +49,12 @@ export const ClientActionListenersContextProvider: FunctionComponent<{ children:
                     }
                 }
             },
-            dispatch: (arg: ClientActionArg): void => {
+            dispatch: (arg: ClientActionArg, opts?: { buffer?: boolean }): void => {
+                // If no listeners, then buffer it until there is one.
+                if (opts?.buffer && listeners.length === 0) {
+                    actionBuffer.push(arg)
+                }
+
                 for (const listener of listeners) {
                     listener(arg)
                 }
@@ -72,7 +72,7 @@ export const ClientActionListenersContextProvider: FunctionComponent<{ children:
  * Get the dispatch function to call in the webview when it receives an action from the client (such
  * as VS Code) in the `clientAction` protocol message.
  */
-export function useClientActionDispatcher(): (arg: ClientActionArg) => void {
+export function useClientActionDispatcher(): ClientActionListenersInWebview['dispatch'] {
     const clientActionListeners = useContext(ClientActionListenersContext)
     if (!clientActionListeners) {
         throw new Error('no clientActionListeners')

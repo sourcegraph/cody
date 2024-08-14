@@ -3,15 +3,16 @@ import type { URI } from 'vscode-uri'
 import type {
     AuthStatus,
     ClientStateForWebview,
-    CodyCommand,
     CodyIDE,
     ConfigurationWithAccessToken,
     ContextItem,
-    ContextMentionProviderMetadata,
     EnhancedContextContextT,
     MentionQuery,
     Model,
+    Prompt,
     RangeData,
+    RequestMessage,
+    ResponseMessage,
     SerializedChatMessage,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
@@ -54,6 +55,11 @@ interface TelemetryEventProperties {
         | TelemetryEventProperties[]
         | TelemetryEventProperties
 }
+
+/**
+ * The location of where the webview is displayed.
+ */
+export type WebviewType = 'sidebar' | 'editor'
 
 /**
  * A message sent from the webview to the extension host.
@@ -124,6 +130,12 @@ export type WebviewMessage =
           text: string
       }
     | {
+          command: 'smartApply'
+          instruction?: string | undefined | null
+          code: string
+          fileName?: string | undefined | null
+      }
+    | {
           command: 'auth'
           authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding' | 'offline'
           endpoint?: string | undefined | null
@@ -155,11 +167,10 @@ export type WebviewMessage =
           command: 'troubleshoot/reloadAuth'
       }
     | {
-          command: 'getAllMentionProvidersMetadata'
+          command: 'queryPrompts'
+          query: string
       }
-    | {
-          command: 'experimental-unit-test-prompt'
-      }
+    | { command: 'rpc/request'; message: RequestMessage }
 
 /**
  * A message sent from the extension host to the webview.
@@ -177,7 +188,6 @@ export type ExtensionMessage =
     | { type: 'view'; view: View }
     | { type: 'errors'; errors: string }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
-    | { type: 'commands'; commands: CodyCommand[] }
     /**
      * Context files returned from a @-mention search
      */
@@ -186,7 +196,11 @@ export type ExtensionMessage =
           userContextFiles?: ContextItem[] | undefined | null
       }
     | { type: 'clientState'; value: ClientStateForWebview }
-    | { type: 'clientAction'; addContextItemsToLastHumanInput: ContextItem[] }
+    | {
+          type: 'clientAction'
+          addContextItemsToLastHumanInput?: ContextItem[] | null | undefined
+          appendTextToLastPromptEditor?: string | null | undefined
+      }
     /**
      * The current default model will always be the first one on the list.
      */
@@ -203,14 +217,11 @@ export type ExtensionMessage =
           }
       }
     | {
-          type: 'allMentionProvidersMetadata'
-          providers: ContextMentionProviderMetadata[]
+          type: 'queryPrompts/response'
+          result?: Prompt[] | null | undefined
+          error?: string | null | undefined
       }
-    | {
-          type: 'updateEditorState'
-          /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
-          editorState?: unknown | undefined | null
-      }
+    | { type: 'rpc/response'; message: ResponseMessage }
 
 interface ExtensionAttributionMessage {
     snippet: string
@@ -224,6 +235,11 @@ interface ExtensionAttributionMessage {
     error?: string | undefined | null
 }
 
+/**
+ * ChatSubmitType represents the type of chat submission.
+ * - 'user': The user starts a new chat panel.
+ * - 'user-newchat': The user reuses the current chat panel.
+ */
 export type ChatSubmitType = 'user' | 'user-newchat'
 
 export interface WebviewSubmitMessage extends WebviewContextMessage {
@@ -259,9 +275,14 @@ export interface ExtensionTranscriptMessage {
 export interface ConfigurationSubsetForWebview
     extends Pick<
         ConfigurationWithAccessToken,
-        'experimentalNoodle' | 'serverEndpoint' | 'agentIDE' | 'agentExtensionVersion'
+        | 'experimentalNoodle'
+        | 'serverEndpoint'
+        | 'agentIDE'
+        | 'agentExtensionVersion'
+        | 'internalDebugContext'
     > {
-    experimentalUnitTest: boolean
+    experimentalSmartApply: boolean
+    webviewType?: WebviewType | undefined | null
 }
 
 /**

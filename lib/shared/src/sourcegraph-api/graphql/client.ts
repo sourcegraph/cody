@@ -7,11 +7,13 @@ import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 import { escapeRegExp } from 'lodash'
 import semver from 'semver'
 import type { AuthStatus } from '../../auth/types'
+import { dependentAbortController, onAbort } from '../../common/abortController'
 import type { ConfigurationWithAccessToken } from '../../configuration'
 import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
+import { isAbortError } from '../errors'
 import {
     CHAT_INTENT_QUERY,
     CONTEXT_FILTERS_QUERY,
@@ -35,9 +37,11 @@ import {
     FUZZY_SYMBOLS_QUERY,
     GET_FEATURE_FLAGS_QUERY,
     GET_REMOTE_FILE_QUERY,
+    GET_URL_CONTENT_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
     PACKAGE_LIST_QUERY,
+    PROMPTS_QUERY,
     RANK_CONTEXT_QUERY,
     RECORD_CONTEXT_QUERY,
     RECORD_TELEMETRY_EVENTS_MUTATION,
@@ -47,6 +51,7 @@ import {
     REPOSITORY_SEARCH_QUERY,
     REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
+    VIEWER_SETTINGS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
 
@@ -121,6 +126,14 @@ interface RemoteFileContentReponse {
                 content: string
             }
         }
+    }
+}
+
+interface GetURLContentResponse {
+    __typename?: 'Query'
+    urlMentionContext: {
+        title: string | null
+        content: string
     }
 }
 
@@ -200,7 +213,9 @@ interface CodyConfigFeaturesResponse {
 }
 
 interface CodyEnterpriseConfigSmartContextResponse {
-    site: { codyLLMConfiguration: { smartContextWindow: string } | null } | null
+    site: {
+        codyLLMConfiguration: { smartContextWindow: string } | null
+    } | null
 }
 
 interface CurrentUserCodyProEnabledResponse {
@@ -331,8 +346,8 @@ type RecordContextResponse = unknown
 interface RankContextResponse {
     rankContext: {
         ranker: string
-        used: number[]
-        ignored: number[]
+        used: { index: number; score: number }[]
+        ignored: { index: number; score: number }[]
     }
 }
 
@@ -386,6 +401,24 @@ export interface ContextSearchResult {
     startLine: number
     endLine: number
     content: string
+}
+
+/**
+ * A prompt that can be shared and reused. See Prompt in the Sourcegraph GraphQL API.
+ */
+export interface Prompt {
+    id: string
+    name: string
+    nameWithOwner: string
+    owner: {
+        namespaceName: string
+    }
+    description?: string
+    draft: boolean
+    definition: {
+        text: string
+    }
+    url: string
 }
 
 interface ContextFiltersResponse {
@@ -471,6 +504,10 @@ interface EvaluatedFeatureFlagsResponse {
 
 interface EvaluateFeatureFlagResponse {
     evaluateFeatureFlag: boolean
+}
+
+interface ViewerSettingsResponse {
+    viewerSettings: { final: string }
 }
 
 function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (data: T) => R): R | Error {
@@ -590,11 +627,15 @@ export class SourcegraphGraphQLAPIClient {
         repositories: string[],
         query: string
     ): Promise<FuzzyFindFile[] | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<FuzzyFindFilesResponse>>(FUZZY_FILES_QUERY, {
-            query: `type:path count:30 ${
-                repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
-            } ${query}`,
-        }).then(response =>
+        return this.fetchSourcegraphAPI<APIResponse<FuzzyFindFilesResponse>>(
+            FUZZY_FILES_QUERY,
+            {
+                query: `type:path count:30 ${
+                    repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
+                } ${query}`,
+            },
+            AbortSignal.timeout(15000)
+        ).then(response =>
             extractDataOrError(
                 response,
                 data => data.search?.results.results ?? new Error('no files found')
@@ -621,17 +662,33 @@ export class SourcegraphGraphQLAPIClient {
     public async getFileContent(
         repository: string,
         filePath: string,
-        range?: { startLine?: number; endLine?: number }
+        range?: { startLine?: number; endLine?: number },
+        signal?: AbortSignal
     ): Promise<string | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<RemoteFileContentReponse>>(GET_REMOTE_FILE_QUERY, {
-            repositoryName: repository,
-            filePath,
-            startLine: range?.startLine,
-            endLine: range?.endLine,
-        }).then(response =>
+        return this.fetchSourcegraphAPI<APIResponse<RemoteFileContentReponse>>(
+            GET_REMOTE_FILE_QUERY,
+            {
+                repositoryName: repository,
+                filePath,
+                startLine: range?.startLine,
+                endLine: range?.endLine,
+            },
+            signal
+        ).then(response =>
             extractDataOrError(
                 response,
                 data => data.repository.commit.blob.content ?? new Error('no file found')
+            )
+        )
+    }
+
+    public async getURLContent(url: string): Promise<{ title: string | null; content: string } | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<GetURLContentResponse>>(GET_URL_CONTENT_QUERY, {
+            url,
+        }).then(response =>
+            extractDataOrError(
+                response,
+                data => data.urlMentionContext ?? new Error('failed to fetch url content')
             )
         )
     }
@@ -861,12 +918,17 @@ export class SourcegraphGraphQLAPIClient {
 
     public async getRepoIds(
         names: string[],
-        first: number
+        first: number,
+        signal?: AbortSignal
     ): Promise<{ name: string; id: string }[] | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<RepositoryIdsResponse>>(REPOSITORY_IDS_QUERY, {
-            names,
-            first,
-        }).then(response => extractDataOrError(response, data => data.repositories?.nodes || []))
+        return this.fetchSourcegraphAPI<APIResponse<RepositoryIdsResponse>>(
+            REPOSITORY_IDS_QUERY,
+            {
+                names,
+                first,
+            },
+            signal
+        ).then(response => extractDataOrError(response, data => data.repositories?.nodes || []))
     }
 
     public async getRepoName(cloneURL: string): Promise<string | null> {
@@ -929,14 +991,19 @@ export class SourcegraphGraphQLAPIClient {
 
     public async contextSearch(
         repoIDs: string[],
-        query: string
+        query: string,
+        signal?: AbortSignal
     ): Promise<ContextSearchResult[] | null | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<ContextSearchResponse>>(CONTEXT_SEARCH_QUERY, {
-            repos: repoIDs,
-            query,
-            codeResultsCount: 15,
-            textResultsCount: 5,
-        }).then(response =>
+        return this.fetchSourcegraphAPI<APIResponse<ContextSearchResponse>>(
+            CONTEXT_SEARCH_QUERY,
+            {
+                repos: repoIDs,
+                query,
+                codeResultsCount: 15,
+                textResultsCount: 5,
+            },
+            signal
+        ).then(response =>
             extractDataOrError(response, data =>
                 (data.getCodyContext || []).map(item => ({
                     commit: item.blob.commit.oid,
@@ -955,14 +1022,20 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async contextFilters(): Promise<{ filters: ContextFilters; transient: boolean }> {
+    public async contextFilters(): Promise<{
+        filters: ContextFilters
+        transient: boolean
+    }> {
         // CONTEXT FILTERS are only available on Sourcegraph 5.3.3 and later.
         const minimumVersion = '5.3.3'
         const { enabled, version } = await this.isCodyEnabled()
         const insiderBuild = version.length > 12 || version.includes('dev')
         const isValidVersion = insiderBuild || semver.gte(version, minimumVersion)
         if (!enabled || !isValidVersion) {
-            return { filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: false }
+            return {
+                filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS,
+                transient: false,
+            }
         }
 
         const response =
@@ -972,28 +1045,56 @@ export class SourcegraphGraphQLAPIClient {
 
         const result = extractDataOrError(response, data => {
             if (data?.site?.codyContextFilters?.raw === null) {
-                return { filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: false }
+                return {
+                    filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS,
+                    transient: false,
+                }
             }
 
             if (data?.site?.codyContextFilters?.raw) {
-                return { filters: data.site.codyContextFilters.raw, transient: false }
+                return {
+                    filters: data.site.codyContextFilters.raw,
+                    transient: false,
+                }
             }
 
             // Exclude everything in case of an unexpected response structure.
-            return { filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: true }
+            return {
+                filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
+                transient: true,
+            }
         })
 
         if (result instanceof Error) {
             // Ignore errors caused by outdated Sourcegraph API instances.
             if (hasOutdatedAPIErrorMessages(result)) {
-                return { filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: false }
+                return {
+                    filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS,
+                    transient: false,
+                }
             }
 
             logError('SourcegraphGraphQLAPIClient', 'contextFilters', result.message)
             // Exclude everything in case of an unexpected error.
-            return { filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS, transient: true }
+            return {
+                filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
+                transient: true,
+            }
         }
 
+        return result
+    }
+
+    public async queryPrompts(query: string, signal?: AbortSignal): Promise<Prompt[]> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<{ prompts: { nodes: Prompt[] } }>>(
+            PROMPTS_QUERY,
+            { query },
+            signal
+        )
+        const result = extractDataOrError(response, data => data.prompts.nodes)
+        if (result instanceof Error) {
+            throw result
+        }
         return result
     }
 
@@ -1009,7 +1110,10 @@ export class SourcegraphGraphQLAPIClient {
      * If the field exists, it calls `getSiteHasCodyEnabled()` to check its value.
      * If the field does not exist, Cody is assumed to be enabled for versions between 5.0.0 - 5.1.0.
      */
-    public async isCodyEnabled(): Promise<{ enabled: boolean; version: string }> {
+    public async isCodyEnabled(): Promise<{
+        enabled: boolean
+        version: string
+    }> {
         // Check site version.
         const siteVersion = await this.getSiteVersion()
         if (isError(siteVersion)) {
@@ -1207,12 +1311,16 @@ export class SourcegraphGraphQLAPIClient {
         return initialDataOrError
     }
 
-    public async searchAttribution(snippet: string): Promise<SearchAttributionResults | Error> {
+    public async searchAttribution(
+        snippet: string,
+        signal?: AbortSignal
+    ): Promise<SearchAttributionResults | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SearchAttributionResponse>>(
             SEARCH_ATTRIBUTION_QUERY,
             {
                 snippet,
-            }
+            },
+            signal
         ).then(response => extractDataOrError(response, data => data.snippetAttribution))
     }
 
@@ -1239,10 +1347,18 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.evaluateFeatureFlag))
     }
 
-    public fetchSourcegraphAPI<T>(
+    public async viewerSettings(): Promise<Record<string, any> | Error> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<ViewerSettingsResponse>>(
+            VIEWER_SETTINGS_QUERY,
+            {}
+        )
+        return extractDataOrError(response, data => JSON.parse(data.viewerSettings.final))
+    }
+
+    public async fetchSourcegraphAPI<T>(
         query: string,
         variables: Record<string, any> = {},
-        timeout = 6000 // Default timeout of 6000ms (6 seconds)
+        signalOrTimeout?: AbortSignal | number
     ): Promise<T | Error> {
         const headers = new Headers(this.config.customHeaders as HeadersInit)
         headers.set('Content-Type', 'application/json; charset=utf-8')
@@ -1263,28 +1379,32 @@ export class SourcegraphGraphQLAPIClient {
             baseUrl: this.config.serverEndpoint,
         })
 
-        // Create an AbortController instance
-        const controller = new AbortController()
-        const signal = controller.signal
+        // Default timeout of 6 seconds.
+        const timeoutMs = typeof signalOrTimeout === 'number' ? signalOrTimeout : 6000
+        const timeoutSignal = AbortSignal.timeout(timeoutMs)
 
-        // Set a timeout to trigger the abort
-        const timeoutId = setTimeout(() => controller.abort(), timeout)
+        const abortController = dependentAbortController(
+            typeof signalOrTimeout !== 'number' ? signalOrTimeout : undefined
+        )
+        onAbort(timeoutSignal, () => abortController.abort())
 
         return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({ query, variables }),
                 headers,
-                signal, // Pass the signal to the fetch request
+                signal: abortController.signal,
             })
-                .then(response => {
-                    clearTimeout(timeoutId) // Clear the timeout if the request completes in time
-                    return verifyResponseCode(response)
-                })
+                .then(verifyResponseCode)
                 .then(response => response.json() as T)
                 .catch(error => {
-                    if (error.name === 'AbortError') {
-                        return new Error(`EHOSTUNREACH: Request timed out after ${timeout}ms (${url})`)
+                    if (isAbortError(error)) {
+                        if (timeoutSignal.aborted) {
+                            return new Error(
+                                `ETIMEDOUT: Request timed out after ${timeoutMs}ms (${url})`
+                            )
+                        }
+                        return error
                     }
                     return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
                 })
@@ -1340,8 +1460,7 @@ export class SourcegraphGraphQLAPIClient {
         queryName: string,
         method: string,
         urlPath: string,
-        body?: string,
-        timeout = 6000 // Default timeout of 6000ms (6 seconds)
+        body?: string
     ): Promise<T | Error> {
         const headers = new Headers(this.config.customHeaders as HeadersInit)
         headers.set('Content-Type', 'application/json; charset=utf-8')
@@ -1355,30 +1474,23 @@ export class SourcegraphGraphQLAPIClient {
         addTraceparent(headers)
         addCustomUserAgent(headers)
 
+        // Timeout of 6 seconds.
+        const signal = AbortSignal.timeout(6000)
+
         const url = new URL(urlPath, this.config.serverEndpoint).href
-
-        // Create an AbortController instance
-        const controller = new AbortController()
-        const signal = controller.signal
-
-        // Set a timeout to trigger the abort
-        const timeoutId = setTimeout(() => controller.abort(), timeout)
 
         return wrapInActiveSpan(`httpapi.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: method,
                 body: body,
                 headers,
-                signal, // Pass the signal to the fetch request
+                signal,
             })
-                .then(response => {
-                    clearTimeout(timeoutId) // Clear the timeout if the request completes in time
-                    return verifyResponseCode(response)
-                })
+                .then(verifyResponseCode)
                 .then(response => response.json() as T)
                 .catch(error => {
-                    if (error.name === 'AbortError') {
-                        return new Error(`EHOSTUNREACH: Request timed out after ${timeout}ms (${url})`)
+                    if (isAbortError(error)) {
+                        return error
                     }
                     return new Error(`accessing Sourcegraph HTTP API: ${error} (${url})`)
                 })

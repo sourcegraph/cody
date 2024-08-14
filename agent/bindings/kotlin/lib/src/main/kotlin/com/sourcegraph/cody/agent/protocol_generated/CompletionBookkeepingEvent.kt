@@ -13,5 +13,6 @@ data class CompletionBookkeepingEvent(
   val acceptedAt: Long? = null,
   val items: List<CompletionItemInfo>,
   val loggedPartialAcceptedLength: Long,
+  val read: Boolean,
 )
 

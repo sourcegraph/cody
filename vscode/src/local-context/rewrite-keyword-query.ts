@@ -20,7 +20,8 @@ const containsMultipleSentences = /[.!?][\s\r\n]+\w/
  */
 export async function rewriteKeywordQuery(
     completionsClient: SourcegraphCompletionsClient,
-    query: PromptString
+    query: PromptString,
+    signal?: AbortSignal
 ): Promise<string> {
     // In evals, we saw that rewriting tends to make performance worse for simple queries. So we only rewrite
     // in cases where it clearly helps: when it's likely in a non-English language, or there are multiple
@@ -33,7 +34,7 @@ export async function rewriteKeywordQuery(
         }
     }
 
-    const rewritten = doRewrite(completionsClient, query)
+    const rewritten = doRewrite(completionsClient, query, signal)
     return rewritten
         .then(value => {
             // If there are no rewritten terms, just return the original query.
@@ -48,7 +49,8 @@ export async function rewriteKeywordQuery(
 
 async function doRewrite(
     completionsClient: SourcegraphCompletionsClient,
-    query: PromptString
+    query: PromptString,
+    signal?: AbortSignal
 ): Promise<string[]> {
     const preamble = getSimplePreamble(undefined, 0)
     const stream = completionsClient.stream(
@@ -66,11 +68,13 @@ async function doRewrite(
             topK: 1,
             fast: true,
         },
-        { apiVersion: 0 } // Use legacy API version for now
+        { apiVersion: 0 }, // Use legacy API version for now
+        signal
     )
 
     const streamingText: string[] = []
     for await (const message of stream) {
+        signal?.throwIfAborted()
         switch (message.type) {
             case 'change': {
                 streamingText.push(message.text)

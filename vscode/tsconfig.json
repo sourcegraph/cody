@@ -24,7 +24,6 @@
     "webviews",
     "webviews/*.d.ts",
     "package.json",
-
   ],
   "exclude": [
     "typehacks",
@@ -37,6 +36,9 @@
   "references": [
     {
       "path": "../lib/shared"
+    },
+    {
+      "path": "../lib/prompt-editor"
     }
   ]
 }

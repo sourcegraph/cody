@@ -1,22 +1,31 @@
 import {
     type CodyCommand,
+    CodyIDE,
     type ContextItem,
-    featureFlagProvider,
+    CustomCommandType,
     isFileURI,
 } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
 import { CodyCommandMenuItems } from '..'
-import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
-import { getContextFileFromGitLog } from '../context/git-log'
-import { getContextFileFromShell } from '../context/shell'
+import { getConfiguration } from '../../configuration'
 import { executeExplainHistoryCommand } from '../execute/explain-history'
 import { showCommandMenu } from '../menus'
 import type { CodyCommandArgs } from '../types'
-import { getDefaultCommandsMap } from '../utils/get-commands'
 import { CustomCommandsManager, openCustomCommandDocsLink } from './custom-commands'
 
-const vscodeDefaultCommands = getDefaultCommandsMap(CodyCommandMenuItems as CodyCommand[])
+const vscodeDefaultCommands: CodyCommand[] = CodyCommandMenuItems.filter(
+    ({ isBuiltin }) => isBuiltin === true
+).map(
+    c =>
+        ({
+            key: c.key,
+            description: c.description,
+            prompt: c.prompt ?? '',
+            type: c.isBuiltin ? 'default' : 'experimental',
+            mode: c.mode,
+        }) satisfies CodyCommand
+)
 
 /**
  * Provides management and interaction capabilities for both default and custom Cody commands.
@@ -26,17 +35,17 @@ const vscodeDefaultCommands = getDefaultCommandsMap(CodyCommandMenuItems as Cody
  */
 export class CommandsProvider implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
-    protected readonly defaultCommands = vscodeDefaultCommands
-    public treeViewProvider = new TreeViewProvider('command', featureFlagProvider)
-    protected customCommandsStore = new CustomCommandsManager(this.treeViewProvider)
-
-    // The commands grouped with default commands and custom commands
-    private allCommands = new Map<string, CodyCommand>()
+    protected readonly commands = new Map<string, CodyCommand>()
+    protected customCommandsStore = new CustomCommandsManager()
 
     constructor() {
         this.disposables.push(this.customCommandsStore)
-        // adds the default commands to the all commands map
-        this.groupCommands(this.defaultCommands)
+
+        if (getConfiguration().agentIDE !== CodyIDE.Web) {
+            for (const c of vscodeDefaultCommands) {
+                this.commands.set(c.key, c)
+            }
+        }
 
         // Cody Command Menus
         this.disposables.push(
@@ -46,13 +55,6 @@ export class CommandsProvider implements vscode.Disposable {
             vscode.commands.registerCommand('cody.commands.open.doc', () => openCustomCommandDocsLink())
         )
 
-        // Tree View
-        this.disposables.push(
-            vscode.window.registerTreeDataProvider('cody.commands.tree.view', this.treeViewProvider),
-            // Update the custom commands when the tree view is refreshed
-            this.treeViewProvider.onDidChangeTreeData(() => this.getCustomCommands())
-        )
-
         this.disposables.push(
             vscode.commands.registerCommand('cody.command.explain-history', a =>
                 executeExplainHistoryCommand(this, a)
@@ -60,12 +62,16 @@ export class CommandsProvider implements vscode.Disposable {
         )
 
         this.customCommandsStore.init()
-        this.refresh()
+        void this.customCommandsStore.refresh()
     }
 
     private async menu(type: 'custom' | 'config' | 'default', args?: CodyCommandArgs): Promise<void> {
-        const customCommands = await this.getCustomCommands()
-        const commandArray = [...customCommands].map(command => command[1])
+        const commandArray = this.list().filter(
+            c =>
+                type !== 'custom' ||
+                c.type === CustomCommandType.User ||
+                c.type === CustomCommandType.Workspace
+        )
         if (type === 'custom' && !commandArray.length) {
             return showCommandMenu('config', commandArray, args)
         }
@@ -74,38 +80,14 @@ export class CommandsProvider implements vscode.Disposable {
     }
 
     public list(): CodyCommand[] {
-        return [...this.allCommands.values()]
+        return [...this.customCommandsStore.commands.values(), ...this.commands.values()]
     }
 
     /**
      * Find a command by its id
      */
     public get(id: string): CodyCommand | undefined {
-        return this.allCommands.get(id)
-    }
-
-    protected async getCustomCommands(): Promise<Map<string, CodyCommand>> {
-        const commands = this.customCommandsStore.commands
-        this.groupCommands(commands)
-        return commands
-    }
-
-    /**
-     * Group the default commands with the custom commands and add a separator
-     */
-    protected groupCommands(customCommands = new Map<string, CodyCommand>()): void {
-        const defaultCommands = [...this.defaultCommands]
-        const combinedMap = new Map([...defaultCommands])
-        // Add the custom commands to the all commands map
-        this.allCommands = new Map([...customCommands, ...combinedMap].sort())
-    }
-
-    /**
-     * Refresh the custom commands from store before combining with default commands
-     */
-    protected async refresh(): Promise<void> {
-        const { commands } = await this.customCommandsStore.refresh()
-        this.groupCommands(commands)
+        return this.commands.get(id) ?? this.customCommandsStore.commands.get(id)
     }
 
     /**
@@ -113,6 +95,7 @@ export class CommandsProvider implements vscode.Disposable {
      * Used for retreiving context for the command field in custom command
      */
     public async runShell(shell: string): Promise<ContextItem[]> {
+        const { getContextFileFromShell } = await import('../context/shell')
         return getContextFileFromShell(shell)
     }
 
@@ -141,6 +124,7 @@ export class CommandsProvider implements vscode.Disposable {
         if (!isFileURI(uri)) {
             throw new Error('history only supported on local file paths')
         }
+        const { getContextFileFromGitLog } = await import('../context/git-log')
         return getContextFileFromGitLog(uri, options)
     }
 

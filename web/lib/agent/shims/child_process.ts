@@ -9,3 +9,7 @@ export function execSync(): unknown {
 export function execFile(): unknown {
     throw new Error('not implemented')
 }
+
+export function exec(): unknown {
+    throw new Error('not implemented')
+}

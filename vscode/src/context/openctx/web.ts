@@ -1,34 +1,47 @@
 import type { ItemsParams, ItemsResult } from '@openctx/client'
-import type { OpenContextProvider } from './types'
+import { WEB_PROVIDER_URI, graphqlClient, isErrorLike } from '@sourcegraph/cody-shared'
+import type { OpenCtxProvider } from './types'
 
 /**
  * An OpenCtx provider that fetches the content of a URL and provides it as an item.
  */
-const WebProvider: OpenContextProvider = {
-    providerUri: 'internal-web-provider',
+export function createWebProvider(useProxy: boolean): OpenCtxProvider {
+    return {
+        providerUri: WEB_PROVIDER_URI,
 
-    meta() {
-        return {
-            name: 'Web URLs',
-            mentions: { label: 'Type or paste a URL...' },
-        }
-    },
+        meta() {
+            return {
+                name: 'Web URLs',
+                mentions: { label: 'Type or paste a URL...' },
+            }
+        },
 
-    async mentions({ query }) {
-        const [item] = await fetchItem({ message: query }, 2000)
-        if (!item) {
-            return []
-        }
+        async mentions({ query }) {
+            const [item] = await fetchItem({ message: query }, useProxy, 2000)
+            if (!item) {
+                return []
+            }
 
-        return [{ title: item.title, uri: item.url || '', data: { content: item.ai?.content } }]
-    },
+            return [
+                {
+                    title: item.title,
+                    uri: item.url || '',
+                    data: { content: item.ai?.content },
+                },
+            ]
+        },
 
-    async items(params) {
-        return fetchItem(params)
-    },
+        async items(params) {
+            return fetchItem(params, useProxy)
+        },
+    }
 }
 
-async function fetchItem(params: ItemsParams, timeoutMs?: number): Promise<ItemsResult> {
+async function fetchItem(
+    params: ItemsParams,
+    useProxy: boolean,
+    timeoutMs?: number
+): Promise<ItemsResult> {
     if (typeof params.mention?.data?.content === 'string') {
         return [
             {
@@ -45,20 +58,33 @@ async function fetchItem(params: ItemsParams, timeoutMs?: number): Promise<Items
         return []
     }
     try {
-        const content = await fetchContentForURLContextItem(
-            url,
-            timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined
-        )
-
-        if (content === null) {
-            return []
+        let title: string | null
+        let content: string
+        if (useProxy) {
+            const response = await graphqlClient.getURLContent(url)
+            if (isErrorLike(response)) {
+                return []
+            }
+            title = response.title
+            content = response.content
+        } else {
+            const response = await fetchContentForURLContextItem(
+                url,
+                timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined
+            )
+            if (response === null) {
+                return []
+            }
+            content = response
+            title = tryGetHTMLDocumentTitle(content) ?? url
         }
+
         return [
             {
                 url,
-                title: tryGetHTMLDocumentTitle(content) ?? url,
+                title: title ?? url,
                 ui: { hover: { text: `Fetched from ${url}` } },
-                ai: { content: content },
+                ai: { content },
             },
         ]
     } catch (error) {
@@ -115,5 +141,3 @@ function tryGetHTMLDocumentTitle(html: string): string | undefined {
         ?.groups?.title.replaceAll(/\s+/gm, ' ')
         .trim()
 }
-
-export default WebProvider

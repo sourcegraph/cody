@@ -1,0 +1,14 @@
+.container {
+    border: 1px solid var(--vscode-widget-border);
+    border-radius: 3px;
+    outline: none;
+}
+
+.item {
+    &.context-item {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 0.2rem;
+    }
+}

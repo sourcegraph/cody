@@ -7,7 +7,7 @@ import * as vscode from 'vscode'
  */
 export async function findWorkspaceFiles(
     cancellationToken?: vscode.CancellationToken
-): Promise<vscode.Uri[]> {
+): Promise<ReadonlyArray<vscode.Uri>> {
     return (
         await Promise.all(
             (vscode.workspace.workspaceFolders ?? [null]).map(async workspaceFolder =>

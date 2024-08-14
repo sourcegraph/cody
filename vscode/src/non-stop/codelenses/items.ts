@@ -9,48 +9,64 @@ import { CodyTaskState } from '../utils'
 // Create Lenses based on state
 export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
     const codeLensRange = new vscode.Range(task.selectionRange.start, task.selectionRange.start)
+    const isChatEdit = task.source === 'chat'
     const isTest = task.intent === 'test'
     const isEdit = task.mode === 'edit'
     switch (task.state) {
         case CodyTaskState.Pending:
         case CodyTaskState.Working: {
-            const title = getWorkingLens(codeLensRange)
+            const title = getWorkingLens(codeLensRange, task.id)
             const cancel = getCancelLens(codeLensRange, task.id)
             return [title, cancel]
         }
         case CodyTaskState.Inserting: {
             if (isTest) {
-                return [getUnitTestLens(codeLensRange)]
+                return [getUnitTestLens(codeLensRange, task.id)]
             }
-            return [getInsertingLens(codeLensRange), getCancelLens(codeLensRange, task.id)]
+            return [getInsertingLens(codeLensRange, task.id), getCancelLens(codeLensRange, task.id)]
         }
         case CodyTaskState.Applying: {
-            const title = getApplyingLens(codeLensRange)
+            const title = getApplyingLens(codeLensRange, task.id)
             const cancel = getCancelLens(codeLensRange, task.id)
             return [title, cancel]
         }
         case CodyTaskState.Applied: {
-            const acceptAll = getAcceptAllLens(codeLensRange, task.id)
-            const acceptLenses = getAcceptLenses(task, codeLensRange, task.id)
-            const rejectLenses = getRejectLens(task, codeLensRange, task.id)
-            const retry = getRetryLens(codeLensRange, task.id)
-            const undo = getUndoLens(codeLensRange, task.id)
-            if (isTest) {
-                return [acceptAll, undo]
-            }
-            if (isEdit) {
-                const showDiff = getDiffLens(
-                    codeLensRange,
-                    task.id,
-                    // Note: We already show an inline-diff in VS Code, so we change the wording slightly.
-                    // It is still useful to open the diff fully here, as it provides additional controls such as
-                    // reverting specific lines
-                    isRunningInsideAgent() ? 'Show Diff' : 'Open Diff'
-                )
-                return [acceptAll, retry, undo, showDiff, 
-                    ...acceptLenses, ...rejectLenses]
-            }
-            return [acceptAll, retry, undo]
+            // Required:
+            const acceptAllLens = getAcceptAllLens(codeLensRange, task.id)
+            const undoLens = getUndoLens(codeLensRange, task.id, isChatEdit ? 'Reject' : undefined)
+
+            // Optional:
+            // Retries only makes sense if the user created the prompt
+            const canRetry = task.intent !== 'fix' && task.intent !== 'doc' && !isTest && !isChatEdit
+            const retryLens = canRetry ? getRetryLens(codeLensRange, task.id) : null
+
+            // Diffs only if there's code that's changed
+            const canDiff = isEdit && !isTest
+            const diffLens = canDiff
+                ? getDiffLens(
+                      codeLensRange,
+                      task.id,
+                      // Note: We already show an inline-diff in VS Code, so we change the wording slightly.
+                      // It is still useful to open the diff fully here, as it provides additional controls such as
+                      // reverting specific lines
+                      isRunningInsideAgent() ? 'Show Diff' : 'Open Diff'
+                  )
+                : null
+
+            // Show additional accept/reject lenses only we're diffing
+            const acceptLenses = canDiff ? getAcceptLenses(task) : []
+            const rejectLenses = canDiff ? getRejectLenses(task) : []
+
+            return (
+                [
+                    acceptAllLens,
+                    retryLens,
+                    undoLens,
+                    diffLens,
+                    ...acceptLenses,
+                    ...rejectLenses,
+                ] as vscode.CodeLens[]
+            ).filter(Boolean) //TODO: Remove type-cast after TS5.5+
         }
         case CodyTaskState.Error: {
             const title = getErrorLens(codeLensRange, task)
@@ -97,29 +113,32 @@ function getErrorLens(codeLensRange: vscode.Range, task: FixupTask): vscode.Code
     return lens
 }
 
-function getWorkingLens(codeLensRange: vscode.Range): vscode.CodeLens {
+function getWorkingLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: '$(sync~spin) Cody is working...',
         command: 'cody.chat.focus',
+        arguments: [id],
     }
     return lens
 }
 
-function getInsertingLens(codeLensRange: vscode.Range): vscode.CodeLens {
+function getInsertingLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: '$(sync~spin) Inserting...',
         command: 'cody.chat.focus',
+        arguments: [id],
     }
     return lens
 }
 
-function getApplyingLens(codeLensRange: vscode.Range): vscode.CodeLens {
+function getApplyingLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: '$(sync~spin) Applying...',
         command: 'cody.chat.focus',
+        arguments: [id],
     }
     return lens
 }
@@ -166,18 +185,18 @@ function getRetryLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens 
     return lens
 }
 
-function getUndoLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+function getUndoLens(codeLensRange: vscode.Range, id: string, title = 'Undo'): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     const shortcut = isRunningInsideAgent() ? '' : ` (${process.platform === 'darwin' ? '⌥X' : 'Alt+X'})`
     lens.command = {
-        title: `Undo${shortcut}`,
+        title: `${title}${shortcut}`,
         command: 'cody.fixup.codelens.undo',
         arguments: [id],
     }
     return lens
 }
 
-function getRejectLens(task: FixupTask, codeLensRange: vscode.Range, id: string): vscode.CodeLens[] {
+function getRejectLenses(task: FixupTask): vscode.CodeLens[] {
     const lenses = []
     if (task.diff) {
         for (const edit of task.diff) {
@@ -185,7 +204,7 @@ function getRejectLens(task: FixupTask, codeLensRange: vscode.Range, id: string)
             acceptBlockLens.command = {
                 title: 'Reject',
                 command: 'cody.fixup.codelens.reject',
-                arguments: [id, edit.range],
+                arguments: [task.id, edit.range],
             }
             lenses.push(acceptBlockLens)
         }
@@ -193,7 +212,7 @@ function getRejectLens(task: FixupTask, codeLensRange: vscode.Range, id: string)
     return lenses
 }
 
-function getAcceptLenses(task: FixupTask, codeLensRange: vscode.Range, id: string): vscode.CodeLens[] {
+function getAcceptLenses(task: FixupTask): vscode.CodeLens[] {
     const lenses = []
     if (task.diff) {
         for (const edit of task.diff) {
@@ -201,7 +220,7 @@ function getAcceptLenses(task: FixupTask, codeLensRange: vscode.Range, id: strin
             acceptBlockLens.command = {
                 title: '$(cody-logo) Accept',
                 command: 'cody.fixup.codelens.accept',
-                arguments: [id, edit.range],
+                arguments: [task.id, edit.range],
             }
             lenses.push(acceptBlockLens)
         }
@@ -220,11 +239,12 @@ function getAcceptAllLens(codeLensRange: vscode.Range, id: string): vscode.CodeL
     return lens
 }
 
-function getUnitTestLens(codeLensRange: vscode.Range): vscode.CodeLens {
+function getUnitTestLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: '$(sync~spin) Generating tests...',
         command: 'cody.chat.focus',
+        arguments: [id],
     }
     return lens
 }

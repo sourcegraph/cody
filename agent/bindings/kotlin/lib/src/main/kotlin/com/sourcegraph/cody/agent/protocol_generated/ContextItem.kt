@@ -36,8 +36,10 @@ data class ContextItemFile(
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
   val provider: String? = null,
   val icon: String? = null,
+  val metadata: List<String>? = null,
   val type: TypeEnum, // Oneof: file
   val remoteRepositoryName: String? = null,
 ) : ContextItem() {
@@ -59,8 +61,10 @@ data class ContextItemRepository(
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
   val provider: String? = null,
   val icon: String? = null,
+  val metadata: List<String>? = null,
   val type: TypeEnum, // Oneof: repository
   val repoID: String,
 ) : ContextItem() {
@@ -82,8 +86,10 @@ data class ContextItemTree(
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
   val provider: String? = null,
   val icon: String? = null,
+  val metadata: List<String>? = null,
   val type: TypeEnum, // Oneof: tree
   val isWorkspaceRoot: Boolean,
   val name: String,
@@ -106,8 +112,10 @@ data class ContextItemSymbol(
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
   val provider: String? = null,
   val icon: String? = null,
+  val metadata: List<String>? = null,
   val type: TypeEnum, // Oneof: symbol
   val symbolName: String,
   val kind: SymbolKind, // Oneof: class, function, method
@@ -131,8 +139,10 @@ data class ContextItemOpenCtx(
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
   val provider: String? = null,
   val icon: String? = null,
+  val metadata: List<String>? = null,
   val type: TypeEnum, // Oneof: openctx
   val providerUri: String,
   val mention: MentionParams? = null,

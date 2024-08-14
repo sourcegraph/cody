@@ -1,5 +1,6 @@
 .buttons-container {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     border-style: solid;
     border-width: 1px;
@@ -11,6 +12,29 @@
 
 .buttons {
     display: flex;
+}
+.button {
+    display: flex;
+    align-items: center;
+    padding: 3px;
+    height: 16px;
+    background-color: transparent;
+    cursor: pointer;
+    background: var(--button-icon-background);
+    border-radius: var(--button-icon-corner-radius);
+    color: var(--foreground);
+}
+.button:hover {
+    background: var(--button-icon-hover-background);
+    outline: 1px dotted var(--contrast-active-border);
+    outline-offset: -1px;
+}
+.button:not(:first-child) {
+    margin-left: 0.25rem;
+}
+
+.button .icon-container {
+    margin-right: 0.25rem
 }
 
 .copy-button,
@@ -117,7 +141,7 @@
 .content pre {
     font-family: var(--vscode-editor-font-family);
     font-size: var(--vscode-editor-font-size);
-    overflow: scroll;
+    overflow: auto;
 }
 
 .content pre,
@@ -177,4 +201,9 @@ body[data-vscode-theme-kind='vscode-light'] .content pre > code {
     margin-block: 1rem;
     padding-inline-start: 2rem;
     list-style: revert;
+}
+
+.file-name-container {
+    color: var(--vscode-descriptionForeground);
+    margin-left: auto;
 }

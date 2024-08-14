@@ -213,8 +213,14 @@ export const RANK_CONTEXT_QUERY = `
 query RankContext($interactionId: String!, $query: String!, $contextItems: [InputContextItem!]!) {
     rankContext(interactionId: $interactionId, query:$query, contextItems: $contextItems) {
         ranker
-        used
-        ignored
+        used {
+            index
+            score
+        }
+        ignored {
+            index
+            score
+        }
     }
 }`
 
@@ -245,6 +251,31 @@ query ContextFilters {
     site {
         codyContextFilters(version: V1) {
             raw
+        }
+    }
+}`
+
+export const PROMPTS_QUERY = `
+query ViewerPrompts($query: String!) {
+    prompts(query: $query, first: 100, viewerIsAffiliated: true, orderBy: PROMPT_NAME_WITH_OWNER) {
+        nodes {
+            id
+            name
+            nameWithOwner
+            owner {
+                namespaceName
+            }
+            description
+            draft
+            definition {
+                text
+            }
+            url
+        }
+        totalCount
+        pageInfo {
+            hasNextPage
+            endCursor
         }
     }
 }`
@@ -325,10 +356,10 @@ query SiteIdentification {
 
 export const GET_FEATURE_FLAGS_QUERY = `
     query FeatureFlags {
-        evaluatedFeatureFlags() {
+        evaluatedFeatureFlags {
             name
             value
-          }
+        }
     }
 `
 
@@ -424,6 +455,23 @@ query GetRemoteFileQuery($repositoryName: String!, $filePath: String!, $startLin
          content(startLine:$startLine endLine:$endLine)
       }
     }
+  }
+}
+`
+
+export const GET_URL_CONTENT_QUERY = `
+query GetURLContentQuery($url: String!) {
+    urlMentionContext(url: $url) {
+        title
+        content
+    }
+}
+`
+
+export const VIEWER_SETTINGS_QUERY = `
+query ViewerSettings {
+  viewerSettings {
+    final
   }
 }
 `

@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
 import { PromptString, ps } from '@sourcegraph/cody-shared'
+import { ClientStateContextProvider } from '@sourcegraph/prompt-editor'
 import { URI } from 'vscode-uri'
-import { ClientStateContextProvider } from '../../../../client/clientState'
 import { VSCodeCell } from '../../../../storybook/VSCodeStoryDecorator'
 import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO } from '../../../fixtures'
 import { HumanMessageCell } from './HumanMessageCell'

@@ -1,6 +1,7 @@
 import type * as vscode from 'vscode'
 
 import type { EventSource } from '@sourcegraph/cody-shared'
+import type { QuickPickInput } from '../edit/input/get-input'
 import type { FixupFile } from './FixupFile'
 import type { FixupTask, FixupTaskID } from './FixupTask'
 import type { CodyTaskState } from './utils'
@@ -51,8 +52,13 @@ export interface FixupActor {
      * a new task to try again. Only applicable to tasks in the "applied" state.
      * @param task the task to retry.
      * @param source the source of the retry, for event logging.
+     * @param previousInput the previous input, if any.
      */
-    retry(task: FixupTask, source: EventSource): Promise<FixupTask | undefined>
+    retry(
+        task: FixupTask,
+        source: EventSource,
+        previousInput?: QuickPickInput
+    ): Promise<FixupTask | undefined>
 }
 
 /**

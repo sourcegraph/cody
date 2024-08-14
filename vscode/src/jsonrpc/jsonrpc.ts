@@ -7,14 +7,10 @@ import { type CancellationToken, type MessageConnection, ResponseError, Trace } 
 import { CodyJsonRpcErrorCode } from './CodyJsonRpcErrorCode'
 import type * as agent from './agent-protocol'
 import type * as bfg from './bfg-protocol'
-import type * as contextRanking from './context-ranking-protocol'
 import type * as embeddings from './embeddings-protocol'
 
-type Requests = bfg.Requests & agent.Requests & embeddings.Requests & contextRanking.Requests
-type Notifications = bfg.Notifications &
-    agent.Notifications &
-    embeddings.Notifications &
-    contextRanking.Notifications
+type Requests = bfg.Requests & agent.Requests & embeddings.Requests
+type Notifications = bfg.Notifications & agent.Notifications & embeddings.Notifications
 
 // String literal types for the names of the Cody Agent protocol methods.
 export type RequestMethodName = keyof Requests
@@ -113,8 +109,14 @@ export class MessageHandler {
 
     public async request<M extends RequestMethodName>(
         method: M,
-        params: ParamsOf<M>
+        params: ParamsOf<M>,
+        extra?: { token?: vscode.CancellationToken }
     ): Promise<ResultOf<M>> {
+        if (extra?.token !== undefined) {
+            return await this.conn.sendRequest(method, params, extra.token)
+        }
+        // Strangely enough: the tests will fail with a cryptic error if we pass
+        // an undefined `token` variable as the third parameter to `sendRequest`.
         return await this.conn.sendRequest(method, params)
     }
 
@@ -137,10 +139,11 @@ export class MessageHandler {
             request: async <M extends RequestMethodName>(
                 method: M,
                 params: ParamsOf<M>,
-                cancelToken: vscode.CancellationToken = new vscode.CancellationTokenSource().token
+                extra?: { token?: vscode.CancellationToken }
             ) => {
                 const handler = this.requestHandlers.get(method)
                 if (handler) {
+                    const cancelToken = extra?.token ?? new vscode.CancellationTokenSource().token
                     return await handler(params, cancelToken)
                 }
                 throw new Error(`No such request handler: ${method}`)

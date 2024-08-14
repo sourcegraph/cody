@@ -11,6 +11,7 @@ data class ExtensionConfiguration(
   val autocompleteAdvancedModel: String? = null,
   val debug: Boolean? = null,
   val verboseDebug: Boolean? = null,
+  val telemetryClientName: String? = null,
   val codebase: String? = null,
   val eventProperties: EventProperties? = null,
   val customConfiguration: Map<String, Any>? = null,

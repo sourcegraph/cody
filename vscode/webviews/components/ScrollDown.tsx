@@ -90,7 +90,7 @@ export const ScrollDown: FC<ScrollDownProps> = props => {
                 variant="outline"
                 size="lg"
                 onClick={onClick}
-                className="tw-py-3 hover:tw-bg-secondary"
+                className="tw-py-3 hover:tw-bg-primary-hover"
             >
                 <ArrowDownIcon size={24} />
             </Button>
