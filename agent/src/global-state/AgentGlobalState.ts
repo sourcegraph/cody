@@ -1,11 +1,12 @@
 import type * as vscode from 'vscode'
 
-import { localStorage } from '../../../vscode/src/services/LocalStorageProvider'
+import { LocalStorage } from 'node-localstorage'
 import * as vscode_shim from '../vscode-shim'
 import schema from './schema.sql?raw'
 
 import path from 'node:path'
 import Database from 'better-sqlite3'
+import { localStorage } from '../../../vscode/src/services/LocalStorageProvider'
 
 export class AgentGlobalState implements vscode.Memento {
     private db: DB
@@ -13,7 +14,7 @@ export class AgentGlobalState implements vscode.Memento {
     constructor(ide: string, dir?: string) {
         // If not provided, will default to an in-memory database
         if (dir) {
-            this.db = new SqliteDB(ide, dir)
+            this.db = new LocalStorageDB(ide, dir)
         } else {
             this.db = new InMemoryDB()
         }
@@ -82,6 +83,30 @@ class InMemoryDB implements DB {
 
     clear() {
         this.store.clear()
+    }
+}
+
+class LocalStorageDB implements DB {
+    storage: LocalStorage
+
+    constructor(ide: string, dir: string) {
+        this.storage = new LocalStorage(path.join(dir, `${ide}-globalState`))
+    }
+
+    get(key: string): any {
+        const item = this.storage.getItem(key)
+        return item ? JSON.parse(item) : undefined
+    }
+    set(key: string, value: any): void {
+        this.storage.setItem(key, JSON.stringify(value))
+    }
+    keys(): readonly string[] {
+        const keys = []
+        for (let i = 0; i < this.storage.length; i++) {
+            keys.push(this.storage.key(i))
+        }
+
+        return keys
     }
 }
 
