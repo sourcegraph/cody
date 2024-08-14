@@ -67,6 +67,16 @@
     line-height: 1;
 }
 
+.metadata-container {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+}
+
+.metadata-container > :not(:last-child) {
+    margin-right: 0.25rem;
+}
+
 .attribution-container {
     all: unset;
     display: flex;

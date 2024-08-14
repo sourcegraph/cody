@@ -252,11 +252,16 @@ export class EditManager implements vscode.Disposable {
         // queries to ask the LLM to generate a selection, and then ultimately apply the edit.
         const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
 
+        const model = configuration.model || ModelsService.getDefaultEditModel()
+        if (!model) {
+            throw new Error('No default edit model found. Please set one.')
+        }
+
         const selection = await getSmartApplySelection(
             configuration.instruction,
             replacementCode,
             configuration.document,
-            configuration.model,
+            model,
             this.options.chat,
             this.options.authProvider.getAuthStatus().codyApiVersion
         )
@@ -310,7 +315,7 @@ export class EditManager implements vscode.Disposable {
                 insertionRange,
                 'add',
                 'insert',
-                configuration.model,
+                model,
                 source,
                 configuration.document.uri,
                 undefined,
@@ -348,7 +353,7 @@ export class EditManager implements vscode.Disposable {
                 range: selection.range,
                 mode: 'edit',
                 instruction: ps`Ensuring that you do not duplicate code that it outside of the selection, apply the following change:\n${replacementCode}`,
-                model: configuration.model,
+                model,
                 intent: 'edit',
             },
             source,

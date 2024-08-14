@@ -363,7 +363,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await handleCopiedCode(message.text, message.eventType === 'Button')
                 break
             case 'smartApplySubmit':
-                await handleSmartApply(message.id, message.code, message.instruction, message.fileName)
+                await handleSmartApply(
+                    message.id,
+                    message.code,
+                    this.authProvider.getAuthStatus(),
+                    message.instruction,
+                    message.fileName
+                )
                 break
             case 'smartApplyAccept':
                 await vscode.commands.executeCommand('cody.fixup.codelens.accept', message.id)
@@ -550,11 +556,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async isSmartApplyEnabled(): Promise<boolean> {
-        if (!this.authProvider.getAuthStatus().isDotCom) {
-            // Only supported on Sourcegraph.com right now, until we support more than just Claude 3.5 Sonnet.
-            return false
-        }
-
         const config = await getFullConfig()
         if (config.isRunningInsideAgent) {
             // Only supported in VS Code right now, until we test and iterate on the UI for other clients.

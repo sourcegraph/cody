@@ -1,6 +1,11 @@
 import * as vscode from 'vscode'
 
-import { PromptString, telemetryRecorder } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type EditModel,
+    PromptString,
+    telemetryRecorder,
+} from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 
 import { Utils } from 'vscode-uri'
@@ -104,9 +109,26 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
     await vscode.workspace.applyEdit(edit)
 }
 
+function getSmartApplyModel(authStatus: AuthStatus): EditModel | undefined {
+    if (!authStatus.isDotCom) {
+        // We cannot be sure what model we're using for enterprise, we will let this fall through
+        // to the default edit/smart apply behaviour where we use the configured enterprise model.
+        return
+    }
+
+    /**
+     * For PLG, we have a greater model choice. We default this to Claude 3.5 Sonnet
+     * as it is the most reliable model for smart apply from our testing.
+     * Right now we should prioritise reliability over latency, take this into account before changing
+     * this value.
+     */
+    return 'anthropic/claude-3-5-sonnet-20240620'
+}
+
 export async function handleSmartApply(
     id: string,
     code: string,
+    authStatus: AuthStatus,
     instruction?: string | null,
     fileUri?: string | null
 ): Promise<void> {
@@ -136,19 +158,12 @@ export async function handleSmartApply(
     })
 
     setLastStoredCode(code, 'applyButton')
-    /**
-     * TODO: We currently only support 3.5 Sonnet for Smart Apply.
-     * This is because it is the most reliable way to apply these changes to files.
-     * We should also support OpenAI models and update the prompt to ensure we get reliable results.
-     * We will need this for enterprise.
-     */
-    const DEFAULT_MODEL = 'anthropic/claude-3-5-sonnet-20240620'
     await executeSmartApply({
         configuration: {
             id,
             document,
             instruction: PromptString.unsafe_fromUserQuery(instruction || ''),
-            model: DEFAULT_MODEL,
+            model: getSmartApplyModel(authStatus),
             replacement: code,
         },
         source: 'chat',
