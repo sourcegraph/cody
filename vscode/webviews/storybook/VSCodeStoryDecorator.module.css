@@ -12,10 +12,6 @@ body {
     height: 100%;
 }
 
-vscode-button::part(control) {
-    font-size: inherit;
-}
-
 .container a {
     color: var(--vscode-textLink-foreground);
     text-decoration: none;
