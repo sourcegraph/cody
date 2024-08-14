@@ -203,7 +203,7 @@ function getRejectLenses(task: FixupTask): vscode.CodeLens[] {
             const acceptBlockLens = new vscode.CodeLens(edit.range)
             acceptBlockLens.command = {
                 title: 'Reject',
-                command: 'cody.fixup.codelens.reject',
+                command: 'cody.fixup.codelens.rejectChange',
                 arguments: [task.id, edit.range],
             }
             lenses.push(acceptBlockLens)
@@ -219,7 +219,7 @@ function getAcceptLenses(task: FixupTask): vscode.CodeLens[] {
             const acceptBlockLens = new vscode.CodeLens(edit.range)
             acceptBlockLens.command = {
                 title: '$(cody-logo) Accept',
-                command: 'cody.fixup.codelens.accept',
+                command: 'cody.fixup.codelens.acceptChange',
                 arguments: [task.id, edit.range],
             }
             lenses.push(acceptBlockLens)
@@ -233,7 +233,7 @@ function getAcceptAllLens(codeLensRange: vscode.Range, id: string): vscode.CodeL
     const shortcut = isRunningInsideAgent() ? '' : ` (${process.platform === 'darwin' ? '⌥A' : 'Alt+A'})`
     lens.command = {
         title: `$(cody-logo) Accept All${shortcut}`,
-        command: 'cody.fixup.codelens.acceptAll',
+        command: 'cody.fixup.codelens.accept',
         arguments: [id],
     }
     return lens

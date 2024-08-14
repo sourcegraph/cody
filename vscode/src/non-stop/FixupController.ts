@@ -121,7 +121,7 @@ export class FixupController
 
                     for (const task of tasksToAccept) {
                         // Finally accept all of the tasks
-                        this.acceptAll(task)
+                        this.accept(task)
                     }
                 })
             )
@@ -130,32 +130,32 @@ export class FixupController
 
     // FixupActor
 
-    public async accept(task: FixupTask, range: vscode.Range): Promise<void> {
+    public async acceptChange(task: FixupTask, range: vscode.Range): Promise<void> {
         this.markBlockAsAccepted(task, range)
         this.refreshCodeLenses(task)
-        this.controlApplicator.didUpdateTask(task);
+        this.controlApplicator.didUpdateTask(task)
     }
 
-    public async reject(task: FixupTask, range: vscode.Range): Promise<void> {
+    public async rejectChange(task: FixupTask, range: vscode.Range): Promise<void> {
         // Check if the range corresponds to an addition or deletion block
-        const edit = task.diff?.find(edit => edit.range.isEqual(range));
+        const edit = task.diff?.find(edit => edit.range.isEqual(range))
         if (!edit) {
-            return;
+            return
         }
 
         if (edit.type === 'insertion') {
             // Remove the added code
-            this.removeAddedCode(task, range);
+            this.removeAddedCode(task, range)
         } else if (edit.type === 'decoratedReplacement') {
             // Re-add the original code
-            this.reAddOriginalCode(task, range, edit.oldText);
+            this.reAddOriginalCode(task, range, edit.oldText)
         }
 
         // Remove the edit from the task's diff
-        task.removeEditByRange(range);
+        task.removeEditByRange(range)
 
         this.refreshCodeLenses(task)
-        this.controlApplicator.didUpdateTask(task);
+        this.controlApplicator.didUpdateTask(task)
     }
 
     private refreshCodeLenses(task: FixupTask): void {
@@ -166,43 +166,43 @@ export class FixupController
     private removeAddedCode(task: FixupTask, range: vscode.Range): void {
         const editor = vscode.window.visibleTextEditors.find(
             editor => editor.document.uri.toString() === task.fixupFile.uri.toString()
-        );
+        )
         if (!editor) {
-            return;
+            return
         }
-    
+
         editor.edit(editBuilder => {
-            editBuilder.delete(range);
-        });
+            editBuilder.delete(range)
+        })
     }
 
     private reAddOriginalCode(task: FixupTask, range: vscode.Range, originalText: string): void {
         const editor = vscode.window.visibleTextEditors.find(
             editor => editor.document.uri.toString() === task.fixupFile.uri.toString()
-        );
+        )
         if (!editor) {
-            return;
+            return
         }
-    
+
         editor.edit(editBuilder => {
-            editBuilder.replace(range, originalText);
-        });
+            editBuilder.replace(range, originalText)
+        })
     }
 
     private markBlockAsAccepted(task: FixupTask, range: vscode.Range): void {
         // Remove the edit from the task's diff
         task.removeEditByRange(range)
-        
+
         // Update the decorations
         this.decorator.didApplyTask(task)
 
         // If all blocks are accepted, mark the task as finished
         if (!task.diff || task.diff.length === 0) {
-            this.acceptAll(task)
+            this.accept(task)
         }
     }
 
-    public acceptAll(task: FixupTask): void {
+    public accept(task: FixupTask): void {
         if (!task || task.state !== CodyTaskState.Applied) {
             return
         }
@@ -219,7 +219,7 @@ export class FixupController
                 task.selectionRange.intersection(primaryTask.selectionRange) !== undefined
             ) {
                 await this.clearPlaceholderInsertions([task], task.fixupFile.uri)
-                this.acceptAll(task)
+                this.accept(task)
             }
         }
     }
@@ -1089,7 +1089,7 @@ export class FixupController
             // within the task range. This is a case where the user is more likely to want
             // to keep in the flow of writing their code, and would not benefit from editing
             // the "diff".
-            this.acceptAll(task)
+            this.accept(task)
             return
         }
 
