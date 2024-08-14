@@ -25,7 +25,3 @@ export function copyFileSync(): unknown {
 export function statSync(): unknown {
     throw new Error('not implemented')
 }
-
-export function access(): unknown {
-    throw new Error('not implemented')
-}

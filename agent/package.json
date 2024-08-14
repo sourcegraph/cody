@@ -40,7 +40,6 @@
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/telemetry": "^0.16.0",
     "@types/js-levenshtein": "^1.1.1",
-    "better-sqlite3": "^11.1.2",
     "chalk": "^5.3.0",
     "commander": "^11.1.0",
     "csv-writer": "^1.6.0",
@@ -63,7 +62,6 @@
     "ws": "^8.16.0"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.11",
     "@types/dedent": "^0.7.0",
     "@types/diff": "^5.0.9",
     "@types/fast-json-stable-stringify": "^2.1.0",
@@ -78,7 +76,6 @@
     "@types/vscode": "^1.80.0",
     "@types/win-ca": "^3.5.4",
     "@types/ws": "^8.5.10",
-    "better-sqlite3": "^11.1.2",
     "chalk": "^5.3.0",
     "commander": "^11.1.0",
     "csv-writer": "^1.6.0",

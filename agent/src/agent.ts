@@ -87,7 +87,6 @@ import * as vscode_shim from './vscode-shim'
 import { vscodeLocation, vscodeRange } from './vscode-type-converters'
 
 const inMemorySecretStorageMap = new Map<string, string>()
-// const globalState = new AgentGlobalState()
 
 /** The VS Code extension's `activate` function. */
 type ExtensionActivate = (
@@ -1559,7 +1558,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
         config: ExtensionConfiguration,
         params?: { forceAuthentication: boolean }
     ): Promise<AuthStatus | undefined> {
-        logDebug('Agent', 'handleConfigChanges', { verbose: config })
         const isAuthChange = vscode_shim.isAuthenticationChange(config)
         vscode_shim.setExtensionConfiguration(config)
         // If this is an authentication change we need to reauthenticate prior to firing events
@@ -1580,7 +1578,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         // functionality), we return true to always triggger the callback.
                         true,
                 })
-                logDebug('Agent', 'notifiying did change', { verbose: authStatus })
                 // await new Promise<void>(resolve => setTimeout(resolve, 3_000))
                 // TODO(#56621): JetBrains: persistent chat history:
                 // This is a temporary workaround to ensure that a new chat panel is created and properly initialized after the auth change.

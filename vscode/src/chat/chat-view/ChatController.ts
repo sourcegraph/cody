@@ -1716,11 +1716,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     public async setWebviewView(view: View): Promise<void> {
-        // Only chat view is supported in the webview panel.
-        // When a different view is requested,
-        // Set context to notify the webview panel to close.
-        // This should close the webview panel and open the login view in the sidebar.
-        await vscode.commands.executeCommand('setContext', 'cody.activated', false)
+        if (view !== 'chat') {
+            // Only chat view is supported in the webview panel.
+            // When a different view is requested,
+            // Set context to notify the webview panel to close.
+            // This should close the webview panel and open the login view in the sidebar.
+            await vscode.commands.executeCommand('setContext', 'cody.activated', false)
+            return
+        }
         const viewOrPanel = this._webviewPanelOrView ?? (await this.createWebviewViewOrPanel())
 
         this._webviewPanelOrView = viewOrPanel
