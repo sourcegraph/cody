@@ -132,14 +132,10 @@ export class FixupController
 
     public async acceptChange(task: FixupTask, range: vscode.Range): Promise<void> {
         const affectedChanges = task.diff?.filter(edit => range.contains(edit.range))
-        if (!affectedChanges) {
-            return
-        }
-
         const editor = vscode.window.visibleTextEditors.find(
             editor => editor.document.uri.toString() === task.fixupFile.uri.toString()
         )
-        if (!editor) {
+        if (!affectedChanges || !editor) {
             return
         }
 
@@ -171,16 +167,11 @@ export class FixupController
     }
 
     public async rejectChange(task: FixupTask, range: vscode.Range): Promise<void> {
-        // Check if the range corresponds to an addition or deletion block
         const affectedChanges = task.diff?.filter(edit => range.contains(edit.range))
-        if (!affectedChanges) {
-            return
-        }
-
         const editor = vscode.window.visibleTextEditors.find(
             editor => editor.document.uri.toString() === task.fixupFile.uri.toString()
         )
-        if (!editor) {
+        if (!affectedChanges || !editor) {
             return
         }
 
