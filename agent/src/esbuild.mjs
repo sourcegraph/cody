@@ -59,7 +59,7 @@ async function buildAgent(minify) {
         platform: "node",
         sourcemap: true,
         logLevel: "error",
-        external: ["typescript"],
+        external: ["typescript", "better-sqlite3"],
         minify: minify,
         plugins: [nativeNodeModulesPlugin],
 
