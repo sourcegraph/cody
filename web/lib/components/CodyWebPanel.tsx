@@ -57,7 +57,6 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const { vscodeAPI, client, initialContext } = useWebAgentClient()
     const dispatchClientAction = useClientActionDispatcher()
 
-    const [rootElement, setRootElement] = useState<HTMLElement | null>()
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -203,7 +202,7 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const isLoading = !client || !userAccountInfo || !chatModels || !config || !view || !userHistory
 
     return (
-        <div className={className} data-cody-web-chat={true} ref={setRootElement}>
+        <div className={className} data-cody-web-chat={true}>
             {!isLoading ? (
                 isErrorLike(client) ? (
                     <p>Error: {client.message}</p>
@@ -227,7 +226,6 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                                     transcript={transcript}
                                     vscodeAPI={vscodeAPI}
                                     isTranscriptError={isTranscriptError}
-                                    scrollableParent={rootElement}
                                 />
                             </ComposedWrappers>
                         </ChatMentionContext.Provider>
