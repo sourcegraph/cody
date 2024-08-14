@@ -101,9 +101,9 @@ export class FixupTask {
         this.stateChanges.fire(state)
     }
 
-    public removeEditByRange(range: vscode.Range): void {
+    public removeDiffChangeByRange(range: vscode.Range): void {
         if (this.diff) {
-            this.diff = this.diff.filter(edit => !edit.range.isEqual(range))
+            this.diff = this.diff.filter(change => !change.range.isEqual(range))
         }
     }
 

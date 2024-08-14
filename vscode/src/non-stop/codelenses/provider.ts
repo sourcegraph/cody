@@ -215,9 +215,9 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
         if (!diff) {
             return
         }
-
         // show diff view between the current document and replacement
         // Add replacement content to the temp document
+
         if (!isRunningInsideAgent()) {
             // Note: For VS Code, we need to accept the task before showing it as a diff here, this is because
             // we have injected empty whitespace and decorations to the document.

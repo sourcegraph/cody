@@ -152,7 +152,7 @@ export class FixupController
         }
 
         // Remove the edit from the task's diff
-        task.removeEditByRange(range)
+        task.removeDiffChangeByRange(range)
 
         this.refreshCodeLenses(task)
         this.controlApplicator.didUpdateTask(task)
@@ -195,7 +195,7 @@ export class FixupController
 
     private markBlockAsAccepted(task: FixupTask, range: vscode.Range): void {
         // Remove the edit from the task's diff
-        task.removeEditByRange(range)
+        task.removeDiffChangeByRange(range)
 
         // Update the decorations
         this.decorator.didApplyTask(task)

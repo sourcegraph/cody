@@ -233,9 +233,15 @@ function getAcceptLenses(task: FixupTask): vscode.CodeLens[] {
 
 function getAcceptAllLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
-    const shortcut = isRunningInsideAgent() ? '' : ` (${process.platform === 'darwin' ? '⌥A' : 'Alt+A'})`
+    const inAgent = isRunningInsideAgent()
+
+    // We don't currently support accepting indivdial changes in the agent, so "Accept All" does not make
+    // sense here
+    const text = inAgent ? 'Accept' : 'Accept All'
+    const shortcut = inAgent ? '' : ` (${process.platform === 'darwin' ? '⌥A' : 'Alt+A'})`
+
     lens.command = {
-        title: `$(cody-logo) Accept All${shortcut}`,
+        title: `$(cody-logo) ${text}${shortcut}`,
         command: 'cody.fixup.codelens.accept',
         arguments: [id],
     }
