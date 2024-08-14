@@ -64,7 +64,10 @@ export const Toolbar: FunctionComponent<{
             role="toolbar"
             aria-hidden={hidden}
             hidden={hidden}
-            className={clsx('tw-flex tw-items-center', className)}
+            className={clsx(
+                'tw-flex tw-items-center tw-justify-between tw-flex-wrap-reverse tw-gap-2 [&_>_*]:tw-flex-shrink-0',
+                className
+            )}
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
         >
@@ -84,12 +87,13 @@ export const Toolbar: FunctionComponent<{
                     className="tw-mr-1"
                 />
             </div>
-            <div className="tw-flex-1" />
-            <SubmitButton
-                onClick={onSubmitClick}
-                isEditorFocused={isEditorFocused}
-                state={submitState}
-            />
+            <div className="tw-flex-1 tw-text-right">
+                <SubmitButton
+                    onClick={onSubmitClick}
+                    isEditorFocused={isEditorFocused}
+                    state={submitState}
+                />
+            </div>
         </menu>
     )
 }

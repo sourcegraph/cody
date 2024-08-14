@@ -244,12 +244,12 @@ export const MentionMenu: FunctionComponent<
             shouldFilter={false}
             value={effectiveValueRow ? commandRowValue(effectiveValueRow) : undefined}
             onValueChange={setValue}
-            className={clsx(styles.container, COMMAND_CLASS_NAME)}
+            className={styles.container}
             label="@-mention context"
             ref={ref}
             data-testid="mention-menu"
         >
-            <CommandList>
+            <CommandList className="!tw-max-h-[unset]">
                 {providers.length > 0 && (
                     <CommandGroup className={COMMAND_GROUP_CLASS_NAME}>{providers}</CommandGroup>
                 )}
@@ -362,18 +362,11 @@ function getItemsHeading(
 }
 
 /**
- * This max-height value MUST be an integer multiple of the {@link COMMAND_ROW_CLASS_NAME} height
- * plus 2px (for the top and bottom border).
- */
-const COMMAND_CLASS_NAME = '!tw-max-h-[392px]'
-
-/**
  * Use the same padding and text size for all command rows so that there is no partially obscured
  * row (i.e., each row is the same height, and the height of the Command is an integer multiple of
  * the row height).
  *
- * If you change this, also update {@link COMMAND_GROUP_CLASS_NAME}'s `[&_[cmd-group-heading]]:`
- * styles.
+ * If you change the height of an item from 30px, also update the `--mention-item-height` CSS variable.
  */
 const COMMAND_ROW_CLASS_NAME = '!tw-p-3 !tw-text-md !tw-leading-[1.2] !tw-h-[30px] !tw-rounded-none'
 

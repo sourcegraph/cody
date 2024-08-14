@@ -7,10 +7,10 @@
     font: inherit;
     width: 100%;
     overflow: auto;
-    scrollbar-width: none;
+    scrollbar-width: thin;
 
     /* Don't allow the input box to become larger than the webview to avoid submit buttons going off the screen */
-    max-height: 80vh; /* 80% of viewport height */
+    max-height: 60vh;
 }
 
 .editor:not(.seamless) {

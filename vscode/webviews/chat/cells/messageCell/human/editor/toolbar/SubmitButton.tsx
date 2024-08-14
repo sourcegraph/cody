@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import type { FunctionComponent } from 'react'
 import { Kbd } from '../../../../../../components/Kbd'
 import { Button } from '../../../../../../components/shadcn/ui/button'
@@ -9,7 +10,8 @@ export const SubmitButton: FunctionComponent<{
     onClick: () => void
     isEditorFocused?: boolean
     state?: SubmitButtonState
-}> = ({ onClick, state = 'submittable' }) => {
+    className?: string
+}> = ({ onClick, state = 'submittable', className }) => {
     if (state === 'waitingResponseComplete') {
         return (
             <Tooltip>
@@ -18,7 +20,10 @@ export const SubmitButton: FunctionComponent<{
                         onClick={onClick}
                         type="submit"
                         variant="ghostRoundedIcon"
-                        className="tw-relative tw-w-[20px] tw-h-[20px] tw-bg-transparent tw-group"
+                        className={clsx(
+                            'tw-relative tw-w-[20px] tw-h-[20px] tw-bg-transparent tw-group',
+                            className
+                        )}
                         title="Stop"
                     >
                         <div className="tw-absolute tw-top-[0px] tw-left-[0px] tw-h-[18px] tw-w-[18px] tw-animate-spin tw-rounded-full tw-border-[1px] tw-border-solid tw-border-current tw-border-e-transparent high-contrast-dark:tw-border-button-border high-contrast-dark:tw-border-e-transparent" />
@@ -40,7 +45,7 @@ export const SubmitButton: FunctionComponent<{
                     onClick={onClick}
                     disabled={state === 'emptyEditorValue'}
                     type="submit"
-                    className="tw-relative tw-w-[20px] tw-h-[20px]"
+                    className={clsx('tw-relative tw-w-[20px] tw-h-[20px]', className)}
                     title="Send"
                 >
                     {/* biome-ignore lint/a11y/noSvgWithoutTitle: */}

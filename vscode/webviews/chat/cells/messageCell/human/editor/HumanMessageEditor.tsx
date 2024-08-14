@@ -301,7 +301,6 @@ export const HumanMessageEditor: FunctionComponent<{
             onBlur={onBlur}
         >
             <PromptEditor
-                contentEditableClassName={styles.editorContentEditable}
                 seamless={true}
                 placeholder={placeholder}
                 initialEditorState={initialEditorState}
@@ -311,6 +310,8 @@ export const HumanMessageEditor: FunctionComponent<{
                 editorRef={editorRef}
                 disabled={disabled}
                 contextWindowSizeInTokens={contextWindowSizeInTokens}
+                editorClassName={styles.editor}
+                contentEditableClassName={styles.editorContentEditable}
             />
             {!disabled && (
                 <Toolbar
