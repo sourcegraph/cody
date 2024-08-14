@@ -98,6 +98,7 @@ export interface QueryWrappers {
         start: Point,
         end?: Point
     ) => [] | readonly [{ readonly node: SyntaxNode; readonly name: CompletionIntent }]
+    getRefactorableNodes: (node: SyntaxNode, start: Point, end?: Point) => Parser.QueryCapture[]
     getDocumentableNode: (
         node: SyntaxNode,
         start: Point,
@@ -159,6 +160,14 @@ function getLanguageSpecificQueryWrappers(
             }
 
             return [{ node: intentCapture.node, name: intentCapture.name as CompletionIntent }] as const
+        },
+        getRefactorableNodes: (root, start, end) => {
+            const captures = queries.refactorableNodes.compiled.captures(
+                root,
+                { ...start, column: 0 },
+                end ? { ...end, column: Number.MAX_SAFE_INTEGER } : undefined
+            )
+            return captures
         },
         getDocumentableNode: (root, start, end) => {
             const captures = queries.documentableNodes.compiled.captures(
