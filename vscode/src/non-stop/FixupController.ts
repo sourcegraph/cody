@@ -145,10 +145,10 @@ export class FixupController
 
         if (edit.type === 'insertion') {
             // Remove the added code
-            this.removeAddedCode(task, range)
+            await this.removeAddedCode(task, range)
         } else if (edit.type === 'decoratedReplacement') {
             // Re-add the original code
-            this.reAddOriginalCode(task, range, edit.oldText)
+            await this.restoreOriginalCode(task, range, edit.oldText)
         }
 
         // Remove the edit from the task's diff
@@ -163,28 +163,32 @@ export class FixupController
         vscode.commands.executeCommand('vscode.executeCodeLensProvider', task.document.uri)
     }
 
-    private removeAddedCode(task: FixupTask, range: vscode.Range): void {
+    private async removeAddedCode(task: FixupTask, range: vscode.Range): Promise<boolean> {
         const editor = vscode.window.visibleTextEditors.find(
             editor => editor.document.uri.toString() === task.fixupFile.uri.toString()
         )
         if (!editor) {
-            return
+            return false
         }
 
-        editor.edit(editBuilder => {
+        return editor.edit(editBuilder => {
             editBuilder.delete(range)
         })
     }
 
-    private reAddOriginalCode(task: FixupTask, range: vscode.Range, originalText: string): void {
+    private async restoreOriginalCode(
+        task: FixupTask,
+        range: vscode.Range,
+        originalText: string
+    ): Promise<boolean> {
         const editor = vscode.window.visibleTextEditors.find(
             editor => editor.document.uri.toString() === task.fixupFile.uri.toString()
         )
         if (!editor) {
-            return
+            return false
         }
 
-        editor.edit(editBuilder => {
+        return editor.edit(editBuilder => {
             editBuilder.replace(range, originalText)
         })
     }

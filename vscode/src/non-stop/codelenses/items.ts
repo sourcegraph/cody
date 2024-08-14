@@ -55,7 +55,7 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
 
             // Show additional accept/reject lenses against change blocks when we have a diff.
             // Currently only supported in VS Code. Need to test and ensure this change works
-            // well in JetBrains before enabling in Agent
+            // well in JetBrains/other clients before enabling in Agent
             const canShowIndividualAcceptRejectLenses = canDiff && !isRunningInsideAgent()
             const acceptLenses = canShowIndividualAcceptRejectLenses ? getAcceptLenses(task) : []
             const rejectLenses = canShowIndividualAcceptRejectLenses ? getRejectLenses(task) : []
@@ -221,7 +221,7 @@ function getAcceptLenses(task: FixupTask): vscode.CodeLens[] {
         for (const edit of task.diff) {
             const acceptBlockLens = new vscode.CodeLens(edit.range)
             acceptBlockLens.command = {
-                title: '$(cody-logo) Accept',
+                title: 'Accept',
                 command: 'cody.fixup.codelens.acceptChange',
                 arguments: [task.id, edit.range],
             }
