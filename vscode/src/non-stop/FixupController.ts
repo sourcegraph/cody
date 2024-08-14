@@ -143,20 +143,20 @@ export class FixupController
             return
         }
 
-        const affectedInsertion = affectedChanges.find(change => change.type === 'insertion')
-        const affectedDeletion = affectedChanges.find(change => change.type === 'decoratedReplacement')
-        if (affectedInsertion && affectedDeletion) {
-            // Accepting a chunked insertion/deletion. Only remove the deletion range
-            await editor.edit(
-                editBuilder => {
-                    editBuilder.delete(affectedDeletion.range)
-                },
-                { undoStopAfter: false, undoStopBefore: false }
-            )
-        }
+        for (const change of affectedChanges) {
+            if (change.type === 'decoratedReplacement') {
+                // Accepting a deletion, we must delete the placeholder lines
+                await editor.edit(
+                    editBuilder => {
+                        editBuilder.delete(change.range)
+                    },
+                    { undoStopAfter: false, undoStopBefore: false }
+                )
+            }
 
-        // Remove the edit from the task's diff
-        task.removeDiffChangeByRange(range)
+            // Remove the edit from the task's diff
+            task.removeDiffChangeByRange(change.range)
+        }
 
         // Update the decorations
         this.decorator.didApplyTask(task)
@@ -184,27 +184,28 @@ export class FixupController
             return
         }
 
-        const affectedInsertion = affectedChanges.find(change => change.type === 'insertion')
-        const affectedDeletion = affectedChanges.find(change => change.type === 'decoratedReplacement')
-        if (affectedInsertion && affectedDeletion) {
-            // Rejecting a chunked insertion/deletion. Replace full range with deleted text
-            await editor.edit(editBuilder => {
-                editBuilder.replace(range, affectedDeletion.oldText)
-            })
-        } else if (affectedInsertion) {
-            // Rejecting an insertion only. Delete the insertion
-            await editor.edit(editBuilder => {
-                editBuilder.delete(range)
-            })
-        } else if (affectedDeletion) {
-            // Rejecting a deletion only. Restore the original text
-            await editor.edit(editBuilder => {
-                editBuilder.replace(range, affectedDeletion.oldText)
-            })
-        }
+        for (const change of affectedChanges) {
+            if (change.type === 'decoratedReplacement') {
+                // Rejecting a deletion, we must restore the oldText
+                await editor.edit(
+                    editBuilder => {
+                        editBuilder.replace(change.range, change.oldText)
+                    },
+                    { undoStopAfter: false, undoStopBefore: false }
+                )
+            } else if (change.type === 'insertion') {
+                // Rejecting an insertion, we must delete the added lines
+                await editor.edit(
+                    editBuilder => {
+                        editBuilder.delete(change.range)
+                    },
+                    { undoStopAfter: false, undoStopBefore: false }
+                )
+            }
 
-        // Remove the edit from the task's diff
-        task.removeDiffChangeByRange(range)
+            // Remove the edit from the task's diff
+            task.removeDiffChangeByRange(change.range)
+        }
 
         // Update the decorations
         this.decorator.didApplyTask(task)
