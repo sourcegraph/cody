@@ -76,8 +76,8 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
     const otherSignInClick = (): void => {
         vscodeAPI.postMessage({ command: 'auth', authKind: 'signin' })
     }
-    const isCodyWeb = uiKindIsWeb || codyIDE === CodyIDE.Web
-    const isNonVSCodeIDE = !isCodyWeb && codyIDE !== CodyIDE.VSCode
+    const isNonVSCodeIDE = codyIDE !== CodyIDE.Web && codyIDE !== CodyIDE.VSCode
+    const isCodyWebUI = (uiKindIsWeb || codyIDE === CodyIDE.Web) && !isNonVSCodeIDE
     return (
         <div className={styles.container}>
             <div className={styles.sectionsContainer}>
@@ -86,11 +86,11 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                     <h1>Cody Free or Cody Pro</h1>
                     <div className={styles.buttonWidthSizer}>
                         <div className={styles.buttonStack}>
-                            {isCodyWeb || isNonVSCodeIDE ? (
+                            {isCodyWebUI || isNonVSCodeIDE ? (
                                 <WebLogin
                                     telemetryRecorder={telemetryRecorder}
                                     vscodeAPI={vscodeAPI}
-                                    isCodyWeb={isCodyWeb}
+                                    isCodyWeb={isCodyWebUI}
                                 />
                             ) : (
                                 <>
@@ -141,7 +141,7 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                         </div>
                     </div>
                 </div>
-                {isCodyWeb || codyIDE === CodyIDE.VSCode ? (
+                {isCodyWebUI || codyIDE === CodyIDE.VSCode ? (
                     <div className={styles.section}>
                         <h1>Cody Enterprise</h1>
                         <div className={styles.buttonWidthSizer}>
