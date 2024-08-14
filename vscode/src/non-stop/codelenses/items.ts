@@ -53,9 +53,12 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
                   )
                 : null
 
-            // Show additional accept/reject lenses only we're diffing
-            const acceptLenses = canDiff ? getAcceptLenses(task) : []
-            const rejectLenses = canDiff ? getRejectLenses(task) : []
+            // Show additional accept/reject lenses against change blocks when we have a diff.
+            // Currently only supported in VS Code. Need to test and ensure this change works
+            // well in JetBrains before enabling in Agent
+            const canShowIndividualAcceptRejectLenses = canDiff && !isRunningInsideAgent()
+            const acceptLenses = canShowIndividualAcceptRejectLenses ? getAcceptLenses(task) : []
+            const rejectLenses = canShowIndividualAcceptRejectLenses ? getRejectLenses(task) : []
 
             return (
                 [

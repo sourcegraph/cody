@@ -17,7 +17,7 @@ export class AgentFixupControls extends FixupCodeLenses {
     public accept(id: FixupTaskID): void {
         const task = this.fixups.taskForId(id)
         if (task) {
-            this.fixups.acceptAll(task)
+            this.fixups.accept(task)
         }
     }
 
