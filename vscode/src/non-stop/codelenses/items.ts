@@ -10,6 +10,7 @@ import { getChunkedEditRanges } from './utils'
 // Create Lenses based on state
 export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
     const codeLensRange = new vscode.Range(task.selectionRange.start, task.selectionRange.start)
+    const isAgent = isRunningInsideAgent()
     const isChatEdit = task.source === 'chat'
     const isTest = task.intent === 'test'
     const isEdit = task.mode === 'edit'
@@ -32,10 +33,6 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             return [title, cancel]
         }
         case CodyTaskState.Applied: {
-            // Required:
-            const acceptAllLens = getAcceptAllLens(codeLensRange, task.id)
-            const undoLens = getUndoLens(codeLensRange, task.id, isChatEdit ? 'Reject' : undefined)
-
             // Optional:
             // Retries only makes sense if the user created the prompt
             const canRetry = task.intent !== 'fix' && task.intent !== 'doc' && !isTest && !isChatEdit
@@ -50,25 +47,41 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
                       // Note: We already show an inline-diff in VS Code, so we change the wording slightly.
                       // It is still useful to open the diff fully here, as it provides additional controls such as
                       // reverting specific lines
-                      isRunningInsideAgent() ? 'Show Diff' : 'Open Diff'
+                      isAgent ? 'Show Diff' : 'Open Diff'
                   )
                 : null
 
             // Show additional accept/reject lenses against change blocks when we have a diff.
             // Currently only supported in VS Code. Need to test and ensure this change works
             // well in JetBrains/other clients before enabling in Agent
-            const canShowIndividualAcceptRejectLenses = canDiff && !isRunningInsideAgent()
-            const acceptLenses = canShowIndividualAcceptRejectLenses ? getAcceptLenses(task) : []
-            const rejectLenses = canShowIndividualAcceptRejectLenses ? getRejectLenses(task) : []
+            const canShowIndividualAcceptRejectLenses = canDiff && !isAgent
+            const chunkedRanges = canShowIndividualAcceptRejectLenses
+                ? getChunkedEditRanges(task.diff)
+                : []
+            const acceptChangeLenses = canShowIndividualAcceptRejectLenses
+                ? getAcceptLenses(task, chunkedRanges)
+                : []
+            const rejectChangeLenses = canShowIndividualAcceptRejectLenses
+                ? getRejectLenses(task, chunkedRanges)
+                : []
+
+            // Required:
+            // Accept: If we are in VS Code and we have multiple chunked ranges, we will show multiple accept/reject lenses.
+            // In this case, we will show "Accept All". Otherwise we just show "Accept"
+            const acceptLens =
+                isAgent || chunkedRanges.length <= 1
+                    ? getAcceptLens(codeLensRange, task.id)
+                    : getAcceptAllLens(codeLensRange, task.id)
+            const undoLens = getUndoLens(codeLensRange, task.id, isChatEdit ? 'Reject' : undefined)
 
             return (
                 [
-                    acceptAllLens,
+                    acceptLens,
                     retryLens,
                     undoLens,
                     diffLens,
-                    ...acceptLenses,
-                    ...rejectLenses,
+                    ...acceptChangeLenses,
+                    ...rejectChangeLenses,
                 ] as vscode.CodeLens[]
             ).filter(Boolean) //TODO: Remove type-cast after TS5.5+
         }
@@ -200,10 +213,9 @@ function getUndoLens(codeLensRange: vscode.Range, id: string, title = 'Undo'): v
     return lens
 }
 
-function getRejectLenses(task: FixupTask): vscode.CodeLens[] {
+function getRejectLenses(task: FixupTask, ranges: vscode.Range[]): vscode.CodeLens[] {
     const lenses = []
-    const chunkedRanges = getChunkedEditRanges(task.diff)
-    for (const range of chunkedRanges) {
+    for (const range of ranges) {
         const acceptBlockLens = new vscode.CodeLens(range)
         acceptBlockLens.command = {
             title: 'Reject',
@@ -215,10 +227,9 @@ function getRejectLenses(task: FixupTask): vscode.CodeLens[] {
     return lenses
 }
 
-function getAcceptLenses(task: FixupTask): vscode.CodeLens[] {
+function getAcceptLenses(task: FixupTask, ranges: vscode.Range[]): vscode.CodeLens[] {
     const lenses = []
-    const chunkedRanges = getChunkedEditRanges(task.diff)
-    for (const range of chunkedRanges) {
+    for (const range of ranges) {
         const acceptBlockLens = new vscode.CodeLens(range)
         acceptBlockLens.command = {
             title: 'Accept',
@@ -230,17 +241,24 @@ function getAcceptLenses(task: FixupTask): vscode.CodeLens[] {
     return lenses
 }
 
-function getAcceptAllLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+function getAcceptLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
-    const inAgent = isRunningInsideAgent()
-
-    // We don't currently support accepting individual changes in the agent,
-    // so "Accept All" does not make sense here
-    const text = inAgent ? 'Accept' : 'Accept All'
-    const shortcut = inAgent ? '' : ` (${process.platform === 'darwin' ? '⌥A' : 'Alt+A'})`
+    const shortcut = isRunningInsideAgent() ? '' : ` (${process.platform === 'darwin' ? '⌥A' : 'Alt+A'})`
 
     lens.command = {
-        title: `$(cody-logo) ${text}${shortcut}`,
+        title: `$(cody-logo) Accept${shortcut}`,
+        command: 'cody.fixup.codelens.accept',
+        arguments: [id],
+    }
+    return lens
+}
+
+function getAcceptAllLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    const shortcut = isRunningInsideAgent() ? '' : ` (${process.platform === 'darwin' ? '⌥A' : 'Alt+A'})`
+
+    lens.command = {
+        title: `$(cody-logo) Accept All${shortcut}`,
         command: 'cody.fixup.codelens.accept',
         arguments: [id],
     }
