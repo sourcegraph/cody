@@ -28,7 +28,7 @@ import {
     CODY_OLLAMA_DOCS_URL,
 } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
-import { executeCodyCommand, setCommandController } from './commands/CommandsController'
+import { commandControllerInit, executeCodyCommand } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
 import {
     executeDocCommand,
@@ -303,7 +303,7 @@ async function initializeSingletons(
     // user's model choices
     ModelsService.setStorage(localStorage)
     disposables.push(upstreamHealthProvider, contextFiltersProvider)
-    setCommandController(platform.createCommandsProvider?.())
+    commandControllerInit(platform.createCommandsProvider?.(), platform.extensionClient.capabilities)
     repoNameResolver.init(authProvider)
     await configWatcher.onChange(
         async config => {

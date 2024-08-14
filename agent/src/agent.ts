@@ -479,9 +479,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
             process.exit(0)
         })
 
-        this.registerNotification('workspaceFolder/didChange', async params => {
-            if (this.workspace.workspaceRootUri?.toString() !== params.uri) {
-                const newWorkspaceUri = vscode.Uri.parse(params.uri)
+        this.registerNotification('workspaceFolder/didChange', async ({ uri }) => {
+            if (uri && this.workspace.workspaceRootUri?.toString() !== uri) {
+                const newWorkspaceUri = vscode.Uri.parse(uri)
                 this.workspace.workspaceRootUri = newWorkspaceUri
 
                 const currentWorkspaceFolders = vscode_shim.workspaceFolders ?? []
