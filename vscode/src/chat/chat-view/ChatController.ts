@@ -1909,4 +1909,5 @@ export async function addWebviewViewHTML(
     view.webview.html = decoded
         .replaceAll('./', `${resources.toString()}/`)
         .replaceAll("'self'", view.webview.cspSource)
+        .replaceAll('{cspSource}', view.webview.cspSource)
 }

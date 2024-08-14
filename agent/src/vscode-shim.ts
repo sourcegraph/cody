@@ -921,9 +921,18 @@ const _commands: Partial<typeof vscode.commands> = {
         const registered = registeredCommands.get(command)
         if (registered) {
             try {
-                if (args) {
+                // Handle the case where a single object is passed
+                if (args.length === 1) {
+                    if (typeof args[0] === 'object' && typeof args[0][Symbol.iterator] === 'function') {
+                        return promisify(registered.callback(...args[0]))
+                    }
+                    return promisify(registered.callback(args[0]))
+                }
+                // Handle multiple arguments or a single non-object argument
+                if (args?.length > 1) {
                     return promisify(registered.callback(...args))
                 }
+                // Handle command with no argument
                 return promisify(registered.callback())
             } catch (error) {
                 console.error(error)
