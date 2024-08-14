@@ -3,7 +3,9 @@ import type { Edit } from '../line-diff'
 
 /**
  * Given a diff, chunks the insertions and deletions into a new set of edits.
- * A new chunk is created if a deletion is immediatelty followed by an insertion.
+ * A new chunk is created if a deletion is immediately followed by an insertion.
+ * This order is dervied from the logic in `computeDiff` and the `diff` NPM package.
+ * TODO: Consider chunking the diffs in `computeDiff` instead of using this util.
  */
 export function getChunkedEditRanges(diff?: Edit[]): vscode.Range[] {
     if (!diff) {

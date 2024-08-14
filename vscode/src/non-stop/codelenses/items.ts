@@ -244,7 +244,6 @@ function getAcceptLenses(task: FixupTask, ranges: vscode.Range[]): vscode.CodeLe
 function getAcceptLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     const shortcut = isRunningInsideAgent() ? '' : ` (${process.platform === 'darwin' ? '⌥A' : 'Alt+A'})`
-
     lens.command = {
         title: `$(cody-logo) Accept${shortcut}`,
         command: 'cody.fixup.codelens.accept',
