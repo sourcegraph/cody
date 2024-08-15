@@ -417,6 +417,11 @@ export class ChatsController implements vscode.Disposable {
         chatQuestion?: string,
         panel?: vscode.WebviewPanel
     ): Promise<ChatController> {
+        // Clients with a single webview.
+        const isSidebarChatOnly = this.extensionClient.capabilities?.webview === 'single'
+        if (isSidebarChatOnly) {
+            return this.panel
+        }
         // Look for an existing editor with the same chatID
         if (chatID && this.editors.map(p => p.sessionID).includes(chatID)) {
             const provider = this.editors.find(p => p.sessionID === chatID)

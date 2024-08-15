@@ -479,18 +479,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
             process.exit(0)
         })
 
-        this.registerNotification('workspaceFolder/didChange', async ({ uri }) => {
+        this.registerNotification('workspaceFolder/didChange', async ({ uri, event }) => {
             if (uri && this.workspace.workspaceRootUri?.toString() !== uri) {
                 const newWorkspaceUri = vscode.Uri.parse(uri)
                 this.workspace.workspaceRootUri = newWorkspaceUri
-
-                const currentWorkspaceFolders = vscode_shim.workspaceFolders ?? []
-                const updatedWorkspaceFolders = vscode_shim.setWorkspaceFolders(newWorkspaceUri)
-
                 this.pushPendingPromise(
                     vscode_shim.onDidChangeWorkspaceFolders.cody_fireAsync({
-                        added: updatedWorkspaceFolders,
-                        removed: currentWorkspaceFolders,
+                        added: vscode_shim.setWorkspaceFolders(newWorkspaceUri, event === 'removed'),
+                        removed: vscode_shim.workspaceFolders,
                     })
                 )
             }

@@ -182,18 +182,31 @@ export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments)
     }
 }
 
-export function setWorkspaceFolders(workspaceRootUri: vscode.Uri): vscode.WorkspaceFolder[] {
-    // TODO: Update this when we support multiple workspace roots
-    while (workspaceFolders.pop()) {
-        // clear workspaceFolders array
+export function setWorkspaceFolders(
+    workspaceRootUri: vscode.Uri,
+    removed = false
+): vscode.WorkspaceFolder[] {
+    if (workspaceFolders.length === 0 && removed) {
+        return []
     }
-
-    workspaceFolders.push({
-        name: path.basename(workspaceRootUri.toString()),
-        uri: workspaceRootUri,
-        index: 0,
-    })
-
+    // clear workspaceFolders array as workspaceFolders is a readonly property,
+    // so we need to modify the array in place insteasd of replacing it.
+    const workspaceRoot = workspaceRootUri.toString()
+    const updatedWFs = [...workspaceFolders].filter(wf => wf?.uri.toString() !== workspaceRoot)
+    // Remove all elements from workspaceFolders
+    workspaceFolders.length = 0
+    // If this is not a removed event, add the workspaceRootUri to the front of the array.
+    if (!removed) {
+        workspaceFolders.push({
+            name: path.basename(workspaceRoot),
+            uri: workspaceRootUri,
+            index: 0,
+        })
+    }
+    // Add the rest of the workspaceFolders back to the array with the updated indexes.
+    for (const wf of updatedWFs) {
+        workspaceFolders.push({ ...wf, index: workspaceFolders.length })
+    }
     return workspaceFolders
 }
 

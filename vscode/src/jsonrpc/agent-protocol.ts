@@ -364,7 +364,7 @@ export type ClientNotifications = {
     'extensionConfiguration/didChange': [ExtensionConfiguration]
 
     // The user has switched to a different workspace folder.
-    'workspaceFolder/didChange': [{ uri: string }]
+    'workspaceFolder/didChange': [{ uri: string; event: 'added' | 'removed' }]
 
     // Lifecycle notifications for the client to notify the server about text
     // contents of documents and to notify which document is currently focused.
@@ -607,9 +607,11 @@ export interface ClientCapabilities {
     // Whether the client supports the VSCode WebView API. If 'agentic', uses
     // AgentWebViewPanel which just delegates bidirectional postMessage over
     // the Agent protocol. If 'native', implements a larger subset of the VSCode
-    // WebView API and expects the client to run web content in the webview.
+    // WebView API and expects the client to run web content in the webview,
+    // which effectively means both sidebar and custom editor chat views are supported.
+    // Use single for clients with a single chat view, e.g. sidebar chat.
     // Defaults to 'agentic'.
-    webview?: 'agentic' | 'native' | undefined | null
+    webview?: 'agentic' | 'native' | 'single' | undefined | null
     // If webview === 'native', describes how the client has configured webview resources.
     // cspSource is passed to the extension as the Webview cspSource property.
     // webviewBundleServingPrefix is prepended to resource paths under 'dist' in
