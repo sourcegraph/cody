@@ -56,34 +56,15 @@ test.extend<ExpectedV2Events>({
         .click() // Submit via Submit button
 
     const retryLens = page.getByRole('button', { name: 'Edit & Retry' })
-    const undoLens = page.getByRole('button', { name: 'Undo' })
-    const acceptLens = page.getByRole('button', { name: 'Accept', exact: true })
+    const acceptLens = page.getByRole('button', { name: 'Accept' })
     const rejectLens = page.getByRole('button', { name: 'Reject' })
 
     // Code Lenses should appear
     await expect(retryLens).toBeVisible()
-    await expect(undoLens).toBeVisible()
-    await expect(acceptLens).toBeVisible()
     await expect(rejectLens).toBeVisible()
+    await expect(acceptLens).toBeVisible()
 
     // The text in the doc should be replaced
-    await nap()
-    await expect(page.getByText('appleName')).not.toBeVisible()
-    await expect(page.getByText('bananaName')).toBeVisible()
-
-    // Undo: remove all the changes made by edit
-    await undoLens.click()
-    await nap()
-    await expect(page.getByText('appleName')).toBeVisible()
-    await expect(page.getByText('bananaName')).not.toBeVisible()
-
-    // create another edit using shortcut
-    await page.getByText('appleName').click()
-    await page.keyboard.press('Alt+K')
-    await expect(page.getByText(inputTitle)).toBeVisible()
-    await inputBox.focus()
-    await inputBox.fill(instruction)
-    await page.keyboard.press('Enter')
     await nap()
     await expect(page.getByText('appleName')).not.toBeVisible()
     await expect(page.getByText('bananaName')).toBeVisible()

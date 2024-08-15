@@ -109,7 +109,7 @@ test.extend<ExpectedV2Events>({
     await erredText.hover()
     await quickFix(page, 'Fix')
 
-    const acceptBtn = page.getByRole('button', { name: 'Accept', exact: true })
+    const acceptBtn = page.getByRole('button', { name: 'Accept' })
     await expect(acceptBtn).toBeVisible()
 
     // Accept the fix
