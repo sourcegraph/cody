@@ -53,9 +53,9 @@ interface CodyAgentServer {
   @JsonRequest("editTask/acceptAll")
   fun editTask_acceptAll(params: EditTask_AcceptAllParams): CompletableFuture<Null?>
   @JsonRequest("editTask/reject")
-  fun editTask_reject(params: EditTask_rejectParams): CompletableFuture<Null?>
-  @JsonRequest("editTask/undo")
-  fun editTask_undo(params: EditTask_UndoParams): CompletableFuture<Null?>
+  fun editTask_reject(params: EditTask_RejectParams): CompletableFuture<Null?>
+   @JsonRequest("editTask/rejectAll")
+  fun editTask_undo(params: EditTask_RejectAllParams): CompletableFuture<Null?>
   @JsonRequest("editTask/cancel")
   fun editTask_cancel(params: EditTask_CancelParams): CompletableFuture<Null?>
   @JsonRequest("editTask/getFoldingRanges")

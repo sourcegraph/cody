@@ -118,7 +118,7 @@ export type ClientRequests = {
     'editTask/reject': [{ id: FixupTaskID, range: Range }, null]
     // If the task is "applied", attempts to revert the task's edit, then
     // discards the task.
-    'editTask/undo': [{ id: FixupTaskID }, null]
+    'editTask/rejectAll': [{ id: FixupTaskID }, null]
     // Discards the task. Applicable to tasks in any state.
     'editTask/cancel': [{ id: FixupTaskID }, null]
 

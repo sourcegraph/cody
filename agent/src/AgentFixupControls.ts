@@ -39,15 +39,16 @@ export class AgentFixupControls implements FixupControlApplicator {
         if (task) {
             console.warn("JM: calling fixups.reject for range", range)
             this.fixups.reject(task, range)
+            // this.didUpdateTask(task); 
         } else {
             console.warn("JM: task not found for id", id)
         }
     }
 
-    public undo(id: FixupTaskID): void {
+    public rejectAll(id: FixupTaskID): void {
         const task = this.fixups.taskForId(id)
         if (task) {
-            console.warn("JM: calling fixups.undo")
+            console.warn("JM: calling fixups.rejectAll")
             this.fixups.undo(task)
         } else {
             console.warn("JM: task not found for id", id)
@@ -77,7 +78,6 @@ export class AgentFixupControls implements FixupControlApplicator {
     dispose() {}
 
     public static serialize(task: FixupTask): EditTask {
-        console.warn("JM: In serialize")
 
         const textEdits: TextEdit[] = task.diff?.map(edit => convertEditToTextEdit(edit)) || []
 

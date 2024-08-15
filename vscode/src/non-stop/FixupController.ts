@@ -140,7 +140,19 @@ export class FixupController
     public async reject(task: FixupTask, range: vscode.Range): Promise<void> {
         // Check if the range corresponds to an addition or deletion block
         const edit = task.diff?.find(edit => edit.range.isEqual(range));
+        //JM loop through entries in task.diff and log them
+        if (task.diff) {
+            for (const edit of task.diff) {
+                console.log('JM Edit:', {
+                    type: edit.type,
+                    range: edit.range
+                })
+            }
+        }
+
+
         if (!edit) {
+            console.warn("No matching range found")
             return;
         }
 
