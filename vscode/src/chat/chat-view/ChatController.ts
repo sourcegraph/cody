@@ -558,7 +558,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async isSmartApplyEnabled(): Promise<boolean> {
-        if (this.extensionClient.capabilities?.edit !== 'enabled') {
+        if (this.extensionClient.capabilities?.edit === 'none') {
             // Smart Apply relies on the Edit capability
             return false
         }
