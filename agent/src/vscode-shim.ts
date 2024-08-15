@@ -182,9 +182,12 @@ export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments)
     }
 }
 
+// Add/move the last opened workspace folder to the front of the workspace folders list.
 function setLastOpenedWorkspaceFolder(uri: vscode.Uri): void {
     const currentWorkspaceFolders = workspaceFolders.map(wf => wf.uri)
-    setWorkspaceFolders([uri, ...currentWorkspaceFolders])
+    if (currentWorkspaceFolders[0]?.toString() !== uri.toString()) {
+        setWorkspaceFolders([uri, ...currentWorkspaceFolders])
+    }
 }
 
 // Sets the workspace folders for the current workspace.
