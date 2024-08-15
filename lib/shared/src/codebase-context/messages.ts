@@ -1,5 +1,6 @@
 import type { URI } from 'vscode-uri'
 
+import type { Mention } from '@openctx/client'
 import type { RangeData } from '../common/range'
 import type { Message } from '../sourcegraph-api'
 
@@ -186,11 +187,7 @@ export interface ContextItemOpenCtx extends ContextItemCommon {
     title: string
     uri: URI
     providerUri: string
-    mention?: {
-        uri: string
-        data?: any
-        description?: string
-    }
+    mention?: Mention
 }
 
 /**

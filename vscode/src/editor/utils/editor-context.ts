@@ -415,13 +415,8 @@ async function resolveOpenCtxContextItem(
         return []
     }
 
-    const mention = {
-        ...item.mention,
-        title: item.title,
-    }
-
     const items = await openCtxClient.items(
-        { message: input.toString(), mention },
+        { message: input.toString(), mention: item.mention },
         { providerUri: item.providerUri }
     )
     // TODO(sqs): add `signal` arg to openCtxClient.items
