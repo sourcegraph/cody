@@ -302,6 +302,7 @@ export const getInput = async (
             getItems: () =>
                 getEditInputItems(
                     editInput.input.value,
+                    activeRange,
                     activeRangeItem,
                     activeModelItem,
                     showModelSelector
@@ -340,6 +341,7 @@ export const getInput = async (
                     // Nothing to match, re-render existing items
                     input.items = getEditInputItems(
                         input.value,
+                        activeRange,
                         activeRangeItem,
                         activeModelItem,
                         showModelSelector

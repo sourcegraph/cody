@@ -48,6 +48,15 @@ export function getLabelForContextItem(item: ContextItem): string {
     }
 }
 
+export function getRangeItemLabel(item: vscode.QuickPickItem, range: vscode.Range): string {
+    const itemLabel = getItemLabel(item)
+    const rangeLength = range.end.line - range.start.line + 1
+    if (rangeLength > 250) {
+        return `${itemLabel} • $(warning) Consider switching to Chat when editing 250+ lines of code`
+    }
+    return itemLabel
+}
+
 /**
  * Returns the label for the given QuickPickItem, stripping any
  * prefixes used internally to track state.

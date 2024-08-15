@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 import type { GetItemsResult } from '../quick-pick'
-import { getItemLabel } from '../utils'
+import { getItemLabel, getRangeItemLabel } from '../utils'
 
 export const RANGE_ITEM: vscode.QuickPickItem = {
     label: 'Range',
@@ -34,6 +34,7 @@ const SUBMIT_ITEM: vscode.QuickPickItem = {
 
 export const getEditInputItems = (
     activeValue: string,
+    activeRange: vscode.Range,
     activeRangeItem: vscode.QuickPickItem,
     activeModelItem: vscode.QuickPickItem | undefined,
     showModelSelector: boolean
@@ -55,7 +56,7 @@ export const getEditInputItems = (
             label: 'edit options',
             kind: vscode.QuickPickItemKind.Separator,
         },
-        { ...RANGE_ITEM, detail: getItemLabel(activeRangeItem) },
+        { ...RANGE_ITEM, detail: getRangeItemLabel(activeRangeItem, activeRange) },
         showModelSelector
             ? { ...MODEL_ITEM, detail: activeModelItem ? getItemLabel(activeModelItem) : undefined }
             : null,
