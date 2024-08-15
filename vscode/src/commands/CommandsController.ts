@@ -18,6 +18,7 @@ import {
     ps,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import type { ClientCapabilities } from '../jsonrpc/agent-protocol'
 /**
  * Handles commands execution with commands from CommandsProvider
  * Provides additional prompt management and execution logic
@@ -28,15 +29,20 @@ class CommandsController implements vscode.Disposable {
     // Provider of default commands and custom commands
     private provider: CommandsProvider | undefined
 
-    public init(provider?: CommandsProvider) {
+    private isEditEnabled = true
+
+    public init(provider?: CommandsProvider, filter?: Pick<Partial<ClientCapabilities>, 'edit'>) {
         if (provider) {
             this.provider = provider
             this.disposables.push(this.provider)
         }
+        // Only set it as disable if the edit capability is set to none.
+        this.isEditEnabled = filter?.edit !== 'none'
     }
 
     public getCommandList(): CodyCommand[] {
-        return this.provider?.list().filter(c => c.key !== 'ask') ?? []
+        // Remove all edit commands if edit is disabled
+        return (this.provider?.list() ?? []).filter(c => c.mode !== 'edit' || this.isEditEnabled)
     }
 
     /**
@@ -63,16 +69,18 @@ class CommandsController implements vscode.Disposable {
             const additionalInstruction =
                 commandKey === input.toString() ? ps`` : PromptString.join(commandSplit.slice(1), ps` `)
 
+            if (isDefaultEditCommand(commandKey) && !this.isEditEnabled) {
+                throw new Error('Edit commands are not supported in this instance.')
+            }
+
             // Process default commands
             if (isDefaultChatCommand(commandKey) || isDefaultEditCommand(commandKey)) {
                 return executeDefaultCommand(commandKey, additionalInstruction)
             }
 
             const command = this.provider?.get(commandKey)
-            if (!command) {
-                logDebug('CommandsController:execute', 'command not found', {
-                    verbose: { commandKey },
-                })
+            if (!command || (command.mode !== 'ask' && !this.isEditEnabled)) {
+                logDebug('CommandsController:execute', `${commandKey} command not found/supported`)
                 return undefined
             }
 
@@ -81,10 +89,8 @@ class CommandsController implements vscode.Disposable {
             command.prompt = [command.prompt, additionalInstruction].join(' ')?.trim()
 
             // Add shell output as context if any before passing to the runner
-            const shell = command.context?.command
-            if (shell) {
-                const contextFile = await this.provider?.runShell(shell)
-                args.userContextFiles = contextFile
+            if (command.context?.command) {
+                args.userContextFiles = await this.provider?.runShell(command.context.command)
             }
 
             return new CommandRunner(span, command, args).start()
@@ -105,7 +111,8 @@ class CommandsController implements vscode.Disposable {
  * Activate on extension activation that will initialize the CommandsProvider.
  */
 const controller = new CommandsController()
-export const setCommandController = (provider?: CommandsProvider) => controller.init(provider)
+export const commandControllerInit = (provider?: CommandsProvider, caps?: ClientCapabilities) =>
+    controller.init(provider, caps)
 
 /**
  * Binds the execute method of the CommandsController instance to be exported as a constant function.

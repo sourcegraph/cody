@@ -1,4 +1,3 @@
-import { clsx } from 'clsx'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 
@@ -32,7 +31,6 @@ interface ChatboxProps {
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
     setView: (view: View) => void
-    className?: string
     experimentalSmartApplyEnabled?: boolean
 }
 
@@ -48,7 +46,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showWelcomeMessage = true,
     showIDESnippetActions = true,
     setView,
-    className,
     experimentalSmartApplyEnabled,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
@@ -199,7 +196,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [])
 
     return (
-        <div className={clsx(styles.container, className, 'tw-relative')}>
+        <>
             {!chatEnabled && (
                 <div className={styles.chatDisabled}>
                     Cody chat is disabled by your Sourcegraph site administrator
@@ -222,8 +219,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             {transcript.length === 0 && showWelcomeMessage && (
                 <WelcomeMessage IDE={userInfo.ide} setView={setView} />
             )}
-            <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
-        </div>
+            {scrollableParent && (
+                <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
+            )}
+        </>
     )
 }
 

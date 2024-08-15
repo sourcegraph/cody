@@ -10,8 +10,10 @@ import {
     TickIcon,
 } from '../../icons/CodeBlockActionIcons'
 
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
+import type { UserAccountInfo } from '../../Chat'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 import styles from './ChatMessageContent.module.css'
@@ -78,8 +80,10 @@ export function createButtons(
 export function createButtonsExperimentalUI(
     preText: string,
     humanMessage: PriorHumanMessageInfo | null,
+    userInfo: UserAccountInfo,
     fileName?: string,
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
     smartApply?: CodeBlockActionsProps['smartApply'],
     smartApplyId?: string,
     smartApplyState?: CodyTaskState
@@ -113,13 +117,53 @@ export function createButtonsExperimentalUI(
             buttons.append(applyButton)
         }
 
-        const actionsDropdown = createActionsDropdown(preText)
-        buttons.append(actionsDropdown)
+        if (userInfo.ide === CodyIDE.VSCode) {
+            // VS Code provides additional support for rendering an OS-native dropdown, that has some
+            // additional benefits. Mainly that it can "break out" of the webview.
+            // TODO: A dropdown would be useful for other clients too, we should consider building
+            // a generic web-based dropdown component that can be used by any client.
+            const actionsDropdown = createActionsDropdown(preText)
+            buttons.append(actionsDropdown)
+        } else {
+            const insertButton = createInsertButton(preText, insertButtonOnSubmit)
+            const saveButton = createSaveButton(preText, insertButtonOnSubmit)
+            buttons.append(insertButton, saveButton)
+        }
     }
 
     container.append(buttons)
 
     return container
+}
+
+function createInsertButton(
+    preText: string,
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+): HTMLElement {
+    const button = document.createElement('button')
+    button.title = 'Insert Code at Cursor'
+    button.className = styles.button
+    button.innerHTML = InsertCodeBlockIcon
+    if (insertButtonOnSubmit) {
+        button.addEventListener('click', () => {
+            insertButtonOnSubmit(preText, false)
+        })
+    }
+    return button
+}
+
+function createSaveButton(
+    preText: string,
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+): HTMLElement {
+    const button = document.createElement('button')
+    button.title = 'Save Code to New File...'
+    button.className = styles.button
+    button.innerHTML = SaveCodeBlockIcon
+    if (insertButtonOnSubmit) {
+        button.addEventListener('click', () => insertButtonOnSubmit(preText, true))
+    }
+    return button
 }
 
 /**
