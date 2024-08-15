@@ -987,6 +987,7 @@ _commands?.registerCommand?.('vscode.executeFormatDocumentProvider', uri => {
     return Promise.resolve([])
 })
 _commands?.registerCommand?.('vscode.open', async (uri: vscode.Uri) => {
+    logDebug('vscode-shim', 'calling vscode.open with', uri.toString())
     const result = toUri(uri?.path)
     if (result) {
         return _window.showTextDocument(result)

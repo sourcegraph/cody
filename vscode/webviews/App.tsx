@@ -27,6 +27,7 @@ import {
     ExtensionAPIProviderFromVSCodeAPI,
 } from '@sourcegraph/prompt-editor'
 import { CodyPanel } from './CodyPanel'
+import { ChatEnvironmentContext, type ChatEnvironmentContextData } from './chat/ChatEnvironmentContext'
 import { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
@@ -220,6 +221,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [chatModels, onCurrentChatModelChange, serverSentModelsEnabled]
     )
 
+    const chatEnvironmentContext = useMemo<ChatEnvironmentContextData>(() => {
+        return { clientType: config?.agentIDE ?? CodyIDE.VSCode }
+    }, [config?.agentIDE])
+
     const wrappers = useMemo<Wrapper[]>(
         () =>
             getAppWrappers(
@@ -227,9 +232,18 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 telemetryRecorder,
                 chatModelContext,
                 clientState,
+                chatEnvironmentContext,
                 config && authStatus ? { config, authStatus } : undefined
             ),
-        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, config, authStatus]
+        [
+            vscodeAPI,
+            telemetryRecorder,
+            chatModelContext,
+            clientState,
+            chatEnvironmentContext,
+            config,
+            authStatus,
+        ]
     )
 
     // Wait for all the data to be loaded before rendering Chat View
@@ -284,6 +298,7 @@ export function getAppWrappers(
     telemetryRecorder: TelemetryRecorder,
     chatModelContext: ChatModelContext,
     clientState: ClientStateForWebview,
+    chatEnvironmentContext: ChatEnvironmentContextData,
     config: Config | undefined
 ): Wrapper[] {
     return [
@@ -303,6 +318,10 @@ export function getAppWrappers(
             provider: ClientStateContextProvider,
             value: clientState,
         } satisfies Wrapper<ComponentProps<typeof ClientStateContextProvider>['value']>,
+        {
+            provider: ChatEnvironmentContext.Provider,
+            value: chatEnvironmentContext,
+        } satisfies Wrapper<ComponentProps<typeof ChatEnvironmentContext.Provider>['value']>,
         {
             component: ConfigProvider,
             props: { value: config },

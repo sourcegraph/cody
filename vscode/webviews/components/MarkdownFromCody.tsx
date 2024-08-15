@@ -91,6 +91,7 @@ export const MarkdownFromCody: FunctionComponent<{ className?: string; children:
     children,
 }) => {
     const { clientType } = useChatEnvironment()
+    console.log('clientType', clientType)
     const urlTransform = useMemo(() => URL_PROCESSORS[clientType], [clientType])
 
     return (
