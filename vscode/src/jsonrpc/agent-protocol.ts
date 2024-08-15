@@ -23,7 +23,7 @@ import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent } from '../completions/logger'
 import type { Repo } from '../context/repo-fetcher'
 import type { FixupTaskID } from '../non-stop/FixupTask'
-import type { CodyTaskState } from '../non-stop/utils'
+import type { CodyTaskState } from '../non-stop/state'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
@@ -52,6 +52,12 @@ export type ClientRequests = {
     // be used to reference to the session with panel id and restore chat with
     // chat id. Main difference compared to the chat/new is that we return chatId.
     'chat/web/new': [null, { panelId: string; chatId: string }]
+
+    // Start a new chat session and returns panel id and chat id that later can
+    // be used to reference to the session with panel id and restore chat with
+    // chat id. Main difference compared to the chat/new and chat/web/new is that
+    // the panel has sidebar webview type instead of editor webview type.
+    'chat/sidebar/new': [null, { panelId: string; chatId: string }]
 
     // Deletes chat by its ID and returns newly updated chat history list
     // Primary is used only in cody web client
@@ -477,6 +483,10 @@ export type ServerNotifications = {
     'webview/setIconPath': [{ handle: string; iconPathUri?: string | null | undefined }]
     'webview/setOptions': [{ handle: string; options: DefiniteWebviewOptions }]
     'webview/setHtml': [{ handle: string; html: string }]
+
+    // When the when-claude context has changed.
+    // For example, 'cody.activated' is set based on user's latest authentication status.
+    'window/didChangeContext': [{ key: string; value?: string | undefined | null }]
 }
 
 export interface WebviewCreateWebviewPanelOptions {

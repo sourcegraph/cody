@@ -20,7 +20,7 @@ import {
 import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
 import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
-import { CodyTaskState } from '../../vscode/src/non-stop/utils'
+import { CodyTaskState } from '../../vscode/src/non-stop/state'
 import {
     TESTING_CREDENTIALS,
     type TestingCredentials,
@@ -102,7 +102,7 @@ export function buildAgentBinary(): void {
     // To see the full error, run this file in isolation:
     //
     //   pnpm test agent/src/index.test.ts
-    execSync('pnpm run build ', {
+    execSync('pnpm run build:for-tests ', {
         cwd: getAgentDir(),
         stdio: 'inherit',
     })

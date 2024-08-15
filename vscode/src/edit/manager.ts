@@ -161,7 +161,8 @@ export class EditManager implements vscode.Disposable {
                 source,
                 configuration.destinationFile,
                 configuration.insertionPoint,
-                telemetryMetadata
+                telemetryMetadata,
+                configuration.id
             )
         } else {
             task = await this.controller.promptUserForTask(
@@ -188,8 +189,8 @@ export class EditManager implements vscode.Disposable {
         const activeTask = this.controller.tasksForFile(task.fixupFile).find(activeTask => {
             return (
                 ACTIVE_TASK_STATES.includes(activeTask.state) &&
-                activeTask.instruction === task!.instruction &&
-                activeTask.selectionRange.isEqual(task!.selectionRange)
+                activeTask.instruction.toString() === task.instruction.toString() &&
+                activeTask.selectionRange.isEqual(task.selectionRange)
             )
         })
 
@@ -251,11 +252,16 @@ export class EditManager implements vscode.Disposable {
         // queries to ask the LLM to generate a selection, and then ultimately apply the edit.
         const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
 
+        const model = configuration.model || ModelsService.getDefaultEditModel()
+        if (!model) {
+            throw new Error('No default edit model found. Please set one.')
+        }
+
         const selection = await getSmartApplySelection(
             configuration.instruction,
             replacementCode,
             configuration.document,
-            configuration.model,
+            model,
             this.options.chat,
             this.options.authProvider.getAuthStatus().codyApiVersion
         )
@@ -280,6 +286,25 @@ export class EditManager implements vscode.Disposable {
         editor.revealRange(selection.range, vscode.TextEditorRevealType.InCenter)
 
         if (selection.range.isEmpty) {
+            let insertionRange = selection.range
+
+            if (
+                selection.type === 'insert' &&
+                document.lineAt(document.lineCount - 1).text.trim().length !== 0
+            ) {
+                // Inserting to the bottom of the file, but the last line is not empty
+                // Inject an additional new line for us to use as the insertion range.
+                await editor.edit(
+                    editBuilder => {
+                        editBuilder.insert(selection.range.start, '\n')
+                    },
+                    { undoStopAfter: false, undoStopBefore: false }
+                )
+
+                // Update the range to reflect the new end of document
+                insertionRange = document.lineAt(document.lineCount - 1).range
+            }
+
             // We determined a selection, but it was empty. This means that we will be _adding_ new code
             // and _inserting_ it into the document. We do not need to re-prompt the LLM for this, let's just
             // add the code directly.
@@ -287,14 +312,15 @@ export class EditManager implements vscode.Disposable {
                 document,
                 configuration.instruction,
                 [],
-                selection.range,
+                insertionRange,
                 'add',
                 'insert',
-                configuration.model,
+                model,
                 source,
                 configuration.document.uri,
                 undefined,
-                {}
+                {},
+                configuration.id
             )
 
             const legacyMetadata = {
@@ -312,7 +338,7 @@ export class EditManager implements vscode.Disposable {
             })
 
             const provider = this.getProviderForTask(task)
-            await provider.applyEdit('\n\n' + configuration.replacement)
+            await provider.applyEdit('\n' + configuration.replacement)
             return task
         }
 
@@ -322,11 +348,12 @@ export class EditManager implements vscode.Disposable {
         // e.g. // ...
         return this.executeEdit({
             configuration: {
+                id: configuration.id,
                 document: configuration.document,
                 range: selection.range,
                 mode: 'edit',
                 instruction: ps`Ensuring that you do not duplicate code that it outside of the selection, apply the following change:\n${replacementCode}`,
-                model: configuration.model,
+                model,
                 intent: 'edit',
             },
             source,

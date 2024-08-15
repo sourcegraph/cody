@@ -223,6 +223,7 @@ export class JvmFormatter {
         'default',
         'case',
         'switch',
+        'native',
     ])
 
     public formatFieldName(name: string): string {

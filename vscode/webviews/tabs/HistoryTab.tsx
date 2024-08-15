@@ -38,7 +38,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
     )
 
     return (
-        <div className="tw-overflow-auto tw-px-8 tw-pt-6 tw-pb-12 tw-flex tw-flex-col tw-gap-10">
+        <div className="tw-px-8 tw-pt-6 tw-pb-12 tw-flex tw-flex-col tw-gap-10">
             {Array.from(chatByPeriod, ([period, chats]) => (
                 <CollapsiblePanel
                     key={period}
