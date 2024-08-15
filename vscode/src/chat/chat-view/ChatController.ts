@@ -612,6 +612,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async handleReady(): Promise<void> {
         await this.sendConfig()
         await this.postConfigFeatures()
+        await this.postClientCapabilities()
 
         // Update the chat model providers again to ensure the correct token limit is set on ready
         this.handleSetChatModel(this.chatModel.modelID)
@@ -1728,6 +1729,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         )
 
         await this.postConfigFeatures()
+        await this.postClientCapabilities()
 
         return viewOrPanel
     }
@@ -1745,6 +1747,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 attribution: clientConfig?.attributionEnabled ?? false,
                 serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
             },
+        })
+    }
+
+    private async postClientCapabilities(): Promise<void> {
+        void this.postMessage({
+            type: 'setClientCapabilities',
+            clientCapabilities: this.extensionClient.capabilities,
         })
     }
 

@@ -24,6 +24,7 @@ import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { Uri } from 'vscode'
 import type { View } from '../../webviews/tabs/types'
 import type { Repo } from '../context/repo-fetcher'
+import type { ClientCapabilities } from '../jsonrpc/agent-protocol'
 import type { FixupTaskID } from '../non-stop/FixupTask'
 import type { CodyTaskState } from '../non-stop/state'
 
@@ -239,6 +240,10 @@ export type ExtensionMessage =
           error?: string | null | undefined
       }
     | { type: 'rpc/response'; message: ResponseMessage }
+    | {
+          type: 'setClientCapabilities'
+          clientCapabilities: ClientCapabilities | undefined
+      }
 
 interface ExtensionAttributionMessage {
     snippet: string
