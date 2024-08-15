@@ -5,10 +5,12 @@ import { isRateLimitError } from '@sourcegraph/cody-shared'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { FixupTask } from '../FixupTask'
 import { CodyTaskState } from '../utils'
+import { getChunkedEditRanges } from './utils'
 
 // Create Lenses based on state
 export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
     const codeLensRange = new vscode.Range(task.selectionRange.start, task.selectionRange.start)
+    const isAgent = isRunningInsideAgent()
     const isTest = task.intent === 'test'
     const isEdit = task.mode === 'edit'
     switch (task.state) {
@@ -30,27 +32,65 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             return [title, cancel]
         }
         case CodyTaskState.Applied: {
-            const acceptAll = getAcceptAllLens(codeLensRange, task.id)
-            const acceptLenses = getAcceptLenses(task, codeLensRange, task.id)
-            const rejectLenses = getRejectLens(task, codeLensRange, task.id)
-            const retry = getRetryLens(codeLensRange, task.id)
-            const undo = getUndoLens(codeLensRange, task.id)
-            if (isTest) {
-                return [acceptAll, undo]
-            }
-            if (isEdit) {
-                const showDiff = getDiffLens(
-                    codeLensRange,
-                    task.id,
-                    // Note: We already show an inline-diff in VS Code, so we change the wording slightly.
-                    // It is still useful to open the diff fully here, as it provides additional controls such as
-                    // reverting specific lines
-                    isRunningInsideAgent() ? 'Show Diff' : 'Open Diff'
-                )
-                return [acceptAll, retry, undo, showDiff, 
-                    ...acceptLenses, ...rejectLenses]
-            }
-            return [acceptAll, retry, undo]
+            // Optional:
+            // Retries only makes sense if the user created the prompt
+            const canRetry = task.intent !== 'fix' && task.intent !== 'doc' && !isTest && !isChatEdit
+            const retryLens = canRetry ? getRetryLens(codeLensRange, task.id) : null
+
+            // Diffs only if there's code that's changed
+            const canDiff = isEdit && !isTest
+            const diffLens = canDiff
+                ? getDiffLens(
+                        codeLensRange,
+                        task.id,
+                        // Note: We already show an inline-diff in VS Code, so we change the wording slightly.
+                        // It is still useful to open the diff fully here, as it provides additional controls such as
+                        // reverting specific lines
+                        isAgent ? 'Show Diff' : 'Open Diff'
+                    )
+                : null
+
+            // Show additional accept/reject lenses against change blocks when we have a diff.
+            // Currently only supported in VS Code. Need to test and ensure this change works
+            // well in JetBrains/other clients before enabling in Agent
+            // Note: We check that the diff has at least 2 or more changes here, otherwise we will just be showing a
+            // duplicate of the top Accept/Reject lens. We just the _originalDiff_ so we don't automatically hide the
+            // final Accept/Reject lens if a user is rejecting multiple
+            const canShowIndividualAcceptRejectLenses =
+                canDiff && !isAgent && getChunkedEditRanges(task.originalDiff).length > 1
+
+            const chunkedRanges = canShowIndividualAcceptRejectLenses
+                ? getChunkedEditRanges(task.diff)
+                : []
+            const acceptLenses = canShowIndividualAcceptRejectLenses
+                ? getAcceptLenses(task, chunkedRanges)
+                : []
+            const rejectLenses = canShowIndividualAcceptRejectLenses
+                ? getRejectLenses(task, chunkedRanges)
+                : []
+
+            // Required:
+            // Accept: If we are in VS Code and we have multiple chunked ranges, we will show multiple accept/reject lenses.
+            // In this case, we will show "Accept All". Otherwise we just show "Accept"
+            const acceptAllLens =
+                isAgent || chunkedRanges.length <= 1
+                    ? getAcceptLens(codeLensRange, task.id)
+                    : getAcceptAllLens(codeLensRange, task.id)
+            const rejectAllLens =
+                isAgent || chunkedRanges.length <= 1
+                    ? getRejectLens(codeLensRange, task.id)
+                    : getRejectAllLens(codeLensRange, task.id)
+
+            return (
+                [
+                    acceptAllLens,
+                    retryLens,
+                    rejectAllLens,
+                    diffLens,
+                    ...acceptLenses,
+                    ...rejectLenses,
+                ] as vscode.CodeLens[]
+            ).filter(Boolean) //TODO: Remove type-cast after TS5.5+
         }
         case CodyTaskState.Error: {
             const title = getErrorLens(codeLensRange, task)
@@ -166,47 +206,65 @@ function getRetryLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens 
     return lens
 }
 
-function getUndoLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+function getRejectLenses(task: FixupTask, ranges: vscode.Range[]): vscode.CodeLens[] {
+    const lenses = []
+    for (const range of ranges) {
+        const acceptBlockLens = new vscode.CodeLens(range)
+        acceptBlockLens.command = {
+            title: 'Reject',
+            command: 'cody.fixup.codelens.reject',
+            arguments: [task.id, range],
+        }
+        lenses.push(acceptBlockLens)
+    }
+    return lenses
+}
+
+function getAcceptLenses(task: FixupTask, ranges: vscode.Range[]): vscode.CodeLens[] {
+    const lenses = []
+    for (const range of ranges) {
+        const acceptBlockLens = new vscode.CodeLens(range)
+        acceptBlockLens.command = {
+            title: 'Accept',
+            command: 'cody.fixup.codelens.accept',
+            arguments: [task.id, range],
+        }
+        lenses.push(acceptBlockLens)
+    }
+    return lenses
+}
+
+function getRejectLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     const shortcut = isRunningInsideAgent() ? '' : ` (${process.platform === 'darwin' ? '⌥X' : 'Alt+X'})`
     lens.command = {
-        title: `Undo${shortcut}`,
-        command: 'cody.fixup.codelens.undo',
+        title: `Reject${shortcut}`,
+        command: 'cody.fixup.codelens.rejectAll',
         arguments: [id],
     }
     return lens
 }
 
-function getRejectLens(task: FixupTask, codeLensRange: vscode.Range, id: string): vscode.CodeLens[] {
-    const lenses = []
-    if (task.diff) {
-        for (const edit of task.diff) {
-            const acceptBlockLens = new vscode.CodeLens(edit.range)
-            acceptBlockLens.command = {
-                title: 'Reject',
-                command: 'cody.fixup.codelens.reject',
-                arguments: [id, edit.range],
-            }
-            lenses.push(acceptBlockLens)
-        }
+function getRejectAllLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    const shortcut = isRunningInsideAgent() ? '' : ` (${process.platform === 'darwin' ? '⌥X' : 'Alt+X'})`
+    lens.command = {
+        title: `Reject All${shortcut}`,
+        command: 'cody.fixup.codelens.rejectAll',
+        arguments: [id],
     }
-    return lenses
+    return lens
 }
 
-function getAcceptLenses(task: FixupTask, codeLensRange: vscode.Range, id: string): vscode.CodeLens[] {
-    const lenses = []
-    if (task.diff) {
-        for (const edit of task.diff) {
-            const acceptBlockLens = new vscode.CodeLens(edit.range)
-            acceptBlockLens.command = {
-                title: '$(cody-logo) Accept',
-                command: 'cody.fixup.codelens.accept',
-                arguments: [id, edit.range],
-            }
-            lenses.push(acceptBlockLens)
-        }
+function getAcceptLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    const shortcut = isRunningInsideAgent() ? '' : ` (${process.platform === 'darwin' ? '⌥A' : 'Alt+A'})`
+    lens.command = {
+        title: `$(cody-logo) Accept${shortcut}`,
+        command: 'cody.fixup.codelens.accept',
+        arguments: [id],
     }
-    return lenses
+    return lens
 }
 
 function getAcceptAllLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {

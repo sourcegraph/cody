@@ -132,80 +132,29 @@ export class FixupController
     // FixupActor
 
     public async accept(task: FixupTask, range: vscode.Range): Promise<void> {
-        this.markBlockAsAccepted(task, range)
-        this.refreshCodeLenses(task)
-        this.controlApplicator.didUpdateTask(task);
-    }
+        const affectedChanges = task.diff?.filter(edit => range.contains(edit.range))
+        const editor = vscode.window.visibleTextEditors.find(
+            editor => editor.document.uri.toString() === task.fixupFile.uri.toString()
+        )
+        if (!affectedChanges || !editor) {
+            return
+        }
 
-    public async reject(task: FixupTask, range: vscode.Range): Promise<void> {
-        // Check if the range corresponds to an addition or deletion block
-        const edit = task.diff?.find(edit => edit.range.isEqual(range));
-        //JM loop through entries in task.diff and log them
-        if (task.diff) {
-            for (const edit of task.diff) {
-                console.log('JM Edit:', {
-                    type: edit.type,
-                    range: edit.range
-                })
+        for (const change of affectedChanges) {
+            if (change.type === 'decoratedReplacement') {
+                // Accepting a deletion, we must delete the placeholder lines
+                await editor.edit(
+                    editBuilder => {
+                        editBuilder.delete(change.range)
+                    },
+                    { undoStopAfter: false, undoStopBefore: false }
+                )
             }
+
+            // Remove the edit from the task's diff
+            task.removeDiffChangeByRange(change.range)
         }
 
-
-        if (!edit) {
-            console.warn("No matching range found")
-            return;
-        }
-
-        if (edit.type === 'insertion') {
-            // Remove the added code
-            this.removeAddedCode(task, range);
-        } else if (edit.type === 'decoratedReplacement') {
-            // Re-add the original code
-            this.reAddOriginalCode(task, range, edit.oldText);
-        }
-
-        // Remove the edit from the task's diff
-        task.removeEditByRange(range);
-
-        this.refreshCodeLenses(task)
-        this.controlApplicator.didUpdateTask(task);
-    }
-
-    private refreshCodeLenses(task: FixupTask): void {
-        // Trigger a refresh of the code lenses
-        vscode.commands.executeCommand('vscode.executeCodeLensProvider', task.document.uri)
-    }
-
-    private removeAddedCode(task: FixupTask, range: vscode.Range): void {
-        const editor = vscode.window.visibleTextEditors.find(
-            editor => editor.document.uri.toString() === task.fixupFile.uri.toString()
-        );
-        if (!editor) {
-            return;
-        }
-    
-        editor.edit(editBuilder => {
-            editBuilder.delete(range);
-        });
-    }
-
-    private reAddOriginalCode(task: FixupTask, range: vscode.Range, originalText: string): void {
-        const editor = vscode.window.visibleTextEditors.find(
-            editor => editor.document.uri.toString() === task.fixupFile.uri.toString()
-        );
-        if (!editor) {
-            return;
-        }
-    
-        editor.edit(editBuilder => {
-            editBuilder.replace(range, originalText);
-        });
-    }
-
-    private markBlockAsAccepted(task: FixupTask, range: vscode.Range): void {
-        // Remove the edit from the task's diff
-        task.removeEditByRange(range)
-        
         // Update the decorations
         this.decorator.didApplyTask(task)
 
@@ -213,6 +162,56 @@ export class FixupController
         if (!task.diff || task.diff.length === 0) {
             this.acceptAll(task)
         }
+
+        this.refreshCodeLenses(task)
+        this.controlApplicator.didUpdateTask(task)
+    }
+
+    public async reject(task: FixupTask, range: vscode.Range): Promise<void> {
+        const affectedChanges = task.diff?.filter(edit => range.contains(edit.range))
+        const editor = vscode.window.visibleTextEditors.find(
+            editor => editor.document.uri.toString() === task.fixupFile.uri.toString()
+        )
+        if (!affectedChanges || !editor) {
+            return
+        }
+
+        for (const change of affectedChanges) {
+            if (change.type === 'decoratedReplacement') {
+                // Rejecting a deletion, we must restore the oldText
+                await editor.edit(
+                    editBuilder => {
+                        editBuilder.replace(
+                            change.range,
+                            change.oldText + '\n' // The oldText does not include the line break, so re-add it here
+                        )
+                    },
+                    { undoStopAfter: false, undoStopBefore: false }
+                )
+            } else if (change.type === 'insertion') {
+                // Rejecting an insertion, we must delete the added lines
+                await editor.edit(
+                    editBuilder => {
+                        editBuilder.delete(change.range)
+                    },
+                    { undoStopAfter: false, undoStopBefore: false }
+                )
+            }
+
+            // Remove the edit from the task's diff
+            task.removeDiffChangeByRange(change.range)
+        }
+
+        // Update the decorations
+        this.decorator.didApplyTask(task)
+
+        this.refreshCodeLenses(task)
+        this.controlApplicator.didUpdateTask(task)
+    }
+
+    private refreshCodeLenses(task: FixupTask): void {
+        // Trigger a refresh of the code lenses
+        vscode.commands.executeCommand('vscode.executeCodeLensProvider', task.document.uri)
     }
 
     public acceptAll(task: FixupTask): void {
@@ -251,7 +250,7 @@ export class FixupController
      * TODO: It is possible the original code is out of date if the user edited it whilst the fixup was running.
      * Handle this case better. Possibly take a copy of the previous code just before the fixup is applied.
      */
-    public async undo(task: FixupTask): Promise<void> {
+    public async rejectAll(task: FixupTask): Promise<void> {
         if (task.state !== CodyTaskState.Applied) {
             return
         }
@@ -372,35 +371,38 @@ export class FixupController
         return editOk
     }
 
-    // Undo the specified task, then prompt for a new set of instructions near
+       // Undo the specified task, then prompt for a new set of instructions near
     // the same region and start a new task.
-    public async retry(task: FixupTask, source: EventSource): Promise<FixupTask | undefined> {
+    public async retry(
+        task: FixupTask,
+        source: EventSource,
+        previousInput?: QuickPickInput
+    ): Promise<FixupTask | undefined> {
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
         // Prompt the user for a new instruction, and create a new fixup
-        const input = await getInput(
-            document,
-            this.authProvider,
-            {
-                initialInputValue: task.instruction,
-                initialRange: task.selectionRange,
-                initialSelectedContextItems: task.userContextItems,
-                initialModel: task.model,
-                initialIntent: task.intent,
-            },
-            source
-        )
+        const input =
+            previousInput ??
+            (await getInput(
+                document,
+                this.authProvider,
+                {
+                    initialInputValue: task.instruction,
+                    initialRange: task.selectionRange,
+                    initialSelectedContextItems: task.userContextItems,
+                    initialModel: task.model,
+                    initialIntent: task.intent,
+                },
+                source
+            ))
         if (!input) {
             return
         }
-
         // If the selected range is the same as what we provided, we actually want the original
         // range, which is the range which will be left in the document after the task is undone.
         // Otherwise, use the new selected range.
         const updatedRange = input.range.isEqual(task.selectionRange) ? task.originalRange : input.range
-
         // Revert and remove the previous task
-        await this.undo(task)
-
+        await this.rejectAll(task)
         return executeEdit({
             configuration: {
                 range: updatedRange,
