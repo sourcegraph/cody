@@ -364,7 +364,10 @@ export type ClientNotifications = {
     'extensionConfiguration/didChange': [ExtensionConfiguration]
 
     // The user has switched to a different workspace folder.
-    'workspaceFolder/didChange': [{ uri: string; event: 'added' | 'removed' }]
+    // @deprecated
+    'workspaceFolder/didChange': [{ uri: string }]
+    // Under requests
+    'workspaceFolder/change': [{ uris: string[] }, { success: boolean }]
 
     // Lifecycle notifications for the client to notify the server about text
     // contents of documents and to notify which document is currently focused.
@@ -611,7 +614,8 @@ export interface ClientCapabilities {
     // which effectively means both sidebar and custom editor chat views are supported.
     // Use single for clients with a single chat view, e.g. sidebar chat.
     // Defaults to 'agentic'.
-    webview?: 'agentic' | 'native' | 'single' | undefined | null
+    webview?: 'agentic' | 'native' | undefined | null
+    nativeWebviews: 'multiple' | 'single' | undefined | null
     // If webview === 'native', describes how the client has configured webview resources.
     // cspSource is passed to the extension as the Webview cspSource property.
     // webviewBundleServingPrefix is prepended to resource paths under 'dist' in
