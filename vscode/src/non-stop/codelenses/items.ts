@@ -72,7 +72,10 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
                 isAgent || chunkedRanges.length <= 1
                     ? getAcceptLens(codeLensRange, task.id)
                     : getAcceptAllLens(codeLensRange, task.id)
-            const undoLens = getUndoLens(codeLensRange, task.id, isChatEdit ? 'Reject' : undefined)
+            const undoLens =
+                isAgent || chunkedRanges.length <= 1
+                    ? getRejectLens(codeLensRange, task.id)
+                    : getRejectAllLens(codeLensRange, task.id)
 
             return (
                 [
@@ -202,17 +205,6 @@ function getRetryLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens 
     return lens
 }
 
-function getUndoLens(codeLensRange: vscode.Range, id: string, title = 'Undo'): vscode.CodeLens {
-    const lens = new vscode.CodeLens(codeLensRange)
-    const shortcut = isRunningInsideAgent() ? '' : ` (${process.platform === 'darwin' ? '⌥X' : 'Alt+X'})`
-    lens.command = {
-        title: `${title}${shortcut}`,
-        command: 'cody.fixup.codelens.undo',
-        arguments: [id],
-    }
-    return lens
-}
-
 function getRejectLenses(task: FixupTask, ranges: vscode.Range[]): vscode.CodeLens[] {
     const lenses = []
     for (const range of ranges) {
@@ -241,6 +233,28 @@ function getAcceptLenses(task: FixupTask, ranges: vscode.Range[]): vscode.CodeLe
     return lenses
 }
 
+function getRejectLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    const shortcut = isRunningInsideAgent() ? '' : ` (${process.platform === 'darwin' ? '⌥X' : 'Alt+X'})`
+    lens.command = {
+        title: `Reject${shortcut}`,
+        command: 'cody.fixup.codelens.undo',
+        arguments: [id],
+    }
+    return lens
+}
+
+function getRejectAllLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    const shortcut = isRunningInsideAgent() ? '' : ` (${process.platform === 'darwin' ? '⌥X' : 'Alt+X'})`
+    lens.command = {
+        title: `Reject All${shortcut}`,
+        command: 'cody.fixup.codelens.undo',
+        arguments: [id],
+    }
+    return lens
+}
+
 function getAcceptLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     const shortcut = isRunningInsideAgent() ? '' : ` (${process.platform === 'darwin' ? '⌥A' : 'Alt+A'})`
@@ -255,7 +269,6 @@ function getAcceptLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens
 function getAcceptAllLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     const shortcut = isRunningInsideAgent() ? '' : ` (${process.platform === 'darwin' ? '⌥A' : 'Alt+A'})`
-
     lens.command = {
         title: `$(cody-logo) Accept All${shortcut}`,
         command: 'cody.fixup.codelens.accept',
