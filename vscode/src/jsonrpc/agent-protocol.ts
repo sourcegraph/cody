@@ -363,8 +363,9 @@ export type ClientNotifications = {
     // should no longer be used.
     'extensionConfiguration/didChange': [ExtensionConfiguration]
 
-    // The user has switched to a different workspace folder.
-    'workspaceFolder/didChange': [{ uri: string }]
+    // Provide an updated list of workspace folders when changed.
+    // Put the most recently opened folder first.
+    'workspaceFolder/didChange': [{ uris: string[] }]
 
     // Lifecycle notifications for the client to notify the server about text
     // contents of documents and to notify which document is currently focused.
@@ -617,14 +618,19 @@ export interface ClientCapabilities {
     // Whether the client supports the VSCode WebView API. If 'agentic', uses
     // AgentWebViewPanel which just delegates bidirectional postMessage over
     // the Agent protocol. If 'native', implements a larger subset of the VSCode
-    // WebView API and expects the client to run web content in the webview.
+    // WebView API and expects the client to run web content in the webview,
+    // which effectively means both sidebar and custom editor chat views are supported.
     // Defaults to 'agentic'.
     webview?: 'agentic' | 'native' | undefined | null
     // If webview === 'native', describes how the client has configured webview resources.
     // cspSource is passed to the extension as the Webview cspSource property.
     // webviewBundleServingPrefix is prepended to resource paths under 'dist' in
     // asWebviewUri (note, multiple prefixes are not yet implemented.)
-    webviewNativeConfig?: { cspSource: string; webviewBundleServingPrefix: string } | undefined | null
+    // Set the view to 'single' when client only support single chat view, e.g. sidebar chat.
+    webviewNativeConfig?:
+        | { view: 'multiple' | 'single'; cspSource: string; webviewBundleServingPrefix: string }
+        | undefined
+        | null
 }
 
 export interface ServerInfo {
