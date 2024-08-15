@@ -1,13 +1,3 @@
-import {
-    FloatingPortal,
-    type UseFloatingOptions,
-    autoUpdate,
-    computePosition,
-    flip,
-    offset,
-    shift,
-    useFloating,
-} from '@floating-ui/react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { LexicalTypeaheadMenuPlugin, type MenuOption } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import {
@@ -21,6 +11,7 @@ import {
 } from 'lexical'
 import { isEqual } from 'lodash'
 import { type FunctionComponent, memo, useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import styles from './atMentions.module.css'
 
 import {
@@ -55,12 +46,6 @@ export function createMentionMenuOption(item: ContextItem): MentionMenuOption {
     }
 }
 
-const FLOATING_OPTIONS: UseFloatingOptions = {
-    placement: 'bottom-start',
-    middleware: [offset(6), flip(), shift()],
-    transform: false,
-}
-
 /**
  * We allow whitespace for @-mentions in the Lexical editor because
  * it has an explicit switch between modes and can render @-mentions
@@ -84,8 +69,6 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
          * Total sum of tokens represented by all of the @-mentioned items.
          */
         const [tokenAdded, setTokenAdded] = useState<number>(0)
-
-        const { x, y, refs, strategy } = useFloating(FLOATING_OPTIONS)
 
         const remainingTokenBudget =
             contextWindowSizeInTokens === undefined
@@ -186,21 +169,6 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
             [editor]
         )
 
-        // Reposition popover when the window, editor, or popover changes size.
-        useEffect(() => {
-            const referenceEl = refs.reference.current
-            const floatingEl = refs.floating.current
-            if (!referenceEl || !floatingEl) {
-                return undefined
-            }
-            const cleanup = autoUpdate(referenceEl, floatingEl, async () => {
-                const { x, y } = await computePosition(referenceEl, floatingEl, FLOATING_OPTIONS)
-                floatingEl.style.left = `${x}px`
-                floatingEl.style.top = `${y}px`
-            })
-            return cleanup
-        }, [refs.reference.current, refs.floating.current])
-
         // Close the menu when the editor loses focus.
         const anchorElementRef2 = useRef<HTMLElement>()
         useEffect(() => {
@@ -240,41 +208,25 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
                 onClose={onClose}
                 triggerFn={scanForMentionTriggerInLexicalInput}
                 options={DUMMY_OPTIONS}
-                anchorClassName={styles.resetAnchor}
                 commandPriority={
                     COMMAND_PRIORITY_NORMAL /* so Enter keypress selects option and doesn't submit form */
                 }
-                onOpen={menuResolution => {
-                    refs.setPositionReference({
-                        getBoundingClientRect: menuResolution.getRect,
-                    })
-                }}
                 menuRenderFn={(anchorElementRef, itemProps) => {
                     const { selectOptionAndCleanUp } = itemProps
                     anchorElementRef2.current = anchorElementRef.current ?? undefined
                     return (
-                        anchorElementRef.current && (
-                            <FloatingPortal root={anchorElementRef.current}>
-                                <div
-                                    ref={ref => {
-                                        refs.setFloating(ref)
-                                    }}
-                                    style={{
-                                        position: strategy,
-                                        top: y,
-                                        left: x,
-                                    }}
-                                    className={clsx(styles.popover)}
-                                >
-                                    <MentionMenu
-                                        params={params}
-                                        updateMentionMenuParams={updateMentionMenuParams}
-                                        setEditorQuery={setEditorQuery}
-                                        data={data}
-                                        selectOptionAndCleanUp={selectOptionAndCleanUp}
-                                    />
-                                </div>
-                            </FloatingPortal>
+                        anchorElementRef.current &&
+                        createPortal(
+                            <div className={clsx(styles.popover)}>
+                                <MentionMenu
+                                    params={params}
+                                    updateMentionMenuParams={updateMentionMenuParams}
+                                    setEditorQuery={setEditorQuery}
+                                    data={data}
+                                    selectOptionAndCleanUp={selectOptionAndCleanUp}
+                                />
+                            </div>,
+                            anchorElementRef.current
                         )
                     )
                 }}

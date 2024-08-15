@@ -12,6 +12,7 @@ import {
     ClientConfigSingleton,
     CodyIDE,
     type ContextItem,
+    type ContextItemOpenCtx,
     ContextItemSource,
     DOTCOM_URL,
     type DefaultChatCommands,
@@ -72,6 +73,7 @@ import type { EnterpriseContextFactory } from '../../context/enterprise-context-
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
 import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
+import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
@@ -104,6 +106,7 @@ import type {
     ConfigurationSubsetForWebview,
     ExtensionMessage,
     LocalEnv,
+    SmartApplyResult,
     WebviewMessage,
 } from '../protocol'
 import { countGeneratedCode } from '../utils'
@@ -361,8 +364,20 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'copy':
                 await handleCopiedCode(message.text, message.eventType === 'Button')
                 break
-            case 'smartApply':
-                await handleSmartApply(message.code, message.instruction, message.fileName)
+            case 'smartApplySubmit':
+                await handleSmartApply(
+                    message.id,
+                    message.code,
+                    this.authProvider.getAuthStatus(),
+                    message.instruction,
+                    message.fileName
+                )
+                break
+            case 'smartApplyAccept':
+                await vscode.commands.executeCommand('cody.fixup.codelens.accept', message.id)
+                break
+            case 'smartApplyReject':
+                await vscode.commands.executeCommand('cody.fixup.codelens.undo', message.id)
                 break
             case 'openURI':
                 vscode.commands.executeCommand('vscode.open', message.uri)
@@ -543,11 +558,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async isSmartApplyEnabled(): Promise<boolean> {
-        if (!this.authProvider.getAuthStatus().isDotCom) {
-            // Only supported on Sourcegraph.com right now, until we support more than just Claude 3.5 Sonnet.
-            return false
-        }
-
         const config = await getFullConfig()
         if (config.isRunningInsideAgent) {
             // Only supported in VS Code right now, until we test and iterate on the UI for other clients.
@@ -570,7 +580,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             this.webviewPanelOrView?.viewType === 'cody.editorPanel' ? 'editor' : 'sidebar'
 
         return {
-            agentIDE: config.isRunningInsideAgent ? config.agentIDE : CodyIDE.VSCode,
+            agentIDE: config.agentIDE ?? CodyIDE.VSCode,
             agentExtensionVersion: config.isRunningInsideAgent
                 ? config.agentExtensionVersion
                 : VSCEVersion,
@@ -858,20 +868,19 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             openCtxContextPromise,
         ])
 
-        // This is the manual ordering of the different retrieved and explicit context sources
-        const context = [
-            structuredMentions.symbols,
-            structuredMentions.files,
-            openCtxContext,
-            priorityContext,
-            retrievedContext,
-        ].flat()
+        const resolvedExplicitMentionsPromise = resolveContextItems(
+            this.editor,
+            [structuredMentions.symbols, structuredMentions.files].flat(),
+            text,
+            signal
+        )
 
-        if (this.contextAPIClient && context.length > 0) {
+        const rankedContext: RankedContext[] = []
+        if (this.contextAPIClient && retrievedContext.length > 1) {
             const response = await this.contextAPIClient.rankContext(
                 requestID,
                 inputTextWithoutContextChips.toString(),
-                context
+                retrievedContext
             )
             if (isError(response)) {
                 throw response
@@ -884,20 +893,35 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             const usedContext: ContextItem[] = []
             const ignoredContext: ContextItem[] = []
             for (const { index, score } of used) {
-                usedContext.push(context[index])
-                all.push([context[index], score])
+                usedContext.push(retrievedContext[index])
+                all.push([retrievedContext[index], score])
             }
             for (const { index, score } of ignored) {
-                ignoredContext.push(context[index])
-                all.push([context[index], score])
+                ignoredContext.push(retrievedContext[index])
+                all.push([retrievedContext[index], score])
             }
-            return [
-                { strategy: 'local+remote, reranked', items: usedContext },
-                { strategy: 'local+remote', items: context },
-            ]
+
+            rankedContext.push({
+                strategy: 'local+remote, reranked',
+                items: combineContext(
+                    await resolvedExplicitMentionsPromise,
+                    openCtxContext,
+                    priorityContext,
+                    usedContext
+                ),
+            })
         }
 
-        return [{ strategy: 'local+remote', items: context }]
+        rankedContext.push({
+            strategy: 'local+remote',
+            items: combineContext(
+                await resolvedExplicitMentionsPromise,
+                openCtxContext,
+                priorityContext,
+                retrievedContext
+            ),
+        })
+        return rankedContext
     }
 
     private async legacyComputeContext(
@@ -936,12 +960,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             ])
         ).flat()
 
-        // Run in background.
-        void this.contextAPIClient?.rankContext(
-            requestID,
-            inputTextWithoutContextChips.toString(),
-            context
-        )
+        if (context.length > 0) {
+            // Run in background.
+            void this.contextAPIClient?.rankContext(
+                requestID,
+                inputTextWithoutContextChips.toString(),
+                context
+            )
+        }
 
         return [
             {
@@ -1105,6 +1131,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (this._webviewPanelOrView) {
             revealWebviewViewOrPanel(this._webviewPanelOrView)
         }
+    }
+
+    public async handleSmartApplyResult(result: SmartApplyResult): Promise<void> {
+        void this.postMessage({
+            type: 'clientAction',
+            smartApplyResult: result,
+        })
     }
 
     private async handleSymfIndex(): Promise<void> {
@@ -1909,4 +1942,17 @@ export async function addWebviewViewHTML(
     view.webview.html = decoded
         .replaceAll('./', `${resources.toString()}/`)
         .replaceAll("'self'", view.webview.cspSource)
+        .replaceAll('{cspSource}', view.webview.cspSource)
+}
+
+// This is the manual ordering of the different retrieved and explicit context sources
+// It should be equivalent to the ordering of things in
+// ChatController:legacyComputeContext > context.ts:resolveContext
+function combineContext(
+    explicitMentions: ContextItem[],
+    openCtxContext: ContextItemOpenCtx[],
+    priorityContext: ContextItem[],
+    retrievedContext: ContextItem[]
+): ContextItem[] {
+    return [explicitMentions, openCtxContext, priorityContext, retrievedContext].flat()
 }

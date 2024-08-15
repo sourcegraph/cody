@@ -28,7 +28,7 @@ import {
     CODY_OLLAMA_DOCS_URL,
 } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
-import { executeCodyCommand, setCommandController } from './commands/CommandsController'
+import { commandControllerInit, executeCodyCommand } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
 import {
     executeDocCommand,
@@ -270,6 +270,7 @@ const register = async (
     if (isExtensionModeDevOrTest) {
         await registerTestCommands(context, authProvider, disposables)
     }
+    registerDebugCommands(context, disposables)
     registerUpgradeHandlers(configWatcher, authProvider, disposables)
     disposables.push(new CharactersLogger())
 
@@ -302,7 +303,7 @@ async function initializeSingletons(
     // user's model choices
     ModelsService.setStorage(localStorage)
     disposables.push(upstreamHealthProvider, contextFiltersProvider)
-    setCommandController(platform.createCommandsProvider?.())
+    commandControllerInit(platform.createCommandsProvider?.(), platform.extensionClient.capabilities)
     repoNameResolver.init(authProvider)
     await configWatcher.onChange(
         async config => {
@@ -583,8 +584,18 @@ async function registerTestCommands(
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (endpoint, token) =>
             authProvider.auth({ endpoint, token })
-        ),
-        // For debugging
+        )
+    )
+}
+
+/**
+ * Register commands used for debugging.
+ */
+async function registerDebugCommands(
+    context: vscode.ExtensionContext,
+    disposables: vscode.Disposable[]
+): Promise<void> {
+    disposables.push(
         vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
         vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
         vscode.commands.registerCommand('cody.debug.enable.all', () => enableVerboseDebugMode()),

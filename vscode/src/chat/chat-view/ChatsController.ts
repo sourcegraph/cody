@@ -29,6 +29,7 @@ import {
     handleCodeFromSaveToNewFile,
 } from '../../services/utils/codeblock-action-tracker'
 import type { ContextAPIClient } from '../context/contextAPIClient'
+import type { SmartApplyResult } from '../protocol'
 import {
     ChatController,
     type ChatSession,
@@ -214,6 +215,10 @@ export class ChatsController implements vscode.Disposable {
 
             // Codeblock commands
             vscode.commands.registerCommand(
+                'cody.command.markSmartApplyApplied',
+                (result: SmartApplyResult) => this.sendSmartApplyResultToChat(result)
+            ),
+            vscode.commands.registerCommand(
                 'cody.command.insertCodeToCursor',
                 (args: { text: string }) => handleCodeFromInsertAtCursor(args.text)
             ),
@@ -251,6 +256,11 @@ export class ChatsController implements vscode.Disposable {
             await vscode.commands.executeCommand('cody.chat.focus')
         }
         await provider.handleGetUserEditorContext(uri)
+    }
+
+    private async sendSmartApplyResultToChat(result: SmartApplyResult): Promise<void> {
+        const provider = await this.getActiveChatController()
+        await provider.handleSmartApplyResult(result)
     }
 
     /**
