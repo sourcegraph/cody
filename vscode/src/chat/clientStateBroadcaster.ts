@@ -1,5 +1,6 @@
 import {
     type ContextItem,
+    type ContextItemFile,
     ContextItemSource,
     type ContextItemTree,
     REMOTE_REPOSITORY_PROVIDER_URI,
@@ -8,9 +9,11 @@ import {
     displayLineRange,
     displayPathBasename,
     expandToLineRange,
+    openCtx,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getSelectionOrFileContext } from '../commands/context/selection'
+import { toVSCodeRange } from '../common/range'
 import { createRemoteRepositoryMention } from '../context/openctx/remoteRepositorySearch'
 import type { RemoteSearch } from '../context/remote-search'
 import type { ChatModel } from './chat-view/ChatModel'
@@ -32,7 +35,7 @@ export function startClientStateBroadcaster({
 }): vscode.Disposable {
     const postMessage = idempotentPostMessage(rawPostMessage)
 
-    async function rawSendClientState(signal: AbortSignal | null): Promise<void> {
+    async function rawSendClientState(signal: AbortSignal): Promise<void> {
         const items: ContextItem[] = []
 
         const corpusItems = getCorpusContextItemsForEditorState({ remoteSearch })
@@ -60,6 +63,9 @@ export function startClientStateBroadcaster({
 
             items.push(item)
         }
+
+        const openctxItems = await getOpenCtxAnnotationsForEditorState(contextFile, signal)
+        items.push(...openctxItems)
 
         postMessage({ type: 'clientState', value: { initialContext: items } })
     }
@@ -154,6 +160,49 @@ export function getCorpusContextItemsForEditorState({
         }
     }
 
+    return items
+}
+
+/**
+ * Fetch the OpenCtx annotations that are present in the selection range and return them as
+ * ContextItems.
+ */
+async function getOpenCtxAnnotationsForEditorState(
+    contextFile: ContextItemFile,
+    _signal: AbortSignal
+): Promise<ContextItem[]> {
+    const openctxController = openCtx.controller
+    if (!openctxController) {
+        return []
+    }
+
+    const selectionRange = toVSCodeRange(contextFile.range)
+    const doc = await vscode.workspace.openTextDocument(contextFile.uri)
+    const anns = await openctxController.annotations(doc)
+
+    const items: ContextItem[] = []
+    for (const ann of anns) {
+        if (selectionRange && ann.range && !selectionRange.intersection(ann.range)) {
+            continue
+        }
+        items.push({
+            type: 'openctx',
+            provider: 'openctx',
+            title: ann.item.title,
+            // TODO!(sqs): come up with uri
+            uri: vscode.Uri.parse(ann.item.url ?? `openctx:${ann.providerUri}-${ann.item.title}`),
+            providerUri: ann.providerUri,
+            annotation: ann,
+            mention: {
+                uri: ann.uri,
+                data: ann.item,
+                description: ann.item.ui?.hover?.markdown ?? ann.item.ui?.hover?.text ?? undefined,
+            },
+            // TODO!(sqs): dont use the hover for content
+            content: ann.item.ai?.content ?? ann.item.ui?.hover?.markdown ?? ann.item.ui?.hover?.text,
+            source: ContextItemSource.Initial,
+        })
+    }
     return items
 }
 

@@ -6,13 +6,15 @@
     white-space: normal;
     padding: 0 3px;
     display: inline-flex;
-    align-items: baseline;
+    vertical-align: -2px; /* align with text baseline */
     outline-offset: -1px;
     cursor: pointer;
+    overflow: hidden;
+    max-width: 100%;
 }
 
 .context-item-mention-node .icon {
-    display: inline-flex;
+    flex-shrink: 0;
     align-self: center;
     width: 14px;
     height: 14px;

@@ -13,6 +13,11 @@ type OpenCtxController = Pick<
         ...args: Parameters<Client<vscode.Range>['mentions']>
     ) => Promise<EachWithProviderUri<(Mention | MentionWithContextItemData)[]>>
 
+    annotations(
+        doc: Pick<vscode.TextDocument, 'uri' | 'getText'>,
+        opts?: ProviderMethodOptions
+    ): ReturnType<Client<vscode.Range>['annotations']>
+
     annotationsChanges__asyncGenerator(
         doc: Pick<vscode.TextDocument, 'uri' | 'getText'>,
         opts?: ProviderMethodOptions,

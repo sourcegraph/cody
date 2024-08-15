@@ -74,6 +74,7 @@ export {
     type SymbolKind,
     type ContextItemTree,
     type ContextItemRepository,
+    isContextItemWithContent,
     FILE_RANGE_TOOLTIP_LABEL,
     GENERAL_HELP_LABEL,
     IGNORED_FILE_WARNING_LABEL,

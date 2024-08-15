@@ -19,6 +19,7 @@ import {
     graphqlClient,
     isAbortError,
     isCodyIgnoredFile,
+    isContextItemWithContent,
     isDefined,
     isErrorLike,
     isWindows,
@@ -397,12 +398,24 @@ async function resolveContextItem(
 }
 
 async function resolveOpenCtxContextItem(
-    { provider: providerUri, ...item }: ContextItem,
+    item: ContextItem,
     input: PromptString,
     signal?: AbortSignal
 ): Promise<ContextItemWithContent[]> {
     if (item.type !== 'openctx') {
         return []
+    }
+
+    // If the content is already supplied, just use that; no need to resolve.
+    if (isContextItemWithContent(item)) {
+        return [item]
+    }
+
+    if (item.annotation) {
+        const content = item.annotation.item.ui?.hover?.markdown ?? item.annotation.item.ui?.hover?.text
+        if (content) {
+            return [{ ...item, content }]
+        }
     }
 
     const openCtxClient = openCtx.controller

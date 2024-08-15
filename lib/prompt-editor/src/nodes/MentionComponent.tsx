@@ -19,14 +19,27 @@ import {
     type NodeKey,
     SELECTION_CHANGE_COMMAND,
 } from 'lexical'
-import { type FunctionComponent, useCallback, useEffect, useMemo, useRef } from 'react'
+import {
+    type ComponentProps,
+    type FunctionComponent,
+    type Ref,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+} from 'react'
 import { getGlobalPromptEditorConfig } from '../config'
 import { $isContextItemMentionNode, type ContextItemMentionNode } from './ContextItemMentionNode'
+import styles from './MentionComponent.module.css'
 import { IS_IOS, useIsFocused } from './mentionUtils'
+
+export const MENTION_CLASS_NAME = styles.contextItemMentionNode
+
+export const MENTION_NODE_CLASS_NAME = `context-item-mention-node ${MENTION_CLASS_NAME}`
 
 export const MentionComponent: FunctionComponent<{
     nodeKey: NodeKey
-    node: ContextItemMentionNode
+    node: Pick<ContextItemMentionNode, 'getTextContent' | 'contextItem'>
     tooltip?: string
     icon?: React.ComponentType<{
         size?: string | number
@@ -34,10 +47,8 @@ export const MentionComponent: FunctionComponent<{
         className?: string
     }>
     className?: string
-    focusedClassName?: string
-    iconClassName?: string
-}> = ({ nodeKey, node, tooltip, icon: Icon, className, focusedClassName, iconClassName }) => {
-    const { tooltipComponents, onContextItemMentionNodeMetaClick } = getGlobalPromptEditorConfig()
+}> = ({ nodeKey, node, tooltip, icon: Icon, className }) => {
+    const { onContextItemMentionNodeMetaClick } = getGlobalPromptEditorConfig()
 
     const [editor] = useLexicalComposerContext()
     const isEditorFocused = useIsFocused()
@@ -47,15 +58,18 @@ export const MentionComponent: FunctionComponent<{
     const text = node.getTextContent()
 
     const composedClassNames = useMemo(() => {
+        const classes: string[] = []
         if (className) {
-            const classes = [className]
-            if (isSelected && isEditorFocused && focusedClassName) {
-                classes.push(focusedClassName)
-            }
-            return classes.join(' ').trim() || undefined
+            classes.push(className)
         }
-        return ''
-    }, [isSelected, className, focusedClassName, isEditorFocused])
+        if (isSelected && isEditorFocused) {
+            classes.push(styles.contextItemMentionChipNodeFocused)
+        }
+        if (node.contextItem.isTooLarge || node.contextItem.isIgnored) {
+            classes.push(styles.isTooLargeOrIgnored)
+        }
+        return classes.join(' ').trim() || undefined
+    }, [isSelected, className, isEditorFocused, node.contextItem.isTooLarge, node.contextItem.isIgnored])
 
     const onDelete = useCallback(
         (payload: KeyboardEvent) => {
@@ -194,10 +208,34 @@ export const MentionComponent: FunctionComponent<{
         }
     }, [editor, onArrowLeftPress, onArrowRightPress, onClick, onDelete, onBlur, onSelectionChange])
 
+    return (
+        <StandaloneMentionComponent
+            ref={ref}
+            text={text}
+            tooltip={tooltip}
+            icon={Icon}
+            className={composedClassNames}
+        />
+    )
+}
+
+export const StandaloneMentionComponent: FunctionComponent<{
+    ref: Ref<HTMLSpanElement>
+    text: string
+    tooltip?: string
+    icon: ComponentProps<typeof MentionComponent>['icon']
+    className?: string
+}> = ({ ref, text, tooltip, icon: Icon, className }) => {
+    const { tooltipComponents } = getGlobalPromptEditorConfig()
+
     const content = (
-        <span ref={ref} className={composedClassNames} title={tooltipComponents ? undefined : tooltip}>
-            {Icon && <Icon size={14} strokeWidth={2} className={iconClassName} />}
-            <span>{text}</span>
+        <span
+            ref={ref}
+            className={`${MENTION_NODE_CLASS_NAME} ${className ?? ''}`}
+            title={tooltipComponents ? undefined : tooltip}
+        >
+            {Icon && <Icon size={14} strokeWidth={2} className={styles.icon} />}
+            <span className="tw-text-ellipsis tw-whitespace-nowrap tw-overflow-hidden">{text}</span>
         </span>
     )
 

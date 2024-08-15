@@ -1,6 +1,6 @@
 import type { URI } from 'vscode-uri'
 
-import type { Mention } from '@openctx/client'
+import type { Annotation, Mention } from '@openctx/client'
 import type { RangeData } from '../common/range'
 import type { Message } from '../sourcegraph-api'
 
@@ -188,6 +188,7 @@ export interface ContextItemOpenCtx extends ContextItemCommon {
     uri: URI
     providerUri: string
     mention?: Mention
+    annotation?: Annotation
 }
 
 /**
@@ -237,6 +238,10 @@ export type SymbolKind = 'class' | 'function' | 'method'
 
 /** {@link ContextItem} with the `content` field set to the content. */
 export type ContextItemWithContent = ContextItem & { content: string }
+
+export function isContextItemWithContent(item: ContextItem): item is ContextItemWithContent {
+    return typeof item.content === 'string'
+}
 
 /**
  * A system chat message that adds a context item to the conversation.

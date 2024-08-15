@@ -54,7 +54,7 @@ export function usePromptEditorConfig(): PromptEditorConfig {
 export function useSetGlobalPromptEditorConfig(): void {
     const config = useContext(PromptEditorConfigContext)
     if (!config) {
-        throw new Error('useApplyPromptEditorConfig must be called within a PromptEditorConfigProvider')
+        throw new Error('useSetPromptEditorConfig must be called within a PromptEditorConfigProvider')
     }
     setGlobalPromptEditorConfig(config)
 }
