@@ -62,7 +62,6 @@ function defaultUrlProcessor(url: string): string {
         return ''
     }
 
-    console.log('processedURL', processedURL)
     return processedURL
 }
 
@@ -75,7 +74,7 @@ function wrapLinksWithCodyOpenCommand(url: string): string {
         return ''
     }
     const encodedURL = encodeURIComponent(JSON.stringify(url))
-    console.log('encodedURL', encodedURL)
+
     return `command:_cody.vscode.open?${encodedURL}`
 }
 
@@ -86,6 +85,7 @@ const URL_PROCESSORS: Record<CodyIDE, UrlTransform> = {
     [CodyIDE.Emacs]: defaultUrlProcessor,
     [CodyIDE.VSCode]: wrapLinksWithCodyOpenCommand,
     [CodyIDE.VisualStudio]: defaultUrlProcessor,
+    [CodyIDE.Eclipse]: defaultUrlProcessor,
 }
 
 export const MarkdownFromCody: FunctionComponent<{ className?: string; children: string }> = ({

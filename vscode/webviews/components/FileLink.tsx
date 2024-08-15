@@ -2,6 +2,7 @@ import { clsx } from 'clsx'
 import type React from 'react'
 
 import {
+    CodyIDE,
     type ContextItemSource,
     type RangeData,
     displayLineRange,
@@ -9,7 +10,9 @@ import {
     webviewOpenURIForContextItem,
 } from '@sourcegraph/cody-shared'
 
+import { useCallback } from 'react'
 import type { URI } from 'vscode-uri'
+import { useChatEnvironment } from '../chat/ChatEnvironmentContext'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import styles from './FileLink.module.css'
 
@@ -60,13 +63,25 @@ export const FileLink: React.FunctionComponent<
     className,
     linkClassName,
 }) => {
-    function logFileLinkClicked() {
+    const clientName = useChatEnvironment().clientType
+    const enableCommandURL = clientName === CodyIDE.Web || clientName === CodyIDE.VSCode
+
+    const logFileLinkClicked = useCallback(() => {
         getVSCodeAPI().postMessage({
             command: 'event',
             eventName: 'CodyVSCodeExtension:chat:context:fileLink:clicked',
             properties: { source },
         })
-    }
+
+        if (!enableCommandURL) {
+            // Run the command directly for agent to handle the command.
+            getVSCodeAPI().postMessage({
+                command: 'openFile',
+                uri,
+                range: range,
+            })
+        }
+    }, [enableCommandURL, source, uri, range])
 
     let tooltip: string
     let pathWithRange: string
@@ -85,6 +100,9 @@ export const FileLink: React.FunctionComponent<
         const pathToDisplay = `${displayPath(uri)}`
         pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
         const openURI = webviewOpenURIForContextItem({ uri, range })
+        if (!enableCommandURL) {
+            openURI.href = uri.toString()
+        }
         tooltip = isIgnored
             ? IGNORE_WARNING
             : isTooLarge
