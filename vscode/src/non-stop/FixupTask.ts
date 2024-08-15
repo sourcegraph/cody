@@ -106,8 +106,8 @@ export class FixupTask {
     /**
      * Sets the task diff. If this is the first time, it will be stored in the originalDiff property.
      */
-    public set diff(diff: Edit[]) {
-        if (this.diff_ === undefined) {
+    public set diff(diff: Edit[] | undefined) {
+        if (this.originalDiff === undefined) {
             this.originalDiff = diff
         }
         this.diff_ = diff
