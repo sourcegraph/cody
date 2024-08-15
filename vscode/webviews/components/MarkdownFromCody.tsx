@@ -62,6 +62,7 @@ function defaultUrlProcessor(url: string): string {
         return ''
     }
 
+    console.log('processedURL', processedURL)
     return processedURL
 }
 
@@ -74,6 +75,7 @@ function wrapLinksWithCodyOpenCommand(url: string): string {
         return ''
     }
     const encodedURL = encodeURIComponent(JSON.stringify(url))
+    console.log('encodedURL', encodedURL)
     return `command:_cody.vscode.open?${encodedURL}`
 }
 

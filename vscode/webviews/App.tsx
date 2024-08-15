@@ -221,7 +221,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [chatModels, onCurrentChatModelChange, serverSentModelsEnabled]
     )
 
-    const chatEnvironmentContext = useMemo<ChatEnvironmentContextData>(() => {
+    const chatEnv = useMemo<ChatEnvironmentContextData>(() => {
         return { clientType: config?.agentIDE ?? CodyIDE.VSCode }
     }, [config?.agentIDE])
 
@@ -232,18 +232,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 telemetryRecorder,
                 chatModelContext,
                 clientState,
-                chatEnvironmentContext,
+                chatEnv,
                 config && authStatus ? { config, authStatus } : undefined
             ),
-        [
-            vscodeAPI,
-            telemetryRecorder,
-            chatModelContext,
-            clientState,
-            chatEnvironmentContext,
-            config,
-            authStatus,
-        ]
+        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, chatEnv, config, authStatus]
     )
 
     // Wait for all the data to be loaded before rendering Chat View

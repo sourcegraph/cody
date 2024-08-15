@@ -19,7 +19,6 @@ import {
 import { ChatMentionContext, type ChatMentionsSettings } from '@sourcegraph/prompt-editor'
 import { getAppWrappers } from 'cody-ai/webviews/App'
 import type { UserAccountInfo } from 'cody-ai/webviews/Chat'
-import { ChatEnvironmentContext } from 'cody-ai/webviews/chat/ChatEnvironmentContext'
 import type { ChatModelContext } from 'cody-ai/webviews/chat/models/chatModelContext'
 import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
 import { createWebviewTelemetryRecorder } from 'cody-ai/webviews/utils/telemetry'
@@ -185,7 +184,7 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         }
     }, [initialContext])
 
-    const envVars = useMemo(() => ({ clientType: CodyIDE.Web }), [])
+    const chatEnv = useMemo(() => ({ clientType: CodyIDE.Web }), [])
 
     const wrappers = useMemo<Wrapper[]>(
         () =>
@@ -194,9 +193,10 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 telemetryRecorder,
                 chatModelContext,
                 clientState,
+                chatEnv,
                 config && authStatus ? { config, authStatus } : undefined
             ),
-        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, config, authStatus]
+        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, chatEnv, config, authStatus]
     )
 
     const isLoading = !client || !userAccountInfo || !chatModels || !config || !view || !userHistory
@@ -207,29 +207,27 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 isErrorLike(client) ? (
                     <p>Error: {client.message}</p>
                 ) : (
-                    <ChatEnvironmentContext.Provider value={envVars}>
-                        <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
-                            <ComposedWrappers wrappers={wrappers}>
-                                <CodyPanel
-                                    view={view}
-                                    setView={setView}
-                                    errorMessages={errorMessages}
-                                    setErrorMessages={setErrorMessages}
-                                    attributionEnabled={false}
-                                    config={config}
-                                    userHistory={userHistory}
-                                    chatEnabled={true}
-                                    showWelcomeMessage={true}
-                                    showIDESnippetActions={true}
-                                    userInfo={userAccountInfo}
-                                    messageInProgress={messageInProgress}
-                                    transcript={transcript}
-                                    vscodeAPI={vscodeAPI}
-                                    isTranscriptError={isTranscriptError}
-                                />
-                            </ComposedWrappers>
-                        </ChatMentionContext.Provider>
-                    </ChatEnvironmentContext.Provider>
+                    <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
+                        <ComposedWrappers wrappers={wrappers}>
+                            <CodyPanel
+                                view={view}
+                                setView={setView}
+                                errorMessages={errorMessages}
+                                setErrorMessages={setErrorMessages}
+                                attributionEnabled={false}
+                                config={config}
+                                userHistory={userHistory}
+                                chatEnabled={true}
+                                showWelcomeMessage={true}
+                                showIDESnippetActions={true}
+                                userInfo={userAccountInfo}
+                                messageInProgress={messageInProgress}
+                                transcript={transcript}
+                                vscodeAPI={vscodeAPI}
+                                isTranscriptError={isTranscriptError}
+                            />
+                        </ComposedWrappers>
+                    </ChatMentionContext.Provider>
                 )
             ) : (
                 <div className={styles.loading}>Loading Cody Client...</div>
