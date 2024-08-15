@@ -358,6 +358,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await handleCodeFromInsertAtCursor(message.text)
                 break
             case 'copy':
+                await this.postMessage({type: 'copy', text: message.text})
                 await handleCopiedCode(message.text, message.eventType === 'Button')
                 break
             case 'smartApplySubmit':

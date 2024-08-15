@@ -227,6 +227,10 @@ export type ExtensionMessage =
      * The current default model will always be the first one on the list.
      */
     | { type: 'chatModels'; models: Model[] }
+    | {
+        type: 'copy'
+        text: string
+    }
     | { type: 'enhanced-context'; enhancedContextStatus: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'context/remote-repos'; repos: Repo[] }
