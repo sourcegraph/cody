@@ -177,35 +177,35 @@ export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments)
                 .map(wf => wf.uri.toString())
                 .includes(newWorkspaceDocuments.workspaceRootUri.toString())
         ) {
-            setWorkspaceFolders(newWorkspaceDocuments.workspaceRootUri)
+            setLastOpenedWorkspaceFolder(newWorkspaceDocuments.workspaceRootUri)
         }
     }
 }
 
-export function setWorkspaceFolders(
-    workspaceRootUri: vscode.Uri,
-    removed = false
-): vscode.WorkspaceFolder[] {
-    if (workspaceFolders.length === 0 && removed) {
-        return []
-    }
-    // clear workspaceFolders array as workspaceFolders is a readonly property,
-    // so we need to modify the array in place insteasd of replacing it.
-    const workspaceRoot = workspaceRootUri.toString()
-    const updatedWFs = [...workspaceFolders].filter(wf => wf?.uri.toString() !== workspaceRoot)
-    // Remove all elements from workspaceFolders
+function setLastOpenedWorkspaceFolder(uri: vscode.Uri): void {
+    const currentWorkspaceFolders = workspaceFolders.map(wf => wf.uri)
+    setWorkspaceFolders([uri, ...currentWorkspaceFolders])
+}
+
+// Sets the workspace folders for the current workspace.
+// This function updates the `workspaceFolders` array to reflect the provided `workspaceRootFolders`.
+// It ensures that the last opened workspace folder is moved to the front of the list if it exists
+// in the new list of folders for "vscode.workspace.workspaceFolders[0]" to return the current workspace folder.
+export function setWorkspaceFolders(workspaceRootFolders: vscode.Uri[]): vscode.WorkspaceFolder[] {
+    const lastOpened = workspaceFolders[0]
+    const rootFolderSet = new Set(workspaceRootFolders)
     workspaceFolders.length = 0
-    // If this is not a removed event, add the workspaceRootUri to the front of the array.
-    if (!removed) {
-        workspaceFolders.push({
-            name: path.basename(workspaceRoot),
-            uri: workspaceRootUri,
-            index: 0,
-        })
+    if (lastOpened && rootFolderSet.has(lastOpened.uri)) {
+        workspaceFolders.push(lastOpened)
+        rootFolderSet.delete(lastOpened.uri)
     }
-    // Add the rest of the workspaceFolders back to the array with the updated indexes.
-    for (const wf of updatedWFs) {
-        workspaceFolders.push({ ...wf, index: workspaceFolders.length })
+    let index = workspaceFolders.length
+    for (const folder of rootFolderSet) {
+        workspaceFolders.push({
+            name: path.basename(folder.toString()),
+            uri: folder,
+            index: index++,
+        })
     }
     return workspaceFolders
 }

@@ -363,11 +363,9 @@ export type ClientNotifications = {
     // should no longer be used.
     'extensionConfiguration/didChange': [ExtensionConfiguration]
 
-    // The user has switched to a different workspace folder.
-    // @deprecated
-    'workspaceFolder/didChange': [{ uri: string }]
-    // Under requests
-    'workspaceFolder/change': [{ uris: string[] }, { success: boolean }]
+    // Provide an updated list of workspace folders when changed.
+    // Put the most recently opened folder first.
+    'workspaceFolder/didChange': [{ uris: string[] }]
 
     // Lifecycle notifications for the client to notify the server about text
     // contents of documents and to notify which document is currently focused.

@@ -274,7 +274,7 @@ describe('vscode_shim.onDidChangeWorkspaceFolders', () => {
 
     it('adds a new workspace folder when array is empty', () => {
         const uri = vscode.Uri.file('/test/workspace')
-        const result = setWorkspaceFolders(uri)
+        const result = setWorkspaceFolders([uri])
         expect(result).toHaveLength(1)
         expect(result[0]).toEqual({
             name: 'workspace',
@@ -291,7 +291,7 @@ describe('vscode_shim.onDidChangeWorkspaceFolders', () => {
             { name: 'workspace2', uri: uri2, index: 1 }
         )
 
-        const result = setWorkspaceFolders(uri1, true)
+        const result = setWorkspaceFolders([uri2])
         expect(result).toHaveLength(1)
         expect(result[0]).toEqual({
             name: 'workspace2',
@@ -310,7 +310,7 @@ describe('vscode_shim.onDidChangeWorkspaceFolders', () => {
             { name: 'workspace3', uri: uri3, index: 2 }
         )
 
-        const result = setWorkspaceFolders(uri2, true)
+        const result = setWorkspaceFolders([uri1, uri3])
         expect(result).toHaveLength(2)
         expect(result[0]).toEqual({
             name: 'workspace1',
@@ -327,9 +327,9 @@ describe('vscode_shim.onDidChangeWorkspaceFolders', () => {
     it('adds a new workspace folder to existing folders', () => {
         const uri1 = vscode.Uri.file('/test/workspace1')
         const uri2 = vscode.Uri.file('/test/workspace2')
-        workspaceFolders.push({ name: 'workspace1', uri: uri1, index: 0 })
+        workspaceFolders.push({ name: 'workspace2', uri: uri2, index: 0 })
 
-        const result = setWorkspaceFolders(uri2)
+        const result = setWorkspaceFolders([uri1, uri2])
         expect(result).toHaveLength(2)
         expect(result[0]).toEqual({
             name: 'workspace2',
@@ -347,7 +347,7 @@ describe('vscode_shim.onDidChangeWorkspaceFolders', () => {
         const uri = vscode.Uri.file('/test/workspace')
         workspaceFolders.push({ name: 'workspace', uri, index: 0 })
 
-        const result = setWorkspaceFolders(uri, true)
+        const result = setWorkspaceFolders([])
         expect(result).toHaveLength(0)
     })
 })

@@ -479,17 +479,24 @@ export class Agent extends MessageHandler implements ExtensionClient {
             process.exit(0)
         })
 
-        this.registerNotification('workspaceFolder/didChange', async ({ uri, event }) => {
-            if (uri && this.workspace.workspaceRootUri?.toString() !== uri) {
-                const newWorkspaceUri = vscode.Uri.parse(uri)
-                this.workspace.workspaceRootUri = newWorkspaceUri
-                this.pushPendingPromise(
-                    vscode_shim.onDidChangeWorkspaceFolders.cody_fireAsync({
-                        added: vscode_shim.setWorkspaceFolders(newWorkspaceUri, event === 'removed'),
-                        removed: vscode_shim.workspaceFolders,
-                    })
-                )
-            }
+        this.registerNotification('workspaceFolder/didChange', async ({ uris }) => {
+            const oldWorkspaceFolders = vscode_shim.workspaceFolders
+            const newWorkspaceFolders = vscode_shim.setWorkspaceFolders(
+                uris.map(uri => vscode.Uri.parse(uri))
+            )
+
+            const added = newWorkspaceFolders.filter(
+                newWf =>
+                    !oldWorkspaceFolders.some(oldWf => oldWf.uri.toString() === newWf.uri.toString())
+            )
+            const removed = oldWorkspaceFolders.filter(
+                oldWf =>
+                    !newWorkspaceFolders.some(newWf => newWf.uri.toString() === oldWf.uri.toString())
+            )
+
+            this.pushPendingPromise(
+                vscode_shim.onDidChangeWorkspaceFolders.cody_fireAsync({ added, removed })
+            )
         })
 
         this.registerNotification('textDocument/didFocus', (document: ProtocolTextDocument) => {
