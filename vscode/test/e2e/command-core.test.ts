@@ -46,7 +46,7 @@ test.extend<ExpectedV2Events>({
 
     // Code lens should be visible
     await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Reject' })).toBeVisible()
 })
 
 test.extend<ExpectedV2Events>({
@@ -88,7 +88,7 @@ test.extend<ExpectedV2Events>({
         // Wait a bit longer because formatting can sometimes be slow.
         timeout: 10000,
     })
-    await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Reject' })).toBeVisible()
 
     // Code lens should be at the start of the function (range expanded from click position)
     await expect(page.getByText('* Mocked doc string')).toBeVisible()
