@@ -57,6 +57,20 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
                     this.controller.accept(task)
                 }
             }),
+            vscode.commands.registerCommand('cody.fixup.codelens.acceptChange', (id, range) => {
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'acceptChange')
+                const task = this.controller.taskForId(id)
+                if (task) {
+                    this.controller.acceptChange(task, range)
+                }
+            }),
+            vscode.commands.registerCommand('cody.fixup.codelens.rejectChange', (id, range) => {
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'rejectChange')
+                const task = this.controller.taskForId(id)
+                if (task) {
+                    this.controller.rejectChange(task, range)
+                }
+            }),
             vscode.commands.registerCommand('cody.fixup.codelens.error', id => {
                 telemetryRecorder.recordEvent('cody.fixup.codeLens', 'showError')
                 return this.showError(id)

@@ -14,11 +14,23 @@ import type { CodyTaskState } from './state'
  */
 export interface FixupActor {
     /**
-     * Mark a task as accepted and stop tracking the task. Only applicable to
+     * Mark all changes in a task as accepted and stop tracking the task. Only applicable to
      * tasks in the "applied" state. Sets the task state to "finished" and
      * discards the task.
      */
     accept(task: FixupTask): void
+
+    /**
+     * Mark an individual part of a diff within a task as accepted.
+     * Only applicable to tasks in the "applied" state.
+     */
+    acceptChange(task: FixupTask, range: vscode.Range): Promise<void>
+
+    /**
+     * Mark an individual part of a diff within a task as rejected.
+     * Only applicable to tasks in the "applied" state.
+     */
+    rejectChange(task: FixupTask, range: vscode.Range): Promise<void>
 
     /**
      * Undo a task's edits and stop tracking the task. Only applicable to
