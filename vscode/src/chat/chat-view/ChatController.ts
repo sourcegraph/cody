@@ -560,7 +560,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async isSmartApplyEnabled(): Promise<boolean> {
         const config = await getFullConfig()
         if (config.isRunningInsideAgent) {
-            // Only supported in VS Code right now, until we test and iterate on the UI for other clients.
+            // Only supported in VS Code right now, until we test on other clients.
+            // TODO: Enable in other clients based on clientCapabilities
             return false
         }
 
