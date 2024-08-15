@@ -25,6 +25,7 @@ export type FixupTelemetryMetadata = {
 
 export class FixupTask {
     public state_: CodyTaskState = CodyTaskState.Idle
+    public diff_: Edit[] | undefined
     private stateChanges = new vscode.EventEmitter<CodyTaskState>()
     public onDidStateChange = this.stateChanges.event
     /**
@@ -43,10 +44,11 @@ export class FixupTask {
     /** The error attached to the fixup, if any */
     public error: Error | undefined
     /**
-     * If text has been received from the LLM and a diff has been computed,
-     * it is cached here. Diffs are recomputed lazily and may be stale.
+     * The original diff when the task was applied.
+     * We keep track of this as users are able to modify the diff by accepting/rejecting different parts of it.
+     * It is useful to know the state of the diff before the user started modifying it.
      */
-    public diff: Edit[] | undefined
+    public originalDiff: Edit[] | undefined
     /** The number of times we've submitted this to the LLM. */
     public spinCount = 0
 
@@ -92,12 +94,6 @@ export class FixupTask {
         this.stateChanges.fire(state)
     }
 
-    public removeDiffChangeByRange(range: vscode.Range): void {
-        if (this.diff) {
-            this.diff = this.diff.filter(change => !change.range.isEqual(range))
-        }
-    }
-
     /**
      * Gets the state of the fixup task.
      *
@@ -105,6 +101,32 @@ export class FixupTask {
      */
     public get state(): CodyTaskState {
         return this.state_
+    }
+
+    /**
+     * Sets the task diff. If this is the first time, it will be stored in the originalDiff property.
+     */
+    public set diff(diff: Edit[]) {
+        if (this.diff_ === undefined) {
+            this.originalDiff = diff
+        }
+        this.diff_ = diff
+    }
+
+    /**
+     * Gets the diff of the fixup task.
+     *
+     * If text has been received from the LLM and a diff has been computed,
+     * it is cached here. Diffs are recomputed lazily and may be stale.
+     */
+    public get diff(): Edit[] | undefined {
+        return this.diff_
+    }
+
+    public removeDiffChangeByRange(range: vscode.Range): void {
+        if (this.diff) {
+            this.diff = this.diff.filter(change => !change.range.isEqual(range))
+        }
     }
 
     private getDefaultSelectionRange(proposedRange: vscode.Range): vscode.Range {
