@@ -117,6 +117,8 @@ function copyExtensionRelativeResources(extensionPath: string, extensionClient: 
         }
         try {
             mkdirSync(path.dirname(target), { recursive: true })
+            // This is preferred over node:fs.copyFileSync because fs-extra's use of graceful-fs
+            // handles certain timing failures on windows machines.
             copySync(source, target)
         } catch (err) {
             logDebug('copyExtensionRelativeResources', `Failed to copy ${source} to dist ${target}`, err)
