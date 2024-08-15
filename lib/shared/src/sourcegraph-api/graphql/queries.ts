@@ -161,6 +161,7 @@ query FileMatchSearchQuery($query: String!) {
         __typename
         ... on FileMatch {
           repository {
+            id
             name
           }
           file {
@@ -224,9 +225,31 @@ query RankContext($interactionId: String!, $query: String!, $contextItems: [Inpu
     }
 }`
 
-export const CONTEXT_SEARCH_QUERY = `
+export const LEGACY_CONTEXT_SEARCH_QUERY = `
 query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
 	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
+        ...on FileChunkContext {
+            blob {
+                path
+                repository {
+                  id
+                  name
+                }
+                commit {
+                  oid
+                }
+                url
+              }
+              startLine
+              endLine
+              chunkContent
+        }
+    }
+}`
+
+export const CONTEXT_SEARCH_QUERY = `
+query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!, $filePatterns: [String!]!) {
+	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount, filePatterns: $filePatterns) {
         ...on FileChunkContext {
             blob {
                 path

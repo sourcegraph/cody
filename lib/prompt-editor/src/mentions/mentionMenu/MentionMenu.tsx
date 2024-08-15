@@ -7,6 +7,7 @@ import {
     type MentionMenuData,
     type MentionQuery,
     NO_SYMBOL_MATCHES_HELP_LABEL,
+    REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     parseMentionQuery,
@@ -137,21 +138,32 @@ export const MentionMenu: FunctionComponent<
             // return files instead of repos if the repo name is in the query.
             if (item.provider === 'openctx' && 'providerUri' in item) {
                 if (
-                    item.providerUri === REMOTE_FILE_PROVIDER_URI &&
-                    item.mention?.data?.repoName &&
-                    !item.mention?.data?.filePath
+                    (item.providerUri === REMOTE_FILE_PROVIDER_URI &&
+                        item.mention?.data?.repoName &&
+                        !item.mention?.data?.filePath) ||
+                    (item.providerUri === REMOTE_DIRECTORY_PROVIDER_URI &&
+                        item.mention?.data?.repoID &&
+                        !item.mention?.data?.directoryPath)
                 ) {
                     // Do not set the selected item as mention if it is repo item from the remote file search provider.
                     // Rather keep the provider in place and update the query with repo name so that the provider can
                     // start showing the files instead.
 
                     updateMentionMenuParams({
-                        parentItem: {
-                            id: REMOTE_FILE_PROVIDER_URI,
-                            title: 'Remote Files',
-                            queryLabel: 'Enter file path to search',
-                            emptyLabel: `No matching files found in ${item?.mention?.data.repoName} repository`,
-                        },
+                        parentItem:
+                            item.providerUri === REMOTE_DIRECTORY_PROVIDER_URI
+                                ? {
+                                      id: REMOTE_DIRECTORY_PROVIDER_URI,
+                                      title: 'Remote Directories',
+                                      queryLabel: 'Enter directory path to search',
+                                      emptyLabel: `No matching directories found in ${item?.mention?.data.repoName} repository`,
+                                  }
+                                : {
+                                      id: REMOTE_FILE_PROVIDER_URI,
+                                      title: 'Remote Files',
+                                      queryLabel: 'Enter file path to search',
+                                      emptyLabel: `No matching files found in ${item?.mention?.data.repoName} repository`,
+                                  },
                     })
 
                     setEditorQuery(currentText => {

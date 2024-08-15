@@ -1,5 +1,6 @@
 import {
     type AuthStatus,
+    CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
     CodyIDE,
     type Configuration,
     FeatureFlag,
@@ -20,8 +21,10 @@ import { Observable } from 'observable-fns'
 import type { ConfigWatcher } from '../configwatcher'
 import { logDebug, outputChannel } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
+import CurrentRepositoryDirectoryProvider from './openctx/currentRepositoryDirectorySearch'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
+import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openctx/remoteDirectorySearch'
 import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFileSearch'
 import RemoteRepositorySearch, { createRemoteRepositoryProvider } from './openctx/remoteRepositorySearch'
 import { createWebProvider } from './openctx/web'
@@ -88,13 +91,25 @@ function getOpenCtxProviders(
                 providerUri: RemoteRepositorySearch.providerUri,
             })
 
-            if (config.experimentalNoodle) {
+            if (await graphqlClient.isValidSiteVersion({ minimumVersion: '5.7.0' })) {
                 providers.push({
                     settings: true,
-                    provider: RemoteFileProvider,
-                    providerUri: RemoteFileProvider.providerUri,
+                    provider: RemoteDirectoryProvider,
+                    providerUri: RemoteDirectoryProvider.providerUri,
+                })
+
+                providers.push({
+                    settings: true,
+                    provider: CurrentRepositoryDirectoryProvider,
+                    providerUri: CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
                 })
             }
+
+            providers.push({
+                settings: true,
+                provider: RemoteFileProvider,
+                providerUri: RemoteFileProvider.providerUri,
+            })
         }
 
         if (config.experimentalNoodle) {
@@ -128,6 +143,11 @@ function getCodyWebOpenCtxProviders(): ImportedProviderConfiguration[] {
             settings: true,
             providerUri: RemoteFileProvider.providerUri,
             provider: createRemoteFileProvider('Files'),
+        },
+        {
+            settings: true,
+            providerUri: RemoteDirectoryProvider.providerUri,
+            provider: createRemoteDirectoryProvider('Directories'),
         },
         {
             settings: true,

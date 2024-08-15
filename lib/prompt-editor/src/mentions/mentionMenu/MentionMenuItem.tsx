@@ -1,10 +1,12 @@
 import {
+    CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
     type ContextItem,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     IGNORED_FILE_WARNING_LABEL,
     LARGE_FILE_WARNING_LABEL,
     type MentionQuery,
+    REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
@@ -142,5 +144,7 @@ export const iconForProvider: Record<
     'internal-linear-issues': LinearLogo, // Can't import LinearIssuesProvider due to transitive dep on vscode.
     [REMOTE_REPOSITORY_PROVIDER_URI]: FolderGitIcon,
     [REMOTE_FILE_PROVIDER_URI]: FolderGitIcon,
+    [REMOTE_DIRECTORY_PROVIDER_URI]: FolderGitIcon,
+    [CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI]: FolderGitIcon,
     [WEB_PROVIDER_URI]: LinkIcon,
 }

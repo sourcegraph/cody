@@ -48,7 +48,7 @@ export function createRemoteFileProvider(customTitle?: string): OpenCtxProvider 
     }
 }
 
-async function getRepoMentions(query?: string): Promise<Mention[]> {
+export async function getRepoMentions(query?: string): Promise<Mention[]> {
     const dataOrError = await graphqlClient.searchRepos(10, undefined, query)
 
     if (isError(dataOrError) || dataOrError === null) {
@@ -131,7 +131,7 @@ async function getFileItem(repoName: string, filePath: string, rev = 'HEAD'): Pr
     ] satisfies Item[]
 }
 
-function escapeRegExp(str: string): string {
+export function escapeRegExp(str: string): string {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 

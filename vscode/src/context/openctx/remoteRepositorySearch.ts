@@ -40,10 +40,10 @@ export function createRemoteRepositoryProvider(customTitle?: string): OpenCtxPro
                 return []
             }
 
-            const dataOrError = await graphqlClient.contextSearch(
-                [mention?.data?.repoId as string],
-                message
-            )
+            const dataOrError = await graphqlClient.contextSearch({
+                repoIDs: [mention?.data?.repoId as string],
+                query: message,
+            })
             if (isError(dataOrError) || dataOrError === null) {
                 return []
             }
