@@ -1393,10 +1393,19 @@ export class Agent extends MessageHandler implements ExtensionClient {
     }
 
     private newGlobalState(clientInfo: ClientInfo): AgentGlobalState {
-        if (clientInfo.capabilities?.globalState === 'server-managed') {
-            return new AgentGlobalState(clientInfo.name, clientInfo.globalStateDir ?? codyPaths().data)
+        switch (clientInfo.capabilities?.globalState) {
+            case 'server-managed':
+                return new AgentGlobalState(
+                    clientInfo.name,
+                    clientInfo.globalStateDir ?? codyPaths().data
+                )
+            case 'client-managed':
+                throw new Error('client-managed global state is not supported')
+            case 'stateless':
+            case undefined:
+            case null:
+                return new AgentGlobalState(clientInfo.name)
         }
-        return new AgentGlobalState(clientInfo.name)
     }
 
     // ExtensionClient callbacks.
