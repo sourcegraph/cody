@@ -41,7 +41,7 @@ export function startClientStateBroadcaster({
     async function rawSendClientState(signal: AbortSignal): Promise<void> {
         const items: ContextItem[] = []
 
-        const corpusItems = getCorpusContextItemsForEditorState({ remoteSearch })
+        const corpusItems = await getCorpusContextItemsForEditorState({ remoteSearch }, signal)
         items.push(...corpusItems)
 
         const { input, context } = chatModel.contextWindow
@@ -110,9 +110,10 @@ export function startClientStateBroadcaster({
     return vscode.Disposable.from(...disposables)
 }
 
-export async function getCorpusContextItemsForEditorState({
-    remoteSearch,
-}: { remoteSearch: RemoteSearch | null }): Promise<ContextItem[]> {
+export async function getCorpusContextItemsForEditorState(
+    { remoteSearch }: { remoteSearch: RemoteSearch | null },
+    signal: AbortSignal
+): Promise<ContextItem[]> {
     const items: ContextItem[] = []
 
     // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
