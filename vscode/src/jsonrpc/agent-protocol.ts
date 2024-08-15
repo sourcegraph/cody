@@ -942,7 +942,11 @@ export interface TestingTelemetryEvent {
         client: string
         clientVersion: string
     }
+    parameters: {
+        [key: string]: number
+    }
     timestamp: string
+    testOnlyAnonymousUserID: string
 }
 export interface NetworkRequest {
     url: string

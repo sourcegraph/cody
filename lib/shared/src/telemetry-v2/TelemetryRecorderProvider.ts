@@ -80,7 +80,7 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
                 clientVersion: extensionDetails.version,
             },
             process.env.CODY_TELEMETRY_EXPORTER === 'testing'
-                ? TESTING_TELEMETRY_EXPORTER
+                ? TESTING_TELEMETRY_EXPORTER.withAnonymousUserID(anonymousUserID)
                 : new GraphQLTelemetryExporter(client, anonymousUserID, legacyBackcompatLogEventMode),
             [
                 new ConfigurationMetadataProcessor(config, authStatusProvider),
@@ -95,17 +95,33 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
     }
 }
 
-// creating a delegate to the TESTING_TELEMETRY_EXPORTER to allow for easy access to exported events
+// This is a special type that is only used in testing to allow for access to anonymousUserID
+type TestTelemetryEventInput = TelemetryEventInput & { testOnlyAnonymousUserID: string }
+
+// creating a delegate to the TESTING_TELEMETRY_EXPORTER to allow for easy access to exported events.
+// This instance must be shared for a consistent view of what has been exported.
 export class DelegateTelemetryExporter implements TelemetryExporter {
-    private exportedEvents: TelemetryEventInput[] = []
+    private exportedEvents: TestTelemetryEventInput[] = []
+    // default to unset to make it clear when it's not set
+    private anonymousUserID = 'unset'
 
     constructor(public delegate: TestTelemetryExporter) {}
     async exportEvents(events: TelemetryEventInput[]): Promise<void> {
-        this.exportedEvents.push(...events)
+        this.exportedEvents.push(
+            ...events.map(event => ({
+                ...event,
+                testOnlyAnonymousUserID: this.anonymousUserID,
+            }))
+        )
         await this.delegate.exportEvents(events)
     }
 
-    getExported(): TelemetryEventInput[] {
+    withAnonymousUserID(anonymousUserID: string): DelegateTelemetryExporter {
+        this.anonymousUserID = anonymousUserID
+        return this
+    }
+
+    getExported(): TestTelemetryEventInput[] {
         return [...this.exportedEvents]
     }
 
@@ -173,7 +189,6 @@ class ConfigurationMetadataProcessor implements TelemetryProcessor {
     ) {}
 
     public processEvent(event: TelemetryEventInput): void {
-        // console.log(event)
         if (!event.parameters.metadata) {
             event.parameters.metadata = []
         }

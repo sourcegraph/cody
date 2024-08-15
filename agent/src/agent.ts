@@ -735,7 +735,15 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         client: event.source.client,
                         clientVersion: event.source.clientVersion ?? '',
                     },
+                    parameters: Object.fromEntries(
+                        Object.entries(event.parameters || {}).map(([key, value]) => [
+                            key,
+                            Number(value),
+                        ])
+                    ),
                     timestamp: event.timestamp,
+                    // TODO add billing metadata
+                    testOnlyAnonymousUserID: event.testOnlyAnonymousUserID,
                 })),
             }
         })

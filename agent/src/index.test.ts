@@ -41,20 +41,6 @@ describe('Agent', () => {
         credentials: TESTING_CREDENTIALS.dotcomProUserRateLimited,
     })
 
-    const demoEnterpriseClient = TestClient.create({
-        workspaceRootUri: workspace.rootUri,
-        name: 'enterpriseClient',
-        credentials: TESTING_CREDENTIALS.enterprise,
-        logEventMode: 'connected-instance-only',
-    })
-
-    const s2EnterpriseClient = TestClient.create({
-        workspaceRootUri: workspace.rootUri,
-        name: 'enterpriseMainBranchClient',
-        credentials: TESTING_CREDENTIALS.s2,
-        logEventMode: 'connected-instance-only',
-    })
-
     const mockEnhancedContext: ContextItem[] = []
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
@@ -117,18 +103,13 @@ describe('Agent', () => {
         let currentClient: TestClient
         const testName = expect.getState().currentTestName ?? 'NoTestName'
         // Choose client based on test name
-        if (testName.includes('S2 Enterprise')) {
-            currentClient = s2EnterpriseClient
-        } else if (testName.includes('Enterprise')) {
-            currentClient = demoEnterpriseClient
-        } else if (testName.includes('RateLimitedAgent')) {
+        if (testName.includes('RateLimitedAgent')) {
             currentClient = rateLimitedClient
         } else {
             currentClient = client // Default client
         }
 
         const response = await currentClient.request('testing/exportedTelemetryEvents', null)
-        const loggedTelemetryEventsV2 = response.events.map(event => `${event.feature}:${event.action}`)
 
         // send data to testing pub/sub topic
         // for each request in response, send to logtest
@@ -142,9 +123,9 @@ describe('Agent', () => {
                 testRunId
             )
         }
-
-        // Equality check to ensure all expected events were fired
-        expect(loggedTelemetryEventsV2).toEqual(expect.arrayContaining(client.expectedEvents))
+        // Equality check to ensure all expected events(feature:action) were fired
+        const loggedTelemetryEventsV2 = response.events.map(event => `${event.feature}:${event.action}`)
+        expect(loggedTelemetryEventsV2).toEqual(expect.arrayContaining(currentClient.expectedEvents))
     })
 
     const sumUri = workspace.file('src', 'sum.ts')
