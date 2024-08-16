@@ -1,15 +1,21 @@
-.vscode/**
-.vscode-test/**
-dist/tsc/
-.gitignore
-**/tsconfig.json
-src/**/*.test.ts
-playwright.config.ts
-vite.config.ts
-pnpm-lock.yaml
-node_modules/
-tsconfig.json
-scripts/
-webviews/
-test/
-index.html
+# To prevent accidental inclusions of .env files etc
+# WE EXCLUDE EVERYTHING BY DEFAULT ... which for some reason has custom
+# semantics https://github.com/microsoft/vscode-vsce/issues/12#issuecomment-306078884
+*
+*/**
+
+# Except a well-defined BOM:
+# annoyingly .vscodeignore doesn't support negations so we can't inlude "everything except .visx"
+
+!dist/webviews/**/*
+!dist/*.js
+!dist/*.js.map
+!dist/*.exe
+
+!resources/*
+
+!package.json
+!LICENSE
+!README.md
+!CHANDELOG.md
+!package.schema.json
