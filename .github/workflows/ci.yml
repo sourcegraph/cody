@@ -148,7 +148,14 @@ jobs:
           # comes to infer the branch name on GitHub action.
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
       - run: GITHUB_REF=$BRANCH_NAME pnpm -C vscode run test:e2e
-        if: matrix.runner != 'ubuntu'
+        if: matrix.runner == 'macos'
+        env:
+          BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
+          # This is required because the test collector from Buildkite is imprecise when it
+          # comes to infer the branch name on GitHub action.
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+      - run: $env:GITHUB_REF=$env:BRANCH_NAME; pnpm -C vscode run test:e2e
+        if: matrix.runner == 'windows'
         env:
           BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
           # This is required because the test collector from Buildkite is imprecise when it
