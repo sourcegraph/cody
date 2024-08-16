@@ -55,13 +55,13 @@ import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategie
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import { AgentFixupControls } from './AgentFixupControls'
-import { AgentGlobalState } from './AgentGlobalState'
 import { AgentProviders } from './AgentProviders'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
 import { codyPaths } from './codyPaths'
+import { AgentGlobalState } from './global-state/AgentGlobalState'
 import {
     MessageHandler,
     type RequestCallback,
@@ -87,7 +87,6 @@ import * as vscode_shim from './vscode-shim'
 import { vscodeLocation, vscodeRange } from './vscode-type-converters'
 
 const inMemorySecretStorageMap = new Map<string, string>()
-const globalState = new AgentGlobalState()
 
 /** The VS Code extension's `activate` function. */
 type ExtensionActivate = (
@@ -133,7 +132,8 @@ function copyExtensionRelativeResources(extensionPath: string, extensionClient: 
 export async function initializeVscodeExtension(
     workspaceRoot: vscode.Uri,
     extensionActivate: ExtensionActivate,
-    extensionClient: ExtensionClient
+    extensionClient: ExtensionClient,
+    globalState: AgentGlobalState
 ): Promise<void> {
     const paths = codyPaths()
     const extensionPath = paths.config
@@ -348,6 +348,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
     private clientInfo: ClientInfo | null = null
 
+    private globalState: AgentGlobalState | null = null
+
     constructor(
         private readonly params: {
             polly?: Polly | undefined
@@ -364,6 +366,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 '*',
                 new IndentationBasedFoldingRangeProvider()
             )
+            this.globalState = this.newGlobalState(clientInfo)
 
             if (clientInfo.capabilities && clientInfo.capabilities?.webview === undefined) {
                 // Make it possible to do `capabilities.webview === 'agentic'`
@@ -373,7 +376,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             if (clientInfo.extensionConfiguration?.baseGlobalState) {
                 for (const key in clientInfo.extensionConfiguration.baseGlobalState) {
                     const value = clientInfo.extensionConfiguration.baseGlobalState[key]
-                    globalState.update(key, value)
+                    this.globalState?.update(key, value)
                 }
             }
             this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
@@ -425,7 +428,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 await initializeVscodeExtension(
                     this.workspace.workspaceRootUri,
                     params.extensionActivate,
-                    this
+                    this,
+                    this.globalState
                 )
 
                 const webviewKind = clientInfo.capabilities?.webview || 'agentic'
@@ -801,7 +805,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('testing/reset', async () => {
             await this.workspace.reset()
-            globalState.reset()
+            this.globalState?.reset()
             return null
         })
 
@@ -1390,6 +1394,20 @@ export class Agent extends MessageHandler implements ExtensionClient {
         if (vscode_shim.isTesting || vscode_shim.isIntegrationTesting) {
             this.pendingPromises.add(pendingPromise)
             pendingPromise.finally(() => this.pendingPromises.delete(pendingPromise))
+        }
+    }
+
+    private newGlobalState(clientInfo: ClientInfo): AgentGlobalState {
+        switch (clientInfo.capabilities?.globalState) {
+            case 'server-managed':
+                return new AgentGlobalState(
+                    clientInfo.name,
+                    clientInfo.globalStateDir ?? codyPaths().data
+                )
+            case 'client-managed':
+                throw new Error('client-managed global state is not supported')
+            default:
+                return new AgentGlobalState(clientInfo.name)
         }
     }
 

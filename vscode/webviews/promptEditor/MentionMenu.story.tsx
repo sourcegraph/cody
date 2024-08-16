@@ -56,13 +56,11 @@ function toParams(query: string, parentItem?: ContextMentionProviderMetadata): M
 
 function toData(
     items: ContextItem[] | undefined,
-    providers: ContextMentionProviderMetadata[] = [],
-    initialContextItems: MentionMenuData['initialContextItems'] = []
+    providers: ContextMentionProviderMetadata[] = []
 ): MentionMenuData {
     return {
         items,
         providers,
-        initialContextItems,
     }
 }
 
@@ -71,6 +69,26 @@ export const Default: StoryObj<typeof MentionMenu> = {
         params: toParams(''),
         data: toData(
             [
+                {
+                    type: 'tree',
+                    isWorkspaceRoot: true,
+                    name: 'my-repo',
+                    description: 'my-repo',
+                    title: 'Current Repository',
+                    source: ContextItemSource.Initial,
+                    content: null,
+                    uri: URI.file('a/b'),
+                    icon: 'folder',
+                },
+                {
+                    uri: URI.file('a/b/initial.go'),
+                    type: 'file',
+                    description: 'initial.go:8-13',
+                    title: 'Current Selection',
+                    source: ContextItemSource.Initial,
+                    range: { start: { line: 7, character: 5 }, end: { line: 12, character: 9 } },
+                    icon: 'list-selection',
+                },
                 {
                     uri: URI.file('a/b/x.go'),
                     type: 'file',
@@ -100,29 +118,7 @@ export const Default: StoryObj<typeof MentionMenu> = {
                     uri: URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`),
                 },
             ],
-            [FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER],
-            [
-                {
-                    type: 'tree',
-                    isWorkspaceRoot: true,
-                    name: 'my-repo',
-                    description: 'my-repo',
-                    title: 'Current Repository',
-                    source: ContextItemSource.Initial,
-                    content: null,
-                    uri: URI.file('a/b'),
-                    icon: 'folder',
-                },
-                {
-                    uri: URI.file('a/b/initial.go'),
-                    type: 'file',
-                    description: 'initial.go:8-13',
-                    title: 'Current Selection',
-                    source: ContextItemSource.Initial,
-                    range: { start: { line: 7, character: 5 }, end: { line: 12, character: 9 } },
-                    icon: 'list-selection',
-                },
-            ]
+            [FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER]
         ),
     },
 }

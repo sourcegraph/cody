@@ -566,6 +566,7 @@ export interface ClientInfo {
     version: string // extension version
     ideVersion?: string | undefined | null
     workspaceRootUri: string
+    globalStateDir?: string | undefined | null
 
     /** @deprecated Use `workspaceRootUri` instead. */
     workspaceRootPath?: string | undefined | null
@@ -605,6 +606,15 @@ export interface ClientCapabilities {
     // convenient for clients that forward the string directly to an underlying
     // webview container.
     webviewMessages?: 'object-encoded' | 'string-encoded' | undefined | null
+    // How to deal with vscode.ExtensionContext.globalState.
+    // - Stateless: the state does not persist between agent processes. This means the client is
+    // responsible for features like managing chat history.
+    // - Server managed: the server reads and writes the state without informing the client.
+    // The client can optionally customize the file path of the JSON config via `ClientInfo.globalStatePath: string`
+    // - Client managed: not implemented yet. When implemented, clients will be able to implement a
+    // JSON-RPC request to handle the saving of the client state. This is needed to safely share state
+    // between concurrent agent processes (assuming there is one IDE client process managing multiple agent processes).
+    globalState?: 'stateless' | 'server-managed' | 'client-managed' | undefined | null
     // Whether the client supports the VSCode WebView API. If 'agentic', uses
     // AgentWebViewPanel which just delegates bidirectional postMessage over
     // the Agent protocol. If 'native', implements a larger subset of the VSCode
