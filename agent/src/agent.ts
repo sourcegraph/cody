@@ -149,8 +149,8 @@ export async function initializeVscodeExtension(
         // Placeholder string values for extension path/uri. These are only used
         // to resolve paths to icon in the UI. They need to have compatible
         // types but don't have to point to a meaningful path/URI.
-        extensionPath,
-        extensionUri: vscode.Uri.file(paths.config),
+        extensionPath: workspaceRoot.fsPath,
+        extensionUri: workspaceRoot,
         globalState,
         logUri: vscode.Uri.file(paths.log),
         logPath: paths.log,
@@ -442,7 +442,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     }
                     registerNativeWebviewHandlers(
                         this,
-                        vscode.Uri.file(codyPaths().config), // the extension root URI, for locating Webview resources
+                        this.workspace.workspaceRootUri,
+                        // vscode.Uri.file(codyPaths().config), // the extension root URI, for locating Webview resources
                         nativeWebviewConfig
                     )
                 } else {
