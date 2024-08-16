@@ -43,7 +43,7 @@ export interface SerializedCompletionParameters extends Omit<CompletionParameter
 }
 
 export interface CompletionCallbacks {
-    onChange: (text: string) => void
+    onChange: (text: string, stopReason: string) => void
     onComplete: () => void
     onError: (error: Error, statusCode?: number) => void
 }
@@ -59,6 +59,6 @@ export interface CompletionCallbacks {
  *   a "complete" event, and no other callbacks will be called afterwards.
  */
 export type CompletionGeneratorValue =
-    | { type: 'change'; text: string }
+    | { type: 'change'; text: string; stopReason: string }
     | { type: 'complete' }
     | { type: 'error'; error: Error; statusCode?: number }

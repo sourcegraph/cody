@@ -63,7 +63,7 @@ export abstract class SourcegraphCompletionsClient {
             switch (event.type) {
                 case 'completion': {
                     span?.addEvent('yield', { stopReason: event.stopReason })
-                    cb.onChange(event.completion)
+                    cb.onChange(event.completion, event.stopReason)
                     break
                 }
                 case 'error': {
@@ -123,8 +123,8 @@ export abstract class SourcegraphCompletionsClient {
             )
         }
         const callbacks: CompletionCallbacks = {
-            onChange(text) {
-                send({ type: 'change', text })
+            onChange(text, stopReason) {
+                send({ type: 'change', text, stopReason })
             },
             onComplete() {
                 send({ type: 'complete' })

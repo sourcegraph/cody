@@ -137,6 +137,7 @@ export class EditProvider {
                         if (textConsumed === 0 && responsePrefix) {
                             void multiplexer.publish(responsePrefix)
                         }
+                        console.log('STOP REASON:', message.stopReason)
                         const text = message.text.slice(textConsumed)
                         textConsumed += text.length
                         void multiplexer.publish(text)
