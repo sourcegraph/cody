@@ -8,4 +8,6 @@ data class EditTask(
   val selectionRange: Range,
   val instruction: String? = null,
   val edits: List<TextEdit> 
+  val model: String? = null,
+  val originalText: String? = null,
 )

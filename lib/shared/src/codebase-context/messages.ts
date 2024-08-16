@@ -58,6 +58,11 @@ interface ContextItemCommon {
     isTooLarge?: boolean
 
     /**
+     * If isTooLarage is true, the reason why the file was deemed too long to be included in the context.
+     */
+    isTooLargeReason?: string
+
+    /**
      * The ID of the {@link ContextMentionProvider} that supplied this context item (or `undefined`
      * if from a built-in context source such as files and symbols).
      */
@@ -67,6 +72,12 @@ interface ContextItemCommon {
      * Lucid icon name for the context item
      */
     icon?: string
+
+    /**
+     * Optional metadata about where this context item came from or how it was scored, which
+     * can help a user or dev working on Cody understand why this item is appearing in context.
+     */
+    metadata?: string[]
 }
 
 /**
@@ -207,3 +218,10 @@ export interface ContextMessage extends Required<Message> {
      */
     file: ContextItem
 }
+
+export const GENERAL_HELP_LABEL = 'Search for a file to include, or type # for symbols...'
+export const NO_SYMBOL_MATCHES_HELP_LABEL = ' (language extensions may be loading)'
+export const FILE_RANGE_TOOLTIP_LABEL = 'Type a line range to include, e.g. 5-10...'
+export const LARGE_FILE_WARNING_LABEL =
+    'File too large. Add line range with : or use @# to choose a symbol'
+export const IGNORED_FILE_WARNING_LABEL = 'File ignored by an admin setting.'

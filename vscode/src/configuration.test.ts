@@ -49,6 +49,8 @@ describe('getConfiguration', () => {
                         return /.*/
                     case 'cody.telemetry.level':
                         return 'off'
+                    case 'cody.telemetry.clientName':
+                        return undefined
                     case 'cody.chat.preInstruction':
                         return 'My name is Jeff.'
                     case 'cody.edit.preInstruction':
@@ -66,8 +68,6 @@ describe('getConfiguration', () => {
                     case 'cody.autocomplete.formatOnAccept':
                         return true
                     case 'cody.autocomplete.disableInsideComments':
-                        return false
-                    case 'cody.autocomplete.experimental.hotStreak':
                         return false
                     case 'cody.autocomplete.experimental.fireworksOptions':
                         return undefined
@@ -90,7 +90,7 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'cody.internal.unstable':
                         return false
-                    case 'cody.experimental.chatContextRanker':
+                    case 'cody.internal.debug.context':
                         return false
                     case 'cody.experimental.supercompletions':
                         return false
@@ -100,10 +100,12 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'cody.autocomplete.advanced.timeout.firstCompletion':
                         return 1500
-                    case 'cody.autocomplete.experimental.smartThrottle':
+                    case 'cody.autocomplete.experimental.preloadDebounceInterval':
+                        return 0
+                    case 'cody.autocomplete.experimental.hotStreakAndSmartThrottle':
                         return false
-                    case 'cody.autocomplete.experimental.smartThrottleExtended':
-                        return false
+                    case 'cody.experimental.guardrailsTimeoutSeconds':
+                        return undefined
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -134,6 +136,7 @@ describe('getConfiguration', () => {
             isRunningInsideAgent: false,
             agentIDE: undefined,
             internalUnstable: false,
+            internalDebugContext: false,
             debugVerbose: true,
             debugFilter: /.*/,
             telemetryLevel: 'off',
@@ -143,7 +146,6 @@ describe('getConfiguration', () => {
             autocompleteFormatOnAccept: true,
             autocompleteDisableInsideComments: false,
             autocompleteExperimentalFireworksOptions: undefined,
-            autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: 'bfg',
             autocompleteExperimentalOllamaOptions: {
                 model: 'codellama:7b-code',
@@ -154,10 +156,10 @@ describe('getConfiguration', () => {
                 singleline: undefined,
             },
             autocompleteFirstCompletionTimeout: 1500,
-            autocompleteExperimentalSmartThrottle: false,
-            autocompleteExperimentalSmartThrottleExtended: false,
+            autocompleteExperimentalPreloadDebounceInterval: 0,
+            autocompleteExperimentalHotStreakAndSmartThrottle: false,
             testingModelConfig: undefined,
-            experimentalChatContextRanker: false,
+            experimentalGuardrailsTimeoutSeconds: undefined,
         } satisfies Configuration)
     })
 })

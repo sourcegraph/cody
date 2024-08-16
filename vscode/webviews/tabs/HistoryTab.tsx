@@ -1,9 +1,9 @@
 import type { SerializedChatTranscript } from '@sourcegraph/cody-shared'
-import { MessageSquareTextIcon } from 'lucide-react'
-import { useMemo } from 'react'
+import { MessageSquareTextIcon, TrashIcon } from 'lucide-react'
+import { useCallback, useMemo } from 'react'
 import { getRelativeChatPeriod } from '../../src/common/time-date'
+import { CollapsiblePanel } from '../components/CollapsiblePanel'
 import { Button } from '../components/shadcn/ui/button'
-import { Collapsible } from '../components/shadcn/ui/collapsible'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 interface HistoryTabProps {
@@ -24,35 +24,68 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
         [userHistory]
     )
 
+    const onDeleteButtonClick = useCallback(
+        (id: string) => {
+            if (userHistory.find(chat => chat.id === id)) {
+                getVSCodeAPI().postMessage({
+                    command: 'command',
+                    id: 'cody.chat.history.clear',
+                    arg: id,
+                })
+            }
+        },
+        [userHistory]
+    )
+
     return (
-        <div className="tw-flex tw-flex-col tw-gap-4 tw-px-8">
+        <div className="tw-px-8 tw-pt-6 tw-pb-12 tw-flex tw-flex-col tw-gap-10">
             {Array.from(chatByPeriod, ([period, chats]) => (
-                <Collapsible
+                <CollapsiblePanel
                     key={period}
+                    storageKey={`history.${period}`}
                     title={period}
-                    items={chats.map(({ interactions, id }) => {
+                    initialOpen={true}
+                >
+                    {chats.map(({ interactions, id }) => {
                         const lastMessage =
                             interactions[interactions.length - 1]?.humanMessage?.text?.trim()
                         return (
-                            <Button
-                                key={id}
-                                variant="text"
-                                size="none"
-                                title={lastMessage}
-                                onClick={() =>
-                                    getVSCodeAPI().postMessage({
-                                        command: 'restoreHistory',
-                                        chatID: id,
-                                    })
-                                }
-                                className="tw-truncate tw-px-2 hover:tw-bg-button-background-hover"
-                            >
-                                <MessageSquareTextIcon className="tw-inline-flex" size={13} />
-                                <span className="tw-px-2 tw-truncate tw-w-full">{lastMessage}</span>
-                            </Button>
+                            <div key={id} className="tw-inline-flex tw-justify-between">
+                                <Button
+                                    key={id}
+                                    variant="ghost"
+                                    title={lastMessage}
+                                    onClick={() =>
+                                        getVSCodeAPI().postMessage({
+                                            command: 'restoreHistory',
+                                            chatID: id,
+                                        })
+                                    }
+                                    className="tw-text-left tw-truncate"
+                                >
+                                    <MessageSquareTextIcon
+                                        className="tw-w-8 tw-h-8 tw-opacity-80"
+                                        size={16}
+                                        strokeWidth="1.25"
+                                    />
+                                    <span className="tw-truncate tw-w-full">{lastMessage}</span>
+                                </Button>
+                                <Button
+                                    key={id}
+                                    variant="ghost"
+                                    title="Delete chat"
+                                    onClick={() => onDeleteButtonClick(id)}
+                                >
+                                    <TrashIcon
+                                        className="tw-w-8 tw-h-8 tw-opacity-80"
+                                        size={16}
+                                        strokeWidth="1.25"
+                                    />
+                                </Button>
+                            </div>
                         )
                     })}
-                />
+                </CollapsiblePanel>
             ))}
         </div>
     )

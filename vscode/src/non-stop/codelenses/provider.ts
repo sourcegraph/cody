@@ -6,8 +6,8 @@ import { ContentProvider } from '../FixupContentStore'
 import type { FixupFile } from '../FixupFile'
 import type { FixupTask, FixupTaskID } from '../FixupTask'
 import type { FixupActor, FixupFileCollection } from '../roles'
+import { CodyTaskState } from '../state'
 import type { FixupControlApplicator } from '../strategies'
-import { CodyTaskState } from '../utils'
 import { ACTIONABLE_TASK_STATES, ACTIVE_TASK_STATES, ALL_ACTIONABLE_TASK_STATES } from './constants'
 import { getLensesForTask } from './items'
 
@@ -69,6 +69,20 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
                 const task = this.controller.taskForId(id);
                 if (task) {
                     this.controller.reject(task, range);
+                }
+            }),
+            vscode.commands.registerCommand('cody.fixup.codelens.acceptChange', (id, range) => {
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'acceptChange')
+                const task = this.controller.taskForId(id)
+                if (task) {
+                    this.controller.accept(task, range)
+                }
+            }),
+            vscode.commands.registerCommand('cody.fixup.codelens.rejectChange', (id, range) => {
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'rejectChange')
+                const task = this.controller.taskForId(id)
+                if (task) {
+                    this.controller.reject(task, range)
                 }
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.error', id => {

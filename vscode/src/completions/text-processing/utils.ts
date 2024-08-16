@@ -433,3 +433,7 @@ export function getSuffixAfterFirstNewline(suffix: PromptString): PromptString {
 
     return suffix.slice(firstNlInSuffix)
 }
+
+export function removeLeadingEmptyLines(str: string): string {
+    return str.replace(/^[\r\n]+/, '')
+}

@@ -1,22 +1,25 @@
-import { clsx } from 'clsx'
 import type React from 'react'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
-import type { AuthStatus, ChatMessage, CodyIDE, Guardrails } from '@sourcegraph/cody-shared'
+import type {
+    AuthStatus,
+    ChatMessage,
+    CodyIDE,
+    Guardrails,
+    PromptString,
+} from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
-import { GenerateUnitTestsButton } from './chat/components/GenerateUnitTestsButton'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
-import { useContextProviders } from './mentions/providers'
+import type { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
 
 interface ChatboxProps {
-    chatID: string
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
@@ -27,12 +30,11 @@ interface ChatboxProps {
     scrollableParent?: HTMLElement | null
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
-    className?: string
-    experimentalUnitTestEnabled?: boolean
+    setView: (view: View) => void
+    experimentalSmartApplyEnabled?: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
-    chatID,
     messageInProgress,
     transcript,
     vscodeAPI,
@@ -43,11 +45,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     scrollableParent,
     showWelcomeMessage = true,
     showIDESnippetActions = true,
-    className,
-    experimentalUnitTestEnabled,
+    setView,
+    experimentalSmartApplyEnabled,
 }) => {
-    const { reload: reloadMentionProviders } = useContextProviders()
     const telemetryRecorder = useTelemetryRecorder()
+
+    const transcriptRef = useRef(transcript)
+    transcriptRef.current = transcript
+
     const feedbackButtonsOnSubmit = useCallback(
         (text: string) => {
             enum FeedbackType {
@@ -57,7 +62,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             telemetryRecorder.recordEvent('cody.feedback', 'submit', {
                 metadata: {
                     feedbackType: text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
-                    lastChatUsedEmbeddings: transcript
+                    lastChatUsedEmbeddings: transcriptRef.current
                         .at(-1)
                         ?.contextFiles?.some(file => file.source === 'embeddings')
                         ? 1
@@ -71,12 +76,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an aditional safegaurd measure
                     responseText: userInfo.isDotComUser
-                        ? truncateTextStart(transcript.toString(), CHAT_INPUT_TOKEN_BUDGET)
+                        ? truncateTextStart(transcriptRef.current.toString(), CHAT_INPUT_TOKEN_BUDGET)
                         : '',
                 },
             })
         },
-        [transcript, userInfo, telemetryRecorder]
+        [userInfo, telemetryRecorder]
     )
 
     const copyButtonOnSubmit = useCallback(
@@ -98,19 +103,52 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         if (showIDESnippetActions) {
             return (text: string, newFile = false) => {
                 const op = newFile ? 'newFile' : 'insert'
-                const eventType = 'Button'
-                // remove the additional /n added by the text area at the end of the text
-                const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
                 // Log the event type and text to telemetry in chat view
                 vscodeAPI.postMessage({
                     command: op,
-                    eventType,
-                    text: code,
+                    // remove the additional /n added by the text area at the end of the text
+                    text: text.replace(/\n$/, ''),
                 })
             }
         }
 
         return
+    }, [vscodeAPI, showIDESnippetActions])
+
+    const smartApply = useMemo(() => {
+        if (!showIDESnippetActions) {
+            return
+        }
+
+        return {
+            onSubmit: (
+                id: string,
+                text: string,
+                instruction?: PromptString,
+                fileName?: string
+            ): void => {
+                vscodeAPI.postMessage({
+                    command: 'smartApplySubmit',
+                    id,
+                    instruction: instruction?.toString(),
+                    // remove the additional /n added by the text area at the end of the text
+                    code: text.replace(/\n$/, ''),
+                    fileName,
+                })
+            },
+            onAccept: (id: string) => {
+                vscodeAPI.postMessage({
+                    command: 'smartApplyAccept',
+                    id,
+                })
+            },
+            onReject: (id: string) => {
+                vscodeAPI.postMessage({
+                    command: 'smartApplyReject',
+                    id,
+                })
+            },
+        }
     }, [vscodeAPI, showIDESnippetActions])
 
     const postMessage = useCallback<ApiPostMessage>(msg => vscodeAPI.postMessage(msg), [vscodeAPI])
@@ -157,37 +195,34 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
     }, [])
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: needs to run when is dotcom status is changing to update openctx providers
-    useEffect(() => {
-        reloadMentionProviders()
-    }, [userInfo.isDotComUser, reloadMentionProviders])
-
-    const showUnitTestsButton = experimentalUnitTestEnabled && transcript.length === 0
-
     return (
-        <div className={clsx(styles.container, className, 'tw-relative')}>
+        <>
             {!chatEnabled && (
                 <div className={styles.chatDisabled}>
                     Cody chat is disabled by your Sourcegraph site administrator
                 </div>
             )}
             <Transcript
-                chatID={chatID}
                 transcript={transcript}
                 messageInProgress={messageInProgress}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                 copyButtonOnSubmit={copyButtonOnSubmit}
                 insertButtonOnSubmit={insertButtonOnSubmit}
+                smartApply={smartApply}
                 isTranscriptError={isTranscriptError}
                 userInfo={userInfo}
                 chatEnabled={chatEnabled}
                 postMessage={postMessage}
                 guardrails={guardrails}
+                experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
             />
-            {showUnitTestsButton && <GenerateUnitTestsButton postMessage={postMessage} />}
-            {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage IDE={userInfo.ide} />}
-            <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
-        </div>
+            {transcript.length === 0 && showWelcomeMessage && (
+                <WelcomeMessage IDE={userInfo.ide} setView={setView} />
+            )}
+            {scrollableParent && (
+                <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
+            )}
+        </>
     )
 }
 

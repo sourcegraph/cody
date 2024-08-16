@@ -4,6 +4,11 @@ export default {
     ...webviewTailwindConfig,
     content: {
         relative: true,
-        files: ['demo/*.{ts,tsx}', '../vscode/webviews/**/*.{ts,tsx}', 'lib/**/*.{ts,tsx}'],
+        files: [
+            'demo/*.{ts,tsx}',
+            '../vscode/webviews/**/*.{ts,tsx}',
+            'lib/**/*.{ts,tsx}',
+            '../lib/prompt-editor/**/*.{ts,tsx}',
+        ],
     },
 }

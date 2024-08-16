@@ -7,6 +7,7 @@ import {
     logError,
 } from '@sourcegraph/cody-shared'
 import type { InputContextItem } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import * as vscode from 'vscode'
 
 function toInput(input: ContextItem[]): InputContextItem[] {
     return input
@@ -18,7 +19,11 @@ function toInput(input: ContextItem[]): InputContextItem[] {
                       retriever: i.source || '',
                   }
         )
-        .filter(i => i !== null) as InputContextItem[]
+        .filter(notNull)
+}
+
+function notNull<T>(value: T | null | undefined): value is T {
+    return value !== null && value !== undefined
 }
 
 export class ContextAPIClient {
@@ -53,7 +58,10 @@ export class ContextAPIClient {
         await this.apiClient.recordContext(interactionID, toInput(used), toInput(ignored))
     }
 
-    private async isServerSideContextAPIEnabled() {
+    private async isServerSideContextAPIEnabled(): Promise<boolean> {
+        if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.serverSideContext')) {
+            return true
+        }
         return await this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyServerSideContextAPI)
     }
 }

@@ -1,13 +1,7 @@
 import { expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
-import {
-    focusSidebar,
-    getChatEditorPanel,
-    getChatSidebarPanel,
-    sidebarExplorer,
-    sidebarSignin,
-} from './common'
+import { focusSidebar, getChatSidebarPanel, sidebarExplorer, sidebarSignin } from './common'
 import {
     type DotcomUrlOverride,
     type ExpectedV2Events,
@@ -52,7 +46,7 @@ test.extend<ExpectedV2Events>({
 
     // Code lens should be visible
     await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Reject' })).toBeVisible()
 })
 
 test.extend<ExpectedV2Events>({
@@ -94,7 +88,7 @@ test.extend<ExpectedV2Events>({
         // Wait a bit longer because formatting can sometimes be slow.
         timeout: 10000,
     })
-    await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Reject' })).toBeVisible()
 
     // Code lens should be at the start of the function (range expanded from click position)
     await expect(page.getByText('* Mocked doc string')).toBeVisible()
@@ -112,7 +106,7 @@ test.extend<ExpectedV2Events>({
         'cody.auth:connected',
         'cody.command.explain:executed',
     ],
-})('Explain Command from Commands Tab', async ({ page, sidebar }) => {
+})('Explain Command from Prompts Tab', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -131,13 +125,11 @@ test.extend<ExpectedV2Events>({
 
     // Click on the Commands view icon from the tab bar.
     const sidebarChat = getChatSidebarPanel(page)
-    const sidebarTabCommandIcon = sidebarChat.locator('[id="radix-\\:r0\\:-trigger-commands"]')
-    await sidebarTabCommandIcon.getByRole('button').click()
-    await sidebarChat.getByRole('button', { name: 'Explain code' }).click()
+    const sidebarTab = sidebarChat.getByTestId('tab-prompts')
+    await sidebarTab.click()
+    await sidebarChat.getByRole('option', { name: 'Explain Code' }).click()
 
-    // Click on a command from the sidebar will start a new Editor window.
-    const editorChat = getChatEditorPanel(page)
-    await expect(editorChat.getByText('hello from the assistant')).toBeVisible()
-    // The sidebar remains open.
-    await expect(sidebarChat.getByRole('button', { name: 'Explain code' })).toBeVisible()
+    // Click on a command from the sidebar should not start a new Editor window when sidebar is empty.
+    await expect(sidebarChat.getByText('hello from the assistant')).toBeVisible()
+    await expect(sidebarChat.getByRole('option', { name: 'Explain Code' })).not.toBeVisible()
 })

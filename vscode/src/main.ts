@@ -19,6 +19,7 @@ import {
 import type { CommandResult } from './CommandResult'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
+import { ContextRetriever } from './chat/chat-view/ContextRetriever'
 import type { ContextAPIClient } from './chat/context/contextAPIClient'
 import {
     ACCOUNT_LIMITS_INFO_URL,
@@ -27,7 +28,7 @@ import {
     CODY_OLLAMA_DOCS_URL,
 } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
-import { executeCodyCommand, setCommandController } from './commands/CommandsController'
+import { commandControllerInit, executeCodyCommand } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
 import {
     executeDocCommand,
@@ -54,7 +55,6 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
-import type { ContextRankingController } from './local-context/context-ranking'
 import type { LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logError } from './log'
@@ -95,14 +95,20 @@ export async function start(
     context: vscode.ExtensionContext,
     platform: PlatformContext
 ): Promise<vscode.Disposable> {
+    // NOTE: Hack to ensure the window is reloaded when extension is restarted after upgrade
+    //  to get the updated sidebar chat UI. Can be removed after the next release (1.28).
+    if (
+        !context.globalState.get('newSidebarChatUI_isReloaded', false) &&
+        process.env.CODY_TESTING !== 'true'
+    ) {
+        // First activation, set the flag and then reload the window
+        await context.globalState.update('newSidebarChatUI_isReloaded', true)
+        await vscode.commands.executeCommand('workbench.action.reloadWindow')
+    }
+
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
-
-    // HACK to improve e2e test latency
-    if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.chatInSidebar')) {
-        await vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', true)
-    }
 
     // Set internal storage fields for storage provider singletons
     localStorage.setStorage(
@@ -183,7 +189,6 @@ const register = async (
         codeCompletionsClient,
         guardrails,
         localEmbeddings,
-        contextRanking,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
         symfRunner,
         contextAPIClient,
@@ -204,6 +209,7 @@ const register = async (
     }, disposables)
 
     const editor = new VSCodeEditor()
+    const contextRetriever = new ContextRetriever(editor, symfRunner, completionsClient)
 
     const { chatsController } = registerChat(
         {
@@ -215,9 +221,9 @@ const register = async (
             authProvider,
             enterpriseContextFactory,
             localEmbeddings,
-            contextRanking,
             symfRunner,
             contextAPIClient,
+            contextRetriever,
         },
         disposables
     )
@@ -248,12 +254,11 @@ const register = async (
         disposables
     )
     const tutorialSetup = tryRegisterTutorial(context, disposables)
-    const openCtxSetup = registerOpenCtxClient(
+    const openCtxSetup = exposeOpenCtxClient(
         context,
-        platform,
         configWatcher,
         authProvider,
-        disposables
+        platform.createOpenCtxController
     )
 
     registerCodyCommands(configWatcher, statusBar, sourceControl, chatClient, disposables)
@@ -265,6 +270,7 @@ const register = async (
     if (isExtensionModeDevOrTest) {
         await registerTestCommands(context, authProvider, disposables)
     }
+    registerDebugCommands(context, disposables)
     registerUpgradeHandlers(configWatcher, authProvider, disposables)
     disposables.push(new CharactersLogger())
 
@@ -297,7 +303,7 @@ async function initializeSingletons(
     // user's model choices
     ModelsService.setStorage(localStorage)
     disposables.push(upstreamHealthProvider, contextFiltersProvider)
-    setCommandController(platform.createCommandsProvider?.())
+    commandControllerInit(platform.createCommandsProvider?.(), platform.extensionClient.capabilities)
     repoNameResolver.init(authProvider)
     await configWatcher.onChange(
         async config => {
@@ -307,7 +313,7 @@ async function initializeSingletons(
             graphqlClient.setConfig(config)
             promises.push(featureFlagProvider.refresh())
             promises.push(contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri))
-            ModelsService.onConfigChange()
+            void ModelsService.onConfigChange(config)
             upstreamHealthProvider.onConfigurationChange(config)
 
             await Promise.all(promises).then()
@@ -578,8 +584,18 @@ async function registerTestCommands(
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (endpoint, token) =>
             authProvider.auth({ endpoint, token })
-        ),
-        // For debugging
+        )
+    )
+}
+
+/**
+ * Register commands used for debugging.
+ */
+async function registerDebugCommands(
+    context: vscode.ExtensionContext,
+    disposables: vscode.Disposable[]
+): Promise<void> {
+    disposables.push(
         vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
         vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
         vscode.commands.registerCommand('cody.debug.enable.all', () => enableVerboseDebugMode()),
@@ -686,31 +702,6 @@ function registerAutocomplete(
     return setupAutocomplete().catch(() => {})
 }
 
-async function registerOpenCtxClient(
-    context: vscode.ExtensionContext,
-    platform: PlatformContext,
-    config: ConfigWatcher<ConfigurationWithAccessToken>,
-    authProvider: AuthProvider,
-    disposables: vscode.Disposable[]
-): Promise<void> {
-    if (authProvider.getAuthStatus().authenticated) {
-        await exposeOpenCtxClient(
-            context,
-            config.get(),
-            authProvider.getAuthStatus().isDotCom,
-            platform.createOpenCtxController
-        )
-    }
-    config.onChange(async newConfig => {
-        await exposeOpenCtxClient(
-            context,
-            newConfig,
-            authProvider.getAuthStatus().isDotCom,
-            platform.createOpenCtxController
-        )
-    }, disposables)
-}
-
 async function registerMinion(
     context: vscode.ExtensionContext,
     config: ConfigWatcher<ConfigurationWithAccessToken>,
@@ -742,9 +733,9 @@ interface RegisterChatOptions {
     authProvider: AuthProvider
     enterpriseContextFactory: EnterpriseContextFactory
     localEmbeddings?: LocalEmbeddingsController
-    contextRanking?: ContextRankingController
     symfRunner?: SymfRunner
     contextAPIClient?: ContextAPIClient
+    contextRetriever: ContextRetriever
 }
 
 function registerChat(
@@ -757,9 +748,9 @@ function registerChat(
         authProvider,
         enterpriseContextFactory,
         localEmbeddings,
-        contextRanking,
         symfRunner,
         contextAPIClient,
+        contextRetriever,
     }: RegisterChatOptions,
     disposables: vscode.Disposable[]
 ): {
@@ -782,10 +773,11 @@ function registerChat(
         authProvider,
         enterpriseContextFactory,
         localEmbeddings || null,
-        contextRanking || null,
         symfRunner || null,
+        contextRetriever,
         guardrails,
-        contextAPIClient || null
+        contextAPIClient || null,
+        platform.extensionClient
     )
     chatsController.registerViewsAndCommands()
 

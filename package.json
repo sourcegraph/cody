@@ -43,11 +43,13 @@
     "@storybook/react-vite": "^8.0.5",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.2.2",
+    "@types/fs-extra": "^11.0.4",
     "@types/node": "20.12.7",
     "@types/react": "18.2.79",
     "@types/react-dom": "18.2.25",
     "@vitejs/plugin-react": "^4.2.1",
     "esbuild": "^0.18.20",
+    "fs-extra": "^11.2.0",
     "happy-dom": "^14.3.10",
     "jsdom": "^22.1.0",
     "knip": "^5.18.1",
@@ -55,12 +57,14 @@
     "stylelint": "^15.11.0",
     "stylelint-config-standard": "^34.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.2",
+    "typescript": "^5.5.4",
     "vite": "^5.2.9",
     "vitest": "^1.5.0"
   },
   "dependencies": {
-    "@openctx/client": "^0.0.19",
+    "@openctx/client": "^0.0.23",
+    "@sourcegraph/cody-shared": "workspace:^",
+    "@sourcegraph/prompt-editor": "workspace:^",
     "ignore": "^5.3.1",
     "mac-ca": "^2.0.3",
     "react": "18.2.0",
@@ -73,6 +77,9 @@
     "tslib": "2.1.0"
   },
   "pnpm": {
+    "overrides": {
+      "@lexical/react": "https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-e9a8d498.tgz"
+    },
     "packageExtensions": {
       "@vscode/webview-ui-toolkit": {
         "dependencies": {
@@ -81,6 +88,9 @@
         }
       }
     },
-    "neverBuiltDependencies": ["deasync", "playwright"]
+    "neverBuiltDependencies": [
+      "deasync",
+      "playwright"
+    ]
   }
 }

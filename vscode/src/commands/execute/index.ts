@@ -7,6 +7,7 @@ import {
     ps,
 } from '@sourcegraph/cody-shared'
 import type { CommandResult } from '../../CommandResult'
+import { executeEdit } from '../../edit/execute'
 import { executeDocCommand } from './doc'
 import { executeExplainCommand } from './explain'
 import { executeSmellCommand } from './smell'
@@ -62,6 +63,8 @@ export async function executeDefaultCommand(
             return executeTestEditCommand({ additionalInstruction })
         case DefaultEditCommands.Doc:
             return executeDocCommand({ additionalInstruction })
+        case DefaultEditCommands.Edit:
+            return { task: await executeEdit({}), type: 'edit' }
         default:
             console.log('not a default command')
             return undefined

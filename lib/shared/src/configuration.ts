@@ -27,6 +27,7 @@ export interface Configuration {
     debugFilter: RegExp | null
     debugVerbose: boolean
     telemetryLevel: 'all' | 'off' | 'agent'
+    telemetryClientName?: string
     useContext: ConfigurationUseContext
     customHeaders: Record<string, string>
     chatPreInstruction: PromptString
@@ -57,27 +58,27 @@ export interface Configuration {
      * Experimental
      */
     experimentalTracing: boolean
-    experimentalChatContextRanker: boolean | undefined
     experimentalSupercompletions: boolean
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean
     experimentalMinionAnthropicKey: string | undefined
+    experimentalGuardrailsTimeoutSeconds: number | undefined
 
     /**
      * Unstable Features for internal testing only
      */
     internalUnstable: boolean
+    internalDebugContext?: boolean
 
     /**
      * Experimental autocomplete
      */
-    autocompleteExperimentalHotStreak?: boolean
     autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | 'tsc' | 'tsc-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: FireworksOptions
     autocompleteExperimentalMultiModelCompletions?: MultimodelSingleModelConfig[]
-    autocompleteExperimentalSmartThrottle?: boolean
-    autocompleteExperimentalSmartThrottleExtended?: boolean
+    autocompleteExperimentalHotStreakAndSmartThrottle?: boolean
+    autocompleteExperimentalPreloadDebounceInterval?: number
 
     /**
      * Hidden settings

@@ -9,7 +9,10 @@ const textDecoder = new TextDecoder('utf-8')
  * Walks the tree from the current directory to find the `.git` folder and
  * extracts remote URLs.
  */
-export async function gitRemoteUrlsFromParentDirs(uri: vscode.Uri): Promise<string[] | undefined> {
+export async function gitRemoteUrlsFromParentDirs(
+    uri: vscode.Uri,
+    signal?: AbortSignal
+): Promise<string[] | undefined> {
     if (!isFileURI(uri)) {
         return undefined
     }
@@ -17,8 +20,10 @@ export async function gitRemoteUrlsFromParentDirs(uri: vscode.Uri): Promise<stri
     const isFile = (await vscode.workspace.fs.stat(uri)).type === vscode.FileType.File
     const dirUri = isFile ? vscode.Uri.joinPath(uri, '..') : uri
 
-    const gitRepoURIs = await gitRepoURIsFromParentDirs(dirUri)
-    return gitRepoURIs ? gitRemoteUrlsFromGitConfigUri(gitRepoURIs.gitConfigUri) : undefined
+    const gitRepoURIs = await gitRepoURIsFromParentDirs(dirUri, signal)
+    return gitRepoURIs
+        ? await gitRemoteUrlsFromGitConfigUri(gitRepoURIs.gitConfigUri, signal)
+        : undefined
 }
 
 interface GitRepoURIs {
@@ -26,8 +31,11 @@ interface GitRepoURIs {
     gitConfigUri: vscode.Uri
 }
 
-async function gitRepoURIsFromParentDirs(uri: vscode.Uri): Promise<GitRepoURIs | undefined> {
-    const gitConfigUri = await resolveGitConfigUri(uri)
+async function gitRepoURIsFromParentDirs(
+    uri: vscode.Uri,
+    signal?: AbortSignal
+): Promise<GitRepoURIs | undefined> {
+    const gitConfigUri = await resolveGitConfigUri(uri, signal)
 
     if (!gitConfigUri) {
         const parentUri = vscode.Uri.joinPath(uri, '..')
@@ -35,15 +43,19 @@ async function gitRepoURIsFromParentDirs(uri: vscode.Uri): Promise<GitRepoURIs |
             return undefined
         }
 
-        return gitRepoURIsFromParentDirs(parentUri)
+        return await gitRepoURIsFromParentDirs(parentUri, signal)
     }
 
     return { rootUri: uri, gitConfigUri }
 }
 
-async function gitRemoteUrlsFromGitConfigUri(gitConfigUri: vscode.Uri): Promise<string[] | undefined> {
+async function gitRemoteUrlsFromGitConfigUri(
+    gitConfigUri: vscode.Uri,
+    signal?: AbortSignal
+): Promise<string[] | undefined> {
     try {
         const raw = await vscode.workspace.fs.readFile(gitConfigUri)
+        signal?.throwIfAborted()
         const configContents = textDecoder.decode(raw)
         const config = ini.parse(configContents)
         const remoteUrls = new Set<string>()
@@ -77,11 +89,15 @@ async function gitRemoteUrlsFromGitConfigUri(gitConfigUri: vscode.Uri): Promise<
 /**
  * Reads the .git directory or file to determine the path to the git config.
  */
-async function resolveGitConfigUri(uri: vscode.Uri): Promise<vscode.Uri | undefined> {
+async function resolveGitConfigUri(
+    uri: vscode.Uri,
+    signal?: AbortSignal
+): Promise<vscode.Uri | undefined> {
     const gitPathUri = vscode.Uri.joinPath(uri, '.git')
 
     try {
         const gitPathStat = await vscode.workspace.fs.stat(gitPathUri)
+        signal?.throwIfAborted()
 
         if (gitPathStat.type === vscode.FileType.Directory) {
             return vscode.Uri.joinPath(gitPathUri, 'config')
@@ -89,6 +105,7 @@ async function resolveGitConfigUri(uri: vscode.Uri): Promise<vscode.Uri | undefi
 
         if (gitPathStat.type === vscode.FileType.File) {
             const rawGitPath = await vscode.workspace.fs.readFile(gitPathUri)
+            signal?.throwIfAborted()
             const submoduleGitDir = textDecoder.decode(rawGitPath).trim().replace('gitdir: ', '')
 
             return vscode.Uri.joinPath(uri, submoduleGitDir, 'config')

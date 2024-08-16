@@ -62,6 +62,11 @@ export default defineProjectWithDefaults(__dirname, {
                 find: './completions/create-inline-completion-item-provider',
                 replacement: resolve(__dirname, 'lib/agent/shims/inline-completion-item-provider.ts'),
             },
+
+            {
+                find: /^cody-ai\/(.*)$/,
+                replacement: resolve(__dirname, '../vscode/$1'),
+            },
         ],
     },
     define: {

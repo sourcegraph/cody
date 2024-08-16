@@ -8,17 +8,24 @@
     display: flex;
     flex-direction: column;
     gap: var(--human-message-editor-gap);
-    padding: var(--prompt-editor-padding-y) var(--prompt-editor-padding-x);
     border-radius: 2px;
     background-color: color-mix(in srgb, var(--vscode-input-background) 50%, transparent);
     color: var(--vscode-input-foreground);
     outline: solid 1px var(--vscode-input-border);
     outline-offset: -1px;
     cursor: text;
+    padding-bottom: var(--prompt-editor-padding-y);
+
+    .editor {
+        scrollbar-gutter: stable;
+        padding: var(--prompt-editor-padding-y) var(--prompt-editor-padding-x);
+        padding-bottom: 0;
+    }
 }
 
 .toolbar {
-    height: var(--human-message-editor-toolbar-height);
+    min-height: var(--human-message-editor-toolbar-height);
+    padding: 0 var(--prompt-editor-padding-x);
     margin-left: -2px;
     overflow: hidden;
 }
@@ -46,9 +53,4 @@
 
 .editor-content-editable {
     min-height: 1lh;
-}
-
-/* color-mix is not supported on JetBrains webview */
-html[data-ide=JetBrains] .container {
-    background-color: var(--vscode-input-background);
 }

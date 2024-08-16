@@ -5,7 +5,7 @@ import {
 import { fireEvent, render, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { type Assertion, type Mock, describe, expect, test, vi } from 'vitest'
-import { TestAppWrapper } from '../../../../../AppWrapper'
+import { AppWrapperForTest } from '../../../../../AppWrapperForTest'
 import { FIXTURE_USER_ACCOUNT_INFO } from '../../../../fixtures'
 import { HumanMessageEditor } from './HumanMessageEditor'
 
@@ -169,7 +169,7 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
     }
 
     const { container } = render(<HumanMessageEditor {...DEFAULT_PROPS} {...props} />, {
-        wrapper: TestAppWrapper,
+        wrapper: AppWrapperForTest,
     })
     return {
         container,

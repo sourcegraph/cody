@@ -21,6 +21,7 @@ interface FileLinkProps {
     range?: RangeData
     title?: string
     isTooLarge?: boolean
+    isTooLargeReason?: string
     isIgnored?: boolean
 }
 
@@ -54,6 +55,7 @@ export const FileLink: React.FunctionComponent<
     title,
     revision,
     isTooLarge,
+    isTooLargeReason,
     isIgnored,
     className,
     linkClassName,
@@ -83,17 +85,21 @@ export const FileLink: React.FunctionComponent<
         const pathToDisplay = `${displayPath(uri)}`
         pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
         const openURI = webviewOpenURIForContextItem({ uri, range })
-        tooltip = isIgnored ? IGNORE_WARNING : isTooLarge ? LIMIT_WARNING : pathWithRange
+        tooltip = isIgnored
+            ? IGNORE_WARNING
+            : isTooLarge
+              ? `${LIMIT_WARNING}${isTooLargeReason ? `: ${isTooLargeReason}` : ''}`
+              : pathWithRange
         href = openURI.href
         target = openURI.target
     }
 
     return (
-        <div className={clsx('tw-flex tw-items-center tw-max-w-full', className)}>
+        <div className={clsx('tw-inline-flex tw-items-center tw-max-w-full', className)}>
             {isIgnored ? (
-                <i className="codicon codicon-warning" title={IGNORE_WARNING} />
+                <i className="codicon codicon-warning" title={tooltip} />
             ) : isTooLarge ? (
-                <i className="codicon codicon-warning" title={LIMIT_WARNING} />
+                <i className="codicon codicon-warning" title={tooltip} />
             ) : null}
             <a
                 className={linkClassName}

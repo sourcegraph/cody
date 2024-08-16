@@ -180,3 +180,20 @@ pnpm --filter cody-ai run start:dev:desktop
 4. **Open Node DevTools**: Look for and click on the option that says "Open dedicated DevTools for Node".
 5. **Specify the Debugging Endpoint**: At this point, DevTools aren't initialized yet. Therefore, you need to specify [the debugging endpoint](https://nodejs.org/en/docs/inspector/) `localhost:9333` (the port depends on the `--inspect-extensions` CLI flag used in the `start:debug` npm script)
 6. **Start Debugging Like a PRO**: yay!
+
+### Capturing network traffic
+
+Viewing the "network" tab in the developer tools often excludes most network traffic done by extensions. Instead you can use a tool like [mitmproxy](https://mitmproxy.org/) or [Proxyman](https://proxyman.io/) as a proxy that will capture all the traffic. Assuming the proxy is listening on port 8080, you can set the following environment variables when starting up `code` or running a test:
+
+```sh
+export NODE_TLS_REJECT_UNAUTHORIZED=0
+export http_proxy=http://127.0.0.1:8080
+export GLOBAL_AGENT_HTTP_PROXY="$http_proxy"
+export HTTPS_PROXY="$http_proxy"
+
+# Capture all requests in vscode. Note: requires starting up a new instance of code.
+code
+
+# Run a specific e2e test and capture the network requests
+pnpm -C vscode test:e2e:run attribution.test.ts:10
+```

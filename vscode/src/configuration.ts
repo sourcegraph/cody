@@ -135,6 +135,7 @@ export function getConfiguration(
          */
 
         internalUnstable: getHiddenSetting('internal.unstable', isTesting),
+        internalDebugContext: getHiddenSetting('internal.debug.context', false),
 
         autocompleteExperimentalGraphContext,
         experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', true),
@@ -145,12 +146,8 @@ export function getConfiguration(
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
         experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),
 
-        experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
+        experimentalGuardrailsTimeoutSeconds: getHiddenSetting('experimental.guardrailsTimeoutSeconds'),
 
-        autocompleteExperimentalHotStreak: getHiddenSetting(
-            'autocomplete.experimental.hotStreak',
-            false
-        ),
         autocompleteExperimentalOllamaOptions: getHiddenSetting(
             'autocomplete.experimental.ollamaOptions',
             {
@@ -166,13 +163,13 @@ export function getConfiguration(
             'autocomplete.experimental.multiModelCompletions',
             undefined
         ),
-        autocompleteExperimentalSmartThrottle: getHiddenSetting(
-            'autocomplete.experimental.smartThrottle',
+        autocompleteExperimentalHotStreakAndSmartThrottle: getHiddenSetting(
+            'autocomplete.experimental.hotStreakAndSmartThrottle',
             false
         ),
-        autocompleteExperimentalSmartThrottleExtended: getHiddenSetting(
-            'autocomplete.experimental.smartThrottleExtended',
-            false
+        autocompleteExperimentalPreloadDebounceInterval: getHiddenSetting(
+            'autocomplete.experimental.preloadDebounceInterval',
+            0
         ),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
@@ -197,6 +194,8 @@ export function getConfiguration(
             'autocomplete.advanced.timeout.firstCompletion',
             3_500
         ),
+
+        telemetryClientName: getHiddenSetting<string | undefined>('telemetry.clientName'),
         testingModelConfig:
             isTesting && hasValidLocalEmbeddingsConfig()
                 ? {

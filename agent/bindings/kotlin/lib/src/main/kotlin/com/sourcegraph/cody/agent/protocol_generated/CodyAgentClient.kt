@@ -15,13 +15,13 @@ interface CodyAgentClient {
   @JsonRequest("textDocument/edit")
   fun textDocument_edit(params: TextDocumentEditParams): CompletableFuture<Boolean>
   @JsonRequest("textDocument/openUntitledDocument")
-  fun textDocument_openUntitledDocument(params: UntitledTextDocument): CompletableFuture<Boolean>
+  fun textDocument_openUntitledDocument(params: UntitledTextDocument): CompletableFuture<ProtocolTextDocument?>
   @JsonRequest("textDocument/show")
   fun textDocument_show(params: TextDocument_ShowParams): CompletableFuture<Boolean>
   @JsonRequest("workspace/edit")
   fun workspace_edit(params: WorkspaceEditParams): CompletableFuture<Boolean>
-  @JsonRequest("webview/create")
-  fun webview_create(params: Webview_CreateParams): CompletableFuture<Null?>
+  @JsonRequest("env/openExternal")
+  fun env_openExternal(params: Env_OpenExternalParams): CompletableFuture<Boolean>
 
   // =============
   // Notifications
@@ -36,8 +36,6 @@ interface CodyAgentClient {
   fun codeLenses_display(params: DisplayCodeLensParams)
   @JsonNotification("ignore/didChange")
   fun ignore_didChange(params: Null?)
-  @JsonNotification("webview/postMessage")
-  fun webview_postMessage(params: WebviewPostMessageParams)
   @JsonNotification("webview/postMessageStringEncoded")
   fun webview_postMessageStringEncoded(params: Webview_PostMessageStringEncodedParams)
   @JsonNotification("progress/start")
@@ -50,4 +48,22 @@ interface CodyAgentClient {
   fun remoteRepo_didChange(params: Null?)
   @JsonNotification("remoteRepo/didChangeState")
   fun remoteRepo_didChangeState(params: RemoteRepoFetchState)
+  @JsonNotification("webview/registerWebviewViewProvider")
+  fun webview_registerWebviewViewProvider(params: Webview_RegisterWebviewViewProviderParams)
+  @JsonNotification("webview/createWebviewPanel")
+  fun webview_createWebviewPanel(params: Webview_CreateWebviewPanelParams)
+  @JsonNotification("webview/dispose")
+  fun webview_dispose(params: Webview_DisposeParams)
+  @JsonNotification("webview/reveal")
+  fun webview_reveal(params: Webview_RevealParams)
+  @JsonNotification("webview/setTitle")
+  fun webview_setTitle(params: Webview_SetTitleParams)
+  @JsonNotification("webview/setIconPath")
+  fun webview_setIconPath(params: Webview_SetIconPathParams)
+  @JsonNotification("webview/setOptions")
+  fun webview_setOptions(params: Webview_SetOptionsParams)
+  @JsonNotification("webview/setHtml")
+  fun webview_setHtml(params: Webview_SetHtmlParams)
+  @JsonNotification("window/didChangeContext")
+  fun window_didChangeContext(params: Window_DidChangeContextParams)
 }

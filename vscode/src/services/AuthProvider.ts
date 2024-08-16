@@ -9,6 +9,7 @@ import {
     DOTCOM_URL,
     LOCAL_APP_URL,
     SourcegraphGraphQLAPIClient,
+    asyncGeneratorFromVSCodeEvent,
     defaultAuthStatus,
     graphqlClient,
     isError,
@@ -312,6 +313,10 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         return this.status
     }
 
+    public observeAuthStatus(signal?: AbortSignal): AsyncGenerator<AuthStatus> {
+        return asyncGeneratorFromVSCodeEvent(this.didChangeEvent.event, this.status, signal)
+    }
+
     // It processes the authentication steps and stores the login info before sharing the auth status with chatview
     public async auth({
         endpoint,
@@ -339,13 +344,9 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
                 await this.storeAuthInfo(config.serverEndpoint, config.accessToken)
             }
 
-            await this.setAuthStatus(authStatus)
-
-            // Set context for the extension to render views based on auth status.
-            // isConsumer should be set before activated to avoid flickering.
-            const isConsumer = authStatus.isLoggedIn && authStatus.isDotCom
-            await vscode.commands.executeCommand('setContext', 'cody.chatInSidebar', isConsumer)
             await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
+
+            await this.setAuthStatus(authStatus)
 
             // If the extension is authenticated on startup, it can't be a user's first
             // ever authentication. We store this to prevent logging first-ever events
@@ -517,7 +518,8 @@ export function isNetworkError(error: Error): boolean {
         message.includes('ENOTFOUND') ||
         message.includes('ECONNREFUSED') ||
         message.includes('ECONNRESET') ||
-        message.includes('EHOSTUNREACH')
+        message.includes('EHOSTUNREACH') ||
+        message.includes('ETIMEDOUT')
     )
 }
 

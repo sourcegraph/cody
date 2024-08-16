@@ -10,7 +10,6 @@ import * as vscode from 'vscode'
 import {
     AbortError,
     type FileURI,
-    type IndexedKeywordContextFetcher,
     type PromptString,
     type Result,
     type SourcegraphCompletionsClient,
@@ -18,6 +17,7 @@ import {
     displayPath,
     isAbortError,
     isDefined,
+    isEnterpriseUser,
     isFileURI,
     isWindows,
     telemetryRecorder,
@@ -28,18 +28,22 @@ import {
 import { logDebug } from '../log'
 
 import path from 'node:path'
-import type { ConfigWatcher } from '../configwatcher'
 import { getEditor } from '../editor/active-editor'
+import type { AuthProvider } from '../services/AuthProvider'
 import { getSymfPath } from './download-symf'
 import { rewriteKeywordQuery } from './rewrite-keyword-query'
 
 const execFile = promisify(_execFile)
-const oneDayMillis = 1000 * 60 * 60 * 24
 
-interface CorpusDiff {
+export interface CorpusDiff {
     maybeChangedFiles?: boolean
     changedFiles?: string[]
+
+    // milliseconds elapsed since last index
     millisElapsed?: number
+
+    // milliseconds of last indexing duration
+    lastTimeToIndexMillis?: number
 }
 
 function parseJSONToCorpusDiff(json: string): CorpusDiff {
@@ -55,7 +59,7 @@ interface IndexOptions {
     ignoreExisting: boolean
 }
 
-export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposable {
+export class SymfRunner implements vscode.Disposable {
     // The root of all symf index directories
     private indexRoot: FileURI
     private indexLocks: Map<string, RWLock> = new Map()
@@ -66,11 +70,8 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
 
     constructor(
         private context: vscode.ExtensionContext,
-        private config: ConfigWatcher<{
-            serverEndpoint: string
-            accessToken: string | null
-        }>,
-        private completionsClient: SourcegraphCompletionsClient
+        private completionsClient: SourcegraphCompletionsClient,
+        authProvider: AuthProvider
     ) {
         const indexRoot = vscode.Uri.joinPath(context.globalStorageUri, 'symf', 'indexroot').with(
             // On VS Code Desktop, this is a `vscode-userdata:` URI that actually just refers to
@@ -83,7 +84,17 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         }
         this.indexRoot = indexRoot
 
-        this.disposables.push(initializeSymfIndexManagement(this))
+        let isInitialized = false
+        authProvider.onChange(
+            authStatus => {
+                if (!isInitialized && authStatus.isLoggedIn && !isEnterpriseUser(authStatus)) {
+                    // Only initialize symf after the user has authenticated AND it's not an enterprise account.
+                    isInitialized = true
+                    this.disposables.push(initializeSymfIndexManagement(this))
+                }
+            },
+            { runImmediately: true }
+        )
     }
 
     public dispose(): void {
@@ -102,23 +113,12 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         return this.status.onDidEnd(cb)
     }
 
-    private async getSymfInfo(): Promise<{
-        symfPath: string
-        serverEndpoint: string
-        accessToken: string
-    }> {
-        const { accessToken, serverEndpoint } = this.config.get()
-        if (!accessToken) {
-            throw new Error('SymfRunner.getResults: No access token')
-        }
-        if (!serverEndpoint) {
-            throw new Error('SymfRunner.getResults: No Sourcegraph server endpoint')
-        }
+    private async mustSymfPath(): Promise<string> {
         const symfPath = await getSymfPath(this.context)
         if (!symfPath) {
             throw new Error('No symf executable')
         }
-        return { accessToken, serverEndpoint, symfPath }
+        return symfPath
     }
 
     public getResults(userQuery: PromptString, scopeDirs: vscode.Uri[]): Promise<Promise<Result[]>[]> {
@@ -128,6 +128,40 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
                 .filter(isFileURI)
                 .map(scopeDir => this.getResultsForScopeDir(userQuery, expandedQuery, scopeDir))
         )
+    }
+
+    public async getLiveResults(
+        userQuery: PromptString,
+        keywordQuery: string,
+        files: string[],
+        signal?: AbortSignal
+    ): Promise<Result[]> {
+        const symfPath = await this.mustSymfPath()
+        const args = [
+            'live-query',
+            ...files.flatMap(f => ['-f', f]),
+            '--limit',
+            files.length < 5 ? `${files.length}` : '5',
+            '--fmt',
+            'json',
+            '--boosted-keywords',
+            `${userQuery}`,
+            `${keywordQuery}`,
+        ]
+        try {
+            const { stdout } = await execFile(symfPath, args, {
+                env: { HOME: process.env.HOME },
+                maxBuffer: 1024 * 1024 * 1024,
+                timeout: 1000 * 30, // timeout in 30 seconds
+            })
+            signal?.throwIfAborted() // TODO(sqs): abort exec call
+            return parseSymfStdout(stdout)
+        } catch (error) {
+            if (isAbortError(error)) {
+                throw error
+            }
+            throw toSymfError(error)
+        }
     }
 
     /**
@@ -163,8 +197,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
             if (indexNotFound) {
                 continue
             }
-            const results = parseSymfStdout(stdout)
-            return results
+            return parseSymfStdout(stdout)
         }
         throw new Error(`failed to find index after ${maxRetries} tries for directory ${scopeDir}`)
     }
@@ -195,8 +228,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     }
 
     /**
-     * Check index freshness and reindex if needed. Currently reindexes daily if changes
-     * have been detected.
+     * Check index freshness and reindex if needed.
      */
     public async reindexIfStale(scopeDir: FileURI): Promise<void> {
         logDebug('SymfRunner', 'reindexIfStale', scopeDir.fsPath)
@@ -209,10 +241,8 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
                 })
                 return
             }
-            if (
-                (diff.millisElapsed === undefined || diff.millisElapsed > oneDayMillis) &&
-                (diff.maybeChangedFiles || (diff.changedFiles && diff.changedFiles.length > 0))
-            ) {
+
+            if (shouldReindex(diff)) {
                 // reindex targeting a temporary directory
                 // atomically replace index
                 await this.ensureIndex(scopeDir, {
@@ -235,7 +265,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
 
     private async statIndex(scopeDir: FileURI): Promise<CorpusDiff | null> {
         const { indexDir } = this.getIndexDir(scopeDir)
-        const { symfPath } = await this.getSymfInfo()
+        const symfPath = await this.mustSymfPath()
         try {
             const { stdout } = await execFile(symfPath, [
                 '--index-root',
@@ -285,32 +315,26 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
         scopeDir: FileURI
     ): Promise<string> {
         const { indexDir } = this.getIndexDir(scopeDir)
-        const { accessToken, symfPath, serverEndpoint } = await this.getSymfInfo()
+        const symfPath = await this.mustSymfPath()
+        const symfArgs = [
+            '--index-root',
+            indexDir.fsPath,
+            'query',
+            '--scopes',
+            scopeDir.fsPath,
+            '--fmt',
+            'json',
+            '--boosted-keywords',
+            `"${userQuery}"`,
+            `${keywordQuery}`,
+        ]
+        logDebug('SymfRunner', 'running symf', symfPath, symfArgs.join(' '))
         try {
-            const { stdout } = await execFile(
-                symfPath,
-                [
-                    '--index-root',
-                    indexDir.fsPath,
-                    'query',
-                    '--scopes',
-                    scopeDir.fsPath,
-                    '--fmt',
-                    'json',
-                    '--rewritten-query',
-                    `"${keywordQuery}"`,
-                    `${userQuery}`,
-                ],
-                {
-                    env: {
-                        SOURCEGRAPH_TOKEN: accessToken,
-                        SOURCEGRAPH_URL: serverEndpoint,
-                        HOME: process.env.HOME,
-                    },
-                    maxBuffer: 1024 * 1024 * 1024,
-                    timeout: 1000 * 30, // timeout in 30 seconds
-                }
-            )
+            const { stdout } = await execFile(symfPath, symfArgs, {
+                env: { HOME: process.env.HOME },
+                maxBuffer: 1024 * 1024 * 1024,
+                timeout: 1000 * 30, // timeout in 30 seconds
+            })
             return stdout
         } catch (error) {
             throw toSymfError(error)
@@ -573,7 +597,19 @@ function parseSymfStdout(stdout: string): Result[] {
     }
     const results = JSON.parse(stdout) as RawSymfResult[]
     return results.map(result => {
-        const { fqname, name, type, doc, exported, lang, file: fsPath, range, summary } = result
+        const {
+            fqname,
+            name,
+            type,
+            doc,
+            exported,
+            lang,
+            file: fsPath,
+            range,
+            summary,
+            blugeScore,
+            heuristicBoostID,
+        } = result
 
         const { row: startRow, col: startColumn } = range.startPoint
         const { row: endRow, col: endColumn } = range.endPoint
@@ -602,6 +638,8 @@ function parseSymfStdout(stdout: string): Result[] {
                     col: endColumn,
                 },
             },
+            blugeScore,
+            heuristicBoostID,
         } satisfies Result
     })
 }
@@ -663,7 +701,7 @@ function toSymfError(error: unknown): Error {
     } else if (errorString.includes('401')) {
         errorMessage = `symf: Unauthorized. Is Cody signed in? ${error}`
     } else {
-        errorMessage = `symf index creation failed: ${error}`
+        errorMessage = `symf failed: ${error}`
     }
     return new EvalError(errorMessage)
 }
@@ -844,4 +882,68 @@ class IndexManager implements vscode.Disposable {
             this.currentlyRefreshing.delete(scopeDir.toString())
         }
     }
+}
+
+/**
+ * Determines whether the search index should be refreshed based on whether we're past a staleness threshold
+ * that depends on the time since last index, time it took to create the last index, and the number of files changed.
+ */
+export function shouldReindex(diff: CorpusDiff): boolean {
+    if (diff.millisElapsed === undefined) {
+        return true
+    }
+
+    const numChangedFiles = diff.changedFiles
+        ? diff.changedFiles.length
+        : diff.maybeChangedFiles
+          ? 9999999
+          : 0
+    if (numChangedFiles === 0) {
+        return false
+    }
+
+    const stalenessThresholds = [
+        {
+            // big change thresholds
+            changedFiles: 20,
+            thresholds: [
+                { lastTimeToIndexMillis: 1000 * 60 * 5, maxMillisStale: 30 * 1000 }, // 5m -> 30s
+                { lastTimeToIndexMillis: 1000 * 60 * 5, maxMillisStale: 60 * 1000 }, // 10m -> 1m
+            ],
+        },
+        {
+            // small change thresholds
+            changedFiles: 0,
+            thresholds: [
+                { lastTimeToIndexMillis: 1000 * 30, maxMillisStale: 1000 * 60 * 5 }, // 30s -> 5m
+                { lastTimeToIndexMillis: 1000 * 60, maxMillisStale: 1000 * 60 * 15 }, // 1m -> 15m
+                { lastTimeToIndexMillis: 1000 * 60 * 5, maxMillisStale: 1000 * 60 * 60 }, // 5m -> 1h
+                { lastTimeToIndexMillis: 1000 * 60 * 10, maxMillisStale: 1000 * 60 * 60 * 2 }, // 10m -> 2h
+            ],
+        },
+    ]
+
+    const fallbackThreshold = 1000 * 60 * 60 * 24 // 1 day
+
+    let t0 = undefined
+    for (const thresh of stalenessThresholds) {
+        if (numChangedFiles >= thresh.changedFiles) {
+            t0 = thresh
+            break
+        }
+    }
+    if (!t0) {
+        // should never happen given last changedFiles is 0
+        return diff.millisElapsed >= fallbackThreshold
+    }
+    if (diff.lastTimeToIndexMillis === undefined) {
+        return true
+    }
+
+    for (const thresh of t0.thresholds) {
+        if (diff.lastTimeToIndexMillis <= thresh.lastTimeToIndexMillis) {
+            return diff.millisElapsed >= thresh.maxMillisStale
+        }
+    }
+    return diff.millisElapsed >= fallbackThreshold
 }

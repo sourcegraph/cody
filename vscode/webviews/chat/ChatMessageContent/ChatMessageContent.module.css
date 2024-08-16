@@ -1,0 +1,219 @@
+.buttons-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    border-style: solid;
+    border-width: 1px;
+    border-color: var(--vscode-sideBarSectionHeader-border);
+    border-bottom-left-radius: 2px;
+    border-bottom-right-radius: 2px;
+    padding: 4px;
+}
+
+.buttons {
+    display: flex;
+}
+.button {
+    display: flex;
+    align-items: center;
+    padding: 3px;
+    height: 20px;
+    background-color: transparent;
+    cursor: pointer;
+    background: var(--button-icon-background);
+    border-radius: var(--button-icon-corner-radius);
+    color: var(--foreground);
+}
+.button:hover {
+    background: var(--button-icon-hover-background);
+    outline: 1px dotted var(--contrast-active-border);
+    outline-offset: -1px;
+}
+.button:not(:first-child) {
+    margin-left: 0.25rem;
+}
+
+.button .icon-container {
+    margin-right: 0.25rem
+}
+
+.copy-button,
+.insert-button,
+.attribution-icon,
+.status {
+    all: unset;
+    padding: 3px;
+    min-width: 16px;  /* Status element needs to be able to expand. */
+    height: 16px;
+    background-color: transparent;
+}
+
+.copy-button,
+.insert-button {
+    cursor: pointer;
+    background: var(--button-icon-background);
+    border-radius: var(--button-icon-corner-radius);
+    color: var(--foreground);
+}
+.copy-button:hover,
+.insert-button:hover {
+    background: var(--button-icon-hover-background);
+    outline: 1px dotted var(--contrast-active-border);
+    outline-offset: -1px;
+}
+
+.status {
+    font-size: 12px;
+    line-height: 1;
+}
+
+.metadata-container {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+}
+
+.metadata-container > :not(:last-child) {
+    margin-right: 0.25rem;
+}
+
+.attribution-container {
+    all: unset;
+    display: flex;
+    margin-left: auto;
+}
+
+
+.attribution-icon-unavailable {
+    color: var(--hl-orange);
+}
+
+.attribution-icon-found {
+    color: var(--hl-dark-red);
+}
+
+.status {
+    display: flex;
+    align-items: center;
+}
+
+.codicon-loading {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/*
+ * Content
+ */
+:root {
+    --spacing: 1rem;
+}
+
+.content {
+    word-break: break-word;
+    text-wrap: wrap;
+}
+
+/* Style @-file tokens to match TranscriptAction context files */
+.content a[href^="vscode://file"] em,
+.content a[href^="vscode-insiders://file"] em,
+.content a[href^="vscodium://file"] em,
+.content a[href^="cursor://file"] em
+{
+    padding: 1px 2px;
+    box-sizing: border-box;
+    background-color: color-mix(in srgb, var(--vscode-textLink-foreground) 15%, transparent);
+    border-radius: 2px;
+    font-style: normal;
+    word-break: break-all;
+}
+
+.content p {
+    word-break: break-word;
+    margin-block: 1rem;
+}
+
+.content pre {
+    padding: calc(var(--spacing) * 0.5);
+    overflow-x: auto;
+    border-style: solid;
+    border-width: 1px;
+    border-color: var(--vscode-sideBarSectionHeader-border);
+    border-bottom: none;
+    margin: 1rem 0;
+}
+
+.content code,
+.content pre {
+    font-family: var(--vscode-editor-font-family);
+    font-size: var(--vscode-editor-font-size);
+    overflow: auto;
+}
+
+.content pre,
+.content pre > code {
+    /* Our syntax highlighter emits colors intended for dark backgrounds only. */
+    background-color: var(--code-background);
+    color: var(--code-foreground);
+    margin-bottom: 0;
+}
+body[data-vscode-theme-kind='vscode-light'] .content pre,
+body[data-vscode-theme-kind='vscode-light'] .content pre > code {
+    /* Our syntax highlighter emits colors intended for dark backgrounds only. */
+    background-color: var(--code-background);
+    color: var(--code-foreground);
+}
+
+.content h1,
+.content h2,
+.content h3,
+.content h4,
+.content h5,
+.content h6 {
+    margin: 1.2em 0;
+}
+
+.content h1 {
+    font-size: 1.15em;
+    font-weight: 700;
+}
+
+.content h2 {
+    font-size: 1.1em;
+    font-weight: 700;
+}
+
+.content h3 {
+    font-size: inherit;
+    font-weight: 700;
+}
+
+.content h4,
+.content h5,
+.content h6 {
+    font-size: inherit;
+    font-weight: 600;
+}
+
+.content > *:first-child {
+    margin-top: 0;
+}
+
+.content > *:last-child {
+    margin-bottom: 0;
+}
+
+.content ul, .content ol {
+    margin-block: 1rem;
+    padding-inline-start: 2rem;
+    list-style: revert;
+}
+
+.file-name-container {
+    color: var(--vscode-descriptionForeground);
+    margin-left: auto;
+}

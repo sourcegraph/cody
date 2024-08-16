@@ -5,6 +5,7 @@ import {
     type ContextItem,
     type ContextItemRepository,
     ContextItemSource,
+    type ContextItemTree,
     FeatureFlag,
     MAX_BYTES_PER_FILE,
     NUM_CODE_RESULTS,
@@ -12,35 +13,47 @@ import {
     type PromptString,
     type Result,
     featureFlagProvider,
+    isAbortError,
     isFileURI,
     truncateTextNearestLine,
     uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { compact, flatten, zip } from 'lodash'
 import type { RemoteSearch } from '../../context/remote-search'
+import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
-import type { ContextRankingController } from '../../local-context/context-ranking'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
+import { repoNameResolver } from '../../repository/repo-name-resolver'
 
-interface HumanInput {
+export interface HumanInput {
     text: PromptString
     mentions: ContextItem[]
 }
 
-function remoteRepositoryIDsFromHumanInput(input: HumanInput): string[] {
-    return input.mentions
-        .filter((item): item is ContextItemRepository => item.type === 'repository')
-        .map(item => item.repoID)
+export async function remoteRepositoryURIsForLocalTrees(input: HumanInput): Promise<string[]> {
+    const trees: ContextItemTree[] = input.mentions.filter(
+        (item): item is ContextItemTree => item.type === 'tree'
+    )
+
+    const groups = await Promise.all(
+        trees.map(tree => repoNameResolver.getRepoNamesFromWorkspaceUri(tree.uri))
+    )
+    return Array.from(new Set(groups.flat()))
 }
 
-function shouldSearchInLocalWorkspace(input: HumanInput): boolean {
-    return input.mentions.some(item => item.type === 'tree')
-}
-
-interface GetEnhancedContextOptions {
+/**
+ * Resolve all @-mentions, including special @-mentions that refer to corpuses (not individual
+ * documents) like `@repository` and `@directory`, for which context search is performed.
+ */
+export async function resolveContext({
+    strategy,
+    editor,
+    input,
+    providers: { remoteSearch, symf, localEmbeddings },
+    signal,
+}: {
     strategy: ConfigurationUseContext
     editor: VSCodeEditor
     input: HumanInput
@@ -49,143 +62,79 @@ interface GetEnhancedContextOptions {
         symf: SymfRunner | null
         remoteSearch: RemoteSearch | null
     }
-    contextRanking: ContextRankingController | null
-    addEnhancedContext: boolean
-    // TODO(@philipp-spiess): Add abort controller to be able to cancel expensive retrievers
-}
-export async function getEnhancedContext({
-    strategy,
-    editor,
-    input,
-    providers,
-    contextRanking,
-    addEnhancedContext,
-}: GetEnhancedContextOptions): Promise<ContextItem[]> {
-    if (contextRanking) {
-        return getEnhancedContextFromRanker({
-            strategy,
-            editor,
-            input,
-            providers,
-            contextRanking,
-            addEnhancedContext,
-        })
-    }
-
-    return wrapInActiveSpan('chat.enhancedContext', async () => {
+    signal?: AbortSignal
+}): Promise<ContextItem[]> {
+    return wrapInActiveSpan('chat.resolveCorpusContextMentions', async () => {
         // use user attention context only if config is set to none
         if (strategy === 'none') {
-            logDebug('ChatController', 'getEnhancedContext > none')
+            logDebug('ChatController', 'resolveContext > none')
             return getVisibleEditorContext(editor)
         }
 
-        const embeddingsContextItemsPromise =
-            strategy !== 'keyword' && (addEnhancedContext || shouldSearchInLocalWorkspace(input))
-                ? retrieveContextGracefully(
-                      searchEmbeddingsLocal(providers.localEmbeddings, input.text),
-                      'local-embeddings'
-                  )
-                : []
+        const repoMentions = input.mentions.filter(
+            (item): item is ContextItemRepository => item.type === 'repository'
+        )
+        const treeMentions = input.mentions.filter(
+            (item): item is ContextItemTree => item.type === 'tree'
+        )
+        const otherMentions = input.mentions.filter(
+            (item): item is Exclude<ContextItem, ContextItemRepository | ContextItemTree> =>
+                item.type !== 'repository' && item.type !== 'tree'
+        )
 
-        //  Get search (symf or remote search) context if config is not set to 'embeddings' only
-        const remoteSearchContextItemsPromise =
-            providers.remoteSearch && strategy !== 'embeddings'
+        // Right now, repo mentions are always remote (remoteSearch), and tree mentions are always
+        // local (symf or embeddings).
+
+        // Remote search:
+        const repoContextSearchResults =
+            remoteSearch && repoMentions.length > 0
                 ? retrieveContextGracefully(
-                      searchRemote(providers.remoteSearch, input, addEnhancedContext),
+                      searchRemote(
+                          remoteSearch,
+                          input.text,
+                          repoMentions.map(m => m.repoID),
+                          signal
+                      ),
                       'remote-search'
                   )
                 : []
-        const localSearchContextItemsPromise =
-            providers.symf &&
-            strategy !== 'embeddings' &&
-            (addEnhancedContext || shouldSearchInLocalWorkspace(input))
-                ? retrieveContextGracefully(searchSymf(providers.symf, editor, input.text), 'symf')
-                : []
 
-        // Retrieve items from all context sources
-        const searchContextBySource = [
-            await embeddingsContextItemsPromise,
-            await remoteSearchContextItemsPromise,
-            await localSearchContextItemsPromise,
-        ]
+        // Symf search:
+        const treeContextSymfSearchResults =
+            symf && strategy !== 'embeddings' && treeMentions.length > 0
+                ? Promise.all(
+                      treeMentions.map(tree =>
+                          retrieveContextGracefully(
+                              searchSymf(symf, editor, tree.uri, input.text),
+                              `symf ${tree.name}`
+                          )
+                      )
+                  ).then(v => v.flat())
+                : Promise.resolve([])
 
-        // Interleave items from context sources, excluding undefined items inserted by lodash's zip
-        const searchContext = compact(flatten(zip(...searchContextBySource)))
-
-        const priorityContext = await getPriorityContext(input.text, editor, searchContext)
-        return priorityContext.concat(searchContext)
-    })
-}
-
-async function getEnhancedContextFromRanker({
-    editor,
-    input,
-    providers,
-    contextRanking,
-    addEnhancedContext,
-}: GetEnhancedContextOptions): Promise<ContextItem[]> {
-    return wrapInActiveSpan('chat.enhancedContextRanker', async span => {
-        // Get all possible context items to rank
-        let searchContext = getVisibleEditorContext(editor)
-
-        const numResults = 50
-        const embeddingsContextItemsPromise =
-            addEnhancedContext || shouldSearchInLocalWorkspace(input)
+        // Embeddings search. Note that this is hard-coded to only work on a single workspace root
+        // and is not scoped to a dir, so we just run it once. TODO: Make it scoped to a dir.
+        const treeContextEmbeddingsSearchResults =
+            localEmbeddings && strategy !== 'keyword' && treeMentions.length > 0
                 ? retrieveContextGracefully(
-                      searchEmbeddingsLocal(providers.localEmbeddings, input.text, numResults),
+                      searchEmbeddingsLocal(localEmbeddings, input.text),
                       'local-embeddings'
                   )
-                : []
+                : Promise.resolve([])
 
-        const modelSpecificEmbeddingsContextItemsPromise = contextRanking
-            ? retrieveContextGracefully(
-                  contextRanking.searchModelSpecificEmbeddings(input.text, numResults),
-                  'model-specific-embeddings'
-              )
-            : []
+        // Other @-mentions:
+        const otherMentionsResolved = resolveContextItems(editor, otherMentions, input.text, signal)
 
-        const precomputeQueryEmbeddingPromise = contextRanking?.precomputeContextRankingFeatures(
-            input.text
-        )
-
-        const localSearchContextItemsPromise =
-            providers.symf && (addEnhancedContext || shouldSearchInLocalWorkspace(input))
-                ? retrieveContextGracefully(searchSymf(providers.symf, editor, input.text), 'symf')
-                : []
-
-        const remoteSearchContextItemsPromise = providers.remoteSearch
-            ? retrieveContextGracefully(
-                  searchRemote(providers.remoteSearch, input, addEnhancedContext),
-                  'remote-search'
-              )
-            : []
-
-        const keywordContextItemsPromise = (async () => [
-            ...(await localSearchContextItemsPromise),
-            ...(await remoteSearchContextItemsPromise),
-        ])()
-
-        const [embeddingsContextItems, keywordContextItems, modelEmbeddingContextItems] =
+        const allContext: ContextItem[] = (
             await Promise.all([
-                embeddingsContextItemsPromise,
-                keywordContextItemsPromise,
-                modelSpecificEmbeddingsContextItemsPromise,
-                precomputeQueryEmbeddingPromise,
+                repoContextSearchResults,
+                treeContextSymfSearchResults,
+                treeContextEmbeddingsSearchResults,
+                otherMentionsResolved,
             ])
-
-        searchContext = searchContext
-            .concat(keywordContextItems)
-            .concat(embeddingsContextItems)
-            .concat(modelEmbeddingContextItems)
-        const editorContext = await getPriorityContext(input.text, editor, searchContext)
-        const allContext = editorContext.concat(searchContext)
-        if (!contextRanking) {
-            return allContext
-        }
-        const rankedContext = wrapInActiveSpan('chat.enhancedContextRanker.reranking', () =>
-            contextRanking.rankContextItems(input.text, allContext)
-        )
-        return rankedContext
+        ).flat()
+        const priorityContext = await getPriorityContext(input.text, editor, allContext)
+        return priorityContext.concat(allContext)
     })
 }
 
@@ -220,18 +169,16 @@ export async function getContextStrategy(
 }
 
 async function searchRemote(
-    remoteSearch: RemoteSearch | null,
-    input: HumanInput,
-    allReposForEnhancedContext: boolean
+    remoteSearch: RemoteSearch,
+    input: PromptString,
+    repoIDs: string[],
+    signal?: AbortSignal
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.search.remote', async () => {
         if (!remoteSearch) {
             return []
         }
-        const repoIDs = allReposForEnhancedContext
-            ? remoteSearch.getRepoIdSet()
-            : remoteRepositoryIDsFromHumanInput(input)
-        return (await remoteSearch.query(input.text, repoIDs)).map(result => {
+        return (await remoteSearch.query(input, repoIDs, signal)).map(result => {
             return {
                 type: 'file',
                 content: result.content,
@@ -249,9 +196,10 @@ async function searchRemote(
 /**
  * Uses symf to conduct a local search within the current workspace folder
  */
-async function searchSymf(
+export async function searchSymf(
     symf: SymfRunner | null,
     editor: VSCodeEditor,
+    workspaceRoot: vscode.Uri,
     userText: PromptString,
     blockOnIndex = false
 ): Promise<ContextItem[]> {
@@ -259,8 +207,7 @@ async function searchSymf(
         if (!symf) {
             return []
         }
-        const workspaceRoot = editor.getWorkspaceRootUri()
-        if (!workspaceRoot || !isFileURI(workspaceRoot)) {
+        if (!isFileURI(workspaceRoot)) {
             return []
         }
 
@@ -289,9 +236,18 @@ async function searchSymf(
                     let text: string | undefined
                     try {
                         text = await editor.getTextEditorContentForFile(result.file, range)
+                        text = truncateSymfResult(text)
                     } catch (error) {
                         logError('ChatController.searchSymf', `Error getting file contents: ${error}`)
                         return []
+                    }
+
+                    const metadata: string[] = [
+                        'source:symf-index',
+                        'score:' + result.blugeScore.toFixed(0),
+                    ]
+                    if (result.heuristicBoostID) {
+                        metadata.push('boost:' + result.heuristicBoostID)
                     }
                     return {
                         type: 'file',
@@ -299,6 +255,7 @@ async function searchSymf(
                         range,
                         source: ContextItemSource.Search,
                         content: text,
+                        metadata,
                     }
                 }
             )
@@ -310,16 +267,12 @@ async function searchSymf(
 }
 
 async function searchEmbeddingsLocal(
-    localEmbeddings: LocalEmbeddingsController | null,
+    localEmbeddings: LocalEmbeddingsController,
     text: PromptString,
     numResults: number = NUM_CODE_RESULTS + NUM_TEXT_RESULTS
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.embeddings.local', async span => {
-        if (!localEmbeddings) {
-            return []
-        }
-
-        logDebug('ChatController', 'getEnhancedContext > searching local embeddings')
+        logDebug('ChatController', 'resolveContext > searching local embeddings')
         const contextItems: ContextItem[] = []
         const embeddingsResults = await localEmbeddings.getContext(text, numResults)
         span.setAttribute('numResults', embeddingsResults.length)
@@ -370,7 +323,7 @@ function getVisibleEditorContext(editor: VSCodeEditor): ContextItem[] {
     })
 }
 
-async function getPriorityContext(
+export async function getPriorityContext(
     text: PromptString,
     editor: VSCodeEditor,
     retrievedContext: ContextItem[]
@@ -496,14 +449,33 @@ function extractQuestion(input: string): string | undefined {
     return undefined
 }
 
-async function retrieveContextGracefully<T>(promise: Promise<T[]>, strategy: string): Promise<T[]> {
+export async function retrieveContextGracefully<T>(
+    promise: Promise<T[]>,
+    strategy: string
+): Promise<T[]> {
     try {
-        logDebug('ChatController', `getEnhancedContext > ${strategy} (start)`)
+        logDebug('ChatController', `resolveContext > ${strategy} (start)`)
         return await promise
     } catch (error) {
-        logError('ChatController', `getEnhancedContext > ${strategy}' (error)`, error)
+        if (isAbortError(error)) {
+            logError('ChatController', `resolveContext > ${strategy}' (aborted)`)
+            throw error
+        }
+        logError('ChatController', `resolveContext > ${strategy}' (error)`, error)
         return []
     } finally {
-        logDebug('ChatController', `getEnhancedContext > ${strategy} (end)`)
+        logDebug('ChatController', `resolveContext > ${strategy} (end)`)
     }
+}
+
+const maxSymfBytes = 2_048
+export function truncateSymfResult(text: string): string {
+    if (text.length >= maxSymfBytes) {
+        text = text.slice(0, maxSymfBytes)
+        const j = text.lastIndexOf('\n')
+        if (j !== -1) {
+            text = text.slice(0, j)
+        }
+    }
+    return text
 }

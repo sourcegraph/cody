@@ -12,8 +12,8 @@ import {
     ClientConfigSingleton,
     CodyIDE,
     type ContextItem,
+    type ContextItemOpenCtx,
     ContextItemSource,
-    type ContextItemWithContent,
     DOTCOM_URL,
     type DefaultChatCommands,
     type EventSource,
@@ -21,20 +21,26 @@ import {
     type Guardrails,
     type MentionQuery,
     type Message,
-    type Model,
     ModelUsage,
     ModelsService,
     PromptString,
+    type RankedContext,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     type SerializedPromptEditorState,
     TokenCounter,
     Typewriter,
+    addMessageListenersForExtensionAPI,
     allMentionProvidersMetadata,
+    asyncGeneratorFromPromise,
+    createMessageAPIForExtension,
     featureFlagProvider,
+    getContextForChatMessage,
     hydrateAfterPostMessage,
     inputTextWithoutContextChipsFromPromptEditorState,
+    isAbortError,
     isAbortErrorOrSocketHangUp,
+    isContextWindowLimitError,
     isDefined,
     isError,
     isFileURI,
@@ -51,7 +57,6 @@ import {
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import { isContextWindowLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { URI } from 'vscode-uri'
 import { version as VSCEVersion } from '../../../package.json'
@@ -61,10 +66,8 @@ import {
     startAuthProgressIndicator,
 } from '../../auth/auth-progress-indicator'
 import type { startTokenReceiver } from '../../auth/token-receiver'
-import { getCodyCommandList } from '../../commands/CommandsController'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
-import { experimentalUnitTestMessageSubmission } from '../../commands/execute/test-chat-experimental'
 import { getConfiguration, getFullConfig } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
@@ -72,14 +75,13 @@ import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
-import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
-import type { ContextRankingController } from '../../local-context/context-ranking'
+import type { ExtensionClient } from '../../extension-client'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
-import { rewriteChatQuery } from '../../local-context/rewrite-chat-query'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
+import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
 import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
@@ -88,18 +90,23 @@ import {
     handleCodeFromInsertAtCursor,
     handleCodeFromSaveToNewFile,
     handleCopiedCode,
+    handleSmartApply,
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
-import { startClientStateBroadcaster } from '../clientStateBroadcaster'
-import { getChatContextItemsForMention } from '../context/chatContext'
+import {
+    getCorpusContextItemsForEditorState,
+    startClientStateBroadcaster,
+} from '../clientStateBroadcaster'
+import { type GetContextItemsTelemetry, getChatContextItemsForMention } from '../context/chatContext'
 import type { ContextAPIClient } from '../context/contextAPIClient'
 import type {
     ChatSubmitType,
     ConfigurationSubsetForWebview,
     ExtensionMessage,
     LocalEnv,
+    SmartApplyResult,
     WebviewMessage,
 } from '../protocol'
 import { countGeneratedCode } from '../utils'
@@ -107,30 +114,36 @@ import { chatHistory } from './ChatHistoryManager'
 import { ChatModel, prepareChatMessage } from './ChatModel'
 import { CodyChatEditorViewType } from './ChatsController'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
+import { type ContextRetriever, toStructuredMentions } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, openFile } from './chat-helpers'
-import { getContextStrategy, getEnhancedContext } from './context'
+import { type HumanInput, getContextStrategy, getPriorityContext, resolveContext } from './context'
 import { DefaultPrompter } from './prompt'
 
 interface ChatControllerOptions {
     extensionUri: vscode.Uri
     authProvider: AuthProvider
     chatClient: ChatClient
+
     localEmbeddings: LocalEmbeddingsController | null
-    contextRanking: ContextRankingController | null
     symf: SymfRunner | null
     enterpriseContext: EnterpriseContextFactory | null
+
+    contextRetriever: ContextRetriever
+    contextAPIClient: ContextAPIClient | null
+
+    extensionClient: ExtensionClient
+
     editor: VSCodeEditor
-    models: Model[]
     guardrails: Guardrails
     startTokenReceiver?: typeof startTokenReceiver
-    contextAPIClient: ContextAPIClient | null
 }
 
 export interface ChatSession {
     webviewPanelOrView: vscode.WebviewView | vscode.WebviewPanel | undefined
     sessionID: string
 }
+
 /**
  * ChatController is the view controller class for the chat panel.
  * It handles all events sent from the view, keeps track of the underlying chat model,
@@ -164,19 +177,20 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly authProvider: AuthProvider
     private readonly chatClient: ChatClient
     private readonly codebaseStatusProvider: CodebaseStatusProvider
+
     private readonly localEmbeddings: LocalEmbeddingsController | null
-    private readonly contextRanking: ContextRankingController | null
     private readonly symf: SymfRunner | null
+    private readonly remoteSearch: RemoteSearch | null
+
+    private readonly contextRetriever: ContextRetriever
+
     private readonly contextStatusAggregator = new ContextStatusAggregator()
     private readonly editor: VSCodeEditor
+    private readonly extensionClient: ExtensionClient
     private readonly guardrails: Guardrails
-    private readonly remoteSearch: RemoteSearch | null
     private readonly repoPicker: RemoteRepoPicker | null
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
     private readonly contextAPIClient: ContextAPIClient | null
-
-    private contextFilesQueryCancellation?: vscode.CancellationTokenSource
-    private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
 
     private disposables: vscode.Disposable[] = []
 
@@ -190,24 +204,26 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         authProvider,
         chatClient,
         localEmbeddings,
-        contextRanking,
         symf,
         editor,
-        models,
         guardrails,
         enterpriseContext,
         startTokenReceiver,
         contextAPIClient,
+        contextRetriever,
+        extensionClient,
     }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
         this.chatClient = chatClient
         this.localEmbeddings = localEmbeddings
-        this.contextRanking = contextRanking
         this.symf = symf
         this.repoPicker = enterpriseContext?.repoPicker || null
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
+        this.extensionClient = extensionClient
+
+        this.contextRetriever = contextRetriever
 
         this.chatModel = new ChatModel(getDefaultModelID())
 
@@ -221,9 +237,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         // Advise local embeddings to start up if necessary.
         void this.localEmbeddings?.start()
-
-        // Start the context Ranking module
-        void this.contextRanking?.start()
 
         // Push context status to the webview when it changes.
         this.disposables.push(
@@ -239,6 +252,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             enterpriseContext ? enterpriseContext.getCodebaseRepoIdMapper() : null
         )
         this.disposables.push(this.contextStatusAggregator.addProvider(this.codebaseStatusProvider))
+
+        // Keep feature flags updated.
+        this.disposables.push({
+            dispose: featureFlagProvider.onFeatureFlagChanged('', () => {
+                void this.postConfigFeatures()
+            }),
+        })
 
         if (this.remoteSearch) {
             this.disposables.push(
@@ -328,20 +348,36 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'get-chat-models':
                 this.postChatModels()
                 break
-            case 'getUserContext':
-                await this.handleGetUserContextFilesCandidates(parseMentionQuery(message.query, null))
+            case 'getUserContext': {
+                const result = await this.handleGetUserContextFilesCandidates({
+                    query: parseMentionQuery(message.query, null),
+                })
+                await this.postMessage({
+                    type: 'userContextFiles',
+                    userContextFiles: result.userContextFiles,
+                })
                 break
-            case 'getAllMentionProvidersMetadata':
-                await this.handleGetAllMentionProvidersMetadata()
-                break
-            case 'queryContextItems':
-                await this.handleGetUserContextFilesCandidates(message.query)
-                break
+            }
             case 'insert':
                 await handleCodeFromInsertAtCursor(message.text)
                 break
             case 'copy':
                 await handleCopiedCode(message.text, message.eventType === 'Button')
+                break
+            case 'smartApplySubmit':
+                await handleSmartApply(
+                    message.id,
+                    message.code,
+                    this.authProvider.getAuthStatus(),
+                    message.instruction,
+                    message.fileName
+                )
+                break
+            case 'smartApplyAccept':
+                await vscode.commands.executeCommand('cody.fixup.codelens.accept', message.id)
+                break
+            case 'smartApplyReject':
+                await vscode.commands.executeCommand('cody.fixup.codelens.undo', message.id)
                 break
             case 'openURI':
                 vscode.commands.executeCommand('vscode.open', message.uri)
@@ -362,8 +398,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await openLocalFileWithRange(message.filePath, message.range ?? undefined)
                 break
             case 'newFile':
-                handleCodeFromSaveToNewFile(message.text)
-                await this.editor.createWorkspaceFile(message.text)
+                await handleCodeFromSaveToNewFile(message.text, this.editor)
                 break
             case 'context/get-remote-search-repos': {
                 await this.postMessage({
@@ -474,6 +509,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     }
                     break
                 }
+                if (message.authKind === 'signin' && message.endpoint && message.value) {
+                    await this.authProvider.auth({ endpoint: message.endpoint, token: message.value })
+                    break
+                }
+                if (message.authKind === 'signout') {
+                    await this.authProvider.signoutMenu()
+                    this.setWebviewView(View.Login)
+                    break
+                }
                 // cody.auth.signin or cody.auth.signout
                 await vscode.commands.executeCommand(`cody.auth.${message.authKind}`)
                 break
@@ -510,30 +554,42 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 })
                 break
             }
-            case 'experimental-unit-test-prompt': {
-                await this.experimentalSetUnitTestPrompt()
-                break
-            }
-            default:
-                this.postError(new Error(`Invalid request type from Webview Panel: ${message.command}`))
         }
     }
 
+    private async isSmartApplyEnabled(): Promise<boolean> {
+        if (this.extensionClient.capabilities?.edit === 'none') {
+            // Smart Apply relies on the Edit capability
+            return false
+        }
+
+        const config = await getFullConfig()
+        return (
+            config.internalUnstable ||
+            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalSmartApply))
+        )
+    }
+
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
-        const [config, experimentalUnitTest] = await Promise.all([
+        const [config, experimentalSmartApply] = await Promise.all([
             getFullConfig(),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalUnitTest),
+            this.isSmartApplyEnabled(),
         ])
 
+        const webviewType =
+            this.webviewPanelOrView?.viewType === 'cody.editorPanel' ? 'editor' : 'sidebar'
+
         return {
-            agentIDE: config.isRunningInsideAgent ? config.agentIDE : CodyIDE.VSCode,
+            agentIDE: config.agentIDE ?? CodyIDE.VSCode,
             agentExtensionVersion: config.isRunningInsideAgent
                 ? config.agentExtensionVersion
                 : VSCEVersion,
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: config.serverEndpoint,
             experimentalNoodle: config.experimentalNoodle,
-            experimentalUnitTest,
+            experimentalSmartApply,
+            webviewType,
+            internalDebugContext: config.internalDebugContext,
         }
     }
 
@@ -548,11 +604,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         // Get the latest model list available to the current user to update the ChatModel.
         this.handleSetChatModel(getDefaultModelID())
+
+        void this.postConfigFeatures()
     }
 
     // When the webview sends the 'ready' message, respond by posting the view config
     private async handleReady(): Promise<void> {
         await this.sendConfig()
+        await this.postConfigFeatures()
+
         // Update the chat model providers again to ensure the correct token limit is set on ready
         this.handleSetChatModel(this.chatModel.modelID)
     }
@@ -570,10 +630,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
-        })
-        await this.postMessage({
-            type: 'commands',
-            commands: getCodyCommandList(),
         })
     }
 
@@ -593,6 +649,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.postChatModels()
         await this.saveSession()
         this.initDoer.signalInitialized()
+        await this.sendConfig()
     }
 
     private async getRepoMetadataIfPublic(): Promise<string> {
@@ -607,18 +664,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return ''
     }
 
-    public async experimentalSetUnitTestPrompt() {
-        const message = await experimentalUnitTestMessageSubmission()
-        if (!message?.editorState) {
-            return
-        }
-
-        this.postMessage({
-            type: 'updateEditorState',
-            editorState: message.editorState as SerializedPromptEditorState,
-        })
-    }
-
     /**
      * Handles user input text for both new and edit submissions
      */
@@ -628,8 +673,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         submitType: ChatSubmitType,
         mentions: ContextItem[],
         editorState: SerializedPromptEditorState | null,
-        addEnhancedContext: boolean,
-        abortSignal: AbortSignal,
+        legacyAddEnhancedContext: boolean,
+        signal: AbortSignal,
         source?: EventSource,
         command?: DefaultChatCommands
     ): Promise<void> {
@@ -643,11 +688,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 command,
                 traceId: span.spanContext().traceId,
                 sessionID: this.chatModel.sessionID,
-                addEnhancedContext,
+                addEnhancedContext: legacyAddEnhancedContext,
             }
             await this.recordChatQuestionTelemetryEvent(
                 authStatus,
-                addEnhancedContext,
+                legacyAddEnhancedContext,
                 mentions,
                 sharedProperties,
                 inputText
@@ -663,88 +708,49 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 if (submitType === 'user-newchat' && !this.chatModel.isEmpty()) {
                     span.addEvent('clearAndRestartSession')
                     await this.clearAndRestartSession()
-                    abortSignal.throwIfAborted()
+                    signal.throwIfAborted()
                 }
 
                 this.chatModel.addHumanMessage({ text: inputText, editorState })
                 await this.saveSession()
-                abortSignal.throwIfAborted()
+                signal.throwIfAborted()
 
                 this.postEmptyMessageInProgress()
                 this.contextAPIClient?.detectChatIntent(requestID, inputText.toString())
 
-                // Add user's current selection as context for chat messages.
-                const selectionContext = source === 'chat' ? await getContextFileFromSelection() : []
-                abortSignal.throwIfAborted()
+                // All mentions we receive are either source=initial or source=user. If the caller
+                // forgot to set the source, assume it's from the user.
+                mentions = mentions.map(m => (m.source ? m : { ...m, source: ContextItemSource.User }))
 
-                const userContextItems: ContextItemWithContent[] = await resolveContextItems(
-                    this.editor,
-                    [...mentions, ...selectionContext],
-                    inputText
+                // If the legacyAddEnhancedContext param is true, then pretend there is a `@repo` or `@tree`
+                // mention and a mention of the current selection to match the old behavior.
+                if (legacyAddEnhancedContext) {
+                    const corpusMentions = getCorpusContextItemsForEditorState({
+                        remoteSearch: this.remoteSearch,
+                    })
+                    mentions = mentions.concat(corpusMentions)
+
+                    const selectionContext = source === 'chat' ? await getContextFileFromSelection() : []
+                    signal.throwIfAborted()
+                    mentions = mentions.concat(selectionContext)
+                }
+
+                const contextAlternatives = await this.computeContext(
+                    { text: inputText, mentions },
+                    requestID,
+                    editorState,
+                    span,
+                    signal
                 )
-                abortSignal.throwIfAborted()
+                signal.throwIfAborted()
+                const corpusContext = contextAlternatives[0].items
 
-                /**
-                 * Whether the input has repository or tree mentions that need large-corpus
-                 * context-fetching (embeddings, symf, and/or context search).
-                 */
-                const corpusMentions = mentions.filter(
-                    item => item.type === 'repository' || item.type === 'tree'
-                )
-                const hasCorpusMentions = corpusMentions.length > 0
-
-                const config = getConfiguration()
-                const contextStrategy = await getContextStrategy(config.useContext)
-                span.setAttribute('strategy', contextStrategy)
-
-                // Remove context chips (repo, @-mentions) from the input text for context retrieval.
-                const inputTextWithoutContextChips = editorState
-                    ? PromptString.unsafe_fromUserQuery(
-                          inputTextWithoutContextChipsFromPromptEditorState(editorState)
-                      )
-                    : inputText
+                const explicitMentions = corpusContext.filter(c => c.source === ContextItemSource.User)
+                const implicitMentions = corpusContext.filter(c => c.source !== ContextItemSource.User)
 
                 const prompter = new DefaultPrompter(
-                    userContextItems,
-                    addEnhancedContext || hasCorpusMentions
-                        ? async () => {
-                              /* EXPERIMENTAL: Rewrite query based on the chat history and the
-                               * mentioned context items for better enhanced context retrieval.
-                               *
-                               * The retrieval performance boost is not evaluated yet and thus
-                               * it is only available when `experimentNoodle` is set to `true`.
-                               */
-                              const rewrite = config.experimentalNoodle
-                                  ? await rewriteChatQuery({
-                                        query: inputText,
-                                        contextItems: userContextItems,
-                                        chatClient: this.chatClient,
-                                        chatModel: this.chatModel,
-                                    })
-                                  : inputTextWithoutContextChips
-                              const context = getEnhancedContext({
-                                  strategy: contextStrategy,
-                                  editor: this.editor,
-                                  input: { text: rewrite, mentions },
-                                  addEnhancedContext,
-                                  providers: {
-                                      localEmbeddings: this.localEmbeddings,
-                                      symf: this.symf,
-                                      remoteSearch: this.remoteSearch,
-                                  },
-                                  contextRanking: this.contextRanking,
-                              })
-                              // add a callback, but return the original context
-                              context.then(c =>
-                                  this.contextAPIClient?.rankContext(
-                                      requestID,
-                                      inputTextWithoutContextChips.toString(),
-                                      c
-                                  )
-                              )
-                              return context
-                          }
-                        : undefined,
+                    explicitMentions,
+                    implicitMentions,
                     command !== undefined
                 )
                 const sendTelemetry = (contextSummary: any, privateContextSummary?: any): void => {
@@ -778,12 +784,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 try {
                     const prompt = await this.buildPrompt(
                         prompter,
-                        abortSignal,
+                        signal,
                         requestID,
-                        sendTelemetry
+                        sendTelemetry,
+                        contextAlternatives
                     )
-                    abortSignal.throwIfAborted()
-                    this.streamAssistantResponse(requestID, prompt, span, firstTokenSpan, abortSignal)
+                    signal.throwIfAborted()
+                    this.streamAssistantResponse(requestID, prompt, span, firstTokenSpan, signal)
                 } catch (error) {
                     if (isAbortErrorOrSocketHangUp(error as Error)) {
                         return
@@ -801,6 +808,173 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }
             })
         })
+    }
+
+    private async computeContext(
+        { text, mentions }: HumanInput,
+        requestID: string,
+        editorState: SerializedPromptEditorState | null,
+        span: Span,
+        signal?: AbortSignal
+    ): Promise<RankedContext[]> {
+        const legacyContextPromise = this.legacyComputeContext(
+            { text, mentions },
+            requestID,
+            editorState,
+            span,
+            signal
+        )
+        if (!vscode.workspace.getConfiguration().get<boolean>('cody.internal.serverSideContext')) {
+            return legacyContextPromise
+        }
+
+        const contextPromise = this._computeContext(
+            { text, mentions },
+            requestID,
+            editorState,
+            span,
+            signal
+        )
+        return (await Promise.all([contextPromise, legacyContextPromise])).flat()
+    }
+
+    private async _computeContext(
+        { text, mentions }: HumanInput,
+        requestID: string,
+        editorState: SerializedPromptEditorState | null,
+        span: Span,
+        signal?: AbortSignal
+    ): Promise<RankedContext[]> {
+        // Remove context chips (repo, @-mentions) from the input text for context retrieval.
+        const inputTextWithoutContextChips = editorState
+            ? PromptString.unsafe_fromUserQuery(
+                  inputTextWithoutContextChipsFromPromptEditorState(editorState)
+              )
+            : text
+        const structuredMentions = toStructuredMentions(mentions)
+        const retrievedContextPromise = this.contextRetriever.retrieveContext(
+            structuredMentions,
+            inputTextWithoutContextChips,
+            span,
+            signal
+        )
+        const priorityContextPromise = retrievedContextPromise.then(p =>
+            getPriorityContext(text, this.editor, p)
+        )
+        const openCtxContextPromise = getContextForChatMessage(text.toString(), signal)
+        const [priorityContext, retrievedContext, openCtxContext] = await Promise.all([
+            priorityContextPromise,
+            retrievedContextPromise,
+            openCtxContextPromise,
+        ])
+
+        const resolvedExplicitMentionsPromise = resolveContextItems(
+            this.editor,
+            [structuredMentions.symbols, structuredMentions.files].flat(),
+            text,
+            signal
+        )
+
+        const rankedContext: RankedContext[] = []
+        if (this.contextAPIClient && retrievedContext.length > 1) {
+            const response = await this.contextAPIClient.rankContext(
+                requestID,
+                inputTextWithoutContextChips.toString(),
+                retrievedContext
+            )
+            if (isError(response)) {
+                throw response
+            }
+            if (!response) {
+                throw new Error('empty response from context reranking API')
+            }
+            const { used, ignored } = response
+            const all: [ContextItem, number][] = []
+            const usedContext: ContextItem[] = []
+            const ignoredContext: ContextItem[] = []
+            for (const { index, score } of used) {
+                usedContext.push(retrievedContext[index])
+                all.push([retrievedContext[index], score])
+            }
+            for (const { index, score } of ignored) {
+                ignoredContext.push(retrievedContext[index])
+                all.push([retrievedContext[index], score])
+            }
+
+            rankedContext.push({
+                strategy: 'local+remote, reranked',
+                items: combineContext(
+                    await resolvedExplicitMentionsPromise,
+                    openCtxContext,
+                    priorityContext,
+                    usedContext
+                ),
+            })
+        }
+
+        rankedContext.push({
+            strategy: 'local+remote',
+            items: combineContext(
+                await resolvedExplicitMentionsPromise,
+                openCtxContext,
+                priorityContext,
+                retrievedContext
+            ),
+        })
+        return rankedContext
+    }
+
+    private async legacyComputeContext(
+        { text, mentions }: HumanInput,
+        requestID: string,
+        editorState: SerializedPromptEditorState | null,
+        span: Span,
+        signal?: AbortSignal
+    ): Promise<RankedContext[]> {
+        // Fetch using legacy context retrieval
+        const config = getConfiguration()
+        const contextStrategy = await getContextStrategy(config.useContext)
+        span.setAttribute('strategy', contextStrategy)
+
+        // Remove context chips (repo, @-mentions) from the input text for context retrieval.
+        const inputTextWithoutContextChips = editorState
+            ? PromptString.unsafe_fromUserQuery(
+                  inputTextWithoutContextChipsFromPromptEditorState(editorState)
+              )
+            : text
+
+        const context = (
+            await Promise.all([
+                resolveContext({
+                    strategy: contextStrategy,
+                    editor: this.editor,
+                    input: { text: inputTextWithoutContextChips, mentions },
+                    providers: {
+                        localEmbeddings: this.localEmbeddings,
+                        symf: this.symf,
+                        remoteSearch: this.remoteSearch,
+                    },
+                    signal,
+                }),
+                getContextForChatMessage(text.toString(), signal),
+            ])
+        ).flat()
+
+        if (context.length > 0) {
+            // Run in background.
+            void this.contextAPIClient?.rankContext(
+                requestID,
+                inputTextWithoutContextChips.toString(),
+                context
+            )
+        }
+
+        return [
+            {
+                strategy: `(legacy)${contextStrategy}`,
+                items: context.flat(),
+            },
+        ]
     }
 
     private submitOrEditOperation: AbortController | undefined
@@ -868,43 +1042,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.postChatModels()
     }
 
-    private async handleGetAllMentionProvidersMetadata(): Promise<void> {
-        // Cancel previously in-flight query.
-        const cancellation = new vscode.CancellationTokenSource()
-        this.allMentionProvidersMetadataQueryCancellation?.cancel()
-        this.allMentionProvidersMetadataQueryCancellation = cancellation
-
-        try {
-            const config = await getFullConfig()
-            const isCodyWeb = config.agentIDE === CodyIDE.Web
-            const providers = isCodyWeb
-                ? await webMentionProvidersMetadata()
-                : await allMentionProvidersMetadata()
-
-            if (cancellation.token.isCancellationRequested) {
-                return
-            }
-            void this.postMessage({
-                type: 'allMentionProvidersMetadata',
-                providers,
-            })
-        } catch (error) {
-            if (cancellation.token.isCancellationRequested) {
-                return
-            }
-            cancellation.cancel()
-            this.postError(new Error(`Error retrieving context files: ${error}`))
-        } finally {
-            cancellation.dispose()
-        }
-    }
-
-    private async handleGetUserContextFilesCandidates(query: MentionQuery): Promise<void> {
-        // Cancel previously in-flight query.
-        const cancellation = new vscode.CancellationTokenSource()
-        this.contextFilesQueryCancellation?.cancel()
-        this.contextFilesQueryCancellation = cancellation
-
+    private async handleGetUserContextFilesCandidates({
+        query,
+    }: { query: MentionQuery }): Promise<
+        Omit<Extract<ExtensionMessage, { type: 'userContextFiles' }>, 'type'>
+    > {
         const source = 'chat'
 
         // Use numerical mapping to send source values to metadata, making this data available on all instances.
@@ -912,7 +1054,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             chat: 1,
         } as const
 
-        const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
+        const scopedTelemetryRecorder: GetContextItemsTelemetry = {
             empty: () => {
                 telemetryRecorder.recordEvent('cody.at-mention', 'executed', {
                     metadata: {
@@ -930,38 +1072,29 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         try {
-            const items = await getChatContextItemsForMention(
-                query,
-                cancellation.token,
-                scopedTelemetryRecorder,
-                // Pass possible remote repository context in order to resolve files
-                // for this remote repositories and not for local one, Cody Web case
-                // when we have only remote repositories as context
-                query.includeRemoteRepositories
-                    ? this.remoteSearch?.getRepos('all')?.map(repo => repo.name)
-                    : undefined
-            )
+            const config = await getFullConfig()
+            const isCodyWeb = config.agentIDE === CodyIDE.Web
 
-            if (cancellation.token.isCancellationRequested) {
-                return
-            }
+            const items = await getChatContextItemsForMention({
+                mentionQuery: query,
+                telemetryRecorder: scopedTelemetryRecorder,
+                rangeFilter: !isCodyWeb,
+                remoteRepositoriesNames: query.includeRemoteRepositories
+                    ? this.remoteSearch?.getRepos('all')?.map(repo => repo.name)
+                    : undefined,
+            })
+
             const { input, context } = this.chatModel.contextWindow
             const userContextFiles = items.map(f => ({
                 ...f,
                 isTooLarge: f.size ? f.size > (context?.user || input) : undefined,
             }))
-            void this.postMessage({
-                type: 'userContextFiles',
-                userContextFiles,
-            })
+            return { userContextFiles }
         } catch (error) {
-            if (cancellation.token.isCancellationRequested) {
-                return
+            if (isAbortError(error)) {
+                throw error // rethrow as-is so it gets ignored by our caller
             }
-            cancellation.cancel()
-            this.postError(new Error(`Error retrieving context files: ${error}`))
-        } finally {
-            cancellation.dispose()
+            throw new Error(`Error retrieving context files: ${error}`)
         }
     }
 
@@ -998,6 +1131,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (this._webviewPanelOrView) {
             revealWebviewViewOrPanel(this._webviewPanelOrView)
         }
+    }
+
+    public async handleSmartApplyResult(result: SmartApplyResult): Promise<void> {
+        void this.postMessage({
+            type: 'clientAction',
+            smartApplyResult: result,
+        })
     }
 
     private async handleSymfIndex(): Promise<void> {
@@ -1156,18 +1296,21 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         prompter: DefaultPrompter,
         abortSignal: AbortSignal,
         requestID: string,
-        sendTelemetry?: (contextSummary: any, privateContextSummary?: any) => void
+        sendTelemetry?: (contextSummary: any, privateContextSummary?: any) => void,
+        contextAlternatives?: RankedContext[]
     ): Promise<Message[]> {
+        const experimentalSmartApplyEnabled = await this.isSmartApplyEnabled()
         const { prompt, context } = await prompter.makePrompt(
             this.chatModel,
-            this.authProvider.getAuthStatus().codyApiVersion
+            this.authProvider.getAuthStatus().codyApiVersion,
+            { experimentalSmartApplyEnabled }
         )
         abortSignal.throwIfAborted()
 
-        // Update UI based on prompt construction
-        // Includes the excluded context items to display in the UI
-        this.chatModel.setLastMessageContext([...context.used, ...context.ignored])
-        // this is not awaited, so we kick the call off but don't block on it returning
+        // Update UI based on prompt construction. Includes the excluded context items to display in the UI
+        this.chatModel.setLastMessageContext([...context.used, ...context.ignored], contextAlternatives)
+
+        // This is not awaited, so we kick the call off but don't block on it returning
         this.contextAPIClient?.recordContext(requestID, context.used, context.ignored)
 
         if (sendTelemetry) {
@@ -1530,7 +1673,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             enableCommandUris: true,
         }
 
-        await addWebviewViewHTML(this.extensionUri, viewOrPanel)
+        await addWebviewViewHTML(this.extensionClient, this.extensionUri, viewOrPanel)
         this.postContextStatus()
 
         // Dispose panel when the panel is closed
@@ -1550,8 +1693,47 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             )
         )
 
-        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
+        // Listen for API calls from the webview.
+        this.disposables.push(
+            addMessageListenersForExtensionAPI(
+                createMessageAPIForExtension({
+                    postMessage: this.postMessage.bind(this),
+                    postError: this.postError.bind(this),
+                    onMessage: callback => {
+                        const disposable = viewOrPanel.webview.onDidReceiveMessage(callback)
+                        return () => disposable.dispose()
+                    },
+                }),
+                {
+                    mentionProviders: async function* (signal: AbortSignal) {
+                        const isCodyWeb = (await getFullConfig()).agentIDE === CodyIDE.Web
+                        const g = isCodyWeb
+                            ? webMentionProvidersMetadata(signal)
+                            : allMentionProvidersMetadata(signal)
+                        for await (const value of g) {
+                            yield value
+                        }
+                    },
+                    contextItems: query =>
+                        asyncGeneratorFromPromise(
+                            this.handleGetUserContextFilesCandidates({ query }).then(
+                                result => result.userContextFiles ?? []
+                            )
+                        ),
+                    evaluatedFeatureFlag: (flag, signal) =>
+                        featureFlagProvider.evaluatedFeatureFlag(flag, signal),
+                    prompts: mergedPromptsAndLegacyCommands,
+                }
+            )
+        )
 
+        await this.postConfigFeatures()
+
+        return viewOrPanel
+    }
+
+    private async postConfigFeatures(): Promise<void> {
+        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
         void this.postMessage({
             type: 'setConfigFeatures',
             configFeatures: {
@@ -1564,8 +1746,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
             },
         })
-
-        return viewOrPanel
     }
 
     public async setWebviewView(view: View): Promise<void> {
@@ -1578,6 +1758,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return
         }
         const viewOrPanel = this._webviewPanelOrView ?? (await this.createWebviewViewOrPanel())
+
+        this._webviewPanelOrView = viewOrPanel
 
         revealWebviewViewOrPanel(viewOrPanel)
 
@@ -1597,9 +1779,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return this.chatModel.getMessages().map(prepareChatMessage)
     }
 
+    public isEmpty(): boolean {
+        return this.chatModel.isEmpty()
+    }
+
+    public isVisible(): boolean {
+        return this.webviewPanelOrView?.visible ?? false
+    }
+
     private async recordChatQuestionTelemetryEvent(
         authStatus: AuthStatus,
-        addEnhancedContext: boolean,
+        legacyAddEnhancedContext: boolean,
         mentions: ContextItem[],
         sharedProperties: any,
         inputText: PromptString
@@ -1611,7 +1801,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
                 // See https://github.com/sourcegraph/sourcegraph/pull/59524
                 recordsPrivateMetadataTranscript: authStatus.endpoint && authStatus.isDotCom ? 1 : 0,
-                addEnhancedContext: addEnhancedContext ? 1 : 0,
+                addEnhancedContext: legacyAddEnhancedContext ? 1 : 0,
 
                 // All mentions
                 mentionsTotal: mentions.length,
@@ -1655,7 +1845,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 promptText:
                     authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
                 gitMetadata:
-                    authStatus.isDotCom && addEnhancedContext
+                    authStatus.isDotCom && legacyAddEnhancedContext
                         ? await this.getRepoMetadataIfPublic()
                         : '',
             },
@@ -1714,7 +1904,6 @@ export function webviewViewOrPanelOnDidChangeViewState(
 }
 
 export function revealWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscode.WebviewPanel): void {
-    // TODO!(sqs): focus sidebar if is webviewView
     if ('reveal' in viewOrPanel) {
         viewOrPanel.reveal()
     }
@@ -1733,10 +1922,11 @@ function getDefaultModelID(): string {
  * Set HTML for webview (panel) & webview view (sidebar)
  */
 export async function addWebviewViewHTML(
+    extensionClient: ExtensionClient,
     extensionUri: vscode.Uri,
     view: vscode.WebviewView | vscode.WebviewPanel
 ): Promise<void> {
-    if (isRunningInsideAgent()) {
+    if (extensionClient.capabilities?.webview === 'agentic') {
         return
     }
     const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
@@ -1751,5 +1941,18 @@ export async function addWebviewViewHTML(
     // 2. Update URIs for content security policy to only allow specific scripts to be run
     view.webview.html = decoded
         .replaceAll('./', `${resources.toString()}/`)
+        .replaceAll("'self'", view.webview.cspSource)
         .replaceAll('{cspSource}', view.webview.cspSource)
+}
+
+// This is the manual ordering of the different retrieved and explicit context sources
+// It should be equivalent to the ordering of things in
+// ChatController:legacyComputeContext > context.ts:resolveContext
+function combineContext(
+    explicitMentions: ContextItem[],
+    openCtxContext: ContextItemOpenCtx[],
+    priorityContext: ContextItem[],
+    retrievedContext: ContextItem[]
+): ContextItem[] {
+    return [explicitMentions, openCtxContext, priorityContext, retrievedContext].flat()
 }

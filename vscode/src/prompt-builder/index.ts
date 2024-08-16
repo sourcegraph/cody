@@ -9,7 +9,7 @@ import {
     ps,
 } from '@sourcegraph/cody-shared'
 import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
-import { sortContextItems } from '../chat/chat-view/agentContextSorting'
+import { sortContextItemsIfInTest } from '../chat/chat-view/agentContextSorting'
 import { getUniqueContextItems, isUniqueContextItem } from './unique-context'
 import { getContextItemTokenUsageType, renderContextItem } from './utils'
 
@@ -60,7 +60,7 @@ export class PromptBuilder {
     }
 
     public tryAddToPrefix(messages: Message[]): boolean {
-        const withinLimit = this.tokenCounter.updateUsage('preamble', messages)
+        const { succeeded: withinLimit } = this.tokenCounter.updateUsage('preamble', messages)
         if (withinLimit) {
             this.prefixMessages.push(...messages)
         }
@@ -84,7 +84,10 @@ export class PromptBuilder {
             if (humanMsg?.speaker !== 'human' || humanMsg?.speaker === assistantMsg?.speaker) {
                 throw new Error(`Invalid transcript order: expected human message at index ${i}`)
             }
-            const withinLimit = this.tokenCounter.updateUsage('input', [humanMsg, assistantMsg])
+            const { succeeded: withinLimit } = this.tokenCounter.updateUsage('input', [
+                humanMsg,
+                assistantMsg,
+            ])
             if (!withinLimit) {
                 // Throw error if the limit was exceeded and no message was added.
                 if (!this.reverseMessages.length) {
@@ -114,14 +117,10 @@ export class PromptBuilder {
             added: [] as ContextItem[], // The items that were added as context
         }
 
-        // Create a new array to avoid modifying the original array,
-        // then reverse it to process the newest context items first.
-        const reversedContextItems = contextItems.slice().reverse()
-
         // Required by agent tests to ensure the context items are sorted correctly.
-        sortContextItems(reversedContextItems as ContextItem[])
+        contextItems = sortContextItemsIfInTest(contextItems)
 
-        for (const item of reversedContextItems) {
+        for (const item of contextItems) {
             // Skip context items that are in the Cody ignore list
             if (isCodyIgnoredFile(item.uri) || (await contextFiltersProvider.isUriIgnored(item.uri))) {
                 result.ignored.push(item)
@@ -152,7 +151,7 @@ export class PromptBuilder {
             }
 
             const tokenType = getContextItemTokenUsageType(item)
-            const isWithinLimit = this.tokenCounter.updateUsage(tokenType, [
+            const { succeeded: isWithinLimit, reason } = this.tokenCounter.updateUsage(tokenType, [
                 ASSISTANT_MESSAGE,
                 contextMessage,
             ])
@@ -160,6 +159,7 @@ export class PromptBuilder {
             // Don't update context items from the past (history items) unless undefined.
             if (type !== 'history' || item.isTooLarge === undefined) {
                 item.isTooLarge = !isWithinLimit
+                item.isTooLargeReason = reason
             }
 
             // Skip item that would exceed token limit & add it to the ignored list.
@@ -173,6 +173,7 @@ export class PromptBuilder {
             // Add the new valid context item to the context list.
             result.added.push(item) // for UI display.
             this.contextItems.push(item) // for building context messages.
+
             // Update context items for the next iteration, removes items that are no longer unique.
             // TODO (bee) update token usage to reflect the removed context items.
             this.contextItems = getUniqueContextItems(this.contextItems)

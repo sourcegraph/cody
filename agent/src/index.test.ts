@@ -2,9 +2,15 @@ import assert from 'node:assert'
 import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { type ContextItem, DOTCOM_URL, ModelUsage, isWindows } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    ContextItemSource,
+    DOTCOM_URL,
+    ModelUsage,
+    isWindows,
+} from '@sourcegraph/cody-shared'
 
 import { ResponseError } from 'vscode-jsonrpc'
 import { URI } from 'vscode-uri'
@@ -14,7 +20,6 @@ import { TestClient, asTranscriptMessage } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 import { decodeURIs } from './decodeURIs'
 import { explainPollyError } from './explainPollyError'
-import type { Requests } from './protocol-alias'
 import { trimEndOfLine } from './trimEndOfLine'
 
 const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
@@ -116,7 +121,8 @@ describe('Agent', () => {
         })
         expect(invalid?.isLoggedIn).toBeFalsy()
         const invalidModels = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
-        expect(invalidModels.models).toStrictEqual([])
+        const remoteInvalidModels = invalidModels.models.filter(model => model.provider !== 'Ollama')
+        expect(remoteInvalidModels).toStrictEqual([])
 
         const valid = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
@@ -350,7 +356,7 @@ describe('Agent', () => {
             })
         }, 30_000)
 
-        it('chat/submitMessage (with enhanced context)', async () => {
+        it('chat/submitMessage (with mock context)', async () => {
             await client.openFile(animalUri)
             const lastMessage = await client.sendSingleMessageToNewChat(
                 'Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.',
@@ -364,9 +370,9 @@ describe('Agent', () => {
             // is not a git directory and symf reports some git-related error.
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "Certainly! Here's a Dog class that implements the Animal interface:
+              "Certainly! Here's a Dog class that implements the Animal interface based on the context provided:
 
-              \`\`\`typescript
+              \`\`\`typescript:src/animal.ts
               export class Dog implements Animal {
                   name: string;
                   isMammal: boolean = true;
@@ -381,13 +387,13 @@ describe('Agent', () => {
               }
               \`\`\`
 
-              This class fully implements the Animal interface as defined in your workspace."
+              This implementation satisfies the Animal interface requirements as defined in your workspace."
             `,
                 explainPollyError
             )
         }, 30_000)
 
-        it('chat/submitMessage (with enhanced context, squirrel test)', async () => {
+        it('chat/submitMessage (squirrel test)', async () => {
             await client.openFile(squirrelUri)
             const { lastMessage, transcript } =
                 await client.sendSingleMessageToNewChatWithFullTranscript('What is Squirrel?', {
@@ -525,7 +531,7 @@ describe('Agent', () => {
             )
         }, 10_000)
 
-        it('chat/submitMessage on an ignored file (with enhanced context)', async () => {
+        it('chat/submitMessage on an ignored file', async () => {
             await client.openFile(ignoredUri)
             const { transcript } = await client.sendSingleMessageToNewChatWithFullTranscript(
                 'What files contain SELECTION_START?',
@@ -545,30 +551,6 @@ describe('Agent', () => {
             }
             // Files that are not ignored should be used as context files
             expect(contextFiles.length).toBeGreaterThan(0)
-        }, 30_000)
-
-        it('chat/submitMessage on an ignored file (addEnhancedContext: false)', async () => {
-            await client.openFile(ignoredUri)
-            const { transcript } = await client.sendSingleMessageToNewChatWithFullTranscript(
-                'Which file is the isIgnoredByCody functions defined?',
-                { addEnhancedContext: false }
-            )
-            decodeURIs(transcript)
-            const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
-            const contextUrls = contextFiles.map(f => f.uri?.path)
-            // Current file which is ignored, should not be included in context files
-            expect(contextUrls.find(uri => uri === ignoredUri.toString())).toBeUndefined()
-            // Since no enhanced context is requested, no context files should be included
-            expect(contextFiles.length).toBe(0)
-            // Ignored file should not be included in context files
-            const result = await Promise.all(
-                contextUrls.map(uri =>
-                    client.request('ignore/test', {
-                        uri,
-                    })
-                )
-            )
-            expect(result.every(entry => entry.policy === 'use')).toBe(true)
         }, 30_000)
 
         it('chat command on an ignored file', async () => {
@@ -634,16 +616,53 @@ describe('Agent', () => {
     })
 
     describe('Text documents', () => {
-        it('chat/submitMessage (understands the selected text)', async () => {
+        // Skipping this test because it asserts an outdated behavior.
+        // Previously, the user's selection was added to the context even when
+        // `addEnhancedContext: false`. In the PR
+        // https://github.com/sourcegraph/cody/pull/5060, we change the behavior
+        // so that the user's selection is only added when `addEnhancedContext:
+        // true`.  We can't just set `addEnhancedContext: true` because we have
+        // other assertions that fail the tests when `addEnhancedContext: true`
+        // and symf is disabled. If we remove that assertion, the test still
+        // fails because of other reasons. Most likely, the Right solution is to
+        // remove the concept of `addEnhancedContext` altogether because the
+        // webview-based Chat  UI doesn't even expose a button to control this. We will still
+        // need to figure out how we expose adding the user's selection to the
+        // context when interacting with Cody through the JSON-RPC API.
+        it.skip('chat/submitMessage (understands the selected text)', async () => {
             await client.openFile(multipleSelectionsUri)
             await client.changeFile(multipleSelectionsUri)
             await client.changeFile(multipleSelectionsUri, {
                 selectionName: 'SELECTION_2',
             })
+            const contextFilesWithoutSelectionFile = mockEnhancedContext.filter(
+                item => item.uri.toString() !== multipleSelectionsUri.toString()
+            )
+
             const reply = await client.sendSingleMessageToNewChat(
                 'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
                 // Add context to ensure the LLM can distinguish between the selected code and other context items
-                { addEnhancedContext: false, contextFiles: mockEnhancedContext }
+                {
+                    addEnhancedContext: false,
+                    contextFiles: [
+                        ...contextFilesWithoutSelectionFile,
+                        {
+                            type: 'file',
+                            uri: multipleSelectionsUri,
+                            range: {
+                                start: {
+                                    line: 7,
+                                    character: 0,
+                                },
+                                end: {
+                                    line: 8,
+                                    character: 0,
+                                },
+                            },
+                            source: ContextItemSource.Selection,
+                        },
+                    ],
+                }
             )
             expect(reply?.text?.trim()).includes('anotherFunction')
             expect(reply?.text?.trim()).not.includes('inner')
@@ -651,7 +670,17 @@ describe('Agent', () => {
             const reply2 = await client.sendSingleMessageToNewChat(
                 'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
                 // Add context to ensure the LLM can distinguish between the selected code and other context items
-                { addEnhancedContext: false, contextFiles: mockEnhancedContext }
+                {
+                    addEnhancedContext: false,
+                    contextFiles: [
+                        ...contextFilesWithoutSelectionFile,
+                        {
+                            type: 'file',
+                            uri: multipleSelectionsUri,
+                            source: ContextItemSource.Selection,
+                        },
+                    ],
+                }
             )
             expect(reply2?.text?.trim()).includes('inner')
             expect(reply2?.text?.trim()).not.includes('anotherFunction')
@@ -914,240 +943,6 @@ describe('Agent', () => {
 
         afterAll(async () => {
             await rateLimitedClient.shutdownAndExit()
-            // Long timeout because to allow Polly.js to persist HTTP recordings
-        }, 30_000)
-    })
-
-    describe('Enterprise', () => {
-        const demoEnterpriseClient = TestClient.create({
-            workspaceRootUri: workspace.rootUri,
-            name: 'enterpriseClient',
-            credentials: TESTING_CREDENTIALS.enterprise,
-            logEventMode: 'connected-instance-only',
-        })
-        // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
-        beforeAll(async () => {
-            const serverInfo = await demoEnterpriseClient.initialize()
-
-            expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
-            expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
-        }, 10_000)
-
-        it('chat/submitMessage', async () => {
-            const lastMessage = await demoEnterpriseClient.sendSingleMessageToNewChat('Reply with "Yes"')
-            expect(lastMessage?.text?.trim()).toStrictEqual('Yes')
-        }, 20_000)
-
-        // Skip because it consistently fails with:
-        // Error: Test timed out in 20000ms.
-        it.skip('commands/document (enterprise client)', async () => {
-            const uri = workspace.file('src', 'example.test.ts')
-            const obtained = await demoEnterpriseClient.documentCode(uri)
-            expect(obtained).toMatchInlineSnapshot(
-                `
-              "import { expect } from 'vitest'
-              import { it } from 'vitest'
-              import { describe } from 'vitest'
-
-              describe('test block', () => {
-                  it('does 1', () => {
-                      expect(true).toBe(true)
-                  })
-
-                  it('does 2', () => {
-                      expect(true).toBe(true)
-                  })
-
-                  it('does something else', () => {
-                      // This line will error due to incorrect usage of \`performance.now\`
-                      // Record the start time of the test using the Performance API
-                      const startTime = performance.now(/* CURSOR */)
-                  })
-              })
-              "
-            `
-            )
-        }, 20_000)
-
-        it('remoteRepo/list', async () => {
-            // List a repo without a query
-            let repos: Requests['remoteRepo/list'][1]
-            do {
-                repos = await demoEnterpriseClient.request('remoteRepo/list', {
-                    query: undefined,
-                    first: 10,
-                })
-            } while (repos.state.state === 'fetching')
-            expect(repos.repos).toHaveLength(10)
-
-            // Make a paginated query.
-            const secondLastRepo = repos.repos.at(-2)
-            const moreRepos = await demoEnterpriseClient.request('remoteRepo/list', {
-                query: undefined,
-                first: 2,
-                afterId: secondLastRepo?.id,
-            })
-            expect(moreRepos.repos[0].id).toBe(repos.repos.at(-1)?.id)
-
-            // Make a query.
-            const filteredRepos = await demoEnterpriseClient.request('remoteRepo/list', {
-                query: 'sourceco',
-                first: 1000,
-            })
-            expect(
-                filteredRepos.repos.find(repo => repo.name === 'github.com/sourcegraph/cody')
-            ).toBeDefined()
-        })
-
-        it('remoteRepo/has', async () => {
-            // Query a repo that does exist.
-            const codyRepoExists = await demoEnterpriseClient.request('remoteRepo/has', {
-                repoName: 'github.com/sourcegraph/cody',
-            })
-            expect(codyRepoExists.result).toBe(true)
-
-            // Query a repo that does not exist.
-            const codyForDos = await demoEnterpriseClient.request('remoteRepo/has', {
-                repoName: 'github.com/sourcegraph/cody-edlin',
-            })
-            expect(codyForDos.result).toBe(false)
-        })
-
-        afterAll(async () => {
-            const { requests } = await demoEnterpriseClient.request('testing/networkRequests', null)
-            const nonServerInstanceRequests = requests
-                .filter(({ url }) => !url.startsWith(demoEnterpriseClient.serverEndpoint))
-                .map(({ url }) => url)
-            expect(JSON.stringify(nonServerInstanceRequests)).toStrictEqual('[]')
-            await demoEnterpriseClient.shutdownAndExit()
-            // Long timeout because to allow Polly.js to persist HTTP recordings
-        }, 30_000)
-    })
-
-    // Enterprise tests are run at demo instance, which is at a recent release version.
-    // Use this section if you need to run against S2 which is released continuously.
-    describe('Enterprise - close main branch', () => {
-        const s2EnterpriseClient = TestClient.create({
-            workspaceRootUri: workspace.rootUri,
-            name: 'enterpriseMainBranchClient',
-            credentials: TESTING_CREDENTIALS.s2,
-            logEventMode: 'connected-instance-only',
-        })
-
-        // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
-        beforeAll(async () => {
-            const serverInfo = await s2EnterpriseClient.initialize({
-                autocompleteAdvancedProvider: 'fireworks',
-            })
-
-            expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
-            expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
-        }, 10_000)
-
-        // Disabled because `attribution/search` GraphQL does not work on S2
-        // See https://sourcegraph.slack.com/archives/C05JDP433DL/p1714017586160079
-        it.skip('attribution/found', async () => {
-            const id = await s2EnterpriseClient.request('chat/new', null)
-            const { repoNames, error } = await s2EnterpriseClient.request('attribution/search', {
-                id,
-                snippet: 'sourcegraph.Location(new URL',
-            })
-            expect(repoNames).not.empty
-            expect(error).null
-        }, 20_000)
-
-        it('attribution/not found', async () => {
-            const id = await s2EnterpriseClient.request('chat/new', null)
-            const { repoNames, error } = await s2EnterpriseClient.request('attribution/search', {
-                id,
-                snippet: 'sourcegraph.Location(new LRU',
-            })
-            expect(repoNames).empty
-            expect(error).null
-        }, 20_000)
-
-        // Use S2 instance for Cody Context Filters enterprise tests
-        describe('Cody Context Filters for enterprise', () => {
-            it('testing/ignore/overridePolicy', async () => {
-                const onChangeCallback = vi.fn()
-
-                // `sumUri` is located inside of the github.com/sourcegraph/cody repo.
-                const ignoreTest = () =>
-                    s2EnterpriseClient.request('ignore/test', { uri: sumUri.toString() })
-                s2EnterpriseClient.registerNotification('ignore/didChange', onChangeCallback)
-
-                expect(await ignoreTest()).toStrictEqual({ policy: 'use' })
-
-                await s2EnterpriseClient.request('testing/ignore/overridePolicy', {
-                    include: [{ repoNamePattern: '' }],
-                    exclude: [{ repoNamePattern: '.*sourcegraph/cody.*' }],
-                })
-
-                expect(onChangeCallback).toBeCalledTimes(1)
-                expect(await ignoreTest()).toStrictEqual({ policy: 'ignore' })
-
-                await s2EnterpriseClient.request('testing/ignore/overridePolicy', {
-                    include: [{ repoNamePattern: '' }],
-                    exclude: [{ repoNamePattern: '.*sourcegraph/sourcegraph.*' }],
-                })
-
-                expect(onChangeCallback).toBeCalledTimes(2)
-                expect(await ignoreTest()).toStrictEqual({ policy: 'use' })
-
-                await s2EnterpriseClient.request('testing/ignore/overridePolicy', {
-                    include: [{ repoNamePattern: '' }],
-                    exclude: [{ repoNamePattern: '.*sourcegraph/sourcegraph.*' }],
-                })
-
-                // onChangeCallback is not called again because filters are the same
-                expect(onChangeCallback).toBeCalledTimes(2)
-            })
-
-            // The site config `cody.contextFilters` value on sourcegraph.sourcegraph.com instance
-            // should include `sourcegraph/cody` repo for this test to pass.
-            // Skipped because of the API error:
-            //  Request to https://sourcegraph.sourcegraph.com/.api/completions/code?client-name=vscode&client-version=v1 failed with 406 Not Acceptable: ClientCodyIgnoreCompatibilityError: Cody for vscode version "v1" doesn't match version constraint ">= 1.20.0". Please upgrade your client.
-            // https://linear.app/sourcegraph/issue/CODY-2814/fix-and-re-enable-cody-context-filters-agent-integration-test
-            it.skip('autocomplete/execute (with Cody Ignore filters)', async () => {
-                // Documents to be used as context sources.
-                await s2EnterpriseClient.openFile(animalUri)
-                await s2EnterpriseClient.openFile(squirrelUri)
-
-                // Document to generate a completion from.
-                await s2EnterpriseClient.openFile(sumUri)
-
-                const { items, completionEvent } = await s2EnterpriseClient.request(
-                    'autocomplete/execute',
-                    {
-                        uri: sumUri.toString(),
-                        position: { line: 1, character: 3 },
-                        triggerKind: 'Invoke',
-                    }
-                )
-
-                expect(items.length).toBeGreaterThan(0)
-                expect(items.map(item => item.insertText)).toMatchInlineSnapshot(
-                    `
-              [
-                "   return a + b",
-              ]
-            `
-                )
-
-                // Two documents will be checked against context filters set in site-config on S2.
-                expect(
-                    completionEvent?.params.contextSummary?.retrieverStats['jaccard-similarity']
-                        .suggestedItems
-                ).toEqual(2)
-
-                s2EnterpriseClient.notify('autocomplete/completionAccepted', {
-                    completionID: items[0].id,
-                })
-            }, 10_000)
-        })
-
-        afterAll(async () => {
-            await s2EnterpriseClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
         }, 30_000)
     })

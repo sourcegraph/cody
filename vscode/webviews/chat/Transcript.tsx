@@ -1,24 +1,17 @@
 import {
     type ChatMessage,
     type Guardrails,
-    type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
 } from '@sourcegraph/cody-shared'
-import {
-    type ComponentProps,
-    type FunctionComponent,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-} from 'react'
+import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
+import isEqual from 'lodash/isEqual'
+import { type FC, memo, useCallback, useMemo, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
-import type { PromptEditorRefAPI } from '../promptEditor/PromptEditor'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-import type { CodeBlockActionsProps } from './ChatMessageContent'
+import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import {
     AssistantMessageCell,
@@ -26,35 +19,59 @@ import {
 } from './cells/messageCell/assistant/AssistantMessageCell'
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
-export const Transcript: React.FunctionComponent<{
-    chatID: string
+interface TranscriptProps {
+    chatEnabled: boolean
     transcript: ChatMessage[]
+    userInfo: UserAccountInfo
     messageInProgress: ChatMessage | null
+
+    guardrails?: Guardrails
+    postMessage?: ApiPostMessage
+    isTranscriptError?: boolean
+
     feedbackButtonsOnSubmit: (text: string) => void
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
-    isTranscriptError?: boolean
-    userInfo: UserAccountInfo
-    chatEnabled: boolean
-    postMessage?: ApiPostMessage
-    guardrails?: Guardrails
-}> = ({ chatID, transcript, messageInProgress, ...props }) => {
+    smartApply?: CodeBlockActionsProps['smartApply']
+    experimentalSmartApplyEnabled?: boolean
+}
+
+export const Transcript: FC<TranscriptProps> = props => {
+    const {
+        chatEnabled,
+        transcript,
+        userInfo,
+        messageInProgress,
+        guardrails,
+        postMessage,
+        isTranscriptError,
+        feedbackButtonsOnSubmit,
+        copyButtonOnSubmit,
+        insertButtonOnSubmit,
+        smartApply,
+        experimentalSmartApplyEnabled,
+    } = props
+
     const interactions = useMemo(
         () => transcriptToInteractionPairs(transcript, messageInProgress),
         [transcript, messageInProgress]
     )
 
     return (
-        <div className="tw-px-8 tw-pt-8 tw-pb-14 tw-flex tw-flex-col tw-gap-10">
+        <div className="tw-px-8 tw-pt-6 tw-pb-12 tw-flex tw-flex-col tw-gap-10">
             {interactions.map((interaction, i) => (
                 <TranscriptInteraction
-                    chatID={chatID}
                     // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-                    key={`${chatID}-${i}`}
-                    {...props}
-                    transcript={transcript}
-                    messageInProgress={messageInProgress}
+                    key={i}
+                    chatEnabled={chatEnabled}
+                    userInfo={userInfo}
                     interaction={interaction}
+                    guardrails={guardrails}
+                    postMessage={postMessage}
+                    isTranscriptError={isTranscriptError}
+                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
+                    insertButtonOnSubmit={insertButtonOnSubmit}
                     isFirstInteraction={i === 0}
                     isLastInteraction={i === interactions.length - 1}
                     isLastSentInteraction={
@@ -63,6 +80,8 @@ export const Transcript: React.FunctionComponent<{
                     priorAssistantMessageIsLoading={Boolean(
                         messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
                     )}
+                    smartApply={smartApply}
+                    experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
                 />
             ))}
         </div>
@@ -124,33 +143,35 @@ export function transcriptToInteractionPairs(
     return pairs
 }
 
-const TranscriptInteraction: FunctionComponent<
-    ComponentProps<typeof Transcript> & {
-        interaction: Interaction
-        isFirstInteraction: boolean
-        isLastInteraction: boolean
-        isLastSentInteraction: boolean
-        priorAssistantMessageIsLoading: boolean
-    }
-> = ({
-    interaction: { humanMessage, assistantMessage },
-    isFirstInteraction,
-    isLastInteraction,
-    isLastSentInteraction,
-    priorAssistantMessageIsLoading,
-    isTranscriptError,
-    ...props
-}) => {
+interface TranscriptInteractionProps
+    extends Omit<TranscriptProps, 'transcript' | 'messageInProgress' | 'chatID'> {
+    interaction: Interaction
+    isFirstInteraction: boolean
+    isLastInteraction: boolean
+    isLastSentInteraction: boolean
+    priorAssistantMessageIsLoading: boolean
+}
+
+const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
+    const {
+        interaction: { humanMessage, assistantMessage },
+        isFirstInteraction,
+        isLastInteraction,
+        isLastSentInteraction,
+        priorAssistantMessageIsLoading,
+        isTranscriptError,
+        userInfo,
+        chatEnabled,
+        feedbackButtonsOnSubmit,
+        postMessage,
+        guardrails,
+        insertButtonOnSubmit,
+        copyButtonOnSubmit,
+        smartApply,
+        experimentalSmartApplyEnabled,
+    } = props
+
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
-    useEffect(() => {
-        return getVSCodeAPI().onMessage(message => {
-            if (message.type === 'updateEditorState') {
-                humanEditorRef.current?.setEditorState(
-                    message.editorState as SerializedPromptEditorState
-                )
-            }
-        })
-    }, [])
 
     const onEditSubmit = useCallback(
         (editorValue: SerializedPromptEditorValue): void => {
@@ -174,8 +195,9 @@ const TranscriptInteraction: FunctionComponent<
     return (
         <>
             <HumanMessageCell
-                {...props}
                 key={humanMessage.index}
+                userInfo={userInfo}
+                chatEnabled={chatEnabled}
                 message={humanMessage}
                 isFirstMessage={humanMessage.index === 0}
                 isSent={!humanMessage.isUnsentFollowup}
@@ -192,6 +214,7 @@ const TranscriptInteraction: FunctionComponent<
                 <ContextCell
                     key={`${humanMessage.index}-context`}
                     contextItems={humanMessage.contextFiles}
+                    contextAlternatives={humanMessage.contextAlternatives}
                     model={assistantMessage?.model}
                     isForFirstMessage={humanMessage.index === 0}
                 />
@@ -199,8 +222,14 @@ const TranscriptInteraction: FunctionComponent<
             {assistantMessage && !isContextLoading && (
                 <AssistantMessageCell
                     key={assistantMessage.index}
-                    {...props}
+                    userInfo={userInfo}
+                    chatEnabled={chatEnabled}
                     message={assistantMessage}
+                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
+                    insertButtonOnSubmit={insertButtonOnSubmit}
+                    postMessage={postMessage}
+                    guardrails={guardrails}
                     humanMessage={makeHumanMessageInfo(
                         { humanMessage, assistantMessage },
                         humanEditorRef
@@ -212,11 +241,13 @@ const TranscriptInteraction: FunctionComponent<
                         !assistantMessage.error &&
                         isLastSentInteraction
                     }
+                    smartApply={smartApply}
+                    experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
                 />
             )}
         </>
     )
-}
+}, isEqual)
 
 // TODO(sqs): Do this the React-y way.
 export function focusLastHumanMessageEditor(): void {

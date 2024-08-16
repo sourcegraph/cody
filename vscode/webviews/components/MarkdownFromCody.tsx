@@ -8,6 +8,7 @@ import rehypeHighlight, { type Options as RehypeHighlightOptions } from 'rehype-
 import rehypeSanitize, { type Options as RehypeSanitizeOptions, defaultSchema } from 'rehype-sanitize'
 import remarkGFM from 'remark-gfm'
 import { useChatEnvironment } from '../chat/ChatEnvironmentContext'
+import { remarkAttachFilePathToCodeBlocks } from '../chat/extract-file-path'
 
 /**
  * Supported URIs to render as links in outputted markdown.
@@ -82,7 +83,7 @@ const URL_PROCESSORS: Record<CodyIDE, UrlTransform> = {
     [CodyIDE.Neovim]: defaultUrlProcessor,
     [CodyIDE.Emacs]: defaultUrlProcessor,
     [CodyIDE.VSCode]: wrapLinksWithCodyOpenCommand,
-    [CodyIDE.VisualStudio]: wrapLinksWithCodyOpenCommand,
+    [CodyIDE.VisualStudio]: defaultUrlProcessor,
 }
 
 export const MarkdownFromCody: FunctionComponent<{ className?: string; children: string }> = ({
@@ -119,6 +120,8 @@ function markdownPluginProps(): Pick<
                         ...defaultSchema.attributes,
                         code: [
                             ...(defaultSchema.attributes?.code || []),
+                            // We use `data-file-path` to attach file path metadata to <code> blocks.
+                            ['data-file-path'],
                             ['className', ...LANGUAGES.map(language => `language-${language}`)],
                         ],
                     },
@@ -144,7 +147,7 @@ function markdownPluginProps(): Pick<
                 } satisfies RehypeHighlightOptions & { ignoreMissing: boolean },
             ],
         ],
-        remarkPlugins: [remarkGFM],
+        remarkPlugins: [remarkGFM, remarkAttachFilePathToCodeBlocks],
     }
     return _markdownPluginProps
 }

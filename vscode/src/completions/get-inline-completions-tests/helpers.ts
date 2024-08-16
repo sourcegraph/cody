@@ -74,7 +74,7 @@ type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'd
     configuration?: Partial<Configuration>
 }
 
-interface ParamsResult extends InlineCompletionsParams {
+export interface ParamsResult extends InlineCompletionsParams {
     /**
      * A promise that's resolved once `completionResponseGenerator` is done.
      * Used to wait for all the completion response chunks to be processed by the
@@ -213,7 +213,7 @@ export function params(
         }),
         isDotComUser,
         configuration,
-        stageRecorder: new AutocompleteStageRecorder(),
+        stageRecorder: new AutocompleteStageRecorder({ isPreloadRequest: false }),
         ...restParams,
 
         // Test-specific helpers
