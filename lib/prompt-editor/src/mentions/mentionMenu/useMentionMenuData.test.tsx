@@ -18,52 +18,79 @@ vi.mock('../../useExtensionAPI')
 vi.mock('../../clientState')
 
 describe('useMentionMenuData', () => {
-    test('items do not include values from initialContextItems', async () => {
-        const mockContextItems: ContextItem[] = [
-            {
+    describe('initial context deduping', () => {
+        test('items does not duplicate items from initialContextItems', async () => {
+            const file1: ContextItem = {
                 uri: URI.parse('file1.ts'),
                 type: 'file',
                 isTooLarge: undefined,
                 source: ContextItemSource.User,
-            },
-            {
-                uri: URI.parse('file2.ts'),
-                type: 'file',
-                isTooLarge: undefined,
-                source: ContextItemSource.User,
-            },
-            {
-                uri: URI.parse('file3.ts'),
-                type: 'file',
-                isTooLarge: undefined,
-                source: ContextItemSource.User,
-            },
-        ]
-        const mockProviders: ContextMentionProviderMetadata[] = [
-            { title: 'My Provider', id: 'my-provider', queryLabel: '', emptyLabel: '' },
-        ]
+            }
+            const mockContextItems: ContextItem[] = [
+                file1,
+                {
+                    uri: URI.parse('file2.ts'),
+                    type: 'file',
+                    isTooLarge: undefined,
+                    source: ContextItemSource.User,
+                },
+                {
+                    uri: URI.parse('file3.ts'),
+                    type: 'file',
+                    isTooLarge: undefined,
+                    source: ContextItemSource.User,
+                },
+            ]
+            const mockProviders: ContextMentionProviderMetadata[] = [
+                { title: 'My Provider', id: 'my-provider', queryLabel: '', emptyLabel: '' },
+            ]
 
-        vi.mocked(useChatContextItems).mockReturnValue({
-            done: false,
-            error: null,
-            value: [mockContextItems[0], mockContextItems[1], mockContextItems[2]],
-        })
-        vi.mocked(useExtensionAPI).mockReturnValue({
-            ...MOCK_API,
-            mentionProviders: () => asyncGeneratorWithValues(mockProviders),
-        })
-        vi.mocked(useClientState).mockReturnValue({
-            initialContext: [mockContextItems[0]],
-        })
+            vi.mocked(useChatContextItems).mockReturnValue({
+                done: false,
+                error: null,
+                value: [file1, mockContextItems[1], mockContextItems[2]],
+            })
+            vi.mocked(useExtensionAPI).mockReturnValue({
+                ...MOCK_API,
+                mentionProviders: () => asyncGeneratorWithValues(mockProviders),
+            })
+            const file1FromInitialContext: ContextItem = {
+                ...mockContextItems[0],
+                source: ContextItemSource.Initial,
+            }
+            vi.mocked(useClientState).mockReturnValue({
+                initialContext: [file1FromInitialContext],
+            })
 
-        const { result } = renderHook(() =>
-            useMentionMenuData({ query: '', parentItem: null }, { remainingTokenBudget: 100, limit: 10 })
-        )
-        await waitForAsyncGeneratorInTest()
-        expect(result.current).toEqual<typeof result.current>({
-            providers: mockProviders,
-            initialContextItems: [mockContextItems[0]],
-            items: [mockContextItems[1], mockContextItems[2]],
+            const { result } = renderHook(() =>
+                useMentionMenuData(
+                    { query: '', parentItem: null },
+                    { remainingTokenBudget: 100, limit: 10 }
+                )
+            )
+            await waitForAsyncGeneratorInTest()
+            expect(result.current).toEqual<typeof result.current>({
+                providers: mockProviders,
+                items: [file1FromInitialContext, mockContextItems[1], mockContextItems[2]],
+            })
+
+            // When there's a query that matches the initial context, it should be included.
+            vi.mocked(useChatContextItems).mockReturnValue({
+                done: false,
+                error: null,
+                value: [file1],
+            })
+            const { result: result2 } = renderHook(() =>
+                useMentionMenuData(
+                    { query: 'file1', parentItem: null },
+                    { remainingTokenBudget: 100, limit: 10 }
+                )
+            )
+            await waitForAsyncGeneratorInTest()
+            expect(result2.current).toEqual<typeof result2.current>({
+                providers: [],
+                items: [file1FromInitialContext],
+            })
         })
     })
 
@@ -91,9 +118,8 @@ describe('useMentionMenuData', () => {
         await waitForAsyncGeneratorInTest()
         await waitForAsyncGeneratorInTest() // reduce flakiness
         expect(result.current).toEqual<typeof result.current>({
-            items: undefined,
+            items: [],
             providers: mockProviders,
-            initialContextItems: [],
             error: 'my error',
         })
     })

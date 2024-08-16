@@ -120,18 +120,6 @@ export const MentionMenu: FunctionComponent<
         [data.providers, params.query, setEditorQuery, updateMentionMenuParams, mentionQuery]
     )
 
-    const onInitialContextItemSelect = useCallback(
-        (value: string): void => {
-            const item = data.initialContextItems?.find(item => commandRowValue(item) === value)
-            if (!item) {
-                throw new Error(`No item found with value ${value}`)
-            }
-
-            selectOptionAndCleanUp(createMentionMenuOption(item))
-        },
-        [data.initialContextItems, selectOptionAndCleanUp]
-    )
-
     const onCommandSelect = useCallback(
         (commandSelected: string): void => {
             const item = data.items?.find(item => commandRowValue(item) === commandSelected)
@@ -198,18 +186,14 @@ export const MentionMenu: FunctionComponent<
     // `value` in state, but when the options change, our state `value` may refer to a row that no
     // longer exists in the list. In that case, we want the first row to be selected.
     const firstProviderRow = data.providers.at(0)
-    const firstInitialContextItemRow = data.initialContextItems?.at(0)
     const firstItemRow = data.items?.at(0)
-    const firstRow = params.parentItem
-        ? firstItemRow
-        : firstProviderRow ?? firstInitialContextItemRow ?? firstItemRow
+    const firstRow = params.parentItem ? firstItemRow : firstProviderRow ?? firstItemRow
 
     const valueRow = useMemo(
         () =>
             data.providers.find(provider => commandRowValue(provider) === value) ??
-            data.initialContextItems?.find(item => commandRowValue(item) === value) ??
             data.items?.find(item => commandRowValue(item) === value),
-        [data.providers, data.items, data.initialContextItems, value]
+        [data.providers, data.items, value]
     )
     const effectiveValueRow = valueRow ?? firstRow
 
@@ -253,27 +237,6 @@ export const MentionMenu: FunctionComponent<
                 {providers.length > 0 && (
                     <CommandGroup className={COMMAND_GROUP_CLASS_NAME}>{providers}</CommandGroup>
                 )}
-
-                {!params.parentItem &&
-                    data.initialContextItems &&
-                    data.initialContextItems.length > 0 && (
-                        <CommandGroup className={COMMAND_GROUP_CLASS_NAME}>
-                            {data.initialContextItems.map(item => (
-                                <CommandItem
-                                    key={commandRowValue(item)}
-                                    value={commandRowValue(item)}
-                                    onSelect={onInitialContextItemSelect}
-                                    className={clsx(
-                                        styles.item,
-                                        styles.contextItem,
-                                        COMMAND_ROW_CLASS_NAME
-                                    )}
-                                >
-                                    <MentionMenuContextItemContent query={mentionQuery} item={item} />
-                                </CommandItem>
-                            ))}
-                        </CommandGroup>
-                    )}
 
                 {(heading || (data.items && data.items.length > 0)) && (
                     <CommandGroup heading={heading} className={COMMAND_GROUP_CLASS_NAME}>
