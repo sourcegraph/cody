@@ -1,26 +1,109 @@
 import type { Mention } from '@openctx/client'
 import {
+    CodyIDE,
     type ContextItem,
     type ContextItemOpenCtx,
     type ContextItemRepository,
     FILE_CONTEXT_MENTION_PROVIDER,
+    type MentionMenuData,
     type MentionQuery,
     REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    allMentionProvidersMetadata,
+    asyncGeneratorFromPromise,
+    combineLatest,
+    isAbortError,
     openCtx,
+    telemetryRecorder,
+    webMentionProvidersMetadata,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
+import { getFullConfig } from '../../configuration'
+import type { RemoteSearch } from '../../context/remote-search'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
     getSymbolContextFiles,
 } from '../../editor/utils/editor-context'
+import type { ChatModel } from '../chat-view/ChatModel'
 
 export interface GetContextItemsTelemetry {
     empty: () => void
     withProvider: (type: MentionQuery['provider'], metadata?: { id: string }) => void
+}
+
+export async function* getMentionMenuData(
+    query: MentionQuery,
+    remoteSearch: RemoteSearch | null,
+    chatModel: ChatModel,
+    signal: AbortSignal
+): AsyncGenerator<MentionMenuData> {
+    const source = 'chat'
+
+    // Use numerical mapping to send source values to metadata, making this data available on all instances.
+    const atMentionSourceTelemetryMetadataMapping: Record<typeof source, number> = {
+        chat: 1,
+    } as const
+
+    const scopedTelemetryRecorder: GetContextItemsTelemetry = {
+        empty: () => {
+            telemetryRecorder.recordEvent('cody.at-mention', 'executed', {
+                metadata: {
+                    source: atMentionSourceTelemetryMetadataMapping[source],
+                },
+                privateMetadata: { source },
+            })
+        },
+        withProvider: (provider, providerMetadata) => {
+            telemetryRecorder.recordEvent(`cody.at-mention.${provider}`, 'executed', {
+                metadata: { source: atMentionSourceTelemetryMetadataMapping[source] },
+                privateMetadata: { source, providerMetadata },
+            })
+        },
+    }
+
+    const isCodyWeb = (await getFullConfig()).agentIDE === CodyIDE.Web
+    const { input, context } = chatModel.contextWindow
+
+    try {
+        const items = asyncGeneratorFromPromise(
+            getChatContextItemsForMention({
+                mentionQuery: query,
+                telemetryRecorder: scopedTelemetryRecorder,
+                rangeFilter: !isCodyWeb,
+                remoteRepositoriesNames: query.includeRemoteRepositories
+                    ? remoteSearch?.getRepos('all')?.map(repo => repo.name)
+                    : undefined,
+            }).then(items =>
+                items.map(f => ({
+                    ...f,
+                    isTooLarge: f.size ? f.size > (context?.user || input) : undefined,
+                }))
+            )
+        )
+
+        const providers = isCodyWeb
+            ? webMentionProvidersMetadata(signal)
+            : allMentionProvidersMetadata(signal)
+        const queryLower = query.text.toLowerCase()
+
+        for await (const [latestItems, latestProviders] of combineLatest([items, providers])) {
+            yield {
+                items: latestItems,
+                providers:
+                    query.provider === null
+                        ? latestProviders.filter(p => p.title.toLowerCase().includes(queryLower))
+                        : [],
+            }
+        }
+    } catch (error) {
+        if (isAbortError(error)) {
+            throw error // rethrow as-is so it gets ignored by our caller
+        }
+        throw new Error(`Error retrieving mentions: ${error}`)
+    }
 }
 
 interface GetContextItemsOptions {

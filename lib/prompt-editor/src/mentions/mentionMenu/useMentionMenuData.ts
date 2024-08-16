@@ -1,14 +1,21 @@
-import type { ContextItem, ContextMentionProviderMetadata } from '@sourcegraph/cody-shared'
+import type {
+    ContextItem,
+    ContextMentionProviderMetadata,
+    MentionMenuData,
+    MentionQuery,
+} from '@sourcegraph/cody-shared'
 import {
     ContextItemSource,
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_REPOSITORY_PROVIDER_URI,
+    memoizeLastValue,
+    parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { debounce } from 'lodash'
 import { useCallback, useContext, useMemo, useState } from 'react'
 import { useClientState } from '../../clientState'
-import { ChatMentionContext, useChatContextItems } from '../../plugins/atMentions/useChatContextItems'
-import { useAsyncGenerator } from '../../useAsyncGenerator'
+import { ChatMentionContext } from '../../plugins/atMentions/useChatContextItems'
+import { type UseAsyncGeneratorResult, useAsyncGenerator } from '../../useAsyncGenerator'
 import { useExtensionAPI } from '../../useExtensionAPI'
 
 export interface MentionMenuParams {
@@ -62,17 +69,6 @@ export function useMentionMenuParams(): {
     )
 }
 
-export interface MentionMenuData {
-    providers: ContextMentionProviderMetadata[]
-    items: (ContextItem & { icon?: string })[] | undefined
-
-    /**
-     * If an error is present, the client should display the error *and* still display the other
-     * data that is present.
-     */
-    error?: string
-}
-
 interface MentionMenuContextValue {
     updateMentionMenuParams: (update: Partial<Pick<MentionMenuParams, 'parentItem'>>) => void
     setEditorQuery: (query: string) => void
@@ -82,15 +78,9 @@ export function useMentionMenuData(
     params: MentionMenuParams,
     { remainingTokenBudget, limit }: { remainingTokenBudget: number; limit: number }
 ): MentionMenuData {
-    const { value: contextItems, error: contextItemsError } = useChatContextItems(
-        params.query,
-        params.parentItem
-    )
+    const { value, error } = useCallMentionMenuData(params)
     const queryLower = params.query?.toLowerCase()?.trim() ?? null
 
-    const { value: providers, error: providersError } = useAsyncGenerator(
-        useExtensionAPI().mentionProviders
-    )
     const clientState = useClientState()
 
     const isInProvider = !!params.parentItem
@@ -109,19 +99,10 @@ export function useMentionMenuData(
     return useMemo(
         () =>
             ({
-                providers:
-                    isInProvider || queryLower === null || !providers
-                        ? []
-                        : providers.filter(
-                              provider =>
-                                  provider.id.toLowerCase().includes(queryLower) ||
-                                  provider.title?.toLowerCase().includes(queryLower) ||
-                                  provider.id.toLowerCase().replaceAll(' ', '').includes(queryLower) ||
-                                  provider.title?.toLowerCase().replaceAll(' ', '').includes(queryLower)
-                          ),
+                providers: value?.providers ?? [],
                 items: [
                     ...filteredInitialContextItems,
-                    ...(contextItems
+                    ...(value?.items
                         ?.filter(
                             // If an item is shown as initial context, don't show it twice.
                             item =>
@@ -134,19 +115,9 @@ export function useMentionMenuData(
                         .slice(0, limit)
                         .map(item => prepareUserContextItem(item, remainingTokenBudget)) ?? []),
                 ],
-                error: (contextItemsError ?? providersError)?.message,
+                error: value?.error ?? (error ? `Unexpected error: ${error}` : undefined),
             }) satisfies MentionMenuData,
-        [
-            isInProvider,
-            providers,
-            providersError,
-            queryLower,
-            contextItems,
-            contextItemsError,
-            filteredInitialContextItems,
-            limit,
-            remainingTokenBudget,
-        ]
+        [value, error, filteredInitialContextItems, limit, remainingTokenBudget]
     )
 }
 
@@ -158,4 +129,35 @@ function prepareUserContextItem(item: ContextItem, remainingTokenBudget: number)
         // All @-mentions should have a source of `User`.
         source: ContextItemSource.User,
     }
+}
+
+/**
+ * @internal
+ */
+export function useCallMentionMenuData({
+    query,
+    parentItem: provider,
+}: MentionMenuParams): UseAsyncGeneratorResult<MentionMenuData> {
+    const mentionSettings = useContext(ChatMentionContext)
+    const unmemoizedCall = useExtensionAPI().mentionMenuData
+    const memoizedCall = useMemo(
+        () =>
+            mentionSettings.resolutionMode === 'local'
+                ? memoizeLastValue(unmemoizedCall, ([query]) => JSON.stringify(query))
+                : unmemoizedCall,
+        [unmemoizedCall, mentionSettings]
+    )
+
+    const mentionQuery: MentionQuery = useMemo(
+        () => ({
+            ...parseMentionQuery(query ?? '', provider),
+            includeRemoteRepositories: mentionSettings.resolutionMode === 'remote',
+        }),
+        [query, provider, mentionSettings]
+    )
+
+    return useAsyncGenerator(
+        useCallback(signal => memoizedCall(mentionQuery, signal), [memoizedCall, mentionQuery]),
+        { preserveValueKey: mentionQuery.provider ?? undefined }
+    )
 }

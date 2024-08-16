@@ -6,8 +6,10 @@ import type { MentionQuery } from '../../mentions/query'
 import type { Prompt } from '../../sourcegraph-api/graphql/client'
 
 export interface WebviewToExtensionAPI {
-    mentionProviders(signal: AbortSignal): AsyncGenerator<ContextMentionProviderMetadata[]>
-    contextItems(query: MentionQuery, signal: AbortSignal): AsyncGenerator<ContextItem[]>
+    /**
+     * Get the data to display in the @-mention menu for the given query.
+     */
+    mentionMenuData(query: MentionQuery, signal: AbortSignal): AsyncGenerator<MentionMenuData>
 
     /**
      * Get the evaluated value of a feature flag. All feature flags used by the webview must be in
@@ -24,6 +26,17 @@ export interface WebviewToExtensionAPI {
      * the Prompt Library).
      */
     prompts(query: string, signal: AbortSignal): AsyncGenerator<PromptsResult>
+}
+
+export interface MentionMenuData {
+    providers: ContextMentionProviderMetadata[]
+    items: (ContextItem & { icon?: string })[] | undefined
+
+    /**
+     * If an error is present, the client should display the error *and* still display the other
+     * data that is present.
+     */
+    error?: string
 }
 
 export interface PromptsResult {

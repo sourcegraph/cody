@@ -79,7 +79,7 @@ export function displayPathDirname(location: URI): string {
  * Similar to `basename(displayPath(location))`, but it uses the right path separators in `basename`
  * ('\' for file URIs on Windows, '/' otherwise).
  */
-export function displayPathBasename(location: URI): string {
+export function displayPathBasename(location: URI | string): string {
     const envInfo = checkEnvInfo()
     const result = _displayPath(location, envInfo)
 
@@ -113,7 +113,7 @@ function checkEnvInfo(): DisplayPathEnvInfo {
 }
 
 function _displayPath(
-    location: URI,
+    location: URI | string,
     { workspaceFolders, isWindows }: DisplayPathEnvInfo,
     includeWorkspaceFolderWhenMultiple = true
 ): string | URI {
