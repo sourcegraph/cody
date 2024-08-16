@@ -1401,9 +1401,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 )
             case 'client-managed':
                 throw new Error('client-managed global state is not supported')
-            case 'stateless':
-            case undefined:
-            case null:
+            default:
                 return new AgentGlobalState(clientInfo.name)
         }
     }
