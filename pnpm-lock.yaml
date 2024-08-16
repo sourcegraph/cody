@@ -160,6 +160,9 @@ importers:
       '@types/minimatch':
         specifier: ^5.1.2
         version: 5.1.2
+      '@types/node-localstorage':
+        specifier: ^1.3.3
+        version: 1.3.3
       '@types/open':
         specifier: ^6.2.1
         version: 6.2.1
@@ -223,6 +226,9 @@ importers:
       minimatch:
         specifier: ^9.0.3
         version: 9.0.3
+      node-localstorage:
+        specifier: ^3.0.5
+        version: 3.0.5
       open:
         specifier: ^8.4.2
         version: 8.4.2
@@ -7200,6 +7206,12 @@ packages:
       '@types/node': 20.12.7
     dev: true
 
+  /@types/node-localstorage@1.3.3:
+    resolution: {integrity: sha512-Wkn5g4eM5x10UNV9Xvl9K6y6m0zorocuJy4WjB5muUdyMZuPbZpSJG3hlhjGHe1HGxbOQO7RcB+jlHcNwkh+Jw==}
+    dependencies:
+      '@types/node': 20.12.7
+    dev: true
+
   /@types/node@18.19.31:
     resolution: {integrity: sha512-ArgCD39YpyyrtFKIqMDvjz79jto5fcI/SVUs2HwB+f0dAzq68yqOdyaSivLiLugSziTpNXLQrVb7RZFmdZzbhA==}
     dependencies:
@@ -13351,6 +13363,13 @@ packages:
       - bluebird
       - supports-color
     dev: false
+
+  /node-localstorage@3.0.5:
+    resolution: {integrity: sha512-GCwtK33iwVXboZWYcqQHu3aRvXEBwmPkAMRBLeaX86ufhqslyUkLGsi4aW3INEfdQYpUB5M9qtYf3eHvAk2VBg==}
+    engines: {node: '>=0.12'}
+    dependencies:
+      write-file-atomic: 5.0.1
+    dev: true
 
   /node-releases@2.0.14:
     resolution: {integrity: sha512-y10wOWt8yZpqXmOgRo77WaHEmhYQYGNA6y421PKsKYWEK8aW+cqAphborZDhqfyKrbZEN92CN1X2KbafY2s7Yw==}
