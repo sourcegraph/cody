@@ -118,6 +118,7 @@ export const AssistantMessageCell: FunctionComponent<{
                                 humanMessage={humanMessage}
                                 experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
                                 smartApply={smartApply}
+                                userInfo={userInfo}
                             />
                         ) : (
                             isLoading && <LoadingDots />

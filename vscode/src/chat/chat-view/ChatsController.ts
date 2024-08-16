@@ -417,6 +417,11 @@ export class ChatsController implements vscode.Disposable {
         chatQuestion?: string,
         panel?: vscode.WebviewPanel
     ): Promise<ChatController> {
+        // For clients without editor chat panels support, always use the sidebar panel.
+        const isSidebarOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
+        if (isSidebarOnly) {
+            return this.panel
+        }
         // Look for an existing editor with the same chatID
         if (chatID && this.editors.map(p => p.sessionID).includes(chatID)) {
             const provider = this.editors.find(p => p.sessionID === chatID)
