@@ -441,6 +441,13 @@ function writeCompletionEvent<SubFeature extends string, Action extends string, 
             params.metadata.source = mappedSource
         }
 
+        // for each completionsProviders, add it to metadata showing it's enabled
+        if (params.privateMetadata?.otherCompletionProviders) {
+            for (const key of params.privateMetadata.otherCompletionProviders) {
+                params.metadata[`otherCompletionProviders.${key}`] = 1
+            }
+        }
+
         // Need to convert since CompletionIntent only refers to a type
         const CompletionIntentEnum: Record<CompletionIntent, CompletionIntent> = Object.keys(
             CompletionIntentTelemetryMetadataMapping
