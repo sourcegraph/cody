@@ -5,6 +5,6 @@ data class WorkspaceEditEntryMetadata(
   val needsConfirmation: Boolean,
   val label: String,
   val description: String? = null,
-  val iconPath: Uri? = null,
+  val iconPath: Uri,
 )
 
