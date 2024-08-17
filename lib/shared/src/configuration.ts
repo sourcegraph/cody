@@ -20,8 +20,10 @@ export interface ConfigGetter<T> {
     get<T>(section: string, defaultValue?: T): T
 }
 
-// Should we share VS Code specific config via cody-shared?
-export interface Configuration {
+/**
+ * Client configuration, such as VS Code settings.
+ */
+export interface ClientConfiguration {
     proxy?: string | null
     codebase?: string
     debugFilter: RegExp | null
@@ -108,9 +110,9 @@ export interface AutocompleteTimeouts {
     singleline?: number
 }
 
-export type ConfigurationWithEndpoint = Omit<ConfigurationWithAccessToken, 'accessToken'>
+export type ClientConfigurationWithEndpoint = Omit<ClientConfigurationWithAccessToken, 'accessToken'>
 
-export interface ConfigurationWithAccessToken extends Configuration {
+export interface ClientConfigurationWithAccessToken extends ClientConfiguration {
     serverEndpoint: string
     /** The access token, which is stored in the secret storage (not configuration). */
     accessToken: string | null

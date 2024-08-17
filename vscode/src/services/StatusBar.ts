@@ -2,8 +2,8 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
+    type ClientConfiguration,
     CodyIDE,
-    type Configuration,
     contextFiltersProvider,
     isCodyIgnoredFile,
 } from '@sourcegraph/cody-shared'
@@ -117,7 +117,7 @@ export function createStatusBar(): CodyStatusBar {
             description: string | undefined,
             detail: string,
             setting: string,
-            getValue: (config: Configuration) => boolean | Promise<boolean>,
+            getValue: (config: ClientConfiguration) => boolean | Promise<boolean>,
             requiresReload = false,
             buttons: readonly vscode.QuickInputButton[] | undefined = undefined
         ): Promise<StatusBarItem> {
