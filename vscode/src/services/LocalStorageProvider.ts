@@ -66,7 +66,7 @@ class LocalStorage {
             }
 
             const uri = new URL(endpoint).href
-            await this.storage.update(this.LAST_USED_ENDPOINT, uri)
+            await this.set(this.LAST_USED_ENDPOINT, uri)
             await this.addEndpointHistory(uri)
         } catch (error) {
             console.error(error)
@@ -74,11 +74,11 @@ class LocalStorage {
     }
 
     public async deleteEndpoint(): Promise<void> {
-        await this.storage.update(this.LAST_USED_ENDPOINT, null)
+        await this.set(this.LAST_USED_ENDPOINT, null)
     }
 
     public getEndpointHistory(): string[] | null {
-        return this.storage.get<string[] | null>(this.CODY_ENDPOINT_HISTORY, null)
+        return this.get<string[] | null>(this.CODY_ENDPOINT_HISTORY)
     }
 
     private async addEndpointHistory(endpoint: string): Promise<void> {
@@ -91,7 +91,7 @@ class LocalStorage {
         const historySet = new Set(history)
         historySet.delete(endpoint)
         historySet.add(endpoint)
-        await this.storage.update(this.CODY_ENDPOINT_HISTORY, [...historySet])
+        await this.set(this.CODY_ENDPOINT_HISTORY, [...historySet])
     }
 
     public getLastStoredUser(): { endpoint: string; username: string } | null {
@@ -122,12 +122,7 @@ class LocalStorage {
                 }
             }
 
-            await this.storage.update(this.KEY_LOCAL_HISTORY, fullHistory)
-
-            // Store the current username as the last used username
-            if (authStatus.username) {
-                this.storage.update(this.LAST_USED_USERNAME, authStatus.username)
-            }
+            await this.set(this.KEY_LOCAL_HISTORY, fullHistory)
         } catch (error) {
             console.error(error)
         }
@@ -160,12 +155,12 @@ class LocalStorage {
 
     public async setMinionHistory(authStatus: AuthStatus, serializedHistory: string): Promise<void> {
         // TODO(beyang): SECURITY - use authStatus
-        await this.storage.update(this.KEY_LOCAL_MINION_HISTORY, serializedHistory)
+        await this.set(this.KEY_LOCAL_MINION_HISTORY, serializedHistory)
     }
 
     public getMinionHistory(authStatus: AuthStatus): string | null {
         // TODO(beyang): SECURITY - use authStatus
-        return this.storage.get<string | null>(this.KEY_LOCAL_MINION_HISTORY, null)
+        return this.get<string | null>(this.KEY_LOCAL_MINION_HISTORY)
     }
 
     public async removeChatHistory(authStatus: AuthStatus): Promise<void> {
@@ -191,7 +186,7 @@ class LocalStorage {
         // Log the first enrollment event
         if (!hasEnrolled) {
             history.push(featureName)
-            this.storage.update(this.CODY_ENROLLMENT_HISTORY, history)
+            this.set(this.CODY_ENROLLMENT_HISTORY, history)
         }
         return hasEnrolled
     }
@@ -206,9 +201,7 @@ class LocalStorage {
         if (!id) {
             created = true
             id = uuid.v4()
-            Promise.resolve(this.storage.update(this.ANONYMOUS_USER_ID_KEY, id).then(undefined)).catch(
-                error => console.error(error)
-            )
+            this.set(this.ANONYMOUS_USER_ID_KEY, id).catch(error => console.error(error))
         }
         return { anonymousUserID: id, created }
     }
@@ -226,7 +219,7 @@ class LocalStorage {
     }
 
     public getLastUsedChatModality(): 'sidebar' | 'editor' {
-        return this.storage?.get(this.LAST_USED_CHAT_MODALITY) ?? 'sidebar'
+        return this.get(this.LAST_USED_CHAT_MODALITY) ?? 'sidebar'
     }
 
     public get<T>(key: string): T | null {
