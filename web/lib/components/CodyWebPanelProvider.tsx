@@ -120,7 +120,7 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
             const { panelId, chatId } = await agent.rpc.sendRequest<{
                 panelId: string
                 chatId: string
-            }>('chat/web/new')
+            }>('chat/web/new', null)
 
             activeWebviewPanelIDRef.current = panelId
 

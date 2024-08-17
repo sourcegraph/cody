@@ -1,4 +1,4 @@
-import type { ServerInfo } from 'cody-ai/src/jsonrpc/agent-protocol'
+import type { ClientInfo, ServerInfo } from 'cody-ai/src/jsonrpc/agent-protocol'
 import {
     BrowserMessageReader,
     BrowserMessageWriter,
@@ -80,6 +80,7 @@ export async function createAgentClient({
         workspaceRootUri,
         capabilities: {
             completions: 'none',
+            webview: 'agentic',
         },
         extensionConfiguration: {
             accessToken,
@@ -92,7 +93,7 @@ export async function createAgentClient({
                 'cody.web': true,
             },
         },
-    })
+    } satisfies ClientInfo)
 
     await rpc.sendNotification('initialized', null)
 

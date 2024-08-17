@@ -28,7 +28,7 @@ export default defineProjectWithDefaults(__dirname, {
     plugins: [
         // @ts-ignore
         react({ devTarget: 'esnext' }),
-        svgr(),
+        svgr() as any,
     ],
     resolve: {
         alias: [
@@ -56,6 +56,12 @@ export default defineProjectWithDefaults(__dirname, {
             { find: /^(node:)?events$/, replacement: resolve(__dirname, 'node_modules/events') },
             { find: /^(node:)?util$/, replacement: resolve(__dirname, 'node_modules/util') },
             { find: /^(node:)?buffer$/, replacement: resolve(__dirname, 'node_modules/buffer') },
+            { find: /^fs-extra$/, replacement: resolve(__dirname, 'lib/agent/shims/fs-extra.ts') },
+            { find: /^open$/, replacement: resolve(__dirname, 'lib/agent/shims/open.ts') },
+            {
+                find: /^worker_threads$/,
+                replacement: resolve(__dirname, 'lib/agent/shims/worker_threads.ts'),
+            },
 
             // Autocomplete isn't used on web. Omitting it cuts the bundle size by ~5 MB.
             {
