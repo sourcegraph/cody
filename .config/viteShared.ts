@@ -12,7 +12,7 @@ const defaultProjectConfig: UserWorkspaceConfig = {
             // Build from TypeScript sources so we don't need to run `tsc -b` in the background
             // during dev.
             {
-                find: /^(@sourcegraph\/(?:cody-[\w-]|prompt-editor)+)$/,
+                find: /^(@sourcegraph\/(?:cody-[\w-]+|prompt-editor))$/,
                 replacement: '$1/src/index.ts',
             },
         ],
