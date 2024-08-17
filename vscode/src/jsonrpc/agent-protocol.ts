@@ -628,7 +628,14 @@ export interface ClientCapabilities {
     // asWebviewUri (note, multiple prefixes are not yet implemented.)
     // Set the view to 'single' when client only support single chat view, e.g. sidebar chat.
     webviewNativeConfig?:
-        | { view: 'multiple' | 'single'; cspSource: string; webviewBundleServingPrefix: string }
+        | {
+              view: 'multiple' | 'single'
+              cspSource: string
+              rootDir: string
+              webviewBundleServingPrefix: string
+              injectScript?: string
+              injectStyle?: string
+          }
         | undefined
         | null
 }
