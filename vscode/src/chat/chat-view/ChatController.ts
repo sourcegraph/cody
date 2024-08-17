@@ -42,6 +42,7 @@ import {
     isRateLimitError,
     modelsService,
     parseMentionQuery,
+    promiseFactoryToObservable,
     recordErrorToSpan,
     reformatBotMessageForChat,
     serializeChatMessage,
@@ -1649,11 +1650,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     },
                 }),
                 {
-                    mentionMenuData: (query, signal) =>
-                        getMentionMenuData(query, this.remoteSearch, this.chatModel, signal),
-                    evaluatedFeatureFlag: (flag, signal) =>
-                        featureFlagProvider.evaluatedFeatureFlag(flag, signal),
-                    prompts: mergedPromptsAndLegacyCommands,
+                    mentionMenuData: query =>
+                        getMentionMenuData(query, this.remoteSearch, this.chatModel),
+                    evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
+                    prompts: query =>
+                        promiseFactoryToObservable(signal =>
+                            mergedPromptsAndLegacyCommands(query, signal)
+                        ),
                 }
             )
         )

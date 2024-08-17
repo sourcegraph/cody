@@ -1,7 +1,5 @@
-import {
-    type ConfigurationWithAccessToken,
-    asyncGeneratorFromVSCodeEvent,
-} from '@sourcegraph/cody-shared'
+import { type ConfigurationWithAccessToken, fromVSCodeEvent } from '@sourcegraph/cody-shared'
+import type { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 import { getFullConfig } from './configuration'
 import type { AuthProvider } from './services/AuthProvider'
@@ -14,6 +12,7 @@ interface OnChangeOptions {
  * A wrapper around a configuration source that lets the client retrieve the current config and watch for changes.
  */
 export interface ConfigWatcher<C> extends vscode.Disposable {
+    changes: Observable<C>
     get(): C
 
     /*
@@ -29,14 +28,12 @@ export interface ConfigWatcher<C> extends vscode.Disposable {
         disposables: vscode.Disposable[],
         options?: OnChangeOptions
     ): Promise<void>
-
-    observe(signal?: AbortSignal): AsyncGenerator<C>
 }
 
 export class BaseConfigWatcher implements ConfigWatcher<ConfigurationWithAccessToken> {
     private currentConfig: ConfigurationWithAccessToken
     private disposables: vscode.Disposable[] = []
-    private configChangeEvent: vscode.EventEmitter<ConfigurationWithAccessToken>
+    private configChangeEvent = new vscode.EventEmitter<ConfigurationWithAccessToken>()
 
     public static async create(
         authProvider: AuthProvider,
@@ -63,9 +60,13 @@ export class BaseConfigWatcher implements ConfigWatcher<ConfigurationWithAccessT
 
     constructor(initialConfig: ConfigurationWithAccessToken) {
         this.currentConfig = initialConfig
-        this.configChangeEvent = new vscode.EventEmitter()
         this.disposables.push(this.configChangeEvent)
     }
+
+    public changes: Observable<ConfigurationWithAccessToken> = fromVSCodeEvent(
+        this.configChangeEvent.event,
+        () => this.currentConfig
+    )
 
     public dispose() {
         for (const d of this.disposables) {
@@ -87,10 +88,6 @@ export class BaseConfigWatcher implements ConfigWatcher<ConfigurationWithAccessT
         if (runImmediately) {
             await callback(this.currentConfig)
         }
-    }
-
-    public observe(signal?: AbortSignal): AsyncGenerator<ConfigurationWithAccessToken> {
-        return asyncGeneratorFromVSCodeEvent(this.configChangeEvent.event, this.currentConfig, signal)
     }
 
     private set(config: ConfigurationWithAccessToken): void {

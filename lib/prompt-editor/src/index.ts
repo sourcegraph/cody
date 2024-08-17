@@ -15,3 +15,4 @@ export {
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
 export * from './useExtensionAPI'
+export { useObservable, type UseObservableResult } from './useObservable'

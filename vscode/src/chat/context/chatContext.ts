@@ -10,13 +10,14 @@ import {
     REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     allMentionProvidersMetadata,
-    asyncGeneratorFromPromise,
     combineLatest,
     isAbortError,
     openCtx,
+    promiseFactoryToObservable,
     telemetryRecorder,
     webMentionProvidersMetadata,
 } from '@sourcegraph/cody-shared'
+import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
@@ -34,12 +35,11 @@ export interface GetContextItemsTelemetry {
     withProvider: (type: MentionQuery['provider'], metadata?: { id: string }) => void
 }
 
-export async function* getMentionMenuData(
+export function getMentionMenuData(
     query: MentionQuery,
     remoteSearch: RemoteSearch | null,
-    chatModel: ChatModel,
-    signal: AbortSignal
-): AsyncGenerator<MentionMenuData> {
+    chatModel: ChatModel
+): Observable<MentionMenuData> {
     const source = 'chat'
 
     // Use numerical mapping to send source values to metadata, making this data available on all instances.
@@ -68,36 +68,38 @@ export async function* getMentionMenuData(
     const { input, context } = chatModel.contextWindow
 
     try {
-        const items = asyncGeneratorFromPromise(
-            getChatContextItemsForMention({
-                mentionQuery: query,
-                telemetryRecorder: scopedTelemetryRecorder,
-                rangeFilter: !isCodyWeb,
-                remoteRepositoriesNames: query.includeRemoteRepositories
-                    ? remoteSearch?.getRepos('all')?.map(repo => repo.name)
-                    : undefined,
-            }).then(items =>
-                items.map(f => ({
+        const items = promiseFactoryToObservable(signal =>
+            getChatContextItemsForMention(
+                {
+                    mentionQuery: query,
+                    telemetryRecorder: scopedTelemetryRecorder,
+                    rangeFilter: !isCodyWeb,
+                    remoteRepositoriesNames: query.includeRemoteRepositories
+                        ? remoteSearch?.getRepos('all')?.map(repo => repo.name)
+                        : undefined,
+                },
+                signal
+            ).then(items =>
+                items.map<ContextItem>(f => ({
                     ...f,
                     isTooLarge: f.size ? f.size > (context?.user || input) : undefined,
                 }))
             )
         )
 
-        const providers = isCodyWeb
-            ? webMentionProvidersMetadata(signal)
-            : allMentionProvidersMetadata(signal)
         const queryLower = query.text.toLowerCase()
+        const providers = (
+            query.provider === null
+                ? isCodyWeb
+                    ? webMentionProvidersMetadata()
+                    : allMentionProvidersMetadata()
+                : Observable.of([])
+        ).pipe(map(providers => providers.filter(p => p.title.toLowerCase().includes(queryLower))))
 
-        for await (const [latestItems, latestProviders] of combineLatest([items, providers])) {
-            yield {
-                items: latestItems,
-                providers:
-                    query.provider === null
-                        ? latestProviders.filter(p => p.title.toLowerCase().includes(queryLower))
-                        : [],
-            }
-        }
+        return combineLatest([providers, items]).map(([providers, items]) => ({
+            providers,
+            items,
+        }))
     } catch (error) {
         if (isAbortError(error)) {
             throw error // rethrow as-is so it gets ignored by our caller
@@ -119,7 +121,8 @@ interface GetContextItemsOptions {
 }
 
 export async function getChatContextItemsForMention(
-    options: GetContextItemsOptions
+    options: GetContextItemsOptions,
+    signal?: AbortSignal
 ): Promise<ContextItem[]> {
     const MAX_RESULTS = 20
     const { mentionQuery, telemetryRecorder, remoteRepositoriesNames, rangeFilter = true } = options

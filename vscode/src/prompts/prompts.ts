@@ -1,10 +1,4 @@
-import {
-    type PromptsResult,
-    type WebviewToExtensionAPI,
-    graphqlClient,
-    isAbortError,
-    isErrorLike,
-} from '@sourcegraph/cody-shared'
+import { type PromptsResult, graphqlClient, isAbortError, isErrorLike } from '@sourcegraph/cody-shared'
 import { FIXTURE_COMMANDS } from '../../webviews/components/promptList/fixtures'
 import { getCodyCommandList } from '../commands/CommandsController'
 
@@ -13,10 +7,10 @@ import { getCodyCommandList } from '../commands/CommandsController'
  * and (deprecated) custom commands. Commands are deprecated in favor of prompts in the Prompt
  * Library.
  */
-export async function* mergedPromptsAndLegacyCommands(
+export async function mergedPromptsAndLegacyCommands(
     query: string,
     signal?: AbortSignal
-): ReturnType<WebviewToExtensionAPI['prompts']> {
+): Promise<PromptsResult> {
     let promptsValue: PromptsResult['prompts']
     try {
         const prompts = await graphqlClient.queryPrompts(query, signal)
@@ -51,7 +45,7 @@ export async function* mergedPromptsAndLegacyCommands(
         c => matchesQuery(c.key) || matchesQuery(c.description ?? '') || matchesQuery(c.prompt)
     )
 
-    yield {
+    return {
         prompts: promptsValue,
         commands: matchingCommands,
         query,
