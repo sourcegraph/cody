@@ -37,7 +37,7 @@ export interface ClientConfiguration {
     telemetryLevel: 'all' | 'off' | 'agent'
     telemetryClientName?: string
     useContext: ConfigurationUseContext
-    customHeaders: Record<string, string>
+    customHeaders?: Record<string, string>
     chatPreInstruction: PromptString
     editPreInstruction: PromptString
     codeActions: boolean

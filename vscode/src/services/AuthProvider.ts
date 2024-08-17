@@ -404,7 +404,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
     // sending back from sourcegraph.com
     public async tokenCallbackHandler(
         uri: vscode.Uri,
-        customHeaders: Record<string, string>
+        customHeaders: Record<string, string> | undefined
     ): Promise<void> {
         closeAuthProgressIndicator()
 

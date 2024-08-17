@@ -26,7 +26,7 @@ export class RestClient {
     constructor(
         private endpointUrl: string,
         private accessToken: string | undefined,
-        private customHeaders: Record<string, string>
+        private customHeaders: Record<string, string> | undefined
     ) {}
 
     // Make an authenticated HTTP request to the Sourcegraph instance.
