@@ -1,12 +1,12 @@
-import { type ConfigurationWithAccessToken, fromVSCodeEvent } from '@sourcegraph/cody-shared'
+import {
+    type ConfigurationWithAccessToken,
+    fromVSCodeEvent,
+    subscriptionDisposable,
+} from '@sourcegraph/cody-shared'
 import type { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 import { getFullConfig } from './configuration'
 import type { AuthProvider } from './services/AuthProvider'
-
-interface OnChangeOptions {
-    runImmediately: boolean
-}
 
 /**
  * A wrapper around a configuration source that lets the client retrieve the current config and watch for changes.
@@ -14,20 +14,6 @@ interface OnChangeOptions {
 export interface ConfigWatcher<C> extends vscode.Disposable {
     changes: Observable<C>
     get(): C
-
-    /*
-     * Register a callback that is called only when Cody's configuration is changed.
-     * Appends to the disposable array methods that unregister the callback.
-     *
-     * If `runImmediately` is true, the callback is called immediately and the returned
-     * Promise is that of the callback. If false (the default), then the return value
-     * is a resolved Promise.
-     */
-    onChange(
-        callback: (config: C) => Promise<void>,
-        disposables: vscode.Disposable[],
-        options?: OnChangeOptions
-    ): Promise<void>
 }
 
 export class BaseConfigWatcher implements ConfigWatcher<ConfigurationWithAccessToken> {
@@ -50,9 +36,11 @@ export class BaseConfigWatcher implements ConfigWatcher<ConfigurationWithAccessT
             })
         )
         disposables.push(
-            authProvider.onChange(async () => {
-                w.set(await getFullConfig())
-            })
+            subscriptionDisposable(
+                authProvider.changes.subscribe(async () => {
+                    w.set(await getFullConfig())
+                })
+            )
         )
 
         return w
@@ -77,17 +65,6 @@ export class BaseConfigWatcher implements ConfigWatcher<ConfigurationWithAccessT
 
     public get(): ConfigurationWithAccessToken {
         return this.currentConfig
-    }
-
-    public async onChange(
-        callback: (config: ConfigurationWithAccessToken) => Promise<void>,
-        disposables: vscode.Disposable[],
-        { runImmediately }: OnChangeOptions = { runImmediately: false }
-    ): Promise<void> {
-        disposables.push(this.configChangeEvent.event(callback))
-        if (runImmediately) {
-            await callback(this.currentConfig)
-        }
     }
 
     private set(config: ConfigurationWithAccessToken): void {

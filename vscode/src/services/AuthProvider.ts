@@ -35,10 +35,6 @@ import { secretStorage } from './SecretStorageProvider'
 
 const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
 
-interface OnChangeOptions {
-    runImmediately: boolean
-}
-
 type AuthConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
 export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
     private endpointHistory: string[] = []
@@ -93,16 +89,6 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         this.didChangeEvent.event,
         this.getAuthStatus.bind(this)
     )
-
-    public onChange(
-        listener: (authStatus: AuthStatus) => void,
-        { runImmediately }: OnChangeOptions = { runImmediately: false }
-    ): vscode.Disposable {
-        if (runImmediately) {
-            listener(this.status)
-        }
-        return this.didChangeEvent.event(listener)
-    }
 
     // Display quickpick to select endpoint to sign in to
     public async signinMenu(type?: 'enterprise' | 'dotcom' | 'token', uri?: string): Promise<void> {

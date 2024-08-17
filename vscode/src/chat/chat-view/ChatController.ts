@@ -64,7 +64,7 @@ import {
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
-import { getConfigWithEndpoint, getConfiguration } from '../../configuration'
+import { getConfigWithEndpoint, getConfiguration, getFullConfig } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
 import type { Repo } from '../../context/repo-fetcher'

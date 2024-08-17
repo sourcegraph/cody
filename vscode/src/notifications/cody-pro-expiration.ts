@@ -2,6 +2,7 @@ import {
     FeatureFlag,
     type FeatureFlagProvider,
     type SourcegraphGraphQLAPIClient,
+    type Unsubscribable,
 } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
@@ -33,7 +34,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
     /**
      * Current subscription to auth provider status changes that may trigger a check.
      */
-    private authProviderSubscription: vscode.Disposable | undefined
+    private authProviderSubscription: Unsubscribable | undefined
 
     /**
      * A timer if there is currently an outstanding timed check.
@@ -83,9 +84,8 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
             // right flags.
             //
             // See https://sourcegraph.slack.com/archives/C05AGQYD528/p1706872864488829
-            this.authProviderSubscription = this.authProvider.onChange(
-                () => setTimeout(() => this.triggerExpirationCheck(), this.autoUpdateDelay),
-                { runImmediately: true }
+            this.authProviderSubscription = this.authProvider.changes.subscribe(() =>
+                setTimeout(() => this.triggerExpirationCheck(), this.autoUpdateDelay)
             )
         }
 
@@ -189,7 +189,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
     public dispose() {
         this.isDisposed = true
 
-        this.authProviderSubscription?.dispose()
+        this.authProviderSubscription?.unsubscribe()
         this.authProviderSubscription = undefined
 
         this.nextTimedCheck?.unref()

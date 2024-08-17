@@ -1,16 +1,22 @@
-import { Observable } from 'observable-fns'
+import { Observable, multicast } from 'observable-fns'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import {
     type ObservableValue,
     allValuesFrom,
     combineLatest,
+    createSyncObservable,
+    distinctUntilChanged,
     firstValueFrom,
     fromVSCodeEvent,
+    mapSyncObservable,
     memoizeLastValue,
+    multicastSync,
     observableOfSequence,
     observableOfTimedSequence,
+    pipeSyncObservable,
     promiseFactoryToObservable,
     readValuesFrom,
+    shareReplay,
 } from './observable'
 
 describe('firstValueFrom', () => {
@@ -223,5 +229,301 @@ describe('fromVSCodeEvent', { timeout: 500 }, () => {
         await done
 
         expect(values).toEqual(['first'])
+    })
+})
+
+describe('distinctUntilChanged', () => {
+    afterEach(() => {
+        vi.useRealTimers()
+    })
+
+    test('supports multiple subscribers', async () => {
+        vi.useFakeTimers()
+        const observable = observableOfSequence('a', 'b', 'b', 'c').pipe(distinctUntilChanged())
+        const reader1 = readValuesFrom(observable)
+        const reader2 = readValuesFrom(observable)
+
+        await vi.runAllTimersAsync()
+        reader1.unsubscribe()
+        reader2.unsubscribe()
+        await reader1.done
+        await reader2.done
+
+        const WANT: typeof reader1.values = ['a', 'b', 'c']
+        expect.soft(reader1.values).toEqual(WANT)
+        expect.soft(reader2.values).toEqual(WANT)
+    })
+})
+
+describe('createSyncObservable', { timeout: 500 }, () => {
+    afterEach(() => {
+        vi.useRealTimers()
+    })
+
+    test('creates a SyncObservable with initial value and subscriber', async () => {
+        vi.useFakeTimers()
+        const syncObservable = createSyncObservable(3, Observable.of(4))
+        expect(syncObservable.value).toBe(3)
+
+        const { values, done, unsubscribe } = readValuesFrom(syncObservable)
+        await vi.runAllTimersAsync()
+        unsubscribe()
+        await done
+
+        expect(syncObservable.value).toBe(4)
+        expect(values).toEqual([3, 4])
+    })
+
+    test('supports multiple subscribers', async () => {
+        vi.useFakeTimers()
+        const syncObservable = createSyncObservable(
+            'X',
+            observableOfTimedSequence('A', 10, 'B', 10, 'C')
+        )
+        const reader1 = readValuesFrom(syncObservable)
+        const reader2 = readValuesFrom(syncObservable)
+        await vi.runAllTimersAsync()
+        reader1.unsubscribe()
+        reader2.unsubscribe()
+        await reader1.done
+        await reader2.done
+
+        expect(syncObservable.value).toBe('C')
+        expect.soft(reader1.values).toEqual(['X', 'A', 'B', 'C'])
+        expect.soft(reader2.values).toEqual(['X', 'A', 'B', 'C'])
+    })
+
+    test('supports distinctUntilChanged with multiple subscribers', async () => {
+        vi.useFakeTimers()
+        const syncObservable = pipeSyncObservable(
+            createSyncObservable('x', observableOfSequence('a', 'b', 'b', 'c')),
+            distinctUntilChanged()
+        )
+
+        const reader1 = readValuesFrom(syncObservable)
+        const reader2 = readValuesFrom(syncObservable)
+
+        await vi.runAllTimersAsync()
+        reader1.unsubscribe()
+        reader2.unsubscribe()
+        await reader1.done
+        await reader2.done
+
+        expect(syncObservable.value).toBe('c')
+        const WANT: typeof reader1.values = ['x', 'a', 'b', 'c']
+        expect.soft(reader1.values).toEqual(WANT)
+        expect.soft(reader2.values).toEqual(WANT)
+    })
+
+    test('supports complex pipes', async () => {
+        vi.useFakeTimers()
+        const syncObservable = mapSyncObservable(
+            createSyncObservable('x', observableOfTimedSequence('a', 10, 'b', 10, 'c', 10, 'c')),
+            s => s.toUpperCase()
+        )
+
+        const reader1 = readValuesFrom(pipeSyncObservable(syncObservable, distinctUntilChanged()))
+        const reader2 = readValuesFrom(
+            pipeSyncObservable(
+                mapSyncObservable(syncObservable, value => value.toLowerCase()),
+                distinctUntilChanged()
+            )
+        )
+
+        await vi.runAllTimersAsync()
+        reader1.unsubscribe()
+        reader2.unsubscribe()
+        await reader1.done
+        await reader2.done
+
+        expect(syncObservable.value).toBe('C')
+        expect.soft(reader1.values).toEqual(['X', 'A', 'B', 'C'])
+        expect.soft(reader2.values).toEqual(['x', 'a', 'b', 'c'])
+    })
+})
+
+describe('multicastSync', { timeout: 500 }, () => {
+    afterEach(() => {
+        vi.useRealTimers()
+    })
+
+    test('non-multicast', async () => {
+        vi.useFakeTimers()
+        let called = 0
+        const observable = new Observable(observer => {
+            called++
+            observer.next('a')
+            observer.next('b')
+            observer.complete()
+        })
+        const reader1 = readValuesFrom(observable)
+        const reader2 = readValuesFrom(observable)
+        await vi.runAllTimersAsync()
+        reader1.unsubscribe()
+        reader2.unsubscribe()
+        await reader1.done
+        await reader2.done
+
+        const WANT: typeof reader1.values = ['a', 'b']
+        expect.soft(reader1.values).toEqual(WANT)
+        expect.soft(reader2.values).toEqual(WANT)
+        expect(called).toBe(2)
+
+        expect(await allValuesFrom(observable)).toEqual(WANT)
+        expect(called).toBe(3)
+    })
+
+    test('multicast normal Observable', async () => {
+        vi.useFakeTimers()
+        let called = 0
+        const observable = multicast(
+            new Observable(observer => {
+                called++
+                observer.next('a')
+                observer.next('b')
+                observer.complete()
+            })
+        )
+        const reader1 = readValuesFrom(observable)
+        const reader2 = readValuesFrom(observable)
+        await vi.runAllTimersAsync()
+        reader1.unsubscribe()
+        reader2.unsubscribe()
+        await reader1.done
+        await reader2.done
+
+        const WANT: typeof reader1.values = ['a', 'b']
+        expect.soft(reader1.values).toEqual(WANT)
+        expect.soft(reader2.values).toEqual(WANT)
+        expect(called).toBe(1)
+
+        expect(await allValuesFrom(observable)).toEqual(WANT)
+        expect(called).toBe(2)
+    })
+
+    test('multicast normal Observable with late subscriber', async () => {
+        vi.useFakeTimers()
+        let called = 0
+        const observable = multicast(
+            new Observable(observer => {
+                called++
+                ;(async () => {
+                    await new Promise(resolve => setTimeout(resolve, 10))
+                    observer.next('a')
+                    await new Promise(resolve => setTimeout(resolve, 10))
+                    observer.next('b')
+                    observer.complete()
+                })()
+            })
+        )
+        const reader1 = readValuesFrom(observable)
+        await vi.advanceTimersByTimeAsync(10)
+        const reader2 = readValuesFrom(observable)
+        await vi.runAllTimersAsync()
+        reader1.unsubscribe()
+        reader2.unsubscribe()
+        await reader1.done
+        await reader2.done
+
+        expect.soft(reader1.values).toEqual(['a', 'b'])
+        expect.soft(reader2.values).toEqual(['b']) // reader2 missed out on the 1st value
+        expect(called).toBe(1)
+    })
+
+    test('multicast', async () => {
+        vi.useFakeTimers()
+        let called = 0
+        const observable = multicastSync(
+            createSyncObservable(
+                'x',
+                new Observable(observer => {
+                    called++
+                    observer.next('a')
+                    observer.next('b')
+                    observer.complete()
+                })
+            )
+        )
+        const reader1 = readValuesFrom(observable)
+        const reader2 = readValuesFrom(observable)
+        await vi.runAllTimersAsync()
+        reader1.unsubscribe()
+        reader2.unsubscribe()
+        await reader1.done
+        await reader2.done
+
+        const WANT: typeof reader1.values = ['x', 'a', 'b']
+        expect(observable.value).toBe('b')
+        expect.soft(reader1.values).toEqual(WANT)
+        expect.soft(reader2.values).toEqual(WANT)
+        expect(called).toBe(1)
+    })
+
+    test('multicast with late subscriber', async () => {
+        vi.useFakeTimers()
+        let called = 0
+        const observable = multicastSync(
+            createSyncObservable(
+                'x',
+                new Observable(observer => {
+                    called++
+                    ;(async () => {
+                        await new Promise(resolve => setTimeout(resolve, 10))
+                        observer.next('a')
+                        await new Promise(resolve => setTimeout(resolve, 10))
+                        observer.next('b')
+                        observer.complete()
+                    })()
+                })
+            )
+        )
+        const reader1 = readValuesFrom(observable)
+        await vi.advanceTimersByTimeAsync(10)
+        const reader2 = readValuesFrom(observable)
+        await vi.runAllTimersAsync()
+        reader1.unsubscribe()
+        reader2.unsubscribe()
+        await reader1.done
+        await reader2.done
+
+        expect(observable.value).toBe('b')
+        expect.soft(reader1.values).toEqual(['x', 'a', 'b'])
+        expect.soft(reader2.values).toEqual(['b']) // reader2 missed out on the 1st and 2nd values
+        expect(called).toBe(1)
+    })
+})
+
+describe('shareReplay', () => {
+    afterEach(() => {
+        vi.useRealTimers()
+    })
+
+    test('late subscriber gets previous value', { timeout: 500 }, async () => {
+        vi.useFakeTimers()
+        let called = 0
+        const observable = new Observable(observer => {
+            called++
+            ;(async () => {
+                await new Promise(resolve => setTimeout(resolve, 10))
+                observer.next('a')
+                await new Promise(resolve => setTimeout(resolve, 10))
+                observer.next('b')
+                observer.complete()
+            })()
+        }).pipe(shareReplay())
+
+        const reader1 = readValuesFrom(observable)
+        await vi.advanceTimersByTimeAsync(10)
+        const reader2 = readValuesFrom(observable)
+        await vi.runAllTimersAsync()
+        reader1.unsubscribe()
+        reader2.unsubscribe()
+        await reader1.done
+        await reader2.done
+
+        const WANT: typeof reader1.values = ['a', 'b']
+        expect.soft(reader1.values).toEqual(WANT)
+        expect.soft(reader2.values).toEqual(WANT) // reader2 got the previous value
+        expect(called).toBe(1) // but the observable was only heated up once
     })
 })
