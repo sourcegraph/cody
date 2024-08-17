@@ -126,7 +126,7 @@ export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderPr
 > {
     constructor(
         extensionDetails: ExtensionDetails,
-        config: ConfigurationWithAccessToken,
+        config: Configuration,
         authStatusProvider: AuthStatusProvider,
         anonymousUserID: string
     ) {

@@ -8,7 +8,7 @@ import { escapeRegExp } from 'lodash'
 import semver from 'semver'
 import type { AuthStatus } from '../../auth/types'
 import { dependentAbortController, onAbort } from '../../common/abortController'
-import type { ConfigurationWithAccessToken } from '../../configuration'
+import type { Configuration, ConfigurationWithAccessToken } from '../../configuration'
 import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
@@ -542,7 +542,7 @@ export type GraphQLAPIClientConfig = Pick<
     ConfigurationWithAccessToken,
     'serverEndpoint' | 'accessToken' | 'customHeaders'
 > &
-    Pick<Partial<ConfigurationWithAccessToken>, 'telemetryLevel'>
+    Pick<Partial<Configuration>, 'telemetryLevel'>
 
 export let customUserAgent: string | undefined
 export function addCustomUserAgent(headers: Headers): void {
