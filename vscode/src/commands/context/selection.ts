@@ -108,7 +108,7 @@ export async function getContextFileFromSelection(): Promise<ContextItem[]> {
  *
  * @returns An array of context items for the current selection or file.
  */
-export async function getSelectionOrFileContext(): Promise<ContextItem[]> {
+export async function getSelectionOrFileContext(): Promise<ContextItemFile[]> {
     return wrapInActiveSpan('commands.context.selection_file', async span => {
         const editor = getEditor()?.active
         const document = editor?.document

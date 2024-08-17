@@ -19,6 +19,7 @@ import {
     graphqlClient,
     isAbortError,
     isCodyIgnoredFile,
+    isContextItemWithContent,
     isDefined,
     isErrorLike,
     isWindows,
@@ -85,6 +86,7 @@ export async function getFileContextFiles(options: FileContextItemsOptions): Pro
             size: range ? 100 : item.file.byteSize,
             source: ContextItemSource.User,
             remoteRepositoryName: item.repository.name,
+            remoteFilePath: item.file.path,
             isIgnored: contextFiltersProvider.isRepoNameIgnored(item.repository.name),
             uri: URI.file(item.repository.name + item.file.path),
         }))
@@ -192,6 +194,7 @@ export async function getSymbolContextFiles(
             item.symbols.map(symbol => ({
                 type: 'symbol',
                 remoteRepositoryName: item.repository.name,
+                remoteFilePath: symbol.location.resource.path,
                 uri: URI.file(item.repository.name + symbol.location.resource.path),
                 isIgnored: contextFiltersProvider.isRepoNameIgnored(item.repository.name),
                 source: ContextItemSource.User,
@@ -382,24 +385,37 @@ async function resolveContextItem(
     input: PromptString,
     signal?: AbortSignal
 ): Promise<ContextItemWithContent[]> {
-    const resolvedItems: ContextItemWithContent[] = item.provider
-        ? await resolveContextMentionProviderContextItem(item, input, signal)
-        : item.type === 'file' || item.type === 'symbol'
-          ? [await resolveFileOrSymbolContextItem(item, editor, signal)]
-          : []
+    const resolvedItems: ContextItemWithContent[] =
+        item.type === 'openctx'
+            ? await resolveOpenCtxContextItem(item, input, signal)
+            : item.type === 'file' || item.type === 'symbol'
+              ? [await resolveFileOrSymbolContextItem(item, editor, signal)]
+              : []
     return resolvedItems.map(resolvedItem => ({
         ...resolvedItem,
         size: resolvedItem.size ?? TokenCounter.countTokens(resolvedItem.content),
     }))
 }
 
-async function resolveContextMentionProviderContextItem(
-    { provider: providerUri, ...item }: ContextItem,
+async function resolveOpenCtxContextItem(
+    item: ContextItem,
     input: PromptString,
     signal?: AbortSignal
 ): Promise<ContextItemWithContent[]> {
     if (item.type !== 'openctx') {
         return []
+    }
+
+    // If the content is already supplied, just use that; no need to resolve.
+    if (isContextItemWithContent(item)) {
+        return [item]
+    }
+
+    if (item.annotation) {
+        const content = item.annotation.item.ui?.hover?.markdown ?? item.annotation.item.ui?.hover?.text
+        if (content) {
+            return [{ ...item, content }]
+        }
     }
 
     const openCtxClient = openCtx.controller
@@ -412,13 +428,8 @@ async function resolveContextMentionProviderContextItem(
         return []
     }
 
-    const mention = {
-        ...item.mention,
-        title: item.title,
-    }
-
     const items = await openCtxClient.items(
-        { message: input.toString(), mention },
+        { message: input.toString(), mention: item.mention },
         { providerUri: item.providerUri }
     )
     // TODO(sqs): add `signal` arg to openCtxClient.items
@@ -445,10 +456,10 @@ async function resolveFileOrSymbolContextItem(
     editor: Editor,
     signal?: AbortSignal
 ): Promise<ContextItemWithContent> {
-    if (contextItem.remoteRepositoryName) {
+    if (contextItem.remoteRepositoryName && contextItem.remoteFilePath) {
         // Get only actual file path without repository name
         const repository = contextItem.remoteRepositoryName
-        const path = contextItem.uri.path.slice(repository.length + 1, contextItem.uri.path.length)
+        const path = contextItem.remoteFilePath
         const ranges = contextItem.range
             ? { startLine: contextItem.range.start.line, endLine: contextItem.range.end.line + 1 }
             : undefined

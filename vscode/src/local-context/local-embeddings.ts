@@ -16,9 +16,11 @@ import {
     featureFlagProvider,
     isDotCom,
     isFileURI,
+    isWindows,
     recordErrorToSpan,
     telemetryRecorder,
     uriBasename,
+    uriHasPrefix,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -633,7 +635,11 @@ export class LocalEmbeddingsController
     }
 
     /** {@link LocalEmbeddingsFetcher.getContext} */
-    public async getContext(query: PromptString, numResults: number): Promise<EmbeddingsSearchResult[]> {
+    public async getContext(
+        query: PromptString,
+        dirInRepo: string | null,
+        numResults: number
+    ): Promise<EmbeddingsSearchResult[]> {
         if (!this.endpointIsDotcom) {
             return []
         }
@@ -649,17 +655,28 @@ export class LocalEmbeddingsController
                 const resp = await service.request('embeddings/query', {
                     repoName: lastRepo.repoName,
                     query: query.toString(),
-                    numResults,
+                    numResults: dirInRepo === null ? numResults : numResults * 100, // HACK(sqs): get more so we can post-filter by dir
                 })
                 logDebug(
                     'LocalEmbeddingsController',
                     'query',
                     `returning ${resp.results.length} results`
                 )
-                return resp.results.map(result => ({
-                    ...result,
-                    uri: vscode.Uri.joinPath(lastRepo.dir, result.fileName),
-                }))
+
+                const dirURIInRepo = dirInRepo ? vscode.Uri.joinPath(lastRepo.dir, dirInRepo) : null
+                return resp.results
+                    .filter(result => {
+                        if (dirURIInRepo === null) {
+                            return true
+                        }
+                        const fileURI = vscode.Uri.joinPath(lastRepo.dir, result.fileName)
+                        return uriHasPrefix(fileURI, dirURIInRepo, isWin)
+                    })
+                    .map(result => ({
+                        ...result,
+                        uri: vscode.Uri.joinPath(lastRepo.dir, result.fileName),
+                    }))
+                    .slice(0, numResults)
             } catch (error) {
                 logDebug('LocalEmbeddingsController', 'query', captureException(error), error)
                 recordErrorToSpan(span, error as Error)
@@ -668,3 +685,5 @@ export class LocalEmbeddingsController
         })
     }
 }
+
+const isWin = isWindows()

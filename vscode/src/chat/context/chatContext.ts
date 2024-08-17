@@ -1,12 +1,11 @@
-import type { Mention } from '@openctx/client'
 import {
     type ContextItem,
     type ContextItemOpenCtx,
-    type ContextItemRepository,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
-    REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    deserializeContextItem,
+    isMentionWithContextItemData,
     openCtx,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -80,50 +79,28 @@ export async function getChatContextItemsForMention(
                 return []
             }
 
-            const items = await openCtx.controller.mentions(
+            const mentions = await openCtx.controller.mentions(
                 { query: mentionQuery.text },
                 // get mention items for the selected provider only.
                 { providerUri: mentionQuery.provider }
             )
 
-            return items.map((item): ContextItemOpenCtx | ContextItemRepository =>
-                contextItemMentionFromOpenCtxItem(item)
+            return mentions.map(mention =>
+                isMentionWithContextItemData(mention)
+                    ? deserializeContextItem(mention.data.contextItem)
+                    : ({
+                          type: 'openctx',
+                          uri: URI.parse(mention.uri),
+                          title: mention.title,
+                          providerUri: mention.providerUri,
+                          provider: 'openctx',
+                          mention: {
+                              uri: mention.uri,
+                              data: mention.data,
+                              description: mention.description,
+                          },
+                      } satisfies ContextItemOpenCtx)
             )
         }
     }
-}
-
-export function contextItemMentionFromOpenCtxItem(
-    item: Mention & { providerUri: string }
-): ContextItemOpenCtx | ContextItemRepository {
-    // HACK: The OpenCtx protocol does not support returning isIgnored
-    // and it does not make sense to expect providers to return disabled
-    // items. That is why we are using `item.data?.ignored`. We only need
-    // this for our internal Sourcegraph Repositories provider.
-    const isIgnored = item.data?.isIgnored as boolean | undefined
-
-    return item.providerUri === REMOTE_REPOSITORY_PROVIDER_URI
-        ? ({
-              type: 'repository',
-              uri: URI.parse(item.uri),
-              isIgnored,
-              title: item.title,
-              repoName: item.title,
-              repoID: item.data!.repoId as string,
-              provider: 'openctx',
-              content: null,
-          } satisfies ContextItemRepository)
-        : ({
-              type: 'openctx',
-              uri: URI.parse(item.uri),
-              isIgnored,
-              title: item.title,
-              providerUri: item.providerUri,
-              provider: 'openctx',
-              mention: {
-                  uri: item.uri,
-                  data: item.data,
-                  description: item.description,
-              },
-          } satisfies ContextItemOpenCtx)
 }

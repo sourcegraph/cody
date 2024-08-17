@@ -1,5 +1,7 @@
-import type { Item, Mention } from '@openctx/client'
+import type { Item } from '@openctx/client'
 import {
+    type InternalOpenCtxProvider,
+    type MentionWithContextItemData,
     REMOTE_REPOSITORY_PROVIDER_URI,
     type RepoSearchResponse,
     contextFiltersProvider,
@@ -7,11 +9,9 @@ import {
     isError,
 } from '@sourcegraph/cody-shared'
 
-import type { OpenCtxProvider } from './types'
+const RemoteRepositorySearch: InternalOpenCtxProvider = createRemoteRepositoryProvider()
 
-const RemoteRepositorySearch: OpenCtxProvider = createRemoteRepositoryProvider()
-
-export function createRemoteRepositoryProvider(customTitle?: string): OpenCtxProvider {
+export function createRemoteRepositoryProvider(customTitle?: string): InternalOpenCtxProvider {
     return {
         providerUri: REMOTE_REPOSITORY_PROVIDER_URI,
 
@@ -29,7 +29,9 @@ export function createRemoteRepositoryProvider(customTitle?: string): OpenCtxPro
 
                 const repositories = dataOrError.repositories.nodes
 
-                return repositories.map(createRemoteRepositoryMention)
+                return repositories.map(repo =>
+                    createRemoteRepositoryMention(repo, RemoteRepositorySearch.providerUri)
+                )
             } catch (error) {
                 return []
             }
@@ -63,20 +65,30 @@ export function createRemoteRepositoryProvider(customTitle?: string): OpenCtxPro
 }
 
 export function createRemoteRepositoryMention(
-    repo: RepoSearchResponse['repositories']['nodes'][number]
-): Mention & { providerUri: string } {
+    repo: RepoSearchResponse['repositories']['nodes'][number],
+    providerUri: string
+): MentionWithContextItemData & { providerUri: string } {
+    const uri = graphqlClient.endpoint + repo.url
     return {
-        uri: graphqlClient.endpoint + repo.url,
+        uri,
         title: repo.name,
         // By default we show <title> <uri> in the mentions menu.
         // As repo.url and repo.name are almost same, we do not want to show the uri.
         // So that is why we are setting the description to " " string.
         description: ' ',
         data: {
-            repoId: repo.id,
-            isIgnored: contextFiltersProvider.isRepoNameIgnored(repo.name),
+            contextItem: {
+                type: 'repository',
+                repoID: repo.id,
+                repoName: repo.name,
+                title: repo.name,
+                uri,
+                isIgnored: contextFiltersProvider.isRepoNameIgnored(repo.name),
+                provider: 'openctx',
+                openctxProviderUri: providerUri,
+            },
         },
-        providerUri: RemoteRepositorySearch.providerUri,
+        providerUri,
     }
 }
 

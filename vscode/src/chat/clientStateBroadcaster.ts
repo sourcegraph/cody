@@ -1,21 +1,28 @@
 import {
     type ContextItem,
+    type ContextItemFile,
     ContextItemSource,
     type ContextItemTree,
+    REMOTE_REPOSITORY_PROVIDER_URI,
     contextFiltersProvider,
+    deserializeContextItem,
     displayLineRange,
     displayPathBasename,
     expandToLineRange,
+    openCtx,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { getAncestorProjectRootDir } from '../commands/context/project'
 import { getSelectionOrFileContext } from '../commands/context/selection'
+import { toVSCodeRange } from '../common/range'
 import { createRemoteRepositoryMention } from '../context/openctx/remoteRepositorySearch'
 import type { RemoteSearch } from '../context/remote-search'
 import type { ChatModel } from './chat-view/ChatModel'
-import { contextItemMentionFromOpenCtxItem } from './context/chatContext'
 import type { ExtensionMessage } from './protocol'
 
 type PostMessage = (message: Extract<ExtensionMessage, { type: 'clientState' }>) => void
+
+const USE_DIRECTORY_INITIAL_CONTEXT = true
 
 /**
  * Listen for changes to the client (such as VS Code) state to send to the webview.
@@ -31,10 +38,10 @@ export function startClientStateBroadcaster({
 }): vscode.Disposable {
     const postMessage = idempotentPostMessage(rawPostMessage)
 
-    async function rawSendClientState(signal: AbortSignal | null): Promise<void> {
+    async function rawSendClientState(signal: AbortSignal): Promise<void> {
         const items: ContextItem[] = []
 
-        const corpusItems = getCorpusContextItemsForEditorState({ remoteSearch })
+        const corpusItems = await getCorpusContextItemsForEditorState({ remoteSearch }, signal)
         items.push(...corpusItems)
 
         const { input, context } = chatModel.contextWindow
@@ -59,6 +66,9 @@ export function startClientStateBroadcaster({
 
             items.push(item)
         }
+
+        const openctxItems = await getOpenCtxAnnotationsForEditorState(contextFile, signal)
+        items.push(...openctxItems)
 
         postMessage({ type: 'clientState', value: { initialContext: items } })
     }
@@ -100,9 +110,10 @@ export function startClientStateBroadcaster({
     return vscode.Disposable.from(...disposables)
 }
 
-export function getCorpusContextItemsForEditorState({
-    remoteSearch,
-}: { remoteSearch: RemoteSearch | null }): ContextItem[] {
+export async function getCorpusContextItemsForEditorState(
+    { remoteSearch }: { remoteSearch: RemoteSearch | null },
+    signal: AbortSignal
+): Promise<ContextItem[]> {
     const items: ContextItem[] = []
 
     // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
@@ -119,14 +130,16 @@ export function getCorpusContextItemsForEditorState({
             if (contextFiltersProvider.isRepoNameIgnored(repo.name)) {
                 continue
             }
+            const mention = createRemoteRepositoryMention(
+                {
+                    id: repo.id,
+                    name: repo.name,
+                    url: repo.name,
+                },
+                REMOTE_REPOSITORY_PROVIDER_URI
+            )
             items.push({
-                ...contextItemMentionFromOpenCtxItem(
-                    createRemoteRepositoryMention({
-                        id: repo.id,
-                        name: repo.name,
-                        url: repo.name,
-                    })
-                ),
+                ...deserializeContextItem(mention.data.contextItem),
                 title: 'Current Repository',
                 description: repo.name,
                 source: ContextItemSource.Initial,
@@ -135,22 +148,76 @@ export function getCorpusContextItemsForEditorState({
         }
     } else {
         // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
-        const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
-        if (workspaceFolder) {
-            items.push({
-                type: 'tree',
-                uri: workspaceFolder.uri,
-                title: 'Current Repository',
-                name: workspaceFolder.name,
-                description: workspaceFolder.name,
-                isWorkspaceRoot: true,
-                content: null,
-                source: ContextItemSource.Initial,
-                icon: 'folder',
-            } satisfies ContextItemTree)
+        if (USE_DIRECTORY_INITIAL_CONTEXT) {
+            const item = await getAncestorProjectRootDir(signal ?? undefined)
+            if (item) {
+                item.source = ContextItemSource.Initial
+                item.icon = 'folder'
+                item.title = 'Project'
+                items.push(item)
+            }
+        } else {
+            // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
+            const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
+            if (workspaceFolder) {
+                items.push({
+                    type: 'tree',
+                    uri: workspaceFolder.uri,
+                    title: 'Current Repository',
+                    name: workspaceFolder.name,
+                    description: workspaceFolder.name,
+                    isWorkspaceRoot: true,
+                    content: null,
+                    source: ContextItemSource.Initial,
+                    icon: 'folder',
+                } satisfies ContextItemTree)
+            }
         }
     }
 
+    return items
+}
+
+/**
+ * Fetch the OpenCtx annotations that are present in the selection range and return them as
+ * ContextItems.
+ */
+async function getOpenCtxAnnotationsForEditorState(
+    contextFile: ContextItemFile,
+    _signal: AbortSignal
+): Promise<ContextItem[]> {
+    const openctxController = openCtx.controller
+    if (!openctxController) {
+        return []
+    }
+
+    const selectionRange = toVSCodeRange(contextFile.range)
+    const doc = await vscode.workspace.openTextDocument(contextFile.uri)
+    const anns = await openctxController.annotations(doc)
+
+    const items: ContextItem[] = []
+    for (const ann of anns) {
+        if (selectionRange && ann.range && !selectionRange.intersection(ann.range)) {
+            continue
+        }
+        items.push({
+            type: 'openctx',
+            provider: 'openctx',
+            title: ann.item.title,
+            // TODO!(sqs): come up with uri
+            uri: vscode.Uri.parse(ann.item.url ?? `openctx:${ann.providerUri}-${ann.item.title}`),
+            providerUri: ann.providerUri,
+            annotation: ann,
+            mention: {
+                uri: ann.uri,
+                data: ann.item,
+                description: ann.item.ui?.hover?.markdown ?? ann.item.ui?.hover?.text ?? undefined,
+            },
+            // TODO!(sqs): dont use the hover for content
+            content: ann.item.ai?.content ?? ann.item.ui?.hover?.markdown ?? ann.item.ui?.hover?.text,
+            source: ContextItemSource.Initial,
+        })
+    }
     return items
 }
 

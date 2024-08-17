@@ -42,6 +42,7 @@ data class ContextItemFile(
   val metadata: List<String>? = null,
   val type: TypeEnum, // Oneof: file
   val remoteRepositoryName: String? = null,
+  val remoteFilePath: String? = null,
 ) : ContextItem() {
 
   enum class TypeEnum {
@@ -67,6 +68,7 @@ data class ContextItemRepository(
   val metadata: List<String>? = null,
   val type: TypeEnum, // Oneof: repository
   val repoID: String,
+  val openctxProviderUri: String? = null,
 ) : ContextItem() {
 
   enum class TypeEnum {
@@ -120,6 +122,7 @@ data class ContextItemSymbol(
   val symbolName: String,
   val kind: SymbolKind, // Oneof: class, function, method
   val remoteRepositoryName: String? = null,
+  val remoteFilePath: String? = null,
 ) : ContextItem() {
 
   enum class TypeEnum {

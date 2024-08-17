@@ -26,10 +26,7 @@ import {
 import { AtSignIcon } from 'lucide-react'
 import { URI } from 'vscode-uri'
 import { iconForProvider } from '../mentions/mentionMenu/MentionMenuItem'
-import styles from './ContextItemMentionNode.module.css'
-import { MentionComponent } from './MentionComponent'
-
-export const MENTION_CLASS_NAME = styles.contextItemMentionNode
+import { MENTION_NODE_CLASS_NAME, MentionComponent } from './MentionComponent'
 
 function convertContextItemMentionElement(domNode: HTMLElement): DOMConversionOutput | null {
     const data = domNode.getAttribute(DOM_DATA_ATTR)
@@ -48,8 +45,6 @@ function convertContextItemMentionElement(domNode: HTMLElement): DOMConversionOu
 }
 
 const DOM_DATA_ATTR = 'data-lexical-context-item-mention'
-
-const MENTION_NODE_CLASS_NAME = `context-item-mention-node ${MENTION_CLASS_NAME}`
 
 /**
  * New-style "chip" mention node.
@@ -151,11 +146,6 @@ export class ContextItemMentionNode extends DecoratorNode<JSX.Element> {
                 node={this}
                 tooltip={this.getTooltip()}
                 icon={iconForContextItem(this.contextItem)}
-                className={`${MENTION_NODE_CLASS_NAME} ${extraClassNamesForContextItem(
-                    this.contextItem
-                )}`}
-                focusedClassName={styles.contextItemMentionChipNodeFocused}
-                iconClassName={styles.icon}
             />
         )
     }
@@ -189,14 +179,6 @@ export function $createContextItemMentionNode(
 ): ContextItemMentionNode {
     const node = new ContextItemMentionNode(contextItem, isFromInitialContext)
     return $applyNodeReplacement(node)
-}
-
-function extraClassNamesForContextItem(contextItem: ContextItem | SerializedContextItem): string {
-    const classNames: string[] = []
-    if (contextItem.isTooLarge || contextItem.isIgnored) {
-        classNames.push(styles.isTooLargeOrIgnored)
-    }
-    return classNames.join(' ')
 }
 
 export function $createContextItemTextNode(contextItem: ContextItem): TextNode {

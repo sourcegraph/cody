@@ -74,6 +74,7 @@ export {
     type SymbolKind,
     type ContextItemTree,
     type ContextItemRepository,
+    isContextItemWithContent,
     FILE_RANGE_TOOLTIP_LABEL,
     GENERAL_HELP_LABEL,
     IGNORED_FILE_WARNING_LABEL,
@@ -310,6 +311,7 @@ export {
     GIT_OPENCTX_PROVIDER_URI,
 } from './context/openctx/api'
 export * from './context/openctx/context'
+export * from './context/openctx/internalProvider'
 export { type ClientStateForWebview } from './clientState'
 export * from './lexicalEditor/editorState'
 export * from './lexicalEditor/nodes'
