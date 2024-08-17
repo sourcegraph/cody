@@ -67,7 +67,7 @@ export async function createProviderConfigHelper(
             })
         }
         case 'fireworks': {
-            const { anonymousUserID } = await localStorage.anonymousUserID()
+            const { anonymousUserID } = localStorage.anonymousUserID()
             return createFireworksProviderConfig({
                 client,
                 model: modelId ?? null,
