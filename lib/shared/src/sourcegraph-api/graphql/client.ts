@@ -558,7 +558,7 @@ const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
 
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = DOTCOM_URL
-    public anonymousUserID: string | undefined
+    private anonymousUserID: string | undefined
 
     /**
      * Should be set on extension activation via `localStorage.onConfigurationChange(config)`
@@ -583,15 +583,6 @@ export class SourcegraphGraphQLAPIClient {
 
     public setConfig(newConfig: GraphQLAPIClientConfig): void {
         this._config = newConfig
-    }
-
-    /**
-     * Tells if the underlying configuration contains an access token, i.e. if requests made right
-     * now would likely be authenticated. This can be used to avoid making requests that would
-     * otherwise just fail due to requiring auth.
-     */
-    public hasAccessToken(): boolean {
-        return !!this._config?.accessToken
     }
 
     /**
