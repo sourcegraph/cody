@@ -1,3 +1,4 @@
+import type { Observable } from 'observable-fns'
 import type { EmbeddingsProvider } from './codebase-context/context-status'
 import type { FileURI } from './common/uri'
 
@@ -18,6 +19,15 @@ export const CONTEXT_SELECTION_ID: Record<ConfigurationUseContext, number> = {
 
 export interface ConfigGetter<T> {
     get<T>(section: string, defaultValue?: T): T
+}
+
+/**
+ * A wrapper around a configuration source that lets the client retrieve the current config and
+ * watch for changes.
+ */
+export interface ConfigWatcher<C> {
+    changes: Observable<C>
+    get(): C
 }
 
 /**
