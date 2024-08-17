@@ -28,7 +28,7 @@ export default defineProjectWithDefaults(__dirname, {
     plugins: [
         // @ts-ignore
         react({ devTarget: 'esnext' }),
-        svgr(),
+        svgr() as any,
     ],
     resolve: {
         alias: [
