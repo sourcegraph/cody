@@ -82,7 +82,7 @@ export function computeAppliedDecorations(task: FixupTask): Decorations | undefi
 
 function getRemainingLinesFromRange(range: vscode.Range, index: number) {
     const result: vscode.Range[] = []
-    const totalLines = range.end.line - range.start.line
+    const totalLines = range.end.line - range.start.line -1
     for (let i = index; i <= totalLines; i++) {
         const line = new vscode.Position(range.start.line + i, 0)
         result.push(new vscode.Range(line, line))
@@ -115,7 +115,7 @@ export function computeOngoingDecorations(
     const currentLineIndex = currentLine.range.start.line - task.selectionRange.start.line
     const unvisitedLines =
         prevComputed?.unvisitedLines ||
-        getRemainingLinesFromRange(task.selectionRange, currentLineIndex + 1).map(range => ({ range }))
+        getRemainingLinesFromRange(task.selectionRange, currentLineIndex ).map(range => ({ range }))
     const decorations: Decorations = {
         linesAdded: [],
         linesRemoved: [],
