@@ -2,7 +2,6 @@ import { type FC, useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import { URI } from 'vscode-uri'
 
 import {
-    type AuthStatus,
     type ChatMessage,
     type ClientStateForWebview,
     CodyIDE,
@@ -27,10 +26,10 @@ import { useWebAgentClient } from './CodyWebPanelProvider'
 
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
-import type { ConfigurationSubsetForWebview, LocalEnv } from 'cody-ai/src/chat/protocol'
 import { CodyPanel } from 'cody-ai/webviews/CodyPanel'
 import type { View } from 'cody-ai/webviews/tabs'
 import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
+import type { Config } from 'cody-ai/webviews/utils/useConfig'
 import styles from './CodyWebPanel.module.css'
 
 const CONTEXT_MENTIONS_SETTINGS: ChatMentionsSettings = {
@@ -61,10 +60,8 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [chatModels, setChatModels] = useState<Model[]>()
-    const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
-    const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
+    const [config, setConfig] = useState<Config | null>(null)
     const [view, setView] = useState<View | undefined>()
-    const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
     const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
 
     useLayoutEffect(() => {
@@ -99,14 +96,10 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     setChatModels(message.models)
                     break
                 case 'config':
-                    setConfig(message.config)
-                    setAuthStatus(message.authStatus)
+                    setConfig(message)
                     break
                 case 'clientAction':
                     dispatchClientAction(message)
-                    break
-                case 'setConfigFeatures':
-                    setServerSentModelsEnabled(!!message.configFeatures.serverSentModels)
                     break
                 case 'history':
                     setUserHistory(Object.values(message.localHistory?.chat ?? {}))
@@ -133,8 +126,12 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         [chatModels, vscodeAPI]
     )
     const chatModelContext = useMemo<ChatModelContext>(
-        () => ({ chatModels, onCurrentChatModelChange, serverSentModelsEnabled }),
-        [chatModels, onCurrentChatModelChange, serverSentModelsEnabled]
+        () => ({
+            chatModels,
+            onCurrentChatModelChange,
+            serverSentModelsEnabled: config?.configFeatures.serverSentModels,
+        }),
+        [chatModels, onCurrentChatModelChange, config]
     )
 
     const clientState: ClientStateForWebview = useMemo<ClientStateForWebview>(() => {
@@ -180,15 +177,8 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const envVars = useMemo(() => ({ clientType: CodyIDE.Web }), [])
 
     const wrappers = useMemo<Wrapper[]>(
-        () =>
-            getAppWrappers(
-                vscodeAPI,
-                telemetryRecorder,
-                chatModelContext,
-                clientState,
-                config && authStatus ? { config, authStatus } : undefined
-            ),
-        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, config, authStatus]
+        () => getAppWrappers(vscodeAPI, telemetryRecorder, chatModelContext, clientState, config),
+        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, config]
     )
 
     const isLoading = !client || !chatModels || !config || !view || !userHistory
@@ -208,7 +198,7 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                                     errorMessages={errorMessages}
                                     setErrorMessages={setErrorMessages}
                                     attributionEnabled={false}
-                                    config={config}
+                                    config={config.config}
                                     userHistory={userHistory}
                                     chatEnabled={true}
                                     showWelcomeMessage={true}

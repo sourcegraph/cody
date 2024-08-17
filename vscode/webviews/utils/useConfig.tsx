@@ -10,9 +10,12 @@ import type { ExtensionMessage } from '../../src/chat/protocol'
 import type { UserAccountInfo } from '../Chat'
 
 export interface Config
-    extends Pick<Extract<ExtensionMessage, { type: 'config' }>, 'config' | 'authStatus'> {}
+    extends Pick<
+        Extract<ExtensionMessage, { type: 'config' }>,
+        'config' | 'authStatus' | 'configFeatures'
+    > {}
 
-const ConfigContext = createContext<Config | undefined>(undefined)
+const ConfigContext = createContext<Config | null>(null)
 
 /**
  * React context provider whose `value` is the {@link Config}.
@@ -26,11 +29,9 @@ export const ConfigProvider: FunctionComponent<{
 /**
  * React hook for getting the {@link Config}.
  */
-export function useConfig(): Config
-export function useConfig(allowUndefined: 'allow-undefined'): Config | undefined
-export function useConfig(allowUndefined?: 'allow-undefined'): Config | undefined {
+export function useConfig(): Config {
     const config = useContext(ConfigContext)
-    if (!config && allowUndefined !== 'allow-undefined') {
+    if (!config) {
         throw new Error('useConfig must be used within a ConfigProvider')
     }
     return config

@@ -256,7 +256,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // Keep feature flags updated.
         this.disposables.push({
             dispose: featureFlagProvider.onFeatureFlagChanged('', () => {
-                void this.postConfigFeatures()
+                void this.sendConfig()
             }),
         })
 
@@ -604,14 +604,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         // Get the latest model list available to the current user to update the ChatModel.
         this.handleSetChatModel(getDefaultModelID())
-
-        void this.postConfigFeatures()
     }
 
     // When the webview sends the 'ready' message, respond by posting the view config
     private async handleReady(): Promise<void> {
         await this.sendConfig()
-        await this.postConfigFeatures()
 
         // Update the chat model providers again to ensure the correct token limit is set on ready
         this.handleSetChatModel(this.chatModel.modelID)
@@ -622,11 +619,21 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const configForWebview = await this.getConfigForWebview()
         const workspaceFolderUris =
             vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
+        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
         await this.postMessage({
             type: 'config',
             config: configForWebview,
             authStatus,
             workspaceFolderUris,
+            configFeatures: {
+                // If clientConfig is undefined means we were unable to fetch the client configuration -
+                // most likely because we are not authenticated yet. We need to be able to display the
+                // chat panel (which is where all login functionality is) in this case, so we fallback
+                // to some default values:
+                chat: clientConfig?.chatEnabled ?? true,
+                attribution: clientConfig?.attributionEnabled ?? false,
+                serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
+            },
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
@@ -1727,28 +1734,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             )
         )
 
-        await this.postConfigFeatures()
+        void this.sendConfig()
 
         return viewOrPanel
     }
 
-    private async postConfigFeatures(): Promise<void> {
-        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
-        void this.postMessage({
-            type: 'setConfigFeatures',
-            configFeatures: {
-                // If clientConfig is undefined means we were unable to fetch the client configuration -
-                // most likely because we are not authenticated yet. We need to be able to display the
-                // chat panel (which is where all login functionality is) in this case, so we fallback
-                // to some default values:
-                chat: clientConfig?.chatEnabled ?? true,
-                attribution: clientConfig?.attributionEnabled ?? false,
-                serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
-            },
-        })
-    }
-
-    public async setWebviewView(view: View): Promise<void> {
+    private async setWebviewView(view: View): Promise<void> {
         if (view !== 'chat') {
             // Only chat view is supported in the webview panel.
             // When a different view is requested,

@@ -86,6 +86,11 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                             endpoint: 'https://sourcegraph.example.com',
                         } satisfies Partial<AuthStatus> as any,
                         config: {} as any,
+                        configFeatures: {
+                            chat: true,
+                            serverSentModels: true,
+                            attribution: true,
+                        },
                     },
                 },
             } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,
