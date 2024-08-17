@@ -217,14 +217,20 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
                     return (
                         anchorElementRef.current &&
                         createPortal(
-                            <div className={clsx(styles.popover)}>
-                                <MentionMenu
-                                    params={params}
-                                    updateMentionMenuParams={updateMentionMenuParams}
-                                    setEditorQuery={setEditorQuery}
-                                    data={data}
-                                    selectOptionAndCleanUp={selectOptionAndCleanUp}
-                                />
+                            // Use an outer container that is always the same height, which is the
+                            // max height of the visible menu. This ensures that the menu does not
+                            // flip orientation as the user is typing if it suddenly has less
+                            // results. It also makes the positioning less glitchy.
+                            <div className={clsx(styles.popoverDimensions)}>
+                                <div className={styles.popover}>
+                                    <MentionMenu
+                                        params={params}
+                                        updateMentionMenuParams={updateMentionMenuParams}
+                                        setEditorQuery={setEditorQuery}
+                                        data={data}
+                                        selectOptionAndCleanUp={selectOptionAndCleanUp}
+                                    />
+                                </div>
                             </div>,
                             anchorElementRef.current
                         )

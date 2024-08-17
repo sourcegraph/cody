@@ -58,7 +58,10 @@ export const MentionMenu: FunctionComponent<
 
     const [value, setValue] = useState<string | null>(null)
 
-    const mentionQuery = parseMentionQuery(params.query ?? '', params.parentItem)
+    const mentionQuery = useMemo(
+        () => parseMentionQuery(params.query ?? '', params.parentItem),
+        [params.query, params.parentItem]
+    )
 
     useEffect(() => {
         if (__storybook__focus) {

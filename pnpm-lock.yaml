@@ -9,7 +9,7 @@ neverBuiltDependencies:
   - playwright
 
 overrides:
-  '@lexical/react': https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-e9a8d498.tgz
+  '@lexical/react': https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz
 
 packageExtensionsChecksum: bc809394d179d8460f9d473fc54e379a
 
@@ -290,8 +290,8 @@ importers:
         specifier: ^0.17.0
         version: 0.17.0
       '@lexical/react':
-        specifier: https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-e9a8d498.tgz
-        version: '@storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-e9a8d498.tgz(react-dom@18.2.0)(react@18.2.0)(yjs@13.6.18)'
+        specifier: https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz
+        version: '@storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz(react-dom@18.2.0)(react@18.2.0)(yjs@13.6.18)'
       '@lexical/text':
         specifier: ^0.17.0
         version: 0.17.0
@@ -17621,9 +17621,9 @@ packages:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
     dev: false
 
-  '@storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-e9a8d498.tgz(react-dom@18.2.0)(react@18.2.0)(yjs@13.6.18)':
-    resolution: {tarball: https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-e9a8d498.tgz}
-    id: '@storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-e9a8d498.tgz'
+  '@storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz(react-dom@18.2.0)(react@18.2.0)(yjs@13.6.18)':
+    resolution: {tarball: https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz}
+    id: '@storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz'
     name: '@lexical/react'
     version: 0.17.0
     peerDependencies:
