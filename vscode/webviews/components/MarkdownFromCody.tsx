@@ -1,5 +1,5 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
-import { all } from 'lowlight'
+import { common } from 'lowlight'
 import type { ComponentProps, FunctionComponent } from 'react'
 import { useMemo } from 'react'
 import Markdown, { defaultUrlTransform } from 'react-markdown'
@@ -135,7 +135,7 @@ function markdownPluginProps(): Pick<
                 {
                     detect: true,
                     languages: Object.fromEntries(
-                        Object.entries(all).filter(([language]) => LANGUAGES.includes(language))
+                        Object.entries(common).filter(([language]) => LANGUAGES.includes(language))
                     ),
 
                     // `ignoreMissing: true` is required to avoid errors when trying to highlight
