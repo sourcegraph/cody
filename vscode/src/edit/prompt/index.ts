@@ -7,11 +7,11 @@ import {
     type EditModel,
     type EditProvider,
     type Message,
-    ModelsService,
     PromptString,
     TokenCounter,
     getModelInfo,
     getSimplePreamble,
+    modelsService,
     ps,
 } from '@sourcegraph/cody-shared'
 
@@ -104,7 +104,7 @@ export const buildInteraction = async ({
             instruction: task.instruction,
             document,
         })
-    const promptBuilder = new PromptBuilder(ModelsService.getContextWindowByID(model))
+    const promptBuilder = new PromptBuilder(modelsService.getContextWindowByID(model))
 
     const preamble = getSimplePreamble(model, codyApiVersion, prompt.system)
     promptBuilder.tryAddToPrefix(preamble)

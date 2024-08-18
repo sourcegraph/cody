@@ -8,10 +8,10 @@ import {
     type Model,
     type ModelContextWindow,
     ModelUsage,
-    ModelsService,
     Typewriter,
     getDotComDefaultModels,
     getSimplePreamble,
+    modelsService,
     pluralize,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -232,7 +232,7 @@ export class CodySourceControl implements vscode.Disposable {
     }
 
     public setAuthStatus(_: AuthStatus): void {
-        const models = ModelsService.getModels(ModelUsage.Chat)
+        const models = modelsService.getModels(ModelUsage.Chat)
         const preferredModel = models.find(p => p.model.includes('claude-3-haiku'))
         this.model = preferredModel ?? models[0]
     }
