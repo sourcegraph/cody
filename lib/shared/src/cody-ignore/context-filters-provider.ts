@@ -97,7 +97,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
 
     async init(getRepoNamesFromWorkspaceUri: GetRepoNamesFromWorkspaceUri) {
         this.getRepoNamesFromWorkspaceUri = getRepoNamesFromWorkspaceUri
-        this.dispose()
+        this.reset()
         this.startRefetchTimer(await this.fetchContextFilters())
     }
 
@@ -226,7 +226,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
         return false
     }
 
-    public dispose(): void {
+    private reset(): void {
         this.lastFetchDelay = 0
         this.lastResultLifetime = undefined
         this.lastContextFiltersResponse = null
@@ -239,7 +239,11 @@ export class ContextFiltersProvider implements vscode.Disposable {
         }
     }
 
-    private hasAllowEverythingFilters() {
+    public dispose(): void {
+        this.reset()
+    }
+
+    private hasAllowEverythingFilters(): boolean {
         return (
             graphqlClient.isDotCom() ||
             this.lastContextFiltersResponse === INCLUDE_EVERYTHING_CONTEXT_FILTERS
