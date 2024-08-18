@@ -1,10 +1,18 @@
-import fs from 'node:fs/promises'
+import type { execSync } from 'node:child_process'
+import type * as fs from 'node:fs'
+import fsPromise from 'node:fs/promises'
 import path from 'node:path'
 import URL from 'node:url'
 import { test as t } from '@playwright/test'
+import type { GreaterThanOrEqual, Integer } from 'type-fest'
+import type * as vscode from 'vscode'
 import type { UIXContextFnContext } from '.'
 
 type SidebarCtx = Pick<UIXContextFnContext, 'page'>
+
+export function activeEditor(ctx: Pick<UIXContextFnContext, 'page'>) {
+    return ctx.page.locator('.editor-group-container.active')
+}
 export class Sidebar {
     public static readonly CODY_VIEW_ID = 'workbench.view.extension.cody'
 
@@ -60,7 +68,7 @@ export async function startSession({
                 if (request.url() === URL.resolve(vscodeUI.url, '/')) {
                     route.fulfill({
                         body: (
-                            await fs.readFile(path.join(placeholderDir, 'index.html'), 'utf-8')
+                            await fsPromise.readFile(path.join(placeholderDir, 'index.html'), 'utf-8')
                         ).replaceAll('{{DEBUG_PORT}}', extensionHostDebugPort.toString()),
                         headers: {
                             'Content-Type': 'text/html',
@@ -125,6 +133,10 @@ export async function startSession({
                             'extensions.autoUpdate': false,
                             'update.mode': 'none',
                             'update.showReleaseNotes': false,
+                            'code-runner.enableAppInsights': false,
+                            'telemetry.enableCrashReporter': false,
+                            'telemetry.enableTelemetry': false,
+                            'telemetry.telemetryLevel': 'off',
                         },
                         null,
                         2
@@ -198,4 +210,102 @@ export async function startSession({
             timeout: 10000,
         })
     })
+}
+
+interface EvalScriptContext {
+    vscode: typeof vscode
+    window: typeof vscode.window
+    execSync: typeof execSync
+    path: typeof path
+    fs: typeof fs
+    require: typeof require
+    utils: {
+        substitutePathVars: (path: string, relativeDocument?: vscode.TextDocument) => string
+    }
+}
+type JavascriptFn<Args extends Array<any> = [], Return = void> = (
+    this: EvalScriptContext,
+    ...args: Args
+) => Promise<Return>
+/** This function allows you to eval a custom script inside of VSCode with access to all the VSCode APIs */
+
+export function evalFn<Args extends Array<any> = [], Return = void>(
+    fn: JavascriptFn<Args, Return>,
+    args: Args,
+    { executeCommand }: Pick<UIXContextFnContext, 'executeCommand'>
+): Promise<Return> {
+    return executeCommand('vscody.eval', [fn.toString(), ...args])
+}
+
+type OpenFileArgs = (
+    | { file: string; workspaceFile?: never }
+    | {
+          workspaceFile: string
+          file?: never
+      }
+) & {
+    selection?: SingleSelection
+    viewColumn?: number | 'active' | 'beside' | 'split'
+}
+export async function openFile(args: OpenFileArgs, ctx: Pick<UIXContextFnContext, 'executeCommand'>) {
+    const file = await evalFn(
+        async function (args) {
+            const { file = `\${workspaceFolder}/${args.workspaceFile}`, viewColumn } = args
+            const uri = this.vscode.Uri.file(this.utils.substitutePathVars(file))
+            const showOptions = { preserveFocus: true, preview: false, viewColumn }
+            await this.vscode.commands.executeCommand('vscode.open', uri, showOptions)
+            return uri
+        },
+        [args],
+        ctx
+    )
+    if (args.selection) {
+        //TODO: pass in returned file
+        await select({ selection: args.selection }, ctx)
+    }
+    return file
+}
+
+type Idx = number & { __type: 'integer'; __start: 1 }
+export function idx<T extends number>(
+    v: GreaterThanOrEqual<T, 1> extends true ? Integer<T> : never
+): Idx {
+    return v as unknown as Idx
+}
+
+// type Index = number & { __type: 'integer'; __/start: 1 }
+//Only allow conversion to index for integers > 1
+
+type SingleSelection =
+    | { line: Idx; character?: Idx; start?: never; end?: never }
+    | {
+          start: { line: Idx; character?: Idx; start?: never; end?: never }
+          end?: { line: Idx; character?: Idx; start?: never; end?: never }
+      }
+interface SelectArgs {
+    selection: SingleSelection
+}
+export async function select(args: SelectArgs, ctx: Pick<UIXContextFnContext, 'executeCommand'>) {
+    //TODO: We might want to activate a specific file. For now we just assume the currently active one
+    return evalFn(
+        async function (args) {
+            const editor = this.vscode.window.activeTextEditor
+            if (!editor) {
+                throw new Error('No editor is active')
+            }
+            const { line: startLine, character: startCharacter = 1 } =
+                args.selection.start || args.selection
+            const { line: endLine, character: endCharacter = 1 } =
+                args.selection.end || args.selection.start || args.selection
+            const fromPosition = new this.vscode.Position(startLine - 1, startCharacter - 1)
+            const toPosition = new this.vscode.Position(endLine - 1, endCharacter - 1)
+            editor.selections = [new this.vscode.Selection(fromPosition, toPosition)]
+            editor.revealRange(
+                editor.selection,
+                this.vscode.TextEditorRevealType.InCenterIfOutsideViewport
+            )
+        },
+        [args],
+        ctx
+    )
 }

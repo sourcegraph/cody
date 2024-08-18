@@ -1,9 +1,61 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { expect, test as t } from '@playwright/test'
+import { type Locator, expect, test as t } from '@playwright/test'
 import type { UIXContextFnContext } from '.'
 import { workspace } from '.'
 import { MITM_AUTH_TOKEN_PLACEHOLDER } from '../constants'
+
+export interface ChatConversationCtx {
+    webview: WebView
+}
+export class ChatConversation {
+    private constructor(private ctx: ChatConversationCtx) {}
+
+    userMessage(nth = 0) {
+        return new UserMessage({
+            ...this.ctx,
+            message: this.ctx.webview.content.getByTestId('message').nth(nth),
+        })
+    }
+
+    //TODO: Implement more nice helpers
+
+    public static get(ctx: ChatConversationCtx) {
+        return new ChatConversation(ctx)
+    }
+}
+
+class UserMessage {
+    constructor(private ctx: ChatConversationCtx & { message: Locator }) {}
+
+    get textInput(): Locator {
+        // <div aria-label="Chat message" class="_content-editable_14ket_24 _editor-content-editable_1nptu_47" contenteditable="true" role="textbox" spellcheck="true" data-lexical-editor="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;"><p class="_theme-paragraph_14ket_48"><br></p></div>
+        return this.ctx.message.locator('[role="textbox"][aria-label="Chat message"]')
+    }
+
+    get toolbar(): Locator {
+        return this.ctx.message.locator('menu[role="toolbar"]')
+    }
+
+    async submit(): Promise<void> {
+        return t.step('Submitting chat', async () => {
+            await this.ctx.message.getByRole('button', { name: 'Send' }).click()
+            // Note: if this fails you might not have any reasonable request delay set
+            // in the mitm proxy.
+            await expect(this.ctx.webview.content.getByRole('button', { name: 'Stop' })).toBeVisible()
+        })
+    }
+
+    abort(): Promise<void> {
+        return t.step('Aborting chat', async () => {
+            // Note: if this fails you might not have any reasonable request delay set
+            // in the mitm proxy.
+            await this.ctx.message.getByRole('button', { name: 'Stop' }).click()
+            await expect(this.ctx.webview.content.getByRole('button', { name: 'Send' })).toBeVisible()
+        })
+    }
+}
+
 type WebViewCtx = Pick<UIXContextFnContext, 'page'>
 
 /**
