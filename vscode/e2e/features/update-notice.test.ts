@@ -1,8 +1,8 @@
 import { type TestDetails, expect } from '@playwright/test'
-import { Annotations } from './utils/test-info'
-import { fixture as test, uix } from './utils/vscody'
-import { ChatConversation, type WebView } from './utils/vscody/uix/cody'
-import { withFloorResponseTime } from './utils/vscody/uix/mitm'
+import { Annotations } from '../utils/test-info'
+import { fixture as test, uix } from '../utils/vscody'
+import { ChatConversation, type WebView } from '../utils/vscody/uix/cody'
+import { withFloorResponseTime } from '../utils/vscody/uix/mitm'
 
 const VERSION_UPDATE_STORAGE_KEY = 'notices.last-dismissed-version'
 const UPDATE_TOAST_TEXT = /Cody updated to v\d+\.\d+/
