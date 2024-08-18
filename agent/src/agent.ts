@@ -430,6 +430,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.globalState
                 )
 
+                this.authenticationPromise = clientInfo.extensionConfiguration
+                    ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
+                          forceAuthentication: true,
+                      })
+                    : this.authStatus()
+                const authStatus = await this.authenticationPromise
+
                 const webviewKind = clientInfo.capabilities?.webview || 'agentic'
                 const nativeWebviewConfig = clientInfo.capabilities?.webviewNativeConfig
                 if (webviewKind === 'native') {
@@ -446,13 +453,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 } else {
                     this.registerWebviewHandlers()
                 }
-
-                this.authenticationPromise = clientInfo.extensionConfiguration
-                    ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
-                          forceAuthentication: true,
-                      })
-                    : this.authStatus()
-                const authStatus = await this.authenticationPromise
 
                 return {
                     name: 'cody-agent',

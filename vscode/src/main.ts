@@ -4,7 +4,9 @@ import {
     type ChatClient,
     ClientConfigSingleton,
     type CodeCompletionsClient,
+    type Configuration,
     type ConfigurationWithAccessToken,
+    type ConfigurationWithEndpoint,
     type DefaultCodyCommands,
     type Guardrails,
     ModelsService,
@@ -406,7 +408,7 @@ async function registerOtherCommands(disposables: vscode.Disposable[]) {
 }
 
 function registerCodyCommands(
-    config: ConfigWatcher<ConfigurationWithAccessToken>,
+    config: ConfigWatcher<Configuration>,
     statusBar: CodyStatusBar,
     sourceControl: CodySourceControl,
     chatClient: ChatClient,
@@ -514,7 +516,7 @@ function registerAuthCommands(authProvider: AuthProvider, disposables: vscode.Di
 }
 
 function registerUpgradeHandlers(
-    configWatcher: ConfigWatcher<ConfigurationWithAccessToken>,
+    configWatcher: ConfigWatcher<Configuration>,
     authProvider: AuthProvider,
     disposables: vscode.Disposable[]
 ): void {
@@ -622,7 +624,7 @@ async function tryRegisterTutorial(
  * the returned promise is awaited in parallel with other tasks.
  */
 function registerAutocomplete(
-    configWatcher: ConfigWatcher<ConfigurationWithAccessToken>,
+    configWatcher: ConfigWatcher<ConfigurationWithEndpoint>,
     platform: PlatformContext,
     authProvider: AuthProvider,
     statusBar: CodyStatusBar,
@@ -704,7 +706,7 @@ function registerAutocomplete(
 
 async function registerMinion(
     context: vscode.ExtensionContext,
-    config: ConfigWatcher<ConfigurationWithAccessToken>,
+    config: ConfigWatcher<Configuration>,
     authProvider: AuthProvider,
     symfRunner: SymfRunner | undefined,
     disposables: vscode.Disposable[]

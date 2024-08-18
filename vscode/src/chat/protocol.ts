@@ -4,7 +4,7 @@ import type {
     AuthStatus,
     ClientStateForWebview,
     CodyIDE,
-    ConfigurationWithAccessToken,
+    ConfigurationWithEndpoint,
     ContextItem,
     EnhancedContextContextT,
     MentionQuery,
@@ -196,6 +196,11 @@ export type ExtensionMessage =
           type: 'config'
           config: ConfigurationSubsetForWebview & LocalEnv
           authStatus: AuthStatus
+          configFeatures: {
+              chat: boolean
+              attribution: boolean
+              serverSentModels: boolean
+          }
           workspaceFolderUris: string[]
       }
     | { type: 'ui/theme'; agentIDE: CodyIDE; cssVariables: CodyIDECssVariables }
@@ -225,14 +230,6 @@ export type ExtensionMessage =
     | { type: 'enhanced-context'; enhancedContextStatus: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'context/remote-repos'; repos: Repo[] }
-    | {
-          type: 'setConfigFeatures'
-          configFeatures: {
-              chat: boolean
-              attribution: boolean
-              serverSentModels: boolean
-          }
-      }
     | {
           type: 'queryPrompts/response'
           result?: Prompt[] | null | undefined
@@ -291,7 +288,7 @@ export interface ExtensionTranscriptMessage {
  */
 export interface ConfigurationSubsetForWebview
     extends Pick<
-        ConfigurationWithAccessToken,
+        ConfigurationWithEndpoint,
         | 'experimentalNoodle'
         | 'serverEndpoint'
         | 'agentIDE'

@@ -21,7 +21,6 @@ export const CodyPanel: FunctionComponent<
     } & Pick<
         ComponentProps<typeof Chat>,
         | 'chatEnabled'
-        | 'userInfo'
         | 'messageInProgress'
         | 'transcript'
         | 'vscodeAPI'
@@ -40,7 +39,6 @@ export const CodyPanel: FunctionComponent<
     setErrorMessages,
     attributionEnabled,
     chatEnabled,
-    userInfo,
     messageInProgress,
     transcript,
     vscodeAPI,
@@ -68,7 +66,6 @@ export const CodyPanel: FunctionComponent<
                 {view === View.Chat && (
                     <Chat
                         chatEnabled={chatEnabled}
-                        userInfo={userInfo}
                         messageInProgress={messageInProgress}
                         transcript={transcript}
                         vscodeAPI={vscodeAPI}
@@ -83,8 +80,8 @@ export const CodyPanel: FunctionComponent<
                 )}
                 {view === View.History && <HistoryTab userHistory={userHistory} />}
                 {view === View.Prompts && <PromptsTab setView={setView} />}
-                {view === View.Account && <AccountTab userInfo={userInfo} />}
-                {view === View.Settings && <SettingsTab userInfo={userInfo} />}
+                {view === View.Account && <AccountTab />}
+                {view === View.Settings && <SettingsTab />}
             </TabContainer>
         </TabRoot>
     )
