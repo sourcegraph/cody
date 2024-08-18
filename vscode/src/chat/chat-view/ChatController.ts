@@ -19,7 +19,6 @@ import {
     type EventSource,
     FeatureFlag,
     type Guardrails,
-    type MentionQuery,
     type Message,
     ModelUsage,
     ModelsService,
@@ -31,14 +30,11 @@ import {
     TokenCounter,
     Typewriter,
     addMessageListenersForExtensionAPI,
-    allMentionProvidersMetadata,
-    asyncGeneratorFromPromise,
     createMessageAPIForExtension,
     featureFlagProvider,
     getContextForChatMessage,
     hydrateAfterPostMessage,
     inputTextWithoutContextChipsFromPromptEditorState,
-    isAbortError,
     isAbortErrorOrSocketHangUp,
     isContextWindowLimitError,
     isDefined,
@@ -52,7 +48,6 @@ import {
     telemetryRecorder,
     tracer,
     truncatePromptString,
-    webMentionProvidersMetadata,
 } from '@sourcegraph/cody-shared'
 
 import type { Span } from '@opentelemetry/api'
@@ -99,7 +94,7 @@ import {
     getCorpusContextItemsForEditorState,
     startClientStateBroadcaster,
 } from '../clientStateBroadcaster'
-import { type GetContextItemsTelemetry, getChatContextItemsForMention } from '../context/chatContext'
+import { getChatContextItemsForMention, getMentionMenuData } from '../context/chatContext'
 import type { ContextAPIClient } from '../context/contextAPIClient'
 import type {
     ChatSubmitType,
@@ -349,12 +344,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.postChatModels()
                 break
             case 'getUserContext': {
-                const result = await this.handleGetUserContextFilesCandidates({
-                    query: parseMentionQuery(message.query, null),
+                const result = await getChatContextItemsForMention({
+                    mentionQuery: parseMentionQuery(message.query, null),
                 })
                 await this.postMessage({
                     type: 'userContextFiles',
-                    userContextFiles: result.userContextFiles,
+                    userContextFiles: result,
                 })
                 break
             }
@@ -1042,62 +1037,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.postChatModels()
     }
 
-    private async handleGetUserContextFilesCandidates({
-        query,
-    }: { query: MentionQuery }): Promise<
-        Omit<Extract<ExtensionMessage, { type: 'userContextFiles' }>, 'type'>
-    > {
-        const source = 'chat'
-
-        // Use numerical mapping to send source values to metadata, making this data available on all instances.
-        const atMentionSourceTelemetryMetadataMapping: Record<typeof source, number> = {
-            chat: 1,
-        } as const
-
-        const scopedTelemetryRecorder: GetContextItemsTelemetry = {
-            empty: () => {
-                telemetryRecorder.recordEvent('cody.at-mention', 'executed', {
-                    metadata: {
-                        source: atMentionSourceTelemetryMetadataMapping[source],
-                    },
-                    privateMetadata: { source },
-                })
-            },
-            withProvider: (provider, providerMetadata) => {
-                telemetryRecorder.recordEvent(`cody.at-mention.${provider}`, 'executed', {
-                    metadata: { source: atMentionSourceTelemetryMetadataMapping[source] },
-                    privateMetadata: { source, providerMetadata },
-                })
-            },
-        }
-
-        try {
-            const config = await getFullConfig()
-            const isCodyWeb = config.agentIDE === CodyIDE.Web
-
-            const items = await getChatContextItemsForMention({
-                mentionQuery: query,
-                telemetryRecorder: scopedTelemetryRecorder,
-                rangeFilter: !isCodyWeb,
-                remoteRepositoriesNames: query.includeRemoteRepositories
-                    ? this.remoteSearch?.getRepos('all')?.map(repo => repo.name)
-                    : undefined,
-            })
-
-            const { input, context } = this.chatModel.contextWindow
-            const userContextFiles = items.map(f => ({
-                ...f,
-                isTooLarge: f.size ? f.size > (context?.user || input) : undefined,
-            }))
-            return { userContextFiles }
-        } catch (error) {
-            if (isAbortError(error)) {
-                throw error // rethrow as-is so it gets ignored by our caller
-            }
-            throw new Error(`Error retrieving context files: ${error}`)
-        }
-    }
-
     public async handleGetUserEditorContext(uri?: URI): Promise<void> {
         // Get selection from the active editor
         const selection = vscode.window.activeTextEditor?.selection
@@ -1705,21 +1644,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     },
                 }),
                 {
-                    mentionProviders: async function* (signal: AbortSignal) {
-                        const isCodyWeb = (await getFullConfig()).agentIDE === CodyIDE.Web
-                        const g = isCodyWeb
-                            ? webMentionProvidersMetadata(signal)
-                            : allMentionProvidersMetadata(signal)
-                        for await (const value of g) {
-                            yield value
-                        }
-                    },
-                    contextItems: query =>
-                        asyncGeneratorFromPromise(
-                            this.handleGetUserContextFilesCandidates({ query }).then(
-                                result => result.userContextFiles ?? []
-                            )
-                        ),
+                    mentionMenuData: (query, signal) =>
+                        getMentionMenuData(query, this.remoteSearch, this.chatModel, signal),
                     evaluatedFeatureFlag: (flag, signal) =>
                         featureFlagProvider.evaluatedFeatureFlag(flag, signal),
                     prompts: mergedPromptsAndLegacyCommands,
