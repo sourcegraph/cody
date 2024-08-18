@@ -775,9 +775,6 @@ importers:
       http-proxy-middleware:
         specifier: ^3.0.0
         version: 3.0.0
-      kill-sync:
-        specifier: ^1.0.3
-        version: 1.0.3
       mocha:
         specifier: ^10.2.0
         version: 10.2.0
@@ -11094,10 +11091,6 @@ packages:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
     dependencies:
       json-buffer: 3.0.1
-    dev: true
-
-  /kill-sync@1.0.3:
-    resolution: {integrity: sha512-3UKwyIpWxg2WGrYyN3f+Fh68QZ4WApTHWwEnyeDK96HSRy9In9UQvanCwIsaLQV7gOzczotBeoX8jgPNZ1g2Zw==}
     dev: true
 
   /kind-of@3.2.2:
