@@ -85,14 +85,6 @@ export function startClientStateBroadcaster({
             void sendClientState('immediate')
         })
     )
-    if (remoteSearch) {
-        disposables.push(
-            remoteSearch.onDidChangeStatus(() => {
-                // Background action, so it's fine to debounce.
-                void sendClientState('debounce')
-            })
-        )
-    }
 
     // Don't debounce for the first invocation so we immediately reflect the state in the UI.
     void sendClientState('immediate')

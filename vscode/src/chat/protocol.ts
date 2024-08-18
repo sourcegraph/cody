@@ -6,7 +6,6 @@ import type {
     CodyIDE,
     ConfigurationWithAccessToken,
     ContextItem,
-    EnhancedContextContextT,
     MentionQuery,
     Model,
     Prompt,
@@ -123,7 +122,6 @@ export type WebviewMessage =
     | { command: 'context/choose-remote-search-repo'; explicitRepos?: Repo[] | undefined | null }
     | { command: 'context/remove-remote-search-repo'; repoId: string }
     | { command: 'embeddings/index' }
-    | { command: 'symf/index' }
     | { command: 'insert'; text: string }
     | { command: 'newFile'; text: string }
     | {
@@ -222,7 +220,6 @@ export type ExtensionMessage =
      * The current default model will always be the first one on the list.
      */
     | { type: 'chatModels'; models: Model[] }
-    | { type: 'enhanced-context'; enhancedContextStatus: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'context/remote-repos'; repos: Repo[] }
     | {

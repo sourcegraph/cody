@@ -54,7 +54,6 @@ export { reformatBotMessageForChat } from './chat/viewHelpers'
 export type {
     ContextGroup,
     ContextProvider,
-    ContextStatusProvider,
     Disposable,
     EnhancedContextContextT,
     LocalEmbeddingsProvider,
