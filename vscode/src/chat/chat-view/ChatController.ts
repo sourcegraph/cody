@@ -1858,7 +1858,7 @@ function newChatModelFromSerializedChatTranscript(
     modelID: string
 ): ChatModel {
     return new ChatModel(
-        migrateAndNotifyForOutdatedModels(json.chatModel || modelID)!,
+        migrateAndNotifyForOutdatedModels(modelID)!,
         json.id,
         json.interactions.flatMap((interaction: SerializedChatInteraction): ChatMessage[] =>
             [

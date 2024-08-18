@@ -178,9 +178,6 @@ export class ChatModel {
             chatTitle: this.getCustomChatTitle(),
             lastInteractionTimestamp: this.sessionID,
             interactions,
-
-            // DEPRECATED: Write this for backcompat.
-            chatModel: this.modelID,
         }
         if (this.selectedRepos) {
             result.enhancedContext = {
