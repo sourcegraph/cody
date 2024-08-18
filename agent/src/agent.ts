@@ -116,7 +116,7 @@ function copyExtensionRelativeResources(extensionPath: string, extensionClient: 
                 return
             }
         } catch {
-            logDebug('copyExtensionRelativeResources', `Failed to find ${source}, skipping copy`)
+            // logDebug('copyExtensionRelativeResources', `Failed to find ${source}, skipping copy`)
             return
         }
         try {
