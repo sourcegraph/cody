@@ -76,7 +76,7 @@
   },
   "pnpm": {
     "overrides": {
-      "@lexical/react": "https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-e9a8d498.tgz"
+      "@lexical/react": "https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz"
     },
     "packageExtensions": {
       "@vscode/webview-ui-toolkit": {
