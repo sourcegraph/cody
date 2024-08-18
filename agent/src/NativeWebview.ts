@@ -1,4 +1,3 @@
-import path from 'node:path'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 import type { Agent } from './agent'
@@ -88,14 +87,14 @@ export function resolveWebviewView(
 
 export function registerNativeWebviewHandlers(
     agent: Agent,
-    extensionUri: vscode.Uri,
+    webviewBundleLocalPrefix: vscode.Uri,
     config: NativeWebviewConfig
 ): void {
     webviewProtocolDelegate = {
         // TODO: When we want to serve resources outside dist/, make Agent
         // include 'dist' in its bundle paths, and simply set this to
         // extensionUri.
-        webviewBundleLocalPrefix: extensionUri.with({ path: path.join(extensionUri.path, 'dist') }),
+        webviewBundleLocalPrefix,
         webviewBundleServingPrefix: config.webviewBundleServingPrefix,
         cspSource: config.cspSource,
         createWebviewPanel: (handle, viewType, title, showOptions, options) => {

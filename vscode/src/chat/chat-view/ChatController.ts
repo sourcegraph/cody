@@ -1931,7 +1931,7 @@ export async function addWebviewViewHTML(
     }
     const config = extensionClient.capabilities?.webviewNativeConfig
     const webviewPath = config?.rootDir
-        ? vscode.Uri.parse(config?.rootDir)
+        ? vscode.Uri.parse(config?.rootDir, true)
         : vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
     // Create Webview using vscode/index.html
     const root = vscode.Uri.joinPath(webviewPath, 'index.html')
