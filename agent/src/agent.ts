@@ -442,7 +442,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     }
                     registerNativeWebviewHandlers(
                         this,
-                        vscode.Uri.file(nativeWebviewConfig.rootDir ?? codyPaths().config),
+                        nativeWebviewConfig.rootDir
+                            ? vscode.Uri.parse(nativeWebviewConfig.rootDir, true)
+                            : vscode.Uri.file(codyPaths().config),
                         nativeWebviewConfig
                     )
                 } else {

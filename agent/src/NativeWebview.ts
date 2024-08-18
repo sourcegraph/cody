@@ -1,3 +1,4 @@
+import path from 'node:path'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 import type { Agent } from './agent'
@@ -94,7 +95,7 @@ export function registerNativeWebviewHandlers(
         // TODO: When we want to serve resources outside dist/, make Agent
         // include 'dist' in its bundle paths, and simply set this to
         // extensionUri.
-        webviewBundleLocalPrefix: extensionUri.with({ path: `${extensionUri.path}/dist` }),
+        webviewBundleLocalPrefix: extensionUri.with({ path: path.join(extensionUri.path, 'dist') }),
         webviewBundleServingPrefix: config.webviewBundleServingPrefix,
         cspSource: config.cspSource,
         createWebviewPanel: (handle, viewType, title, showOptions, options) => {
