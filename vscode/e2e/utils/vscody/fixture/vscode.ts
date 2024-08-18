@@ -11,7 +11,6 @@ import {
 } from '@vscode/test-electron'
 import { downloadAndUnzipVSCode } from '@vscode/test-electron/out/download'
 import glob from 'glob'
-import killSync from 'kill-sync'
 import 'node:http'
 import 'node:https'
 import path from 'node:path'
@@ -20,6 +19,7 @@ import { onExit } from 'signal-exit'
 import type { TestContext, WorkerContext } from '.'
 import { waitForLock } from '../../../../src/lockfile'
 import { CODY_VSCODE_ROOT_DIR, retry, stretchTimeout } from '../../helpers'
+import { killChildrenSync, killSync } from './kill'
 import { rangeOffset } from './util'
 
 const DOWNLOAD_GRACE_TIME = 5 * 60 * 1000 //5 minutes
@@ -27,11 +27,8 @@ const DOWNLOAD_GRACE_TIME = 5 * 60 * 1000 //5 minutes
 const SPAWNED_PIDS = new Set<number | undefined>()
 onExit(
     () => {
-        for (const pid of SPAWNED_PIDS.values()) {
-            if (pid !== undefined) {
-                killSync(pid, 'SIGKILL', true)
-            }
-        }
+        // kill all processes that are a child to my own process
+        killChildrenSync(process.pid, 'SIGKILL')
     },
     { alwaysLast: true }
 )
