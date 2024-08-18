@@ -7,7 +7,6 @@ import {
     CodyIDE,
     type ConfigurationWithAccessToken,
     DOTCOM_URL,
-    LOCAL_APP_URL,
     SourcegraphGraphQLAPIClient,
     asyncGeneratorFromVSCodeEvent,
     defaultAuthStatus,
@@ -74,20 +73,13 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
     // Sign into the last endpoint the user was signed into, if any
     public async init(): Promise<void> {
-        let lastEndpoint = localStorage?.getEndpoint() || this.config.serverEndpoint
-        let token = (await secretStorage.get(lastEndpoint || '')) || this.config.accessToken
+        const lastEndpoint = localStorage?.getEndpoint() || this.config.serverEndpoint
+        const token = (await secretStorage.get(lastEndpoint || '')) || this.config.accessToken
         logDebug(
             'AuthProvider:init:lastEndpoint',
             token?.trim() ? 'Token recovered from secretStorage' : 'No token found in secretStorage',
             lastEndpoint
         )
-        if (lastEndpoint === LOCAL_APP_URL.toString()) {
-            // If the user last signed in to app, which talks to dotcom, try
-            // signing them in to dotcom.
-            logDebug('AuthProvider:init', 'redirecting App-signed in user to dotcom')
-            lastEndpoint = DOTCOM_URL.toString()
-            token = (await secretStorage.get(lastEndpoint)) || null
-        }
 
         await this.auth({
             endpoint: lastEndpoint,

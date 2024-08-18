@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { LOCAL_APP_URL, isDotCom } from '@sourcegraph/cody-shared'
+import { isDotCom } from '@sourcegraph/cody-shared'
 import { isSourcegraphToken } from '../chat/protocol'
 
 interface LoginMenuItem {
@@ -26,10 +26,6 @@ export const AuthMenu = async (
     historyItems: string[]
 ): Promise<LoginMenuItem | null> => {
     // Create option items
-
-    // Exclude App from the history list.
-    historyItems = historyItems?.filter(uri => uri !== LOCAL_APP_URL.toString())
-
     const historySize = historyItems?.length
     const history =
         historySize > 0
