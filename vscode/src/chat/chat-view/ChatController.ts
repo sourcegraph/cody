@@ -21,7 +21,6 @@ import {
     type Guardrails,
     type Message,
     ModelUsage,
-    ModelsService,
     PromptString,
     type RankedContext,
     type SerializedChatInteraction,
@@ -41,6 +40,7 @@ import {
     isError,
     isFileURI,
     isRateLimitError,
+    modelsService,
     parseMentionQuery,
     recordErrorToSpan,
     reformatBotMessageForChat,
@@ -337,7 +337,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'chatModel':
                 // Because this was a user action to change the model we will set that
                 // as a global default for chat
-                await ModelsService.setSelectedModel(ModelUsage.Chat, message.model)
+                await modelsService.setSelectedModel(ModelUsage.Chat, message.model)
                 this.handleSetChatModel(message.model)
                 break
             case 'get-chat-models':
@@ -1200,7 +1200,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (!authStatus?.isLoggedIn) {
             return
         }
-        const models = ModelsService.getModels(ModelUsage.Chat)
+        const models = modelsService.getModels(ModelUsage.Chat)
 
         void this.postMessage({
             type: 'chatModels',
@@ -1829,7 +1829,7 @@ export function revealWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscod
 function getDefaultModelID(): string {
     const pending = ''
     try {
-        return ModelsService.getDefaultChatModel() || pending
+        return modelsService.getDefaultChatModel() || pending
     } catch {
         return pending
     }

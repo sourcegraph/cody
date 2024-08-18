@@ -12,9 +12,9 @@ import fs from 'node:fs'
 import { promisify } from 'node:util'
 import {
     type ConfigurationUseContext,
-    ModelsService,
     graphqlClient,
     isDefined,
+    modelsService,
 } from '@sourcegraph/cody-shared'
 import { sleep } from '../../../../vscode/src/completions/utils'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
@@ -360,7 +360,7 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
         // There is no VSC setting yet to configure the base edit model. Users
         // can only modify this setting by changing it through the quickpick
         // menu in VSC.
-        const provider = ModelsService.getModelByIDSubstringOrError(editModel)
+        const provider = modelsService.getModelByIDSubstringOrError(editModel)
         baseGlobalState.editModel = provider.model
     }
 

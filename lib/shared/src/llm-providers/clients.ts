@@ -1,6 +1,6 @@
 import type { ChatNetworkClient, ChatNetworkClientParams } from '.'
 import { googleChatClient, groqChatClient, ollamaChatClient } from '..'
-import { ModelsService } from '../models'
+import { modelsService } from '../models'
 import { isCustomModel } from '../models/utils'
 import { anthropicChatClient } from './anthropic/chat-client'
 
@@ -11,7 +11,7 @@ export async function useCustomChatClient({
     logger,
     signal,
 }: ChatNetworkClientParams): Promise<boolean> {
-    const model = ModelsService.getModelByID(params.model ?? '')
+    const model = modelsService.getModelByID(params.model ?? '')
     if (!model || !isCustomModel(model)) {
         return false
     }

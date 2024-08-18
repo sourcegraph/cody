@@ -319,114 +319,98 @@ interface SitePreferences {
  *      from this type.)
  */
 export class ModelsService {
-    // Unused. Only to work around the linter complaining about a static-only class.
-    // When we are fetching data from the Sourcegraph backend, and relying on the
-    // current user's credentials, we'll need to turn this into a proper singleton
-    // with an initialization step on startup.
-    protected ModelsService() {}
+    /** Models available on the user's Sourcegraph instance. */
+    private primaryModels: Model[] = []
 
-    public static reset() {
-        ModelsService.primaryModels = []
-        ModelsService.localModels = []
-        ModelsService._preferences = {}
-        ModelsService.storage = undefined
-    }
+    /** Models available from user's local instances, e.g. Ollama. */
+    private localModels: Model[] = []
 
-    // Get all the providers currently available to the user
-    private static get models(): Model[] {
-        return ModelsService.primaryModels.concat(ModelsService.localModels)
-    }
+    /** persistent storage to save user preferences and server defaults */
+    private storage: Storage | undefined
 
-    // Models available on the user's Sourcegraph instance.
-    private static primaryModels: Model[] = []
+    /** current system auth status */
+    private authStatus: AuthStatus | undefined
 
-    // Models available from user's local instances, e.g. Ollama.
-    private static localModels: Model[] = []
+    /** Cache of users preferences and defaults across each endpoint they have used */
+    private _preferences: PerSitePreferences | undefined
 
     private static STORAGE_KEY = 'model-preferences'
 
-    // persistent storage to save user preferences and server defaults
-    private static storage: Storage | undefined
-
-    // current system auth status
-    private static authStatus: AuthStatus | undefined
-
-    // Cache of users preferences and defaults across each endpoint they have used
-    private static _preferences: PerSitePreferences | undefined
+    // Get all the providers currently available to the user
+    private get models(): Model[] {
+        return this.primaryModels.concat(this.localModels)
+    }
 
     // lazy loads the users preferences for the current endpoint into a local cache
     // or initializes a new cache if one doesn't exist
-    private static get preferences(): SitePreferences {
+    private get preferences(): SitePreferences {
         const empty: SitePreferences = {
             defaults: {},
             selected: {},
         }
-        const endpoint = ModelsService.authStatus?.endpoint
+        const endpoint = this.authStatus?.endpoint
         if (!endpoint) {
             logError('ModelsService::preferences', 'No auth status set')
             return empty
         }
         // If global cache is missing, try loading from storage
-        if (!ModelsService._preferences) {
-            const serialized = ModelsService.storage?.get(ModelsService.STORAGE_KEY)
-            ModelsService._preferences = (serialized ? JSON.parse(serialized) : {}) as PerSitePreferences
+        if (!this._preferences) {
+            const serialized = this.storage?.get(ModelsService.STORAGE_KEY)
+            this._preferences = (serialized ? JSON.parse(serialized) : {}) as PerSitePreferences
         }
 
-        const current = ModelsService._preferences[endpoint]
+        const current = this._preferences[endpoint]
         if (current) {
             // cache hit!
             return current
         }
 
         // Else the endpoint cache is missing, so initialize it
-        ModelsService._preferences[endpoint] = empty
+        this._preferences[endpoint] = empty
         return empty
     }
 
-    public static async onConfigChange(config: Configuration): Promise<void> {
+    public async onConfigChange(config: Configuration): Promise<void> {
         try {
             const isCodyWeb = config.agentIDE === CodyIDE.Web
 
             // Disable Ollama local models for cody web
-            ModelsService.localModels = !isCodyWeb ? await fetchLocalOllamaModels() : []
+            this.localModels = !isCodyWeb ? await fetchLocalOllamaModels() : []
         } catch {
-            ModelsService.localModels = []
+            this.localModels = []
         }
     }
 
-    public static async setAuthStatus(authStatus: AuthStatus) {
-        ModelsService.authStatus = authStatus
+    public async setAuthStatus(authStatus: AuthStatus) {
+        this.authStatus = authStatus
     }
 
-    public static setStorage(storage: Storage): void {
-        ModelsService.storage = storage
+    public setStorage(storage: Storage): void {
+        this.storage = storage
     }
 
     /**
      * Sets the primary models available to the user.
      */
-    public static setModels(models: Model[]): void {
+    public setModels(models: Model[]): void {
         logDebug('ModelsService', `Setting primary models: ${JSON.stringify(models.map(m => m.model))}`)
-        ModelsService.primaryModels = models
+        this.primaryModels = models
     }
 
     /**
      * Sets the primary and default models from the server sent config
      */
-    public static async setServerSentModels(config: ServerModelConfiguration): Promise<void> {
+    public async setServerSentModels(config: ServerModelConfiguration): Promise<void> {
         const models = config.models.map(Model.fromApi)
-        ModelsService.setModels(models)
-        await ModelsService.setServerDefaultModel(ModelUsage.Chat, config.defaultModels.chat)
-        await ModelsService.setServerDefaultModel(ModelUsage.Edit, config.defaultModels.chat)
-        await ModelsService.setServerDefaultModel(
-            ModelUsage.Autocomplete,
-            config.defaultModels.codeCompletion
-        )
+        this.setModels(models)
+        await this.setServerDefaultModel(ModelUsage.Chat, config.defaultModels.chat)
+        await this.setServerDefaultModel(ModelUsage.Edit, config.defaultModels.chat)
+        await this.setServerDefaultModel(ModelUsage.Autocomplete, config.defaultModels.codeCompletion)
     }
 
-    private static async setServerDefaultModel(usage: ModelUsage, newDefaultModelRef: ModelRefStr) {
+    private async setServerDefaultModel(usage: ModelUsage, newDefaultModelRef: ModelRefStr) {
         const ref = Model.parseModelRef(newDefaultModelRef)
-        const { preferences } = ModelsService
+        const { preferences } = this
 
         // If our cached default model matches, nothing needed
         if (preferences.defaults[usage] === ref.modelId) {
@@ -438,29 +422,26 @@ export class ModelsService {
         // models for this usage type
         preferences.defaults[usage] = ref.modelId
         delete preferences.selected[usage]
-        await ModelsService.flush()
+        await this.flush()
     }
 
-    private static async flush(): Promise<void> {
-        await ModelsService.storage?.set(
-            ModelsService.STORAGE_KEY,
-            JSON.stringify(ModelsService._preferences)
-        )
+    private async flush(): Promise<void> {
+        await this.storage?.set(ModelsService.STORAGE_KEY, JSON.stringify(this._preferences))
     }
 
     /**
      * Add new models for use.
      */
-    public static addModels(models: Model[]): void {
-        const set = new Set(ModelsService.primaryModels)
+    public addModels(models: Model[]): void {
+        const set = new Set(this.primaryModels)
         for (const provider of models) {
             set.add(provider)
         }
-        ModelsService.primaryModels = Array.from(set)
+        this.primaryModels = Array.from(set)
     }
 
-    private static getModelsByType(usage: ModelUsage): Model[] {
-        return ModelsService.models.filter(model => model.usage.includes(usage))
+    private getModelsByType(usage: ModelUsage): Model[] {
+        return this.models.filter(model => model.usage.includes(usage))
     }
 
     /**
@@ -470,44 +451,42 @@ export class ModelsService {
      * @param authStatus - The authentication status of the user.
      * @returns An array of models, with the default model first.
      */
-    public static getModels(type: ModelUsage): Model[] {
-        const models = ModelsService.getModelsByType(type)
-        const currentModel = ModelsService.getDefaultModel(type)
+    public getModels(type: ModelUsage): Model[] {
+        const models = this.getModelsByType(type)
+        const currentModel = this.getDefaultModel(type)
         if (!currentModel) {
             return models
         }
         return [currentModel].concat(models.filter(m => m.model !== currentModel.model))
     }
 
-    public static getDefaultModel(type: ModelUsage): Model | undefined {
+    public getDefaultModel(type: ModelUsage): Model | undefined {
         // Free users can only use the default free model, so we just find the first model they can use
-        const models = ModelsService.getModelsByType(type)
-        const firstModelUserCanUse = models.find(m => ModelsService.isModelAvailable(m))
+        const models = this.getModelsByType(type)
+        const firstModelUserCanUse = models.find(m => this.isModelAvailable(m))
 
-        const { preferences } = ModelsService
+        const { preferences } = this
 
         // Check to see if the user has a selected a default model for this
         // usage type and if not see if there is a server sent default type
-        const selected = ModelsService.resolveModel(
-            preferences.selected[type] ?? preferences.defaults[type]
-        )
-        if (selected && ModelsService.isModelAvailable(selected)) {
+        const selected = this.resolveModel(preferences.selected[type] ?? preferences.defaults[type])
+        if (selected && this.isModelAvailable(selected)) {
             return selected
         }
 
         return firstModelUserCanUse
     }
 
-    public static getDefaultEditModel(): EditModel | undefined {
-        return ModelsService.getDefaultModel(ModelUsage.Edit)?.model
+    public getDefaultEditModel(): EditModel | undefined {
+        return this.getDefaultModel(ModelUsage.Edit)?.model
     }
 
-    public static getDefaultChatModel(): ChatModel | undefined {
-        return ModelsService.getDefaultModel(ModelUsage.Chat)?.model
+    public getDefaultChatModel(): ChatModel | undefined {
+        return this.getDefaultModel(ModelUsage.Chat)?.model
     }
 
-    public static async setSelectedModel(type: ModelUsage, model: Model | string): Promise<void> {
-        const resolved = ModelsService.resolveModel(model)
+    public async setSelectedModel(type: ModelUsage, model: Model | string): Promise<void> {
+        const resolved = this.resolveModel(model)
         if (!resolved) {
             return
         }
@@ -515,16 +494,16 @@ export class ModelsService {
             throw new Error(`Model "${resolved.model}" is not compatible with usage type "${type}".`)
         }
         logDebug('ModelsService', `Setting selected ${type} model to ${resolved.model}`)
-        ModelsService.preferences.selected[type] = resolved.model
-        await ModelsService.flush()
+        this.preferences.selected[type] = resolved.model
+        await this.flush()
     }
 
-    public static isModelAvailable(model: string | Model): boolean {
-        const status = ModelsService.authStatus
+    public isModelAvailable(model: string | Model): boolean {
+        const status = this.authStatus
         if (!status) {
             return false
         }
-        const resolved = ModelsService.resolveModel(model)
+        const resolved = this.resolveModel(model)
         if (!resolved) {
             return false
         }
@@ -547,7 +526,7 @@ export class ModelsService {
     // does an approximate match on the model id, seeing if there are any models in the
     // cache that are contained within the given model id. This allows passing a qualified,
     // unqualified or ModelRefStr in as the model id will be a substring
-    static resolveModel(modelID: Model | string | undefined): Model | undefined {
+    private resolveModel(modelID: Model | string | undefined): Model | undefined {
         if (!modelID) {
             return undefined
         }
@@ -555,25 +534,25 @@ export class ModelsService {
             return modelID
         }
 
-        return ModelsService.models.find(m => modelID.includes(m.model))
+        return this.models.find(m => modelID.includes(m.model))
     }
 
     /**
      * Finds the model provider with the given model ID and returns its Context Window.
      */
-    public static getContextWindowByID(modelID: string): ModelContextWindow {
-        const model = ModelsService.models.find(m => m.model === modelID)
+    public getContextWindowByID(modelID: string): ModelContextWindow {
+        const model = this.models.find(m => m.model === modelID)
         return model
             ? model.contextWindow
             : { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET }
     }
 
-    public static getModelByID(modelID: string): Model | undefined {
-        return ModelsService.models.find(m => m.model === modelID)
+    public getModelByID(modelID: string): Model | undefined {
+        return this.models.find(m => m.model === modelID)
     }
 
-    public static getModelByIDSubstringOrError(modelSubstring: string): Model {
-        const models = ModelsService.models.filter(m => m.model.includes(modelSubstring))
+    public getModelByIDSubstringOrError(modelSubstring: string): Model {
+        const models = this.models.filter(m => m.model.includes(modelSubstring))
         if (models.length === 1) {
             return models[0]
         }
@@ -581,14 +560,13 @@ export class ModelsService {
             models.length > 1
                 ? `Multiple models found for substring ${modelSubstring}.`
                 : `No models found for substring ${modelSubstring}.`
-        const modelsList = ModelsService.models.map(m => m.model).join(', ')
+        const modelsList = this.models.map(m => m.model).join(', ')
         throw new Error(`${errorMessage} Available models: ${modelsList}`)
     }
-
-    public static hasModelTag(model: Model, modelTag: ModelTag): boolean {
-        return model.tags.includes(modelTag)
-    }
 }
+
+export const modelsService = new ModelsService()
+
 interface Storage {
     get(key: string): string | null
     set(key: string, value: string): Promise<void>
