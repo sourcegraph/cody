@@ -1441,7 +1441,6 @@
     "fs-extra": "^11.2.0",
     "fuzzysort": "^2.0.4",
     "http-proxy-middleware": "^3.0.0",
-    "kill-sync": "^1.0.3",
     "mocha": "^10.2.0",
     "node-fetch": "^2.6.4",
     "ovsx": "^0.8.2",
