@@ -32,7 +32,7 @@ export async function createAgentClient({
     workspaceRootUri,
     customHeaders,
     telemetryClientName,
-    debug = true,
+    debug = false,
     trace = false,
 }: AgentClientOptions): Promise<AgentClient> {
     // Run agent worker and set up a transport bridge between
