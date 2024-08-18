@@ -560,7 +560,7 @@ function registerUpgradeHandlers(
                 }
                 // Re-auth if user's cody pro status has changed
                 const isCurrentCodyProUser = !authStatus.userCanUpgrade
-                if (res.codyProEnabled !== isCurrentCodyProUser) {
+                if (res && res.codyProEnabled !== isCurrentCodyProUser) {
                     authProvider.reloadAuthStatus()
                 }
             }
