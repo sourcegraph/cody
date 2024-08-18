@@ -631,8 +631,8 @@ export interface ClientCapabilities {
         | {
               view: 'multiple' | 'single'
               cspSource: string
-              rootDir: string
               webviewBundleServingPrefix: string
+              rootDir?: string
               injectScript?: string
               injectStyle?: string
           }
