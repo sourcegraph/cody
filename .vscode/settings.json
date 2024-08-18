@@ -3,7 +3,8 @@
     "**/node_modules": true,
     "**/dist": true,
     "**/.vscode-test": true,
-    "**/.vscode-test-web": true
+    "**/.vscode-test-web": true,
+    "**/.test": true
   },
   "files.exclude": {
     "**/.vscode-test": true,
@@ -37,5 +38,8 @@
   },
   "[css]": {
     "editor.defaultFormatter": "stylelint.vscode-stylelint"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
   }
 }

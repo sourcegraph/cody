@@ -1,6 +1,10 @@
 import { spawn } from 'node:child_process'
 import type { Dirent } from 'node:fs'
 import fs from 'node:fs/promises'
+import 'node:http'
+import 'node:https'
+import path from 'node:path'
+import { setTimeout } from 'node:timers/promises'
 import pspawn from '@npmcli/promise-spawn'
 import { test as _test, expect } from '@playwright/test'
 import {
@@ -13,18 +17,15 @@ import { downloadAndUnzipVSCode } from '@vscode/test-electron/out/download'
 import glob from 'glob'
 import 'node:http'
 import 'node:https'
-import path from 'node:path'
-import { setTimeout } from 'node:timers/promises'
 import { onExit } from 'signal-exit'
+import symlinkDir from 'symlink-dir'
 import type { TestContext, WorkerContext } from '.'
 import { waitForLock } from '../../../../src/lockfile'
 import { CODY_VSCODE_ROOT_DIR, retry, stretchTimeout } from '../../helpers'
 import { killChildrenSync, killSync } from './kill'
 import { rangeOffset } from './util'
-
 const DOWNLOAD_GRACE_TIME = 5 * 60 * 1000 //5 minutes
 
-const SPAWNED_PIDS = new Set<number | undefined>()
 onExit(
     () => {
         // kill all processes that are a child to my own process
@@ -77,7 +78,7 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
             )
             await fs.mkdir(serverExecutableDir, { recursive: true })
             // We nullify the time it takes to download VSCode as it can vary wildly!
-            const [_, codeTunnelCliPath] = await stretchTimeout(
+            const [codeCliPath, codeTunnelCliPath] = await stretchTimeout(
                 () => downloadOrWaitForVSCode({ validOptions, executableDir }),
                 {
                     max: DOWNLOAD_GRACE_TIME,
@@ -112,54 +113,19 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
                 )
             )
 
-            // Here we install the extensions requested. To speed things up we make use of a shared extension cache that we symlink to.
+            // extensions sadly can't live in the Cody dir because it would mess
+            // up pnpm node_module symlink references. Instead we create a tmpdir
+            // and and save a symlink to it here for easy access
+            // const isolatedExtensionsDir = await fs.mkdtemp(path.join(os.tmpdir(), 'vsc-extensions'))
+            // const extensionsDir = isolatedExtensionsDir
+            // console.log('extensionsDir', extensionsDir)
             const extensionsDir = path.join(serverRootDir, 'extensions')
             await fs.mkdir(extensionsDir, { recursive: true })
             const userDataDir = path.join(serverRootDir, 'data/User')
             await fs.mkdir(userDataDir, { recursive: true })
-            if (validOptions.vscodeExtensions.length > 0) {
-                //TODO(rnauta): Add lockfile wrapper to avoid race conditions
-                const sharedExtensionsDir = path.resolve(
-                    CODY_VSCODE_ROOT_DIR,
-                    validOptions.vscodeExtensionCacheDir
-                )
-                if (!sharedExtensionsDir.endsWith(path.join('.vscode-server', 'extensions'))) {
-                    //right now there's no way of setting the extension installation directory. Instead they are always install in ~/.vscode-server/extensions
-                    throw new Error(
-                        "Unfortunately VSCode doesn't provide a way yet to cache extensions isolated from a global installation. Please use ~/.code-server/extensions for now."
-                    )
-                }
-                await fs.mkdir(sharedExtensionsDir, { recursive: true })
-                const releaseLock = await waitForLock(sharedExtensionsDir, {
-                    lockfilePath: path.join(sharedExtensionsDir, '.lock'),
-                    delay: 1000,
-                })
-                try {
-                    const args = [
-                        ...validOptions.vscodeExtensions.flatMap(v => ['--install-extension', v]),
-                    ]
-                    await pspawn(codeTunnelCliPath, args, {
-                        env: {
-                            ...process.env,
-                            // VSCODE_EXTENSIONS: sharedExtensionsDir, This doesn't work either
-                        },
-                        stdio: ['inherit', 'ignore', 'inherit'],
-                    })
-                } finally {
-                    releaseLock()
-                }
-                //we now read all the folders in the shared cache dir and
-                //symlink the relevant ones to our isolated extension dir
-                for (const sharedExtensionDir of await fs.readdir(sharedExtensionsDir)) {
-                    const [_, extensionName] = /^(.*)-\d+\.\d+\.\d+$/.exec(sharedExtensionDir) ?? []
-                    if (!validOptions.vscodeExtensions.includes(extensionName?.toLowerCase())) {
-                        continue
-                    }
-                    const sharedExtensionPath = path.join(sharedExtensionsDir, sharedExtensionDir)
-                    const extensionPath = path.join(extensionsDir, sharedExtensionDir)
-                    await fs.symlink(sharedExtensionPath, extensionPath)
-                }
-            }
+
+            await installExtensions({ validOptions, codeCliPath, extensionsDir, userDataDir })
+
             //TODO: Fixed Port Ranges
 
             // We can now start the server
@@ -234,7 +200,6 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
             }
             if (codeProcess.pid) {
                 killSync(codeProcess.pid, 'SIGTERM', true)
-                SPAWNED_PIDS.delete(codeProcess.pid)
             }
         },
         { scope: 'test' },
@@ -349,7 +314,6 @@ async function waitForPatchedVSCodeServer(config: {
                 stdio: ['inherit', 'ignore', 'inherit'],
                 detached: false,
             })
-            SPAWNED_PIDS.add(codeProcess.pid)
 
             let connectionIssueTries = config.maxConnectionRetries ?? 5
             while (true) {
@@ -378,7 +342,6 @@ async function waitForPatchedVSCodeServer(config: {
                 // We need to patch and restart the server so we kill this one and try again
                 if (codeProcess.pid) {
                     killSync(codeProcess.pid, 'SIGTERM', true)
-                    SPAWNED_PIDS.delete(codeProcess.pid)
                 }
             } else {
                 return codeProcess
@@ -387,6 +350,92 @@ async function waitForPatchedVSCodeServer(config: {
     } finally {
         releaseServerDownloadLock()
     }
+}
+
+async function installExtensions({
+    codeCliPath,
+    validOptions,
+    extensionsDir,
+}: Pick<TestContext, 'validOptions'> & {
+    codeCliPath: string
+    extensionsDir: string
+    userDataDir: string
+}) {
+    // We start by installing all extensions to a shared cache dir. This speeds up tests without any risk of flake.
+
+    const sharedExtensionsDir = path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.vscodeExtensionCacheDir)
+    if (validOptions.vscodeExtensions.length) {
+        await fs.mkdir(sharedExtensionsDir, { recursive: true })
+        const releaseLock = await waitForLock(sharedExtensionsDir, {
+            lockfilePath: path.join(sharedExtensionsDir, '.lock'),
+            delay: 1000,
+        })
+        try {
+            const args = [
+                `--extensions-dir=${sharedExtensionsDir}`,
+                ...validOptions.vscodeExtensions.map(extension => `--install-extension=${extension}`),
+            ]
+            await pspawn(codeCliPath, args, {
+                env: {
+                    ...process.env,
+                },
+                stdio: ['inherit', 'ignore', 'inherit'],
+            })
+        } finally {
+            releaseLock()
+        }
+    }
+
+    // Next, we link any symlinkExtensions directly to the test-server extensions
+    // directory. These are always preferred to marketplace versions.
+    const symlinkedExtensions: Record<string, string> = {}
+    const symlinkExtension = [
+        ...validOptions.symlinkExtensions,
+        path.join(CODY_VSCODE_ROOT_DIR, 'e2e/utils/vscody/extension'),
+    ]
+    for (const entry of symlinkExtension) {
+        const { name, publisher, version } = await readExtensionMetadata(entry)
+        await symlinkDir(entry, path.join(extensionsDir, `${publisher}.${name}-${version}`))
+        symlinkedExtensions[`${publisher}.${name}`] = version
+    }
+
+    //we now read all the folders in the shared cache dir and
+    //symlink the relevant ones to our isolated extension dir
+    for (const entry of await fs.readdir(sharedExtensionsDir)) {
+        const [_, extensionName] = /^(.*)-\d+\.\d+\.\d+$/.exec(entry) ?? []
+        if (
+            !validOptions.vscodeExtensions.includes(extensionName?.toLowerCase()) ||
+            symlinkedExtensions[extensionName]
+        ) {
+            continue
+        }
+
+        const existingPath = path.join(sharedExtensionsDir, entry)
+        const newPath = path.join(extensionsDir, entry)
+        await symlinkDir(existingPath, newPath)
+    }
+
+    // Finally by listing the extensions it generates a extensions.json file which ensures that when VSCode starts it doesn't trigger a reload.
+    await pspawn(codeCliPath, [`--extensions-dir=${extensionsDir}`, '--list-extensions'], {
+        env: {
+            ...process.env,
+        },
+        stdio: ['inherit', 'ignore', 'inherit'],
+    })
+}
+
+async function readExtensionMetadata(
+    extensionDir: string
+): Promise<{ publisher: string; name: string; version: string }> {
+    const packageJsonPath = await fs.readFile(path.join(extensionDir, 'package.json'))
+    const packageJson = JSON.parse(packageJsonPath.toString())
+    const { publisher, name, version } = packageJson
+    if (!publisher || !name || !version) {
+        throw new TypeError(
+            `package.json for extension ${extensionDir} must have publisher, name, and version`
+        )
+    }
+    return { publisher, name, version }
 }
 
 /**
