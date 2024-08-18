@@ -26,7 +26,7 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     type SerializedPromptEditorState,
-    TokenCounter,
+    TokenCounterUtils,
     Typewriter,
     addMessageListenersForExtensionAPI,
     createMessageAPIForExtension,
@@ -1292,18 +1292,20 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return {}
         }
 
-        const getContextSummary = (items: ContextItem[]) => ({
+        const getContextSummary = async (items: ContextItem[]) => ({
             count: items.length,
-            items: items.map(i => ({
-                source: i.source,
-                size: i.size || TokenCounter.countTokens(i.content || ''),
-                content: i.content,
-            })),
+            items: await Promise.all(
+                items.map(async i => ({
+                    source: i.source,
+                    size: i.size || (await TokenCounterUtils.countTokens(i.content || '')),
+                    content: i.content,
+                }))
+            ),
         })
 
         return {
-            included: getContextSummary(context.used),
-            excluded: getContextSummary(context.ignored),
+            included: await getContextSummary(context.used),
+            excluded: await getContextSummary(context.ignored),
             gitMetadata: await this.getRepoMetadataIfPublic(),
         }
     }

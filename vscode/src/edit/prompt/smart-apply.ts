@@ -5,7 +5,7 @@ import {
     type EditModel,
     type Message,
     PromptString,
-    TokenCounter,
+    TokenCounterUtils,
     getSimplePreamble,
     modelsService,
     ps,
@@ -70,13 +70,13 @@ export const getPrompt = async (
 ): Promise<{ messages: Message[]; prefix: string }> => {
     const documentRange = new vscode.Range(0, 0, document.lineCount - 1, 0)
     const documentText = PromptString.fromDocumentText(document, documentRange)
-    const tokenCount = TokenCounter.countPromptString(documentText)
+    const tokenCount = await TokenCounterUtils.countPromptString(documentText)
     const contextWindow = modelsService.getContextWindowByID(model)
     if (tokenCount > contextWindow.input) {
         throw new Error("The amount of text in this document exceeds Cody's current capacity.")
     }
 
-    const promptBuilder = new PromptBuilder(contextWindow)
+    const promptBuilder = await PromptBuilder.create(contextWindow)
     const preamble = getSimplePreamble(model, codyApiVersion, SMART_APPLY_SELECTION_PROMPT.system)
     promptBuilder.tryAddToPrefix(preamble)
 

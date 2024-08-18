@@ -375,8 +375,8 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
       js-tiktoken:
-        specifier: ^1.0.10
-        version: 1.0.10
+        specifier: ^1.0.14
+        version: 1.0.14
       lexical:
         specifier: ^0.17.0
         version: 0.17.0
@@ -11679,8 +11679,8 @@ packages:
     resolution: {integrity: sha512-X2BB11YZtrRqY4EnQcLX5Rh373zbK4alC1FW7D7MBhL2gtcC17cTnr6DmfHZeS0s2rTHjUTMMHfG7gO8SSdw+g==}
     engines: {node: '>=0.10.0'}
 
-  /js-tiktoken@1.0.10:
-    resolution: {integrity: sha512-ZoSxbGjvGyMT13x6ACo9ebhDha/0FHdKA+OsQcMOWcm1Zs7r90Rhk5lhERLzji+3rA7EKpXCgwXcM5fF3DMpdA==}
+  /js-tiktoken@1.0.14:
+    resolution: {integrity: sha512-Pk3l3WOgM9joguZY2k52+jH82RtABRgB5RdGFZNUGbOKGMVlNmafcPA3b0ITcCZPu1L9UclP1tne6aw7ZI4Myg==}
     dependencies:
       base64-js: 1.5.1
     dev: false

@@ -1,4 +1,4 @@
-import { type ContextItem, ContextItemSource, TokenCounter } from '@sourcegraph/cody-shared'
+import { type ContextItem, ContextItemSource, TokenCounterUtils } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
@@ -6,7 +6,7 @@ import type { URI } from 'vscode-uri'
 export async function createContextFile(file: URI, content: string): Promise<ContextItem | undefined> {
     try {
         const range = new vscode.Range(0, 0, content.split('\n').length, 0)
-        const size = TokenCounter.countTokens(content)
+        const size = await TokenCounterUtils.countTokens(content)
 
         return {
             type: 'file',

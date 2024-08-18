@@ -8,7 +8,7 @@ import {
     type EditProvider,
     type Message,
     PromptString,
-    TokenCounter,
+    TokenCounterUtils,
     getModelInfo,
     getSimplePreamble,
     modelsService,
@@ -84,7 +84,7 @@ export const buildInteraction = async ({
     )
     const precedingText = PromptString.fromDocumentText(document, prefixRange)
     const selectedText = PromptString.fromDocumentText(document, task.selectionRange)
-    const tokenCount = TokenCounter.countPromptString(selectedText)
+    const tokenCount = await TokenCounterUtils.countPromptString(selectedText)
     if (tokenCount > contextWindow) {
         throw new Error("The amount of text selected exceeds Cody's current capacity.")
     }
@@ -104,7 +104,7 @@ export const buildInteraction = async ({
             instruction: task.instruction,
             document,
         })
-    const promptBuilder = new PromptBuilder(modelsService.getContextWindowByID(model))
+    const promptBuilder = await PromptBuilder.create(modelsService.getContextWindowByID(model))
 
     const preamble = getSimplePreamble(model, codyApiVersion, prompt.system)
     promptBuilder.tryAddToPrefix(preamble)
