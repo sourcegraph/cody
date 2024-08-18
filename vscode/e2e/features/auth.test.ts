@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test'
-import { fixture as test, uix } from './utils/vscody'
+import { fixture as test, uix } from '../utils/vscody'
 
 test.describe('Auth', () => {
     test.use({
