@@ -58,7 +58,7 @@ export class ChatsController implements vscode.Disposable {
     private activeEditor: ChatController | undefined = undefined
 
     // We keep track of the currently authenticated account and dispose open chats when it changes
-    private currentAuthAccount: undefined | { endpoint: string; primaryEmail: string; username: string }
+    private currentAuthAccount: undefined | { endpoint: string; primaryEmail?: string; username: string }
 
     protected disposables: vscode.Disposable[] = []
 

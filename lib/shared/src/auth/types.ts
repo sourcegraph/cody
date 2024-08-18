@@ -23,9 +23,9 @@ export interface AuthStatus {
     codyApiVersion: number
     configOverwrites?: CodyLLMSiteConfiguration
     showNetworkError?: boolean
-    primaryEmail: string
+    primaryEmail?: string
     displayName?: string
-    avatarURL: string
+    avatarURL?: string
     /**
      * Whether the users account can be upgraded.
      *
@@ -55,9 +55,6 @@ export const defaultAuthStatus: AuthStatus = {
     siteVersion: '',
     userCanUpgrade: false,
     username: '',
-    primaryEmail: '',
-    displayName: '',
-    avatarURL: '',
     codyApiVersion: 0,
 }
 
@@ -74,9 +71,6 @@ export const unauthenticatedStatus: AuthStatus = {
     siteVersion: '',
     userCanUpgrade: false,
     username: '',
-    primaryEmail: '',
-    displayName: '',
-    avatarURL: '',
     codyApiVersion: 0,
 }
 
@@ -93,9 +87,6 @@ export const networkErrorAuthStatus: Omit<AuthStatus, 'endpoint'> = {
     siteVersion: '',
     userCanUpgrade: false,
     username: '',
-    primaryEmail: '',
-    displayName: '',
-    avatarURL: '',
     codyApiVersion: 0,
 }
 
@@ -113,9 +104,6 @@ export const offlineModeAuthStatus: AuthStatus = {
     siteVersion: '',
     userCanUpgrade: false,
     username: 'offline',
-    primaryEmail: '',
-    displayName: '',
-    avatarURL: '',
     codyApiVersion: 0,
 }
 

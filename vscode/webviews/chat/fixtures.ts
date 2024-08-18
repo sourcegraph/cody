@@ -167,7 +167,6 @@ export const FIXTURE_USER_ACCOUNT_INFO: UserAccountInfo = {
         displayName: 'Quinn Slack',
         avatarURL: 'https://avatars.githubusercontent.com/u/1976',
         endpoint: '',
-        primaryEmail: '',
     },
     ide: CodyIDE.VSCode,
 }
