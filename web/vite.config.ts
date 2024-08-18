@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
-
 import react from '@vitejs/plugin-react-swc'
+import { analyzer } from 'vite-bundle-analyzer'
 import svgr from 'vite-plugin-svgr'
 
 // @ts-ignore
@@ -29,6 +29,7 @@ export default defineProjectWithDefaults(__dirname, {
         // @ts-ignore
         react({ devTarget: 'esnext' }),
         svgr() as any,
+        process.env.ANALYZE ? analyzer({ analyzerMode: 'server' }) : undefined,
     ],
     resolve: {
         alias: [
@@ -100,7 +101,7 @@ export default defineProjectWithDefaults(__dirname, {
         minify: false,
         outDir: 'dist',
         assetsDir: '.',
-        reportCompressedSize: false,
+        reportCompressedSize: true,
         lib: {
             formats: ['cjs'],
             entry: resolve(__dirname, 'lib/index.ts'),
