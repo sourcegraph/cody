@@ -10,7 +10,7 @@ export type SymlinkExtensions =
           symlinkExtensions: [string, ...string[]]
       }
     | {
-          vscodeExtensionCacheDir?: unknown
+          vscodeExtensionCacheDir?: string
           symlinkExtensions?: [] | null // these paths will get symlinked to the shared extension cache as pre-installed extensions
       }
 
@@ -27,6 +27,10 @@ setup.extend<{}, SymlinkExtensions>({
     }
     if (typeof vscodeExtensionCacheDir !== 'string') {
         throw new TypeError('vscodeTmpDir is required to symlink extensions')
+    }
+    if (vscodeExtensionCacheDir) {
+        vscodeExtensionCacheDir = path.resolve(CODY_VSCODE_ROOT_DIR, vscodeExtensionCacheDir)
+        await fs.mkdir(vscodeExtensionCacheDir, { recursive: true })
     }
     for (const extension of symlinkExtensions) {
         const absoluteDir = path.resolve(CODY_VSCODE_ROOT_DIR, extension)

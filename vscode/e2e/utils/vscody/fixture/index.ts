@@ -30,7 +30,7 @@ export interface TestContext {
     //sourcegraphMitM: { endpoint: string; target: string }
     workspaceDir: Directory
     //TODO(rnauta): Make the typing inferred from VSCode directly
-    executeCommand: <T = any>(commandId: string, ...args: any[]) => Promise<T | undefined>
+    executeCommand: <T = any>(commandId: string, ...args: any[]) => Promise<T>
 }
 
 export const fixture = mergeTests(

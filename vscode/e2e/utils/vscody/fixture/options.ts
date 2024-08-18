@@ -29,6 +29,7 @@ const workerOptionsSchema = zod.object({
 const testOptionsSchema = zod.object({
     vscodeVersion: zod.string().default('stable'),
     vscodeExtensions: zod.array(zod.string().toLowerCase()).default([]),
+    symlinkExtensions: zod.array(zAbsPath()).default([]),
     templateWorkspaceDir: zAbsPath(),
     recordingMode: zod.enum([
         'passthrough',
@@ -110,6 +111,7 @@ export const optionsFixture: ReturnType<
         async (
             {
                 vscodeExtensions,
+                symlinkExtensions,
                 vscodeVersion,
                 templateWorkspaceDir,
                 recordIfMissing,
@@ -124,6 +126,7 @@ export const optionsFixture: ReturnType<
             const validOptionsWithDefaults = await testOptionsSchema.safeParseAsync(
                 {
                     vscodeExtensions,
+                    symlinkExtensions,
                     vscodeVersion,
                     keepUnusedRecordings,
                     recordingExpiresIn,
