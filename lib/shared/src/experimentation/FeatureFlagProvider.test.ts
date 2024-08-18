@@ -143,14 +143,14 @@ describe('FeatureFlagProvider', () => {
                     apiClient as unknown as SourcegraphGraphQLAPIClient
                 )
 
-                const abortController = new AbortController()
                 const generator = provider.evaluatedFeatureFlag(FeatureFlag.TestFlagDoNotUse)
 
-                const { values, done } = readValuesFrom(generator)
+                const { values, done, unsubscribe } = readValuesFrom(generator)
                 vitest.runAllTimers()
 
                 await nextTick()
-                expect(values).toEqual<typeof values>([true])
+                expect(values).toEqual<typeof values>([true, true])
+                values.pop()
                 values.pop()
 
                 // Test that the generator yields updated values when flags change.
@@ -162,7 +162,7 @@ describe('FeatureFlagProvider', () => {
                 expect(values).toEqual<typeof values>([false])
                 values.pop()
 
-                abortController.abort()
+                unsubscribe()
                 await done
                 expect(values).toEqual<typeof values>([])
             }
