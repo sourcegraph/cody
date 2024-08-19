@@ -23,7 +23,7 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
 
     constructor(
         public client: SourcegraphGraphQLAPIClient,
-        anonymousUserID: string,
+        private anonymousUserID: string,
         /**
          * logEvent mode to use if exporter needs to use a legacy export mode.
          */
@@ -98,7 +98,6 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
          * if setLegacyEventsStateOnce determines we need to do so.
          */
         if (this.exportMode === 'legacy') {
-            console.log({ legacyBackcompatLogEventMode: this.legacyBackcompatLogEventMode })
             const resultOrError = await Promise.all(
                 events.map(event =>
                     this.client.logEvent(
@@ -114,7 +113,7 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
                                     [curr.key]: curr.value,
                                 })),
                             argument: JSON.stringify(event.parameters.privateMetadata),
-                            userCookieID: this.client.anonymousUserID || '',
+                            userCookieID: this.anonymousUserID || '',
                             connectedSiteID: this.legacySiteIdentification?.siteid,
                             hashedLicenseKey: this.legacySiteIdentification?.hashedLicenseKey,
                         },

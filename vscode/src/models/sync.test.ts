@@ -3,10 +3,10 @@ import {
     Model,
     ModelTag,
     ModelUsage,
-    ModelsService,
     RestClient,
     defaultAuthStatus,
     getDotComDefaultModels,
+    modelsService,
     unauthenticatedStatus,
 } from '@sourcegraph/cody-shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -15,7 +15,7 @@ import { syncModels } from './sync'
 import { getEnterpriseContextWindow } from './utils'
 
 describe('syncModels', () => {
-    const setModelsSpy = vi.spyOn(ModelsService, 'setModels')
+    const setModelsSpy = vi.spyOn(modelsService, 'setModels')
 
     beforeEach(() => {
         setModelsSpy.mockClear()
@@ -93,10 +93,10 @@ describe('syncModels from the server', () => {
     // Unlike the other mocks, we define setModelsSpy here so that it can
     // be referenced by individual tests. (But like the other spys, it needs
     // to be reset/restored after each test.)
-    let setModelsSpy = vi.spyOn(ModelsService, 'setModels')
+    let setModelsSpy = vi.spyOn(modelsService, 'setModels')
 
     beforeEach(() => {
-        setModelsSpy = vi.spyOn(ModelsService, 'setModels')
+        setModelsSpy = vi.spyOn(modelsService, 'setModels')
 
         // Mock the /.api/client-config for these tests so that modelsAPIEnabled == true
         const mockClientConfig = {

@@ -203,7 +203,7 @@ describe('Transcript', () => {
                 ]}
             />
         )
-        expectCells([{ message: 'Foo' }, { message: 'Request Failed: some error' }])
+        expectCells([{ message: 'Foo' }, { message: 'Model\nRequest Failed: some error' }])
         expect(screen.queryByText('Try again with different context')).toBeNull()
     })
 

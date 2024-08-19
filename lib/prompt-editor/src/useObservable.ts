@@ -1,8 +1,9 @@
+import type { Observable } from 'observable-fns'
 import { useEffect, useRef, useState } from 'react'
 
-export type UseAsyncGeneratorResult<T> = {
+export type UseObservableResult<T> = {
     /**
-     * The last value from the AsyncGenerator, or `undefined` if no value has been emitted yet.
+     * The last value from the Observable, or `undefined` if no value has been emitted yet.
      *
      * It is not possible in this API to differentiate "no value emitted yet" from "value
      * `undefined` emitted".
@@ -19,20 +20,19 @@ export type UseAsyncGeneratorResult<T> = {
       }
 )
 
-const INITIAL: UseAsyncGeneratorResult<any> = {
+const INITIAL: UseObservableResult<any> = {
     value: undefined,
     done: false,
     error: null,
 }
 
 /**
- * React hook to return the latest value and complete/error state from an AsyncGenerator.
+ * React hook to return the latest value and complete/error state from an Observable.
  *
- * The AsyncGenerator is obtained by calling {@link factory} so that its execution can be aborted
- * when the hook is unmounted, to avoid resource leaks.
+ * The Observable ({@link observable} arg) should be wrapped in `useMemo`.
  */
-export function useAsyncGenerator<T>(
-    factory: (signal: AbortSignal) => AsyncGenerator<T>,
+export function useObservable<T>(
+    observable: Observable<T>,
     options?: {
         /**
          * By default, the prior result value will be reused even if `factory` changes, until the
@@ -41,48 +41,47 @@ export function useAsyncGenerator<T>(
          */
         preserveValueKey?: string | number
     }
-): UseAsyncGeneratorResult<T> {
-    const [state, setState] = useState<UseAsyncGeneratorResult<T>>(INITIAL)
+): UseObservableResult<T> {
+    const [state, setState] = useState<UseObservableResult<T>>(INITIAL)
 
     const lastPreserveValueKey = useRef(options?.preserveValueKey ?? undefined)
 
     useEffect(() => {
         let isMounted = true
-        const abortController = new AbortController()
 
         if (lastPreserveValueKey.current !== options?.preserveValueKey) {
             setState(INITIAL)
             lastPreserveValueKey.current = options?.preserveValueKey
         }
 
-        async function run() {
-            try {
-                const generator = factory(abortController.signal)
-                for await (const value of generator) {
-                    if (!isMounted) break
+        const subscription = observable.subscribe({
+            next: value => {
+                if (isMounted) {
                     setState({ value, done: false, error: null })
                 }
-                if (isMounted) {
-                    setState(prevState => ({ ...prevState, done: true }))
-                }
-            } catch (error) {
+            },
+            error: error => {
                 if (isMounted) {
                     setState(prevState => ({ ...prevState, done: true, error: error as Error }))
                 }
-            }
-        }
-        run()
+            },
+            complete: () => {
+                if (isMounted) {
+                    setState(prevState => ({ ...prevState, done: true }))
+                }
+            },
+        })
 
         return () => {
             isMounted = false
-            abortController.abort()
+            subscription.unsubscribe()
         }
-    }, [factory, options?.preserveValueKey])
+    }, [observable, options?.preserveValueKey])
 
     return state
 }
 
-export function waitForAsyncGeneratorInTest(): Promise<void> {
+export function waitForObservableInTest(): Promise<void> {
     return new Promise(resolve => {
         setTimeout(resolve)
     })

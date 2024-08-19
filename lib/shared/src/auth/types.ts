@@ -42,7 +42,7 @@ export interface AuthStatusProvider {
     getAuthStatus(): AuthStatus
 }
 
-export const defaultAuthStatus = {
+export const defaultAuthStatus: AuthStatus = {
     endpoint: '',
     isDotCom: true,
     isLoggedIn: false,
@@ -59,9 +59,9 @@ export const defaultAuthStatus = {
     displayName: '',
     avatarURL: '',
     codyApiVersion: 0,
-} satisfies AuthStatus
+}
 
-export const unauthenticatedStatus = {
+export const unauthenticatedStatus: AuthStatus = {
     endpoint: '',
     isDotCom: true,
     isLoggedIn: false,
@@ -78,9 +78,9 @@ export const unauthenticatedStatus = {
     displayName: '',
     avatarURL: '',
     codyApiVersion: 0,
-} satisfies AuthStatus
+}
 
-export const networkErrorAuthStatus = {
+export const networkErrorAuthStatus: Omit<AuthStatus, 'endpoint'> = {
     isDotCom: false,
     showInvalidAccessTokenError: false,
     authenticated: false,
@@ -97,9 +97,9 @@ export const networkErrorAuthStatus = {
     displayName: '',
     avatarURL: '',
     codyApiVersion: 0,
-} satisfies Omit<AuthStatus, 'endpoint'>
+}
 
-export const offlineModeAuthStatus = {
+export const offlineModeAuthStatus: AuthStatus = {
     endpoint: '',
     isDotCom: true,
     isLoggedIn: true,
@@ -117,7 +117,7 @@ export const offlineModeAuthStatus = {
     displayName: '',
     avatarURL: '',
     codyApiVersion: 0,
-} satisfies AuthStatus
+}
 
 export function isCodyProUser(authStatus: AuthStatus): boolean {
     return authStatus.isDotCom && !authStatus.userCanUpgrade

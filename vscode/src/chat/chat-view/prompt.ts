@@ -47,7 +47,7 @@ export class DefaultPrompter {
         options?: { experimentalSmartApplyEnabled?: boolean }
     ): Promise<PromptInfo> {
         return wrapInActiveSpan('chat.prompter', async () => {
-            const promptBuilder = new PromptBuilder(chat.contextWindow)
+            const promptBuilder = await PromptBuilder.create(chat.contextWindow)
             const preInstruction: PromptString | undefined = PromptString.fromConfig(
                 vscode.workspace.getConfiguration('cody.chat'),
                 'preInstruction',

@@ -7,6 +7,7 @@ import {
     type CompletionResponse,
     type CompletionResponseGenerator,
     CompletionStopReason,
+    type Configuration,
     type ConfigurationWithAccessToken,
     NetworkError,
     PromptString,
@@ -199,7 +200,7 @@ class FireworksProvider extends Provider {
         'userCanUpgrade' | 'isDotCom' | 'endpoint' | 'isFireworksTracingEnabled'
     >
     private isLocalInstance: boolean
-    private fireworksConfig?: ConfigurationWithAccessToken['autocompleteExperimentalFireworksOptions']
+    private fireworksConfig?: Configuration['autocompleteExperimentalFireworksOptions']
     private promptExtractor: FIMModelSpecificPromptExtractor
     // Todo: This variable is used to introduce an additional delay to collect the data on impact of latency on user experience.
     // Todo: Delete this variable once the data is collected.

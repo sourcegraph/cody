@@ -20,6 +20,7 @@ import {
     isEnterpriseUser,
     isFileURI,
     isWindows,
+    subscriptionDisposable,
     telemetryRecorder,
     uriBasename,
     uriDirname,
@@ -85,15 +86,16 @@ export class SymfRunner implements vscode.Disposable {
         this.indexRoot = indexRoot
 
         let isInitialized = false
-        authProvider.onChange(
-            authStatus => {
-                if (!isInitialized && authStatus.isLoggedIn && !isEnterpriseUser(authStatus)) {
-                    // Only initialize symf after the user has authenticated AND it's not an enterprise account.
-                    isInitialized = true
-                    this.disposables.push(initializeSymfIndexManagement(this))
-                }
-            },
-            { runImmediately: true }
+        this.disposables.push(
+            subscriptionDisposable(
+                authProvider.changes.subscribe(authStatus => {
+                    if (!isInitialized && authStatus.isLoggedIn && !isEnterpriseUser(authStatus)) {
+                        // Only initialize symf after the user has authenticated AND it's not an enterprise account.
+                        isInitialized = true
+                        this.disposables.push(initializeSymfIndexManagement(this))
+                    }
+                })
+            )
         )
     }
 

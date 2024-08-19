@@ -1,6 +1,6 @@
 // Add anything else here that needs to be used outside of this library.
 
-export { Model, ModelsService } from './models'
+export { Model, modelsService } from './models'
 export {
     type EditModel,
     type EditProvider,
@@ -183,7 +183,6 @@ export {
 export { PromptMixin, newPromptMixin } from './prompt/prompt-mixin'
 export * from './prompt/templates'
 export {
-    truncateText,
     truncateTextNearestLine,
     truncatePromptStringStart,
     truncatePromptString,
@@ -204,7 +203,6 @@ export type {
 export * from './sourcegraph-api/completions/types'
 export {
     DOTCOM_URL,
-    LOCAL_APP_URL,
     isDotCom,
 } from './sourcegraph-api/environments'
 export {
@@ -285,7 +283,7 @@ export {
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type ContextMentionProviderMetadata,
 } from './mentions/api'
-export { TokenCounter } from './token/counter'
+export { TokenCounter, getTokenCounterUtils, TokenCounterUtils } from './token/counter'
 export { CORPUS_CONTEXT_ALLOCATION as ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
 export { tokensToChars, charsToTokens } from './token/utils'
 export * from './prompt/prompt-string'
@@ -329,4 +327,4 @@ export {
     type GenericWebviewAPIWrapper,
     createMessageAPIForExtension,
 } from './misc/rpc/rpc'
-export * from './misc/asyncGenerator'
+export * from './misc/observable'

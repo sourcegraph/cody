@@ -320,6 +320,7 @@ describe('Agent', () => {
                     messages: [
                         { text: 'What model are you?', speaker: 'human', contextFiles: [] },
                         {
+                            model: 'anthropic/claude-2.0',
                             text: " I'm Claude, an AI assistant created by Anthropic.",
                             speaker: 'assistant',
                         },
@@ -335,7 +336,6 @@ describe('Agent', () => {
                 const myDate = new Date(date.getTime() + index * 60 * 1000).toISOString()
 
                 expect(result.transcript).toMatchInlineSnapshot(`{
-  "chatModel": "anthropic/claude-2.0",
   "id": "${myDate}",
   "interactions": [
     {

@@ -1,4 +1,4 @@
-import { type Model, ModelsService } from '.'
+import type { Model } from '.'
 import { ModelTag } from '..'
 
 export function getProviderName(name: string): string {
@@ -31,21 +31,25 @@ export function getModelInfo(modelID: string): {
 }
 
 export function isCodyProModel(model: Model): boolean {
-    return ModelsService.hasModelTag(model, ModelTag.Pro)
+    return modelHasTag(model, ModelTag.Pro)
 }
 
 export function isLocalModel(model: Model): boolean {
-    return ModelsService.hasModelTag(model, ModelTag.Local)
+    return modelHasTag(model, ModelTag.Local)
 }
 
 export function isCustomModel(model: Model): boolean {
     return (
-        ModelsService.hasModelTag(model, ModelTag.Local) ||
-        ModelsService.hasModelTag(model, ModelTag.Dev) ||
-        ModelsService.hasModelTag(model, ModelTag.BYOK)
+        modelHasTag(model, ModelTag.Local) ||
+        modelHasTag(model, ModelTag.Dev) ||
+        modelHasTag(model, ModelTag.BYOK)
     )
 }
 
 export function isOllamaModel(model: Model): boolean {
-    return model.provider.toLowerCase() === 'ollama' || ModelsService.hasModelTag(model, ModelTag.Ollama)
+    return model.provider.toLowerCase() === 'ollama' || modelHasTag(model, ModelTag.Ollama)
+}
+
+export function modelHasTag(model: Model, modelTag: ModelTag): boolean {
+    return model.tags.includes(modelTag)
 }

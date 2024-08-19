@@ -15,7 +15,7 @@ import {
 // cody repository
 
 // @ts-ignore
-import AgentWorker from './agent.worker.ts?worker&inline'
+import AgentWorker from './agent.worker.ts?worker'
 
 // TODO(sqs): dedupe with agentClient.ts in [experimental Cody CLI](https://github.com/sourcegraph/cody/pull/3418)
 export interface AgentClient {

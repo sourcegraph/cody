@@ -8,10 +8,10 @@ import {
     type Model,
     type ModelContextWindow,
     ModelUsage,
-    ModelsService,
     Typewriter,
     getDotComDefaultModels,
     getSimplePreamble,
+    modelsService,
     pluralize,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -208,7 +208,7 @@ export class CodySourceControl implements vscode.Disposable {
         const text = COMMIT_COMMAND_PROMPTS.instruction.replace('{COMMIT_TEMPLATE}', templatePrompt)
         const transcript: ChatMessage[] = [{ speaker: 'human', text }]
 
-        const promptBuilder = new PromptBuilder(contextWindow)
+        const promptBuilder = await PromptBuilder.create(contextWindow)
         promptBuilder.tryAddToPrefix(preamble)
         promptBuilder.tryAddMessages(transcript.reverse())
 
@@ -232,7 +232,7 @@ export class CodySourceControl implements vscode.Disposable {
     }
 
     public setAuthStatus(_: AuthStatus): void {
-        const models = ModelsService.getModels(ModelUsage.Chat)
+        const models = modelsService.getModels(ModelUsage.Chat)
         const preferredModel = models.find(p => p.model.includes('claude-3-haiku'))
         this.model = preferredModel ?? models[0]
     }

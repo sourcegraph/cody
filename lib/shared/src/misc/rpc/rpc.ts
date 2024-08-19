@@ -1,4 +1,4 @@
-import { isAbortError } from '../../sourcegraph-api/errors'
+import { Observable } from 'observable-fns'
 import type { WebviewToExtensionAPI } from './webviewAPI'
 
 export interface GenericVSCodeWrapper<TWebviewMessage, TExtensionMessage> {
@@ -184,91 +184,52 @@ export function createMessageAPIForWebview<
 const isWebview = Boolean(typeof window !== 'undefined' && window.document?.body)
 
 /**
- * Send a message and return an AsyncGenerator that will emit the responses.
+ * Send a message and return an Observable that will emit the responses.
  */
-async function* callExtensionAPI<T>(
+function callExtensionAPI<T>(
     messageAPI: MessageAPI<RequestMessage, ResponseMessage>,
     method: string,
-    args: unknown[],
-    signal?: AbortSignal
-): AsyncGenerator<T> {
-    const streamId = generateStreamId()
+    args: unknown[]
+): Observable<T> {
+    return new Observable<T>(observer => {
+        const streamId = generateStreamId()
 
-    // Stream state
-    const queue: T[] = []
-    let thrown: unknown
-    let resolve: (() => void) | undefined
-    let reject: ((error: unknown) => void) | undefined
-    let finished = false
+        // Stream state
+        let finished = false
 
-    // Set up a listener for the messages in the response stream.
-    function messageListener({
-        data: { streamId: responseStreamId, streamEvent, data },
-    }: Pick<MessageEvent<ResponseMessage>, 'data'>): void {
-        // If the message is on the stream for this call, emit it.
-        if (responseStreamId === streamId) {
-            switch (streamEvent) {
-                case 'next':
-                    queue.push(data as T)
-                    resolve?.()
-                    resolve = undefined
-                    break
-                case 'error':
-                    thrown = data
-                    reject?.(thrown)
-                    reject = undefined
-                    break
-                case 'complete':
-                    finished = true
-                    resolve?.()
-                    resolve = undefined
-                    break
+        // Set up a listener for the messages in the response stream.
+        function messageListener({
+            data: { streamId: responseStreamId, streamEvent, data },
+        }: Pick<MessageEvent<ResponseMessage>, 'data'>): void {
+            // If the message is on the stream for this call, emit it.
+            if (responseStreamId === streamId) {
+                switch (streamEvent) {
+                    case 'next':
+                        observer.next(data as T)
+                        break
+                    case 'error':
+                        observer.error(data)
+                        break
+                    case 'complete':
+                        finished = true
+                        observer.complete()
+                        break
+                }
             }
         }
-    }
-    messageAPI.addEventListener('message', messageListener)
+        messageAPI.addEventListener('message', messageListener)
 
-    // AbortSignal
-    let removeAbortListener: (() => void) | undefined = undefined
-    if (signal) {
-        const handler = () => {
-            resolve?.()
-            resolve = undefined
-            finished = true
-
-            // Send abort message to peer.
-            logRPCMessage(`W->X: aborting stream ${streamId}`)
-            messageAPI.postMessage({ streamIdToAbort: streamId })
-        }
-        signal.addEventListener('abort', handler)
-        removeAbortListener = () => {
-            signal.removeEventListener('abort', handler)
-        }
-    }
-
-    try {
         messageAPI.postMessage({ streamId, method, args } satisfies RequestMessage)
 
-        // Yield streaming responses.
-        while (true) {
-            if (queue.length > 0) {
-                const value = queue.shift()!
-                yield value
-            } else if (thrown) {
-                throw thrown
-            } else if (finished) {
-                break
-            } else {
-                await new Promise<void>((res, rej) => {
-                    resolve = res
-                    reject = rej
-                })
+        return () => {
+            messageAPI.removeEventListener('message', messageListener)
+            if (!finished) {
+                // Send abort message to peer if the observable is unsubscribed before completion.
+                logRPCMessage(`W->X: aborting stream ${streamId}`)
+                messageAPI.postMessage({ streamIdToAbort: streamId })
             }
         }
-    } finally {
-        messageAPI.removeEventListener('message', messageListener)
-        removeAbortListener?.()
-    }
+    })
 }
 
 /**
@@ -281,11 +242,9 @@ export function proxyExtensionAPI<M extends keyof WebviewToExtensionAPI>(
     if (!isWebview) {
         throw new Error('tried to call extension API function from extension itself')
     }
-    return (...args: any[]): AsyncGenerator<any> => {
-        const nonSignalArgs = args.slice(0, -1)
-        const signal = args.at(-1)
-        logRPCMessage(`X->W: call method=${method} args=${nonSignalArgs}`)
-        return callExtensionAPI(messageAPI, method, nonSignalArgs, signal)
+    return (...args: any[]): Observable<any> => {
+        logRPCMessage(`X->W: call method=${method} args=${JSON.stringify(args)}`)
+        return callExtensionAPI(messageAPI, method, args)
     }
 }
 
@@ -300,6 +259,7 @@ export function addMessageListenersForExtensionAPI(
         throw new Error('must be called from extension')
     }
 
+    const activeListeners: Pick<AbortController, 'abort'>[] = []
     function messageListener({ data }: Pick<MessageEvent<RequestMessage>, 'data'>): void {
         if (!('method' in data)) {
             return
@@ -309,8 +269,16 @@ export function addMessageListenersForExtensionAPI(
             throw new Error('non-AsyncIterator-returning RPC calls are not yet implemented')
         }
 
-        // Listen for abort signal.
         const abortController = new AbortController()
+        activeListeners.push(abortController)
+        function removeFromActiveListeners(): void {
+            const index = activeListeners.indexOf(abortController)
+            if (index !== -1) {
+                activeListeners.splice(index, 1)
+            }
+        }
+
+        // Listen for abort signal from peer.
         function abortListener({ data }: Pick<MessageEvent<RequestMessage>, 'data'>) {
             if (!('streamIdToAbort' in data)) {
                 return
@@ -328,47 +296,52 @@ export function addMessageListenersForExtensionAPI(
 
         const methodImpl = api[method as keyof WebviewToExtensionAPI]
         if (!methodImpl) {
+            removeFromActiveListeners()
             throw new Error(`invalid RPC call for method ${JSON.stringify(method)}`)
         }
-        ;(async () => {
-            try {
-                for await (const value of (methodImpl as any)(...args.concat(abortController.signal))) {
+
+        try {
+            const observable: Observable<unknown> = (methodImpl as any)(...args)
+            const subscription = observable.subscribe({
+                next: value => {
                     messageAPI.postMessage({
                         streamId,
                         streamEvent: 'next',
                         data: value,
                     })
-                }
-                messageAPI.postMessage({ streamId, streamEvent: 'complete' })
-            } catch (error) {
-                if (isAbortError(error)) {
+                },
+                error: error => {
                     messageAPI.postMessage({
                         streamId,
-                        streamEvent: 'complete',
+                        streamEvent: 'error',
+                        data: error instanceof Error ? error.message : String(error),
                     })
-                    return
-                }
-                messageAPI.postMessage({
-                    streamId,
-                    streamEvent: 'error',
-                    data: error instanceof Error ? error.message : String(error),
-                })
-            } finally {
-                disposeAbortListener()
-            }
-        })()
+                },
+                complete: () => {
+                    messageAPI.postMessage({ streamId, streamEvent: 'complete' })
+                },
+            })
+            abortController.signal.addEventListener('abort', () => {
+                subscription.unsubscribe()
+            })
+        } finally {
+            disposeAbortListener()
+            removeFromActiveListeners()
+        }
     }
 
     messageAPI.addEventListener('message', messageListener)
-
     return {
         dispose: () => {
             messageAPI.removeEventListener('message', messageListener)
+            for (const abortController of activeListeners) {
+                abortController.abort()
+            }
         },
     }
 }
 
-const LOG_RPC_MESSAGES = false
+const LOG_RPC_MESSAGES = true
 
 function logRPCMessage(msg: string, ...args: any[]) {
     if (LOG_RPC_MESSAGES) {

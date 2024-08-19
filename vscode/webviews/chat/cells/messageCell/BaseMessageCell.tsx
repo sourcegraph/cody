@@ -1,4 +1,3 @@
-import type { ChatMessage } from '@sourcegraph/cody-shared'
 import type { FunctionComponent } from 'react'
 import { Cell } from '../Cell'
 
@@ -6,16 +5,19 @@ import { Cell } from '../Cell'
  * The base component for messages.
  */
 export const BaseMessageCell: FunctionComponent<{
-    speaker: ChatMessage['speaker']
     speakerIcon?: React.ReactNode
+    speakerTitle?: React.ReactNode
     content: React.ReactNode
     contentClassName?: string
     footer?: React.ReactNode
     className?: string
-}> = ({ speaker, speakerIcon, content, contentClassName, footer, className }) => (
+}> = ({ speakerIcon, speakerTitle, content, contentClassName, footer, className }) => (
     <Cell
-        style={speaker === 'human' ? 'human' : 'assistant'}
-        gutterIcon={speakerIcon}
+        header={
+            <>
+                {speakerIcon} <span className="tw-mt-[-1px] tw-font-semibold">{speakerTitle}</span>
+            </>
+        }
         containerClassName={className}
         contentClassName={contentClassName}
         data-testid="message"
@@ -25,4 +27,4 @@ export const BaseMessageCell: FunctionComponent<{
     </Cell>
 )
 
-export const MESSAGE_CELL_AVATAR_SIZE = 24
+export const MESSAGE_CELL_AVATAR_SIZE = 20

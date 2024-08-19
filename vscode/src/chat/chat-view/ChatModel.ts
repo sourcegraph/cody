@@ -5,11 +5,11 @@ import {
     type ContextItem,
     type Message,
     type ModelContextWindow,
-    ModelsService,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     errorToChatError,
     isCodyIgnoredFile,
+    modelsService,
     serializeChatMessage,
     toRangeData,
 } from '@sourcegraph/cody-shared'
@@ -27,12 +27,12 @@ export class ChatModel {
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
     ) {
-        this.contextWindow = ModelsService.getContextWindowByID(this.modelID)
+        this.contextWindow = modelsService.getContextWindowByID(this.modelID)
     }
 
     public updateModel(newModelID: string) {
         this.modelID = newModelID
-        this.contextWindow = ModelsService.getContextWindowByID(this.modelID)
+        this.contextWindow = modelsService.getContextWindowByID(this.modelID)
     }
 
     public isEmpty(): boolean {
@@ -178,9 +178,6 @@ export class ChatModel {
             chatTitle: this.getCustomChatTitle(),
             lastInteractionTimestamp: this.sessionID,
             interactions,
-
-            // DEPRECATED: Write this for backcompat.
-            chatModel: this.modelID,
         }
         if (this.selectedRepos) {
             result.enhancedContext = {

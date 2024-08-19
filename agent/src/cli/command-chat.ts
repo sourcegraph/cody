@@ -3,7 +3,7 @@ import ora, { type Ora, spinners } from 'ora'
 import path from 'node:path'
 
 import type { Polly } from '@pollyjs/core'
-import { type ContextItem, ModelUsage, TokenCounter } from '@sourcegraph/cody-shared'
+import { type ContextItem, ModelUsage, TokenCounterUtils } from '@sourcegraph/cody-shared'
 import { Command } from 'commander'
 
 import Table from 'easy-table'
@@ -306,7 +306,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     spinner.prefixText = ''
     const elapsed = performance.now() - start
     const replyText = reply.text ?? ''
-    const tokens = TokenCounter.encode(replyText).length
+    const tokens = (await TokenCounterUtils.encode(replyText)).length
     const tokensPerSecond = tokens / (elapsed / 1000)
     spinner.text = spinner.text.trim() + ` (${Math.round(tokensPerSecond)} tokens/second)`
     spinner.clear()

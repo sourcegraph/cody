@@ -1,10 +1,10 @@
 import type { MenuRenderFn } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import {
     type ContextItem,
-    type ContextItemOpenCtx,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     FILE_RANGE_TOOLTIP_LABEL,
+    type MentionMenuData,
     type MentionQuery,
     NO_SYMBOL_MATCHES_HELP_LABEL,
     REMOTE_FILE_PROVIDER_URI,
@@ -19,7 +19,7 @@ import type { setEditorQuery } from '../../plugins/atMentions/atMentions'
 import { contextItemID } from '../../plugins/atMentions/util'
 import styles from './MentionMenu.module.css'
 import { MentionMenuContextItemContent, MentionMenuProviderItemContent } from './MentionMenuItem'
-import type { MentionMenuData, MentionMenuParams } from './useMentionMenuData'
+import type { MentionMenuParams } from './useMentionMenuData'
 
 /**
  * The menu for @-mentioning context in a chat message.
@@ -135,12 +135,11 @@ export const MentionMenu: FunctionComponent<
             // put in the query to search for files. Below we are doing a hack to not set the repo item as a mention
             // but instead keep the same provider selected and put the full repo name in the query. The provider will then
             // return files instead of repos if the repo name is in the query.
-            if (item.provider === 'openctx') {
-                const openCtxItem = item as ContextItemOpenCtx
+            if (item.provider === 'openctx' && 'providerUri' in item) {
                 if (
-                    openCtxItem.providerUri === REMOTE_FILE_PROVIDER_URI &&
-                    openCtxItem.mention?.data?.repoName &&
-                    !openCtxItem.mention?.data?.filePath
+                    item.providerUri === REMOTE_FILE_PROVIDER_URI &&
+                    item.mention?.data?.repoName &&
+                    !item.mention?.data?.filePath
                 ) {
                     // Do not set the selected item as mention if it is repo item from the remote file search provider.
                     // Rather keep the provider in place and update the query with repo name so that the provider can
@@ -151,7 +150,7 @@ export const MentionMenu: FunctionComponent<
                             id: REMOTE_FILE_PROVIDER_URI,
                             title: 'Remote Files',
                             queryLabel: 'Enter file path to search',
-                            emptyLabel: `No matching files found in ${openCtxItem?.mention?.data.repoName} repository`,
+                            emptyLabel: `No matching files found in ${item?.mention?.data.repoName} repository`,
                         },
                     })
 
@@ -165,7 +164,7 @@ export const MentionMenu: FunctionComponent<
                         const cursorPosition = selection.anchorOffset
                         const mentionStart = cursorPosition - mentionQuery.text.length
                         const mentionEndIndex = cursorPosition
-                        const textToInsert = `${openCtxItem.mention?.data?.repoName}:`
+                        const textToInsert = `${item.mention?.data?.repoName}:`
 
                         return [
                             currentText.slice(0, mentionStart) +

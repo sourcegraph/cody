@@ -220,16 +220,20 @@ function sanitizeCodebase(codebase: string | undefined): string {
     return codebase.replace(protocolRegexp, '').trim().replace(trailingSlashRegexp, '')
 }
 
-export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => {
+export function getConfigWithEndpoint(): Omit<ConfigurationWithAccessToken, 'accessToken'> {
     const config = getConfiguration()
     const isTesting = process.env.CODY_TESTING === 'true'
     const serverEndpoint =
         localStorage?.getEndpoint() || (isTesting ? 'http://localhost:49300/' : DOTCOM_URL.href)
+    return { ...config, serverEndpoint }
+}
+
+export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => {
     const accessToken =
         vscode.workspace.getConfiguration().get<string>('cody.accessToken') ||
         (await getAccessToken()) ||
         null
-    return { ...config, accessToken, serverEndpoint }
+    return { ...getConfigWithEndpoint(), accessToken }
 }
 
 function checkValidEnumValues(configName: string, value: string | null): void {

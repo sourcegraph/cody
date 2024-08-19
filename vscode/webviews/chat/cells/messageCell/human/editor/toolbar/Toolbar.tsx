@@ -65,7 +65,7 @@ export const Toolbar: FunctionComponent<{
             aria-hidden={hidden}
             hidden={hidden}
             className={clsx(
-                'tw-flex tw-items-center tw-justify-between tw-flex-wrap-reverse tw-gap-2 [&_>_*]:tw-flex-shrink-0',
+                'tw-flex tw-items-center tw-justify-between tw-flex-wrap-reverse tw-border-t tw-border-t-border tw-gap-2 [&_>_*]:tw-flex-shrink-0',
                 className
             )}
             onMouseDown={onMaybeGapClick}
@@ -74,7 +74,10 @@ export const Toolbar: FunctionComponent<{
             <div className="tw-flex tw-items-center">
                 {/* Can't use tw-gap-1 because the popover creates an empty element when open. */}
                 {onMentionClick && (
-                    <AddContextButton onClick={onMentionClick} className="tw-opacity-60 tw-mr-2" />
+                    <AddContextButton
+                        onClick={onMentionClick}
+                        className="tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2"
+                    />
                 )}
                 <PromptSelectFieldToolbarItem
                     focusEditor={focusEditor}
