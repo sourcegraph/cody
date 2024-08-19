@@ -334,7 +334,7 @@ class WebUIProxy(private val host: WebUIHost, private val browser: JBCefBrowserB
       val browser =
           JBCefBrowserBuilder()
               .apply {
-                setOffScreenRendering(false)
+                setOffScreenRendering(true)
                 // TODO: Make this conditional on running in a debug configuration.
                 setEnableOpenDevToolsMenuItem(true)
               }
