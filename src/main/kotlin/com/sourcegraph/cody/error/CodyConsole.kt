@@ -8,7 +8,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.content.Content
-import com.sourcegraph.cody.agent.protocol.DebugMessage
+import com.sourcegraph.cody.agent.protocol_generated.DebugMessage
 
 @Service(Service.Level.PROJECT)
 class CodyConsole(project: Project) {

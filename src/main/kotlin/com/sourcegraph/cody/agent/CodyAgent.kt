@@ -2,7 +2,6 @@ package com.sourcegraph.cody.agent
 
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.application.ApplicationInfo
-import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
@@ -103,8 +102,7 @@ private constructor(
     fun create(project: Project): CompletableFuture<CodyAgent> {
       try {
         val conn = startAgentProcess()
-        val client = CodyAgentClient(WebUIServiceWebviewProvider(project))
-        client.onSetConfigFeatures = project.service<CurrentConfigFeatures>()
+        val client = CodyAgentClient(project, WebUIServiceWebviewProvider(project))
         val launcher = startAgentLauncher(conn, client)
         val server = launcher.remoteProxy
         val listeningToJsonRpc = launcher.startListening()

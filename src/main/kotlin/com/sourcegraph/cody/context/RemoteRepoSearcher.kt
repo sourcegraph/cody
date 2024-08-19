@@ -7,7 +7,9 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgentException
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.*
+import com.sourcegraph.cody.agent.protocol.RemoteRepoHasParams
+import com.sourcegraph.cody.agent.protocol.RemoteRepoListParams
+import com.sourcegraph.cody.agent.protocol.Repo
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -93,18 +95,5 @@ class RemoteRepoSearcher(private val project: Project) {
       } while (stepDone.get())
     }
     return result
-  }
-
-  private fun fetchDone(state: RemoteRepoFetchState): Boolean {
-    return state.state == "complete" || state.state == "errored"
-  }
-
-  // Callbacks for CodyAgentService
-  fun remoteRepoDidChange() {
-    // Ignore this. `search` uses the earliest available result.
-  }
-
-  fun remoteRepoDidChangeState(state: RemoteRepoFetchState) {
-    // No-op.
   }
 }
