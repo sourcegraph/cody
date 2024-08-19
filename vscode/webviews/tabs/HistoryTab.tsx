@@ -61,7 +61,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
                                             chatID: id,
                                         })
                                     }
-                                    className="tw-text-left tw-truncate"
+                                    className="tw-text-left tw-truncate tw-w-full"
                                 >
                                     <MessageSquareTextIcon
                                         className="tw-w-8 tw-h-8 tw-opacity-80"
