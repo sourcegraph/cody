@@ -67,14 +67,14 @@ export const HumanMessageCell: FunctionComponent<{
 
         return (
             <BaseMessageCell
-                speaker="human"
                 speakerIcon={
                     <UserAvatar
                         user={userInfo.user}
                         size={MESSAGE_CELL_AVATAR_SIZE}
-                        className="tw-mt-[2px]"
+                        sourcegraphGradientBorder={true}
                     />
                 }
+                speakerTitle={userInfo.user.displayName ?? userInfo.user.username}
                 content={
                     <HumanMessageEditor
                         userInfo={userInfo}

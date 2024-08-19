@@ -6,13 +6,42 @@ import styles from './UserAvatar.module.css'
 interface Props {
     user: NonNullable<UserAccountInfo['user']>
     size: number
+    sourcegraphGradientBorder?: boolean
     className?: string
 }
+
+const SOURCEGRAPH_GRADIENT_BORDER_SIZE = 1 /* px */
 
 /**
  * UserAvatar displays the avatar of a user.
  */
-export const UserAvatar: FunctionComponent<Props> = ({ user, size, className }) => {
+export const UserAvatar: FunctionComponent<Props> = ({
+    user,
+    size,
+    sourcegraphGradientBorder,
+    className,
+}) => {
+    const inner = (
+        <InnerUserAvatar
+            user={user}
+            size={sourcegraphGradientBorder ? size - SOURCEGRAPH_GRADIENT_BORDER_SIZE * 2 : size}
+            className={sourcegraphGradientBorder ? undefined : className}
+        />
+    )
+    return sourcegraphGradientBorder ? (
+        <div className={clsx(styles.sourcegraphGradientBorder, 'tw-inline-flex', className)}>
+            {inner}
+        </div>
+    ) : (
+        inner
+    )
+}
+
+const InnerUserAvatar: FunctionComponent<Omit<Props, 'sourcegraphGradientBorder'>> = ({
+    user,
+    size,
+    className,
+}) => {
     const title = user.displayName || user.username
 
     if (user?.avatarURL) {
@@ -32,7 +61,7 @@ export const UserAvatar: FunctionComponent<Props> = ({ user, size, className }) 
 
         return (
             <img
-                className={clsx(styles.userAvatar, className)}
+                className={styles.userAvatar}
                 src={url}
                 role="presentation"
                 title={title}
