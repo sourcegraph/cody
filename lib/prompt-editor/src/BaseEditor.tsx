@@ -46,6 +46,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
     onEnterKey,
 }) => {
     // biome-ignore lint/correctness/useExhaustiveDependencies: We do not want to update initialConfig because LexicalComposer is meant to be an uncontrolled component.
+    console.log("RENINDIENG BASE EDITOR")
     const initialConfig = useMemo<InitialConfigType>(
         () => ({
             namespace: 'BaseEditor',
@@ -60,6 +61,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
 
     return (
         <div className={className}>
+	   Hello World!
             <div className={styles.editor}>
                 <LexicalComposer initialConfig={initialConfig}>
                     <RichTextPlugin

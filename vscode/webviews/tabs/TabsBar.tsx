@@ -151,7 +151,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                     },
                     {
                         view: View.History,
-                        title: 'History',
+                        title: 'Herstory',
                         Icon: HistoryIcon,
                         SubIcons: [
                             {
@@ -221,6 +221,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                 styles.tabsContainer
             )}
         >
+	AJKSFKSDSDFKLSDFS
             <div className="tw-flex tw-gap-1">
                 {tabItems.map(({ Icon, view, command, title, changesView }) => (
                     <Tabs.Trigger key={view} value={view} asChild={true}>

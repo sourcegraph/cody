@@ -56,7 +56,7 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE; setView: (view: V
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-pt-4 tw-px-6 tw-gap-10 tw-transition-all">
             <CollapsiblePanel
                 storageKey="prompts"
-                title="Prompts & Commands"
+                title="Prompts & Commands. ETC"
                 className="tw-mb-6 tw-mt-2"
                 contentClassName="!tw-p-0 tw-overflow-clip"
                 initialOpen={true}

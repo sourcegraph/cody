@@ -25,7 +25,8 @@ export const OnFocusChangePlugin: FunctionComponent<{ onFocusChange: (focused: b
             editor.registerCommand(
                 BLUR_COMMAND,
                 () => {
-                    onFocusChange(false)
+                    // onFocusChange(false)
+		    console.log("SKIPPING BLUR!!!")
                     return false
                 },
                 COMMAND_PRIORITY_NORMAL
