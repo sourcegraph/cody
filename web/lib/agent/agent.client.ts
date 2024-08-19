@@ -1,4 +1,4 @@
-import type { ServerInfo } from 'cody-ai/src/jsonrpc/agent-protocol'
+import type { ClientInfo, ServerInfo } from 'cody-ai/src/jsonrpc/agent-protocol'
 import {
     BrowserMessageReader,
     BrowserMessageWriter,
@@ -15,7 +15,7 @@ import {
 // cody repository
 
 // @ts-ignore
-import AgentWorker from './agent.worker.ts?worker&inline'
+import AgentWorker from './agent.worker.ts?worker'
 
 // TODO(sqs): dedupe with agentClient.ts in [experimental Cody CLI](https://github.com/sourcegraph/cody/pull/3418)
 export interface AgentClient {
@@ -80,6 +80,7 @@ export async function createAgentClient({
         workspaceRootUri,
         capabilities: {
             completions: 'none',
+            webview: 'agentic',
         },
         extensionConfiguration: {
             accessToken,
@@ -92,7 +93,7 @@ export async function createAgentClient({
                 'cody.web': true,
             },
         },
-    })
+    } satisfies ClientInfo)
 
     await rpc.sendNotification('initialized', null)
 

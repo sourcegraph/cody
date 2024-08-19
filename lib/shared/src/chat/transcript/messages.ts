@@ -31,10 +31,6 @@ export interface ChatMessage extends Message {
 
     /**
      * The model used to generate this chat message response. Not set on human messages.
-     *
-     * NOTE: The chat model used to be a property of the entire chat session and was not changeable
-     * after the chat session had begun. Now that field, {@link SerializedChatTranscript.chatModel},
-     * is deprecated, and this field should be used instead.
      */
     model?: string
 }

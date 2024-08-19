@@ -12,34 +12,18 @@ interface Scroller {
     getClientHeight: () => number
 }
 
-// Chat UI could be run in different modes, in VSCode the whole chat
-// is rendered within scrollable iframe, and it scrolls down button should
-// listen and work with window updates,In Cody Web (and possible in other
-// clients) chat might be rendered in arbitrary scrollable element.
-// This Scroller API helps to observe complexity of both cases and provides
-// unified API to work with different root elements.
-function createScrollerAPI(element: HTMLElement | null | undefined): Scroller {
-    if (element) {
-        return {
-            root: element,
-            getObserveElement: () => element.children[0],
-            getScrollTop: () => element.scrollTop,
-            getScrollHeight: () => element.scrollHeight,
-            getClientHeight: () => element.getBoundingClientRect().height,
-        }
-    }
-
+function createScrollerAPI(element: HTMLElement): Scroller {
     return {
-        root: window,
-        getObserveElement: () => window.document.body,
-        getScrollTop: () => window.scrollY,
-        getScrollHeight: () => window.document.body.scrollHeight,
-        getClientHeight: () => window.innerHeight,
+        root: element,
+        getObserveElement: () => element.firstElementChild!,
+        getScrollTop: () => element.scrollTop,
+        getScrollHeight: () => element.scrollHeight,
+        getClientHeight: () => element.getBoundingClientRect().height,
     }
 }
 
 interface ScrollDownProps {
-    scrollableParent?: HTMLElement | null
+    scrollableParent: HTMLElement
     onClick?: () => void
 }
 

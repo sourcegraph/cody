@@ -177,23 +177,39 @@ export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments)
                 .map(wf => wf.uri.toString())
                 .includes(newWorkspaceDocuments.workspaceRootUri.toString())
         ) {
-            setWorkspaceFolders(newWorkspaceDocuments.workspaceRootUri)
+            setLastOpenedWorkspaceFolder(newWorkspaceDocuments.workspaceRootUri)
         }
     }
 }
 
-export function setWorkspaceFolders(workspaceRootUri: vscode.Uri): vscode.WorkspaceFolder[] {
-    // TODO: Update this when we support multiple workspace roots
-    while (workspaceFolders.pop()) {
-        // clear workspaceFolders array
+// Add/move the last opened workspace folder to the front of the workspace folders list.
+function setLastOpenedWorkspaceFolder(uri: vscode.Uri): void {
+    const currentWorkspaceFolders = workspaceFolders.map(wf => wf.uri)
+    if (currentWorkspaceFolders[0]?.toString() !== uri.toString()) {
+        setWorkspaceFolders([uri, ...currentWorkspaceFolders])
     }
+}
 
-    workspaceFolders.push({
-        name: path.basename(workspaceRootUri.toString()),
-        uri: workspaceRootUri,
-        index: 0,
-    })
-
+// Sets the workspace folders for the current workspace.
+// This function updates the `workspaceFolders` array to reflect the provided `workspaceRootFolders`.
+// It ensures that the last opened workspace folder is moved to the front of the list if it exists
+// in the new list of folders for "vscode.workspace.workspaceFolders[0]" to return the current workspace folder.
+export function setWorkspaceFolders(workspaceRootFolders: vscode.Uri[]): vscode.WorkspaceFolder[] {
+    const lastOpened = workspaceFolders[0]
+    const rootFolderSet = new Set(workspaceRootFolders)
+    workspaceFolders.length = 0
+    if (lastOpened && rootFolderSet.has(lastOpened.uri)) {
+        workspaceFolders.push(lastOpened)
+        rootFolderSet.delete(lastOpened.uri)
+    }
+    let index = workspaceFolders.length
+    for (const folder of rootFolderSet) {
+        workspaceFolders.push({
+            name: path.basename(folder.toString()),
+            uri: folder,
+            index: index++,
+        })
+    }
     return workspaceFolders
 }
 
@@ -613,6 +629,9 @@ const _window: typeof vscode.window = {
         provider: vscode.WebviewViewProvider,
         options?: { webviewOptions?: { retainContextWhenHidden?: boolean } }
     ) => {
+        if (agent?.capabilities?.webview !== 'native') {
+            return emptyDisposable
+        }
         agent?.webviewViewProviders.set(viewId, provider)
         options ??= {
             webviewOptions: undefined,
@@ -752,8 +771,12 @@ const _window: typeof vscode.window = {
         throw new Error('Not implemented: vscode.window.showOpenDialog')
     },
     showSaveDialog: () => {
-        console.log(new Error().stack)
-        throw new Error('Not implemented: vscode.window.showSaveDialog')
+        if (agent) {
+            return agent.request('window/showSaveDialog', null).then(result => {
+                return result ? Uri.parse(result) : undefined
+            })
+        }
+        return Promise.resolve(undefined)
     },
     showInputBox: () => {
         console.log(new Error().stack)
@@ -914,16 +937,22 @@ const _commands: Partial<typeof vscode.commands> = {
             }
         })
     },
-    executeCommand: (command, args) => {
+    executeCommand: (command, ...args) => {
         const registered = registeredCommands.get(command)
         if (registered) {
             try {
-                if (args) {
-                    if (typeof args === 'object' && typeof args[Symbol.iterator] === 'function') {
-                        return promisify(registered.callback(...args))
+                // Handle the case where a single object is passed
+                if (args.length === 1) {
+                    if (typeof args[0] === 'object' && typeof args[0][Symbol.iterator] === 'function') {
+                        return promisify(registered.callback(...args[0]))
                     }
-                    return promisify(registered.callback(args))
+                    return promisify(registered.callback(args[0]))
                 }
+                // Handle multiple arguments or a single non-object argument
+                if (args?.length > 1) {
+                    return promisify(registered.callback(...args))
+                }
+                // Handle command with no argument
                 return promisify(registered.callback())
             } catch (error) {
                 console.error(error)
@@ -947,6 +976,7 @@ _commands?.registerCommand?.('setContext', (key, value) => {
         throw new TypeError(`setContext: first argument must be string. Got: ${key}`)
     }
     context.set(key, value)
+    agent?.notify('window/didChangeContext', { key, value: value.toString() })
 })
 _commands?.registerCommand?.('vscode.executeFoldingRangeProvider', async uri => {
     const promises: vscode.FoldingRange[] = []
@@ -968,6 +998,9 @@ _commands?.registerCommand?.('vscode.executeDocumentSymbolProvider', uri => {
     // symbols. However, the test cases show that we may want to incorporate
     // document symbol data to improve the quality of the inferred selection
     // location.
+    return Promise.resolve([])
+})
+_commands?.registerCommand?.('vscode.executeWorkspaceSymbolProvider', query => {
     return Promise.resolve([])
 })
 _commands?.registerCommand?.('vscode.executeFormatDocumentProvider', uri => {

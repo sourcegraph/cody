@@ -1,4 +1,4 @@
-import { type Model, ModelUsage, ModelsService } from '@sourcegraph/cody-shared'
+import { type Model, ModelUsage, modelsService } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { localStorage } from '../services/LocalStorageProvider'
@@ -37,7 +37,7 @@ export function migrateAndNotifyForOutdatedModels(model: string | null): string 
     // Claude 2 to Claude 3 migration.
     const newModel = 'anthropic/claude-3-5-sonnet-20240620'
     // Verify that the new model is available before migrating.
-    if (ModelsService.getModelByID(newModel)) {
+    if (modelsService.getModelByID(newModel)) {
         showNotificationIfNotShownYet(
             'Claude 2 model support has been removed in favor of the newer Claude 3 models. All chats that used Claude 2 have been upgraded to Claude 3.',
             'claude2-migration-notification-shown'

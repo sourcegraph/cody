@@ -39,10 +39,8 @@ export async function createLocalEmbeddingsController(
         (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEmbeddingsGenerateMetadata))
             ? sourcegraphMetadataModelConfig
             : sourcegraphModelConfig
-    const autoIndexingEnabled = await featureFlagProvider.evaluateFeatureFlag(
-        FeatureFlag.CodyEmbeddingsAutoIndexing
-    )
-    return new LocalEmbeddingsController(context, config, modelConfig, autoIndexingEnabled)
+
+    return new LocalEmbeddingsController(context, config, modelConfig)
 }
 
 export type LocalEmbeddingsConfig = Pick<
@@ -136,8 +134,7 @@ export class LocalEmbeddingsController
     constructor(
         private readonly context: vscode.ExtensionContext,
         config: LocalEmbeddingsConfig,
-        private readonly modelConfig: EmbeddingsModelConfig,
-        private readonly autoIndexingEnabled: boolean
+        private readonly modelConfig: EmbeddingsModelConfig
     ) {
         logDebug('LocalEmbeddingsController', 'constructor')
         this.disposables.push(this.changeEmitter, this.statusEmitter)
@@ -637,7 +634,7 @@ export class LocalEmbeddingsController
 
     // Check if auto-indexing is enabled and if we're using the Sourcegraph provider.
     private canAutoIndex(): boolean {
-        return this.autoIndexingEnabled && this.modelConfig.provider === 'sourcegraph'
+        return this.modelConfig.provider === 'sourcegraph'
     }
 
     private updateIssueStatusBar(): void {

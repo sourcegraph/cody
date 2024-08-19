@@ -2,18 +2,15 @@ import { CodyIDE } from '@sourcegraph/cody-shared'
 import { useCallback } from 'react'
 import { URI } from 'vscode-uri'
 import { ACCOUNT_USAGE_URL } from '../../src/chat/protocol'
-import type { UserAccountInfo } from '../Chat'
 import { MESSAGE_CELL_AVATAR_SIZE } from '../chat/cells/messageCell/BaseMessageCell'
 import { UserAvatar } from '../components/UserAvatar'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-
-interface AccountTabProps {
-    userInfo: UserAccountInfo
-}
+import { useUserAccountInfo } from '../utils/useConfig'
 
 // TODO: Implement the AccountTab component once the design is ready.
-export const AccountTab: React.FC<AccountTabProps> = ({ userInfo }) => {
+export const AccountTab: React.FC = () => {
+    const userInfo = useUserAccountInfo()
     const { user, isCodyProUser, isDotComUser, ide } = userInfo
     const { displayName, username, primaryEmail, endpoint } = user
 
@@ -40,7 +37,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({ userInfo }) => {
         },
         {
             text: 'Sign Out',
-            onClick: () => getVSCodeAPI().postMessage({ command: 'command', id: 'cody.auth.signout' }),
+            onClick: () => getVSCodeAPI().postMessage({ command: 'auth', authKind: 'signout' }),
         },
     ]
 

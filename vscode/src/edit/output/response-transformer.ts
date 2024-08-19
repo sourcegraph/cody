@@ -30,6 +30,9 @@ const MARKDOWN_CODE_BLOCK_REGEX = new RegExp(
     'g'
 )
 
+const LEADING_SPACES_AND_NEW_LINES = /^\s*\n/
+const LEADING_SPACES = /^[ ]+/
+
 /**
  * Given the LLM response for a FixupTask, transforms the response
  * to make it suitable to insert as code.
@@ -47,11 +50,18 @@ export function responseTransformer(
         .replaceAll(MARKDOWN_CODE_BLOCK_REGEX, block =>
             block.replace(MARKDOWN_CODE_BLOCK_START, '').replace(MARKDOWN_CODE_BLOCK_END, '')
         )
-        // Trim any leading or trailing spaces
-        .replace(/^\s*\n/, '')
+
+    // Trim leading spaces
+    // - For `add` insertions, the LLM will attempt to continue the code from the position of the cursor, we handle the `insertionPoint`
+    //   but we should preserve new lines as they may be valuable for spacing
+    // - For other edits, we already trim the selection to exclude padded whitespace, we only want the start of the incoming text
+    const trimmedText =
+        task.intent === 'add'
+            ? strippedText.replace(LEADING_SPACES, '')
+            : strippedText.replace(LEADING_SPACES_AND_NEW_LINES, '')
 
     // Strip the response of any remaining HTML entities such as &lt; and &gt;
-    const decodedText = decode(strippedText)
+    const decodedText = decode(trimmedText)
 
     if (!isMessageInProgress) {
         if (task.mode === 'insert') {

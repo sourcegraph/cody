@@ -35,11 +35,14 @@ export class PromptBuilder {
      */
     public contextItems: ContextItem[] = []
 
-    private tokenCounter: TokenCounter
-
-    constructor(contextWindow: ModelContextWindow) {
-        this.tokenCounter = new TokenCounter(contextWindow)
+    /**
+     * Convenience constructor because loading the tokenizer is async due to its large size.
+     */
+    public static async create(contextWindow: ModelContextWindow): Promise<PromptBuilder> {
+        return new PromptBuilder(await TokenCounter.create(contextWindow))
     }
+
+    private constructor(private readonly tokenCounter: TokenCounter) {}
 
     public build(): Message[] {
         if (this.contextItems.length > 0) {

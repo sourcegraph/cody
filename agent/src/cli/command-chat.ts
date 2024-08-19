@@ -1,12 +1,14 @@
-import ora, { spinners } from 'ora'
+import ora, { type Ora, spinners } from 'ora'
 
 import path from 'node:path'
 
 import type { Polly } from '@pollyjs/core'
-import { type ContextItem, ModelUsage, TokenCounter } from '@sourcegraph/cody-shared'
+import { type ContextItem, ModelUsage, TokenCounterUtils } from '@sourcegraph/cody-shared'
 import { Command } from 'commander'
 
+import Table from 'easy-table'
 import * as vscode from 'vscode'
+import type { ExtensionTranscriptMessage } from '../../../vscode/src/chat/protocol'
 import { activate } from '../../../vscode/src/extension.node'
 import { startPollyRecording } from '../../../vscode/src/testutils/polly'
 import packageJson from '../../package.json'
@@ -33,6 +35,7 @@ export interface ChatOptions {
     debug: boolean
     silent: boolean
     isTesting?: boolean
+    ignoreContextWindowErrors: boolean
     streams?: Streams
 }
 
@@ -74,6 +77,11 @@ Enterprise Only:
         )
         .option('--context-file <files...>', 'Local files to include in the context')
         .option('--show-context', 'Show context items in reply', false)
+        .option(
+            '--ignore-context-window-errors',
+            'If true, does not fail fast when a context file is too large to fit into the LLMs context window',
+            false
+        )
         .option('--silent', 'Disable streaming reply', false)
         .option('--debug', 'Enable debug logging', false)
         .action(async (options: ChatOptions, cmd) => {
@@ -149,8 +157,19 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         })
     }
 
+    if (!serverInfo.authStatus?.isLoggedIn) {
+        notLoggedIn(spinner)
+        return 1
+    }
+
+    const endpoint = serverInfo.authStatus.endpoint ?? options.endpoint
+    const tokenSource = new vscode.CancellationTokenSource()
+    const token = tokenSource.token
+
+    let isFirstMessageCheck = true
+
     messageHandler.registerNotification('webview/postMessage', message => {
-        if (message.message.type === 'transcript') {
+        if (message.message.type === 'transcript' && !token.isCancellationRequested) {
             const lastMessage = message.message.messages.at(-1)
             if (lastMessage?.model && !spinner.text.startsWith('Model')) {
                 const modelName =
@@ -159,13 +178,17 @@ export async function chatAction(options: ChatOptions): Promise<number> {
                 spinner.spinner = spinners.dots
             }
             spinner.prefixText = (lastMessage?.text ?? '') + '\n'
+
+            if (isFirstMessageCheck && !options.ignoreContextWindowErrors) {
+                const contextFiles = message.message.messages.at(0)?.contextFiles
+                if (contextFiles && contextFiles.length > 0) {
+                    isFirstMessageCheck = false
+                }
+
+                validateContext(message.message, spinner, endpoint, tokenSource)
+            }
         }
     })
-
-    if (!serverInfo.authStatus?.isLoggedIn) {
-        notLoggedIn(spinner)
-        return 1
-    }
 
     spinner.text = 'Asking Cody...'
     const id = await client.request('chat/new', null)
@@ -239,16 +262,24 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         return 1
     }
     const addEnhancedContext = isNonEmptyArray(options.contextRepo)
-    const response = await client.request('chat/submitMessage', {
-        id,
-        message: {
-            command: 'submit',
-            submitType: 'user',
-            text: messageText,
-            contextFiles,
-            addEnhancedContext,
+    const response = await client.request(
+        'chat/submitMessage',
+        {
+            id,
+            message: {
+                command: 'submit',
+                submitType: 'user',
+                text: messageText,
+                contextFiles,
+                addEnhancedContext,
+            },
         },
-    })
+        { token: tokenSource.token }
+    )
+
+    if (token.isCancellationRequested) {
+        return 1
+    }
 
     if (response.type !== 'transcript') {
         spinner.fail(
@@ -275,21 +306,16 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     spinner.prefixText = ''
     const elapsed = performance.now() - start
     const replyText = reply.text ?? ''
-    const tokens = TokenCounter.encode(replyText).length
+    const tokens = (await TokenCounterUtils.encode(replyText)).length
     const tokensPerSecond = tokens / (elapsed / 1000)
     spinner.text = spinner.text.trim() + ` (${Math.round(tokensPerSecond)} tokens/second)`
     spinner.clear()
 
     if (options.showContext) {
-        const reponseContextFiles = response.messages.flatMap(m => m.contextFiles ?? [])
+        const responseContextFiles = response.messages.flatMap(m => m.contextFiles ?? [])
         streams.log('> Context items:\n')
-        for (const [i, item] of reponseContextFiles.entries()) {
-            const uri = vscode.Uri.from(item.uri as any)
-            const endpoint = serverInfo.authStatus.endpoint ?? options.endpoint
-            // Workaround for strange URI authority resopnse, reported in
-            // https://sourcegraph.slack.com/archives/C05AGQYD528/p1721382757890889
-            const remoteURL = new URL(uri.path, endpoint).toString()
-            const displayText = uri.scheme === 'file' ? uri.fsPath : remoteURL
+        for (const [i, item] of responseContextFiles.entries()) {
+            const displayText = uriDisplayText(item, endpoint)
             streams.log(`> ${i + 1}. ${displayText}\n`)
         }
         streams.log('\n')
@@ -298,6 +324,14 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     await client.request('shutdown', null)
     spinner.succeed()
     return 0
+}
+
+function uriDisplayText(item: ContextItem, endpoint: string): string {
+    const uri = vscode.Uri.from(item.uri as any)
+    // Workaround for strange URI authority resopnse, reported in
+    // https://sourcegraph.slack.com/archives/C05AGQYD528/p1721382757890889
+    const remoteURL = new URL(uri.path, endpoint).toString()
+    return uri.scheme === 'file' ? uri.fsPath : remoteURL
 }
 
 function toUri(dir: string, relativeOrAbsolutePath: string): vscode.Uri {
@@ -345,4 +379,33 @@ async function readStdin(): Promise<string> {
         })
         process.stdin.on('error', reject)
     })
+}
+
+function validateContext(
+    message: ExtensionTranscriptMessage,
+    spinner: Ora,
+    endpoint: string,
+    tokenSource: vscode.CancellationTokenSource
+): void {
+    const tooLargeItems = message.messages.flatMap(messages =>
+        (messages.contextFiles ?? []).filter(item => item.isTooLarge)
+    )
+    if (tooLargeItems.length > 0) {
+        const t = new Table()
+        for (const item of tooLargeItems) {
+            t.cell('File', uriDisplayText(item, endpoint))
+            t.cell('Reason', item.isTooLargeReason)
+            t.newRow()
+        }
+        spinner.text = ''
+        spinner.prefixText = ''
+        spinner.fail(
+            'The provided context is too large to fit into the context window. \n' +
+                'To fix this problem, either remove the files from --context-file or\n' +
+                'edit these files so they become small enough to fit into the context window.\n' +
+                'Alternatively, set the flag --ignore-context-window-errors to skip this check.\n\n' +
+                t.toString()
+        )
+        tokenSource.cancel()
+    }
 }

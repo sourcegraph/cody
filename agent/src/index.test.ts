@@ -320,6 +320,7 @@ describe('Agent', () => {
                     messages: [
                         { text: 'What model are you?', speaker: 'human', contextFiles: [] },
                         {
+                            model: 'anthropic/claude-2.0',
                             text: " I'm Claude, an AI assistant created by Anthropic.",
                             speaker: 'assistant',
                         },
@@ -335,7 +336,6 @@ describe('Agent', () => {
                 const myDate = new Date(date.getTime() + index * 60 * 1000).toISOString()
 
                 expect(result.transcript).toMatchInlineSnapshot(`{
-  "chatModel": "anthropic/claude-2.0",
   "id": "${myDate}",
   "interactions": [
     {
@@ -370,9 +370,9 @@ describe('Agent', () => {
             // is not a git directory and symf reports some git-related error.
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "Certainly! Here's a Dog class that implements the Animal interface:
+              "Certainly! Here's a Dog class that implements the Animal interface based on the context provided:
 
-              \`\`\`typescript
+              \`\`\`typescript:src/animal.ts
               export class Dog implements Animal {
                   name: string;
                   isMammal: boolean = true;
@@ -387,7 +387,7 @@ describe('Agent', () => {
               }
               \`\`\`
 
-              This class fulfills all the requirements of the Animal interface defined in your workspace."
+              This implementation satisfies the Animal interface requirements as defined in your workspace."
             `,
                 explainPollyError
             )

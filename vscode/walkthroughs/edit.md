@@ -2,7 +2,7 @@
 
 <!-- todo -->
 
-You can ask Cody to perform code edits using the Edit Code command. This will edit code according to your instructions, giving you the chance to retry the edit with a new prompt, undo, or accept the change.
+You can ask Cody to perform code edits using the Edit Code command. This will edit code according to your instructions, giving you the chance to retry the edit with a new prompt, undo, accept, or reject the change(s).
 
 To get started: select code in your editor, right click, and choose "Cody → Edit Code".
 

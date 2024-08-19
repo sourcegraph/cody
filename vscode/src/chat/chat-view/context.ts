@@ -6,13 +6,11 @@ import {
     type ContextItemRepository,
     ContextItemSource,
     type ContextItemTree,
-    FeatureFlag,
     MAX_BYTES_PER_FILE,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
     type PromptString,
     type Result,
-    featureFlagProvider,
     isAbortError,
     isFileURI,
     truncateTextNearestLine,
@@ -136,36 +134,6 @@ export async function resolveContext({
         const priorityContext = await getPriorityContext(input.text, editor, allContext)
         return priorityContext.concat(allContext)
     })
-}
-
-export async function getContextStrategy(
-    defaultStrategy: ConfigurationUseContext
-): Promise<ConfigurationUseContext> {
-    // Only run experiment if we're in VS Code
-    if (vscode.workspace.getConfiguration().get<boolean>('cody.advanced.agent.running', false)) {
-        return defaultStrategy
-    }
-
-    const [isEnhancedContextExperiment, useEmbeddings, useSymf] = await Promise.all([
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEnhancedContextExperiment),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEnhancedContexUseEmbeddings),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEnhancedContextUseSymf),
-    ])
-
-    if (!isEnhancedContextExperiment) {
-        return defaultStrategy
-    }
-
-    if (useEmbeddings && useSymf) {
-        return 'blended'
-    }
-    if (useEmbeddings) {
-        return 'embeddings'
-    }
-    if (useSymf) {
-        return 'keyword'
-    }
-    return 'none'
 }
 
 async function searchRemote(

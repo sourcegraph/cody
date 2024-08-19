@@ -5,9 +5,9 @@ import {
     ClientConfigSingleton,
     Model,
     ModelUsage,
-    ModelsService,
     RestClient,
     getDotComDefaultModels,
+    modelsService,
 } from '@sourcegraph/cody-shared'
 import type { ServerModelConfiguration } from '@sourcegraph/cody-shared/src/models'
 import { ModelTag } from '@sourcegraph/cody-shared/src/models/tags'
@@ -26,15 +26,15 @@ import { getEnterpriseContextWindow } from './utils'
  */
 export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // Offline mode only support Ollama models, which would be synced seperately.
-    ModelsService.setAuthStatus(authStatus)
+    modelsService.setAuthStatus(authStatus)
     if (authStatus.isOfflineMode) {
-        ModelsService.setModels([])
+        modelsService.setModels([])
         return
     }
 
     // If you are not authenticated, you cannot use Cody. Sorry.
     if (!authStatus.authenticated) {
-        ModelsService.setModels([])
+        modelsService.setModels([])
         return
     }
 
@@ -47,7 +47,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
         const serverSideModels = await fetchServerSideModels(authStatus.endpoint || '')
         // If the request failed, fall back to using the default models
         if (serverSideModels) {
-            ModelsService.setServerSentModels(serverSideModels)
+            modelsService.setServerSentModels(serverSideModels)
             // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't entirely make sense in
             // a world where LLM models are managed server-side. However, this is how Cody can be extended
             // to use locally running LLMs such as Ollama. (Though some more testing is needed.)
@@ -60,7 +60,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // If you are connecting to Sourcegraph.com, we use the Cody Pro set of models.
     // (Only some of them may not be available if you are on the Cody Free plan.)
     if (authStatus.isDotCom) {
-        ModelsService.setModels(getDotComDefaultModels())
+        modelsService.setModels(getDotComDefaultModels())
         registerModelsFromVSCodeConfiguration()
         return
     }
@@ -75,7 +75,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // NOTE: If authStatus?.configOverwrites?.chatModel is empty,
     // automatically fallback to use the default model configured on the instance.
     if (authStatus?.configOverwrites?.chatModel) {
-        ModelsService.setModels([
+        modelsService.setModels([
             new Model({
                 model: authStatus.configOverwrites.chatModel,
                 // TODO (umpox) Add configOverwrites.editModel for separate edit support
@@ -89,9 +89,9 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
         ])
     } else {
         // If the enterprise instance didn't have any configuration data for Cody,
-        // clear the models available in the ModelsService. Otherwise there will be
+        // clear the models available in the modelsService. Otherwise there will be
         // stale, defunct models available.
-        ModelsService.setModels([])
+        modelsService.setModels([])
     }
 }
 
@@ -106,7 +106,7 @@ interface ChatModelProviderConfig {
 
 /**
  * Adds any Models defined by the Visual Studio "cody.dev.models" configuration into the
- * ModelsService. This provides a way to interact with models not hard-coded by default.
+ * modelsService. This provides a way to interact with models not hard-coded by default.
  *
  * NOTE: DotCom Connections only as model options are not available for Enterprise
  * BUG: This does NOT make any model changes based on the "cody.dev.useServerDefinedModels".
@@ -120,7 +120,7 @@ export function registerModelsFromVSCodeConfiguration() {
         return
     }
 
-    ModelsService.addModels(
+    modelsService.addModels(
         modelsConfig.map(
             m =>
                 new Model({

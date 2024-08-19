@@ -3,7 +3,6 @@ import { type ComponentProps, useCallback, useEffect, useMemo, useState } from '
 import styles from './App.module.css'
 
 import {
-    type AuthStatus,
     type ChatMessage,
     type ClientStateForWebview,
     CodyIDE,
@@ -12,10 +11,8 @@ import {
     PromptString,
     type SerializedChatTranscript,
     type TelemetryRecorder,
-    isCodyProUser,
 } from '@sourcegraph/cody-shared'
-import type { AuthMethod, ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
-import type { UserAccountInfo } from './Chat'
+import type { AuthMethod } from '../src/chat/protocol'
 import { LoadingPage } from './LoadingPage'
 import { LoginSimplified } from './OnboardingExperiment'
 import { ConnectionIssuesPage } from './Troubleshooting'
@@ -35,14 +32,11 @@ import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './util
 import { type Config, ConfigProvider } from './utils/useConfig'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
-    const [view, setView] = useState<View | undefined>()
+    const [config, setConfig] = useState<Config | null>(null)
+    const [view, setView] = useState<View>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
 
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
-
-    const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
-    const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
 
     const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
 
@@ -50,10 +44,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
     const [chatModels, setChatModels] = useState<Model[]>()
-
-    const [chatEnabled, setChatEnabled] = useState<boolean>(true)
-    const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
-    const [serverSentModelsEnabled, setServerSentModelsEnabled] = useState<boolean>(false)
 
     const [clientState, setClientState] = useState<ClientStateForWebview>({
         initialContext: [],
@@ -99,27 +89,13 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     }
                     case 'config':
-                        setConfig(message.config)
-                        setAuthStatus(message.authStatus)
-                        setUserAccountInfo({
-                            isCodyProUser: isCodyProUser(message.authStatus),
-                            // Receive this value from the extension backend to make it work
-                            // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
-                            isDotComUser: message.authStatus.isDotCom,
-                            user: message.authStatus,
-                            ide: message.config.agentIDE ?? CodyIDE.VSCode,
-                        })
+                        setConfig(message)
                         setView(message.authStatus.isLoggedIn ? View.Chat : View.Login)
                         updateDisplayPathEnvInfoForWebview(message.workspaceFolderUris)
                         // Get chat models
                         if (message.authStatus.isLoggedIn) {
                             vscodeAPI.postMessage({ command: 'get-chat-models' })
                         }
-                        break
-                    case 'setConfigFeatures':
-                        setChatEnabled(message.configFeatures.chat)
-                        setAttributionEnabled(message.configFeatures.attribution)
-                        setServerSentModelsEnabled(message.configFeatures.serverSentModels)
                         break
                     case 'history':
                         setUserHistory(Object.values(message.localHistory?.chat ?? {}))
@@ -216,61 +192,58 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [vscodeAPI]
     )
     const chatModelContext = useMemo<ChatModelContext>(
-        () => ({ chatModels, onCurrentChatModelChange, serverSentModelsEnabled }),
-        [chatModels, onCurrentChatModelChange, serverSentModelsEnabled]
+        () => ({
+            chatModels,
+            onCurrentChatModelChange,
+            serverSentModelsEnabled: config?.configFeatures.serverSentModels,
+        }),
+        [chatModels, onCurrentChatModelChange, config]
     )
 
     const wrappers = useMemo<Wrapper[]>(
-        () =>
-            getAppWrappers(
-                vscodeAPI,
-                telemetryRecorder,
-                chatModelContext,
-                clientState,
-                config && authStatus ? { config, authStatus } : undefined
-            ),
-        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, config, authStatus]
+        () => getAppWrappers(vscodeAPI, telemetryRecorder, chatModelContext, clientState, config),
+        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, config]
     )
 
     // Wait for all the data to be loaded before rendering Chat View
-    if (!view || !authStatus || !config || !userHistory) {
+    if (!view || !config || !userHistory) {
         return <LoadingPage />
     }
 
     return (
         <ComposedWrappers wrappers={wrappers}>
-            {authStatus.showNetworkError ? (
+            {config.authStatus.showNetworkError ? (
                 <div className={styles.outerContainer}>
                     <ConnectionIssuesPage
-                        configuredEndpoint={authStatus.endpoint}
+                        configuredEndpoint={config.authStatus.endpoint}
                         vscodeAPI={vscodeAPI}
                     />
                 </div>
-            ) : view === View.Login || !authStatus.isLoggedIn || !userAccountInfo ? (
+            ) : view === View.Login || !config.authStatus.isLoggedIn ? (
                 <div className={styles.outerContainer}>
                     <LoginSimplified
                         simplifiedLoginRedirect={loginRedirect}
-                        uiKindIsWeb={config.uiKindIsWeb}
+                        uiKindIsWeb={config.config.uiKindIsWeb}
                         vscodeAPI={vscodeAPI}
+                        codyIDE={config.config.agentIDE ?? CodyIDE.VSCode}
                     />
                 </div>
             ) : (
                 <CodyPanel
                     view={view}
                     setView={setView}
-                    config={config}
+                    config={config.config}
                     errorMessages={errorMessages}
                     setErrorMessages={setErrorMessages}
-                    attributionEnabled={attributionEnabled}
-                    chatEnabled={chatEnabled}
-                    userInfo={userAccountInfo}
+                    attributionEnabled={config.configFeatures.attribution}
+                    chatEnabled={config.configFeatures.chat}
                     messageInProgress={messageInProgress}
                     transcript={transcript}
                     vscodeAPI={vscodeAPI}
                     isTranscriptError={isTranscriptError}
                     guardrails={guardrails}
                     userHistory={userHistory}
-                    experimentalSmartApplyEnabled={config.experimentalSmartApply}
+                    experimentalSmartApplyEnabled={config.config.experimentalSmartApply}
                 />
             )}
         </ComposedWrappers>
@@ -282,7 +255,7 @@ export function getAppWrappers(
     telemetryRecorder: TelemetryRecorder,
     chatModelContext: ChatModelContext,
     clientState: ClientStateForWebview,
-    config: Config | undefined
+    config: Config | null
 ): Wrapper[] {
     return [
         {

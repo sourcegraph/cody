@@ -1,6 +1,6 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import type React from 'react'
-import type { ComponentProps, FunctionComponent } from 'react'
+import { type ComponentProps, type FunctionComponent, useRef } from 'react'
 import type { ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 import styles from './App.module.css'
 import { Chat } from './Chat'
@@ -21,7 +21,6 @@ export const CodyPanel: FunctionComponent<
     } & Pick<
         ComponentProps<typeof Chat>,
         | 'chatEnabled'
-        | 'userInfo'
         | 'messageInProgress'
         | 'transcript'
         | 'vscodeAPI'
@@ -29,7 +28,6 @@ export const CodyPanel: FunctionComponent<
         | 'guardrails'
         | 'showWelcomeMessage'
         | 'showIDESnippetActions'
-        | 'scrollableParent'
         | 'experimentalSmartApplyEnabled'
     > &
         Pick<ComponentProps<typeof HistoryTab>, 'userHistory'>
@@ -41,18 +39,17 @@ export const CodyPanel: FunctionComponent<
     setErrorMessages,
     attributionEnabled,
     chatEnabled,
-    userInfo,
     messageInProgress,
     transcript,
     vscodeAPI,
     isTranscriptError,
     guardrails,
     showIDESnippetActions,
-    scrollableParent,
     showWelcomeMessage,
     userHistory,
     experimentalSmartApplyEnabled,
 }) => {
+    const tabContainerRef = useRef<HTMLDivElement>(null)
     return (
         <TabRoot
             defaultValue={View.Chat}
@@ -65,11 +62,10 @@ export const CodyPanel: FunctionComponent<
                 <TabsBar currentView={view} setView={setView} IDE={config.agentIDE || CodyIDE.VSCode} />
             ) : null}
             {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
-            <TabContainer value={view}>
+            <TabContainer value={view} ref={tabContainerRef}>
                 {view === View.Chat && (
                     <Chat
                         chatEnabled={chatEnabled}
-                        userInfo={userInfo}
                         messageInProgress={messageInProgress}
                         transcript={transcript}
                         vscodeAPI={vscodeAPI}
@@ -77,15 +73,15 @@ export const CodyPanel: FunctionComponent<
                         guardrails={attributionEnabled ? guardrails : undefined}
                         showIDESnippetActions={showIDESnippetActions}
                         showWelcomeMessage={showWelcomeMessage}
-                        scrollableParent={scrollableParent}
+                        scrollableParent={tabContainerRef.current}
                         experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
                         setView={setView}
                     />
                 )}
                 {view === View.History && <HistoryTab userHistory={userHistory} />}
                 {view === View.Prompts && <PromptsTab setView={setView} />}
-                {view === View.Account && <AccountTab userInfo={userInfo} />}
-                {view === View.Settings && <SettingsTab userInfo={userInfo} />}
+                {view === View.Account && <AccountTab />}
+                {view === View.Settings && <SettingsTab />}
             </TabContainer>
         </TabRoot>
     )

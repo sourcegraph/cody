@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process'
+import { copyFileSync } from 'node:fs'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
@@ -12,7 +13,6 @@ import {
     type BillingCategory,
     type BillingProduct,
     FeatureFlag,
-    ModelsService,
     PromptString,
     contextFiltersProvider,
     convertGitCloneURLToCodebaseName,
@@ -23,6 +23,7 @@ import {
     isRateLimitError,
     logDebug,
     logError,
+    modelsService,
     setUserAgent,
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
@@ -36,7 +37,6 @@ import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 import { mkdirSync, statSync } from 'node:fs'
 import { PassThrough } from 'node:stream'
 import type { Har } from '@pollyjs/persister'
-import { copySync } from 'fs-extra'
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
@@ -55,13 +55,13 @@ import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategie
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import { AgentFixupControls } from './AgentFixupControls'
-import { AgentGlobalState } from './AgentGlobalState'
 import { AgentProviders } from './AgentProviders'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
 import { codyPaths } from './codyPaths'
+import { AgentGlobalState } from './global-state/AgentGlobalState'
 import {
     MessageHandler,
     type RequestCallback,
@@ -87,7 +87,6 @@ import * as vscode_shim from './vscode-shim'
 import { vscodeLocation, vscodeRange } from './vscode-type-converters'
 
 const inMemorySecretStorageMap = new Map<string, string>()
-const globalState = new AgentGlobalState()
 
 /** The VS Code extension's `activate` function. */
 type ExtensionActivate = (
@@ -102,15 +101,14 @@ type ExtensionActivate = (
 // In the agent, we assume this file is placed next to the bundled `index.js`
 // file, and we copy it over to the `extensionPath` so the VS Code logic works
 // without changes.
-function copyExtensionRelativeResources(extensionPath: string): void {
-    const relativeSources = ['win-ca-roots.exe', 'webviews']
-    for (const relativeSource of relativeSources) {
+function copyExtensionRelativeResources(extensionPath: string, extensionClient: ExtensionClient): void {
+    const copySources = (relativeSource: string): void => {
         const source = path.join(__dirname, relativeSource)
         const target = path.join(extensionPath, 'dist', relativeSource)
         try {
             const stat = statSync(source)
             if (!(stat.isFile() || stat.isDirectory())) {
-                continue
+                return
             }
         } catch {
             logDebug('copyExtensionRelativeResources', `Failed to find ${source}, skipping copy`)
@@ -118,21 +116,26 @@ function copyExtensionRelativeResources(extensionPath: string): void {
         }
         try {
             mkdirSync(path.dirname(target), { recursive: true })
-            copySync(source, target)
+            copyFileSync(source, target)
         } catch (err) {
             logDebug('copyExtensionRelativeResources', `Failed to copy ${source} to dist ${target}`, err)
         }
+    }
+    copySources('win-ca-roots.exe')
+    if (extensionClient.capabilities?.webview === 'native') {
+        copySources('webviews')
     }
 }
 
 export async function initializeVscodeExtension(
     workspaceRoot: vscode.Uri,
     extensionActivate: ExtensionActivate,
-    extensionClient: ExtensionClient
+    extensionClient: ExtensionClient,
+    globalState: AgentGlobalState
 ): Promise<void> {
     const paths = codyPaths()
     const extensionPath = paths.config
-    copyExtensionRelativeResources(extensionPath)
+    copyExtensionRelativeResources(extensionPath, extensionClient)
 
     const context: vscode.ExtensionContext = {
         asAbsolutePath(relativePath) {
@@ -343,6 +346,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
     private clientInfo: ClientInfo | null = null
 
+    private globalState: AgentGlobalState | null = null
+
     constructor(
         private readonly params: {
             polly?: Polly | undefined
@@ -359,10 +364,17 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 '*',
                 new IndentationBasedFoldingRangeProvider()
             )
+            this.globalState = this.newGlobalState(clientInfo)
+
+            if (clientInfo.capabilities && clientInfo.capabilities?.webview === undefined) {
+                // Make it possible to do `capabilities.webview === 'agentic'`
+                clientInfo.capabilities.webview = 'agentic'
+            }
+
             if (clientInfo.extensionConfiguration?.baseGlobalState) {
                 for (const key in clientInfo.extensionConfiguration.baseGlobalState) {
                     const value = clientInfo.extensionConfiguration.baseGlobalState[key]
-                    globalState.update(key, value)
+                    this.globalState?.update(key, value)
                 }
             }
             this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
@@ -414,8 +426,16 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 await initializeVscodeExtension(
                     this.workspace.workspaceRootUri,
                     params.extensionActivate,
-                    this
+                    this,
+                    this.globalState
                 )
+
+                this.authenticationPromise = clientInfo.extensionConfiguration
+                    ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
+                          forceAuthentication: true,
+                      })
+                    : this.authStatus()
+                const authStatus = await this.authenticationPromise
 
                 const webviewKind = clientInfo.capabilities?.webview || 'agentic'
                 const nativeWebviewConfig = clientInfo.capabilities?.webviewNativeConfig
@@ -433,13 +453,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 } else {
                     this.registerWebviewHandlers()
                 }
-
-                this.authenticationPromise = clientInfo.extensionConfiguration
-                    ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
-                          forceAuthentication: true,
-                      })
-                    : this.authStatus()
-                const authStatus = await this.authenticationPromise
 
                 return {
                     name: 'cody-agent',
@@ -470,21 +483,24 @@ export class Agent extends MessageHandler implements ExtensionClient {
             process.exit(0)
         })
 
-        this.registerNotification('workspaceFolder/didChange', async params => {
-            if (this.workspace.workspaceRootUri?.toString() !== params.uri) {
-                const newWorkspaceUri = vscode.Uri.parse(params.uri)
-                this.workspace.workspaceRootUri = newWorkspaceUri
+        this.registerNotification('workspaceFolder/didChange', async ({ uris }) => {
+            const oldWorkspaceFolders = vscode_shim.workspaceFolders
+            const newWorkspaceFolders = vscode_shim.setWorkspaceFolders(
+                uris.map(uri => vscode.Uri.parse(uri))
+            )
 
-                const currentWorkspaceFolders = vscode_shim.workspaceFolders ?? []
-                const updatedWorkspaceFolders = vscode_shim.setWorkspaceFolders(newWorkspaceUri)
+            const added = newWorkspaceFolders.filter(
+                newWf =>
+                    !oldWorkspaceFolders.some(oldWf => oldWf.uri.toString() === newWf.uri.toString())
+            )
+            const removed = oldWorkspaceFolders.filter(
+                oldWf =>
+                    !newWorkspaceFolders.some(newWf => newWf.uri.toString() === oldWf.uri.toString())
+            )
 
-                this.pushPendingPromise(
-                    vscode_shim.onDidChangeWorkspaceFolders.cody_fireAsync({
-                        added: updatedWorkspaceFolders,
-                        removed: currentWorkspaceFolders,
-                    })
-                )
-            }
+            this.pushPendingPromise(
+                vscode_shim.onDidChangeWorkspaceFolders.cody_fireAsync({ added, removed })
+            )
         })
 
         this.registerNotification('textDocument/didFocus', (document: ProtocolTextDocument) => {
@@ -787,7 +803,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('testing/reset', async () => {
             await this.workspace.reset()
-            globalState.reset()
+            this.globalState?.reset()
             return null
         })
 
@@ -1067,7 +1083,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('editTask/retry', params => {
             const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
-            const models = getModelOptionItems(ModelsService.getModels(ModelUsage.Edit), true)
+            const models = getModelOptionItems(modelsService.getModels(ModelUsage.Edit), true)
             const previousInput: QuickPickInput = {
                 instruction: instruction,
                 userContextFiles: [],
@@ -1163,10 +1179,22 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { panelId, chatId }
         })
 
+        this.registerAuthenticatedRequest('chat/sidebar/new', async () => {
+            const panelId = await this.createChatPanel(
+                Promise.resolve({
+                    type: 'chat',
+                    session: await vscode.commands.executeCommand('cody.chat.newPanel'),
+                })
+            )
+
+            const chatId = this.webPanels.panels.get(panelId)?.chatID ?? ''
+            return { panelId, chatId }
+        })
+
         // TODO: JetBrains no longer uses this, consider deleting it.
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            modelID ??= ModelsService.getDefaultChatModel() ?? ''
+            modelID ??= modelsService.getDefaultChatModel() ?? ''
             const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
             const chatModel = new ChatModel(modelID, chatID, chatMessages)
             await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
@@ -1179,7 +1207,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
-            const models = ModelsService.getModels(modelUsage)
+            const models = modelsService.getModels(modelUsage)
             return { models }
         })
 
@@ -1364,6 +1392,20 @@ export class Agent extends MessageHandler implements ExtensionClient {
         if (vscode_shim.isTesting || vscode_shim.isIntegrationTesting) {
             this.pendingPromises.add(pendingPromise)
             pendingPromise.finally(() => this.pendingPromises.delete(pendingPromise))
+        }
+    }
+
+    private newGlobalState(clientInfo: ClientInfo): AgentGlobalState {
+        switch (clientInfo.capabilities?.globalState) {
+            case 'server-managed':
+                return new AgentGlobalState(
+                    clientInfo.name,
+                    clientInfo.globalStateDir ?? codyPaths().data
+                )
+            case 'client-managed':
+                throw new Error('client-managed global state is not supported')
+            default:
+                return new AgentGlobalState(clientInfo.name)
         }
     }
 

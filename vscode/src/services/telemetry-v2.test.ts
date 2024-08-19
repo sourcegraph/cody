@@ -135,7 +135,7 @@ describe('splitSafeMetadata', () => {
             string: 'string',
             object: { key: 'value', safeVar: 3 },
         })
-        telemetryRecorder.recordEvent('telemetry-v2.test', 'splitSafeMetadata', {
+        telemetryRecorder.recordEvent('telemetry-vtwo.test', 'splitSafeMetadata', {
             metadata,
             privateMetadata,
         })
@@ -143,7 +143,7 @@ describe('splitSafeMetadata', () => {
         expect(events).toHaveLength(1)
         expect(events[0]).toEqual({
             action: 'splitSafeMetadata',
-            feature: 'telemetry-v2.test',
+            feature: 'telemetry-vtwo.test',
             parameters: {
                 metadata: [
                     {

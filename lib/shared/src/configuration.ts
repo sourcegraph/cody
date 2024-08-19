@@ -107,6 +107,8 @@ export interface AutocompleteTimeouts {
     singleline?: number
 }
 
+export type ConfigurationWithEndpoint = Omit<ConfigurationWithAccessToken, 'accessToken'>
+
 export interface ConfigurationWithAccessToken extends Configuration {
     serverEndpoint: string
     /** The access token, which is stored in the secret storage (not configuration). */

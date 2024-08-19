@@ -4,7 +4,7 @@ import type {
     AuthStatus,
     ClientStateForWebview,
     CodyIDE,
-    ConfigurationWithAccessToken,
+    ConfigurationWithEndpoint,
     ContextItem,
     EnhancedContextContextT,
     MentionQuery,
@@ -24,6 +24,8 @@ import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { Uri } from 'vscode'
 import type { View } from '../../webviews/tabs/types'
 import type { Repo } from '../context/repo-fetcher'
+import type { FixupTaskID } from '../non-stop/FixupTask'
+import type { CodyTaskState } from '../non-stop/state'
 
 /**
  * DO NOT USE DIRECTLY - ALWAYS USE a TelemetryRecorder from
@@ -130,10 +132,19 @@ export type WebviewMessage =
           text: string
       }
     | {
-          command: 'smartApply'
-          instruction?: string | undefined | null
+          command: 'smartApplySubmit'
+          id: FixupTaskID
           code: string
+          instruction?: string | undefined | null
           fileName?: string | undefined | null
+      }
+    | {
+          command: 'smartApplyAccept'
+          id: FixupTaskID
+      }
+    | {
+          command: 'smartApplyReject'
+          id: FixupTaskID
       }
     | {
           command: 'auth'
@@ -172,6 +183,11 @@ export type WebviewMessage =
       }
     | { command: 'rpc/request'; message: RequestMessage }
 
+export interface SmartApplyResult {
+    taskId: FixupTaskID
+    taskState: CodyTaskState
+}
+
 /**
  * A message sent from the extension host to the webview.
  */
@@ -180,6 +196,11 @@ export type ExtensionMessage =
           type: 'config'
           config: ConfigurationSubsetForWebview & LocalEnv
           authStatus: AuthStatus
+          configFeatures: {
+              chat: boolean
+              attribution: boolean
+              serverSentModels: boolean
+          }
           workspaceFolderUris: string[]
       }
     | { type: 'ui/theme'; agentIDE: CodyIDE; cssVariables: CodyIDECssVariables }
@@ -200,6 +221,7 @@ export type ExtensionMessage =
           type: 'clientAction'
           addContextItemsToLastHumanInput?: ContextItem[] | null | undefined
           appendTextToLastPromptEditor?: string | null | undefined
+          smartApplyResult?: SmartApplyResult | undefined | null
       }
     /**
      * The current default model will always be the first one on the list.
@@ -208,14 +230,6 @@ export type ExtensionMessage =
     | { type: 'enhanced-context'; enhancedContextStatus: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'context/remote-repos'; repos: Repo[] }
-    | {
-          type: 'setConfigFeatures'
-          configFeatures: {
-              chat: boolean
-              attribution: boolean
-              serverSentModels: boolean
-          }
-      }
     | {
           type: 'queryPrompts/response'
           result?: Prompt[] | null | undefined
@@ -274,7 +288,7 @@ export interface ExtensionTranscriptMessage {
  */
 export interface ConfigurationSubsetForWebview
     extends Pick<
-        ConfigurationWithAccessToken,
+        ConfigurationWithEndpoint,
         | 'experimentalNoodle'
         | 'serverEndpoint'
         | 'agentIDE'

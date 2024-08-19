@@ -23,7 +23,7 @@ import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent } from '../completions/logger'
 import type { Repo } from '../context/repo-fetcher'
 import type { FixupTaskID } from '../non-stop/FixupTask'
-import type { CodyTaskState } from '../non-stop/utils'
+import type { CodyTaskState } from '../non-stop/state'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
@@ -52,6 +52,12 @@ export type ClientRequests = {
     // be used to reference to the session with panel id and restore chat with
     // chat id. Main difference compared to the chat/new is that we return chatId.
     'chat/web/new': [null, { panelId: string; chatId: string }]
+
+    // Start a new chat session and returns panel id and chat id that later can
+    // be used to reference to the session with panel id and restore chat with
+    // chat id. Main difference compared to the chat/new and chat/web/new is that
+    // the panel has sidebar webview type instead of editor webview type.
+    'chat/sidebar/new': [null, { panelId: string; chatId: string }]
 
     // Deletes chat by its ID and returns newly updated chat history list
     // Primary is used only in cody web client
@@ -317,6 +323,7 @@ export type ClientRequests = {
 // ================
 export type ServerRequests = {
     'window/showMessage': [ShowWindowMessageParams, string | null]
+    'window/showSaveDialog': [null, string | undefined | null]
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
     'textDocument/openUntitledDocument': [UntitledTextDocument, ProtocolTextDocument | undefined | null]
@@ -357,8 +364,9 @@ export type ClientNotifications = {
     // should no longer be used.
     'extensionConfiguration/didChange': [ExtensionConfiguration]
 
-    // The user has switched to a different workspace folder.
-    'workspaceFolder/didChange': [{ uri: string }]
+    // Provide an updated list of workspace folders when changed.
+    // Put the most recently opened folder first.
+    'workspaceFolder/didChange': [{ uris: string[] }]
 
     // Lifecycle notifications for the client to notify the server about text
     // contents of documents and to notify which document is currently focused.
@@ -476,6 +484,10 @@ export type ServerNotifications = {
     'webview/setIconPath': [{ handle: string; iconPathUri?: string | null | undefined }]
     'webview/setOptions': [{ handle: string; options: DefiniteWebviewOptions }]
     'webview/setHtml': [{ handle: string; html: string }]
+
+    // When the when-claude context has changed.
+    // For example, 'cody.activated' is set based on user's latest authentication status.
+    'window/didChangeContext': [{ key: string; value?: string | undefined | null }]
 }
 
 export interface WebviewCreateWebviewPanelOptions {
@@ -555,6 +567,7 @@ export interface ClientInfo {
     version: string // extension version
     ideVersion?: string | undefined | null
     workspaceRootUri: string
+    globalStateDir?: string | undefined | null
 
     /** @deprecated Use `workspaceRootUri` instead. */
     workspaceRootPath?: string | undefined | null
@@ -594,17 +607,31 @@ export interface ClientCapabilities {
     // convenient for clients that forward the string directly to an underlying
     // webview container.
     webviewMessages?: 'object-encoded' | 'string-encoded' | undefined | null
+    // How to deal with vscode.ExtensionContext.globalState.
+    // - Stateless: the state does not persist between agent processes. This means the client is
+    // responsible for features like managing chat history.
+    // - Server managed: the server reads and writes the state without informing the client.
+    // The client can optionally customize the file path of the JSON config via `ClientInfo.globalStatePath: string`
+    // - Client managed: not implemented yet. When implemented, clients will be able to implement a
+    // JSON-RPC request to handle the saving of the client state. This is needed to safely share state
+    // between concurrent agent processes (assuming there is one IDE client process managing multiple agent processes).
+    globalState?: 'stateless' | 'server-managed' | 'client-managed' | undefined | null
     // Whether the client supports the VSCode WebView API. If 'agentic', uses
     // AgentWebViewPanel which just delegates bidirectional postMessage over
     // the Agent protocol. If 'native', implements a larger subset of the VSCode
-    // WebView API and expects the client to run web content in the webview.
+    // WebView API and expects the client to run web content in the webview,
+    // which effectively means both sidebar and custom editor chat views are supported.
     // Defaults to 'agentic'.
     webview?: 'agentic' | 'native' | undefined | null
     // If webview === 'native', describes how the client has configured webview resources.
     // cspSource is passed to the extension as the Webview cspSource property.
     // webviewBundleServingPrefix is prepended to resource paths under 'dist' in
     // asWebviewUri (note, multiple prefixes are not yet implemented.)
-    webviewNativeConfig?: { cspSource: string; webviewBundleServingPrefix: string } | undefined | null
+    // Set the view to 'single' when client only support single chat view, e.g. sidebar chat.
+    webviewNativeConfig?:
+        | { view: 'multiple' | 'single'; cspSource: string; webviewBundleServingPrefix: string }
+        | undefined
+        | null
 }
 
 export interface ServerInfo {

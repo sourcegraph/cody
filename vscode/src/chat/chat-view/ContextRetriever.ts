@@ -24,9 +24,9 @@ import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { gitLocallyModifiedFiles } from '../../repository/git-extension-api'
 import { repoNameResolver } from '../../repository/repo-name-resolver'
-import { getContextStrategy, retrieveContextGracefully, searchSymf, truncateSymfResult } from './context'
+import { retrieveContextGracefully, searchSymf, truncateSymfResult } from './context'
 
-interface StructuredMentions {
+export interface StructuredMentions {
     repos: ContextItemRepository[]
     trees: ContextItemTree[]
     files: ContextItemFile[]
@@ -113,7 +113,11 @@ async function codebaseRootsFromMentions(
         }))
     )
     const localRepoNames = treesToRepoNames.flatMap(t => t.names)
-    const localRepoIDs = await graphqlClient.getRepoIds(localRepoNames, localRepoNames.length, signal)
+
+    const localRepoIDs =
+        localRepoNames.length === 0
+            ? []
+            : await graphqlClient.getRepoIds(localRepoNames, localRepoNames.length, signal)
     if (isError(localRepoIDs)) {
         throw localRepoIDs
     }
@@ -173,6 +177,9 @@ export class ContextRetriever implements vscode.Disposable {
         span: Span,
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
+        if (roots.length === 0) {
+            return []
+        }
         const rewritten = await rewriteKeywordQuery(this.llms, query, signal)
         const rewrittenQuery = {
             ...query,
@@ -332,7 +339,7 @@ export class ContextRetriever implements vscode.Disposable {
 
         // Legacy context retrieval
         const config = getConfiguration()
-        const contextStrategy = await getContextStrategy(config.useContext)
+        const contextStrategy = config.useContext
         span.setAttribute('strategy', contextStrategy)
 
         // symf retrieval

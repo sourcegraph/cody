@@ -1,9 +1,84 @@
-import { getEncoding } from 'js-tiktoken'
+import { Tiktoken } from 'js-tiktoken/lite'
 import type { TokenBudget, TokenUsage } from '.'
 import type { ChatContextTokenUsage, TokenUsageType } from '.'
 import type { ModelContextWindow } from '..'
 import type { Message, PromptString } from '..'
 import { CORPUS_CONTEXT_ALLOCATION } from './constants'
+
+interface TokenCounterUtils {
+    encode(text: string): number[]
+    decode(encoded: number[]): string
+    countTokens(text: string): number
+    countPromptString(text: PromptString): number
+    getMessagesTokenCount(messages: Message[]): number
+    getTokenCountForMessage(message: Message): number
+}
+
+/**
+ * Get the tokenizer, which is lazily-loaded it because it requires reading ~1 MB of tokenizer data.
+ */
+export async function getTokenCounterUtils(): Promise<TokenCounterUtils> {
+    // This could have been implemented in a separate file that is wholly async-imported, but that
+    // carries too much risk of accidental non-async importing.
+    if (!_tokenCounterUtilsPromise) {
+        _tokenCounterUtilsPromise = import('js-tiktoken/ranks/cl100k_base')
+            .then(({ default: cl100k_base }) => new Tiktoken(cl100k_base))
+            .then(tokenizer => {
+                const tokenCounterUtils: TokenCounterUtils = {
+                    encode(text: string): number[] {
+                        return tokenizer.encode(text.normalize('NFKC'), 'all')
+                    },
+
+                    decode(encoded: number[]): string {
+                        return tokenizer.decode(encoded)
+                    },
+
+                    countTokens(text: string): number {
+                        return tokenCounterUtils.encode(text).length
+                    },
+
+                    countPromptString(text: PromptString): number {
+                        return tokenCounterUtils.encode(text.toString()).length
+                    },
+
+                    getMessagesTokenCount(messages: Message[]): number {
+                        return messages.reduce((acc, m) => acc + this.getTokenCountForMessage(m), 0)
+                    },
+
+                    getTokenCountForMessage(message: Message): number {
+                        if (message?.text && message?.text.length > 0) {
+                            return this.countPromptString(message.text)
+                        }
+                        return 0
+                    },
+                }
+                return tokenCounterUtils
+            })
+    }
+    return _tokenCounterUtilsPromise
+}
+
+let _tokenCounterUtilsPromise: Promise<TokenCounterUtils> | null = null
+
+type WithPromise<T> = {
+    [K in keyof T]: T[K] extends (...args: any[]) => any
+        ? (...args: Parameters<T[K]>) => Promise<ReturnType<T[K]>>
+        : T[K]
+}
+
+/**
+ * Calling `await TokenCounterUtils.foo()` is the same as `(await getTokenCounterUtils()).foo()`.
+ */
+export const TokenCounterUtils: WithPromise<TokenCounterUtils> = {
+    encode: async (...args) => (await getTokenCounterUtils()).encode(...args),
+    decode: async (...args) => (await getTokenCounterUtils()).decode(...args),
+    countTokens: async (...args) => (await getTokenCounterUtils()).countTokens(...args),
+    countPromptString: async (...args) => (await getTokenCounterUtils()).countPromptString(...args),
+    getMessagesTokenCount: async (...args) =>
+        (await getTokenCounterUtils()).getMessagesTokenCount(...args),
+    getTokenCountForMessage: async (...args) =>
+        (await getTokenCounterUtils()).getTokenCountForMessage(...args),
+}
 
 /**
  * A class to manage the token allocation during prompt building.
@@ -31,7 +106,18 @@ export class TokenCounter {
      */
     private shareChatAndUserBudget = true
 
-    constructor(contextWindow: ModelContextWindow) {
+    /**
+     * Convenience constructor to await the lazy-import from {@link getTokenCounterUtils} and then
+     * call our constructor.
+     */
+    public static async create(contextWindow: ModelContextWindow): Promise<TokenCounter> {
+        return new TokenCounter(await getTokenCounterUtils(), contextWindow)
+    }
+
+    private constructor(
+        readonly utils: TokenCounterUtils,
+        contextWindow: ModelContextWindow
+    ) {
         // If there is no context window reserved for context.user,
         // context will share the same token budget with chat.
         this.shareChatAndUserBudget = !contextWindow.context?.user
@@ -53,7 +139,7 @@ export class TokenCounter {
         type: TokenUsageType,
         messages: Message[]
     ): { succeeded: boolean; reason?: string } {
-        const count = TokenCounter.getMessagesTokenCount(messages)
+        const count = this.utils.getMessagesTokenCount(messages)
         const { isWithinLimit, reason } = this.canAllocateTokens(type, count)
         if (isWithinLimit) {
             this.usedTokens[type] = this.usedTokens[type] + count
@@ -154,60 +240,5 @@ export class TokenCounter {
                     reason: `unrecognized token usage type ${type}`,
                 }
         }
-    }
-
-    /**
-     * The default tokenizer is cl100k_base.
-     */
-    private static tokenizer = getEncoding('cl100k_base')
-
-    /**
-     * Encode the given text using the tokenizer.
-     * The text is first normalized to NFKC to handle different character representations consistently.
-     * All special tokens are included in the token count.
-     */
-    public static encode(text: string): number[] {
-        return TokenCounter.tokenizer.encode(text.normalize('NFKC'), 'all')
-    }
-
-    public static decode(encoded: number[]): string {
-        return TokenCounter.tokenizer.decode(encoded)
-    }
-
-    /**
-     * Counts the number of tokens in the given text using the tokenizer.
-     *
-     * @param text - The input text to count tokens for.
-     * @returns The number of tokens in the input text.
-     */
-    public static countTokens(text: string): number {
-        return TokenCounter.encode(text).length
-    }
-
-    public static countPromptString(text: PromptString): number {
-        return TokenCounter.encode(text.toString()).length
-    }
-
-    /**
-     * Counts the number of tokens in the given message using the tokenizer.
-     *
-     * @param message - The message to count tokens for.
-     * @returns The number of tokens in the message.
-     */
-    private static getTokenCountForMessage(message: Message): number {
-        if (message?.text && message?.text.length > 0) {
-            return TokenCounter.countPromptString(message.text)
-        }
-        return 0
-    }
-
-    /**
-     * Calculates the total number of tokens across the given array of messages.
-     *
-     * @param messages - An array of messages to count the tokens for.
-     * @returns The total number of tokens in the provided messages.
-     */
-    public static getMessagesTokenCount(messages: Message[]): number {
-        return messages.reduce((acc, m) => acc + TokenCounter.getTokenCountForMessage(m), 0)
     }
 }

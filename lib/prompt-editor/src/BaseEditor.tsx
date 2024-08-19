@@ -11,7 +11,6 @@ import { type FunctionComponent, type RefObject, useMemo } from 'react'
 import styles from './BaseEditor.module.css'
 import { RICH_EDITOR_NODES } from './nodes'
 import { MentionsPlugin } from './plugins/atMentions/atMentions'
-import CodeHighlightPlugin from './plugins/codeHighlight'
 import { DisableEscapeKeyBlursPlugin } from './plugins/disableEscapeKeyBlurs'
 import { KeyboardEventPlugin, type KeyboardEventPluginProps } from './plugins/keyboardEvent'
 import { NoRichTextFormatShortcutsPlugin } from './plugins/noRichTextShortcuts'
@@ -60,22 +59,15 @@ export const BaseEditor: FunctionComponent<Props> = ({
     )
 
     return (
-        <div className={clsx(styles.editorShell, className)}>
-            <div className={styles.editorContainer}>
+        <div className={className}>
+            <div className={styles.editor}>
                 <LexicalComposer initialConfig={initialConfig}>
                     <RichTextPlugin
                         contentEditable={
-                            <div className={styles.editorScroller}>
-                                <div className={styles.editor}>
-                                    <ContentEditable
-                                        className={clsx(
-                                            styles.contentEditable,
-                                            contentEditableClassName
-                                        )}
-                                        ariaLabel={ariaLabel}
-                                    />
-                                </div>
-                            </div>
+                            <ContentEditable
+                                className={clsx(styles.contentEditable, contentEditableClassName)}
+                                ariaLabel={ariaLabel}
+                            />
                         }
                         placeholder={<div className={styles.placeholder}>{placeholder}</div>}
                         ErrorBoundary={LexicalErrorBoundary}
@@ -89,7 +81,6 @@ export const BaseEditor: FunctionComponent<Props> = ({
                         ignoreHistoryMergeTagChange={false}
                     />
                     <MentionsPlugin contextWindowSizeInTokens={contextWindowSizeInTokens} />
-                    <CodeHighlightPlugin />
                     {onFocusChange && <OnFocusChangePlugin onFocusChange={onFocusChange} />}
                     {editorRef && <EditorRefPlugin editorRef={editorRef} />}
                     <KeyboardEventPlugin onEnterKey={onEnterKey} />
