@@ -42,6 +42,7 @@ import {
     isRateLimitError,
     modelsService,
     parseMentionQuery,
+    promiseFactoryToObservable,
     recordErrorToSpan,
     reformatBotMessageForChat,
     serializeChatMessage,
@@ -63,7 +64,7 @@ import {
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
-import { getConfiguration, getFullConfig } from '../../configuration'
+import { getConfigWithEndpoint, getConfiguration, getFullConfig } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
 import type { Repo } from '../../context/repo-fetcher'
@@ -566,10 +567,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
-        const [config, experimentalSmartApply] = await Promise.all([
-            getFullConfig(),
-            this.isSmartApplyEnabled(),
-        ])
+        const config = getConfigWithEndpoint()
+        const experimentalSmartApply = await this.isSmartApplyEnabled()
 
         const webviewType =
             this.webviewPanelOrView?.viewType === 'cody.editorPanel' ? 'editor' : 'sidebar'
@@ -1651,11 +1650,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     },
                 }),
                 {
-                    mentionMenuData: (query, signal) =>
-                        getMentionMenuData(query, this.remoteSearch, this.chatModel, signal),
-                    evaluatedFeatureFlag: (flag, signal) =>
-                        featureFlagProvider.evaluatedFeatureFlag(flag, signal),
-                    prompts: mergedPromptsAndLegacyCommands,
+                    mentionMenuData: query =>
+                        getMentionMenuData(query, this.remoteSearch, this.chatModel),
+                    evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
+                    prompts: query =>
+                        promiseFactoryToObservable(signal =>
+                            mergedPromptsAndLegacyCommands(query, signal)
+                        ),
                 }
             )
         )

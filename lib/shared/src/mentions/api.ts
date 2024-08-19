@@ -1,6 +1,7 @@
-import type { MetaResult } from '@openctx/client'
+import type { EachWithProviderUri, MetaResult } from '@openctx/client'
+import { Observable } from 'observable-fns'
 import { openCtx } from '../context/openctx/api'
-import { logDebug } from '../logger'
+import { fromRxJSObservable } from '../misc/observable'
 
 /**
  * A unique identifier for a {@link ContextMentionProvider}.
@@ -51,22 +52,18 @@ export const SYMBOL_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata & {
 }
 
 /** Metadata for all registered {@link ContextMentionProvider}s. */
-export async function* allMentionProvidersMetadata(
-    signal?: AbortSignal
-): AsyncGenerator<ContextMentionProviderMetadata[]> {
-    for await (const providers of openCtxMentionProviders(signal)) {
-        yield [FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER, ...providers]
-    }
+export function allMentionProvidersMetadata(): Observable<ContextMentionProviderMetadata[]> {
+    return openCtxMentionProviders().map(providers => [
+        FILE_CONTEXT_MENTION_PROVIDER,
+        SYMBOL_CONTEXT_MENTION_PROVIDER,
+        ...providers,
+    ])
 }
 
 // Cody Web providers don't include standard file provider since
 // it uses openctx remote file provider instead
-export async function* webMentionProvidersMetadata(
-    signal?: AbortSignal
-): AsyncGenerator<ContextMentionProviderMetadata[]> {
-    for await (const providers of openCtxMentionProviders(signal)) {
-        yield [SYMBOL_CONTEXT_MENTION_PROVIDER, ...providers]
-    }
+export function webMentionProvidersMetadata(): Observable<ContextMentionProviderMetadata[]> {
+    return openCtxMentionProviders().map(providers => [SYMBOL_CONTEXT_MENTION_PROVIDER, ...providers])
 }
 
 export function openCtxProviderMetadata(
@@ -80,23 +77,17 @@ export function openCtxProviderMetadata(
     }
 }
 
-async function* openCtxMentionProviders(
-    signal?: AbortSignal
-): AsyncGenerator<ContextMentionProviderMetadata[]> {
-    const client = openCtx.controller
-    if (!client) {
-        return []
+function openCtxMentionProviders(): Observable<ContextMentionProviderMetadata[]> {
+    const controller = openCtx.controller
+    if (!controller) {
+        return Observable.of([])
     }
 
-    try {
-        for await (const providers of client.metaChanges__asyncGenerator({}, {}, signal)) {
-            yield providers
+    return fromRxJSObservable<EachWithProviderUri<MetaResult[]>>(controller.metaChanges({}, {})).map(
+        providers =>
+            providers
                 .filter(provider => !!provider.mentions)
                 .map(openCtxProviderMetadata)
                 .sort((a, b) => (a.title > b.title ? 1 : -1))
-        }
-    } catch (error) {
-        logDebug('openctx', `Failed to fetch OpenCtx providers: ${error}`)
-        return []
-    }
+    )
 }

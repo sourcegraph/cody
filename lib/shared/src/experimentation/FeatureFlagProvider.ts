@@ -1,7 +1,7 @@
+import { Observable } from 'observable-fns'
 import type { Event } from 'vscode'
 import { logDebug } from '../logger'
-import { asyncGeneratorFromVSCodeEvent } from '../misc/asyncGenerator'
-import { isAbortError } from '../sourcegraph-api/errors'
+import { fromVSCodeEvent } from '../misc/observable'
 import { type SourcegraphGraphQLAPIClient, graphqlClient } from '../sourcegraph-api/graphql'
 import { wrapInActiveSpan } from '../tracing'
 import { isError } from '../utils'
@@ -171,16 +171,10 @@ export class FeatureFlagProvider {
     /**
      * Observe the evaluated value of a feature flag.
      */
-    public async *evaluatedFeatureFlag(
-        flagName: FeatureFlag,
-        signal?: AbortSignal
-    ): AsyncGenerator<boolean | undefined> {
+    public evaluatedFeatureFlag(flagName: FeatureFlag): Observable<boolean | undefined> {
         if (process.env.DISABLE_FEATURE_FLAGS) {
-            yield undefined
-            return
+            return Observable.of(undefined)
         }
-
-        const initialValue = await this.evaluateFeatureFlag(flagName)
 
         const onChangeEvent: Event<boolean | undefined> = (
             listener: (value: boolean | undefined) => void
@@ -188,19 +182,7 @@ export class FeatureFlagProvider {
             const dispose = this.onFeatureFlagChanged('', () => listener(this.getFromCache(flagName)))
             return { dispose }
         }
-        const generator = asyncGeneratorFromVSCodeEvent(onChangeEvent, initialValue, signal)
-        signal?.throwIfAborted()
-
-        try {
-            for await (const value of generator) {
-                yield value
-            }
-        } catch (error) {
-            if (signal?.aborted && isAbortError(error)) {
-                return
-            }
-            throw error
-        }
+        return fromVSCodeEvent(onChangeEvent, () => this.evaluateFeatureFlag(flagName))
     }
 
     public async refresh(): Promise<void> {

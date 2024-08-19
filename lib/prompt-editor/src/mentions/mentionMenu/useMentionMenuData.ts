@@ -15,8 +15,8 @@ import { debounce } from 'lodash'
 import { useCallback, useContext, useMemo, useState } from 'react'
 import { useClientState } from '../../clientState'
 import { ChatMentionContext } from '../../plugins/atMentions/useChatContextItems'
-import { type UseAsyncGeneratorResult, useAsyncGenerator } from '../../useAsyncGenerator'
 import { useExtensionAPI } from '../../useExtensionAPI'
+import { type UseObservableResult, useObservable } from '../../useObservable'
 
 export interface MentionMenuParams {
     query: string | null
@@ -137,7 +137,7 @@ function prepareUserContextItem(item: ContextItem, remainingTokenBudget: number)
 export function useCallMentionMenuData({
     query,
     parentItem: provider,
-}: MentionMenuParams): UseAsyncGeneratorResult<MentionMenuData> {
+}: MentionMenuParams): UseObservableResult<MentionMenuData> {
     const mentionSettings = useContext(ChatMentionContext)
     const unmemoizedCall = useExtensionAPI().mentionMenuData
     const memoizedCall = useMemo(
@@ -156,8 +156,8 @@ export function useCallMentionMenuData({
         [query, provider, mentionSettings]
     )
 
-    return useAsyncGenerator(
-        useCallback(signal => memoizedCall(mentionQuery, signal), [memoizedCall, mentionQuery]),
+    return useObservable(
+        useMemo(() => memoizedCall(mentionQuery), [memoizedCall, mentionQuery]),
         { preserveValueKey: mentionQuery.provider ?? undefined }
     )
 }

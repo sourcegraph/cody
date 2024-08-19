@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import * as vscode from 'vscode'
-import { getFullConfig } from '../configuration'
+import { getConfiguration } from '../configuration'
 import type { SymfRunner } from '../local-context/symf'
 import type { AuthProvider } from '../services/AuthProvider'
 import { MinionController, ReactPanelController } from './MinionController'
@@ -64,8 +64,7 @@ export class MinionOrchestrator implements vscode.Disposable {
 
         const assetRoot = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
 
-        const config = await getFullConfig()
-        const anthropicKey = config.experimentalMinionAnthropicKey
+        const anthropicKey = getConfiguration().experimentalMinionAnthropicKey
         const anthropic = new Anthropic({ apiKey: anthropicKey })
 
         const minion = await ReactPanelController.createAndInit<MinionController>(

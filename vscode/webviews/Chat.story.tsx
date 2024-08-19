@@ -1,6 +1,6 @@
-import { asyncGeneratorWithValues } from '@sourcegraph/cody-shared'
 import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
+import { Observable } from 'observable-fns'
 import { Chat } from './Chat'
 import { FIXTURE_TRANSCRIPT } from './chat/fixtures'
 import { FIXTURE_COMMANDS, makePromptsAPIWithData } from './components/promptList/fixtures'
@@ -49,7 +49,7 @@ export const EmptyWithPromptLibraryUnsupported: StoryObj<typeof meta> = {
                     prompts: { type: 'unsupported' },
                     commands: FIXTURE_COMMANDS,
                 }),
-                evaluatedFeatureFlag: _flag => asyncGeneratorWithValues(true),
+                evaluatedFeatureFlag: _flag => Observable.of(true),
             }}
         >
             <Chat {...args} />
@@ -67,7 +67,7 @@ export const EmptyWithNoPrompts: StoryObj<typeof meta> = {
                     prompts: { type: 'results', results: [] },
                     commands: FIXTURE_COMMANDS,
                 }),
-                evaluatedFeatureFlag: _flag => asyncGeneratorWithValues(true),
+                evaluatedFeatureFlag: _flag => Observable.of(true),
             }}
         >
             <Chat {...args} />

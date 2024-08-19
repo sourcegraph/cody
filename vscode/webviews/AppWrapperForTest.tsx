@@ -5,10 +5,10 @@ import {
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SymbolKind,
-    asyncGeneratorFromAsyncFunction,
-    asyncGeneratorWithValues,
+    promiseFactoryToObservable,
 } from '@sourcegraph/cody-shared'
 import { ClientStateContextProvider, ExtensionAPIProviderForTestsOnly } from '@sourcegraph/prompt-editor'
+import { Observable } from 'observable-fns'
 import { type ComponentProps, type FunctionComponent, type ReactNode, useMemo } from 'react'
 import { URI } from 'vscode-uri'
 import { COMMON_WRAPPERS } from './AppWrapper'
@@ -35,7 +35,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                 provider: ExtensionAPIProviderForTestsOnly,
                 value: {
                     mentionMenuData: query =>
-                        asyncGeneratorFromAsyncFunction(async () => {
+                        promiseFactoryToObservable(async () => {
                             await new Promise<void>(resolve => setTimeout(resolve, 250))
                             const queryTextLower = query.text.toLowerCase()
                             return {
@@ -69,7 +69,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                                             ].filter(f => f.uri.path.includes(queryTextLower)),
                             }
                         }),
-                    evaluatedFeatureFlag: _flag => asyncGeneratorWithValues(true),
+                    evaluatedFeatureFlag: _flag => Observable.of(true),
                     prompts: makePromptsAPIWithData({
                         prompts: { type: 'results', results: FIXTURE_PROMPTS },
                         commands: FIXTURE_COMMANDS,

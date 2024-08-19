@@ -28,13 +28,10 @@ export class RepoNameResolver {
         this.authProvider = authProvider
 
         // TODO(beyang): handle disposable
-        this.authProvider.onChange(
-            () => {
-                this.fsPathToRepoNameCache.clear()
-                this.remoteUrlToRepoNameCache.clear()
-            },
-            { runImmediately: true }
-        )
+        this.authProvider.changes.subscribe(() => {
+            this.fsPathToRepoNameCache.clear()
+            this.remoteUrlToRepoNameCache.clear()
+        })
     }
 
     /**

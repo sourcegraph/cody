@@ -4,15 +4,15 @@ import {
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionMenuData,
-    asyncGeneratorFromPromise,
-    asyncGeneratorWithValues,
+    promiseToObservable,
 } from '@sourcegraph/cody-shared'
 import { renderHook } from '@testing-library/react'
+import { Observable } from 'observable-fns'
 import { describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { useClientState } from '../../clientState'
-import { waitForAsyncGeneratorInTest } from '../../useAsyncGenerator'
 import { MOCK_API, useExtensionAPI } from '../../useExtensionAPI'
+import { waitForObservableInTest } from '../../useObservable'
 import { useCallMentionMenuData, useMentionMenuData } from './useMentionMenuData'
 
 vi.mock('../../useExtensionAPI')
@@ -49,7 +49,7 @@ describe('useMentionMenuData', () => {
             vi.mocked(useExtensionAPI).mockReturnValue({
                 ...MOCK_API,
                 mentionMenuData: () =>
-                    asyncGeneratorWithValues({
+                    Observable.of({
                         providers: mockProviders,
                         items: [file1, mockContextItems[1], mockContextItems[2]],
                     }),
@@ -68,7 +68,7 @@ describe('useMentionMenuData', () => {
                     { remainingTokenBudget: 100, limit: 10 }
                 )
             )
-            await waitForAsyncGeneratorInTest()
+            await waitForObservableInTest()
             expect(result.current).toEqual<typeof result.current>({
                 providers: mockProviders,
                 items: [file1FromInitialContext, mockContextItems[1], mockContextItems[2]],
@@ -79,7 +79,7 @@ describe('useMentionMenuData', () => {
             vi.mocked(useExtensionAPI).mockReturnValue({
                 ...MOCK_API,
                 mentionMenuData: () =>
-                    asyncGeneratorWithValues({
+                    Observable.of({
                         providers: [],
                         items: [file1],
                     }),
@@ -90,7 +90,7 @@ describe('useMentionMenuData', () => {
                     { remainingTokenBudget: 100, limit: 10 }
                 )
             )
-            await waitForAsyncGeneratorInTest()
+            await waitForObservableInTest()
             expect(result2.current).toEqual<typeof result2.current>({
                 providers: [],
                 items: [file1],
@@ -106,7 +106,7 @@ describe('useMentionMenuData', () => {
         vi.mocked(useExtensionAPI).mockReturnValue({
             ...MOCK_API,
             mentionMenuData: () =>
-                asyncGeneratorWithValues({
+                Observable.of({
                     providers: mockProviders,
                     items: [],
                     error: 'my error',
@@ -119,8 +119,8 @@ describe('useMentionMenuData', () => {
         const { result } = renderHook(() =>
             useMentionMenuData({ query: '', parentItem: null }, { remainingTokenBudget: 100, limit: 10 })
         )
-        await waitForAsyncGeneratorInTest()
-        await waitForAsyncGeneratorInTest() // reduce flakiness
+        await waitForObservableInTest()
+        await waitForObservableInTest() // reduce flakiness
         expect(result.current).toEqual<typeof result.current>({
             items: [],
             providers: mockProviders,
@@ -140,7 +140,7 @@ describe('useCallMentionMenuData', () => {
 
         vi.mocked(useExtensionAPI).mockReturnValue({
             ...MOCK_API,
-            mentionMenuData: () => asyncGeneratorFromPromise(dataPromise),
+            mentionMenuData: () => promiseToObservable(dataPromise),
         })
 
         const { result } = renderHook(() => useCallMentionMenuData({ query: 'q', parentItem: null }))

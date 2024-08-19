@@ -8,8 +8,8 @@ import {
     type ConfigurationWithAccessToken,
     DOTCOM_URL,
     SourcegraphGraphQLAPIClient,
-    asyncGeneratorFromVSCodeEvent,
     defaultAuthStatus,
+    fromVSCodeEvent,
     graphqlClient,
     isError,
     logError,
@@ -19,6 +19,7 @@ import {
     unauthenticatedStatus,
 } from '@sourcegraph/cody-shared'
 
+import type { Observable } from 'observable-fns'
 import { AccountMenuOptions, openAccountMenu } from '../auth/account-menu'
 import { closeAuthProgressIndicator } from '../auth/auth-progress-indicator'
 import { ACCOUNT_USAGE_URL, isSourcegraphToken } from '../chat/protocol'
@@ -33,10 +34,6 @@ import { localStorage } from './LocalStorageProvider'
 import { secretStorage } from './SecretStorageProvider'
 
 const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
-
-interface OnChangeOptions {
-    runImmediately: boolean
-}
 
 type AuthConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
 export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
@@ -88,15 +85,10 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         }).catch(error => logError('AuthProvider:init:failed', lastEndpoint, { verbose: error }))
     }
 
-    public onChange(
-        listener: (authStatus: AuthStatus) => void,
-        { runImmediately }: OnChangeOptions = { runImmediately: false }
-    ): vscode.Disposable {
-        if (runImmediately) {
-            listener(this.status)
-        }
-        return this.didChangeEvent.event(listener)
-    }
+    public changes: Observable<AuthStatus> = fromVSCodeEvent(
+        this.didChangeEvent.event,
+        this.getAuthStatus.bind(this)
+    )
 
     // Display quickpick to select endpoint to sign in to
     public async signinMenu(type?: 'enterprise' | 'dotcom' | 'token', uri?: string): Promise<void> {
@@ -303,10 +295,6 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
     public getAuthStatus(): AuthStatus {
         return this.status
-    }
-
-    public observeAuthStatus(signal?: AbortSignal): AsyncGenerator<AuthStatus> {
-        return asyncGeneratorFromVSCodeEvent(this.didChangeEvent.event, this.status, signal)
     }
 
     // It processes the authentication steps and stores the login info before sharing the auth status with chatview

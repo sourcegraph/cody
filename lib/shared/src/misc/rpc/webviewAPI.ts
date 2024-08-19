@@ -1,3 +1,4 @@
+import type { Observable } from 'observable-fns'
 import type { ContextItem } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
@@ -9,23 +10,20 @@ export interface WebviewToExtensionAPI {
     /**
      * Get the data to display in the @-mention menu for the given query.
      */
-    mentionMenuData(query: MentionQuery, signal: AbortSignal): AsyncGenerator<MentionMenuData>
+    mentionMenuData(query: MentionQuery): Observable<MentionMenuData>
 
     /**
      * Get the evaluated value of a feature flag. All feature flags used by the webview must be in
      * {@link FEATURE_FLAGS_USED_IN_WEBVIEW}.
      */
-    evaluatedFeatureFlag(
-        flag: FeatureFlagUsedInWebview,
-        signal: AbortSignal
-    ): AsyncGenerator<boolean | undefined>
+    evaluatedFeatureFlag(flag: FeatureFlagUsedInWebview): Observable<boolean | undefined>
 
     /**
      * Observe the results of querying prompts in the Prompt Library. For backcompat, it also
      * includes matching builtin commands and custom commands (which are both deprecated in favor of
      * the Prompt Library).
      */
-    prompts(query: string, signal: AbortSignal): AsyncGenerator<PromptsResult>
+    prompts(query: string): Observable<PromptsResult>
 }
 
 export interface MentionMenuData {

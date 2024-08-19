@@ -18,14 +18,17 @@ importers:
   .:
     dependencies:
       '@openctx/client':
-        specifier: ^0.0.23
-        version: 0.0.23
+        specifier: ^0.0.24
+        version: 0.0.24
       ignore:
         specifier: ^5.3.1
         version: 5.3.1
       mac-ca:
         specifier: ^2.0.3
         version: 2.0.3
+      observable-fns:
+        specifier: ^0.6.1
+        version: 0.6.1
       react:
         specifier: 18.2.0
         version: 18.2.0
@@ -442,8 +445,8 @@ importers:
         specifier: ^0.0.6
         version: 0.0.6
       '@openctx/vscode-lib':
-        specifier: ^0.0.18
-        version: 0.0.18
+        specifier: ^0.0.20
+        version: 0.0.20
       '@opentelemetry/api':
         specifier: ^1.7.0
         version: 1.7.0
@@ -872,8 +875,8 @@ importers:
   web:
     devDependencies:
       '@openctx/vscode-lib':
-        specifier: ^0.0.18
-        version: 0.0.18
+        specifier: ^0.0.20
+        version: 0.0.20
       '@sourcegraph/cody':
         specifier: workspace:*
         version: link:../agent
@@ -3683,8 +3686,8 @@ packages:
       which: 4.0.0
     dev: true
 
-  /@openctx/client@0.0.23:
-    resolution: {integrity: sha512-5SAtYz6rkAsgZbJV4mWnhMQal7oC5lcEmXr0/oQaY2VnrZgAuHAwnAOj62chwSDqzfEF21suTH6ZJOIEJmKy3w==}
+  /@openctx/client@0.0.24:
+    resolution: {integrity: sha512-ffUiKU4LnloMix1jYJZCGFRn1MPUjKuwgYKuTJN1GD0SGamAyJ1gJAB/DSiild+U15wtTiJNMSN85RV/bXUUMA==}
     dependencies:
       '@openctx/protocol': 0.0.16
       '@openctx/provider': 0.0.15
@@ -3740,10 +3743,10 @@ packages:
       sanitize-html: 2.13.0
       xss: 1.0.15
 
-  /@openctx/vscode-lib@0.0.18:
-    resolution: {integrity: sha512-t44wzMSpO8RiMiX7FvMb3vJIOXTD5oVFbaEHqjsWuH3xVgYVocvd4S1CjWtCjz6kDgkG9OrGr1MtUkIJo3In7A==}
+  /@openctx/vscode-lib@0.0.20:
+    resolution: {integrity: sha512-LWaijsnYfdB+e8pz3xGTWrutcdS1cKQLwMXFMbXO18QKK9zfZ2DaJYqb/ZMbONTEdUXeS72HOlZNMbLuDytUhQ==}
     dependencies:
-      '@openctx/client': 0.0.23
+      '@openctx/client': 0.0.24
       '@openctx/ui-common': 0.0.11
       rxjs: 7.8.1
 
@@ -7843,7 +7846,7 @@ packages:
     resolution: {integrity: sha512-y+CcFFwelSXpLZk/7fMB2mUbGtX9lKycf1MWJ7CaTIERyitVlyQx6C+sxcROU2BAJ24OiZyK+8wj2i8AlBoS3A==}
     engines: {node: '>=10'}
     dependencies:
-      tslib: 2.1.0
+      tslib: 2.6.3
     dev: false
 
   /aria-query@5.1.3:
@@ -7937,14 +7940,14 @@ packages:
     resolution: {integrity: sha512-x1FCFnFifvYDDzTaLII71vG5uvDwgtmDTEVWAxrgeiR8VjMONcCXJx7E+USjDtHlwFmt9MysbqgF9b9Vjr6w+w==}
     engines: {node: '>=4'}
     dependencies:
-      tslib: 2.1.0
+      tslib: 2.6.3
     dev: false
 
   /ast-types@0.16.1:
     resolution: {integrity: sha512-6t10qk83GOG8p0vKmaCr8eiilZwO171AvbROMtvvNiwrTly62t+7XkA8RdIIVbpMhCASAsxgAzdRSwh6nw/5Dg==}
     engines: {node: '>=4'}
     dependencies:
-      tslib: 2.1.0
+      tslib: 2.6.3
     dev: true
 
   /astral-regex@2.0.0:
@@ -9481,7 +9484,7 @@ packages:
     resolution: {integrity: sha512-Kv5nKlh6yRrdrGvxeJ2e5y2eRUpkUosIW4A2AS38zwSz27zu7ufDwQPi5Jhs3XAlGNetl3bmnGhQsMtkKJnj3w==}
     dependencies:
       no-case: 3.0.4
-      tslib: 2.1.0
+      tslib: 2.6.3
     dev: true
 
   /dotenv-expand@10.0.0:
@@ -12210,7 +12213,7 @@ packages:
   /lower-case@2.0.2:
     resolution: {integrity: sha512-7fm3l3NAF9WfN6W3JOmf5drwpVqX78JtoGJ3A6W0a6ZnldM41w2fV5D490psKFTpMds8TJse/eHLFFsNHHjHgg==}
     dependencies:
-      tslib: 2.1.0
+      tslib: 2.6.3
     dev: true
 
   /lowlight@2.9.0:
@@ -13282,7 +13285,7 @@ packages:
     resolution: {integrity: sha512-fgAN3jGAh+RoxUGZHTSOLJIqUc2wmoBwGR4tbpNAKmmovFoWq0OdRkb0VkldReO2a2iBT/OEulG9XSUc10r3zg==}
     dependencies:
       lower-case: 2.0.2
-      tslib: 2.1.0
+      tslib: 2.6.3
     dev: true
 
   /nocache@3.0.4:
@@ -13522,6 +13525,10 @@ packages:
     engines: {node: '>=0.10.0'}
     dependencies:
       isobject: 3.0.1
+    dev: false
+
+  /observable-fns@0.6.1:
+    resolution: {integrity: sha512-9gRK4+sRWzeN6AOewNBTLXir7Zl/i3GB6Yl26gK4flxz8BXVpD3kt8amREmWNb0mxYOGDotvE5a4N+PtGGKdkg==}
     dev: false
 
   /ohash@1.1.3:
@@ -14091,7 +14098,6 @@ packages:
       nanoid: 3.3.7
       picocolors: 1.0.1
       source-map-js: 1.2.0
-    dev: true
 
   /prebuild-install@7.1.2:
     resolution: {integrity: sha512-UnNke3IQb6sgarcZIDU3gbMeTp/9SSU1DAIkil7PrqG1vZlBtY5msYccSKSHDqa3hNg436IXK+SNImReuA1wEQ==}
@@ -14581,7 +14587,7 @@ packages:
       '@types/react': 18.2.37
       react: 18.2.0
       react-style-singleton: 2.2.1(@types/react@18.2.37)(react@18.2.0)
-      tslib: 2.1.0
+      tslib: 2.6.3
     dev: false
 
   /react-remove-scroll-bar@2.3.6(@types/react@18.2.79)(react@18.2.0):
@@ -14597,7 +14603,7 @@ packages:
       '@types/react': 18.2.79
       react: 18.2.0
       react-style-singleton: 2.2.1(@types/react@18.2.79)(react@18.2.0)
-      tslib: 2.1.0
+      tslib: 2.6.3
     dev: false
 
   /react-remove-scroll@2.5.5(@types/react@18.2.37)(react@18.2.0):
@@ -14614,7 +14620,7 @@ packages:
       react: 18.2.0
       react-remove-scroll-bar: 2.3.6(@types/react@18.2.37)(react@18.2.0)
       react-style-singleton: 2.2.1(@types/react@18.2.37)(react@18.2.0)
-      tslib: 2.1.0
+      tslib: 2.6.3
       use-callback-ref: 1.3.2(@types/react@18.2.37)(react@18.2.0)
       use-sidecar: 1.1.2(@types/react@18.2.37)(react@18.2.0)
     dev: false
@@ -14633,7 +14639,7 @@ packages:
       react: 18.2.0
       react-remove-scroll-bar: 2.3.6(@types/react@18.2.79)(react@18.2.0)
       react-style-singleton: 2.2.1(@types/react@18.2.79)(react@18.2.0)
-      tslib: 2.1.0
+      tslib: 2.6.3
       use-callback-ref: 1.3.2(@types/react@18.2.79)(react@18.2.0)
       use-sidecar: 1.1.2(@types/react@18.2.79)(react@18.2.0)
     dev: false
@@ -14652,7 +14658,7 @@ packages:
       get-nonce: 1.0.1
       invariant: 2.2.4
       react: 18.2.0
-      tslib: 2.1.0
+      tslib: 2.6.3
     dev: false
 
   /react-style-singleton@2.2.1(@types/react@18.2.79)(react@18.2.0):
@@ -14669,7 +14675,7 @@ packages:
       get-nonce: 1.0.1
       invariant: 2.2.4
       react: 18.2.0
-      tslib: 2.1.0
+      tslib: 2.6.3
     dev: false
 
   /react@18.2.0:
@@ -14779,7 +14785,7 @@ packages:
       esprima: 4.0.1
       source-map: 0.6.1
       tiny-invariant: 1.3.3
-      tslib: 2.1.0
+      tslib: 2.6.3
     dev: true
 
   /redent@3.0.0:
@@ -15176,7 +15182,7 @@ packages:
   /rxjs@7.8.1:
     resolution: {integrity: sha512-AA3TVj+0A2iuIoQkWEK/tqFjBq2j+6PO6Y0zJcvzLAFhEFIO3HL0vls9hWLncZbAAbK0mar7oZ4V079I/qPMxg==}
     dependencies:
-      tslib: 2.1.0
+      tslib: 2.6.3
 
   /safe-buffer@5.1.2:
     resolution: {integrity: sha512-Gd2UZBJDkXlY7GbJxfsE8/nvKkUEU1G38c1siN6QP6a9PT9MmHB8GnpscSmMJSoF8LOIrt8ud/wPtojys4G6+g==}
@@ -15201,7 +15207,7 @@ packages:
       htmlparser2: 8.0.2
       is-plain-object: 5.0.0
       parse-srcset: 1.0.2
-      postcss: 8.4.38
+      postcss: 8.4.41
 
   /sax@1.3.0:
     resolution: {integrity: sha512-0s+oAmw9zLl1V1cS9BtZN7JAd0cW5e0QH4W3LWEK6a4LaLEA2OTpGYWDY+6XasBLtz6wkm3u1xRw95mRuJ59WA==}
@@ -15428,7 +15434,7 @@ packages:
     resolution: {integrity: sha512-LAOh4z89bGQvl9pFfNF8V146i7o7/CqFPbqzYgP+yYzDIDeS9HaNFtXABamRW+AQzEVODcvE79ljJ+8a9YSdMg==}
     dependencies:
       dot-case: 3.0.4
-      tslib: 2.1.0
+      tslib: 2.6.3
     dev: true
 
   /snapdragon-node@2.1.1:
@@ -16378,6 +16384,7 @@ packages:
 
   /tslib@2.1.0:
     resolution: {integrity: sha512-hcVC3wYEziELGGmEEXue7D75zbwIIVUMWAVbHItGPx0ziyXxrOMQx4rQEVEV45Ut/1IotuEvwqPopzIOkDMf0A==}
+    dev: false
 
   /tslib@2.6.3:
     resolution: {integrity: sha512-xNvxJEOUiWPGhUuUdQgAJPKOOJfGnIyKySOc09XkKsgdUV/3E2zvwZYdejjmRgPCgcym1juLH3226yA7sEFJKQ==}
@@ -16788,7 +16795,7 @@ packages:
     dependencies:
       '@types/react': 18.2.37
       react: 18.2.0
-      tslib: 2.1.0
+      tslib: 2.6.3
     dev: false
 
   /use-callback-ref@1.3.2(@types/react@18.2.79)(react@18.2.0):
@@ -16803,7 +16810,7 @@ packages:
     dependencies:
       '@types/react': 18.2.79
       react: 18.2.0
-      tslib: 2.1.0
+      tslib: 2.6.3
     dev: false
 
   /use-sidecar@1.1.2(@types/react@18.2.37)(react@18.2.0):
@@ -16819,7 +16826,7 @@ packages:
       '@types/react': 18.2.37
       detect-node-es: 1.1.0
       react: 18.2.0
-      tslib: 2.1.0
+      tslib: 2.6.3
     dev: false
 
   /use-sidecar@1.1.2(@types/react@18.2.79)(react@18.2.0):
@@ -16835,7 +16842,7 @@ packages:
       '@types/react': 18.2.79
       detect-node-es: 1.1.0
       react: 18.2.0
-      tslib: 2.1.0
+      tslib: 2.6.3
     dev: false
 
   /use@3.1.1:
@@ -16992,7 +16999,7 @@ packages:
     dependencies:
       '@types/node': 20.12.7
       esbuild: 0.20.2
-      postcss: 8.4.38
+      postcss: 8.4.41
       rollup: 4.18.0
     optionalDependencies:
       fsevents: 2.3.3

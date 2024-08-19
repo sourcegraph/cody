@@ -329,4 +329,4 @@ export {
     type GenericWebviewAPIWrapper,
     createMessageAPIForExtension,
 } from './misc/rpc/rpc'
-export * from './misc/asyncGenerator'
+export * from './misc/observable'
