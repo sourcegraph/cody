@@ -11,7 +11,6 @@ import { type FunctionComponent, type RefObject, useMemo } from 'react'
 import styles from './BaseEditor.module.css'
 import { RICH_EDITOR_NODES } from './nodes'
 import { MentionsPlugin } from './plugins/atMentions/atMentions'
-import CodeHighlightPlugin from './plugins/codeHighlight'
 import { DisableEscapeKeyBlursPlugin } from './plugins/disableEscapeKeyBlurs'
 import { KeyboardEventPlugin, type KeyboardEventPluginProps } from './plugins/keyboardEvent'
 import { NoRichTextFormatShortcutsPlugin } from './plugins/noRichTextShortcuts'
@@ -82,7 +81,6 @@ export const BaseEditor: FunctionComponent<Props> = ({
                         ignoreHistoryMergeTagChange={false}
                     />
                     <MentionsPlugin contextWindowSizeInTokens={contextWindowSizeInTokens} />
-                    <CodeHighlightPlugin />
                     {onFocusChange && <OnFocusChangePlugin onFocusChange={onFocusChange} />}
                     {editorRef && <EditorRefPlugin editorRef={editorRef} />}
                     <KeyboardEventPlugin onEnterKey={onEnterKey} />

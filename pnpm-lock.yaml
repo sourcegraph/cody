@@ -289,9 +289,6 @@ importers:
 
   lib/prompt-editor:
     dependencies:
-      '@lexical/code':
-        specifier: ^0.17.0
-        version: 0.17.0
       '@lexical/react':
         specifier: https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz
         version: '@storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz(react-dom@18.2.0)(react@18.2.0)(yjs@13.6.18)'
