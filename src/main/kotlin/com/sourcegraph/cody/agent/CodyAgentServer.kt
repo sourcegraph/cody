@@ -9,7 +9,6 @@ import com.sourcegraph.cody.agent.protocol.AutocompleteResult
 import com.sourcegraph.cody.agent.protocol.ChatHistoryResponse
 import com.sourcegraph.cody.agent.protocol.ChatModelsParams
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
-import com.sourcegraph.cody.agent.protocol.ChatSubmitMessageParams
 import com.sourcegraph.cody.agent.protocol.CompletionItemParams
 import com.sourcegraph.cody.agent.protocol.CurrentUserCodySubscription
 import com.sourcegraph.cody.agent.protocol.Event
@@ -41,7 +40,6 @@ import com.sourcegraph.cody.agent.protocol_generated.Graphql_GetRepoIdsParams
 import com.sourcegraph.cody.agent.protocol_generated.Graphql_GetRepoIdsResult
 import com.sourcegraph.cody.agent.protocol_generated.Null
 import com.sourcegraph.cody.agent.protocol_generated.ServerInfo
-import com.sourcegraph.cody.chat.ConnectionId
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
@@ -161,18 +159,12 @@ interface _LegacyAgentServer {
   @JsonRequest("command/execute")
   fun commandExecute(params: CommandExecuteParams): CompletableFuture<Any?>
 
-  @JsonRequest("commands/explain") fun legacyCommandsExplain(): CompletableFuture<ConnectionId>
-
-  @JsonRequest("commands/smell") fun legacyCommandsSmell(): CompletableFuture<ConnectionId>
-
   @JsonRequest("editCommands/document") fun commandsDocument(): CompletableFuture<EditTask>
 
   @JsonRequest("editCommands/code")
   fun commandsEdit(params: InlineEditParams): CompletableFuture<EditTask>
 
   @JsonRequest("editCommands/test") fun commandsTest(): CompletableFuture<EditTask>
-
-  @JsonRequest("chat/new") fun chatNewTODODeleteMe(): CompletableFuture<String>
 
   @JsonRequest("chat/web/new") fun chatNew(): CompletableFuture<Any>
 
@@ -186,9 +178,6 @@ interface _LegacyAgentServer {
 
   @JsonRequest("webview/resolveWebviewView")
   fun webviewResolveWebviewView(params: WebviewResolveWebviewViewParams): CompletableFuture<Any>
-
-  @JsonRequest("chat/submitMessage")
-  fun chatSubmitMessage(params: ChatSubmitMessageParams): CompletableFuture<ExtensionMessage>
 
   @JsonRequest("chat/models")
   fun chatModels(params: ChatModelsParams): CompletableFuture<ChatModelsResponse>

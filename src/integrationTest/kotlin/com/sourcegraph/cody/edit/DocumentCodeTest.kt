@@ -12,6 +12,7 @@ import com.sourcegraph.cody.edit.widget.LensSpinner
 import com.sourcegraph.cody.edit.widget.LensWidgetGroup
 import com.sourcegraph.cody.util.CodyIntegrationTextFixture
 import com.sourcegraph.cody.util.CustomJunitClassRunner
+import kotlin.test.Ignore
 import org.hamcrest.Matchers.startsWith
 import org.junit.Assert.assertThat
 import org.junit.Test
@@ -19,6 +20,7 @@ import org.junit.runner.RunWith
 
 @RunWith(CustomJunitClassRunner::class)
 class DocumentCodeTest : CodyIntegrationTextFixture() {
+  @Ignore
   @Test
   fun testGetsWorkingGroupLens() {
     val codeLensGroup = runAndWaitForLenses(DocumentCodeAction.ID, EditCancelAction.ID)

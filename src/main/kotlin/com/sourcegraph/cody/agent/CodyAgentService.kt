@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
-import java.util.function.Function
 
 @Service(Service.Level.PROJECT)
 class CodyAgentService(private val project: Project) : Disposable {
@@ -57,12 +56,12 @@ class CodyAgentService(private val project: Project) : Disposable {
         0,
         5000) // Check every 5 seconds
     onStartup { agent ->
-      agent.client.onOpenExternal = Function { params ->
+      agent.client.onOpenExternal = { params ->
         BrowserOpener.openInBrowser(project, params.uri)
         true
       }
 
-      agent.client.onWorkspaceEdit = Function { params ->
+      agent.client.onWorkspaceEdit = { params ->
         try {
           EditService.getInstance(project).performWorkspaceEdit(params)
         } catch (e: RuntimeException) {
@@ -71,11 +70,11 @@ class CodyAgentService(private val project: Project) : Disposable {
         }
       }
 
-      agent.client.onCodeLensesDisplay = Consumer { params ->
+      agent.client.onCodeLensesDisplay = { params ->
         LensesService.getInstance(project).updateLenses(params.uri, params.codeLenses)
       }
 
-      agent.client.onTextDocumentEdit = Function { params ->
+      agent.client.onTextDocumentEdit = { params ->
         try {
           EditService.getInstance(project).performTextEdits(params.uri, params.edits)
         } catch (e: RuntimeException) {
@@ -84,16 +83,20 @@ class CodyAgentService(private val project: Project) : Disposable {
         }
       }
 
-      agent.client.onTextDocumentShow = Function { params ->
+      agent.client.onTextDocumentShow = { params ->
         val selection = params.options?.selection
         val preserveFocus = params.options?.preserveFocus
-        val vf = CodyEditorUtil.findFileOrScratch(project, params.uri) ?: return@Function false
-        CodyEditorUtil.showDocument(project, vf, selection, preserveFocus)
-        true
+        val vf = CodyEditorUtil.findFileOrScratch(project, params.uri)
+        if (vf != null) {
+          CodyEditorUtil.showDocument(project, vf, selection, preserveFocus)
+          true
+        } else {
+          false
+        }
       }
 
-      agent.client.onOpenUntitledDocument = Function { params ->
-        val result = CompletableFuture<ProtocolTextDocument?>()
+      agent.client.onOpenUntitledDocument = { params ->
+        val result = CompletableFuture<ProtocolTextDocument>()
         ApplicationManager.getApplication().invokeAndWait {
           val vf =
               CodyEditorUtil.createFileOrScratchFromUntitled(project, params.uri, params.content)
@@ -102,19 +105,17 @@ class CodyAgentService(private val project: Project) : Disposable {
         result.get()
       }
 
-      agent.client.onRemoteRepoDidChange = Consumer {
+      agent.client.onRemoteRepoDidChange = {
         RemoteRepoSearcher.getInstance(project).remoteRepoDidChange()
       }
 
-      agent.client.onRemoteRepoDidChangeState = Consumer { state ->
+      agent.client.onRemoteRepoDidChangeState = { state ->
         RemoteRepoSearcher.getInstance(project).remoteRepoDidChangeState(state)
       }
 
-      agent.client.onIgnoreDidChange = Consumer {
-        IgnoreOracle.getInstance(project).onIgnoreDidChange()
-      }
+      agent.client.onIgnoreDidChange = { IgnoreOracle.getInstance(project).onIgnoreDidChange() }
 
-      agent.client.onDebugMessage = Consumer { message ->
+      agent.client.onDebugMessage = { message ->
         if (!project.isDisposed) {
           CodyConsole.getInstance(project).addMessage(message)
         }
