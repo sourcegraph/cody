@@ -28,6 +28,7 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     type SerializedPromptEditorState,
+    TokenCounter,
     Typewriter,
     addMessageListenersForExtensionAPI,
     allMentionProvidersMetadata,
@@ -79,6 +80,7 @@ import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
+import { workspaceReposMonitor } from '../../repository/repo-metadata-from-git-api'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
@@ -113,7 +115,7 @@ import { type ContextRetriever, toStructuredMentions } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, openFile } from './chat-helpers'
 import { type HumanInput, getContextStrategy, getPriorityContext, resolveContext } from './context'
-import { DefaultPrompter } from './prompt'
+import { DefaultPrompter, type PromptInfo } from './prompt'
 
 interface ChatControllerOptions {
     extensionUri: vscode.Uri
@@ -692,42 +694,23 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     implicitMentions,
                     command !== undefined
                 )
-                const sendTelemetry = (contextSummary: any, privateContextSummary?: any): void => {
-                    const properties = {
-                        ...sharedProperties,
-                        traceId: span.spanContext().traceId,
-                    }
-                    span.setAttributes(properties)
-                    firstTokenSpan.setAttributes(properties)
-
-                    telemetryRecorder.recordEvent('cody.chat-question', 'executed', {
-                        metadata: {
-                            ...contextSummary,
-                            // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
-                            // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                            recordsPrivateMetadataTranscript: authStatus.isDotCom ? 1 : 0,
-                        },
-                        privateMetadata: {
-                            properties,
-                            privateContextSummary: privateContextSummary,
-                            // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
-                            // V2 telemetry exports privateMetadata only for DotCom users
-                            // the condition below is an additional safeguard measure
-                            promptText:
-                                authStatus.isDotCom &&
-                                truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
-                        },
-                    })
-                }
 
                 try {
-                    const prompt = await this.buildPrompt(
+                    const { prompt, context } = await this.buildPrompt(
                         prompter,
                         signal,
                         requestID,
-                        sendTelemetry,
                         contextAlternatives
                     )
+
+                    void this.sendChatExecutedTelemetry(
+                        span,
+                        firstTokenSpan,
+                        inputText,
+                        sharedProperties,
+                        context
+                    )
+
                     signal.throwIfAborted()
                     this.streamAssistantResponse(requestID, prompt, span, firstTokenSpan, signal)
                 } catch (error) {
@@ -746,6 +729,56 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     recordErrorToSpan(span, error as Error)
                 }
             })
+        })
+    }
+
+    private async sendChatExecutedTelemetry(
+        span: Span,
+        firstTokenSpan: Span,
+        inputText: PromptString,
+        sharedProperties: any,
+        context: PromptInfo['context']
+    ): Promise<void> {
+        const authStatus = this.authProvider.getAuthStatus()
+
+        // Create a summary of how many code snippets of each context source are being
+        // included in the prompt
+        const contextSummary: { [key: string]: number } = {}
+        for (const { source } of context.used) {
+            if (!source) {
+                continue
+            }
+            if (contextSummary[source]) {
+                contextSummary[source] += 1
+            } else {
+                contextSummary[source] = 1
+            }
+        }
+        const privateContextSummary = await this.buildPrivateContextSummary(context)
+
+        const properties = {
+            ...sharedProperties,
+            traceId: span.spanContext().traceId,
+        }
+        span.setAttributes(properties)
+        firstTokenSpan.setAttributes(properties)
+
+        telemetryRecorder.recordEvent('cody.chat-question', 'executed', {
+            metadata: {
+                ...contextSummary,
+                // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
+                // See https://github.com/sourcegraph/sourcegraph/pull/59524
+                recordsPrivateMetadataTranscript: authStatus.isDotCom ? 1 : 0,
+            },
+            privateMetadata: {
+                properties,
+                privateContextSummary: privateContextSummary,
+                // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                // V2 telemetry exports privateMetadata only for DotCom users
+                // the condition below is an additional safeguard measure
+                promptText:
+                    authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
+            },
         })
     }
 
@@ -1213,9 +1246,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         prompter: DefaultPrompter,
         abortSignal: AbortSignal,
         requestID: string,
-        sendTelemetry?: (contextSummary: any, privateContextSummary?: any) => void,
         contextAlternatives?: RankedContext[]
-    ): Promise<Message[]> {
+    ): Promise<PromptInfo> {
         const experimentalSmartApplyEnabled = await this.isSmartApplyEnabled()
         const { prompt, context } = await prompter.makePrompt(
             this.chatModel,
@@ -1230,7 +1262,42 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // This is not awaited, so we kick the call off but don't block on it returning
         this.contextAPIClient?.recordContext(requestID, context.used, context.ignored)
 
-        return prompt
+        return { prompt, context }
+    }
+
+    private async buildPrivateContextSummary(context: {
+        used: ContextItem[]
+        ignored: ContextItem[]
+    }): Promise<object> {
+        // 🚨 SECURITY: included only for dotcom users & public repos
+        const isDotCom = this.authProvider.getAuthStatus().isDotCom
+        if (!isDotCom) {
+            return {}
+        }
+        if (!workspaceReposMonitor) {
+            return {}
+        }
+
+        const { isPublic, repoMetadata: gitMetadata } =
+            await workspaceReposMonitor.getRepoMetadataIfPublic()
+        if (!isPublic) {
+            return {}
+        }
+
+        const getContextSummary = (items: ContextItem[]) => ({
+            count: items.length,
+            items: items.map(i => ({
+                source: i.source,
+                size: i.size || TokenCounter.countTokens(i.content || ''),
+                content: i.content,
+            })),
+        })
+
+        return {
+            included: getContextSummary(context.used),
+            excluded: getContextSummary(context.ignored),
+            gitMetadata,
+        }
     }
 
     private streamAssistantResponse(
@@ -1665,6 +1732,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     ): Promise<void> {
         const mentionsInInitialContext = mentions.filter(item => item.source !== ContextItemSource.User)
         const mentionsByUser = mentions.filter(item => item.source === ContextItemSource.User)
+
+        let gitMetadata = ''
+        if (workspaceReposMonitor) {
+            const { isPublic: isWorkspacePublic, repoMetadata } =
+                await workspaceReposMonitor.getRepoMetadataIfPublic()
+            if (authStatus.isDotCom && legacyAddEnhancedContext && isWorkspacePublic) {
+                gitMetadata = JSON.stringify(repoMetadata)
+            }
+        }
         telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
             metadata: {
                 // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
@@ -1713,6 +1789,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // the condition below is an additional safeguard measure
                 promptText:
                     authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
+                gitMetadata,
             },
         })
     }

@@ -1,3 +1,141 @@
+import * as vscode from 'vscode'
+import { logDebug } from '../log'
+import { gitCommitIdFromGitExtension, vscodeGitAPI } from './git-extension-api'
+import { repoNameResolver } from './repo-name-resolver'
+
+export interface RepoRevMetaData extends RepoMetaData {
+    commit?: string
+}
+
+export class WorkspaceReposMonitor implements vscode.Disposable {
+    private disposables: vscode.Disposable[] = []
+    private repoMetadata = new Map<string, Promise<RepoRevMetaData[]>>()
+
+    constructor() {
+        for (const folderURI of this.getFolderURIs()) {
+            this.addWorkspaceFolder(folderURI)
+        }
+        this.disposables.push(
+            vscode.workspace.onDidChangeWorkspaceFolders(evt => this.onDidChangeWorkspaceFolders(evt))
+        )
+    }
+
+    private getFolderURIs(): vscode.Uri[] {
+        return vscode.workspace.workspaceFolders?.map(f => f.uri) ?? []
+    }
+
+    private addWorkspaceFolder(folderURI: vscode.Uri): void {
+        const repoMetadata: Promise<RepoRevMetaData[]> = fetchRepoMetadataForFolder(folderURI).then(
+            metadatas =>
+                metadatas.map(m => ({
+                    ...m,
+                    commit: gitCommitIdFromGitExtension(folderURI),
+                }))
+        )
+        this.repoMetadata.set(folderURI.toString(), repoMetadata)
+    }
+
+    private removeWorkspaceFolder(folderURI: vscode.Uri): void {
+        this.repoMetadata.delete(folderURI.toString())
+    }
+
+    public dispose(): void {
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+        this.disposables = []
+    }
+
+    public async getRepoMetadataIfPublic(): Promise<
+        | { isPublic: false; repoMetadata: undefined }
+        | { isPublic: true; repoMetadata: RepoRevMetaData[] }
+    > {
+        return _getRepoMetadataIfPublic(this.getFolderURIs(), this.repoMetadata)
+    }
+
+    private onDidChangeWorkspaceFolders(event: vscode.WorkspaceFoldersChangeEvent): void {
+        for (const folder of event.added) {
+            this.addWorkspaceFolder(folder.uri)
+        }
+        for (const folder of event.removed) {
+            this.removeWorkspaceFolder(folder.uri)
+        }
+    }
+}
+
+export let workspaceReposMonitor: WorkspaceReposMonitor | undefined = undefined
+export function initWorkspaceReposMonitor(): WorkspaceReposMonitor {
+    if (!vscodeGitAPI) {
+        throw new Error(
+            'The Git API (initVSCodeGitApi) must be initialized before the workspace repos monitor'
+        )
+    }
+    workspaceReposMonitor = new WorkspaceReposMonitor()
+    return workspaceReposMonitor
+}
+
+async function fetchRepoMetadataForFolder(folderURI: vscode.Uri): Promise<RepoMetaData[]> {
+    const repoNames = await repoNameResolver.getRepoNamesFromWorkspaceUri(folderURI)
+    if (repoNames.length === 0) {
+        return []
+    }
+    const instance = RepoMetadatafromGitApi.getInstance()
+    return Promise.all(repoNames.map(rn => instance.getRepoMetadataUsingGitUrl(rn))).then(metadatas =>
+        metadatas.filter(m => m).map(m => m as RepoMetaData)
+    )
+}
+
+/**
+ * Checks if all of the workspace folders correspond to a public repository.
+ * A workspace folder is considered public if it has at least one public remote.
+ * If all workspace folders are public, return the public repository metadata for each folder.
+ */
+export async function _getRepoMetadataIfPublic(
+    folderURIs: vscode.Uri[],
+    folderURIToRepoMetadata: Map<string, Promise<RepoRevMetaData[]>>
+): Promise<
+    { isPublic: false; repoMetadata: undefined } | { isPublic: true; repoMetadata: RepoRevMetaData[] }
+> {
+    try {
+        if (folderURIs.length === 0) {
+            return { isPublic: false, repoMetadata: undefined }
+        }
+
+        const m: (Promise<RepoRevMetaData[]> | undefined)[] = []
+        for (const folderURI of folderURIs) {
+            m.push(folderURIToRepoMetadata.get(folderURI.toString()))
+        }
+        const repoMetadata = await Promise.all(m)
+
+        const allFoldersHaveAtLeastOnePublicRepo = repoMetadata.every(
+            r => r?.some(r => r.isPublic) ?? false
+        )
+        if (!allFoldersHaveAtLeastOnePublicRepo) {
+            return { isPublic: false, repoMetadata: undefined }
+        }
+
+        const publicRepoMetadata: RepoRevMetaData[] = []
+        for (const r of repoMetadata) {
+            if (!r) {
+                continue
+            }
+            for (const m of r) {
+                if (m.isPublic) {
+                    publicRepoMetadata.push(m)
+                    break
+                }
+            }
+        }
+        return {
+            isPublic: true,
+            repoMetadata: publicRepoMetadata,
+        }
+    } catch (error) {
+        logDebug('_getRepoMetadataIfPublic', 'error getting repository metadata', error)
+        return { isPublic: false, repoMetadata: undefined }
+    }
+}
+
 interface RepoMetaData {
     owner: string
     repoName: string
@@ -6,7 +144,6 @@ interface RepoMetaData {
 
 export class RepoMetadatafromGitApi {
     // This class is used to get the metadata from the gitApi.
-    // It is primarily meant to get the
     private static instance: RepoMetadatafromGitApi | null = null
     private cache = new Map<string, RepoMetaData | undefined>()
 
