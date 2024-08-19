@@ -18,10 +18,6 @@ export function rmSync(): unknown {
     throw new Error('not implemented')
 }
 
-export function copySync(): unknown {
-    throw new Error('not implemented')
-}
-
 export function copyFileSync(): unknown {
     throw new Error('not implemented')
 }

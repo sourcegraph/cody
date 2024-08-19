@@ -26,7 +26,6 @@
     "_build:web": "pnpm run -s _build:esbuild:web && pnpm run -s _build:webviews --mode production",
     "build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop\" \"pnpm run -s _build:webviews --mode development\"",
     "build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web\" \"pnpm run -s _build:webviews --mode development\"",
-    "build:prod:webviews": "pnpm run -s _build:webviews --mode production",
     "watch:build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
     "watch:build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
     "_build:esbuild:desktop": "pnpm download-wasm && pnpm run -s _build:esbuild:uninstall && pnpm run -s _build:esbuild:node",

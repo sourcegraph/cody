@@ -1849,10 +1849,7 @@ export async function addWebviewViewHTML(
     if (extensionClient.capabilities?.webview === 'agentic') {
         return
     }
-    const config = extensionClient.capabilities?.webviewNativeConfig
-    const webviewPath = config?.rootDir
-        ? vscode.Uri.parse(config?.rootDir, true)
-        : vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
+    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
     // Create Webview using vscode/index.html
     const root = vscode.Uri.joinPath(webviewPath, 'index.html')
     const bytes = await vscode.workspace.fs.readFile(root)
@@ -1866,16 +1863,6 @@ export async function addWebviewViewHTML(
         .replaceAll('./', `${resources.toString()}/`)
         .replaceAll("'self'", view.webview.cspSource)
         .replaceAll('{cspSource}', view.webview.cspSource)
-
-    // If a script or style is injected, replace the placeholder with the script or style
-    // and drop the content-security-policy meta tag which prevents inline scripts and styles
-    if (config?.injectScript || config?.injectStyle) {
-        // drop all text betweeb <-- START CSP --> and <-- END CSP -->
-        view.webview.html = decoded
-            .replace(/<-- START CSP -->.*<!-- END CSP -->/s, '')
-            .replaceAll('/*injectedScript*/', config?.injectScript ?? '')
-            .replaceAll('/*injectedStyle*/', config?.injectStyle ?? '')
-    }
 }
 
 // This is the manual ordering of the different retrieved and explicit context sources
