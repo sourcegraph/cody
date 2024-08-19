@@ -8,6 +8,7 @@ import {
 import vscode from 'vscode'
 import { escapeRegExp } from './remoteFileSearch'
 
+import { getEditor } from '../../editor/active-editor'
 import { repoNameResolver } from '../../repository/repo-name-resolver'
 import { WorkspaceRepoMapper } from '../workspace-repo-mapper'
 import type { OpenCtxProvider } from './types'
@@ -25,7 +26,7 @@ export function createCurrentRepositoryDirectoryProvider(customTitle?: string): 
         },
 
         async mentions({ query }) {
-            const currentFile = vscode.window.activeTextEditor?.document.uri
+            const currentFile = getEditor().active?.document.uri
             const workspace = vscode.workspace.workspaceFolders?.[0].uri
 
             if (currentFile || workspace) {
