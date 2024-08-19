@@ -483,7 +483,7 @@ describe('Agent', () => {
             client.expectedEvents = [
                 'cody.chat-question:submitted',
                 'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
+                'cody.chatResponse:hasCode',
             ]
             await client.openFile(squirrelUri)
             const { lastMessage, transcript } =
