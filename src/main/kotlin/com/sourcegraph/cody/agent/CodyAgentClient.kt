@@ -6,13 +6,13 @@ import com.sourcegraph.cody.agent.protocol.DebugMessage
 import com.sourcegraph.cody.agent.protocol.OpenExternalParams
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol.RemoteRepoFetchState
-import com.sourcegraph.cody.agent.protocol.TextDocumentEditParams
 import com.sourcegraph.cody.agent.protocol.TextDocumentShowParams
 import com.sourcegraph.cody.agent.protocol.UntitledTextDocument
 import com.sourcegraph.cody.agent.protocol.WebviewCreateWebviewPanelParams
-import com.sourcegraph.cody.agent.protocol.WorkspaceEditParams
 import com.sourcegraph.cody.agent.protocol_generated.DisplayCodeLensParams
 import com.sourcegraph.cody.agent.protocol_generated.EditTask
+import com.sourcegraph.cody.agent.protocol_generated.TextDocumentEditParams
+import com.sourcegraph.cody.agent.protocol_generated.WorkspaceEditParams
 import com.sourcegraph.cody.ui.NativeWebviewProvider
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification

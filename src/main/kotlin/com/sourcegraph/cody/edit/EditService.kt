@@ -6,9 +6,16 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
-import com.sourcegraph.cody.agent.protocol.TextEdit
-import com.sourcegraph.cody.agent.protocol.WorkspaceEditParams
 import com.sourcegraph.cody.agent.protocol_extensions.toOffset
+import com.sourcegraph.cody.agent.protocol_generated.CreateFileOperation
+import com.sourcegraph.cody.agent.protocol_generated.DeleteFileOperation
+import com.sourcegraph.cody.agent.protocol_generated.DeleteTextEdit
+import com.sourcegraph.cody.agent.protocol_generated.EditFileOperation
+import com.sourcegraph.cody.agent.protocol_generated.InsertTextEdit
+import com.sourcegraph.cody.agent.protocol_generated.RenameFileOperation
+import com.sourcegraph.cody.agent.protocol_generated.ReplaceTextEdit
+import com.sourcegraph.cody.agent.protocol_generated.TextEdit
+import com.sourcegraph.cody.agent.protocol_generated.WorkspaceEditParams
 import com.sourcegraph.utils.CodyEditorUtil
 
 @Service(Service.Level.PROJECT)
@@ -38,31 +45,23 @@ class EditService(val project: Project) {
 
     return WriteCommandAction.runWriteCommandAction<Boolean>(project) {
       edits.reversed().all { edit ->
-        when (edit.type) {
-          "replace",
-          "delete" -> {
-            if (edit.range != null) {
-              document.replaceString(
-                  edit.range.start.toOffset(document),
-                  edit.range.end.toOffset(document),
-                  edit.value ?: "")
-              true
-            } else {
-              logger.warn("Edit range is null for ${edit.type} operation")
-              false
-            }
+        when (edit) {
+          is ReplaceTextEdit -> {
+            document.replaceString(
+                edit.range.start.toOffset(document), edit.range.end.toOffset(document), edit.value)
+            true
           }
-          "insert" -> {
-            if (edit.position != null) {
-              document.insertString(edit.position.toOffset(document), edit.value ?: "")
-              true
-            } else {
-              logger.warn("Edit position is null for insert operation")
-              false
-            }
+          is DeleteTextEdit -> {
+            document.deleteString(
+                edit.range.start.toOffset(document), edit.range.end.toOffset(document))
+            true
+          }
+          is InsertTextEdit -> {
+            document.insertString(edit.position.toOffset(document), edit.value)
+            true
           }
           else -> {
-            logger.warn("Unknown edit type: ${edit.type}")
+            logger.warn("Unknown edit type: $edit")
             false
           }
         }
@@ -73,34 +72,25 @@ class EditService(val project: Project) {
   fun performWorkspaceEdit(workspaceEditParams: WorkspaceEditParams): Boolean {
     return workspaceEditParams.operations.all { op ->
       // TODO: We need to support the file-level operations.
-      when (op.type) {
-        "create-file" -> {
+      when (op) {
+        is CreateFileOperation -> {
           logger.warn("Workspace edit operation created a file: ${op.uri}")
           return false
         }
-        "rename-file" -> {
+        is RenameFileOperation -> {
           logger.warn("Workspace edit operation renamed a file: ${op.oldUri} -> ${op.newUri}")
           return false
         }
-        "delete-file" -> {
+        is DeleteFileOperation -> {
           logger.warn("Workspace edit operation deleted a file: ${op.uri}")
           return false
         }
-        "edit-file" -> {
-          if (op.edits == null) {
-            logger.warn("Workspace edit operation has no edits")
-            return false
-          } else if (op.uri == null) {
-            logger.warn("Workspace edit operation has null uri")
-            return false
-          } else {
-            logger.info("Applying workspace edit to a file: ${op.uri}")
-            performTextEdits(op.uri, op.edits)
-          }
+        is EditFileOperation -> {
+          logger.info("Applying workspace edit to a file: ${op.uri}")
+          performTextEdits(op.uri, op.edits)
         }
         else -> {
-          logger.warn(
-              "DocumentCommand session received unknown workspace edit operation: ${op.type}")
+          logger.warn("DocumentCommand session received unknown workspace edit operation: $op")
           return false
         }
       }
