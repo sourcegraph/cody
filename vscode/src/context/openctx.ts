@@ -46,6 +46,8 @@ export async function exposeOpenCtxClient(
             ? getMergeConfigurationFunction()
             : undefined
 
+        const isValidSiteVersion = await graphqlClient.isValidSiteVersion({ minimumVersion: '5.7.0' })
+
         const controller = createController({
             extensionId: context.extension.id,
             secrets: context.secrets,
@@ -53,7 +55,7 @@ export async function exposeOpenCtxClient(
             features: isCodyWeb ? {} : { annotations: true, statusBar: true },
             providers: isCodyWeb
                 ? Observable.of(getCodyWebOpenCtxProviders())
-                : getOpenCtxProviders(config.changes, authProvider.changes),
+                : getOpenCtxProviders(config.changes, authProvider.changes, isValidSiteVersion),
             mergeConfiguration,
         })
         setOpenCtx({
@@ -67,18 +69,15 @@ export async function exposeOpenCtxClient(
 
 function getOpenCtxProviders(
     configChanges: Observable<Configuration>,
-    authStatusChanges: Observable<AuthStatus>
+    authStatusChanges: Observable<AuthStatus>,
+    isValidSiteVersion: boolean
 ): Observable<ImportedProviderConfiguration[]> {
     return combineLatest([
         configChanges,
         authStatusChanges,
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider),
     ]).map(
-        async ([config, authStatus, gitMentionProvider]: [
-            Configuration,
-            AuthStatus,
-            boolean | undefined,
-        ]) => {
+        ([config, authStatus, gitMentionProvider]: [Configuration, AuthStatus, boolean | undefined]) => {
             const providers: ImportedProviderConfiguration[] = [
                 {
                     settings: true,
@@ -96,7 +95,7 @@ function getOpenCtxProviders(
                     providerUri: RemoteRepositorySearch.providerUri,
                 })
 
-                if (await graphqlClient.isValidSiteVersion({ minimumVersion: '5.7.0' })) {
+                if (isValidSiteVersion) {
                     providers.push({
                         settings: true,
                         provider: RemoteDirectoryProvider,
