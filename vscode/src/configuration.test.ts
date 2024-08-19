@@ -98,6 +98,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.minion.anthropicKey':
                         return undefined
+                    case 'cody.experimental.pre-r.enabled':
+                        return false
                     case 'cody.autocomplete.advanced.timeout.firstCompletion':
                         return 1500
                     case 'cody.autocomplete.experimental.preloadDebounceInterval':
@@ -128,6 +130,7 @@ describe('getConfiguration', () => {
             commandCodeLenses: true,
             experimentalSupercompletions: false,
             experimentalMinionAnthropicKey: undefined,
+            experimentalCodyLintEnabled: true,
             experimentalTracing: true,
             experimentalCommitMessage: true,
             experimentalNoodle: false,
