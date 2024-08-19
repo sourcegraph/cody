@@ -64,13 +64,18 @@ export class WorkspaceReposMonitor implements vscode.Disposable {
 }
 
 export let workspaceReposMonitor: WorkspaceReposMonitor | undefined = undefined
-export function initWorkspaceReposMonitor(): WorkspaceReposMonitor {
+export function initWorkspaceReposMonitor(
+    disposables: vscode.Disposable[]
+): WorkspaceReposMonitor | undefined {
     if (!vscodeGitAPI) {
-        throw new Error(
-            'The Git API (initVSCodeGitApi) must be initialized before the workspace repos monitor'
+        logDebug(
+            'WorkspaceReposMonitor',
+            'not initializing workspace repos monitor because the Git API is not available'
         )
+        return undefined
     }
     workspaceReposMonitor = new WorkspaceReposMonitor()
+    disposables.push(workspaceReposMonitor)
     return workspaceReposMonitor
 }
 

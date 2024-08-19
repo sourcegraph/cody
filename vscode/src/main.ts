@@ -188,7 +188,7 @@ const register = async (
 
     // Ensure Git API is available
     disposables.push(await initVSCodeGitApi())
-    disposables.push(initWorkspaceReposMonitor())
+    initWorkspaceReposMonitor(disposables)
 
     registerParserListeners(disposables)
     registerChatListeners(disposables)
