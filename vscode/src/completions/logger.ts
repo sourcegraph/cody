@@ -1108,11 +1108,13 @@ const otherCompletionProviders = [
     'Codeium.codeium-enterprise-updater',
     'Codeium.codeium',
     'Continue.continue',
+    'DanielSanMedium.dscodegpt', // CodeGPT: Chat & AI Agents
     'devsense.intelli-php-vscode',
     'FittenTech.Fitten-Code',
     'GitHub.copilot-nightly',
     'GitHub.copilot',
     'mutable-ai.mutable-ai',
+    'Supermaven.supermaven',
     'svipas.code-autocomplete',
     'TabbyML.vscode-tabby',
     'TabNine.tabnine-vscode-self-hosted-updater',
