@@ -1,7 +1,6 @@
 import type { FeatureFlagUsedInWebview } from '@sourcegraph/cody-shared'
-import { useExtensionAPI } from '@sourcegraph/prompt-editor'
-import { useAsyncGenerator } from '@sourcegraph/prompt-editor/src/useAsyncGenerator'
-import { useCallback } from 'react'
+import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
+import { useMemo } from 'react'
 
 /**
  * React hook for getting a feature flag's value.
@@ -11,10 +10,5 @@ import { useCallback } from 'react'
  */
 export function useFeatureFlag(flag: FeatureFlagUsedInWebview): boolean | undefined {
     const evaluatedFeatureFlag = useExtensionAPI().evaluatedFeatureFlag
-    return useAsyncGenerator(
-        useCallback(
-            (signal: AbortSignal) => evaluatedFeatureFlag(flag, signal),
-            [evaluatedFeatureFlag, flag]
-        )
-    ).value
+    return useObservable(useMemo(() => evaluatedFeatureFlag(flag), [evaluatedFeatureFlag, flag])).value
 }

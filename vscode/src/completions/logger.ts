@@ -441,6 +441,13 @@ function writeCompletionEvent<SubFeature extends string, Action extends string, 
             params.metadata.source = mappedSource
         }
 
+        // for each completionsProviders, add it to metadata showing it's enabled
+        if (params.privateMetadata?.otherCompletionProviders) {
+            for (const key of params.privateMetadata.otherCompletionProviders) {
+                params.metadata[`otherCompletionProviders.${key}`] = 1
+            }
+        }
+
         // Need to convert since CompletionIntent only refers to a type
         const CompletionIntentEnum: Record<CompletionIntent, CompletionIntent> = Object.keys(
             CompletionIntentTelemetryMetadataMapping
@@ -1101,11 +1108,13 @@ const otherCompletionProviders = [
     'Codeium.codeium-enterprise-updater',
     'Codeium.codeium',
     'Continue.continue',
+    'DanielSanMedium.dscodegpt', // CodeGPT: Chat & AI Agents
     'devsense.intelli-php-vscode',
     'FittenTech.Fitten-Code',
     'GitHub.copilot-nightly',
     'GitHub.copilot',
     'mutable-ai.mutable-ai',
+    'Supermaven.supermaven',
     'svipas.code-autocomplete',
     'TabbyML.vscode-tabby',
     'TabNine.tabnine-vscode-self-hosted-updater',

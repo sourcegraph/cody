@@ -1,6 +1,6 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import { type AuthStatus, CodyIDE, type TelemetryRecorder } from '@sourcegraph/cody-shared'
+import { CodyIDE, type TelemetryRecorder } from '@sourcegraph/cody-shared'
 
 import type { AuthMethod } from '../src/chat/protocol'
 
@@ -13,13 +13,13 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 import styles from './OnboardingExperiment.module.css'
 import { ClientSignInForm } from './components/ClientSignInForm'
 import { useTelemetryRecorder } from './utils/telemetry'
+import { useConfig } from './utils/useConfig'
 
 interface LoginProps {
     simplifiedLoginRedirect: (method: AuthMethod) => void
     uiKindIsWeb: boolean
     vscodeAPI: VSCodeWrapper
     codyIDE: CodyIDE
-    authStatus?: AuthStatus
 }
 
 const WebLogin: React.FunctionComponent<
@@ -70,8 +70,8 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
     uiKindIsWeb,
     vscodeAPI,
     codyIDE,
-    authStatus,
 }) => {
+    const authStatus = useConfig().authStatus
     const telemetryRecorder = useTelemetryRecorder()
     const otherSignInClick = (): void => {
         vscodeAPI.postMessage({ command: 'auth', authKind: 'signin' })

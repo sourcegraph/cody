@@ -1,7 +1,7 @@
+import { Observable } from 'observable-fns'
 import type { Event } from 'vscode'
 import { logDebug } from '../logger'
-import { asyncGeneratorFromVSCodeEvent } from '../misc/asyncGenerator'
-import { isAbortError } from '../sourcegraph-api/errors'
+import { fromVSCodeEvent } from '../misc/observable'
 import { type SourcegraphGraphQLAPIClient, graphqlClient } from '../sourcegraph-api/graphql'
 import { wrapInActiveSpan } from '../tracing'
 import { isError } from '../utils'
@@ -66,20 +66,8 @@ export enum FeatureFlag {
     /** Interactive tutorial, primarily for onboarding */
     CodyInteractiveTutorial = 'cody-interactive-tutorial',
 
-    /** Automatically start indexing using embeddings. */
-    CodyEmbeddingsAutoIndexing = 'cody-embeddings-auto-indexing',
-
     /** Whether to use generated metadata to power embeddings. */
     CodyEmbeddingsGenerateMetadata = 'cody-embeddings-generate-metadata',
-
-    /** Enhanced context experiment */
-    CodyEnhancedContextExperiment = 'cody-enhanced-context-experiment',
-
-    /** Use symf to provide enhanced context. */
-    CodyEnhancedContextUseSymf = 'cody-enhanced-context-use-symf',
-
-    /** Use embeddings to provide enhanced context. */
-    CodyEnhancedContexUseEmbeddings = 'cody-enhanced-context-use-embeddings',
 
     /** Whether to use server-side Context API. */
     CodyServerSideContextAPI = 'cody-server-side-context-api-enabled',
@@ -114,8 +102,10 @@ export class FeatureFlagProvider {
 
     constructor(private apiClient: SourcegraphGraphQLAPIClient) {}
 
-    public getFromCache(flagName: FeatureFlag, endpoint = this.apiClient.endpoint): boolean | undefined {
+    public getFromCache(flagName: FeatureFlag): boolean | undefined {
         void this.refreshIfStale()
+
+        const endpoint = this.apiClient.endpoint
 
         const exposedValue = this.exposedFeatureFlags[endpoint]?.[flagName]
         if (exposedValue !== undefined) {
@@ -129,20 +119,19 @@ export class FeatureFlagProvider {
         return undefined
     }
 
-    public getExposedExperiments(endpoint = this.apiClient.endpoint): Record<string, boolean> {
+    public getExposedExperiments(): Record<string, boolean> {
+        const endpoint = this.apiClient.endpoint
         return this.exposedFeatureFlags[endpoint] || {}
     }
 
-    public async evaluateFeatureFlag(
-        flagName: FeatureFlag,
-        endpoint = this.apiClient.endpoint
-    ): Promise<boolean> {
+    public async evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
+        const endpoint = this.apiClient.endpoint
         return wrapInActiveSpan(`FeatureFlagProvider.evaluateFeatureFlag.${flagName}`, async () => {
             if (process.env.DISABLE_FEATURE_FLAGS) {
                 return false
             }
 
-            const cachedValue = this.getFromCache(flagName, endpoint)
+            const cachedValue = this.getFromCache(flagName)
             if (cachedValue !== undefined) {
                 return cachedValue
             }
@@ -170,41 +159,18 @@ export class FeatureFlagProvider {
     /**
      * Observe the evaluated value of a feature flag.
      */
-    public async *evaluatedFeatureFlag(
-        flagName: FeatureFlag,
-        signal?: AbortSignal,
-        endpoint = this.apiClient.endpoint
-    ): AsyncGenerator<boolean | undefined> {
+    public evaluatedFeatureFlag(flagName: FeatureFlag): Observable<boolean | undefined> {
         if (process.env.DISABLE_FEATURE_FLAGS) {
-            yield undefined
-            return
+            return Observable.of(undefined)
         }
-
-        const initialValue = await this.evaluateFeatureFlag(flagName, endpoint)
 
         const onChangeEvent: Event<boolean | undefined> = (
             listener: (value: boolean | undefined) => void
         ) => {
-            const dispose = this.onFeatureFlagChanged(
-                '',
-                () => listener(this.getFromCache(flagName, endpoint)),
-                endpoint
-            )
+            const dispose = this.onFeatureFlagChanged('', () => listener(this.getFromCache(flagName)))
             return { dispose }
         }
-        const generator = asyncGeneratorFromVSCodeEvent(onChangeEvent, initialValue, signal)
-        signal?.throwIfAborted()
-
-        try {
-            for await (const value of generator) {
-                yield value
-            }
-        } catch (error) {
-            if (signal?.aborted && isAbortError(error)) {
-                return
-            }
-            throw error
-        }
+        return fromVSCodeEvent(onChangeEvent, () => this.evaluateFeatureFlag(flagName))
     }
 
     public async refresh(): Promise<void> {
@@ -250,11 +216,8 @@ export class FeatureFlagProvider {
     // Note this will only update feature flags that a user is currently exposed to. For feature
     // flags not defined upstream, the changes will require a new call to `evaluateFeatureFlag` to
     // be picked up.
-    public onFeatureFlagChanged(
-        prefixFilter: string,
-        callback: () => void,
-        endpoint = this.apiClient.endpoint
-    ): () => void {
+    public onFeatureFlagChanged(prefixFilter: string, callback: () => void): () => void {
+        const endpoint = this.apiClient.endpoint
         const key = endpoint + '#' + prefixFilter
         const subscription = this.subscriptions.get(key)
         if (subscription) {

@@ -40,6 +40,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 siteVersion: '5.1.0',
                 endpoint: 'https://example.com',
             },
+            configFeatures: { attribution: true, chat: true, serverSentModels: true },
             workspaceFolderUris: [],
         })
         cb({ type: 'chatModels', models: getDotComDefaultModels() })

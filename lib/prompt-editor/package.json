@@ -19,7 +19,6 @@
     "prepublishOnly": "tsc --build --clean && pnpm run build"
   },
   "dependencies": {
-    "@lexical/code": "^0.17.0",
     "@lexical/react": "^0.17.0",
     "@lexical/text": "^0.17.0",
     "@lexical/utils": "^0.17.0",

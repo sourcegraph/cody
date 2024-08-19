@@ -177,23 +177,39 @@ export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments)
                 .map(wf => wf.uri.toString())
                 .includes(newWorkspaceDocuments.workspaceRootUri.toString())
         ) {
-            setWorkspaceFolders(newWorkspaceDocuments.workspaceRootUri)
+            setLastOpenedWorkspaceFolder(newWorkspaceDocuments.workspaceRootUri)
         }
     }
 }
 
-export function setWorkspaceFolders(workspaceRootUri: vscode.Uri): vscode.WorkspaceFolder[] {
-    // TODO: Update this when we support multiple workspace roots
-    while (workspaceFolders.pop()) {
-        // clear workspaceFolders array
+// Add/move the last opened workspace folder to the front of the workspace folders list.
+function setLastOpenedWorkspaceFolder(uri: vscode.Uri): void {
+    const currentWorkspaceFolders = workspaceFolders.map(wf => wf.uri)
+    if (currentWorkspaceFolders[0]?.toString() !== uri.toString()) {
+        setWorkspaceFolders([uri, ...currentWorkspaceFolders])
     }
+}
 
-    workspaceFolders.push({
-        name: path.basename(workspaceRootUri.toString()),
-        uri: workspaceRootUri,
-        index: 0,
-    })
-
+// Sets the workspace folders for the current workspace.
+// This function updates the `workspaceFolders` array to reflect the provided `workspaceRootFolders`.
+// It ensures that the last opened workspace folder is moved to the front of the list if it exists
+// in the new list of folders for "vscode.workspace.workspaceFolders[0]" to return the current workspace folder.
+export function setWorkspaceFolders(workspaceRootFolders: vscode.Uri[]): vscode.WorkspaceFolder[] {
+    const lastOpened = workspaceFolders[0]
+    const rootFolderSet = new Set(workspaceRootFolders)
+    workspaceFolders.length = 0
+    if (lastOpened && rootFolderSet.has(lastOpened.uri)) {
+        workspaceFolders.push(lastOpened)
+        rootFolderSet.delete(lastOpened.uri)
+    }
+    let index = workspaceFolders.length
+    for (const folder of rootFolderSet) {
+        workspaceFolders.push({
+            name: path.basename(folder.toString()),
+            uri: folder,
+            index: index++,
+        })
+    }
     return workspaceFolders
 }
 
@@ -755,8 +771,12 @@ const _window: typeof vscode.window = {
         throw new Error('Not implemented: vscode.window.showOpenDialog')
     },
     showSaveDialog: () => {
-        console.log(new Error().stack)
-        throw new Error('Not implemented: vscode.window.showSaveDialog')
+        if (agent) {
+            return agent.request('window/showSaveDialog', null).then(result => {
+                return result ? Uri.parse(result) : undefined
+            })
+        }
+        return Promise.resolve(undefined)
     },
     showInputBox: () => {
         console.log(new Error().stack)
@@ -1029,6 +1049,7 @@ const newCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 const removeCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 export const onDidRegisterNewCodeLensProvider = newCodeLensProvider.event
 export const onDidUnregisterNewCodeLensProvider = removeCodeLensProvider.event
+
 let latestCompletionProvider: InlineCompletionItemProvider | undefined
 let resolveFirstCompletionProvider: (provider: InlineCompletionItemProvider) => void = () => {}
 const firstCompletionProvider = new Promise<InlineCompletionItemProvider>(resolve => {
@@ -1058,6 +1079,14 @@ const _languages: Partial<typeof vscode.languages> = {
     registerCodeLensProvider: (_selector, provider) => {
         newCodeLensProvider.fire(provider)
         return { dispose: () => removeCodeLensProvider.fire(provider) }
+    },
+    registerHoverProvider: (_selector, _provider) => {
+        return {
+            dispose: () => {
+                console.log(new Error().stack)
+                throw new Error('Not implemented: vscode.languages.registerHoverProvider')
+            },
+        }
     },
     registerInlineCompletionItemProvider: (_selector, provider) => {
         latestCompletionProvider = provider as any

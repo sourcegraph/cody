@@ -6,6 +6,7 @@ data class ClientInfo(
   val version: String,
   val ideVersion: String? = null,
   val workspaceRootUri: String,
+  val globalStateDir: String? = null,
   val workspaceRootPath: String? = null,
   val extensionConfiguration: ExtensionConfiguration? = null,
   val capabilities: ClientCapabilities? = null,

@@ -9,6 +9,7 @@ import {
     DEFAULT_EVENT_SOURCE,
     type Guardrails,
     editorStateFromPromptString,
+    subscriptionDisposable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
@@ -80,9 +81,9 @@ export class ChatsController implements vscode.Disposable {
         this.panel = this.createChatController()
 
         this.disposables.push(
-            this.authProvider.onChange(authStatus => this.setAuthStatus(authStatus), {
-                runImmediately: true,
-            })
+            subscriptionDisposable(
+                this.authProvider.changes.subscribe(authStatus => this.setAuthStatus(authStatus))
+            )
         )
     }
 
@@ -417,6 +418,11 @@ export class ChatsController implements vscode.Disposable {
         chatQuestion?: string,
         panel?: vscode.WebviewPanel
     ): Promise<ChatController> {
+        // For clients without editor chat panels support, always use the sidebar panel.
+        const isSidebarOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
+        if (isSidebarOnly) {
+            return this.panel
+        }
         // Look for an existing editor with the same chatID
         if (chatID && this.editors.map(p => p.sessionID).includes(chatID)) {
             const provider = this.editors.find(p => p.sessionID === chatID)

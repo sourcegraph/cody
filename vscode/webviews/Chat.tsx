@@ -18,6 +18,7 @@ import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
+import { useUserAccountInfo } from './utils/useConfig'
 
 interface ChatboxProps {
     chatEnabled: boolean
@@ -25,7 +26,6 @@ interface ChatboxProps {
     transcript: ChatMessage[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     isTranscriptError: boolean
-    userInfo: UserAccountInfo
     guardrails?: Guardrails
     scrollableParent?: HTMLElement | null
     showWelcomeMessage?: boolean
@@ -40,7 +40,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     vscodeAPI,
     isTranscriptError,
     chatEnabled = true,
-    userInfo,
     guardrails,
     scrollableParent,
     showWelcomeMessage = true,
@@ -52,6 +51,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const transcriptRef = useRef(transcript)
     transcriptRef.current = transcript
+
+    const userInfo = useUserAccountInfo()
 
     const feedbackButtonsOnSubmit = useCallback(
         (text: string) => {

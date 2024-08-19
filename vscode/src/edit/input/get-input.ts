@@ -6,10 +6,10 @@ import {
     GENERAL_HELP_LABEL,
     LARGE_FILE_WARNING_LABEL,
     ModelUsage,
-    ModelsService,
     PromptString,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     displayLineRange,
+    modelsService,
     parseMentionQuery,
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
@@ -98,7 +98,7 @@ export const getInput = async (
 
     const authStatus = authProvider.getAuthStatus()
     const isCodyPro = !authStatus.userCanUpgrade
-    const modelOptions = ModelsService.getModels(ModelUsage.Edit)
+    const modelOptions = modelsService.getModels(ModelUsage.Edit)
     const modelItems = getModelOptionItems(modelOptions, isCodyPro)
     const showModelSelector = modelOptions.length > 1 && authStatus.isDotCom
 
@@ -106,7 +106,7 @@ export const getInput = async (
     let activeModelItem = modelItems.find(item => item.model === initialValues.initialModel)
 
     const getContextWindowOnModelChange = (model: EditModel) => {
-        const latestContextWindow = ModelsService.getContextWindowByID(model)
+        const latestContextWindow = modelsService.getContextWindowByID(model)
         return latestContextWindow.input + (latestContextWindow.context?.user ?? 0)
     }
     let activeModelContextWindow = getContextWindowOnModelChange(activeModel)
@@ -210,7 +210,7 @@ export const getInput = async (
                     return
                 }
 
-                ModelsService.setSelectedModel(ModelUsage.Edit, acceptedItem.model)
+                modelsService.setSelectedModel(ModelUsage.Edit, acceptedItem.model)
                 activeModelItem = acceptedItem
                 activeModel = acceptedItem.model
                 activeModelContextWindow = getContextWindowOnModelChange(acceptedItem.model)

@@ -2,6 +2,6 @@
 package com.sourcegraph.cody.agent.protocol_generated;
 
 data class WorkspaceFolder_DidChangeParams(
-  val uri: String,
+  val uris: List<String>,
 )
 

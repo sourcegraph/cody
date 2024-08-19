@@ -15,7 +15,6 @@ import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
-import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
 import {
     ChatMessageContent,
     type CodeBlockActionsProps,
@@ -79,21 +78,13 @@ export const AssistantMessageCell: FunctionComponent<{
 
         return (
             <BaseMessageCell
-                speaker={message.speaker}
-                speakerIcon={
-                    chatModel && ModelIcon ? (
-                        <span>
-                            <Tooltip>
-                                <TooltipTrigger
-                                    className="tw-cursor-default"
-                                    data-testid="chat-message-model-icon"
-                                >
-                                    <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} />
-                                </TooltipTrigger>
-                                <TooltipContent side="bottom">{`${chatModel.title} by ${chatModel.provider}`}</TooltipContent>
-                            </Tooltip>
-                        </span>
-                    ) : null
+                speakerIcon={ModelIcon ? <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} /> : null}
+                speakerTitle={
+                    <span data-testid="chat-model">
+                        {chatModel
+                            ? chatModel.title ?? `Model ${chatModel.model} by ${chatModel.provider}`
+                            : 'Model'}
+                    </span>
                 }
                 content={
                     <>
@@ -118,6 +109,7 @@ export const AssistantMessageCell: FunctionComponent<{
                                 humanMessage={humanMessage}
                                 experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
                                 smartApply={smartApply}
+                                userInfo={userInfo}
                             />
                         ) : (
                             isLoading && <LoadingDots />

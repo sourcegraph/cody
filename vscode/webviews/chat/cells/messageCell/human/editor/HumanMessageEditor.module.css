@@ -1,6 +1,5 @@
 :root {
-    --human-message-editor-toolbar-height: 22px;
-    --human-message-editor-gap: 4px;
+    --human-message-editor-gap: 0;
     --human-message-editor-cell-spacing-bottom: 6px;
 }
 
@@ -14,18 +13,15 @@
     outline: solid 1px var(--vscode-input-border);
     outline-offset: -1px;
     cursor: text;
-    padding-bottom: var(--prompt-editor-padding-y);
 
     .editor {
         scrollbar-gutter: stable;
         padding: var(--prompt-editor-padding-y) var(--prompt-editor-padding-x);
-        padding-bottom: 0;
     }
 }
 
 .toolbar {
-    min-height: var(--human-message-editor-toolbar-height);
-    padding: 0 var(--prompt-editor-padding-x);
+    padding: calc(0.75*var(--prompt-editor-padding-y)) var(--prompt-editor-padding-x);
     margin-left: -2px;
     overflow: hidden;
 }
@@ -38,6 +34,7 @@
         opacity: 0;
         margin-top: 0;
         pointer-events: none;
+        padding: 0;
     }
 }
 

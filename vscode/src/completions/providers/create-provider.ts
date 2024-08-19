@@ -5,8 +5,8 @@ import {
     FeatureFlag,
     type Model,
     ModelUsage,
-    ModelsService,
     featureFlagProvider,
+    modelsService,
 } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
@@ -306,7 +306,7 @@ interface AutocompleteModelInfo {
 }
 
 function getAutocompleteModelInfo(authStatus: AuthStatus): AutocompleteModelInfo | Error | undefined {
-    const model = ModelsService.getDefaultModel(ModelUsage.Autocomplete)
+    const model = modelsService.getDefaultModel(ModelUsage.Autocomplete)
     if (model) {
         let provider = model.provider
         if (model.clientSideConfig?.openAICompatible) {

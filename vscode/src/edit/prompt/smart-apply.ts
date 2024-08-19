@@ -4,10 +4,10 @@ import {
     type ChatMessage,
     type EditModel,
     type Message,
-    ModelsService,
     PromptString,
-    TokenCounter,
+    TokenCounterUtils,
     getSimplePreamble,
+    modelsService,
     ps,
     psDedent,
 } from '@sourcegraph/cody-shared'
@@ -70,13 +70,13 @@ export const getPrompt = async (
 ): Promise<{ messages: Message[]; prefix: string }> => {
     const documentRange = new vscode.Range(0, 0, document.lineCount - 1, 0)
     const documentText = PromptString.fromDocumentText(document, documentRange)
-    const tokenCount = TokenCounter.countPromptString(documentText)
-    const contextWindow = ModelsService.getContextWindowByID(model)
+    const tokenCount = await TokenCounterUtils.countPromptString(documentText)
+    const contextWindow = modelsService.getContextWindowByID(model)
     if (tokenCount > contextWindow.input) {
         throw new Error("The amount of text in this document exceeds Cody's current capacity.")
     }
 
-    const promptBuilder = new PromptBuilder(contextWindow)
+    const promptBuilder = await PromptBuilder.create(contextWindow)
     const preamble = getSimplePreamble(model, codyApiVersion, SMART_APPLY_SELECTION_PROMPT.system)
     promptBuilder.tryAddToPrefix(preamble)
 
@@ -103,7 +103,7 @@ export async function promptModelForOriginalCode(
     codyApiVersion: number
 ): Promise<string> {
     const multiplexer = new BotResponseMultiplexer()
-    const contextWindow = ModelsService.getContextWindowByID(model)
+    const contextWindow = modelsService.getContextWindowByID(model)
 
     let text = ''
     multiplexer.sub(SMART_APPLY_TOPICS.REPLACE.toString(), {
