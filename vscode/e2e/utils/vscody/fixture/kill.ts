@@ -33,11 +33,10 @@ export function killChildrenSync(pid: number, signal?: string | number): void {
     signal = signal ?? 'SIGTERM'
 
     switch (process.platform) {
-        case 'win32':
-            execSync(
-                `powershell -Command "Get-CimInstance Win32_Process | Where-Object { $_.ParentProcessId -eq ${pid} } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"`
-            )
+        case 'win32': {
+            treeKillPowershell(pid, false)
             break
+        }
         //case 'darwin':
         default:
             treeKillUnix(pid, signal, false)
