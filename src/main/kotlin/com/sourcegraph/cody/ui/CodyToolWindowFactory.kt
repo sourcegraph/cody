@@ -2,11 +2,13 @@ package com.sourcegraph.cody.ui
 
 import com.google.gson.Gson
 import com.google.gson.JsonArray
+import com.google.gson.JsonParser
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.ui.jcef.JBCefBrowserBase
@@ -14,7 +16,16 @@ import com.intellij.ui.jcef.JBCefBrowserBuilder
 import com.intellij.ui.jcef.JBCefJSQuery
 import com.intellij.util.io.isAncestor
 import com.jetbrains.rd.util.ConcurrentHashMap
-import com.sourcegraph.cody.agent.*
+import com.sourcegraph.cody.agent.CodyAgent
+import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.CommandExecuteParams
+import com.sourcegraph.cody.agent.WebviewDidDisposeParams
+import com.sourcegraph.cody.agent.WebviewPostMessageStringEncodedParams
+import com.sourcegraph.cody.agent.WebviewReceiveMessageStringEncodedParams
+import com.sourcegraph.cody.agent.WebviewRegisterWebviewViewProviderParams
+import com.sourcegraph.cody.agent.WebviewSetHtmlParams
+import com.sourcegraph.cody.agent.WebviewSetOptionsParams
+import com.sourcegraph.cody.agent.WebviewSetTitleParams
 import com.sourcegraph.cody.agent.protocol.WebviewCreateWebviewPanelParams
 import com.sourcegraph.cody.agent.protocol.WebviewOptions
 import com.sourcegraph.cody.chat.actions.ExportChatsAction.Companion.gson
@@ -22,6 +33,7 @@ import com.sourcegraph.cody.config.ui.AccountConfigurable
 import com.sourcegraph.cody.sidebar.WebTheme
 import com.sourcegraph.cody.sidebar.WebThemeController
 import com.sourcegraph.common.BrowserOpener
+import java.awt.datatransfer.StringSelection
 import java.io.IOException
 import java.net.URI
 import java.net.URLDecoder
@@ -40,7 +52,14 @@ import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
 import org.cef.callback.CefAuthCallback
 import org.cef.callback.CefCallback
-import org.cef.handler.*
+import org.cef.handler.CefCookieAccessFilter
+import org.cef.handler.CefFocusHandler
+import org.cef.handler.CefFocusHandlerAdapter
+import org.cef.handler.CefLifeSpanHandler
+import org.cef.handler.CefLoadHandler
+import org.cef.handler.CefRequestHandler
+import org.cef.handler.CefResourceHandler
+import org.cef.handler.CefResourceRequestHandler
 import org.cef.misc.BoolRef
 import org.cef.misc.IntRef
 import org.cef.misc.StringRef
@@ -202,6 +221,7 @@ class WebUIService(private val project: Project) {
 }
 
 const val COMMAND_PREFIX = "command:"
+
 // We make up a host name and serve the static resources into the webview apparently from this host.
 const val PSEUDO_HOST = "file+.sourcegraphstatic.com"
 const val PSEUDO_ORIGIN = "https://$PSEUDO_HOST"
@@ -415,19 +435,26 @@ class WebUIProxy(private val host: WebUIHost, private val browser: JBCefBrowserB
   }
 
   private fun handleCefQuery(query: String) {
-    val postMessagePrefix = "{\"what\":\"postMessage\",\"value\":"
-    val setStatePrefix = "{\"what\":\"setState\",\"value\":"
-    when {
-      query.startsWith(postMessagePrefix) -> {
-        val stringEncodedJsonMessage =
-            query.substring(postMessagePrefix.length, query.length - "}".length)
-        host.postMessageWebviewToHost(stringEncodedJsonMessage)
+    val queryObject = JsonParser.parseString(query).asJsonObject
+    val queryWhat = queryObject["what"]?.asString
+
+    when (queryWhat) {
+      "postMessage" -> {
+        val queryValue = queryObject["value"] ?: return
+        host.postMessageWebviewToHost(queryValue.toString())
+
+        val messageObject = if (queryValue.isJsonObject) queryValue.asJsonObject else return
+        if (messageObject["command"]?.asString == "copy" &&
+            messageObject["text"]?.asString != null) {
+          val textToCopy = messageObject["text"].asString
+          CopyPasteManager.getInstance().setContents(StringSelection(textToCopy))
+        }
       }
-      query.startsWith(setStatePrefix) -> {
-        val state = query.substring(setStatePrefix.length, query.length - "}".length)
-        host.stateAsJSONString = state
+      "setState" -> {
+        val queryValue = queryObject["value"] ?: return
+        host.stateAsJSONString = queryValue.toString()
       }
-      query == "{\"what\":\"DOMContentLoaded\"}" -> onDOMContentLoaded()
+      "DOMContentLoaded" -> onDOMContentLoaded()
       else -> {
         logger.warn("unhandled query from Webview to host: $query")
       }
@@ -714,6 +741,7 @@ class ExtensionResourceHandler() : CefResourceHandler {
   var bytesReadFromResource = 0L
   private var bytesSent = 0L
   private var bytesWaitingSend = ByteBuffer.allocate(512 * 1024).flip()
+
   // correctly
   private var contentLength = 0L
   var contentType = "text/plain"
