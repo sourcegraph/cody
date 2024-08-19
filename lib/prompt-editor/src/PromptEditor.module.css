@@ -1,6 +1,6 @@
 :root {
-    --prompt-editor-padding-y: 0.4375rem;
-    --prompt-editor-padding-x: 0.5rem;
+    --prompt-editor-padding-y: 8px;
+    --prompt-editor-padding-x: 8px;
 }
 
 .editor {
@@ -16,11 +16,9 @@
 .editor:not(.seamless) {
     background-color: var(--vscode-input-background);
     color: var(--vscode-input-foreground);
-
     box-sizing: border-box;
     border: 1px solid transparent;
     border-radius: 2px;
-
     padding: var(--prompt-editor-padding-y) var(--prompt-editor-padding-x);
 }
 
