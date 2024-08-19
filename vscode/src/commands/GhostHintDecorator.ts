@@ -4,6 +4,7 @@ import {
     getEditorInsertSpaces,
     getEditorTabSize,
     isMacOS,
+    subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { type DebouncedFunc, throttle } from 'lodash'
@@ -202,9 +203,9 @@ export class GhostHintDecorator implements vscode.Disposable {
 
         // Listen to authentication changes
         this.permanentDisposables.push(
-            authProvider.onChange(authStatus => this.updateEnablement(authStatus), {
-                runImmediately: true,
-            })
+            subscriptionDisposable(
+                authProvider.changes.subscribe(authStatus => this.updateEnablement(authStatus))
+            )
         )
 
         // Listen to configuration changes (e.g. if the setting is disabled)

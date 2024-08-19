@@ -3,7 +3,7 @@ import {
     CustomCommandType,
     type PromptsResult,
     type WebviewToExtensionAPI,
-    asyncGeneratorFromAsyncFunction,
+    promiseFactoryToObservable,
 } from '@sourcegraph/cody-shared'
 
 export const FIXTURE_COMMANDS: CodyCommand[] = [
@@ -63,7 +63,7 @@ export function makePromptsAPIWithData(
     data: Omit<PromptsResult, 'query'>
 ): WebviewToExtensionAPI['prompts'] {
     return query =>
-        asyncGeneratorFromAsyncFunction<PromptsResult>(async () => {
+        promiseFactoryToObservable<PromptsResult>(async () => {
             await new Promise<void>(resolve => setTimeout(resolve, 500))
 
             const queryLower = query.toLowerCase()

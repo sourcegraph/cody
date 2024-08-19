@@ -1,6 +1,11 @@
 import * as vscode from 'vscode'
 
-import { type ContextItem, ContextItemSource, TokenCounter, displayPath } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    ContextItemSource,
+    TokenCounterUtils,
+    displayPath,
+} from '@sourcegraph/cody-shared'
 import { logError } from '../../log'
 import type { Repository } from '../../repository/builtinGitExtension'
 import { doesFileExist } from '../utils/workspace-files'
@@ -24,7 +29,7 @@ export async function getContextFilesFromGitApi(
 
     const contextItems = [...diffContext, ...logContext]
     if (template) {
-        contextItems.push(getGitCommitTemplateContextFile(template))
+        contextItems.push(await getGitCommitTemplateContextFile(template))
     }
     return contextItems
 }
@@ -94,7 +99,7 @@ async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<ContextI
                 // Using the uri by file enables Cody Ignore checks during prompt-building step.
                 uri,
                 source: ContextItemSource.Terminal,
-                size: TokenCounter.countTokens(content),
+                size: await TokenCounterUtils.countTokens(content),
             })
         }
 
@@ -138,7 +143,7 @@ async function getContextFilesFromGitLog(gitRepo: Repository, maxEntries = 5): P
                 title: command,
                 uri: vscode.Uri.file('GIT_LOG'),
                 source: ContextItemSource.Terminal,
-                size: TokenCounter.countTokens(content),
+                size: await TokenCounterUtils.countTokens(content),
             },
         ]
     } catch (error) {
@@ -153,7 +158,7 @@ async function getContextFilesFromGitLog(gitRepo: Repository, maxEntries = 5): P
  * @param template - The git commit template.
  * @returns The context item containing the git commit template information.
  */
-function getGitCommitTemplateContextFile(template: string): ContextItem {
+async function getGitCommitTemplateContextFile(template: string): Promise<ContextItem> {
     const content = `Here is my git commit template:\n\n${template}`
     return {
         type: 'file',
@@ -161,7 +166,7 @@ function getGitCommitTemplateContextFile(template: string): ContextItem {
         title: 'Git Commit Template',
         uri: vscode.Uri.file('COMMIT_TEMPLATE'),
         source: ContextItemSource.Terminal,
-        size: TokenCounter.countTokens(content),
+        size: await TokenCounterUtils.countTokens(content),
     }
 }
 

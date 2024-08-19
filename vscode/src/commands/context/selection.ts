@@ -1,6 +1,6 @@
 import {
     type ContextItem,
-    TokenCounter,
+    TokenCounterUtils,
     contextFiltersProvider,
     isCodyIgnoredFile,
     logError,
@@ -47,7 +47,7 @@ export async function getContextFileFromCursor(
             const selection = activeSelection ?? visibleRange
 
             const content = document.getText(selection)
-            const size = TokenCounter.countTokens(content)
+            const size = await TokenCounterUtils.countTokens(content)
 
             return {
                 type: 'file',
@@ -90,7 +90,7 @@ export async function getContextFileFromSelection(): Promise<ContextItem[]> {
                     content,
                     source: ContextItemSource.Selection,
                     range: toRangeData(selection),
-                    size: TokenCounter.countTokens(content),
+                    size: await TokenCounterUtils.countTokens(content),
                 } satisfies ContextItemFile,
             ]
         } catch (error) {
@@ -129,7 +129,7 @@ export async function getSelectionOrFileContext(): Promise<ContextItem[]> {
                 content,
                 source: ContextItemSource.Selection,
                 range: range && toRangeData(range),
-                size: TokenCounter.countTokens(content),
+                size: await TokenCounterUtils.countTokens(content),
             } satisfies ContextItemFile,
         ]
     })

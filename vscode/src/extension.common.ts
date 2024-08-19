@@ -4,7 +4,7 @@ import type {
     CompletionLogger,
     CompletionsClientConfig,
     Configuration,
-    ConfigurationWithAccessToken,
+    ConfigurationWithEndpoint,
     SourcegraphCompletionsClient,
 } from '@sourcegraph/cody-shared'
 import type { startTokenReceiver } from './auth/token-receiver'
@@ -46,7 +46,7 @@ export interface PlatformContext {
         config: CompletionsClientConfig,
         logger?: CompletionLogger
     ) => SourcegraphCompletionsClient
-    createSentryService?: (config: Pick<ConfigurationWithAccessToken, 'serverEndpoint'>) => SentryService
+    createSentryService?: (config: Pick<ConfigurationWithEndpoint, 'serverEndpoint'>) => SentryService
     createOpenTelemetryService?: (config: OpenTelemetryServiceConfig) => OpenTelemetryService
     startTokenReceiver?: typeof startTokenReceiver
     onConfigurationChange?: (configuration: Configuration) => void

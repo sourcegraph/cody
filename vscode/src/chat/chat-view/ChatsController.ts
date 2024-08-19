@@ -9,6 +9,7 @@ import {
     DEFAULT_EVENT_SOURCE,
     type Guardrails,
     editorStateFromPromptString,
+    subscriptionDisposable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
@@ -80,9 +81,9 @@ export class ChatsController implements vscode.Disposable {
         this.panel = this.createChatController()
 
         this.disposables.push(
-            this.authProvider.onChange(authStatus => this.setAuthStatus(authStatus), {
-                runImmediately: true,
-            })
+            subscriptionDisposable(
+                this.authProvider.changes.subscribe(authStatus => this.setAuthStatus(authStatus))
+            )
         )
     }
 

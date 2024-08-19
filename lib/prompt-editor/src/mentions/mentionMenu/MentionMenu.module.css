@@ -1,7 +1,6 @@
 .container {
-    border: 1px solid var(--vscode-widget-border);
-    border-radius: 3px;
     outline: none;
+    border-radius: 0;
 }
 
 .item {

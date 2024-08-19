@@ -1,5 +1,4 @@
 import { spawn } from 'node:child_process'
-import { copyFileSync } from 'node:fs'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
@@ -13,7 +12,6 @@ import {
     type BillingCategory,
     type BillingProduct,
     FeatureFlag,
-    ModelsService,
     PromptString,
     contextFiltersProvider,
     convertGitCloneURLToCodebaseName,
@@ -24,6 +22,7 @@ import {
     isRateLimitError,
     logDebug,
     logError,
+    modelsService,
     setUserAgent,
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
@@ -37,6 +36,7 @@ import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 import { mkdirSync, statSync } from 'node:fs'
 import { PassThrough } from 'node:stream'
 import type { Har } from '@pollyjs/persister'
+import { copySync } from 'fs-extra'
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
@@ -116,7 +116,9 @@ function copyExtensionRelativeResources(extensionPath: string, extensionClient: 
         }
         try {
             mkdirSync(path.dirname(target), { recursive: true })
-            copyFileSync(source, target)
+            // This is preferred over node:fs.copyFileSync because fs-extra's use of graceful-fs
+            // handles certain timing failures on windows machines.
+            copySync(source, target)
         } catch (err) {
             logDebug('copyExtensionRelativeResources', `Failed to copy ${source} to dist ${target}`, err)
         }
@@ -430,6 +432,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.globalState
                 )
 
+                this.authenticationPromise = clientInfo.extensionConfiguration
+                    ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
+                          forceAuthentication: true,
+                      })
+                    : this.authStatus()
+                const authStatus = await this.authenticationPromise
+
                 const webviewKind = clientInfo.capabilities?.webview || 'agentic'
                 const nativeWebviewConfig = clientInfo.capabilities?.webviewNativeConfig
                 if (webviewKind === 'native') {
@@ -440,19 +449,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     }
                     registerNativeWebviewHandlers(
                         this,
-                        vscode.Uri.file(codyPaths().config), // the extension root URI, for locating Webview resources
+                        nativeWebviewConfig.rootDir
+                            ? vscode.Uri.parse(nativeWebviewConfig.rootDir, true)
+                            : vscode.Uri.file(codyPaths().config + '/dist'),
                         nativeWebviewConfig
                     )
                 } else {
                     this.registerWebviewHandlers()
                 }
-
-                this.authenticationPromise = clientInfo.extensionConfiguration
-                    ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
-                          forceAuthentication: true,
-                      })
-                    : this.authStatus()
-                const authStatus = await this.authenticationPromise
 
                 return {
                     name: 'cody-agent',
@@ -1083,7 +1087,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('editTask/retry', params => {
             const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
-            const models = getModelOptionItems(ModelsService.getModels(ModelUsage.Edit), true)
+            const models = getModelOptionItems(modelsService.getModels(ModelUsage.Edit), true)
             const previousInput: QuickPickInput = {
                 instruction: instruction,
                 userContextFiles: [],
@@ -1194,7 +1198,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         // TODO: JetBrains no longer uses this, consider deleting it.
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            modelID ??= ModelsService.getDefaultChatModel() ?? ''
+            modelID ??= modelsService.getDefaultChatModel() ?? ''
             const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
             const chatModel = new ChatModel(modelID, chatID, chatMessages)
             await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
@@ -1207,7 +1211,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
-            const models = ModelsService.getModels(modelUsage)
+            const models = modelsService.getModels(modelUsage)
             return { models }
         })
 

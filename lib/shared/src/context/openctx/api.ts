@@ -1,16 +1,10 @@
-import type { Client, ProviderMethodOptions } from '@openctx/client'
+import type { Client } from '@openctx/client'
 import type * as vscode from 'vscode'
 
 type OpenCtxController = Pick<
     Client<vscode.Range>,
-    'meta' | 'metaChanges__asyncGenerator' | 'mentions' | 'mentionsChanges__asyncGenerator' | 'items'
-> & {
-    annotationsChanges__asyncGenerator(
-        doc: Pick<vscode.TextDocument, 'uri' | 'getText'>,
-        opts?: ProviderMethodOptions,
-        signal?: AbortSignal
-    ): ReturnType<Client<vscode.Range>['annotationsChanges__asyncGenerator']>
-}
+    'meta' | 'metaChanges' | 'mentions' | 'mentionsChanges' | 'items'
+> & {}
 
 interface OpenCtx {
     controller?: OpenCtxController

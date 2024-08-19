@@ -13,7 +13,7 @@ import {
     type PromptString,
     type RangeData,
     type SymbolKind,
-    TokenCounter,
+    TokenCounterUtils,
     contextFiltersProvider,
     displayPath,
     graphqlClient,
@@ -387,10 +387,12 @@ async function resolveContextItem(
         : item.type === 'file' || item.type === 'symbol'
           ? [await resolveFileOrSymbolContextItem(item, editor, signal)]
           : []
-    return resolvedItems.map(resolvedItem => ({
-        ...resolvedItem,
-        size: resolvedItem.size ?? TokenCounter.countTokens(resolvedItem.content),
-    }))
+    return await Promise.all(
+        resolvedItems.map(async resolvedItem => ({
+            ...resolvedItem,
+            size: resolvedItem.size ?? (await TokenCounterUtils.countTokens(resolvedItem.content)),
+        }))
+    )
 }
 
 async function resolveContextMentionProviderContextItem(
@@ -463,7 +465,7 @@ async function resolveFileOrSymbolContextItem(
                 content: resultOrError,
                 repoName: repository,
                 source: ContextItemSource.Unified,
-                size: TokenCounter.countTokens(resultOrError),
+                size: await TokenCounterUtils.countTokens(resultOrError),
             }
         }
     }
@@ -476,6 +478,6 @@ async function resolveFileOrSymbolContextItem(
     return {
         ...contextItem,
         content,
-        size: contextItem.size ?? TokenCounter.countTokens(content),
+        size: contextItem.size ?? (await TokenCounterUtils.countTokens(content)),
     }
 }

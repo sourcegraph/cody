@@ -7,10 +7,11 @@ import {
     ContextItemSource,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
+    type MentionMenuData,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     openCtxProviderMetadata,
 } from '@sourcegraph/cody-shared'
-import { MentionMenu, type MentionMenuData, type MentionMenuParams } from '@sourcegraph/prompt-editor'
+import { MentionMenu, type MentionMenuParams } from '@sourcegraph/prompt-editor'
 import { VSCodeDecorator } from '../storybook/VSCodeStoryDecorator'
 
 const meta: Meta<typeof MentionMenu> = {

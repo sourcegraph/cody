@@ -324,7 +324,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     focusEditor={focusEditor}
                     appendTextToEditor={appendTextToEditor}
                     hidden={!focused && isSent}
-                    className={clsx('tw-transition-all', styles.toolbar)}
+                    className={styles.toolbar}
                 />
             )}
         </div>
