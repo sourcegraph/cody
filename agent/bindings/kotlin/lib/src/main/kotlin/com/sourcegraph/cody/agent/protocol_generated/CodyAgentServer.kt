@@ -96,6 +96,8 @@ interface CodyAgentServer {
   fun diagnostics_publish(params: Diagnostics_PublishParams): CompletableFuture<Null?>
   @JsonRequest("testing/progress")
   fun testing_progress(params: Testing_ProgressParams): CompletableFuture<Testing_ProgressResult>
+  @JsonRequest("testing/exportedTelemetryEvents")
+  fun testing_exportedTelemetryEvents(params: Null?): CompletableFuture<Testing_ExportedTelemetryEventsResult>
   @JsonRequest("testing/networkRequests")
   fun testing_networkRequests(params: Null?): CompletableFuture<Testing_NetworkRequestsResult>
   @JsonRequest("testing/requestErrors")
