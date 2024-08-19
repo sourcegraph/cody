@@ -73,63 +73,69 @@ function getOpenCtxProviders(
         configChanges,
         authStatusChanges,
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider),
-    ]).map(([config, authStatus, gitMentionProvider]) => {
-        const providers: ImportedProviderConfiguration[] = [
-            {
-                settings: true,
-                provider: createWebProvider(false),
-                providerUri: WEB_PROVIDER_URI,
-            },
-        ]
+    ]).map(
+        async ([config, authStatus, gitMentionProvider]: [
+            Configuration,
+            AuthStatus,
+            boolean | undefined,
+        ]) => {
+            const providers: ImportedProviderConfiguration[] = [
+                {
+                    settings: true,
+                    provider: createWebProvider(false),
+                    providerUri: WEB_PROVIDER_URI,
+                },
+            ]
 
-        // Remote repository and remote files should be available only for
-        // non-dotcom users
-        if (!authStatus.isDotCom) {
-            providers.push({
-                settings: true,
-                provider: RemoteRepositorySearch,
-                providerUri: RemoteRepositorySearch.providerUri,
-            })
-
-            if (await graphqlClient.isValidSiteVersion({ minimumVersion: '5.7.0' })) {
+            // Remote repository and remote files should be available only for
+            // non-dotcom users
+            if (!authStatus.isDotCom) {
                 providers.push({
                     settings: true,
-                    provider: RemoteDirectoryProvider,
-                    providerUri: RemoteDirectoryProvider.providerUri,
+                    provider: RemoteRepositorySearch,
+                    providerUri: RemoteRepositorySearch.providerUri,
                 })
 
+                if (await graphqlClient.isValidSiteVersion({ minimumVersion: '5.7.0' })) {
+                    providers.push({
+                        settings: true,
+                        provider: RemoteDirectoryProvider,
+                        providerUri: RemoteDirectoryProvider.providerUri,
+                    })
+
+                    providers.push({
+                        settings: true,
+                        provider: CurrentRepositoryDirectoryProvider,
+                        providerUri: CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
+                    })
+                }
+
                 providers.push({
                     settings: true,
-                    provider: CurrentRepositoryDirectoryProvider,
-                    providerUri: CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
+                    provider: RemoteFileProvider,
+                    providerUri: RemoteFileProvider.providerUri,
                 })
             }
 
-            providers.push({
-                settings: true,
-                provider: RemoteFileProvider,
-                providerUri: RemoteFileProvider.providerUri,
-            })
-        }
+            if (config.experimentalNoodle) {
+                providers.push({
+                    settings: true,
+                    provider: LinearIssuesProvider,
+                    providerUri: LinearIssuesProvider.providerUri,
+                })
+            }
 
-        if (config.experimentalNoodle) {
-            providers.push({
-                settings: true,
-                provider: LinearIssuesProvider,
-                providerUri: LinearIssuesProvider.providerUri,
-            })
-        }
+            if (gitMentionProvider) {
+                providers.push({
+                    settings: true,
+                    provider: gitMentionsProvider,
+                    providerUri: GIT_OPENCTX_PROVIDER_URI,
+                })
+            }
 
-        if (gitMentionProvider) {
-            providers.push({
-                settings: true,
-                provider: gitMentionsProvider,
-                providerUri: GIT_OPENCTX_PROVIDER_URI,
-            })
+            return providers
         }
-
-        return providers
-    })
+    )
 }
 
 function getCodyWebOpenCtxProviders(): ImportedProviderConfiguration[] {
