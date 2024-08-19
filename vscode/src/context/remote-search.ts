@@ -2,7 +2,6 @@ import {
     type ContextSearchResult,
     type PromptString,
     type SourcegraphCompletionsClient,
-    contextFiltersProvider,
     graphqlClient,
 } from '@sourcegraph/cody-shared'
 
@@ -21,15 +20,8 @@ interface DisplayRepo {
 
 export class RemoteSearch {
     public static readonly MAX_REPO_COUNT = 10
-    private disposeOnContextFilterChanged: () => void
 
-    constructor(private completions: SourcegraphCompletionsClient) {
-        this.disposeOnContextFilterChanged = contextFiltersProvider.onContextFiltersChanged(() => {
-            // this.statusChangedEmitter.fire(this)
-        })
-    }
-
-    // private statusChangedEmitter = new vscode.EventEmitter<ContextStatusProvider>()
+    constructor(private completions: SourcegraphCompletionsClient) {}
 
     // Repositories we are including automatically because of the workspace.
     private reposAuto: Map<string, DisplayRepo> = new Map()
@@ -37,16 +29,9 @@ export class RemoteSearch {
     // Repositories the user has added manually.
     private reposManual: Map<string, DisplayRepo> = new Map()
 
-    public dispose(): void {
-        // this.statusChangedEmitter.dispose()
-        this.disposeOnContextFilterChanged()
-    }
-
     // Removes a manually included repository.
     public removeRepo(repoId: string): void {
-        if (this.reposManual.delete(repoId)) {
-            // this.statusChangedEmitter.fire(this)
-        }
+        this.reposManual.delete(repoId)
     }
 
     // Sets the repos to search. RepoInclusion.Automatic is for repositories added
@@ -67,7 +52,6 @@ export class RemoteSearch {
                 break
             }
         }
-        // this.statusChangedEmitter.fire(this)
     }
 
     public getRepos(inclusion: RepoInclusion | 'all'): repofetcher.Repo[] {
