@@ -62,7 +62,7 @@
     "vitest": "^1.5.0"
   },
   "dependencies": {
-    "@openctx/client": "^0.0.24",
+    "@openctx/client": "^0.0.25",
     "ignore": "^5.3.1",
     "mac-ca": "^2.0.3",
     "observable-fns": "^0.6.1",
