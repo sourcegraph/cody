@@ -632,9 +632,9 @@ export interface ClientCapabilities {
               view: 'multiple' | 'single'
               cspSource: string
               webviewBundleServingPrefix: string
-              rootDir?: string
-              injectScript?: string
-              injectStyle?: string
+              rootDir?: string | undefined | null
+              injectScript?: string | undefined | null
+              injectStyle?: string | undefined | null
           }
         | undefined
         | null
