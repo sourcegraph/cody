@@ -54,6 +54,7 @@ export const CodyWebPanelContext = createContext<CodyWebPanelContextData>({
 interface CodyWebPanelProviderProps {
     serverEndpoint: string
     accessToken: string | null
+    createAgentWorker: () => Worker
     telemetryClientName?: string
     initialContext?: InitialContext
     customHeaders?: Record<string, string>
@@ -66,6 +67,7 @@ interface CodyWebPanelProviderProps {
 export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPanelProviderProps>> = ({
     serverEndpoint,
     accessToken,
+    createAgentWorker,
     initialContext,
     telemetryClientName,
     children,
@@ -95,6 +97,7 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
                 const client = await createAgentClient({
                     customHeaders,
                     telemetryClientName,
+                    createAgentWorker,
                     workspaceRootUri: '',
                     serverEndpoint: serverEndpoint,
                     accessToken: accessToken ?? '',
@@ -109,7 +112,7 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
                 setClient(() => error as Error)
             }
         })()
-    }, [accessToken, serverEndpoint, customHeaders, telemetryClientName])
+    }, [accessToken, serverEndpoint, createAgentWorker, customHeaders, telemetryClientName])
 
     const createChat = useCallback(
         async (agent = client) => {
