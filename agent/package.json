@@ -39,7 +39,6 @@
     "@pollyjs/persister": "^6.0.6",
     "@pollyjs/persister-fs": "^6.0.6",
     "@sourcegraph/cody-shared": "workspace:*",
-    "@sourcegraph/telemetry": "^0.16.0",
     "@types/js-levenshtein": "^1.1.1",
     "chalk": "^5.3.0",
     "commander": "^11.1.0",
