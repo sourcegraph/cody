@@ -161,11 +161,13 @@ export async function openMentionsForProvider(
 }
 
 export function mentionMenuItems(chatFrame: FrameLocator): Locator {
-    return chatFrame.locator('[cmdk-list] [role="option"]')
+    return chatFrame.locator('[cmdk-root][data-testid="mention-menu"] [role="option"]')
 }
 
 export async function selectMentionMenuItem(chatFrame: FrameLocator, title: string): Promise<void> {
-    const item = chatFrame.locator('[cmdk-list] [role="option"]', { hasText: title })
+    const item = chatFrame.locator('[cmdk-root][data-testid="mention-menu"] [role="option"]', {
+        hasText: title,
+    })
     await item.click()
 }
 

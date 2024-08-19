@@ -725,11 +725,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 1d6b7417dc13e78cf0704907809a5532
+    - _id: d30452695a5fef843d6895d066e114c0
       _order: 0
       cache: {}
       request:
-        bodySize: 2126
+        bodySize: 2378
         cookies: []
         headers:
           - name: content-type
@@ -742,7 +742,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-4f4b8bc5510c96ab7ce9c2c5c75f11d5-dc0051f0c1a1aead-01
+            value: 00-47a03e267857d6be84db01763e80e784-4cd03c4f8fad4718-01
           - name: connection
             value: keep-alive
           - name: host
@@ -846,11 +846,17 @@ log:
                 text: Ok.
               - speaker: human
                 text: >-
-                  You have access to the provided codebase context. Answer
-                  positively without apologizing.
+                  When generating fenced code blocks in Markdown, ensure you
+                  include the full file path in the tag. The structure should be
+                  ```language:path/to/file
+
+                  ```
 
 
-                  Question: What is Squirrel?
+                  You have access to the provided codebase context. Answer positively without apologizing. 
+
+
+                  Question: Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.
             model: anthropic/claude-3-5-sonnet-20240620
             temperature: 0
             topK: -1
@@ -864,14 +870,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 12671
+        bodySize: 10812
         content:
           mimeType: text/event-stream
-          size: 12671
+          size: 10812
           text: >+
             event: completion
 
-            data: {"completion":"According to the codebase context, Squirrel is an interface defined in the file src/squirrel.ts. Despite its name, it's not actually related to squirrels. The interface is described as mocking something completely unrelated to squirrels and is associated with the implementation of precise code navigation in Sourcegraph. The interface is currently empty in the provided code snippet, suggesting it might be a placeholder or used for type checking purposes in the larger codebase.","stopReason":"end_turn"}
+            data: {"completion":"Certainly! Here's a Dog class that implements the Animal interface based on the context provided:\n\n```typescript:src/animal.ts\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis implementation satisfies the Animal interface requirements as defined in your workspace.","stopReason":"end_turn"}
 
 
             event: done
@@ -881,7 +887,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 09 Jul 2024 17:21:59 GMT
+            value: Thu, 15 Aug 2024 09:56:17 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -910,7 +916,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-09T17:21:57.420Z
+      startedDateTime: 2024-08-15T09:56:14.930Z
       time: 0
       timings:
         blocked: -1
@@ -920,11 +926,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 6e875382e1f1709d69ff99d85a33c52e
+    - _id: 35cda81684e898d6636a8a975f08f96f
       _order: 0
       cache: {}
       request:
-        bodySize: 2223
+        bodySize: 2281
         cookies: []
         headers:
           - name: content-type
@@ -937,7 +943,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-1e1a61c62dd3c76045d160ec121932f4-9fbd1daa97603c6c-01
+            value: 00-11c5a1fa4e45fc234239bc3b84a03311-7c2b6fcfcd26fb64-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1041,11 +1047,17 @@ log:
                 text: Ok.
               - speaker: human
                 text: >-
-                  You have access to the provided codebase context. Answer
-                  positively without apologizing.
+                  When generating fenced code blocks in Markdown, ensure you
+                  include the full file path in the tag. The structure should be
+                  ```language:path/to/file
+
+                  ```
 
 
-                  Question: Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.
+                  You have access to the provided codebase context. Answer positively without apologizing. 
+
+
+                  Question: What is Squirrel?
             model: anthropic/claude-3-5-sonnet-20240620
             temperature: 0
             topK: -1
@@ -1059,14 +1071,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 9108
+        bodySize: 22028
         content:
           mimeType: text/event-stream
-          size: 9108
+          size: 22028
           text: >+
             event: completion
 
-            data: {"completion":"Certainly! Here's a Dog class that implements the Animal interface:\n\n```typescript\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis class fulfills all the requirements of the Animal interface defined in your workspace.","stopReason":"end_turn"}
+            data: {"completion":"Based on the provided codebase context, Squirrel is an interface defined in the file src/squirrel.ts. Here's what we know about it:\n\n```typescript:src/squirrel.ts\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels.\n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\nexport interface Squirrel {}\n```\n\nSquirrel is an empty interface that, despite its name, is not actually related to squirrels. Instead, it's used as part of the implementation for precise code navigation in Sourcegraph. The interface itself doesn't define any properties or methods, serving as a placeholder or mock for some functionality related to code navigation.","stopReason":"end_turn"}
 
 
             event: done
@@ -1076,15 +1088,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 30 Jul 2024 17:17:03 GMT
+            value: Thu, 15 Aug 2024 09:56:21 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "194"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1102,12 +1112,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-30T17:17:00.721Z
+      startedDateTime: 2024-08-15T09:56:18.436Z
       time: 0
       timings:
         blocked: -1
@@ -3301,103 +3311,6 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-07-03T06:24:15.015Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: ff15c1591a827be177c7c2adca6e207e
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 144
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "144"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 332
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-              
-              query ContextFilters {
-                  site {
-                      codyContextFilters(version: V1) {
-                          raw
-                      }
-                  }
-              }
-            variables: {}
-        queryString:
-          - name: ContextFilters
-            value: null
-        url: https://sourcegraph.com/.api/graphql?ContextFilters
-      response:
-        bodySize: 22
-        content:
-          mimeType: text/plain; charset=utf-8
-          size: 22
-          text: |
-            Invalid access token.
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 30 Jul 2024 18:17:43 GMT
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "22"
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1263
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 401
-        statusText: Unauthorized
-      startedDateTime: 2024-07-30T18:17:42.819Z
       time: 0
       timings:
         blocked: -1

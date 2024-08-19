@@ -13,7 +13,7 @@ const buttonVariants = cva(
                 default:
                     'tw-bg-button-background tw-text-button-foreground hover:tw-bg-button-background-hover focus-visible:tw-bg-primary-hover',
                 outline:
-                    'tw-border tw-border-border tw-bg-background hover:tw-bg-muted-transparent hover:tw-text-foreground',
+                    'tw-border tw-border-border tw-bg-background hover:tw-bg-muted hover:tw-text-foreground',
                 secondary:
                     'tw-bg-button-secondary-background tw-text-button-secondary-foreground hover:tw-bg-button-secondary-background-hover disabled:tw-opacity-75',
                 ghost: 'hover:tw-bg-muted-transparent',
@@ -26,6 +26,7 @@ const buttonVariants = cva(
 
             size: {
                 default: 'tw-px-4 tw-py-2',
+                xs: 'tw-rounded-sm tw-px-2 tw-text-xs',
                 sm: 'tw-rounded-md tw-px-2 tw-py-[.1rem]',
                 lg: 'tw-rounded-md tw-px-8',
                 icon: 'tw-rounded-lg tw-w-[1.375rem] tw-h-[1.375rem]', // Match VS Code’s 22px icon buttons

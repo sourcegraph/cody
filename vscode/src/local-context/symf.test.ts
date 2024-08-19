@@ -4,6 +4,7 @@ import path from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { getOSArch } from '../os'
 import { _config, _getNamesForPlatform, _upsertSymfForPlatform } from './download-symf'
+import { type CorpusDiff, shouldReindex } from './symf'
 import { downloadFile } from './utils'
 
 //@ts-ignore
@@ -72,6 +73,87 @@ describe('upsertSymfForPlatform', () => {
         } finally {
             await rm(dir, { recursive: true })
         }
+    })
+})
+
+describe('shouldReindex', () => {
+    const testCases: {
+        input: CorpusDiff
+        expected: boolean
+    }[] = [
+        {
+            input: { changedFiles: [], millisElapsed: 0 },
+            expected: false,
+        },
+        {
+            input: { changedFiles: [], millisElapsed: 1000 * 60 * 60 * 24 * 10 },
+            expected: false,
+        },
+        {
+            input: {
+                changedFiles: Array.from({ length: 5 }, (_, index) => `${index}`),
+
+                lastTimeToIndexMillis: /* 20 sec */ 1000 * 20,
+                millisElapsed: /* 4 min */ 1000 * 60 * 4,
+            },
+            expected: false,
+        },
+        {
+            input: {
+                changedFiles: Array.from({ length: 5 }, (_, index) => `${index}`),
+                lastTimeToIndexMillis: /* 20 sec */ 1000 * 20,
+                millisElapsed: /* 6 minutes */ 1000 * 60 * 6,
+            },
+            expected: true,
+        },
+        {
+            input: {
+                changedFiles: Array.from({ length: 5 }, (_, index) => `${index}`),
+                lastTimeToIndexMillis: /* 5 min */ 1000 * 60 * 5,
+                millisElapsed: /* 6 min */ 1000 * 60 * 6,
+            },
+            expected: false,
+        },
+        {
+            input: {
+                changedFiles: Array.from({ length: 5 }, (_, index) => `${index}`),
+                lastTimeToIndexMillis: /* 5 min */ 1000 * 60 * 5,
+                millisElapsed: /* 1.5 hr */ 1000 * 60 * 60 * 1.5,
+            },
+            expected: true,
+        },
+        {
+            input: {
+                changedFiles: Array.from({ length: 21 }, (_, index) => `${index}`),
+                lastTimeToIndexMillis: /* 5 min */ 1000 * 60 * 5,
+                millisElapsed: /* 1 min */ 1000 * 60,
+            },
+            expected: true,
+        },
+        {
+            input: {
+                changedFiles: Array.from({ length: 21 }, (_, index) => `${index}`),
+                lastTimeToIndexMillis: /* 1 hr */ 1000 * 60 * 60,
+                millisElapsed: /* 23 hrs */ 1000 * 60 * 60 * 23,
+            },
+            expected: false,
+        },
+        {
+            input: {
+                changedFiles: Array.from({ length: 21 }, (_, index) => `${index}`),
+                lastTimeToIndexMillis: /* 1 hr */ 1000 * 60 * 60,
+                millisElapsed: /* > 1 day */ 1000 * 60 * 60 * 25,
+            },
+            expected: true,
+        },
+    ]
+
+    it.each(testCases)('should return $expected when input is $input', ({ input, expected }) => {
+        const actual = shouldReindex(input)
+        expect(
+            actual,
+            `${JSON.stringify(input)} -> shouldReindex should be ${expected}, but got ${actual}`
+        ).toBe(expected)
     })
 })
 

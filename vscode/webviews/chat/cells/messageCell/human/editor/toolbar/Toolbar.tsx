@@ -1,10 +1,10 @@
-import { FeatureFlag, type Model, type Prompt } from '@sourcegraph/cody-shared'
+import type { Model } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
+import type { PromptOrDeprecatedCommand } from '../../../../../../components/promptList/PromptList'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
-import { useFeatureFlag } from '../../../../../../utils/useFeatureFlags'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
 import { AddContextButton } from './AddContextButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
@@ -58,15 +58,16 @@ export const Toolbar: FunctionComponent<{
         [onGapClick]
     )
 
-    const showChatPromptLibrarySelector = useFeatureFlag(FeatureFlag.ChatPromptSelector) ?? false
-
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <menu
             role="toolbar"
             aria-hidden={hidden}
             hidden={hidden}
-            className={clsx('tw-flex tw-items-center', className)}
+            className={clsx(
+                'tw-flex tw-items-center tw-justify-between tw-flex-wrap-reverse tw-gap-2 [&_>_*]:tw-flex-shrink-0',
+                className
+            )}
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
         >
@@ -75,25 +76,24 @@ export const Toolbar: FunctionComponent<{
                 {onMentionClick && (
                     <AddContextButton onClick={onMentionClick} className="tw-opacity-60 tw-mr-2" />
                 )}
-                {showChatPromptLibrarySelector && (
-                    <PromptSelectFieldToolbarItem
-                        focusEditor={focusEditor}
-                        appendTextToEditor={appendTextToEditor}
-                        className="tw-ml-1 tw-mr-1"
-                    />
-                )}
+                <PromptSelectFieldToolbarItem
+                    focusEditor={focusEditor}
+                    appendTextToEditor={appendTextToEditor}
+                    className="tw-ml-1 tw-mr-1"
+                />
                 <ModelSelectFieldToolbarItem
                     userInfo={userInfo}
                     focusEditor={focusEditor}
                     className="tw-mr-1"
                 />
             </div>
-            <div className="tw-flex-1" />
-            <SubmitButton
-                onClick={onSubmitClick}
-                isEditorFocused={isEditorFocused}
-                state={submitState}
-            />
+            <div className="tw-flex-1 tw-text-right">
+                <SubmitButton
+                    onClick={onSubmitClick}
+                    isEditorFocused={isEditorFocused}
+                    state={submitState}
+                />
+            </div>
         </menu>
     )
 }
@@ -104,8 +104,8 @@ const PromptSelectFieldToolbarItem: FunctionComponent<{
     className?: string
 }> = ({ focusEditor, appendTextToEditor, className }) => {
     const onSelect = useCallback(
-        (prompt: Prompt) => {
-            appendTextToEditor(prompt.definition.text)
+        (item: PromptOrDeprecatedCommand) => {
+            appendTextToEditor(item.type === 'prompt' ? item.value.definition.text : item.value.prompt)
             focusEditor?.()
         },
         [appendTextToEditor, focusEditor]

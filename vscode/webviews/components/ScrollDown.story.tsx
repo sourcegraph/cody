@@ -1,12 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import type { FunctionComponent } from 'react'
+import { type FunctionComponent, useState } from 'react'
 import { ScrollDown } from './ScrollDown'
 
 const ScrollDownContainer: FunctionComponent = () => {
     const paragraph = 'Aaa bbb ccc ddd eee fff ggg.'
+    const [ref, setRef] = useState<HTMLDivElement | null>(null) // use useState to force rerender
     return (
         <>
-            <div>
+            <div className="tw-h-[50vh] tw-overflow-auto" ref={e => setRef(e)}>
                 {new Array(20).fill(0).map((_, index) => {
                     return (
                         // biome-ignore lint/suspicious/noArrayIndexKey:
@@ -17,8 +18,8 @@ const ScrollDownContainer: FunctionComponent = () => {
                         </p>
                     )
                 })}
+                {ref && <ScrollDown scrollableParent={ref} />}
             </div>
-            <ScrollDown />
         </>
     )
 }

@@ -18,8 +18,8 @@ describe('PromptBuilder', () => {
 
     const preamble: Message[] = [{ speaker: 'system', text: ps`preamble` }]
 
-    it('throws an error when trying to add corpus context before chat input', () => {
-        const builder = new PromptBuilder({ input: 100, output: 100 })
+    it('throws an error when trying to add corpus context before chat input', async () => {
+        const builder = await PromptBuilder.create({ input: 100, output: 100 })
         builder.tryAddToPrefix(preamble)
         const file: ContextItem = {
             type: 'file',
@@ -30,8 +30,8 @@ describe('PromptBuilder', () => {
         expect(() => builder.tryAddContext('corpus', [file])).rejects.toThrowError()
     })
 
-    it('throws an error when trying to add User Context before chat input', () => {
-        const builder = new PromptBuilder({ input: 100, output: 100 })
+    it('throws an error when trying to add User Context before chat input', async () => {
+        const builder = await PromptBuilder.create({ input: 100, output: 100 })
         builder.tryAddToPrefix(preamble)
         const file: ContextItem = {
             type: 'file',
@@ -42,9 +42,9 @@ describe('PromptBuilder', () => {
         expect(() => builder.tryAddContext('user', [file])).rejects.toThrowError()
     })
 
-    describe('tryAddToPrefix', () => {
-        it('should add messages to prefix if within token limit', () => {
-            const builder = new PromptBuilder({ input: 20, output: 100 })
+    describe('tryAddToPrefix', async () => {
+        it('should add messages to prefix if within token limit', async () => {
+            const builder = await PromptBuilder.create({ input: 20, output: 100 })
             const preambleTranscript: ChatMessage[] = [{ speaker: 'human', text: ps`Hi!` }]
 
             expect(builder.tryAddToPrefix(preambleTranscript)).toBe(true)
@@ -52,8 +52,8 @@ describe('PromptBuilder', () => {
             // expect(mockUpdateUsage).toHaveBeenCalledWith('preamble', messages)
         })
 
-        it('should not add messages to prefix if not within token limit', () => {
-            const builder = new PromptBuilder({ input: 1, output: 100 })
+        it('should not add messages to prefix if not within token limit', async () => {
+            const builder = await PromptBuilder.create({ input: 1, output: 100 })
             const preambleTranscript: ChatMessage[] = [{ speaker: 'human', text: ps`Hi!` }]
 
             expect(builder.tryAddToPrefix(preambleTranscript)).toBe(false)
@@ -61,15 +61,15 @@ describe('PromptBuilder', () => {
         })
     })
 
-    describe('tryAddMessages', () => {
-        it('throws error when tryAddMessages before tryAddPrefix', () => {
-            const builder = new PromptBuilder({ input: 100, output: 100 })
+    describe('tryAddMessages', async () => {
+        it('throws error when tryAddMessages before tryAddPrefix', async () => {
+            const builder = await PromptBuilder.create({ input: 100, output: 100 })
             const transcript: ChatMessage[] = [{ speaker: 'human', text: ps`Hi!` }]
             expect(() => builder.tryAddMessages(transcript.reverse())).toThrowError()
         })
 
-        it('adds single valid transcript', () => {
-            const builder = new PromptBuilder({ input: 100, output: 100 })
+        it('adds single valid transcript', async () => {
+            const builder = await PromptBuilder.create({ input: 100, output: 100 })
             const transcript: ChatMessage[] = [{ speaker: 'human', text: ps`Hi!` }]
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages(transcript.reverse())
@@ -79,8 +79,8 @@ describe('PromptBuilder', () => {
             expect(messages[1].speaker).toBe('human')
         })
 
-        it('throw on transcript starts with assistant', () => {
-            const builder = new PromptBuilder({ input: 100, output: 100 })
+        it('throw on transcript starts with assistant', async () => {
+            const builder = await PromptBuilder.create({ input: 100, output: 100 })
             const transcript: ChatMessage[] = [{ speaker: 'assistant', text: ps`Hi!` }]
             builder.tryAddToPrefix(preamble)
             expect(() => {
@@ -88,8 +88,8 @@ describe('PromptBuilder', () => {
             }).toThrowError()
         })
 
-        it('adds valid transcript in reverse order', () => {
-            const builder = new PromptBuilder({ input: 1000, output: 100 })
+        it('adds valid transcript in reverse order', async () => {
+            const builder = await PromptBuilder.create({ input: 1000, output: 100 })
             const transcript: ChatMessage[] = [
                 { speaker: 'human', text: ps`Hi assistant!` },
                 { speaker: 'assistant', text: ps`Hello there!` },
@@ -107,8 +107,8 @@ describe('PromptBuilder', () => {
             expect(messages[2].speaker === messages[4].speaker).toBeTruthy()
         })
 
-        it('throws on consecutive speakers order', () => {
-            const builder = new PromptBuilder({ input: 1000, output: 100 })
+        it('throws on consecutive speakers order', async () => {
+            const builder = await PromptBuilder.create({ input: 1000, output: 100 })
             const invalidTranscript: ChatMessage[] = [
                 { speaker: 'human', text: ps`Hi there!` },
                 { speaker: 'human', text: ps`Hello there!` },
@@ -121,8 +121,8 @@ describe('PromptBuilder', () => {
             }).toThrowError()
         })
 
-        it('throws on transcript with human speakers only', () => {
-            const builder = new PromptBuilder({ input: 1000, output: 100 })
+        it('throws on transcript with human speakers only', async () => {
+            const builder = await PromptBuilder.create({ input: 1000, output: 100 })
             const invalidTranscript: ChatMessage[] = [
                 { speaker: 'human', text: ps`1` },
                 { speaker: 'human', text: ps`2` },
@@ -135,8 +135,8 @@ describe('PromptBuilder', () => {
             }).toThrowError()
         })
 
-        it('stops adding message-pairs when limit has been reached', () => {
-            const builder = new PromptBuilder({ input: 20, output: 100 })
+        it('stops adding message-pairs when limit has been reached', async () => {
+            const builder = await PromptBuilder.create({ input: 20, output: 100 })
             builder.tryAddToPrefix(preamble)
             const longTranscript: ChatMessage[] = [
                 { speaker: 'human', text: ps`Hi assistant!` },
@@ -156,7 +156,7 @@ describe('PromptBuilder', () => {
         })
     })
 
-    describe('tryAddContext', () => {
+    describe('tryAddContext', async () => {
         const chatTranscript: Message[] = [
             { speaker: 'human', text: ps`Hi!` },
             { speaker: 'assistant', text: ps`Hi!` },
@@ -170,7 +170,7 @@ describe('PromptBuilder', () => {
         }
 
         it('should not allow context prompt to exceed context window', async () => {
-            const builder = new PromptBuilder({ input: 10, output: 100 })
+            const builder = await PromptBuilder.create({ input: 10, output: 100 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
@@ -193,7 +193,7 @@ describe('PromptBuilder', () => {
         })
 
         it('should not contain duplicated context', async () => {
-            const builder = new PromptBuilder({ input: 100, output: 100 })
+            const builder = await PromptBuilder.create({ input: 100, output: 100 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
@@ -209,7 +209,7 @@ describe('PromptBuilder', () => {
         })
 
         it('should not contain non-unique context (context with overlapping ranges)', async () => {
-            const builder = new PromptBuilder({ input: 100, output: 100 })
+            const builder = await PromptBuilder.create({ input: 100, output: 100 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
@@ -230,7 +230,7 @@ describe('PromptBuilder', () => {
         })
 
         it('should not contain context that is too large', async () => {
-            const builder = new PromptBuilder({ input: 50, output: 50 })
+            const builder = await PromptBuilder.create({ input: 50, output: 50 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
@@ -263,7 +263,7 @@ describe('PromptBuilder', () => {
         })
 
         it('should remove context with overlapping ranges when full file is provided', async () => {
-            const builder = new PromptBuilder({ input: 50, output: 50 })
+            const builder = await PromptBuilder.create({ input: 50, output: 50 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
@@ -291,7 +291,7 @@ describe('PromptBuilder', () => {
         })
 
         it('should not remove user-added with overlapping ranges even when full file is provided', async () => {
-            const builder = new PromptBuilder({ input: 55, output: 50 })
+            const builder = await PromptBuilder.create({ input: 55, output: 50 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
@@ -319,7 +319,7 @@ describe('PromptBuilder', () => {
         })
 
         it('should deduplicate context from different token usage types', async () => {
-            const builder = new PromptBuilder({ input: 55, output: 50 })
+            const builder = await PromptBuilder.create({ input: 55, output: 50 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
@@ -355,7 +355,7 @@ describe('PromptBuilder', () => {
         })
 
         it('preserves context items content', async () => {
-            const builder = new PromptBuilder({ input: 100, output: 100 })
+            const builder = await PromptBuilder.create({ input: 100, output: 100 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 

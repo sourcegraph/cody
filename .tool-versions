@@ -1,2 +1,3 @@
 nodejs 20.4.0
 pnpm 8.6.7
+yarn 1.22.19  # required for agent/scripts/generate-agent-bindings.sh -> scip-typescript-cody-bindings

@@ -4,8 +4,8 @@ import {
     type Message,
     Model,
     ModelUsage,
-    ModelsService,
     contextFiltersProvider,
+    modelsService,
     ps,
 } from '@sourcegraph/cody-shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -23,7 +23,7 @@ describe('DefaultPrompter', () => {
     })
 
     it('constructs a prompt with no context', async () => {
-        ModelsService.setModels([
+        modelsService.setModels([
             new Model({
                 model: 'a-model-id',
                 usage: [ModelUsage.Chat],
@@ -54,7 +54,7 @@ describe('DefaultPrompter', () => {
     })
 
     it('prompt context items are ordered in reverse order of relevance', async () => {
-        const p = new PromptBuilder({ input: 10_000, output: 10_000 })
+        const p = await PromptBuilder.create({ input: 10_000, output: 10_000 })
         const contextItems: ContextItem[] = [
             {
                 type: 'file',
@@ -95,7 +95,7 @@ describe('DefaultPrompter', () => {
             update: vi.fn(() => Promise.resolve()),
         }))
 
-        ModelsService.setModels([
+        modelsService.setModels([
             new Model({
                 model: 'a-model-id',
                 usage: [ModelUsage.Chat],
@@ -126,7 +126,7 @@ describe('DefaultPrompter', () => {
     })
 
     it('prefers latest enhanced context', async () => {
-        ModelsService.setModels([
+        modelsService.setModels([
             new Model({
                 model: 'a-model-id',
                 usage: [ModelUsage.Chat],

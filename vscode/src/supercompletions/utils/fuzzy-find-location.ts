@@ -11,7 +11,7 @@ export function fuzzyFindLocation(
     const snippetLines = snippet.split('\n')
 
     const candidates: [number, number][] = []
-    for (let i = 0; i < lines.length - snippetLines.length; i++) {
+    for (let i = 0; i <= lines.length - snippetLines.length; i++) {
         const window = lines.slice(i, i + snippetLines.length).join('\n')
         const distance = levenshtein(window, snippet)
         candidates.push([distance, i])

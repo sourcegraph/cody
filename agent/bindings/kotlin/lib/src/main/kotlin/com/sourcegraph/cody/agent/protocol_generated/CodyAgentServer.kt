@@ -18,6 +18,8 @@ interface CodyAgentServer {
   fun chat_new(params: Null?): CompletableFuture<String>
   @JsonRequest("chat/web/new")
   fun chat_web_new(params: Null?): CompletableFuture<Chat_Web_NewResult>
+  @JsonRequest("chat/sidebar/new")
+  fun chat_sidebar_new(params: Null?): CompletableFuture<Chat_Sidebar_NewResult>
   @JsonRequest("chat/delete")
   fun chat_delete(params: Chat_DeleteParams): CompletableFuture<List<ChatExportResult>>
   @JsonRequest("chat/restore")
@@ -86,6 +88,8 @@ interface CodyAgentServer {
   fun git_codebaseName(params: Git_CodebaseNameParams): CompletableFuture<String?>
   @JsonRequest("webview/didDispose")
   fun webview_didDispose(params: Webview_DidDisposeParams): CompletableFuture<Null?>
+  @JsonRequest("webview/resolveWebviewView")
+  fun webview_resolveWebviewView(params: Webview_ResolveWebviewViewParams): CompletableFuture<Null?>
   @JsonRequest("webview/receiveMessageStringEncoded")
   fun webview_receiveMessageStringEncoded(params: Webview_ReceiveMessageStringEncodedParams): CompletableFuture<Null?>
   @JsonRequest("diagnostics/publish")
@@ -140,6 +144,8 @@ interface CodyAgentServer {
   fun exit(params: Null?)
   @JsonNotification("extensionConfiguration/didChange")
   fun extensionConfiguration_didChange(params: ExtensionConfiguration)
+  @JsonNotification("workspaceFolder/didChange")
+  fun workspaceFolder_didChange(params: WorkspaceFolder_DidChangeParams)
   @JsonNotification("textDocument/didOpen")
   fun textDocument_didOpen(params: ProtocolTextDocument)
   @JsonNotification("textDocument/didChange")
@@ -166,4 +172,6 @@ interface CodyAgentServer {
   fun autocomplete_completionAccepted(params: CompletionItemParams)
   @JsonNotification("progress/cancel")
   fun progress_cancel(params: Progress_CancelParams)
+  @JsonNotification("webview/didDisposeNative")
+  fun webview_didDisposeNative(params: Webview_DidDisposeNativeParams)
 }

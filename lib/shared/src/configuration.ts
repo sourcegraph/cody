@@ -68,6 +68,7 @@ export interface Configuration {
      * Unstable Features for internal testing only
      */
     internalUnstable: boolean
+    internalDebugContext?: boolean
 
     /**
      * Experimental autocomplete
@@ -105,6 +106,8 @@ export interface AutocompleteTimeouts {
     multiline?: number
     singleline?: number
 }
+
+export type ConfigurationWithEndpoint = Omit<ConfigurationWithAccessToken, 'accessToken'>
 
 export interface ConfigurationWithAccessToken extends Configuration {
     serverEndpoint: string

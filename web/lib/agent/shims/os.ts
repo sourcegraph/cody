@@ -6,4 +6,8 @@ export function arch(): unknown {
     return 'n/a'
 }
 
-export default { platform, arch }
+export function homedir(): unknown {
+    return ''
+}
+
+export default { platform, arch, homedir }

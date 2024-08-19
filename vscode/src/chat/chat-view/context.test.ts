@@ -1,8 +1,7 @@
 import type { ContextItem } from '@sourcegraph/cody-shared'
 import { describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
-import { filterLocallyModifiedFilesOutOfRemoteContext } from './ContextFetcher'
-import type { Root } from './context'
+import { type Root, filterLocallyModifiedFilesOutOfRemoteContext } from './ContextRetriever'
 
 describe('filterLocallyModifiedFilesOutOfRemoteContext', () => {
     it('filters out local context files', () => {
@@ -16,10 +15,12 @@ describe('filterLocallyModifiedFilesOutOfRemoteContext', () => {
                 roots: [
                     {
                         local: vscode.Uri.file('/tmp/my/repo'),
-                        remoteRepo: {
-                            name: 'github.com/my/repo',
-                            id: '==myrepoid',
-                        },
+                        remoteRepos: [
+                            {
+                                name: 'github.com/my/repo',
+                                id: '==myrepoid',
+                            },
+                        ],
                     },
                 ],
                 localModifiedFilesByRoot: [['/tmp/my/repo/README.md']],

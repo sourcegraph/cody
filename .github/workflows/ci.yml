@@ -140,10 +140,27 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      - run: xvfb-run -a pnpm -C vscode run test:e2e --shard=${{ matrix.shard }}
+      - run: GITHUB_REF=$BRANCH_NAME xvfb-run -a pnpm -C vscode run test:e2e --shard=${{ matrix.shard }}
         if: matrix.runner == 'ubuntu'
-      - run: pnpm -C vscode run test:e2e
-        if: matrix.runner != 'ubuntu'
+        env:
+          BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
+          # This is required because the test collector from Buildkite is imprecise when it
+          # comes to infer the branch name on GitHub action.
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+      - run: GITHUB_REF=$BRANCH_NAME pnpm -C vscode run test:e2e
+        if: matrix.runner == 'macos'
+        env:
+          BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
+          # This is required because the test collector from Buildkite is imprecise when it
+          # comes to infer the branch name on GitHub action.
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+      - run: $env:GITHUB_REF=$env:BRANCH_NAME; pnpm -C vscode run test:e2e
+        if: matrix.runner == 'windows'
+        env:
+          BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
+          # This is required because the test collector from Buildkite is imprecise when it
+          # comes to infer the branch name on GitHub action.
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
       - uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:

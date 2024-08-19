@@ -251,14 +251,18 @@ test.extend<ExpectedV2Events>({
     const [chatFrame, lastChatInput, firstChatInput, chatInputs] = await createEmptyChatPanel(page)
 
     // Submit three new messages
+    await expect(chatInputs).toHaveCount(1)
     await lastChatInput.fill('One')
     await lastChatInput.press('Enter')
+    await page.waitForTimeout(1000)
     await expect(chatFrame.getByText('One')).toBeVisible()
     await lastChatInput.fill('Two')
     await lastChatInput.press('Enter')
+    await page.waitForTimeout(1000)
     await expect(chatFrame.getByText('Two')).toBeVisible()
     await lastChatInput.fill('Three')
     await lastChatInput.press('Enter')
+    await page.waitForTimeout(1000)
     await expect(chatFrame.getByText('Three')).toBeVisible()
 
     // Click on the first input to get into the editing mode

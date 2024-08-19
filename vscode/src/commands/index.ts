@@ -12,6 +12,7 @@ interface MenuCommandAccessor {
     mode?: CodyCommandMode
     contextValue?: string
     requires?: { setting: string }
+    isBuiltin?: boolean
 }
 
 export const CodyCommandMenuItems: MenuCommandAccessor[] = [
@@ -32,6 +33,7 @@ export const CodyCommandMenuItems: MenuCommandAccessor[] = [
         command: { command: 'cody.command.edit-code' },
         keybinding: `${osIcon}K`,
         mode: 'edit',
+        isBuiltin: true,
     },
     {
         key: 'doc',
@@ -40,6 +42,7 @@ export const CodyCommandMenuItems: MenuCommandAccessor[] = [
         command: { command: 'cody.command.document-code' },
         keybinding: `${osIcon}D`,
         mode: 'edit',
+        isBuiltin: true,
     },
     {
         key: 'explain',
@@ -48,6 +51,7 @@ export const CodyCommandMenuItems: MenuCommandAccessor[] = [
         command: { command: 'cody.command.explain-code' },
         keybinding: '',
         mode: 'ask',
+        isBuiltin: true,
     },
     {
         key: 'test',
@@ -56,6 +60,7 @@ export const CodyCommandMenuItems: MenuCommandAccessor[] = [
         command: { command: 'cody.command.unit-tests' },
         keybinding: '',
         mode: 'edit',
+        isBuiltin: true,
     },
     {
         key: 'smell',
@@ -64,6 +69,7 @@ export const CodyCommandMenuItems: MenuCommandAccessor[] = [
         command: { command: 'cody.command.smell-code' },
         keybinding: '',
         mode: 'ask',
+        isBuiltin: true,
     },
     {
         key: 'auto',

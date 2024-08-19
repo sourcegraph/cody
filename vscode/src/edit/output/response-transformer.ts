@@ -1,4 +1,5 @@
 import { decode } from 'he'
+import type * as vscode from 'vscode'
 import type { FixupTask } from '../../non-stop/FixupTask'
 import { PROMPT_TOPICS } from '../prompt/constants'
 import { matchIndentation } from './match-indentation'
@@ -29,6 +30,9 @@ const MARKDOWN_CODE_BLOCK_REGEX = new RegExp(
     'g'
 )
 
+const LEADING_SPACES_AND_NEW_LINES = /^\s*\n/
+const LEADING_SPACES = /^[ ]+/
+
 /**
  * Given the LLM response for a FixupTask, transforms the response
  * to make it suitable to insert as code.
@@ -46,33 +50,43 @@ export function responseTransformer(
         .replaceAll(MARKDOWN_CODE_BLOCK_REGEX, block =>
             block.replace(MARKDOWN_CODE_BLOCK_START, '').replace(MARKDOWN_CODE_BLOCK_END, '')
         )
-        // Trim any leading or trailing spaces
-        .replace(/^\s*\n/, '')
+
+    // Trim leading spaces
+    // - For `add` insertions, the LLM will attempt to continue the code from the position of the cursor, we handle the `insertionPoint`
+    //   but we should preserve new lines as they may be valuable for spacing
+    // - For other edits, we already trim the selection to exclude padded whitespace, we only want the start of the incoming text
+    const trimmedText =
+        task.intent === 'add'
+            ? strippedText.replace(LEADING_SPACES, '')
+            : strippedText.replace(LEADING_SPACES_AND_NEW_LINES, '')
 
     // Strip the response of any remaining HTML entities such as &lt; and &gt;
-    const decodedText = decode(strippedText)
+    const decodedText = decode(trimmedText)
 
     if (!isMessageInProgress) {
-        const formattedToMatchLanguage = matchLanguage(decodedText, task)
-
         if (task.mode === 'insert') {
             // For insertions, we want to always ensure we include a new line at the end of the response
             // We do not attempt to match indentation, as we don't have any original text to compare to
-            return formattedToMatchLanguage.endsWith('\n')
-                ? formattedToMatchLanguage
-                : formattedToMatchLanguage + '\n'
+            return decodedText.endsWith('\n') ? decodedText : decodedText + '\n'
         }
 
-        // LLMs have a tendency to complete the response with a final new line, but we don't want to
-        // include this unless necessary, as we already trim the users' selection, and any additional whitespace will
-        // hurt the readability of the diff.
-        const trimmedReplacement =
-            task.original.trimEnd().length === task.original.length
-                ? formattedToMatchLanguage.trimEnd()
-                : formattedToMatchLanguage
-        // Attempt to match the indentation of the replacement with the original text
-        return matchIndentation(trimmedReplacement, task.original)
+        return formatToMatchOriginal(decodedText, task.original, task.fixupFile.uri)
     }
 
     return decodedText
+}
+
+export function formatToMatchOriginal(incoming: string, original: string, uri: vscode.Uri): string {
+    const formattedToMatchLanguage = matchLanguage(incoming, original, uri)
+
+    // LLMs have a tendency to complete the response with a final new line, but we don't want to
+    // include this unless necessary, as we already trim the users' selection, and any additional whitespace will
+    // hurt the readability of the diff.
+    const trimmedReplacement =
+        original.trimEnd().length === original.length
+            ? formattedToMatchLanguage.trimEnd()
+            : formattedToMatchLanguage
+
+    // Attempt to match the indentation of the replacement with the original text
+    return matchIndentation(trimmedReplacement, original)
 }

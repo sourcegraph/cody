@@ -11,7 +11,7 @@ import { type FC, memo, useCallback, useMemo, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-import type { CodeBlockActionsProps } from './ChatMessageContent'
+import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import {
     AssistantMessageCell,
@@ -20,7 +20,6 @@ import {
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 interface TranscriptProps {
-    chatID: string
     chatEnabled: boolean
     transcript: ChatMessage[]
     userInfo: UserAccountInfo
@@ -33,11 +32,12 @@ interface TranscriptProps {
     feedbackButtonsOnSubmit: (text: string) => void
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+    smartApply?: CodeBlockActionsProps['smartApply']
+    experimentalSmartApplyEnabled?: boolean
 }
 
 export const Transcript: FC<TranscriptProps> = props => {
     const {
-        chatID,
         chatEnabled,
         transcript,
         userInfo,
@@ -48,6 +48,8 @@ export const Transcript: FC<TranscriptProps> = props => {
         feedbackButtonsOnSubmit,
         copyButtonOnSubmit,
         insertButtonOnSubmit,
+        smartApply,
+        experimentalSmartApplyEnabled,
     } = props
 
     const interactions = useMemo(
@@ -56,12 +58,11 @@ export const Transcript: FC<TranscriptProps> = props => {
     )
 
     return (
-        <div className="tw-px-8 tw-py-6 tw-pt-8 tw-mt-2 tw-flex tw-flex-col tw-gap-10">
+        <div className="tw-px-8 tw-pt-6 tw-pb-12 tw-flex tw-flex-col tw-gap-10">
             {interactions.map((interaction, i) => (
                 <TranscriptInteraction
                     // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-                    key={`${chatID}-${i}`}
-                    chatID={chatID}
+                    key={i}
                     chatEnabled={chatEnabled}
                     userInfo={userInfo}
                     interaction={interaction}
@@ -79,6 +80,8 @@ export const Transcript: FC<TranscriptProps> = props => {
                     priorAssistantMessageIsLoading={Boolean(
                         messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
                     )}
+                    smartApply={smartApply}
+                    experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
                 />
             ))}
         </div>
@@ -140,7 +143,8 @@ export function transcriptToInteractionPairs(
     return pairs
 }
 
-interface TranscriptInteractionProps extends Omit<TranscriptProps, 'transcript' | 'messageInProgress'> {
+interface TranscriptInteractionProps
+    extends Omit<TranscriptProps, 'transcript' | 'messageInProgress' | 'chatID'> {
     interaction: Interaction
     isFirstInteraction: boolean
     isLastInteraction: boolean
@@ -163,6 +167,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         guardrails,
         insertButtonOnSubmit,
         copyButtonOnSubmit,
+        smartApply,
+        experimentalSmartApplyEnabled,
     } = props
 
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
@@ -235,6 +241,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         !assistantMessage.error &&
                         isLastSentInteraction
                     }
+                    smartApply={smartApply}
+                    experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
                 />
             )}
         </>

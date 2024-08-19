@@ -1,0 +1,41 @@
+.container {
+    width: 100%;
+    max-width: 300px;
+    background: var(--vscode-sideBar-background);
+    color: var(--vscode-sideBar-foreground);
+    border: 1px solid var(--vscode-widget-border);
+    box-shadow: 0 2px 16px 0 var(--vscode-widget-shadow);
+    border-radius: 4px;
+    margin-bottom: var(--spacing);
+    padding: var(--spacing);
+}
+
+.section {
+    width: 100%;
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    flex-direction: column;
+}
+
+.button {
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: center;
+    padding: 0.25rem;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: var(--spacing);
+}
+
+.input {
+    width: 100%;
+    padding: 0.25rem;
+    color: var(--vscode-input-foreground);
+    background-color: var(--vscode-input-background);
+    border: 1px solid var(--vscode-input-border);
+}
+
+.warning {
+    color: var(--vscode-inputValidation-warningBorder);
+}

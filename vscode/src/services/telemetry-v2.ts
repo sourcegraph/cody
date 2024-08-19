@@ -12,7 +12,7 @@ import {
     telemetryRecorderProvider,
     updateGlobalTelemetryInstances,
 } from '@sourcegraph/cody-shared'
-import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry'
+import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry/dist/processors/timestamp'
 
 import { logDebug } from '../log'
 import { getOSArch } from '../os'

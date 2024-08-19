@@ -1,7 +1,7 @@
 import {
     type ContextItem,
     ContextItemSource,
-    TokenCounter,
+    TokenCounterUtils,
     contextFiltersProvider,
     logError,
     toRangeData,
@@ -45,7 +45,7 @@ export async function getContextFileFromUri(
             if (!content.trim()) {
                 throw new Error('No file content')
             }
-            const size = TokenCounter.countTokens(content)
+            const size = await TokenCounterUtils.countTokens(content)
 
             return {
                 type: 'file',

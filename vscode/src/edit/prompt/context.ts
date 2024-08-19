@@ -44,8 +44,8 @@ const getContextFromIntent = async ({
     selectionRange,
     editor,
 }: GetContextFromIntentOptions): Promise<ContextMessage[]> => {
-    const truncatedPrecedingText = truncatePromptStringStart(prefix.text, MAX_CURRENT_FILE_TOKENS)
-    const truncatedFollowingText = truncatePromptString(suffix.text, MAX_CURRENT_FILE_TOKENS)
+    const truncatedPrecedingText = await truncatePromptStringStart(prefix.text, MAX_CURRENT_FILE_TOKENS)
+    const truncatedFollowingText = await truncatePromptString(suffix.text, MAX_CURRENT_FILE_TOKENS)
 
     // Disable no case declarations because we get better type checking with a switch case
     switch (intent) {

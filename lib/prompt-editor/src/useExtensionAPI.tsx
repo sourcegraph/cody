@@ -15,8 +15,7 @@ export const ExtensionAPIProviderFromVSCodeAPI: FunctionComponent<{
     const extensionAPI = useMemo<WebviewToExtensionAPI>(() => {
         const messageAPI = createMessageAPIForWebview(vscodeAPI)
         return {
-            contextItems: proxyExtensionAPI(messageAPI, 'contextItems'),
-            mentionProviders: proxyExtensionAPI(messageAPI, 'mentionProviders'),
+            mentionMenuData: proxyExtensionAPI(messageAPI, 'mentionMenuData'),
             evaluatedFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluatedFeatureFlag'),
             prompts: proxyExtensionAPI(messageAPI, 'prompts'),
         }

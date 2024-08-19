@@ -1,8 +1,13 @@
-import { clsx } from 'clsx'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 
-import type { AuthStatus, ChatMessage, CodyIDE, Guardrails } from '@sourcegraph/cody-shared'
+import type {
+    AuthStatus,
+    ChatMessage,
+    CodyIDE,
+    Guardrails,
+    PromptString,
+} from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -11,41 +16,43 @@ import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/cons
 import styles from './Chat.module.css'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
+import type { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
+import { useUserAccountInfo } from './utils/useConfig'
 
 interface ChatboxProps {
-    chatID: string
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     isTranscriptError: boolean
-    userInfo: UserAccountInfo
     guardrails?: Guardrails
     scrollableParent?: HTMLElement | null
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
-    className?: string
+    setView: (view: View) => void
+    experimentalSmartApplyEnabled?: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
-    chatID,
     messageInProgress,
     transcript,
     vscodeAPI,
     isTranscriptError,
     chatEnabled = true,
-    userInfo,
     guardrails,
     scrollableParent,
     showWelcomeMessage = true,
     showIDESnippetActions = true,
-    className,
+    setView,
+    experimentalSmartApplyEnabled,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
     const transcriptRef = useRef(transcript)
     transcriptRef.current = transcript
+
+    const userInfo = useUserAccountInfo()
 
     const feedbackButtonsOnSubmit = useCallback(
         (text: string) => {
@@ -97,19 +104,52 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         if (showIDESnippetActions) {
             return (text: string, newFile = false) => {
                 const op = newFile ? 'newFile' : 'insert'
-                const eventType = 'Button'
-                // remove the additional /n added by the text area at the end of the text
-                const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
                 // Log the event type and text to telemetry in chat view
                 vscodeAPI.postMessage({
                     command: op,
-                    eventType,
-                    text: code,
+                    // remove the additional /n added by the text area at the end of the text
+                    text: text.replace(/\n$/, ''),
                 })
             }
         }
 
         return
+    }, [vscodeAPI, showIDESnippetActions])
+
+    const smartApply = useMemo(() => {
+        if (!showIDESnippetActions) {
+            return
+        }
+
+        return {
+            onSubmit: (
+                id: string,
+                text: string,
+                instruction?: PromptString,
+                fileName?: string
+            ): void => {
+                vscodeAPI.postMessage({
+                    command: 'smartApplySubmit',
+                    id,
+                    instruction: instruction?.toString(),
+                    // remove the additional /n added by the text area at the end of the text
+                    code: text.replace(/\n$/, ''),
+                    fileName,
+                })
+            },
+            onAccept: (id: string) => {
+                vscodeAPI.postMessage({
+                    command: 'smartApplyAccept',
+                    id,
+                })
+            },
+            onReject: (id: string) => {
+                vscodeAPI.postMessage({
+                    command: 'smartApplyReject',
+                    id,
+                })
+            },
+        }
     }, [vscodeAPI, showIDESnippetActions])
 
     const postMessage = useCallback<ApiPostMessage>(msg => vscodeAPI.postMessage(msg), [vscodeAPI])
@@ -157,28 +197,33 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [])
 
     return (
-        <div className={clsx(styles.container, className, 'tw-relative')}>
+        <>
             {!chatEnabled && (
                 <div className={styles.chatDisabled}>
                     Cody chat is disabled by your Sourcegraph site administrator
                 </div>
             )}
             <Transcript
-                chatID={chatID}
                 transcript={transcript}
                 messageInProgress={messageInProgress}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                 copyButtonOnSubmit={copyButtonOnSubmit}
                 insertButtonOnSubmit={insertButtonOnSubmit}
+                smartApply={smartApply}
                 isTranscriptError={isTranscriptError}
                 userInfo={userInfo}
                 chatEnabled={chatEnabled}
                 postMessage={postMessage}
                 guardrails={guardrails}
+                experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
             />
-            {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage IDE={userInfo.ide} />}
-            <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
-        </div>
+            {transcript.length === 0 && showWelcomeMessage && (
+                <WelcomeMessage IDE={userInfo.ide} setView={setView} />
+            )}
+            {scrollableParent && (
+                <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
+            )}
+        </>
     )
 }
 

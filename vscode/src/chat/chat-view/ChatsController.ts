@@ -9,6 +9,7 @@ import {
     DEFAULT_EVENT_SOURCE,
     type Guardrails,
     editorStateFromPromptString,
+    subscriptionDisposable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
@@ -21,9 +22,15 @@ import type { startTokenReceiver } from '../../auth/token-receiver'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import { getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
+import type { ExtensionClient } from '../../extension-client'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { type ChatLocation, localStorage } from '../../services/LocalStorageProvider'
+import {
+    handleCodeFromInsertAtCursor,
+    handleCodeFromSaveToNewFile,
+} from '../../services/utils/codeblock-action-tracker'
 import type { ContextAPIClient } from '../context/contextAPIClient'
+import type { SmartApplyResult } from '../protocol'
 import {
     ChatController,
     type ChatSession,
@@ -33,7 +40,7 @@ import {
     webviewViewOrPanelViewColumn,
 } from './ChatController'
 import { chatHistory } from './ChatHistoryManager'
-import type { ContextFetcher } from './ContextFetcher'
+import type { ContextRetriever } from './ContextRetriever'
 
 export const CodyChatEditorViewType = 'cody.editorPanel'
 
@@ -64,18 +71,19 @@ export class ChatsController implements vscode.Disposable {
         private readonly localEmbeddings: LocalEmbeddingsController | null,
         private readonly symf: SymfRunner | null,
 
-        private readonly contextFetcher: ContextFetcher,
+        private readonly contextRetriever: ContextRetriever,
 
         private readonly guardrails: Guardrails,
-        private readonly contextAPIClient: ContextAPIClient | null
+        private readonly contextAPIClient: ContextAPIClient | null,
+        private readonly extensionClient: ExtensionClient
     ) {
         logDebug('ChatsController:constructor', 'init')
         this.panel = this.createChatController()
 
         this.disposables.push(
-            this.authProvider.onChange(authStatus => this.setAuthStatus(authStatus), {
-                runImmediately: true,
-            })
+            subscriptionDisposable(
+                this.authProvider.changes.subscribe(authStatus => this.setAuthStatus(authStatus))
+            )
         )
     }
 
@@ -204,6 +212,20 @@ export class ChatsController implements vscode.Disposable {
             ),
             vscode.commands.registerCommand('cody.mention.file', uri =>
                 this.sendEditorContextToChat(uri)
+            ),
+
+            // Codeblock commands
+            vscode.commands.registerCommand(
+                'cody.command.markSmartApplyApplied',
+                (result: SmartApplyResult) => this.sendSmartApplyResultToChat(result)
+            ),
+            vscode.commands.registerCommand(
+                'cody.command.insertCodeToCursor',
+                (args: { text: string }) => handleCodeFromInsertAtCursor(args.text)
+            ),
+            vscode.commands.registerCommand(
+                'cody.command.insertCodeToNewFile',
+                (args: { text: string }) => handleCodeFromSaveToNewFile(args.text, this.options.editor)
             )
         )
     }
@@ -235,6 +257,11 @@ export class ChatsController implements vscode.Disposable {
             await vscode.commands.executeCommand('cody.chat.focus')
         }
         await provider.handleGetUserEditorContext(uri)
+    }
+
+    private async sendSmartApplyResultToChat(result: SmartApplyResult): Promise<void> {
+        const provider = await this.getActiveChatController()
+        await provider.handleSmartApplyResult(result)
     }
 
     /**
@@ -345,14 +372,11 @@ export class ChatsController implements vscode.Disposable {
         }
     }
 
-    private async clearHistory(arg?: vscode.TreeItem | 'clear-all-no-confirm'): Promise<void> {
-        const treeItem = arg && arg !== 'clear-all-no-confirm' ? arg : undefined
-        const clearAllNoConfirm = arg === 'clear-all-no-confirm'
+    private async clearHistory(chatID?: string): Promise<void> {
+        const clearAllNoConfirm = chatID === 'clear-all-no-confirm'
 
         const authProvider = this.options.authProvider
         const authStatus = authProvider.getAuthStatus()
-
-        const chatID = treeItem?.id
 
         // delete single chat
         if (chatID) {
@@ -362,7 +386,7 @@ export class ChatsController implements vscode.Disposable {
         }
 
         // delete all chats
-        if (!treeItem) {
+        if (!chatID || clearAllNoConfirm) {
             logDebug('ChatsController:clearHistory', 'userConfirmation')
 
             if (!clearAllNoConfirm) {
@@ -394,6 +418,11 @@ export class ChatsController implements vscode.Disposable {
         chatQuestion?: string,
         panel?: vscode.WebviewPanel
     ): Promise<ChatController> {
+        // For clients without editor chat panels support, always use the sidebar panel.
+        const isSidebarOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
+        if (isSidebarOnly) {
+            return this.panel
+        }
         // Look for an existing editor with the same chatID
         if (chatID && this.editors.map(p => p.sessionID).includes(chatID)) {
             const provider = this.editors.find(p => p.sessionID === chatID)
@@ -473,7 +502,8 @@ export class ChatsController implements vscode.Disposable {
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,
             contextAPIClient: this.contextAPIClient,
-            contextFetcher: this.contextFetcher,
+            contextRetriever: this.contextRetriever,
+            extensionClient: this.extensionClient,
         })
     }
 

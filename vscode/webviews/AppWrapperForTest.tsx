@@ -2,17 +2,17 @@ import {
     type AuthStatus,
     type ContextItem,
     type ContextItemSymbol,
-    type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SymbolKind,
-    asyncGeneratorFromAsyncFunction,
-    asyncGeneratorWithValues,
+    promiseFactoryToObservable,
 } from '@sourcegraph/cody-shared'
 import { ClientStateContextProvider, ExtensionAPIProviderForTestsOnly } from '@sourcegraph/prompt-editor'
+import { Observable } from 'observable-fns'
 import { type ComponentProps, type FunctionComponent, type ReactNode, useMemo } from 'react'
 import { URI } from 'vscode-uri'
 import { COMMON_WRAPPERS } from './AppWrapper'
+import { FIXTURE_COMMANDS, makePromptsAPIWithData } from './components/promptList/fixtures'
 import { FIXTURE_PROMPTS } from './components/promptSelectField/fixtures'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
 import { TelemetryRecorderContext } from './utils/telemetry'
@@ -34,47 +34,46 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
             {
                 provider: ExtensionAPIProviderForTestsOnly,
                 value: {
-                    contextItems: query =>
-                        asyncGeneratorFromAsyncFunction(async () => {
+                    mentionMenuData: query =>
+                        promiseFactoryToObservable(async () => {
                             await new Promise<void>(resolve => setTimeout(resolve, 250))
-
                             const queryTextLower = query.text.toLowerCase()
-                            const results =
-                                query.provider === SYMBOL_CONTEXT_MENTION_PROVIDER.id
-                                    ? DUMMY_SYMBOLS.filter(
-                                          f =>
-                                              f.symbolName.toLowerCase().includes(queryTextLower) ||
-                                              f.uri.path.includes(queryTextLower)
-                                      )
-                                    : query.provider === null ||
-                                        query.provider === FILE_CONTEXT_MENTION_PROVIDER.id
-                                      ? DUMMY_FILES.filter(f => f.uri.path.includes(queryTextLower))
-                                      : [
-                                            {
-                                                type: 'file',
-                                                uri: URI.file(`sample-${query.provider}-result`),
-                                            } satisfies ContextItem,
-                                        ].filter(f => f.uri.path.includes(queryTextLower))
-                            return results
+                            return {
+                                providers: [
+                                    {
+                                        title: 'My Context Source',
+                                        id: 'my-context-source',
+                                        queryLabel: 'Type a query for My Context Source',
+                                        emptyLabel: 'No results found from My Context Source',
+                                    },
+                                ].filter(
+                                    p =>
+                                        query.provider === null &&
+                                        p.title.toLowerCase().includes(queryTextLower)
+                                ),
+                                items:
+                                    query.provider === SYMBOL_CONTEXT_MENTION_PROVIDER.id
+                                        ? DUMMY_SYMBOLS.filter(
+                                              f =>
+                                                  f.symbolName.toLowerCase().includes(queryTextLower) ||
+                                                  f.uri.path.includes(queryTextLower)
+                                          )
+                                        : query.provider === null ||
+                                            query.provider === FILE_CONTEXT_MENTION_PROVIDER.id
+                                          ? DUMMY_FILES.filter(f => f.uri.path.includes(queryTextLower))
+                                          : [
+                                                {
+                                                    type: 'file',
+                                                    uri: URI.file(`sample-${query.provider}-result`),
+                                                } satisfies ContextItem,
+                                            ].filter(f => f.uri.path.includes(queryTextLower)),
+                            }
                         }),
-                    mentionProviders: () =>
-                        asyncGeneratorWithValues<ContextMentionProviderMetadata[]>([
-                            {
-                                title: 'My Context Source',
-                                id: 'my-context-source',
-                                queryLabel: 'Type a query for My Context Source',
-                                emptyLabel: 'No results found from My Context Source',
-                            },
-                        ]),
-                    evaluatedFeatureFlag: () => asyncGeneratorWithValues(undefined),
-                    prompts: query =>
-                        asyncGeneratorFromAsyncFunction(async () => {
-                            await new Promise<void>(resolve => setTimeout(resolve, 250))
-                            const queryTextLower = query.toLowerCase()
-                            return FIXTURE_PROMPTS.filter(prompt =>
-                                prompt.name.toLowerCase().includes(queryTextLower)
-                            )
-                        }),
+                    evaluatedFeatureFlag: _flag => Observable.of(true),
+                    prompts: makePromptsAPIWithData({
+                        prompts: { type: 'results', results: FIXTURE_PROMPTS },
+                        commands: FIXTURE_COMMANDS,
+                    }),
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
             {
@@ -89,6 +88,11 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                             endpoint: 'https://sourcegraph.example.com',
                         } satisfies Partial<AuthStatus> as any,
                         config: {} as any,
+                        configFeatures: {
+                            chat: true,
+                            serverSentModels: true,
+                            attribution: true,
+                        },
                     },
                 },
             } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,

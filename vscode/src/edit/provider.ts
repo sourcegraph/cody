@@ -2,10 +2,10 @@ import { Utils } from 'vscode-uri'
 
 import {
     BotResponseMultiplexer,
-    ModelsService,
     Typewriter,
     isAbortError,
     isDotCom,
+    modelsService,
     posixFilePaths,
     telemetryRecorder,
     uriBasename,
@@ -23,7 +23,7 @@ import {
 } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { workspace } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
-import { CodyTaskState } from '../non-stop/utils'
+import { CodyTaskState } from '../non-stop/state'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import type { EditManagerOptions } from './manager'
@@ -52,7 +52,7 @@ export class EditProvider {
         return wrapInActiveSpan('command.edit.start', async span => {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
-            const contextWindow = ModelsService.getContextWindowByID(model)
+            const contextWindow = modelsService.getContextWindowByID(model)
             const {
                 messages,
                 stopSequences,
@@ -172,6 +172,17 @@ export class EditProvider {
 
     public abortEdit(): void {
         this.abortController?.abort()
+    }
+
+    /**
+     * Given a response, allows applying an edit directly.
+     * This is a shortcut to creating an edit without calling `executeEdit`.
+     * Should **only** be used for completed edits.
+     */
+    public applyEdit(response: string): Promise<void> {
+        // We need to start the task first, before applying
+        this.config.controller.startTask(this.config.task)
+        return this.handleResponse(response, false)
     }
 
     private async handleResponse(response: string, isMessageInProgress: boolean): Promise<void> {

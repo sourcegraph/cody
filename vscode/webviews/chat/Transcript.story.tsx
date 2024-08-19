@@ -28,7 +28,6 @@ const meta: Meta<typeof Transcript> = {
         },
     },
     args: {
-        chatID: 'test',
         transcript: FIXTURE_TRANSCRIPT.simple,
         messageInProgress: null,
         feedbackButtonsOnSubmit: () => {},
@@ -39,7 +38,11 @@ const meta: Meta<typeof Transcript> = {
         chatEnabled: true,
     } satisfies ComponentProps<typeof Transcript>,
 
-    decorators: [VSCodeWebview],
+    decorators: [
+        // This marginBottom makes it easier to test the @-mention menu's positioning behavior.
+        story => <div style={{ marginBottom: '300px' }}>{story()}</div>,
+        VSCodeWebview,
+    ],
 }
 
 export default meta

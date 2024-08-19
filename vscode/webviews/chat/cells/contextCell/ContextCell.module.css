@@ -3,6 +3,12 @@
     padding: 2px 4px 2px 2px;
 }
 
+.context-item-metadata {
+    color: var(--vscode-disabledForeground);
+    padding-left: 0.1rem;
+    text-wrap: nowrap;
+}
+
 .context-item-link {
     background: none;
     border: none;

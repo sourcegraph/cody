@@ -1,8 +1,17 @@
 import * as vscode from 'vscode'
 
-import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type EditModel,
+    PromptString,
+    telemetryRecorder,
+} from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 
+import { Utils } from 'vscode-uri'
+import { doesFileExist } from '../../commands/utils/workspace-files'
+import { executeSmartApply } from '../../edit/smart-apply'
+import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { countCode, matchCodeSnippets } from './code-count'
 
 /**
@@ -34,17 +43,10 @@ enum SourceMetadataMapping {
  */
 function setLastStoredCode(
     code: string,
-    eventName: string,
+    eventName: 'copyButton' | 'keyDown.Copy' | 'applyButton' | 'insertButton' | 'saveButton',
     source = 'chat',
     requestID = ''
-): {
-    code: string
-    lineCount: number
-    charCount: number
-    eventName: string
-    source: string
-    requestID?: string
-} {
+): void {
     // All non-copy events are considered as insertions since we don't need to listen for paste events
     insertInProgress = !eventName.includes('copy')
     const { lineCount, charCount } = countCode(code)
@@ -52,8 +54,22 @@ function setLastStoredCode(
 
     lastStoredCode = codeCount
 
-    // Currently supported events are: copy, insert, save
-    const op = eventName.includes('copy') ? 'copy' : eventName.startsWith('insert') ? 'insert' : 'save'
+    let operation: string
+    switch (eventName) {
+        case 'copyButton':
+        case 'keyDown.Copy':
+            operation = 'copy'
+            break
+        case 'applyButton':
+            operation = 'apply'
+            break
+        case 'insertButton':
+            operation = 'insert'
+            break
+        case 'saveButton':
+            operation = 'save'
+            break
+    }
 
     telemetryRecorder.recordEvent(`cody.${eventName}`, 'clicked', {
         metadata: {
@@ -64,11 +80,9 @@ function setLastStoredCode(
         interactionID: requestID,
         privateMetadata: {
             source,
-            op,
+            op: operation,
         },
     })
-
-    return codeCount
 }
 
 async function setLastTextFromClipboard(clipboardText?: string): Promise<void> {
@@ -91,20 +105,87 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
     const edit = new vscode.WorkspaceEdit()
     // trimEnd() to remove new line added by Cody
     edit.insert(activeEditor.document.uri, selectionRange.start, `${text}\n`)
+    setLastStoredCode(text, 'insertButton')
     await vscode.workspace.applyEdit(edit)
+}
 
-    // Log insert event
-    const op = 'insert'
-    const eventName = `${op}Button`
-    setLastStoredCode(text, eventName)
+function getSmartApplyModel(authStatus: AuthStatus): EditModel | undefined {
+    if (!authStatus.isDotCom) {
+        // We cannot be sure what model we're using for enterprise, we will let this fall through
+        // to the default edit/smart apply behaviour where we use the configured enterprise model.
+        return
+    }
+
+    /**
+     * For PLG, we have a greater model choice. We default this to Claude 3.5 Sonnet
+     * as it is the most reliable model for smart apply from our testing.
+     * Right now we should prioritise reliability over latency, take this into account before changing
+     * this value.
+     */
+    return 'anthropic/claude-3-5-sonnet-20240620'
+}
+
+export async function handleSmartApply(
+    id: string,
+    code: string,
+    authStatus: AuthStatus,
+    instruction?: string | null,
+    fileUri?: string | null
+): Promise<void> {
+    const activeEditor = getEditor()?.active
+    const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
+    const uri =
+        fileUri && workspaceUri ? Utils.joinPath(workspaceUri, fileUri) : activeEditor?.document.uri
+
+    if (uri && !(await doesFileExist(uri))) {
+        return handleNewFileWithCode(code, uri)
+    }
+
+    const document = uri ? await vscode.workspace.openTextDocument(uri) : activeEditor?.document
+    if (!document) {
+        throw new Error('No editor found to insert text')
+    }
+
+    const visibleEditor = vscode.window.visibleTextEditors.find(
+        editor => editor.document.uri.toString() === document.uri.toString()
+    )
+
+    // Open the document for the user, so they can immediately see the progress decorations
+    await vscode.window.showTextDocument(document, {
+        // We may have triggered the smart apply from a different view column to the visible document
+        // so re-use the correct view column if we can
+        viewColumn: visibleEditor?.viewColumn,
+    })
+
+    setLastStoredCode(code, 'applyButton')
+    await executeSmartApply({
+        configuration: {
+            id,
+            document,
+            instruction: PromptString.unsafe_fromUserQuery(instruction || ''),
+            model: getSmartApplyModel(authStatus),
+            replacement: code,
+        },
+        source: 'chat',
+    })
+}
+
+export async function handleNewFileWithCode(code: string, uri: vscode.Uri): Promise<void> {
+    const workspaceEditor = new vscode.WorkspaceEdit()
+    workspaceEditor.createFile(uri, { ignoreIfExists: false })
+    const range = new vscode.Range(0, 0, 0, 0)
+    workspaceEditor.replace(uri, range, code.trimEnd())
+    setLastStoredCode(code, 'applyButton')
+    await vscode.workspace.applyEdit(workspaceEditor)
+    return vscode.commands.executeCommand('vscode.open', uri)
 }
 
 /**
  * Handles insert event to insert text from code block to new file
  */
-export function handleCodeFromSaveToNewFile(text: string): void {
-    const eventName = 'saveButton'
-    setLastStoredCode(text, eventName)
+export async function handleCodeFromSaveToNewFile(text: string, editor: VSCodeEditor): Promise<void> {
+    setLastStoredCode(text, 'saveButton')
+    return editor.createWorkspaceFile(text)
 }
 
 /**

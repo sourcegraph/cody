@@ -1,6 +1,6 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import type { TelemetryRecorder } from '@sourcegraph/cody-shared'
+import { CodyIDE, type TelemetryRecorder } from '@sourcegraph/cody-shared'
 
 import type { AuthMethod } from '../src/chat/protocol'
 
@@ -11,20 +11,24 @@ import signInLogoGoogle from './sign-in-logo-google.svg'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './OnboardingExperiment.module.css'
+import { ClientSignInForm } from './components/ClientSignInForm'
 import { useTelemetryRecorder } from './utils/telemetry'
+import { useConfig } from './utils/useConfig'
 
 interface LoginProps {
     simplifiedLoginRedirect: (method: AuthMethod) => void
     uiKindIsWeb: boolean
     vscodeAPI: VSCodeWrapper
+    codyIDE: CodyIDE
 }
 
 const WebLogin: React.FunctionComponent<
     React.PropsWithoutRef<{
+        isCodyWeb: boolean
         telemetryRecorder: TelemetryRecorder
         vscodeAPI: VSCodeWrapper
     }>
-> = ({ vscodeAPI }) => {
+> = ({ vscodeAPI, isCodyWeb }) => {
     const telemetryRecorder = useTelemetryRecorder()
     return (
         <ol>
@@ -38,22 +42,24 @@ const WebLogin: React.FunctionComponent<
                     Generate an Access Token
                 </a>
             </li>
-            <li>
-                <a
-                    href="about:blank"
-                    onClick={event => {
-                        telemetryRecorder.recordEvent('cody.webview.auth', 'clickSignIn')
-                        vscodeAPI.postMessage({
-                            command: 'simplified-onboarding',
-                            onboardingKind: 'web-sign-in-token',
-                        })
-                        event.preventDefault()
-                        event.stopPropagation()
-                    }}
-                >
-                    Add the Access Token to VS Code
-                </a>
-            </li>
+            {isCodyWeb && (
+                <li>
+                    <a
+                        href="about:blank"
+                        onClick={event => {
+                            telemetryRecorder.recordEvent('cody.webview.auth', 'clickSignIn')
+                            vscodeAPI.postMessage({
+                                command: 'simplified-onboarding',
+                                onboardingKind: 'web-sign-in-token',
+                            })
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }}
+                    >
+                        Add Access Token to Cody
+                    </a>
+                </li>
+            )}
         </ol>
     )
 }
@@ -63,11 +69,15 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
     simplifiedLoginRedirect,
     uiKindIsWeb,
     vscodeAPI,
+    codyIDE,
 }) => {
+    const authStatus = useConfig().authStatus
     const telemetryRecorder = useTelemetryRecorder()
     const otherSignInClick = (): void => {
         vscodeAPI.postMessage({ command: 'auth', authKind: 'signin' })
     }
+    const isNonVSCodeIDE = codyIDE !== CodyIDE.Web && codyIDE !== CodyIDE.VSCode
+    const isCodyWebUI = (uiKindIsWeb || codyIDE === CodyIDE.Web) && !isNonVSCodeIDE
     return (
         <div className={styles.container}>
             <div className={styles.sectionsContainer}>
@@ -76,8 +86,12 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                     <h1>Cody Free or Cody Pro</h1>
                     <div className={styles.buttonWidthSizer}>
                         <div className={styles.buttonStack}>
-                            {uiKindIsWeb ? (
-                                <WebLogin telemetryRecorder={telemetryRecorder} vscodeAPI={vscodeAPI} />
+                            {isCodyWebUI || isNonVSCodeIDE ? (
+                                <WebLogin
+                                    telemetryRecorder={telemetryRecorder}
+                                    vscodeAPI={vscodeAPI}
+                                    isCodyWeb={isCodyWebUI}
+                                />
                             ) : (
                                 <>
                                     <VSCodeButton
@@ -127,24 +141,28 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                         </div>
                     </div>
                 </div>
-                <div className={styles.section}>
-                    <h1>Cody Enterprise</h1>
-                    <div className={styles.buttonWidthSizer}>
-                        <div className={styles.buttonStack}>
-                            <VSCodeButton
-                                className={styles.button}
-                                type="button"
-                                onClick={otherSignInClick}
-                            >
-                                Sign In to Your Enterprise&nbsp;Instance
-                            </VSCodeButton>
+                {isCodyWebUI || codyIDE === CodyIDE.VSCode ? (
+                    <div className={styles.section}>
+                        <h1>Cody Enterprise</h1>
+                        <div className={styles.buttonWidthSizer}>
+                            <div className={styles.buttonStack}>
+                                <VSCodeButton
+                                    className={styles.button}
+                                    type="button"
+                                    onClick={otherSignInClick}
+                                >
+                                    Sign In to Your Enterprise&nbsp;Instance
+                                </VSCodeButton>
+                            </div>
                         </div>
+                        <p>
+                            Learn more about{' '}
+                            <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a>
+                        </p>
                     </div>
-                    <p>
-                        Learn more about{' '}
-                        <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a>
-                    </p>
-                </div>
+                ) : (
+                    <ClientSignInForm authStatus={authStatus} />
+                )}
             </div>
             <div className={styles.terms}>
                 By signing in to Cody you agree to our{' '}

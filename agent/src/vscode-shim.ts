@@ -46,6 +46,7 @@ import {
 
 import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
+import open from 'open'
 import { AgentDiagnostics } from './AgentDiagnostics'
 import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'
@@ -150,6 +151,7 @@ const configuration = new AgentWorkspaceConfiguration(
     () => extensionConfiguration
 )
 
+export const onDidChangeWorkspaceFolders = new EventEmitter<vscode.WorkspaceFoldersChangeEvent>()
 export const onDidChangeTextEditorSelection = new EventEmitter<vscode.TextEditorSelectionChangeEvent>() // TODO: implement this
 export const onDidChangeVisibleTextEditors = new EventEmitter<readonly vscode.TextEditor[]>()
 export const onDidChangeActiveTextEditor = new EventEmitter<vscode.TextEditor | undefined>()
@@ -175,13 +177,40 @@ export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments)
                 .map(wf => wf.uri.toString())
                 .includes(newWorkspaceDocuments.workspaceRootUri.toString())
         ) {
-            workspaceFolders.push({
-                name: path.basename(newWorkspaceDocuments.workspaceRootUri.fsPath),
-                uri: newWorkspaceDocuments.workspaceRootUri,
-                index: 0,
-            })
+            setLastOpenedWorkspaceFolder(newWorkspaceDocuments.workspaceRootUri)
         }
     }
+}
+
+// Add/move the last opened workspace folder to the front of the workspace folders list.
+function setLastOpenedWorkspaceFolder(uri: vscode.Uri): void {
+    const currentWorkspaceFolders = workspaceFolders.map(wf => wf.uri)
+    if (currentWorkspaceFolders[0]?.toString() !== uri.toString()) {
+        setWorkspaceFolders([uri, ...currentWorkspaceFolders])
+    }
+}
+
+// Sets the workspace folders for the current workspace.
+// This function updates the `workspaceFolders` array to reflect the provided `workspaceRootFolders`.
+// It ensures that the last opened workspace folder is moved to the front of the list if it exists
+// in the new list of folders for "vscode.workspace.workspaceFolders[0]" to return the current workspace folder.
+export function setWorkspaceFolders(workspaceRootFolders: vscode.Uri[]): vscode.WorkspaceFolder[] {
+    const lastOpened = workspaceFolders[0]
+    const rootFolderSet = new Set(workspaceRootFolders)
+    workspaceFolders.length = 0
+    if (lastOpened && rootFolderSet.has(lastOpened.uri)) {
+        workspaceFolders.push(lastOpened)
+        rootFolderSet.delete(lastOpened.uri)
+    }
+    let index = workspaceFolders.length
+    for (const folder of rootFolderSet) {
+        workspaceFolders.push({
+            name: path.basename(folder.toString()),
+            uri: folder,
+            index: index++,
+        })
+    }
+    return workspaceFolders
 }
 
 export const workspaceFolders: vscode.WorkspaceFolder[] = []
@@ -326,7 +355,7 @@ const _workspace: typeof vscode.workspace = {
     },
     // TODO: used by `WorkspaceRepoMapper` and will be used by `git.onDidOpenRepository`
     // https://github.com/sourcegraph/cody/issues/4136
-    onDidChangeWorkspaceFolders: emptyEvent(),
+    onDidChangeWorkspaceFolders: onDidChangeWorkspaceFolders.event,
     onDidOpenTextDocument: onDidOpenTextDocument.event,
     onDidChangeConfiguration: onDidChangeConfiguration.event,
     onDidChangeTextDocument: onDidChangeTextDocument.event,
@@ -462,7 +491,7 @@ const defaultTreeView: vscode.TreeView<any> = {
 }
 
 function toUri(
-    uriOrString: string | vscode.Uri | { language?: string; content?: string } | undefined
+    uriOrString: string | UriString | vscode.Uri | { language?: string; content?: string } | undefined
 ): Uri | undefined {
     if (typeof uriOrString === 'string') {
         return Uri.parse(uriOrString)
@@ -482,6 +511,14 @@ function toUri(
         })
     }
     return
+}
+
+// This opaque type prevents strings from being mistakenly used as URIs.
+export type UriString = string & { __tag: 'vscode.Uri' }
+export namespace UriString {
+    export function fromUri(uri: vscode.Uri): UriString {
+        return uri.toString() as UriString
+    }
 }
 
 function outputChannel(name: string): vscode.LogOutputChannel {
@@ -587,7 +624,28 @@ const _window: typeof vscode.window = {
     onDidCloseTerminal: emptyEvent(),
     onDidOpenTerminal: emptyEvent(),
     registerUriHandler: () => emptyDisposable,
-    registerWebviewViewProvider: () => emptyDisposable,
+    registerWebviewViewProvider: (
+        viewId: string,
+        provider: vscode.WebviewViewProvider,
+        options?: { webviewOptions?: { retainContextWhenHidden?: boolean } }
+    ) => {
+        if (agent?.capabilities?.webview !== 'native') {
+            return emptyDisposable
+        }
+        agent?.webviewViewProviders.set(viewId, provider)
+        options ??= {
+            webviewOptions: undefined,
+        }
+        options.webviewOptions ??= {
+            retainContextWhenHidden: undefined,
+        }
+        options.webviewOptions.retainContextWhenHidden ??= false
+        agent?.notify('webview/registerWebviewViewProvider', {
+            viewId,
+            retainContextWhenHidden: options?.webviewOptions.retainContextWhenHidden,
+        })
+        return emptyDisposable
+    },
     createStatusBarItem: () => statusBarItem,
     visibleTextEditors,
     withProgress: async (options, handler) => {
@@ -713,8 +771,12 @@ const _window: typeof vscode.window = {
         throw new Error('Not implemented: vscode.window.showOpenDialog')
     },
     showSaveDialog: () => {
-        console.log(new Error().stack)
-        throw new Error('Not implemented: vscode.window.showSaveDialog')
+        if (agent) {
+            return agent.request('window/showSaveDialog', null).then(result => {
+                return result ? Uri.parse(result) : undefined
+            })
+        }
+        return Promise.resolve(undefined)
     },
     showInputBox: () => {
         console.log(new Error().stack)
@@ -875,16 +937,22 @@ const _commands: Partial<typeof vscode.commands> = {
             }
         })
     },
-    executeCommand: (command, args) => {
+    executeCommand: (command, ...args) => {
         const registered = registeredCommands.get(command)
         if (registered) {
             try {
-                if (args) {
-                    if (typeof args === 'object' && typeof args[Symbol.iterator] === 'function') {
-                        return promisify(registered.callback(...args))
+                // Handle the case where a single object is passed
+                if (args.length === 1) {
+                    if (typeof args[0] === 'object' && typeof args[0][Symbol.iterator] === 'function') {
+                        return promisify(registered.callback(...args[0]))
                     }
-                    return promisify(registered.callback(args))
+                    return promisify(registered.callback(args[0]))
                 }
+                // Handle multiple arguments or a single non-object argument
+                if (args?.length > 1) {
+                    return promisify(registered.callback(...args))
+                }
+                // Handle command with no argument
                 return promisify(registered.callback())
             } catch (error) {
                 console.error(error)
@@ -908,6 +976,7 @@ _commands?.registerCommand?.('setContext', (key, value) => {
         throw new TypeError(`setContext: first argument must be string. Got: ${key}`)
     }
     context.set(key, value)
+    agent?.notify('window/didChangeContext', { key, value: value.toString() })
 })
 _commands?.registerCommand?.('vscode.executeFoldingRangeProvider', async uri => {
     const promises: vscode.FoldingRange[] = []
@@ -931,8 +1000,18 @@ _commands?.registerCommand?.('vscode.executeDocumentSymbolProvider', uri => {
     // location.
     return Promise.resolve([])
 })
+_commands?.registerCommand?.('vscode.executeWorkspaceSymbolProvider', query => {
+    return Promise.resolve([])
+})
 _commands?.registerCommand?.('vscode.executeFormatDocumentProvider', uri => {
     return Promise.resolve([])
+})
+_commands?.registerCommand?.('vscode.open', async (uri: vscode.Uri) => {
+    const result = toUri(uri?.path)
+    if (result) {
+        return _window.showTextDocument(result)
+    }
+    return open(uri.toString())
 })
 
 function promisify(value: any): Promise<any> {
@@ -949,6 +1028,14 @@ const _env: Partial<typeof vscode.env> = {
     clipboard: {
         readText: () => Promise.resolve(''),
         writeText: () => Promise.resolve(),
+    },
+    openExternal: (uri: vscode.Uri): Thenable<boolean> => {
+        try {
+            open(uri.toString())
+            return Promise.resolve(true)
+        } catch {
+            return Promise.resolve(false)
+        }
     },
 }
 export const env = _env as typeof vscode.env

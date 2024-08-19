@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { ModelsService, getDotComDefaultModels } from '@sourcegraph/cody-shared'
+import { getDotComDefaultModels, modelsService } from '@sourcegraph/cody-shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
@@ -16,7 +16,7 @@ describe('Edit', () => {
     })
 
     beforeAll(async () => {
-        ModelsService.setModels(getDotComDefaultModels())
+        modelsService.setModels(getDotComDefaultModels())
         await workspace.beforeAll()
         await client.beforeAll()
         await client.request('command/execute', { command: 'cody.search.index-update' })
@@ -54,7 +54,7 @@ describe('Edit', () => {
         await client.openFile(uri)
         const task = await client.request('editCommands/code', {
             instruction: 'Add types to these props. Introduce new interfaces as necessary',
-            model: ModelsService.getModelByIDSubstringOrError('anthropic/claude-3-5-sonnet-20240620')
+            model: modelsService.getModelByIDSubstringOrError('anthropic/claude-3-5-sonnet-20240620')
                 .model,
         })
         await client.acceptEditTask(uri, task)
@@ -106,7 +106,7 @@ describe('Edit', () => {
         const task = await client.request('editCommands/code', {
             instruction:
                 'Create and export a Heading component that uses these props. Do not use default exports',
-            model: ModelsService.getModelByIDSubstringOrError('anthropic/claude-3-5-sonnet-20240620')
+            model: modelsService.getModelByIDSubstringOrError('anthropic/claude-3-5-sonnet-20240620')
                 .model,
         })
         await client.acceptEditTask(uri, task)
@@ -120,10 +120,10 @@ describe('Edit', () => {
           }
 
           export const Heading: React.FC<HeadingProps> = ({ text, level = 1 }) => {
-              const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements
+              const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements;
 
-              return <HeadingTag>{text}</HeadingTag>
-          }
+              return <HeadingTag>{text}</HeadingTag>;
+          };
 
           "
         `,
@@ -136,7 +136,7 @@ describe('Edit', () => {
         await client.openFile(uri, { removeCursor: true })
         const task = await client.request('editCommands/code', {
             instruction: 'Convert this to use a switch statement',
-            model: ModelsService.getModelByIDSubstringOrError('anthropic/claude-3-opus').model,
+            model: modelsService.getModelByIDSubstringOrError('anthropic/claude-3-opus').model,
         })
         await client.acceptEditTask(uri, task)
         expect(client.documentText(uri)).toMatchInlineSnapshot(

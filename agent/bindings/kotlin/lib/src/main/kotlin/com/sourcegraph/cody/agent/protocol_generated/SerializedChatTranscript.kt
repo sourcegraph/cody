@@ -3,7 +3,6 @@ package com.sourcegraph.cody.agent.protocol_generated;
 
 data class SerializedChatTranscript(
   val id: String,
-  val chatModel: String? = null,
   val chatTitle: String? = null,
   val interactions: List<SerializedChatInteraction>,
   val lastInteractionTimestamp: String,

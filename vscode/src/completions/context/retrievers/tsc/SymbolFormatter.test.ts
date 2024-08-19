@@ -149,8 +149,8 @@ describe('SymbolFormatter', () => {
         ).toMatchInlineSnapshot(`
           [
             "type Animal = Dog | Cat",
-            "type Dog = { kind: 'dog'; bark: string; }",
-            "type Cat = { kind: 'cat'; meow: string; }",
+            "type Dog = { kind: "dog"; bark: string; }",
+            "type Cat = { kind: "cat"; meow: string; }",
             "type CustomStr = string & { __custom: never; }",
             "type TypeParams<S> = Map<string, S>",
           ]

@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
-
 import react from '@vitejs/plugin-react-swc'
+import { analyzer } from 'vite-bundle-analyzer'
 import svgr from 'vite-plugin-svgr'
 
 // @ts-ignore
@@ -28,7 +28,8 @@ export default defineProjectWithDefaults(__dirname, {
     plugins: [
         // @ts-ignore
         react({ devTarget: 'esnext' }),
-        svgr(),
+        svgr() as any,
+        process.env.ANALYZE ? analyzer({ analyzerMode: 'server' }) : undefined,
     ],
     resolve: {
         alias: [
@@ -56,6 +57,12 @@ export default defineProjectWithDefaults(__dirname, {
             { find: /^(node:)?events$/, replacement: resolve(__dirname, 'node_modules/events') },
             { find: /^(node:)?util$/, replacement: resolve(__dirname, 'node_modules/util') },
             { find: /^(node:)?buffer$/, replacement: resolve(__dirname, 'node_modules/buffer') },
+            { find: /^fs-extra$/, replacement: resolve(__dirname, 'lib/agent/shims/fs-extra.ts') },
+            { find: /^open$/, replacement: resolve(__dirname, 'lib/agent/shims/open.ts') },
+            {
+                find: /^worker_threads$/,
+                replacement: resolve(__dirname, 'lib/agent/shims/worker_threads.ts'),
+            },
 
             // Autocomplete isn't used on web. Omitting it cuts the bundle size by ~5 MB.
             {
@@ -94,7 +101,7 @@ export default defineProjectWithDefaults(__dirname, {
         minify: false,
         outDir: 'dist',
         assetsDir: '.',
-        reportCompressedSize: false,
+        reportCompressedSize: true,
         lib: {
             formats: ['cjs'],
             entry: resolve(__dirname, 'lib/index.ts'),

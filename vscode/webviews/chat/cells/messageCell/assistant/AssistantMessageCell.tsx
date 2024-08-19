@@ -2,6 +2,7 @@ import {
     type ChatMessage,
     ContextItemSource,
     type Guardrails,
+    type PromptString,
     contextItemsFromPromptEditorValue,
     filterContextItemsFromPromptEditorValue,
     isAbortErrorOrSocketHangUp,
@@ -15,7 +16,10 @@ import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
-import { ChatMessageContent, type CodeBlockActionsProps } from '../../../ChatMessageContent'
+import {
+    ChatMessageContent,
+    type CodeBlockActionsProps,
+} from '../../../ChatMessageContent/ChatMessageContent'
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
 import { type Interaction, editHumanMessage } from '../../../Transcript'
 import { FeedbackButtons } from '../../../components/FeedbackButtons'
@@ -43,6 +47,9 @@ export const AssistantMessageCell: FunctionComponent<{
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
+    experimentalSmartApplyEnabled?: boolean
+    smartApply?: CodeBlockActionsProps['smartApply']
+
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
 }> = memo(
@@ -58,6 +65,8 @@ export const AssistantMessageCell: FunctionComponent<{
         insertButtonOnSubmit,
         postMessage,
         guardrails,
+        smartApply,
+        experimentalSmartApplyEnabled,
     }) => {
         const displayMarkdown = useMemo(
             () => reformatBotMessageForChat(message.text ?? ps``).toString(),
@@ -106,6 +115,10 @@ export const AssistantMessageCell: FunctionComponent<{
                                 copyButtonOnSubmit={copyButtonOnSubmit}
                                 insertButtonOnSubmit={insertButtonOnSubmit}
                                 guardrails={guardrails}
+                                humanMessage={humanMessage}
+                                experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
+                                smartApply={smartApply}
+                                userInfo={userInfo}
                             />
                         ) : (
                             isLoading && <LoadingDots />
@@ -157,6 +170,7 @@ export interface HumanMessageInitialContextInfo {
 }
 
 export interface PriorHumanMessageInfo {
+    text?: PromptString
     hasInitialContext: HumanMessageInitialContextInfo
     rerunWithDifferentContext: (withInitialContext: HumanMessageInitialContextInfo) => void
 
@@ -176,6 +190,7 @@ export function makeHumanMessageInfo(
     const contextItems = contextItemsFromPromptEditorValue(editorValue)
 
     return {
+        text: humanMessage.text,
         hasInitialContext: {
             repositories: Boolean(
                 contextItems.some(item => item.type === 'repository' || item.type === 'tree')

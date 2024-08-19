@@ -1,22 +1,4 @@
-.editor-shell {
-    position: relative;
-}
-
-.editor-shell .editor-container {
-    position: relative;
-    display: block;
-}
-
-.editor-scroller {
-    border: 0;
-    display: flex;
-    position: relative;
-    outline: 0;
-    overflow: auto;
-}
-
 .editor {
-    flex: auto;
     position: relative;
 }
 
@@ -26,7 +8,6 @@
     display: block;
     position: relative;
     outline: 0;
-    caret-color: var(--vscode-input-foreground);
 }
 
 /* Placeholder */

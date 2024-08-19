@@ -1,6 +1,7 @@
 import {
     type ContextItem,
     type ContextMentionProviderMetadata,
+    type MentionMenuData,
     displayPathBasename,
 } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
@@ -18,7 +19,6 @@ import { type Mock, describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { type PromptEditorConfig, PromptEditorConfigProvider } from '../../config'
 import { MentionMenu } from './MentionMenu'
-import type { MentionMenuData } from './useMentionMenuData'
 
 vi.mock('./MentionMenuItem', () => ({
     MentionMenuContextItemContent: ({ item }: { item: ContextItem }) =>
