@@ -10,7 +10,7 @@ import path from 'node:path/posix'
 import {
     type ContextItem,
     ContextItemSource,
-    TokenCounter,
+    TokenCounterUtils,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -43,7 +43,7 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
             }
 
             const content = outputWrapper.replace('{command}', command).replace('{output}', output)
-            const size = TokenCounter.countTokens(content)
+            const size = await TokenCounterUtils.countTokens(content)
 
             return [
                 {

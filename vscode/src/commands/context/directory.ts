@@ -1,7 +1,7 @@
 import {
     type ContextItem,
     ContextItemSource,
-    TokenCounter,
+    TokenCounterUtils,
     contextFiltersProvider,
     logError,
     toRangeData,
@@ -65,7 +65,7 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
                 const bytes = await vscode.workspace.fs.readFile(fileUri)
                 const content = new TextDecoder('utf-8').decode(bytes)
                 const range = new vscode.Range(0, 0, content.split('\n').length - 1 || 0, 0)
-                const size = TokenCounter.countTokens(content)
+                const size = await TokenCounterUtils.countTokens(content)
 
                 contextFiles.push({
                     type: 'file',

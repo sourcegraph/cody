@@ -1,21 +1,17 @@
 import type { RangeData } from '../common/range'
-import { TokenCounter } from '../token/counter'
+import { getTokenCounterUtils } from '../token/counter'
 
 import type { PromptString } from './prompt-string'
 
-/**
- * Truncates text to the given number of tokens, keeping the start of the text.
- */
-export function truncateText(text: string, maxTokens: number): string {
-    const encoded = TokenCounter.encode(text)
-    return encoded.length <= maxTokens ? text : TokenCounter.decode(encoded.slice(0, maxTokens)).trim()
-}
-
-export function truncatePromptString(text: PromptString, maxTokens: number): PromptString {
-    const encoded = TokenCounter.encode(text.toString())
+export async function truncatePromptString(
+    text: PromptString,
+    maxTokens: number
+): Promise<PromptString> {
+    const tokenCounterUtils = await getTokenCounterUtils()
+    const encoded = tokenCounterUtils.encode(text.toString())
     return encoded.length <= maxTokens
         ? text
-        : text.slice(0, TokenCounter.decode(encoded.slice(0, maxTokens))?.length).trim()
+        : text.slice(0, tokenCounterUtils.decode(encoded.slice(0, maxTokens))?.length).trim()
 }
 
 /**
@@ -57,13 +53,21 @@ export function truncateTextNearestLine(
 /**
  * Truncates text to the given number of tokens, keeping the end of the text.
  */
-export function truncateTextStart(text: string, maxTokens: number): string {
-    const encoded = TokenCounter.encode(text)
-    return encoded.length <= maxTokens ? text : TokenCounter.decode(encoded.slice(-maxTokens)).trim()
+export async function truncateTextStart(text: string, maxTokens: number): Promise<string> {
+    const tokenCounterUtils = await getTokenCounterUtils()
+    const encoded = tokenCounterUtils.encode(text)
+    return encoded.length <= maxTokens
+        ? text
+        : tokenCounterUtils.decode(encoded.slice(-maxTokens)).trim()
 }
 
-export function truncatePromptStringStart(text: PromptString, maxTokens: number): PromptString {
-    const encoded = TokenCounter.encode(text.toString())
+export async function truncatePromptStringStart(
+    text: PromptString,
+    maxTokens: number
+): Promise<PromptString> {
+    const tokenCounterUtils = await getTokenCounterUtils()
+
+    const encoded = tokenCounterUtils.encode(text.toString())
 
     if (encoded.length <= maxTokens) {
         return text
@@ -73,6 +77,6 @@ export function truncatePromptStringStart(text: PromptString, maxTokens: number)
     // considered unsafe. Instead, we use the string representation to get the updated
     // character count
 
-    const decoded = TokenCounter.decode(encoded.slice(-maxTokens))
+    const decoded = tokenCounterUtils.decode(encoded.slice(-maxTokens))
     return text.slice(-decoded.length - 1).trim()
 }

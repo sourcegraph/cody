@@ -54,7 +54,7 @@ describe('DefaultPrompter', () => {
     })
 
     it('prompt context items are ordered in reverse order of relevance', async () => {
-        const p = new PromptBuilder({ input: 10_000, output: 10_000 })
+        const p = await PromptBuilder.create({ input: 10_000, output: 10_000 })
         const contextItems: ContextItem[] = [
             {
                 type: 'file',
