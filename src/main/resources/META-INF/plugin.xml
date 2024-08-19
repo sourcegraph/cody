@@ -96,23 +96,6 @@
                 fieldName="INSTANCE"/>
         <editorTabTitleProvider implementation="com.sourcegraph.cody.ui.WebPanelTabTitleProvider"/>
 
-        <!-- Remote repo input TODO, remove this now we have web UI for chats -->
-        <fileType
-                name="SourcegraphRemoteRepoListFile"
-                implementationClass="com.sourcegraph.cody.context.RemoteRepoFileType"
-                fieldName="INSTANCE"
-                language="SourcegraphRemoteRepoList"
-                extensions=""/>
-        <lang.parserDefinition
-                language="SourcegraphRemoteRepoList"
-                implementationClass="com.sourcegraph.cody.context.RemoteRepoListParserDefinition"/>
-        <completion.contributor language="SourcegraphRemoteRepoList"
-                                implementationClass="com.sourcegraph.cody.context.RemoteRepoCompletionContributor"
-                                order="first, before commitCompletion"/>
-        <annotator language="SourcegraphRemoteRepoList"
-                   implementationClass="com.sourcegraph.cody.context.RemoteRepoAnnotator"/>
-
-
         <keymapExtension implementation="com.sourcegraph.cody.config.CodyKeymapExtension"/>
 
         <!-- Web UI Sidebar Views

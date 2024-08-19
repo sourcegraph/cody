@@ -2,7 +2,6 @@ package com.sourcegraph.cody.inspections
 
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.intention.PriorityAction
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
@@ -23,8 +22,6 @@ class CodeActionQuickFix(private val params: CodeActionQuickFixParams) :
   companion object {
     const val FAMILY_NAME = "Cody Code Action"
   }
-
-  private val logger = Logger.getInstance(CodeActionQuickFix::class.java)
 
   override fun getPriority(): PriorityAction.Priority {
     return if (isFixAction()) {

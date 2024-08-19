@@ -60,10 +60,6 @@ class EditService(val project: Project) {
             document.insertString(edit.position.toOffset(document), edit.value)
             true
           }
-          else -> {
-            logger.warn("Unknown edit type: $edit")
-            false
-          }
         }
       }
     }
@@ -88,10 +84,6 @@ class EditService(val project: Project) {
         is EditFileOperation -> {
           logger.info("Applying workspace edit to a file: ${op.uri}")
           performTextEdits(op.uri, op.edits)
-        }
-        else -> {
-          logger.warn("DocumentCommand session received unknown workspace edit operation: $op")
-          return false
         }
       }
     }
