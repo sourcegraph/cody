@@ -25,7 +25,7 @@ export async function getBfgPath(context: vscode.ExtensionContext): Promise<stri
     // If user-specified symf path is set, use that
     // TODO: maybe we do want an option to download bfg if it's not found?
     const config = vscode.workspace.getConfiguration()
-    const userBfgPath = config.get<string>('cody.experimental.cody-engine.path')
+    const userBfgPath = '/Users/jan/repos/bfg-private/target/release/bfg' //config.get<string>('cody.experimental.cody-engine.path')
     if (userBfgPath) {
         if (!(await fileExists(userBfgPath))) {
             throw new Error(`bfg can't be loaded from user provided path: ${userBfgPath}`)

@@ -26,7 +26,7 @@ import {
 import type { IndexHealthResultFound, IndexRequest } from '../jsonrpc/embeddings-protocol'
 import type { MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'
-import { vscodeGitAPI } from '../repository/git-extension-api'
+import { initVSCodeGitApi, vscodeGitAPI } from '../repository/git-extension-api'
 import { captureException } from '../services/sentry/sentry'
 import { CodyEngineService } from './cody-engine'
 
@@ -506,6 +506,7 @@ export class LocalEmbeddingsController
     private async healthCheck(repoName: string, repoDir: FileURI): Promise<void> {
         // Do a health check only if we haven't done it in the last minute.
         if (this.lastHealth && this.lastHealthTime && Date.now() - this.lastHealthTime < 1000 * 60) {
+            logDebug('LocalEmbeddingsController', 'healthCheck', 'skipping health check')
             return
         }
 
@@ -541,6 +542,13 @@ export class LocalEmbeddingsController
     private async onHealthReport(repoDir: FileURI, health: IndexHealthResultFound): Promise<void> {
         if (repoDir.toString() !== this.lastRepo?.dir.toString()) {
             // We've loaded a different repo since this health report; ignore it.
+            logDebug(
+                'LocalEmbeddingsController',
+                'onHealthReport',
+                'ignoring health report for different repo',
+                repoDir.toString(),
+                this.lastRepo?.dir.toString()
+            )
             return
         }
         this.lastHealth = health
@@ -567,11 +575,29 @@ export class LocalEmbeddingsController
 
     // Check if the embeddings are stale and refresh the index if needed.
     private async checkIndexStaleness(repoDir: FileURI, health: IndexHealthResultFound): Promise<void> {
+        if (!vscodeGitAPI) {
+            logDebug('LocalEmbeddingsController', 'checkIndexStaleness: no vscodeGitAPI')
+            await initVSCodeGitApi()
+        }
+        logDebug(
+            'LocalEmbeddingsController',
+            'checkIndexStaleness: repos',
+            JSON.stringify(vscodeGitAPI?.repositories)
+        )
+        logDebug('LocalEmbeddingsController', 'checkIndexStaleness: repoDir', JSON.stringify(repoDir))
         const repo = vscodeGitAPI?.getRepository(repoDir)
+        logDebug('LocalEmbeddingsController', 'checkIndexStaleness: repo', JSON.stringify(repo))
         const currentCommit = repo?.state.HEAD?.commit ?? ''
+        logDebug(
+            'LocalEmbeddingsController',
+            'checkIndexStaleness: currentCommit',
+            JSON.stringify(currentCommit)
+        )
         const changedFiles = (await repo?.diffBetween(health.commit, currentCommit))?.length ?? 0
+        logDebug('LocalEmbeddingsController', 'checkIndexStaleness: changedFiles', changedFiles)
 
         if (!isDefined(this.lastRepo) || changedFiles === 0) {
+            logDebug('LocalEmbeddingsController', 'checkIndexStaleness: no change')
             return
         }
 
@@ -584,7 +610,7 @@ export class LocalEmbeddingsController
         const stalenessThresholds = [
             { changedFiles: 100, timeSince: 1000 * 60 * 60 }, // 1 hour
             { changedFiles: 10, timeSince: 1000 * 60 * 60 * 24 }, // 1 day
-            { changedFiles: 1, timeSince: 1000 * 60 }, // 1 minute for testing
+            { changedFiles: 0, timeSince: 1000 * 10 }, // 1 minute for testing
         ]
 
         // The embeddings are stale if the number of changed files and the time between the indexed commits surpass a threshold.
