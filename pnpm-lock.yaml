@@ -20,6 +20,9 @@ importers:
       '@openctx/client':
         specifier: ^0.0.25
         version: 0.0.25
+      '@sourcegraph/telemetry':
+        specifier: ^0.18.0
+        version: 0.18.0
       ignore:
         specifier: ^5.3.1
         version: 5.3.1
@@ -132,9 +135,6 @@ importers:
       '@sourcegraph/cody-shared':
         specifier: workspace:*
         version: link:../lib/shared
-      '@sourcegraph/telemetry':
-        specifier: ^0.16.0
-        version: 0.16.0
       json5:
         specifier: ^2.2.3
         version: 2.2.3
@@ -350,9 +350,6 @@ importers:
       '@opentelemetry/api':
         specifier: ^1.7.0
         version: 1.7.0
-      '@sourcegraph/telemetry':
-        specifier: ^0.16.0
-        version: 0.16.0
       crypto-js:
         specifier: ^4.2.0
         version: 4.2.0
@@ -513,9 +510,6 @@ importers:
       '@sourcegraph/prompt-editor':
         specifier: workspace:*
         version: link:../lib/prompt-editor
-      '@sourcegraph/telemetry':
-        specifier: ^0.16.0
-        version: 0.16.0
       '@sourcegraph/tree-sitter-wasms':
         specifier: ^0.1.9
         version: 0.1.9
@@ -5745,10 +5739,8 @@ packages:
     resolution: {integrity: sha512-Uf7wMo5Fu3+g03gl2jvU2qHMaDp0p9RK9U2ucmy6VxWaavxALCC8iy47JL5GdgR5qG3ekEd5mAQV0dIIfoKELA==}
     dev: true
 
-  /@sourcegraph/telemetry@0.16.0:
-    resolution: {integrity: sha512-/LTbGWwscy/iNOYc0JS2Sl5Q21WOaiIhABlGynwJLMfPYy0YoJQfEtrCEGTSYWY735dSdUBW3wcTgCOCz8EEjA==}
-    dependencies:
-      rxjs: 7.8.1
+  /@sourcegraph/telemetry@0.18.0:
+    resolution: {integrity: sha512-x9J6cwp1fVu4jAp7EL3H58TPjRz0rZ8lu2OFU1ccBNmEcJGrpfyaHCHmgXBVP0z9ppD79N1/GY0sVciW0luA/w==}
     dev: false
 
   /@sourcegraph/tree-sitter-wasms@0.1.9:
@@ -15136,6 +15128,7 @@ packages:
     resolution: {integrity: sha512-AA3TVj+0A2iuIoQkWEK/tqFjBq2j+6PO6Y0zJcvzLAFhEFIO3HL0vls9hWLncZbAAbK0mar7oZ4V079I/qPMxg==}
     dependencies:
       tslib: 2.6.3
+    dev: true
 
   /safe-buffer@5.1.2:
     resolution: {integrity: sha512-Gd2UZBJDkXlY7GbJxfsE8/nvKkUEU1G38c1siN6QP6a9PT9MmHB8GnpscSmMJSoF8LOIrt8ud/wPtojys4G6+g==}

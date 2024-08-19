@@ -4,9 +4,9 @@ import {
     type TelemetryEventInput,
     type TelemetryProcessor,
     TestTelemetryExporter,
-    TimestampTelemetryProcessor,
     defaultEventRecordingOptions,
 } from '@sourcegraph/telemetry'
+import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry/dist/processors/timestamp'
 
 import {
     CONTEXT_SELECTION_ID,

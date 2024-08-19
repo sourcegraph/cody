@@ -1378,7 +1378,6 @@
     "@sentry/node": "^7.107.0",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/prompt-editor": "workspace:*",
-    "@sourcegraph/telemetry": "^0.16.0",
     "@sourcegraph/tree-sitter-wasms": "^0.1.9",
     "@types/he": "^1.2.3",
     "@types/mdast": "^4.0.4",
