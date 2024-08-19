@@ -1,5 +1,4 @@
 import { spawn } from 'node:child_process'
-import { copyFileSync } from 'node:fs'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
@@ -27,7 +26,7 @@ import {
     setUserAgent,
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-
+import { copySync } from 'fs-extra'
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import { ChatModel } from '../../vscode/src/chat/chat-view/ChatModel'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
@@ -116,7 +115,9 @@ function copyExtensionRelativeResources(extensionPath: string, extensionClient: 
         }
         try {
             mkdirSync(path.dirname(target), { recursive: true })
-            copyFileSync(source, target)
+            // This is preferred over node:fs.copyFileSync because fs-extra's use of graceful-fs
+            // handles certain timing failures on windows machines.
+            copySync(source, target)
         } catch (err) {
             logDebug('copyExtensionRelativeResources', `Failed to copy ${source} to dist ${target}`, err)
         }
