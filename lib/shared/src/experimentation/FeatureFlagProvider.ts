@@ -66,20 +66,8 @@ export enum FeatureFlag {
     /** Interactive tutorial, primarily for onboarding */
     CodyInteractiveTutorial = 'cody-interactive-tutorial',
 
-    /** Automatically start indexing using embeddings. */
-    CodyEmbeddingsAutoIndexing = 'cody-embeddings-auto-indexing',
-
     /** Whether to use generated metadata to power embeddings. */
     CodyEmbeddingsGenerateMetadata = 'cody-embeddings-generate-metadata',
-
-    /** Enhanced context experiment */
-    CodyEnhancedContextExperiment = 'cody-enhanced-context-experiment',
-
-    /** Use symf to provide enhanced context. */
-    CodyEnhancedContextUseSymf = 'cody-enhanced-context-use-symf',
-
-    /** Use embeddings to provide enhanced context. */
-    CodyEnhancedContexUseEmbeddings = 'cody-enhanced-context-use-embeddings',
 
     /** Whether to use server-side Context API. */
     CodyServerSideContextAPI = 'cody-server-side-context-api-enabled',

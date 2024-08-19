@@ -24,7 +24,7 @@ import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { gitLocallyModifiedFiles } from '../../repository/git-extension-api'
 import { repoNameResolver } from '../../repository/repo-name-resolver'
-import { getContextStrategy, retrieveContextGracefully, searchSymf, truncateSymfResult } from './context'
+import { retrieveContextGracefully, searchSymf, truncateSymfResult } from './context'
 
 export interface StructuredMentions {
     repos: ContextItemRepository[]
@@ -339,7 +339,7 @@ export class ContextRetriever implements vscode.Disposable {
 
         // Legacy context retrieval
         const config = getConfiguration()
-        const contextStrategy = await getContextStrategy(config.useContext)
+        const contextStrategy = config.useContext
         span.setAttribute('strategy', contextStrategy)
 
         // symf retrieval

@@ -113,7 +113,7 @@ import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { type ContextRetriever, toStructuredMentions } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, openFile } from './chat-helpers'
-import { type HumanInput, getContextStrategy, getPriorityContext, resolveContext } from './context'
+import { type HumanInput, getPriorityContext, resolveContext } from './context'
 import { DefaultPrompter } from './prompt'
 
 interface ChatControllerOptions {
@@ -934,7 +934,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     ): Promise<RankedContext[]> {
         // Fetch using legacy context retrieval
         const config = getConfiguration()
-        const contextStrategy = await getContextStrategy(config.useContext)
+        const contextStrategy = config.useContext
         span.setAttribute('strategy', contextStrategy)
 
         // Remove context chips (repo, @-mentions) from the input text for context retrieval.
