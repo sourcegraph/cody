@@ -5,7 +5,7 @@ import {
     isDefined,
     isError,
 } from '@sourcegraph/cody-shared'
-import vscode from 'vscode'
+import * as vscode from 'vscode'
 import { escapeRegExp } from './remoteFileSearch'
 
 import { getEditor } from '../../editor/active-editor'
