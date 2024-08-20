@@ -1,15 +1,13 @@
 import { clsx } from 'clsx'
 import type React from 'react'
 import type { FunctionComponent, PropsWithChildren } from 'react'
-import { MESSAGE_CELL_AVATAR_SIZE } from './messageCell/BaseMessageCell'
 
 /**
  * A cell is a row in a chat, which can be a human message, assistant message, context, notice, etc.
  */
 export const Cell: FunctionComponent<
     PropsWithChildren<{
-        style?: 'human' | 'context' | 'assistant'
-        gutterIcon: React.ReactNode
+        header: React.ReactNode
         containerClassName?: string
         contentClassName?: string
         'aria-current'?: boolean
@@ -17,8 +15,7 @@ export const Cell: FunctionComponent<
         'data-testid'?: string
     }>
 > = ({
-    style,
-    gutterIcon,
+    header,
     containerClassName,
     contentClassName,
     'aria-current': ariaCurrent,
@@ -27,18 +24,13 @@ export const Cell: FunctionComponent<
     children,
 }) => (
     <div
-        className={clsx('tw-flex tw-gap-4', containerClassName)}
+        className={clsx('tw-flex tw-flex-col tw-gap-4', containerClassName)}
         role="row"
         aria-current={ariaCurrent}
         aria-disabled={ariaDisabled}
         data-testid={dataTestID}
     >
-        <div
-            className="tw-flex tw-pt-[2px] tw-items-top tw-justify-center"
-            style={{ width: `${MESSAGE_CELL_AVATAR_SIZE}px` }}
-        >
-            {gutterIcon}
-        </div>
+        <header className="tw-flex tw-gap-4 tw-items-center [&_>_*]:tw-flex-shrink-0">{header}</header>
         <div className={clsx('tw-flex-1 tw-overflow-hidden', contentClassName)}>{children}</div>
     </div>
 )

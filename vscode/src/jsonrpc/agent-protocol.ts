@@ -323,7 +323,7 @@ export type ClientRequests = {
 // ================
 export type ServerRequests = {
     'window/showMessage': [ShowWindowMessageParams, string | null]
-    'window/showSaveDialog': [null, string | undefined | null]
+    'window/showSaveDialog': [SaveDialogOptionsParams, string | undefined | null]
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
     'textDocument/openUntitledDocument': [UntitledTextDocument, ProtocolTextDocument | undefined | null]
@@ -629,7 +629,14 @@ export interface ClientCapabilities {
     // asWebviewUri (note, multiple prefixes are not yet implemented.)
     // Set the view to 'single' when client only support single chat view, e.g. sidebar chat.
     webviewNativeConfig?:
-        | { view: 'multiple' | 'single'; cspSource: string; webviewBundleServingPrefix: string }
+        | {
+              view: 'multiple' | 'single'
+              cspSource: string
+              webviewBundleServingPrefix: string
+              rootDir?: string | undefined | null
+              injectScript?: string | undefined | null
+              injectStyle?: string | undefined | null
+          }
         | undefined
         | null
 }
@@ -973,6 +980,13 @@ export interface ShowWindowMessageParams {
     message: string
     options?: vscode.MessageOptions | undefined | null
     items?: string[] | undefined | null
+}
+
+export interface SaveDialogOptionsParams {
+    defaultUri?: string | undefined | null
+    saveLabel?: string | undefined | null
+    filters?: Record<string, string[]> | undefined | null
+    title?: string | undefined | null
 }
 
 interface FileIdentifier {

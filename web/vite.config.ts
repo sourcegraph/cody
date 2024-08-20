@@ -43,6 +43,7 @@ export default defineProjectWithDefaults(__dirname, {
                 replacement: resolve(__dirname, 'lib/agent/shims/fs__promises.ts'),
             },
             { find: /^node:fs$/, replacement: resolve(__dirname, 'lib/agent/shims/fs.ts') },
+            { find: /^fs-extra$/, replacement: resolve(__dirname, 'lib/agent/shims/fs.ts') },
             { find: /^node:os$/, replacement: resolve(__dirname, 'lib/agent/shims/os.ts') },
             { find: 'env-paths', replacement: resolve(__dirname, 'lib/agent/shims/env-paths.ts') },
             {
@@ -104,7 +105,7 @@ export default defineProjectWithDefaults(__dirname, {
         reportCompressedSize: true,
         lib: {
             formats: ['cjs'],
-            entry: resolve(__dirname, 'lib/index.ts'),
+            entry: [resolve(__dirname, 'lib/index.ts'), resolve(__dirname, 'lib/agent/agent.worker.ts')],
         },
         rollupOptions: {
             external: ['react', 'react/jsx-runtime'],

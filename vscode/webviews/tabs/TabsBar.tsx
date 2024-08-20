@@ -26,6 +26,7 @@ interface TabsBarProps {
     IDE: CodyIDE
     currentView: View
     setView: (view: View) => void
+    onDownloadChatClick?: () => void
 }
 
 type IconComponent = React.ForwardRefExoticComponent<
@@ -46,6 +47,7 @@ interface TabConfig {
         Icon: IconComponent
         command: string
         arg?: string | undefined | null
+        callback?: () => void
     }[]
     changesView?: boolean
 }
@@ -107,7 +109,7 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
 )
 TabButton.displayName = 'TabButton'
 
-export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) => {
+export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onDownloadChatClick }) => {
     const {
         config: { webviewType },
     } = useConfig()
@@ -152,13 +154,12 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                         title: 'History',
                         Icon: HistoryIcon,
                         SubIcons: [
-                            IDE !== CodyIDE.Web
-                                ? {
-                                      title: 'Export History',
-                                      Icon: DownloadIcon,
-                                      command: 'cody.chat.history.export',
-                                  }
-                                : null,
+                            {
+                                title: 'Export History',
+                                Icon: DownloadIcon,
+                                command: 'cody.chat.history.export',
+                                callback: onDownloadChatClick,
+                            },
                             {
                                 title: 'Clear Chat History',
                                 Icon: Trash2Icon,
@@ -166,7 +167,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                                 // We don't have a way to request user confirmation in Cody Web
                                 // (vscode.window.showWarningMessage is not implemented), so bypass
                                 // confirmation.
-                                arg: IDE === CodyIDE.Web ? 'clear-all-no-confirm' : undefined,
+                                arg: IDE === CodyIDE.VSCode ? undefined : 'clear-all-no-confirm',
                             },
                         ].filter(isDefined),
                         changesView: true,
@@ -196,7 +197,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                         : null,
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, webviewType]
+        [IDE, webviewType, onDownloadChatClick]
     )
     const currentViewSubIcons = tabItems.find(tab => tab.view === currentView)?.SubIcons
 
@@ -220,7 +221,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                 styles.tabsContainer
             )}
         >
-            <div className="tw-flex tw-gap-1">
+            <div className="tw-flex tw-gap-1 [&_>_*]:tw-flex-shrink-0">
                 {tabItems.map(({ Icon, view, command, title, changesView }) => (
                     <Tabs.Trigger key={view} value={view} asChild={true}>
                         <TabButton
@@ -235,9 +236,9 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                     </Tabs.Trigger>
                 ))}
             </div>
-            <div className="tw-flex tw-gap-4">
+            <div className="tw-flex tw-gap-4 [&_>_*]:tw-flex-shrink-0">
                 {currentViewSubIcons?.map(
-                    ({ Icon, command, title, alwaysShowTitle, tooltipExtra, arg }) => (
+                    ({ Icon, command, title, alwaysShowTitle, tooltipExtra, arg, callback }) => (
                         <TabButton
                             key={command}
                             Icon={Icon}
@@ -246,7 +247,13 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                             tooltipExtra={tooltipExtra}
                             command={command}
                             onClick={() =>
-                                getVSCodeAPI().postMessage({ command: 'command', id: command, arg })
+                                callback
+                                    ? callback()
+                                    : getVSCodeAPI().postMessage({
+                                          command: 'command',
+                                          id: command,
+                                          arg,
+                                      })
                             }
                             prominent
                         />

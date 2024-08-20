@@ -770,11 +770,18 @@ const _window: typeof vscode.window = {
         console.log(new Error().stack)
         throw new Error('Not implemented: vscode.window.showOpenDialog')
     },
-    showSaveDialog: () => {
+    showSaveDialog: options => {
         if (agent) {
-            return agent.request('window/showSaveDialog', null).then(result => {
-                return result ? Uri.parse(result) : undefined
-            })
+            return agent
+                .request('window/showSaveDialog', {
+                    defaultUri: options?.defaultUri?.toString(),
+                    saveLabel: options?.saveLabel,
+                    filters: options?.filters,
+                    title: options?.title,
+                })
+                .then(result => {
+                    return result ? Uri.parse(result) : undefined
+                })
         }
         return Promise.resolve(undefined)
     },
@@ -1049,6 +1056,7 @@ const newCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 const removeCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 export const onDidRegisterNewCodeLensProvider = newCodeLensProvider.event
 export const onDidUnregisterNewCodeLensProvider = removeCodeLensProvider.event
+
 let latestCompletionProvider: InlineCompletionItemProvider | undefined
 let resolveFirstCompletionProvider: (provider: InlineCompletionItemProvider) => void = () => {}
 const firstCompletionProvider = new Promise<InlineCompletionItemProvider>(resolve => {
@@ -1078,6 +1086,14 @@ const _languages: Partial<typeof vscode.languages> = {
     registerCodeLensProvider: (_selector, provider) => {
         newCodeLensProvider.fire(provider)
         return { dispose: () => removeCodeLensProvider.fire(provider) }
+    },
+    registerHoverProvider: (_selector, _provider) => {
+        return {
+            dispose: () => {
+                console.log(new Error().stack)
+                throw new Error('Not implemented: vscode.languages.registerHoverProvider')
+            },
+        }
     },
     registerInlineCompletionItemProvider: (_selector, provider) => {
         latestCompletionProvider = provider as any

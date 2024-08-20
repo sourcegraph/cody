@@ -206,27 +206,25 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     await firstChatInput.fill('to model1')
     await firstChatInput.press('Enter')
 
+    async function expectModelName(modelName: string): Promise<void> {
+        await expect(chatFrame.locator('[data-testid="chat-model"]').last()).toHaveText(modelName)
+    }
+
     // Verify tooltip shows the correct model
-    await chatFrame.locator('[data-testid="chat-message-model-icon"]').last().hover()
-    await expect(
-        chatFrame.locator('[data-testid="message"]').getByText('Claude 3.5 Sonnet by Anthropic')
-    ).toBeVisible()
+    await expectModelName('Claude 3.5 Sonnet')
 
     // Change model and send another message.
     await expect(modelSelect).toBeEnabled()
     await modelSelect.click()
     const modelChoices = chatFrame.getByRole('listbox', { name: 'Suggestions' })
-    await modelChoices.getByRole('option', { name: 'GPT-4o' }).click()
+    await modelChoices.getByRole('option', { name: 'Claude 3 Haiku' }).click()
     const lastChatInput = getChatInputs(chatFrame).last()
     await expect(lastChatInput).toBeFocused()
-    await expect(modelSelect).toHaveText(/^GPT-4o/)
+    await expect(modelSelect).toHaveText(/^Claude 3 Haiku/)
     await lastChatInput.fill('to model2')
     await lastChatInput.press('Enter')
-    await expect(chatFrame.locator('[data-testid="chat-message-model-icon"]')).toHaveCount(2)
-    await chatFrame.locator('[data-testid="chat-message-model-icon"]').last().hover()
-    await expect(
-        chatFrame.locator('[data-testid="message"]').getByText('GPT-4o by OpenAI')
-    ).toBeVisible()
+    await expect(chatFrame.locator('[data-testid="chat-model"]')).toHaveCount(2)
+    await expectModelName('Claude 3 Haiku')
 })
 
 test.extend<ExpectedV2Events>({
