@@ -1,4 +1,5 @@
 import { Observable } from 'observable-fns'
+import { logDebug } from '../..'
 import type { WebviewToExtensionAPI } from './webviewAPI'
 
 export interface GenericVSCodeWrapper<TWebviewMessage, TExtensionMessage> {
@@ -341,18 +342,14 @@ export function addMessageListenersForExtensionAPI(
     }
 }
 
-let LOG_RPC_MESSAGES = false
-
-function logRPCMessage(msg: string, ...args: any[]) {
-    if (LOG_RPC_MESSAGES) {
-        console.debug(msg, ...args)
-    }
-}
+const LOG_RPC_MESSAGES = process.env.CODY_DEBUG_LOG_RPC_MESSAGES === 'true'
 
 /**
- * Enables or disables logging of RPC messages to the console.
- * NOTE: The logs will also be picked up by the JSON-RPC in clients that could cause formatting errors.
+ * Write the RPC message to the output log.
+ * NOTE: Do not use console logging as it would break write to strout/stderr and break the JSON-RPC protocol.
  */
-export function enableLogRPCMessages(enabled: boolean): void {
-    LOG_RPC_MESSAGES = enabled
+function logRPCMessage(msg: string, ...args: any[]) {
+    if (LOG_RPC_MESSAGES) {
+        logDebug('[RPC]', msg, ...args)
+    }
 }
