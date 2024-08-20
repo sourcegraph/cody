@@ -381,6 +381,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'links':
                 void openExternalLinks(message.value)
                 break
+            case 'openFileLink':
+                vscode.commands.executeCommand('vscode.open', message.uri, {
+                    selection: message.range,
+                    preserveFocus: true,
+                    background: false,
+                    preview: true,
+                    viewColumn: vscode.ViewColumn.Beside,
+                })
+                break
             case 'openFile':
                 await openFile(
                     message.uri,
@@ -569,9 +578,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const config = getConfigWithEndpoint()
         const experimentalSmartApply = await this.isSmartApplyEnabled()
-
-        const webviewType =
-            this.webviewPanelOrView?.viewType === 'cody.editorPanel' ? 'editor' : 'sidebar'
+        const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
+        const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
+        const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
 
         return {
             agentIDE: config.agentIDE ?? CodyIDE.VSCode,
@@ -583,6 +592,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             experimentalNoodle: config.experimentalNoodle,
             experimentalSmartApply,
             webviewType,
+            multipleWebviewsEnabled: !sidebarViewOnly,
             internalDebugContext: config.internalDebugContext,
         }
     }

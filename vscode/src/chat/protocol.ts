@@ -6,6 +6,7 @@ import type {
     CodyIDE,
     ConfigurationWithEndpoint,
     ContextItem,
+    ContextItemSource,
     EnhancedContextContextT,
     MentionQuery,
     Model,
@@ -99,6 +100,12 @@ export type WebviewMessage =
     | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'openURI'; uri: Uri }
+    | {
+          command: 'openFileLink'
+          uri: Uri
+          range?: RangeData | undefined | null
+          source?: ContextItemSource | undefined | null
+      }
     | {
           command: 'show-page'
           page: string
@@ -296,7 +303,10 @@ export interface ConfigurationSubsetForWebview
         | 'internalDebugContext'
     > {
     experimentalSmartApply: boolean
+    // Type/location of the current webview.
     webviewType?: WebviewType | undefined | null
+    // Whether support running multiple webviews (e.g. sidebar w/ multiple editor panels).
+    multipleWebviewsEnabled?: boolean | undefined | null
 }
 
 /**
