@@ -98,6 +98,11 @@ export class PromptString {
         return internal_toReferences(this)
     }
 
+    // function to add a new line to the string of this
+    public addNewLine(): PromptString {
+        return internal_createPromptString(internal_toString(this) + '\n', internal_toReferences(this))
+    }
+
     public toJSON(): string {
         return internal_toString(this)
     }

@@ -152,6 +152,7 @@ export function computeOngoingDecorations(
         }
 
         // We know that preceding lines are visited, but following lines are not, so highlight those too
+        // Update unvisited lines based on the found line
         decorations.unvisitedLines = getRemainingLinesFromRange(
             task.selectionRange,
             foundLine + currentLineIndex + 1
@@ -160,5 +161,6 @@ export function computeOngoingDecorations(
         }))
     }
 
+    // Return the computed decorations
     return decorations
 }
