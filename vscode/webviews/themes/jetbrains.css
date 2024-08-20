@@ -391,10 +391,10 @@ html[data-ide='JetBrains'] {
     --vscode-remoteHub-decorations-submoduleForegroundColor: var(--jetbrains-ActionButton-hoverBackground);
     --vscode-remoteHub-decorations-workspaceRepositoriesView-hasUncommittedChangesForegroundColor: var(--jetbrains-ActionButton-pressedBackground);
     --vscode-scm-historyItemStatisticsBorder: var(--jetbrains-VersionControl-Log-Commit-currentBranchBackground);
-    --vscode-scrollbar-shadow: var(--jetbrains-ScrollBar-thumbShadow);
-    --vscode-scrollbarSlider-activeBackground: var(--jetbrains-ScrollBar-trackHighlight);
+    --vscode-scrollbar-shadow: var(--jetbrains-ScrollBar-thumbDarkShadow:);
+    --vscode-scrollbarSlider-activeBackground: var(--jetbrains-ScrollBar-track);
     --vscode-scrollbarSlider-background: var(--jetbrains-ScrollBar-track);
-    --vscode-scrollbarSlider-hoverBackground: var(--jetbrains-ScrollBar-trackHighlight);
+    --vscode-scrollbarSlider-hoverBackground: var(--jetbrains-ScrollBar-track);
     --vscode-search-resultsInfoForeground: var(--jetbrains-InfoText);
     --vscode-searchEditor-findMatchBorder: var(--jetbrains-SearchEverywhere-list-separatorColor);
     --vscode-searchEditor-textInputBorder: var(--jetbrains-SearchEverywhere-searchField-infoForeground);
