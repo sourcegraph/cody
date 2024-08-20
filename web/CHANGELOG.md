@@ -1,3 +1,13 @@
+## 0.5.0 
+- Improves bundle size 
+- Now allows you to have lazily loaded modules within cody web agent web-worker
+- Changes API in a way that you have to pass agent worker yourself from the consumer
+
+## 0.4.0 
+- Updates Cody Web UI components to the most recent Tabs UI version
+- Makes it so that when you go to `/cody/chat` in Cody Web, it
+  autofocuses the message input for a new chat
+
 ## 0.3.7
 - Adds support for the full panel (not just chat) to the CodyWebPanel component (renamed from CodyWebChat).
 - Sets experimental.noodle flag to false (default).
