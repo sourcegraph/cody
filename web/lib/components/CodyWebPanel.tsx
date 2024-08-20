@@ -202,7 +202,7 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                                     userHistory={userHistory}
                                     chatEnabled={true}
                                     showWelcomeMessage={true}
-                                    showIDESnippetActions={true}
+                                    showIDESnippetActions={false}
                                     messageInProgress={messageInProgress}
                                     transcript={transcript}
                                     vscodeAPI={vscodeAPI}

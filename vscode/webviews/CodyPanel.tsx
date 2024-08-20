@@ -70,15 +70,14 @@ export const CodyPanel: FunctionComponent<
             className={styles.outerContainer}
         >
             {/* Hide tab bar in editor chat panels. */}
-            {config.agentIDE === CodyIDE.Web ||
-                (config.webviewType !== 'editor' && (
-                    <TabsBar
-                        currentView={view}
-                        setView={setView}
-                        IDE={config.agentIDE || CodyIDE.VSCode}
-                        onDownloadChatClick={onDownloadChatClick}
-                    />
-                ))}
+            {(config.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
+                <TabsBar
+                    currentView={view}
+                    setView={setView}
+                    IDE={config.agentIDE || CodyIDE.VSCode}
+                    onDownloadChatClick={onDownloadChatClick}
+                />
+            )}
             {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
             <TabContainer value={view} ref={tabContainerRef}>
                 {view === View.Chat && (

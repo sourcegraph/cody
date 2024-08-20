@@ -135,9 +135,11 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                                 ),
                                 Icon: MessageSquarePlusIcon,
                                 command:
-                                    webviewType === 'sidebar'
-                                        ? 'cody.chat.newPanel'
-                                        : 'cody.chat.newEditorPanel',
+                                    IDE === CodyIDE.Web
+                                        ? 'cody.chat.new'
+                                        : webviewType === 'sidebar'
+                                          ? 'cody.chat.newPanel'
+                                          : 'cody.chat.newEditorPanel',
                             },
                             IDE !== CodyIDE.Web
                                 ? {
