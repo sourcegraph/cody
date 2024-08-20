@@ -96,6 +96,8 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     setChatModels(message.models)
                     break
                 case 'config':
+                    message.config.webviewType = 'sidebar'
+                    message.config.multipleWebviewsEnabled = false
                     setConfig(message)
                     break
                 case 'clientAction':
