@@ -59,7 +59,6 @@ private constructor(
       LOG.debug("Request: ${request.url} ${request.operationName} : Connecting")
       return connect {
         val connection = it.connection as HttpURLConnection
-
         if (request is SourcegraphApiRequest.Post) {
           LOG.debug(
               "Request: ${connection.requestMethod} ${connection.url} with body:\n${request.body} : Connected")

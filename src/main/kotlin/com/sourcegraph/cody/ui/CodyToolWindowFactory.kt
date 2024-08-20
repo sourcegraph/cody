@@ -284,14 +284,14 @@ class WebUIHostImpl(
     }
   }
 
-  override fun setOptions(value: WebviewOptions) {
+  override fun setOptions(options: WebviewOptions) {
     // TODO:
     // When TypeScript uses these WebView options, implement them:
     // - retainContextWhenHidden: false and dispose the browser when hidden.
     // - localResourceRoots beyond just the extension distribution path.
     // - Non-empty portMapping.
     // - enableScripts: false, enableForms: false
-    _options = value
+    _options = options
   }
 
   override fun setTitle(value: String) {
@@ -314,7 +314,7 @@ class WebUIHostImpl(
               }
             } ?: emptyList()
     if (_options.enableCommandUris == true ||
-        (_options.enableCommandUris as List<String>).contains(commandName)) {
+        (_options.enableCommandUris as List<*>).contains(commandName)) {
       CodyAgentService.withAgent(project) {
         it.server.commandExecute(CommandExecuteParams(commandName, arguments))
       }
@@ -336,7 +336,7 @@ class WebUIProxy(private val host: WebUIHost, private val browser: JBCefBrowserB
           JBCefBrowserBuilder()
               .apply {
                 val isOffScreenRenderingSupported =
-                    ApplicationInfo.getInstance().build.baselineVersion >= 224
+                    ApplicationInfo.getInstance().build.baselineVersion >= 232
                 setOffScreenRendering(isOffScreenRenderingSupported)
                 // TODO: Make this conditional on running in a debug configuration.
                 setEnableOpenDevToolsMenuItem(true)
@@ -835,13 +835,13 @@ class ExtensionResourceHandler() : CefResourceHandler {
     if (bytesSent >= contentLength || dataOut == null) {
       try {
         readChannel?.close()
-      } catch (e: IOException) {}
+      } catch (_: IOException) {}
       bytesRead?.set(0)
       return false
     }
 
     if (bytesWaitingSend.remaining() > 0) {
-      val willSendNumBytes = min(bytesWaitingSend.remaining() as Int, bytesToRead)
+      val willSendNumBytes = min(bytesWaitingSend.remaining(), bytesToRead)
       bytesWaitingSend.get(dataOut, 0, willSendNumBytes)
       bytesRead?.set(willSendNumBytes)
       return true
@@ -866,7 +866,7 @@ class ExtensionResourceHandler() : CefResourceHandler {
             if (result == -1) {
               try {
                 readChannel?.close()
-              } catch (e: IOException) {}
+              } catch (_: IOException) {}
               readChannel = null
             } else {
               bytesReadFromResource += result
@@ -878,7 +878,7 @@ class ExtensionResourceHandler() : CefResourceHandler {
           override fun failed(exc: Throwable?, attachment: Void?) {
             try {
               readChannel?.close()
-            } catch (e: IOException) {}
+            } catch (_: IOException) {}
             readChannel = null
             callback?.Continue()
           }
@@ -891,7 +891,7 @@ class ExtensionResourceHandler() : CefResourceHandler {
   override fun cancel() {
     try {
       readChannel?.close()
-    } catch (e: IOException) {}
+    } catch (_: IOException) {}
     readChannel = null
   }
 }
