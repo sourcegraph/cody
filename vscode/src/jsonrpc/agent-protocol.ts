@@ -983,10 +983,10 @@ export interface ShowWindowMessageParams {
 }
 
 export interface SaveDialogOptionsParams {
-    defaultUri?: string
-    saveLabel?: string
-    filters?: Record<string, string[]>
-    title?: string
+    defaultUri?: string | undefined | null
+    saveLabel?: string | undefined | null
+    filters?: Record<string, string[]> | undefined | null
+    title?: string | undefined | null
 }
 
 interface FileIdentifier {
