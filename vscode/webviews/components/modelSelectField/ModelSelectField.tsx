@@ -345,9 +345,9 @@ const optionByGroup = (
     options: SelectListOption[]
 ): { group: string; options: SelectListOption[] }[] => {
     const groupOrder = [
-        ModelUIGroup.Power,
         ModelUIGroup.Balanced,
         ModelUIGroup.Speed,
+        ModelUIGroup.Power,
         ModelUIGroup.Ollama,
         ModelUIGroup.Other,
     ]
