@@ -250,7 +250,8 @@ val pnpmPath =
 tasks {
   val codeSearchCommit = "9d86a4f7d183e980acfe5d6b6468f06aaa0d8acf"
   fun downloadCodeSearch(): File {
-    val url = "https://github.com/sourcegraph/sourcegraph/archive/$codeSearchCommit.zip"
+    val url =
+        "https://github.com/sourcegraph/sourcegraph-public-snapshot/archive/$codeSearchCommit.zip"
     val destination = githubArchiveCache.resolve("$codeSearchCommit.zip")
     download(url, destination)
     return destination
@@ -260,7 +261,7 @@ tasks {
     val zip = downloadCodeSearch()
     val dir = githubArchiveCache.resolve("code-search")
     unzip(zip, dir, FileSystems.getDefault().getPathMatcher("glob:**.go"))
-    return dir.resolve("sourcegraph-$codeSearchCommit")
+    return dir.resolve("sourcegraph-public-snapshot-$codeSearchCommit")
   }
 
   fun buildCodeSearch(): File? {
