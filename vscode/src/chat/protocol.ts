@@ -104,7 +104,7 @@ export type WebviewMessage =
           command: 'openFileLink'
           uri: Uri
           range?: RangeData | undefined | null
-          source: ContextItemSource | undefined | null
+          source?: ContextItemSource | undefined | null
       }
     | {
           command: 'show-page'
