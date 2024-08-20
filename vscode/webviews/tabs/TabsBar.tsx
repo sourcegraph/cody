@@ -221,7 +221,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                 styles.tabsContainer
             )}
         >
-            <div className="tw-flex tw-gap-1">
+            <div className="tw-flex tw-gap-1 [&_>_*]:tw-flex-shrink-0">
                 {tabItems.map(({ Icon, view, command, title, changesView }) => (
                     <Tabs.Trigger key={view} value={view} asChild={true}>
                         <TabButton
@@ -236,7 +236,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                     </Tabs.Trigger>
                 ))}
             </div>
-            <div className="tw-flex tw-gap-4">
+            <div className="tw-flex tw-gap-4 [&_>_*]:tw-flex-shrink-0">
                 {currentViewSubIcons?.map(
                     ({ Icon, command, title, alwaysShowTitle, tooltipExtra, arg, callback }) => (
                         <TabButton
