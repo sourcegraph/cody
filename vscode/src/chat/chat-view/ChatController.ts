@@ -17,7 +17,6 @@ import {
     DOTCOM_URL,
     type DefaultChatCommands,
     type EventSource,
-    FeatureFlag,
     type Guardrails,
     type Message,
     ModelUsage,
@@ -64,7 +63,7 @@ import {
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
-import { getConfigWithEndpoint, getConfiguration, getFullConfig } from '../../configuration'
+import { getConfigWithEndpoint, getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
 import type { Repo } from '../../context/repo-fetcher'
@@ -562,22 +561,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
     }
 
-    private async isSmartApplyEnabled(): Promise<boolean> {
-        if (this.extensionClient.capabilities?.edit === 'none') {
-            // Smart Apply relies on the Edit capability
-            return false
-        }
-
-        const config = await getFullConfig()
-        return (
-            config.internalUnstable ||
-            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalSmartApply))
-        )
+    private isSmartApplyEnabled(): boolean {
+        return this.extensionClient.capabilities?.edit !== 'none'
     }
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const config = getConfigWithEndpoint()
-        const experimentalSmartApply = await this.isSmartApplyEnabled()
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
@@ -590,7 +579,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: config.serverEndpoint,
             experimentalNoodle: config.experimentalNoodle,
-            experimentalSmartApply,
+            smartApply: this.isSmartApplyEnabled(),
             webviewType,
             multipleWebviewsEnabled: !sidebarViewOnly,
             internalDebugContext: config.internalDebugContext,
@@ -1254,11 +1243,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         sendTelemetry?: (contextSummary: any, privateContextSummary?: any) => void,
         contextAlternatives?: RankedContext[]
     ): Promise<Message[]> {
-        const experimentalSmartApplyEnabled = await this.isSmartApplyEnabled()
         const { prompt, context } = await prompter.makePrompt(
             this.chatModel,
-            this.authProvider.getAuthStatus().codyApiVersion,
-            { experimentalSmartApplyEnabled }
+            this.authProvider.getAuthStatus().codyApiVersion
         )
         abortSignal.throwIfAborted()
 

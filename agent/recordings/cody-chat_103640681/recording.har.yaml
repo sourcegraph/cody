@@ -187,11 +187,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b33f9ea19dd116f2ef31b76450455f55
+    - _id: 981e59f977afc47f300f9c5268dda27e
       _order: 0
       cache: {}
       request:
-        bodySize: 532
+        bodySize: 808
         cookies: []
         headers:
           - name: content-type
@@ -230,6 +230,13 @@ log:
                 text: Ok.
               - speaker: human
                 text: >-
+                  When generating fenced code blocks in Markdown, ensure you
+                  include the full file path in the tag. The structure should be
+                  ```language:path/to/file
+
+                  ```. You should only do this when generating a code block, the user does not need to be made aware of this in any other way.
+
+
                   You have access to the provided codebase context. 
 
 
@@ -247,14 +254,14 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=1&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 1297
+        bodySize: 2960
         content:
           mimeType: text/event-stream
-          size: 1297
+          size: 2960
           text: >+
             event: completion
 
-            data: {"completion":"```typescript\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
+            data: {"completion":"Here's the implementation of a cow without any explanation:\n\n```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
 
 
             event: done
@@ -264,7 +271,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 13 Aug 2024 19:01:34 GMT
+            value: Tue, 20 Aug 2024 12:54:22 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -293,7 +300,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-13T19:01:33.443Z
+      startedDateTime: 2024-08-20T12:54:21.365Z
       time: 0
       timings:
         blocked: -1

@@ -73,9 +73,6 @@ export enum FeatureFlag {
     CodyServerSideContextAPI = 'cody-server-side-context-api-enabled',
 
     GitMentionProvider = 'git-mention-provider',
-
-    /** Enable experimental smart apply and chat codeblock UI */
-    CodyExperimentalSmartApply = 'cody-experimental-smart-apply',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
