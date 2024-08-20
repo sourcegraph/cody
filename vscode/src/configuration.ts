@@ -180,6 +180,7 @@ export function getConfiguration(
         agentIDE: getHiddenSetting<CodyIDE>('advanced.agent.ide'),
         agentIDEVersion: getHiddenSetting('advanced.agent.ide.version'),
         agentExtensionVersion: getHiddenSetting('advanced.agent.extension.version'),
+        agentHasPersistentStorage: getHiddenSetting('advanced.agent.capabilities.storage', false),
         autocompleteTimeouts: {
             multiline: getHiddenSetting<number | undefined>(
                 'autocomplete.advanced.timeout.multiline',

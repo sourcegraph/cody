@@ -87,6 +87,7 @@ export interface Configuration {
     agentIDE?: CodyIDE
     agentIDEVersion?: string
     agentExtensionVersion?: string
+    agentHasPersistentStorage?: boolean
     autocompleteTimeouts: AutocompleteTimeouts
     autocompleteFirstCompletionTimeout: number
 

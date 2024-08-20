@@ -120,7 +120,10 @@ const emptyFileWatcher: vscode.FileSystemWatcher = {
 export let clientInfo: ClientInfo | undefined
 export function setClientInfo(newClientInfo: ClientInfo): void {
     clientInfo = newClientInfo
-    setClientNameVersion(clientInfo.name, clientInfo.version)
+    setClientNameVersion(
+        clientInfo.legacyNameForServerIdentification ?? clientInfo.name,
+        clientInfo.version
+    )
     if (newClientInfo.extensionConfiguration) {
         setExtensionConfiguration(newClientInfo.extensionConfiguration)
     }
