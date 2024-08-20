@@ -323,7 +323,7 @@ export type ClientRequests = {
 // ================
 export type ServerRequests = {
     'window/showMessage': [ShowWindowMessageParams, string | null]
-    'window/showSaveDialog': [null, string | undefined | null]
+    'window/showSaveDialog': [SaveDialogOptionsParams, string | undefined | null]
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
     'textDocument/openUntitledDocument': [UntitledTextDocument, ProtocolTextDocument | undefined | null]
@@ -980,6 +980,13 @@ export interface ShowWindowMessageParams {
     message: string
     options?: vscode.MessageOptions | undefined | null
     items?: string[] | undefined | null
+}
+
+export interface SaveDialogOptionsParams {
+    defaultUri?: string | undefined | null
+    saveLabel?: string | undefined | null
+    filters?: Record<string, string[]> | undefined | null
+    title?: string | undefined | null
 }
 
 interface FileIdentifier {

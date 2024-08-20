@@ -770,11 +770,18 @@ const _window: typeof vscode.window = {
         console.log(new Error().stack)
         throw new Error('Not implemented: vscode.window.showOpenDialog')
     },
-    showSaveDialog: () => {
+    showSaveDialog: options => {
         if (agent) {
-            return agent.request('window/showSaveDialog', null).then(result => {
-                return result ? Uri.parse(result) : undefined
-            })
+            return agent
+                .request('window/showSaveDialog', {
+                    defaultUri: options?.defaultUri?.toString(),
+                    saveLabel: options?.saveLabel,
+                    filters: options?.filters,
+                    title: options?.title,
+                })
+                .then(result => {
+                    return result ? Uri.parse(result) : undefined
+                })
         }
         return Promise.resolve(undefined)
     },
