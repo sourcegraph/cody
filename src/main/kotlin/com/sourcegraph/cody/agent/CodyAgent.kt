@@ -129,6 +129,7 @@ private constructor(
                               webview = ClientCapabilities.WebviewEnum.Native,
                               webviewNativeConfig =
                                   WebviewNativeConfigParams(
+                                      view = WebviewNativeConfigParams.ViewEnum.Multiple,
                                       cspSource = "'self' https://*.sourcegraphstatic.com",
                                       webviewBundleServingPrefix =
                                           "https://file+.sourcegraphstatic.com",

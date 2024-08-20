@@ -15,7 +15,6 @@ import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.intellij.or
 import org.jetbrains.intellij.tasks.RunPluginVerifierTask.FailureLevel
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.jetbrains.kotlin.incremental.deleteDirectoryContents
 
 fun properties(key: String) = project.findProperty(key).toString()
 
@@ -325,6 +324,9 @@ tasks {
   }
 
   val buildCodyDir = layout.buildDirectory.asFile.get().resolve("sourcegraph").resolve("agent")
+  val protocolGeneratedDir =
+      layout.projectDirectory.asFile.resolve(
+          "src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated")
   fun buildCody(): File {
     if (!isForceAgentBuild && (buildCodyDir.listFiles()?.size ?: 0) > 0) {
       println("Cached $buildCodyDir")
@@ -354,11 +356,11 @@ tasks {
     return buildCodyDir
   }
 
-  fun copyProtocol(): Unit {
+  fun copyProtocol() {
     // This is just a temporary solution to make it easier to use certain generated protocol
     // messages.
     // Ultimately this should entirely be replaced by use of the generated protocol.
-    if (!isForceProtocolCopy) {
+    if (!isForceProtocolCopy && (protocolGeneratedDir.listFiles()?.size ?: 0) > 0) {
       return
     }
     val codyDir = downloadCody()
@@ -382,7 +384,7 @@ tasks {
         layout.projectDirectory.asFile.resolve(
             "src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated")
 
-    targetDir.deleteDirectoryContents()
+    targetDir.deleteRecursively()
     sourceDir.copyRecursively(targetDir, overwrite = true)
     // in each file replace the package name
     for (file in targetDir.walkTopDown()) {
@@ -612,6 +614,8 @@ tasks {
     systemProperty(
         "idea.test.src.dir", "${layout.buildDirectory.asFile.get()}/resources/integrationTest")
   }
+
+  withType<KotlinCompile> { dependsOn("copyProtocol") }
 
   named("classpathIndexCleanup") { dependsOn("processIntegrationTestResources") }
 

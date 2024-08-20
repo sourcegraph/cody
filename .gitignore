@@ -43,3 +43,4 @@ src/main/resources/dist/*
 # VSCode langserver artifacts
 /bin/
 .DS_Store
+/src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated/*
