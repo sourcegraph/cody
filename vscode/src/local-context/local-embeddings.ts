@@ -586,7 +586,6 @@ export class LocalEmbeddingsController
         const stalenessThresholds = [
             { changedFiles: 100, timeSince: 1000 * 60 * 60 }, // 1 hour
             { changedFiles: 10, timeSince: 1000 * 60 * 60 * 24 }, // 1 day
-            { changedFiles: 1, timeSince: 1000 * 10 }, // 1 minute for testing
         ]
 
         // The embeddings are stale if the number of changed files and the time between the indexed commits surpass a threshold.
@@ -600,14 +599,14 @@ export class LocalEmbeddingsController
         if (isStale) {
             logDebug(
                 'LocalEmbeddingsController',
-                'reindexing',
-                'currentCommit',
+                'checkIndexStaleness: reindexing',
+                'HEAD commit"',
                 currentCommit,
-                'lastEmbeddingsCommit',
+                'last indexed commit:',
                 health.commit,
-                'timeSinceLastIndexedCommit',
+                'seconds since last indexed commit:',
                 timeSinceLastIndexedCommit / 1000,
-                'changedFiles',
+                'number of changed files:',
                 changedFiles
             )
             await this.indexRequest({
