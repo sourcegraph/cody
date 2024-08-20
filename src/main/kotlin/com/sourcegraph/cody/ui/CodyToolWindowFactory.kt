@@ -3,6 +3,7 @@ package com.sourcegraph.cody.ui
 import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonParser
+import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
@@ -334,7 +335,9 @@ class WebUIProxy(private val host: WebUIHost, private val browser: JBCefBrowserB
       val browser =
           JBCefBrowserBuilder()
               .apply {
-                setOffScreenRendering(true)
+                val isOffScreenRenderingSupported =
+                    ApplicationInfo.getInstance().build.baselineVersion >= 224
+                setOffScreenRendering(isOffScreenRenderingSupported)
                 // TODO: Make this conditional on running in a debug configuration.
                 setEnableOpenDevToolsMenuItem(true)
               }
