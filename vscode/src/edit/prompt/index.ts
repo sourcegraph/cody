@@ -88,7 +88,7 @@ export const buildInteraction = async ({
     if (tokenCount > contextWindow) {
         throw new Error("The amount of text selected exceeds Cody's current capacity.")
     }
-    task.original = selectedText.toString() 
+    task.original = selectedText.toString()
     const suffixRange = new vscode.Range(
         task.selectionRange.end,
         task.selectionRange.end.translate({ lineDelta: 50 })
