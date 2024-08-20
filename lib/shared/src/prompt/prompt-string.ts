@@ -98,7 +98,7 @@ export class PromptString {
         return internal_toReferences(this)
     }
 
-    // function to add a new line to the string of this
+    // function to add a new line suffix to the string
     public addNewLine(): PromptString {
         return internal_createPromptString(internal_toString(this) + '\n', internal_toReferences(this))
     }
