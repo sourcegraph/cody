@@ -141,11 +141,13 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                                           ? 'cody.chat.newPanel'
                                           : 'cody.chat.newEditorPanel',
                             },
-                            multipleWebviewsEnabled && {
-                                title: 'Open in Editor',
-                                Icon: ColumnsIcon,
-                                command: 'cody.chat.moveToEditor',
-                            },
+                            multipleWebviewsEnabled
+                                ? {
+                                      title: 'Open in Editor',
+                                      Icon: ColumnsIcon,
+                                      command: 'cody.chat.moveToEditor',
+                                  }
+                                : null,
                         ].filter(isDefined),
                         changesView: true,
                     },
@@ -178,19 +180,23 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                         Icon: BookTextIcon,
                         changesView: true,
                     },
-                    multipleWebviewsEnabled && {
-                        view: View.Settings,
-                        title: 'Settings',
-                        Icon: SettingsIcon,
-                        command: 'cody.status-bar.interacted',
-                    },
-                    IDE !== CodyIDE.Web && {
-                        view: View.Account,
-                        title: 'Account',
-                        Icon: CircleUserIcon,
-                        command: 'cody.auth.account',
-                        changesView: IDE !== CodyIDE.VSCode,
-                    },
+                    multipleWebviewsEnabled
+                        ? {
+                              view: View.Settings,
+                              title: 'Settings',
+                              Icon: SettingsIcon,
+                              command: 'cody.status-bar.interacted',
+                          }
+                        : null,
+                    IDE !== CodyIDE.Web
+                        ? {
+                              view: View.Account,
+                              title: 'Account',
+                              Icon: CircleUserIcon,
+                              command: 'cody.auth.account',
+                              changesView: IDE !== CodyIDE.VSCode,
+                          }
+                        : null,
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
         [IDE, webviewType, onDownloadChatClick, multipleWebviewsEnabled]
