@@ -315,7 +315,7 @@ export class ContextRetriever implements vscode.Disposable {
             return []
         }
 
-        const remoteResultPromise = graphqlClient.contextSearch(repoIDs, query, signal)
+        const remoteResultPromise = graphqlClient.contextSearch({ repoIDs, query, signal })
 
         const remoteResult = await remoteResultPromise
         if (isError(remoteResult)) {
