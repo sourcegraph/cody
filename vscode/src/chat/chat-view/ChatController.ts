@@ -381,6 +381,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'links':
                 void openExternalLinks(message.value)
                 break
+            case 'openFileLink':
+                vscode.commands.executeCommand('vscode.open', message.uri, {
+                    selection: message.range,
+                    preserveFocus: true,
+                    background: false,
+                    preview: true,
+                    viewColumn: vscode.ViewColumn.Beside,
+                })
+                break
             case 'openFile':
                 await openFile(
                     message.uri,
