@@ -159,10 +159,10 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
         await expect(humanRow0.toolbar.mention).toBeVisible()
         await expect(humanRow0.toolbar.modelSelector).toBeVisible()
         await expect(humanRow0.toolbar.submit).toBeVisible()
-        await expect(chatPanel.getByText('More powerful models')).not.toBeVisible()
+        await expect(chatPanel.getByText('Powerful Models')).not.toBeVisible()
         // Open the model selector toolbar popover.
         await humanRow0.toolbar.modelSelector.click()
-        await expect(chatPanel.getByText('More powerful models')).toBeVisible()
+        await expect(chatPanel.getByText('Powerful Models')).toBeVisible()
         await expect(humanRow0.toolbar.mention).toBeVisible()
         await expect(humanRow0.toolbar.modelSelector).toBeVisible()
         await expect(humanRow0.toolbar.submit).toBeVisible()
