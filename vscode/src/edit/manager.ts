@@ -240,9 +240,52 @@ export class EditManager implements vscode.Disposable {
             return
         }
 
+        const model = configuration.model || modelsService.getDefaultEditModel()
+        if (!model) {
+            throw new Error('No default edit model found. Please set one.')
+        }
+
         telemetryRecorder.recordEvent('cody.command.smart-apply', 'executed')
 
         const editor = await vscode.window.showTextDocument(document.uri)
+
+        if (args.configuration?.isNewFile) {
+            // We are creating a new file, this means we are only _adding_ new code and _inserting_ it into the document.
+            // We do not need to re-prompt the LLM for this, let's just add the code directly.
+            const task = await this.controller.createTask(
+                document,
+                configuration.instruction,
+                [],
+                new vscode.Range(0, 0, 0, 0),
+                'add',
+                'insert',
+                model,
+                source,
+                configuration.document.uri,
+                undefined,
+                {},
+                configuration.id
+            )
+
+            const legacyMetadata = {
+                intent: task.intent,
+                mode: task.mode,
+                source: task.source,
+            }
+            const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
+            telemetryRecorder.recordEvent('cody.command.edit', 'executed', {
+                metadata,
+                privateMetadata: {
+                    ...privateMetadata,
+                    model: task.model,
+                },
+            })
+
+            const provider = this.getProviderForTask(task)
+            await provider.applyEdit(configuration.replacement)
+            return task
+        }
+
         // Apply some decorations to the editor, this showcases that Cody is working on the full file range
         // of the document. We will narrow it down to a selection soon.
         const documentRange = new vscode.Range(0, 0, document.lineCount, 0)
@@ -251,11 +294,6 @@ export class EditManager implements vscode.Disposable {
         // We need to extract the proposed code, provided by the LLM, so we can use it in future
         // queries to ask the LLM to generate a selection, and then ultimately apply the edit.
         const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
-
-        const model = configuration.model || modelsService.getDefaultEditModel()
-        if (!model) {
-            throw new Error('No default edit model found. Please set one.')
-        }
 
         const selection = await getSmartApplySelection(
             configuration.instruction,
