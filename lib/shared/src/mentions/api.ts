@@ -1,5 +1,5 @@
 import type { EachWithProviderUri, MetaResult } from '@openctx/client'
-import { Observable } from 'observable-fns'
+// import { Observable } from 'observable-fns'
 import { openCtx } from '../context/openctx/api'
 import { fromRxJSObservable } from '../misc/observable'
 

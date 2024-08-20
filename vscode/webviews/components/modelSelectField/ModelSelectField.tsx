@@ -326,15 +326,15 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 
 /** Common {@link ModelsService.uiGroup} values. */
 export const ModelUIGroup: Record<string, string> = {
-    Accuracy: 'Optimized for Accuracy',
-    Balanced: 'Balanced (Speed & Accuracy)',
-    Speed: 'Optimized for Speed',
-    Ollama: 'Ollama (Local)',
+    Power: 'More powerful models',
+    Balanced: 'Balanced for power and speed',
+    Speed: 'Faster models',
+    Ollama: 'Ollama (Local models)',
     Other: 'Other',
 }
 
 const getModelDropDownUIGroup = (model: Model): string => {
-    if (model.tags.includes(ModelTag.Accuracy)) return ModelUIGroup.Accuracy
+    if (model.tags.includes(ModelTag.Power)) return ModelUIGroup.Power
     if (model.tags.includes(ModelTag.Balanced)) return ModelUIGroup.Balanced
     if (model.tags.includes(ModelTag.Speed)) return ModelUIGroup.Speed
     if (model.tags.includes(ModelTag.Ollama)) return ModelUIGroup.Ollama
@@ -345,7 +345,7 @@ const optionByGroup = (
     options: SelectListOption[]
 ): { group: string; options: SelectListOption[] }[] => {
     const groupOrder = [
-        ModelUIGroup.Accuracy,
+        ModelUIGroup.Power,
         ModelUIGroup.Balanced,
         ModelUIGroup.Speed,
         ModelUIGroup.Ollama,
