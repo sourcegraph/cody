@@ -11,6 +11,7 @@ import {
     type Guardrails,
     PromptString,
     contextFiltersProvider,
+    enableLogRPCMessages,
     featureFlagProvider,
     graphqlClient,
     modelsService,
@@ -583,6 +584,9 @@ async function registerTestCommands(
     disposables: vscode.Disposable[]
 ): Promise<void> {
     await vscode.commands.executeCommand('setContext', 'cody.devOrTest', true)
+    if (!isRunningInsideAgent()) {
+        enableLogRPCMessages(true)
+    }
     disposables.push(
         vscode.commands.registerCommand('cody.test.set-context-filters', async () => {
             // Prompt the user for the policy

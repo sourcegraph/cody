@@ -341,10 +341,18 @@ export function addMessageListenersForExtensionAPI(
     }
 }
 
-const LOG_RPC_MESSAGES = true
+let LOG_RPC_MESSAGES = false
 
 function logRPCMessage(msg: string, ...args: any[]) {
     if (LOG_RPC_MESSAGES) {
         console.debug(msg, ...args)
     }
+}
+
+/**
+ * Enables or disables logging of RPC messages to the console.
+ * NOTE: The logs will also be picked up by the JSON-RPC in clients that could cause formatting errors.
+ */
+export function enableLogRPCMessages(enabled: boolean): void {
+    LOG_RPC_MESSAGES = enabled
 }
