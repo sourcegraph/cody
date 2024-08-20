@@ -342,7 +342,7 @@ export function addMessageListenersForExtensionAPI(
     }
 }
 
-const LOG_RPC_MESSAGES = process.env.CODY_DEBUG === 'true'
+const LOG_RPC_MESSAGES = process.env.CODY_LOG_WEBVIEW_RPC_MESSAGES === 'true'
 
 /**
  * Write the RPC message to the output log.
