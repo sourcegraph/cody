@@ -30,18 +30,12 @@ export class PromptMixin {
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
      * Add hedging prevention prompt to specific models who need this.
      */
-    public static mixInto(
-        humanMessage: ChatMessage,
-        modelID: string,
-        options?: { experimentalSmartApplyEnabled?: boolean }
-    ): ChatMessage {
+    public static mixInto(humanMessage: ChatMessage, modelID: string): ChatMessage {
         // Default Mixin is added at the end so that it cannot be overriden by other mixins.
         let mixins = PromptString.join(
-            [
-                ...PromptMixin.mixins,
-                ...(options?.experimentalSmartApplyEnabled ? [PromptMixin.codeBlockMixin] : []),
-                PromptMixin.contextMixin,
-            ].map(mixin => mixin.prompt),
+            [...PromptMixin.mixins, PromptMixin.codeBlockMixin, PromptMixin.contextMixin].map(
+                mixin => mixin.prompt
+            ),
             ps`\n\n`
         )
 

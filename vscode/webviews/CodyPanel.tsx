@@ -28,7 +28,7 @@ export const CodyPanel: FunctionComponent<
         | 'guardrails'
         | 'showWelcomeMessage'
         | 'showIDESnippetActions'
-        | 'experimentalSmartApplyEnabled'
+        | 'smartApplyEnabled'
     > &
         Pick<ComponentProps<typeof HistoryTab>, 'userHistory'>
 > = ({
@@ -47,7 +47,7 @@ export const CodyPanel: FunctionComponent<
     showIDESnippetActions,
     showWelcomeMessage,
     userHistory,
-    experimentalSmartApplyEnabled,
+    smartApplyEnabled,
 }) => {
     const tabContainerRef = useRef<HTMLDivElement>(null)
 
@@ -91,7 +91,7 @@ export const CodyPanel: FunctionComponent<
                         showIDESnippetActions={showIDESnippetActions}
                         showWelcomeMessage={showWelcomeMessage}
                         scrollableParent={tabContainerRef.current}
-                        experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
+                        smartApplyEnabled={smartApplyEnabled}
                         setView={setView}
                     />
                 )}

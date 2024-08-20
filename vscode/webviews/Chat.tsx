@@ -31,7 +31,7 @@ interface ChatboxProps {
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
     setView: (view: View) => void
-    experimentalSmartApplyEnabled?: boolean
+    smartApplyEnabled?: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -45,7 +45,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showWelcomeMessage = true,
     showIDESnippetActions = true,
     setView,
-    experimentalSmartApplyEnabled,
+    smartApplyEnabled,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -215,7 +215,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 chatEnabled={chatEnabled}
                 postMessage={postMessage}
                 guardrails={guardrails}
-                experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
+                smartApplyEnabled={smartApplyEnabled}
             />
             {transcript.length === 0 && showWelcomeMessage && (
                 <WelcomeMessage IDE={userInfo.ide} setView={setView} />
