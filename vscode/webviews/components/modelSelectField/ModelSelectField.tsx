@@ -326,10 +326,10 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 
 /** Common {@link ModelsService.uiGroup} values. */
 export const ModelUIGroup: Record<string, string> = {
-    Power: 'More powerful models',
-    Balanced: 'Balanced for power and speed',
-    Speed: 'Faster models',
-    Ollama: 'Ollama (Local models)',
+    Balanced: 'Balanced for Power and Speed',
+    Speed: 'Faster Models',
+    Power: 'Powerful Models',
+    Ollama: 'Ollama (Local Models)',
     Other: 'Other',
 }
 
