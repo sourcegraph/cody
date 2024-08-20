@@ -327,6 +327,5 @@ export {
     type GenericVSCodeWrapper,
     type GenericWebviewAPIWrapper,
     createMessageAPIForExtension,
-    enableLogRPCMessages,
 } from './misc/rpc/rpc'
 export * from './misc/observable'
