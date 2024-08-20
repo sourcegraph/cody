@@ -30,6 +30,7 @@ export const ModelSelectField: React.FunctionComponent<{
 
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
 
+
     onCloseByEscape?: () => void
     className?: string
 
@@ -326,17 +327,17 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 
 /** Common {@link ModelsService.uiGroup} values. */
 export const ModelUIGroup: Record<string, string> = {
-    Power: 'More powerful models',
-    Balanced: 'Balanced for power and speed',
-    Speed: 'Faster models',
-    Ollama: 'Ollama (Local models)',
+    Balanced: 'Balanced for Power and Speed',
+    Speed: 'Faster Models',
+    Accuracy: 'Powerful Models',
+    Ollama: 'Ollama (Local Models)',
     Other: 'Other',
 }
 
 const getModelDropDownUIGroup = (model: Model): string => {
-    if (model.tags.includes(ModelTag.Power)) return ModelUIGroup.Power
     if (model.tags.includes(ModelTag.Balanced)) return ModelUIGroup.Balanced
     if (model.tags.includes(ModelTag.Speed)) return ModelUIGroup.Speed
+    if (model.tags.includes(ModelTag.Accuracy)) return ModelUIGroup.Accuracy
     if (model.tags.includes(ModelTag.Ollama)) return ModelUIGroup.Ollama
     return ModelUIGroup.Other
 }
@@ -345,9 +346,9 @@ const optionByGroup = (
     options: SelectListOption[]
 ): { group: string; options: SelectListOption[] }[] => {
     const groupOrder = [
-        ModelUIGroup.Power,
         ModelUIGroup.Balanced,
         ModelUIGroup.Speed,
+        ModelUIGroup.Accuracy,
         ModelUIGroup.Ollama,
         ModelUIGroup.Other,
     ]

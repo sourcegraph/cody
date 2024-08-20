@@ -51,7 +51,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         provider: 'Anthropic',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Pro, ModelTag.Power],
+        tags: [ModelTag.Gateway, ModelTag.Pro, ModelTag.Accuracy],
     },
     {
         title: 'Claude 3 Haiku',
@@ -91,7 +91,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         provider: 'Google',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Power],
+        tags: [ModelTag.Gateway, ModelTag.Accuracy],
     },
 
     // TODO (tom) Improve prompt for Mixtral + Edit to see if we can use it there too.
@@ -109,7 +109,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         provider: 'Mistral',
         usage: [ModelUsage.Chat],
         contextWindow: basicContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Power],
+        tags: [ModelTag.Gateway, ModelTag.Accuracy],
     },
 ] as const satisfies Model[]
 
