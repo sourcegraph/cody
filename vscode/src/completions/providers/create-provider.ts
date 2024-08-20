@@ -21,7 +21,7 @@ import { createProviderConfig as createExperimentalOllamaProviderConfig } from '
 import { createProviderConfig as createExperimentalOpenAICompatibleProviderConfig } from './expopenaicompatible'
 import {
     DEEPSEEK_CODER_V2_LITE_BASE,
-    DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096,
+    DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE,
     DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192,
     DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384,
     DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768,
@@ -168,7 +168,7 @@ async function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<
     ])
     if (fimModelVariant1) {
         // Variant 1: Current production model with +200msec latency to quantity the effect of latency increase while keeping same quality
-        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096 }
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE }
     }
     if (fimModelVariant2) {
         return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192 }
