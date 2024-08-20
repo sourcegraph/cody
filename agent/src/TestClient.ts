@@ -195,6 +195,7 @@ export class TestClient extends MessageHandler {
     public workspace = new AgentWorkspaceDocuments({})
     public workspaceEditParams: WorkspaceEditParams[] = []
     public textDocumentEditParams: TextDocumentEditParams[] = []
+    public expectedEvents: string[] = []
 
     get serverEndpoint(): string {
         return this.params.credentials.serverEndpoint
