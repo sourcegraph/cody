@@ -111,7 +111,7 @@ TabButton.displayName = 'TabButton'
 
 export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onDownloadChatClick }) => {
     const {
-        config: { webviewType },
+        config: { webviewType, multipleWebviewsEnabled },
     } = useConfig()
 
     const tabItems = useMemo<TabConfig[]>(
@@ -135,17 +135,15 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                                 ),
                                 Icon: MessageSquarePlusIcon,
                                 command:
-                                    webviewType === 'sidebar'
+                                    webviewType === 'sidebar' || !multipleWebviewsEnabled
                                         ? 'cody.chat.newPanel'
                                         : 'cody.chat.newEditorPanel',
                             },
-                            IDE !== CodyIDE.Web
-                                ? {
-                                      title: 'Open in Editor',
-                                      Icon: ColumnsIcon,
-                                      command: 'cody.chat.moveToEditor',
-                                  }
-                                : null,
+                            multipleWebviewsEnabled && {
+                                title: 'Open in Editor',
+                                Icon: ColumnsIcon,
+                                command: 'cody.chat.moveToEditor',
+                            },
                         ].filter(isDefined),
                         changesView: true,
                     },
@@ -178,26 +176,22 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                         Icon: BookTextIcon,
                         changesView: true,
                     },
-                    IDE !== CodyIDE.Web
-                        ? {
-                              view: View.Settings,
-                              title: 'Settings',
-                              Icon: SettingsIcon,
-                              command: 'cody.status-bar.interacted',
-                          }
-                        : null,
-                    IDE !== CodyIDE.Web
-                        ? {
-                              view: View.Account,
-                              title: 'Account',
-                              Icon: CircleUserIcon,
-                              command: 'cody.auth.account',
-                              changesView: IDE !== CodyIDE.VSCode,
-                          }
-                        : null,
+                    multipleWebviewsEnabled && {
+                        view: View.Settings,
+                        title: 'Settings',
+                        Icon: SettingsIcon,
+                        command: 'cody.status-bar.interacted',
+                    },
+                    IDE !== CodyIDE.Web && {
+                        view: View.Account,
+                        title: 'Account',
+                        Icon: CircleUserIcon,
+                        command: 'cody.auth.account',
+                        changesView: IDE !== CodyIDE.VSCode,
+                    },
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, webviewType, onDownloadChatClick]
+        [IDE, webviewType, onDownloadChatClick, multipleWebviewsEnabled]
     )
     const currentViewSubIcons = tabItems.find(tab => tab.view === currentView)?.SubIcons
 

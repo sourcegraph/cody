@@ -7,8 +7,8 @@ import type { UrlTransform } from 'react-markdown/lib'
 import rehypeHighlight, { type Options as RehypeHighlightOptions } from 'rehype-highlight'
 import rehypeSanitize, { type Options as RehypeSanitizeOptions, defaultSchema } from 'rehype-sanitize'
 import remarkGFM from 'remark-gfm'
-import { useChatEnvironment } from '../chat/ChatEnvironmentContext'
 import { remarkAttachFilePathToCodeBlocks } from '../chat/extract-file-path'
+import { useConfig } from '../utils/useConfig'
 
 /**
  * Supported URIs to render as links in outputted markdown.
@@ -84,14 +84,17 @@ const URL_PROCESSORS: Record<CodyIDE, UrlTransform> = {
     [CodyIDE.Emacs]: defaultUrlProcessor,
     [CodyIDE.VSCode]: wrapLinksWithCodyOpenCommand,
     [CodyIDE.VisualStudio]: defaultUrlProcessor,
+    [CodyIDE.Eclipse]: defaultUrlProcessor,
 }
 
 export const MarkdownFromCody: FunctionComponent<{ className?: string; children: string }> = ({
     className,
     children,
 }) => {
-    const { clientType } = useChatEnvironment()
-    const urlTransform = useMemo(() => URL_PROCESSORS[clientType], [clientType])
+    const {
+        config: { agentIDE },
+    } = useConfig()
+    const urlTransform = useMemo(() => URL_PROCESSORS[agentIDE ?? CodyIDE.VSCode], [agentIDE])
 
     return (
         <Markdown className={className} {...markdownPluginProps()} urlTransform={urlTransform}>

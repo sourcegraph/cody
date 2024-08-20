@@ -569,9 +569,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const config = getConfigWithEndpoint()
         const experimentalSmartApply = await this.isSmartApplyEnabled()
-
-        const webviewType =
-            this.webviewPanelOrView?.viewType === 'cody.editorPanel' ? 'editor' : 'sidebar'
+        const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
+        const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
+        const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
 
         return {
             agentIDE: config.agentIDE ?? CodyIDE.VSCode,
@@ -583,6 +583,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             experimentalNoodle: config.experimentalNoodle,
             experimentalSmartApply,
             webviewType,
+            multipleWebviewsEnabled: !sidebarViewOnly,
             internalDebugContext: config.internalDebugContext,
         }
     }
