@@ -1,7 +1,7 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import { createContext, useContext } from 'react'
 
-interface ChatEnvironmentContextData {
+export interface ChatEnvironmentContextData {
     clientType: CodyIDE
 }
 

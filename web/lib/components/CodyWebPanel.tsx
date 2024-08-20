@@ -179,8 +179,9 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const envVars = useMemo(() => ({ clientType: CodyIDE.Web }), [])
 
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers(vscodeAPI, telemetryRecorder, chatModelContext, clientState, config),
-        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, config]
+        () =>
+            getAppWrappers(vscodeAPI, telemetryRecorder, chatModelContext, clientState, config, envVars),
+        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, config, envVars]
     )
 
     const isLoading = !client || !chatModels || !config || !view || !userHistory
