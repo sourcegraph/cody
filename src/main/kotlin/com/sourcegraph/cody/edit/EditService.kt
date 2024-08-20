@@ -70,8 +70,11 @@ class EditService(val project: Project) {
       // TODO: We need to support the file-level operations.
       when (op) {
         is CreateFileOperation -> {
-          logger.warn("Workspace edit operation created a file: ${op.uri}")
-          return false
+          logger.info("Workspace edit operation created a file: ${op.uri}")
+          val file =
+              CodyEditorUtil.createFileOrScratchFromUntitled(project, op.uri, content = "")
+                  ?: return false
+          CodyEditorUtil.showDocument(project, file)
         }
         is RenameFileOperation -> {
           logger.warn("Workspace edit operation renamed a file: ${op.oldUri} -> ${op.newUri}")

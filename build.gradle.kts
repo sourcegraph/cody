@@ -23,7 +23,7 @@ val isForceAgentBuild =
     isForceBuild ||
         properties("forceCodyBuild") == "true" ||
         properties("forceAgentBuild") == "true"
-val isForceProtocolCopy = properties("forceProtocolCopy") == "true"
+val isForceProtocolCopy = isForceAgentBuild || properties("forceProtocolCopy") == "true"
 val isForceCodeSearchBuild = isForceBuild || properties("forceCodeSearchBuild") == "true"
 
 // As https://www.jetbrains.com/updates/updates.xml adds a new "IntelliJ IDEA" YYYY.N version, add
