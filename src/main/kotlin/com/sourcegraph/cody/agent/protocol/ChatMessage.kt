@@ -13,17 +13,7 @@ data class ChatError(
     val retryMessage: String? = null,
     val feature: String? = null,
     val upgradeIsAvailable: Boolean? = null,
-) {
-  fun toRateLimitError(): RateLimitError? {
-    if (this.upgradeIsAvailable == null) {
-      return null
-    }
-    return RateLimitError(
-        upgradeIsAvailable = this.upgradeIsAvailable,
-        limit = this.limit,
-    )
-  }
-}
+)
 
 data class ChatMessage(
     val speaker: Speaker,
@@ -31,6 +21,4 @@ data class ChatMessage(
     val displayText: String? = null,
     val contextFiles: List<ContextItem>? = null,
     val error: ChatError? = null
-) {
-  fun actualMessage(): String = displayText ?: text ?: ""
-}
+)

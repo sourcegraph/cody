@@ -2,8 +2,6 @@
 
 package com.sourcegraph.cody.agent
 
-import com.sourcegraph.cody.agent.protocol.AttributionSearchParams
-import com.sourcegraph.cody.agent.protocol.AttributionSearchResponse
 import com.sourcegraph.cody.agent.protocol.AutocompleteParams
 import com.sourcegraph.cody.agent.protocol.AutocompleteResult
 import com.sourcegraph.cody.agent.protocol.ChatHistoryResponse
@@ -19,10 +17,6 @@ import com.sourcegraph.cody.agent.protocol.IgnoreTestResponse
 import com.sourcegraph.cody.agent.protocol.InlineEditParams
 import com.sourcegraph.cody.agent.protocol.NetworkRequest
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
-import com.sourcegraph.cody.agent.protocol.RemoteRepoHasParams
-import com.sourcegraph.cody.agent.protocol.RemoteRepoHasResponse
-import com.sourcegraph.cody.agent.protocol.RemoteRepoListParams
-import com.sourcegraph.cody.agent.protocol.RemoteRepoListResponse
 import com.sourcegraph.cody.agent.protocol.TelemetryEvent
 import com.sourcegraph.cody.agent.protocol_generated.ClientInfo
 import com.sourcegraph.cody.agent.protocol_generated.CodeActions_ProvideParams
@@ -36,8 +30,6 @@ import com.sourcegraph.cody.agent.protocol_generated.EditTask_GetTaskDetailsPara
 import com.sourcegraph.cody.agent.protocol_generated.EditTask_RetryParams
 import com.sourcegraph.cody.agent.protocol_generated.EditTask_UndoParams
 import com.sourcegraph.cody.agent.protocol_generated.ExtensionConfiguration
-import com.sourcegraph.cody.agent.protocol_generated.Graphql_GetRepoIdsParams
-import com.sourcegraph.cody.agent.protocol_generated.Graphql_GetRepoIdsResult
 import com.sourcegraph.cody.agent.protocol_generated.Null
 import com.sourcegraph.cody.agent.protocol_generated.ServerInfo
 import java.util.concurrent.CompletableFuture
@@ -72,11 +64,6 @@ interface _SubsetGeneratedCodyAgentServer {
   @JsonRequest("codeActions/trigger")
   fun codeActions_trigger(params: CodeActions_TriggerParams): CompletableFuture<EditTask>
 
-  @JsonRequest("graphql/getRepoIds")
-  fun graphql_getRepoIds(
-      params: Graphql_GetRepoIdsParams
-  ): CompletableFuture<Graphql_GetRepoIdsResult>
-
   @JsonRequest("extensionConfiguration/getSettingsSchema")
   fun extensionConfiguration_getSettingsSchema(params: Null?): CompletableFuture<String>
 
@@ -106,8 +93,6 @@ interface _LegacyAgentServer {
   fun recordEvent(event: TelemetryEvent): CompletableFuture<Void?>
 
   @JsonRequest("graphql/logEvent") fun logEvent(event: Event): CompletableFuture<Void?>
-
-  @JsonRequest("graphql/currentUserId") fun currentUserId(): CompletableFuture<String>
 
   // TODO(CODY-2826): Would be nice if we can generate some set of "known" feature flags from the
   // protocol
@@ -143,9 +128,6 @@ interface _LegacyAgentServer {
 
   @JsonNotification("autocomplete/completionAccepted")
   fun completionAccepted(logID: CompletionItemParams)
-
-  @JsonRequest("webview/receiveMessage")
-  fun webviewReceiveMessage(params: WebviewReceiveMessageParams): CompletableFuture<Any?>
 
   @JsonRequest("editTask/accept")
   fun acceptEditTask(params: EditTask_AcceptParams): CompletableFuture<Void?>
@@ -183,17 +165,6 @@ interface _LegacyAgentServer {
   fun chatModels(params: ChatModelsParams): CompletableFuture<ChatModelsResponse>
 
   @JsonRequest("chat/export") fun chatExport(): CompletableFuture<List<ChatHistoryResponse>>
-
-  @JsonRequest("attribution/search")
-  fun attributionSearch(
-      params: AttributionSearchParams
-  ): CompletableFuture<AttributionSearchResponse>
-
-  @JsonRequest("remoteRepo/has")
-  fun remoteRepoHas(params: RemoteRepoHasParams): CompletableFuture<RemoteRepoHasResponse>
-
-  @JsonRequest("remoteRepo/list")
-  fun remoteRepoList(params: RemoteRepoListParams): CompletableFuture<RemoteRepoListResponse>
 
   @JsonRequest("ignore/test")
   fun ignoreTest(params: IgnoreTestParams): CompletableFuture<IgnoreTestResponse>
