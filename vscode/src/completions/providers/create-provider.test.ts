@@ -61,7 +61,7 @@ describe('createProviderConfig', () => {
     })
 
     describe('if completions provider field is not defined in VSCode settings', () => {
-        it('returns "anthropic" if completions provider is not configured', async () => {
+        it('returns `null` if completions provider is not configured', async () => {
             const provider = await createProviderConfig(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: null as Configuration['autocompleteAdvancedProvider'],
@@ -69,8 +69,7 @@ describe('createProviderConfig', () => {
                 dummyCodeCompletionsClient,
                 dummyAuthStatus
             )
-            expect(provider?.identifier).toBe('fireworks')
-            expect(provider?.model).toBe('deepseek-coder-v2-lite-base')
+            expect(provider).toBeNull()
         })
 
         it('returns "fireworks" provider config and corresponding model if specified', async () => {
@@ -264,7 +263,7 @@ describe('createProviderConfig', () => {
                 // provider not defined (backward compat)
                 {
                     codyLLMConfig: { provider: undefined, completionModel: 'superdupercoder-7b' },
-                    expected: { provider: 'fireworks', model: 'deepseek-coder-v2-lite-base' },
+                    expected: null,
                 },
             ]
 
@@ -286,24 +285,5 @@ describe('createProviderConfig', () => {
                 })
             }
         })
-    })
-
-    it('PLG: returns Fireworks provider config if no completions provider specified in VSCode settings or site config', async () => {
-        const provider = await createProviderConfig(
-            getVSCodeConfigurationWithAccessToken(),
-            dummyCodeCompletionsClient,
-            dummyAuthStatus
-        )
-        expect(provider?.identifier).toBe('fireworks')
-        expect(provider?.model).toBe('deepseek-coder-v2-lite-base')
-    })
-
-    it('Enterprise: returns `null` if no completions provider specified in VSCode settings or site config', async () => {
-        const provider = await createProviderConfig(
-            getVSCodeConfigurationWithAccessToken(),
-            dummyCodeCompletionsClient,
-            enterpriseAuthStatus
-        )
-        expect(provider).toBeNull()
     })
 })

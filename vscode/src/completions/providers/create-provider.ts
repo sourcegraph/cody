@@ -221,14 +221,7 @@ function getAutocompleteModelInfo(authStatus: AuthStatus): AutocompleteModelInfo
         })
     }
 
-    // Fallback to the Fireworks autocomplete provider only for PLG users.
-    if (authStatus.isDotCom) {
-        return {
-            provider: 'fireworks',
-        }
-    }
-
-    // Fail with error for enterprises.
+    // Fail with error if no `completionModel` is configured.
     return new Error(
         'Failed to get autocomplete model info. Please configure the `completionModel` using site configuration.'
     )
