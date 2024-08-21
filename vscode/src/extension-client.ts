@@ -38,6 +38,8 @@ export interface ExtensionClient {
      */
     openNewDocument(workspace: typeof vscode.workspace, uri: Uri): Thenable<TextDocument | undefined>
 
+    readUriUTF8?(uri: Uri): Thenable<string | undefined>
+
     get clientName(): string
     get clientVersion(): string
     get capabilities(): ClientCapabilities | undefined

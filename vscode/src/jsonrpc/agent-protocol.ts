@@ -450,6 +450,9 @@ export type ServerNotifications = {
 
     'progress/end': [{ id: string }]
 
+    'uri/readBytes': [{ uri: string }, { base64EncodedBytes: string }]
+    'uri/readUTF8': [{ uri: string }, { text: string }]
+
     // The list of remote repositories changed. Results from remoteRepo/list
     // may be stale and should be requeried.
     'remoteRepo/didChange': [null]
@@ -624,6 +627,9 @@ export interface ClientCapabilities {
     // which effectively means both sidebar and custom editor chat views are supported.
     // Defaults to 'agentic'.
     webview?: 'agentic' | 'native' | undefined | null
+
+    uriSchemeLoaders?: string[] // can be ['webviewasset']
+
     // If webview === 'native', describes how the client has configured webview resources.
     // cspSource is passed to the extension as the Webview cspSource property.
     // webviewBundleServingPrefix is prepended to resource paths under 'dist' in
@@ -633,6 +639,7 @@ export interface ClientCapabilities {
         | {
               view: 'multiple' | 'single'
               cspSource: string
+              assetLoader: 'fs' | 'client'
               webviewBundleServingPrefix: string
               rootDir?: string | undefined | null
               injectScript?: string | undefined | null

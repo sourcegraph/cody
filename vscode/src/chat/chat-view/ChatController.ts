@@ -1851,6 +1851,15 @@ export async function addWebviewViewHTML(
         ? vscode.Uri.parse(config?.rootDir, true)
         : vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
     // Create Webview using vscode/index.html
+    if (
+        extensionClient.capabilities?.uriSchemeLoaders?.includes('webviewasset') &&
+        extensionClient.readUriUTF8
+    ) {
+        const decoded = await extensionClient.readUriUTF8(
+            vscode.Uri.from({ scheme: 'webviewasset', path: 'index.html' })
+        )
+        return
+    }
     const root = vscode.Uri.joinPath(webviewPath, 'index.html')
     const bytes = await vscode.workspace.fs.readFile(root)
     const decoded = new TextDecoder('utf-8').decode(bytes)
