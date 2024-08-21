@@ -138,8 +138,6 @@ export class FixupTask {
         // For all other Edits, we always expand the range to encompass all characters from the selection lines
         // This is so we can calculate an optimal diff, and the LLM has the best chance at understanding
         // the indentation in the returned code.
-        return this.document.validateRange(
-            new vscode.Range(proposedRange.start.line, 0, proposedRange.end.line + 1, 0)
-        )
+        return new vscode.Range(proposedRange.start.line, 0, proposedRange.end.line + 1, 0)
     }
 }
