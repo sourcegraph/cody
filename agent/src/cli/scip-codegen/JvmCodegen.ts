@@ -40,7 +40,6 @@ export class JvmCodegen extends BaseCodegen {
     ) {
         super(options, symtab, reporter)
         this.f = new JvmFormatter(this.language, this.symtab, this)
-        this.options.namespace = 'Cody.Core.Agent.Protocol'
     }
 
     public async run(): Promise<void> {
@@ -133,7 +132,7 @@ export class JvmCodegen extends BaseCodegen {
         }
         const { p } = this.startDocument()
         if (this.language === JvmLanguage.CSharp) {
-            p.line(`namespace ${this.options.namespace};`)
+            p.line(`namespace ${this.options.kotlinPackage};`)
             p.line('{')
             p.line('public static class Constants')
             p.line('{')
@@ -205,7 +204,6 @@ export class JvmCodegen extends BaseCodegen {
         union: DiscriminatedUnion
     ): Promise<void> {
         if (this.language === JvmLanguage.CSharp) {
-            p.addImport('using System.Text.Json;')
             p.addImport('using System.Text.Json.Serialization;')
         } else {
             p.line('import com.google.gson.Gson;')
@@ -221,7 +219,7 @@ export class JvmCodegen extends BaseCodegen {
             p.line(`public abstract class ${name} {`)
         } else if (this.language === JvmLanguage.CSharp) {
             p.line(`[JsonConverter(typeof(${name}Converter))]`)
-            name = name.replace('_', '')
+            name = name.replaceAll('_', '')
             p.line(`public abstract class ${name}`)
             p.line('{')
         }
@@ -481,7 +479,7 @@ export class JvmCodegen extends BaseCodegen {
                 if (this.language === JvmLanguage.Kotlin) {
                     p.line('val placeholderField: String? = null // Empty data class')
                 } else if (this.language === JvmLanguage.CSharp) {
-                    p.line('public string? PlaceholderField { get; set; } // Empty class')
+                    p.line('public string PlaceholderField { get; set; } // Empty class')
                 }
             }
         })
@@ -593,10 +591,9 @@ export class JvmCodegen extends BaseCodegen {
                 }
             }
         } else if (this.language === JvmLanguage.CSharp) {
-            p.addImport('using System;')
             p.addImport('using System.Text.Json.Serialization;')
             p.line()
-            p.line(`namespace ${this.options.namespace}`)
+            p.line(`namespace ${this.options.kotlinPackage}`)
             p.line('{')
             p.block(() => {
                 if (alias) {
@@ -645,7 +642,7 @@ export class JvmCodegen extends BaseCodegen {
 
         let filename = `${info.display_name}.${this.fileExtension()}`
         if (this.language === JvmLanguage.CSharp) {
-            filename = filename.replace('_', '')
+            filename = filename.replaceAll('_', '')
         }
         fspromises.writeFile(path.join(this.options.output, filename), p.build())
     }
@@ -668,7 +665,7 @@ export class JvmCodegen extends BaseCodegen {
         } else if (this.language === JvmLanguage.CSharp) {
             p.addImport('using System.Threading.Tasks;')
             p.line()
-            p.line(`namespace ${this.options.namespace};`)
+            p.line(`namespace ${this.options.kotlinPackage};`)
             p.line('{')
         }
         p.line()

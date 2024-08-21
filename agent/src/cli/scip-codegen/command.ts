@@ -13,7 +13,6 @@ export interface CodegenOptions {
     language: string
     protocol: string
     kotlinPackage: string
-    namespace: string
     discriminatedUnions: 'flat' | 'nested'
     severity: string
 }

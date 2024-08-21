@@ -12,7 +12,8 @@ export class JvmFormatter {
         private codegen: JvmCodegen
     ) {}
     public functionName(info: scip.SymbolInformation): string {
-        return info.display_name.replaceAll('$/', '').replaceAll('/', '_')
+        const replacer = this.language === JvmLanguage.CSharp ? '' : '_'
+        return info.display_name.replaceAll('$/', '').replaceAll('/', replacer)
     }
 
     public typeName(info: scip.SymbolInformation): string {
@@ -20,11 +21,12 @@ export class JvmFormatter {
             // HACK, just need to get this compiling
             return 'Uri'
         }
+        const joiner = this.language === JvmLanguage.CSharp ? '' : '_'
         return info.display_name
             .replaceAll('$/', '')
             .split('/')
             .map(part => capitalize(part))
-            .join('_')
+            .join(joiner)
     }
 
     public jsonrpcMethodParameter(jsonrpcMethod: scip.SymbolInformation): {
@@ -52,7 +54,7 @@ export class JvmFormatter {
             return ''
         }
         if (this.language === JvmLanguage.CSharp) {
-            return this.isNullable(tpe) ? '?' : ''
+            return ''
         }
         return this.isNullable(tpe) ? '?' : ''
     }
@@ -188,7 +190,7 @@ export class JvmFormatter {
                     case 'String':
                         return 'string'
                     case 'Long':
-                        return 'long'
+                        return 'int'
                     default:
                         return keyword
                 }
@@ -268,6 +270,7 @@ export class JvmFormatter {
                 .split('_')
                 .map(part => part.charAt(0).toUpperCase() + part.slice(1))
                 .join('')
+                .replaceAll('_', '')
         }
         // Java
         const isKeyword = this.javaKeywords.has(escaped)

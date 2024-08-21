@@ -1,7 +1,10 @@
 #!/bin/bash
 set -eux
+
 INDEXER_DIR=${SCIP_TYPESCRIPT_DIR:-../scip-typescript-cody-bindings}
 OUTPUT_DIR="agent/dist/bindings/csharp"
+RUN_VALIDATION_STEP=false
+PROTOCOL_NAMESPACE="Cody.Core.Agent.Protocol"
 
 if [ ! -d "$INDEXER_DIR" ]; then
   git clone https://github.com/sourcegraph/scip-typescript.git "$INDEXER_DIR"
@@ -11,18 +14,23 @@ pushd "$INDEXER_DIR"
 git fetch origin
 git checkout olafurpg/signatures-rebase1
 git pull origin olafurpg/signatures-rebase1
-yarn install
+pnpm install
 popd
 
 pnpm install --prefer-offline
 pnpm build
 # TODO: invoke @sourcegraph/scip-typescript npm package instead
 pnpm exec ts-node "$INDEXER_DIR"/src/main.ts index --emit-signatures --emit-external-symbols
-pnpm exec ts-node agent/src/cli/scip-codegen/command.ts --output "$OUTPUT_DIR" --language csharp
+pnpm exec ts-node agent/src/cli/scip-codegen/command.ts --output "$OUTPUT_DIR" --language csharp --kotlin-package "$PROTOCOL_NAMESPACE"
 
-# Loop through files and check for specific words
+if [ "$RUN_VALIDATION_STEP" = false ]; then
+  # exit early if we don't want to run the validation step
+  exit 0
+fi
+
+# Loop through files and check for specific words that should not be present in C# code.
 BAD_WORD_LIST=("typealias" "package com.sourcegraph.cody.protocol_generated" " val " "data class" "gson.")
-
+# TODO: remove this once we have a better way to generate the bindings
 echo "Checking files for specific words..."
 for file in "$OUTPUT_DIR"/*; do
     if [ -f "$file" ]; then
