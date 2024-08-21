@@ -4,7 +4,6 @@ import { LocalStorage } from 'node-localstorage'
 import * as vscode_shim from '../vscode-shim'
 
 import path from 'node:path'
-import { logDebug } from '../../../vscode/src/log'
 import { localStorage } from '../../../vscode/src/services/LocalStorageProvider'
 
 export class AgentGlobalState implements vscode.Memento {
@@ -39,19 +38,15 @@ export class AgentGlobalState implements vscode.Memento {
     }
 
     public get<T>(key: string, defaultValue?: unknown): any {
-        logDebug('agentglobalstate', `get:${key}`)
         switch (key) {
             case localStorage.LAST_USED_ENDPOINT:
                 return vscode_shim.extensionConfiguration?.serverEndpoint
             case localStorage.ANONYMOUS_USER_ID_KEY:
-                logDebug('agentglobalstate', 'getting anonymousUserID')
                 // biome-ignore lint/suspicious/noFallthroughSwitchClause: This is intentional
                 if (vscode_shim.extensionConfiguration?.anonymousUserID) {
-                    logDebug('agentglobalstate', 'from config')
                     return vscode_shim.extensionConfiguration?.anonymousUserID
                 }
             default:
-                logDebug('agentglobalstate', `fetching:${key}`)
                 return this.db.get(key) ?? defaultValue
         }
     }

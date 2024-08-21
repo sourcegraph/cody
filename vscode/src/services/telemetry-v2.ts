@@ -94,7 +94,6 @@ export async function createOrUpdateTelemetryRecorderProvider(
         logDebug(debugLogLabel, 'using no-op exports')
         updateGlobalTelemetryInstances(defaultNoOpProvider)
     } else {
-        logDebug(debugLogLabel, 'using real exporter')
         updateGlobalTelemetryInstances(
             new TelemetryRecorderProvider(
                 extensionDetails,
@@ -113,7 +112,6 @@ export async function createOrUpdateTelemetryRecorderProvider(
      * Skip any init events for Cody Web use case.
      */
     if (initialize && !isCodyWeb) {
-        logDebug(debugLogLabel, `new anonymous user:${newAnonymousUser}`)
         if (newAnonymousUser) {
             /**
              * New user
