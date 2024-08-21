@@ -1,11 +1,11 @@
 import type { execSync } from 'node:child_process'
 import type * as fs from 'node:fs'
-import fsPromise from 'node:fs/promises'
 import path from 'node:path'
 import URL from 'node:url'
 import { test as t } from '@playwright/test'
 import type { GreaterThanOrEqual, Integer } from 'type-fest'
 import type * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 import type { UIXContextFnContext } from '.'
 
 type SidebarCtx = Pick<UIXContextFnContext, 'page'>
@@ -54,37 +54,11 @@ export async function startSession({
     page,
     vscodeUI,
     workspaceDir,
+    executeCommand,
 }: Pick<UIXContextFnContext, 'page' | 'vscodeUI' | 'executeCommand' | 'workspaceDir'>) {
     // If we have a debugger then we show some user instructions
-    const { extensionHostDebugPort } = vscodeUI
 
     const interceptRouteURL = `${URL.resolve(vscodeUI.url, '/**')}`
-    if (extensionHostDebugPort) {
-        await t.step('Show Debug Instructions', async () => {
-            // load a landing page before the session is initialized
-            const placeholderDir = path.join(__dirname, '../resources/vscode-placeholder')
-            await page.route(interceptRouteURL, async (route, request) => {
-                // serve local modified HTML or any of the resources requested
-                if (request.url() === URL.resolve(vscodeUI.url, '/')) {
-                    route.fulfill({
-                        body: (
-                            await fsPromise.readFile(path.join(placeholderDir, 'index.html'), 'utf-8')
-                        ).replaceAll('{{DEBUG_PORT}}', extensionHostDebugPort.toString()),
-                        headers: {
-                            'Content-Type': 'text/html',
-                        },
-                        status: 200,
-                    })
-                } else {
-                    const pathParts = request.url().replace(vscodeUI.url, '').split('/')
-                    route.fulfill({
-                        path: path.join(placeholderDir, ...pathParts),
-                    })
-                }
-            })
-            await page.goto(vscodeUI.url)
-        })
-    }
     return t.step('Start VSCode Session', async () => {
         if (page.url() !== vscodeUI.url) {
             await page.route(interceptRouteURL, route => {
@@ -202,9 +176,41 @@ export async function startSession({
         })
 
         // We can now authenticate and navigate to the UI
-        await page.goto(`${vscodeUI.url}?tkn=${vscodeUI.token}&folder=${path.resolve(workspaceDir)}`)
+        const uriFolder = URI.file(path.resolve(workspaceDir))
+        await page.goto(
+            `${vscodeUI.url}?tkn=${vscodeUI.token}&payload=${JSON.stringify(vscodeUI.payload)}&folder=${
+                uriFolder.path
+            }`,
+            {}
+        )
+
+        if (vscodeUI.extensionHostDebugPort) {
+            await page.evaluate(
+                debugPort => {
+                    // insert a div right at the top that shows the debug port
+                    const div = document.createElement('div')
+                    Object.assign(div.style, {
+                        position: 'fixed',
+                        top: '0px',
+                        left: '0px',
+                        'background-color': '#fef08a',
+                        color: '#78350f',
+                        display: 'flex',
+                        'z-index': 9999,
+                        height: '35px',
+                        'justify-content': 'center',
+                        'align-items': 'center',
+                        padding: '0 10px',
+                    })
+                    div.innerText = `Debug port: ${debugPort}`
+                    document.body.appendChild(div)
+                },
+                [vscodeUI.extensionHostDebugPort]
+            )
+        }
 
         // wait for the UI to be ready
+        //TODO: Allow stretching this is we're waiting for a debugger to connect
         await page.locator('iframe.web-worker-ext-host-iframe').waitFor({
             state: 'attached',
             timeout: 10000,

@@ -1,26 +1,20 @@
 import { spawn } from 'node:child_process'
 import type { Dirent } from 'node:fs'
 import fs from 'node:fs/promises'
-import 'node:http'
-import 'node:https'
-import path from 'node:path'
-import { setTimeout } from 'node:timers/promises'
+import szip from '7zip-min'
 import pspawn from '@npmcli/promise-spawn'
 import { test as _test, expect } from '@playwright/test'
-import {
-    ConsoleReporter,
-    type ProgressReport,
-    ProgressReportStage,
-    resolveCliArgsFromVSCodeExecutablePath,
-} from '@vscode/test-electron'
-import { downloadAndUnzipVSCode } from '@vscode/test-electron/out/download'
-import glob from 'glob'
+import { isWindows } from '@sourcegraph/cody-shared'
 import 'node:http'
 import 'node:https'
+import os from 'node:os'
+import path from 'node:path'
 import { onExit } from 'signal-exit'
 import symlinkDir from 'symlink-dir'
 import type { TestContext, WorkerContext } from '.'
+import { downloadFile } from '../../../../src/local-context/utils'
 import { waitForLock } from '../../../../src/lockfile'
+import { withTempDir } from '../../../../test/e2e/helpers'
 import { CODY_VSCODE_ROOT_DIR, retry, stretchTimeout } from '../../helpers'
 import { killChildrenSync, killSync } from './kill'
 import { rangeOffset } from './util'
@@ -77,9 +71,14 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
                 validOptions.vscodeServerTmpDir
             )
             await fs.mkdir(serverExecutableDir, { recursive: true })
+
             // We nullify the time it takes to download VSCode as it can vary wildly!
-            const [codeCliPath, codeTunnelCliPath] = await stretchTimeout(
-                () => downloadOrWaitForVSCode({ validOptions, executableDir }),
+            const versionedServerExecutableDir = await stretchTimeout(
+                () =>
+                    downloadVSCodeServer({
+                        serverExecutableDir,
+                        validOptions,
+                    }),
                 {
                     max: DOWNLOAD_GRACE_TIME,
                     testInfo,
@@ -124,9 +123,16 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
             const userDataDir = path.join(serverRootDir, 'data/User')
             await fs.mkdir(userDataDir, { recursive: true })
 
-            await installExtensions({ validOptions, codeCliPath, extensionsDir, userDataDir })
-
-            //TODO: Fixed Port Ranges
+            await stretchTimeout(
+                () =>
+                    installExtensions({
+                        validOptions,
+                        versionedServerExecutableDir,
+                        extensionsDir,
+                        userDataDir,
+                    }),
+                { max: DOWNLOAD_GRACE_TIME, testInfo }
+            )
 
             // We can now start the server
             const connectionToken = '0000-0000'
@@ -135,26 +141,18 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
                 validOptions.vscodeServerPortRange
             )
             const args = [
-                'serve-web',
                 `--user-data-dir=${userDataDir}`,
                 '--accept-server-license-terms',
+                '--disable-workspace-trust',
+                '--host=127.0.0.1', // todo: allow making external for remote support
                 `--port=${serverPort}`,
                 `--connection-token=${connectionToken}`,
-                `--cli-data-dir=${serverExecutableDir}`,
                 `--server-data-dir=${serverRootDir}`,
-                `--extensions-dir=${extensionsDir}`, // cli doesn't handle quotes properly so just escape spaces,
+                `--extensions-dir=${extensionsDir}`,
             ]
-
             const extensionHostDebugPort = debugMode ? reservedExtensionHostDebugPort : null
             const env = {
                 ...process.env,
-                ...(['stable', 'insiders'].includes(validOptions.vscodeVersion)
-                    ? { VSCODE_CLI_QUALITY: validOptions.vscodeVersion }
-                    : { VSCODE_CLI_COMMIT: validOptions.vscodeVersion }),
-                // This environment variable is read inside the patched server.main.js of VSCode server
-                EXTENSION_HOST_INSPECT_ENV: validOptions.waitForExtensionHostDebugger
-                    ? `--inspect-brk=${extensionHostDebugPort}`
-                    : `--inspect=${extensionHostDebugPort}`,
                 TESTING_DOTCOM_URL: mitmProxy.sourcegraph.dotcom.endpoint,
                 CODY_TESTING_BFG_DIR: path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.binaryTmpDir),
                 CODY_TESTING_SYMF_DIR: path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.binaryTmpDir),
@@ -162,23 +160,26 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
             const config = {
                 url: `http://127.0.0.1:${serverPort}/`,
                 token: connectionToken,
+                payload: extensionHostDebugPort
+                    ? [
+                          [
+                              `inspect-${
+                                  validOptions.waitForExtensionHostDebugger ? 'brk-' : ''
+                              }extensions`,
+                              `${extensionHostDebugPort}`,
+                          ],
+                      ]
+                    : [],
                 extensionHostDebugPort,
             }
-
-            const codeProcess = await stretchTimeout(
-                () =>
-                    waitForPatchedVSCodeServer({
-                        codeTunnelCliPath,
-                        args,
-                        env,
-                        url: config.url,
-                        serverExecutableDir,
-                    }),
-                {
-                    max: DOWNLOAD_GRACE_TIME,
-                    testInfo,
-                }
-            )
+            //@ts-ignore
+            const serverProcess = await waitForVSCodeServerV2({
+                extensionHostDebugPort,
+                versionedServerExecutableDir,
+                validOptions,
+                args,
+                env,
+            })
 
             polly.play()
 
@@ -198,8 +199,9 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
                 await page.goto('about:blank')
                 await page.waitForLoadState('domcontentloaded')
             }
-            if (codeProcess.pid) {
-                killSync(codeProcess.pid, 'SIGTERM', true)
+            if (serverProcess.pid) {
+                killChildrenSync(serverProcess.pid, 'SIGTERM')
+                killSync(serverProcess.pid, 'SIGTERM')
             }
         },
         { scope: 'test' },
@@ -237,132 +239,145 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
     ],
 })
 
-/**
- * Waits for server components to be downloaded, patched (so that we can control
- * the debug port) and that the server is ready to accept connections
- */
-async function waitForPatchedVSCodeServer(config: {
-    url: string
-    codeTunnelCliPath: string
-    args: string[]
-    env: Record<string, string>
-    serverExecutableDir: string
-    maxConnectionRetries?: number
-}) {
-    const releaseServerDownloadLock = await waitForLock(config.serverExecutableDir, {
-        delay: 100,
-        lockfilePath: path.join(config.serverExecutableDir, '.lock'),
+async function downloadVSCodeServer(
+    config: {
+        serverExecutableDir: string
+    } & Pick<TestContext, 'validOptions'>
+) {
+    const platform = os.platform()
+    const arch = os.arch()
+    let commitSha = config.validOptions.vscodeCommitSha ?? ''
+    const vscodeArtifactName = getVSCodeArtifactName(platform, arch)
+    if (!commitSha) {
+        const latestPath = path.join(config.serverExecutableDir, 'latest.json')
+        // try and load the latest file if it already exists
+        let latestContent: { lastChecked: string; hashes: string[] } | null = null
+        try {
+            const latestContentString = await fs.readFile(latestPath, 'utf-8')
+            latestContent = JSON.parse(latestContentString)
+        } catch (e) {
+            // ignore error, we'll fetch the latest content
+        }
+
+        const now = new Date()
+        if (
+            !latestContent ||
+            now.getTime() - new Date(latestContent.lastChecked).getTime() > 24 * 60 * 60 * 1000
+        ) {
+            // if not we need to download it
+            const hashes = await (
+                await fetch(
+                    `https://update.code.visualstudio.com/api/commits/stable/${vscodeArtifactName}`
+                )
+            ).json()
+            latestContent = { lastChecked: now.toISOString(), hashes }
+            await fs.writeFile(latestPath, JSON.stringify(latestContent)).catch(() => null)
+        }
+        commitSha = latestContent.hashes[0]
+    }
+
+    if (!/^[0-9a-f]{40}$/.test(commitSha)) {
+        throw new Error(`Invalid VSCode commit SHA: ${commitSha}`)
+    }
+
+    const versionedExecutableDir = path.join(config.serverExecutableDir, commitSha)
+
+    const releaseLock = await waitForLock(config.serverExecutableDir, {
+        lockfilePath: path.join(config.serverExecutableDir, `${commitSha}.lock`),
+        delay: 1000,
     })
     try {
-        while (true) {
-            const filesToPatch = glob.sync(
-                path.join(
-                    config.serverExecutableDir,
-                    'serve-web',
-                    '*',
-                    'out',
-                    'vs',
-                    'server',
-                    'node',
-                    'server.main.js'
-                )
-            )
-            // We patch the server.main.js file to accept a environment variable
-            // (EXTENSION_HOST_INSPECT_ENV) that allows us to control the debug port
-            // of specifically the extension host. There is currently no offical
-            // mechanism to do so in the serve-web command.
-            let requiresPatching = false
-            for (const file of filesToPatch) {
-                const contents = await fs.readFile(file, 'utf-8')
-                if (contents.includes('process.env.EXTENSION_HOST_INSPECT_ENV')) {
-                    //this file is assumed already patched
-                    continue
-                }
-                requiresPatching = true
-                // this is a bit tricky to understand, but essentially we find
-                // `C.execArgv.unshift("--dns-result-order=ipv4first")` which is the
-                // insertion point. The `C` here might change depending on the
-                // minifier so we capture this variable and then re-use it in our
-                // injected statement.
-                // process.env.EXTENSION_HOST_INSPECT_ENV ? C.execArgv.push(process.env.EXTENSION_HOST_INSPECT_ENV) : null;C.execArgv.unshift("--dns-result-order=ipv4first")
-                const insertionPoint =
-                    /(?<varname>[A-Z]+)\.execArgv\.unshift\("--dns-result-order=ipv4first"\)/.exec(
-                        contents
-                    )
-                if (!insertionPoint) {
-                    throw new Error(`Could not find insertion point for patching ${file}`)
-                }
-                const varname = insertionPoint?.groups?.varname
-                if (!varname) {
-                    throw new Error(
-                        `Could not find variable name for insertion point for patching ${file}`
-                    )
-                }
-                //we split at the insertion point
-                const newContent =
-                    contents.slice(0, insertionPoint.index) +
-                    `process.env.EXTENSION_HOST_INSPECT_ENV ? ${varname}.execArgv.push(process.env.EXTENSION_HOST_INSPECT_ENV) : null;` +
-                    contents.slice(insertionPoint.index)
-                await fs.writeFile(file, newContent, 'utf-8')
-            }
-            if (requiresPatching) {
-                // we retry even before starting the server. This is because if the patch changes we might need to re-patch already existing server downloads
-                continue
-            }
-            const codeProcess = spawn(config.codeTunnelCliPath, config.args, {
-                env: config.env,
-                stdio: ['inherit', 'ignore', 'inherit'],
-                detached: false,
-            })
+        const ok = await fs.readFile(path.join(versionedExecutableDir, 'ok'), 'utf-8').catch(() => null)
 
-            let connectionIssueTries = config.maxConnectionRetries ?? 5
-            while (true) {
-                try {
-                    const res = await fetch(config.url)
-                    if (res.status === 202) {
-                        requiresPatching = true
-                        // we are still downloading here
-                    } else if (res.status === 200 || res.status === 403) {
-                        // 403 simply means we haven't supplied the token
-                        // 200 probably means we didn't require a token
-                        // either way we are ready to accept connections
-                        break
-                    } else {
-                        console.error(`Unexpected status code ${res.status}`)
-                    }
-                } catch (err) {
-                    connectionIssueTries--
-                    if (connectionIssueTries <= 0) {
-                        throw err
-                    }
-                }
-                await setTimeout(1000)
-            }
-            if (requiresPatching) {
-                // We need to patch and restart the server so we kill this one and try again
-                if (codeProcess.pid) {
-                    killSync(codeProcess.pid, 'SIGTERM', true)
-                }
-            } else {
-                return codeProcess
-            }
+        if (!ok) {
+            await fs.rm(versionedExecutableDir, {
+                recursive: true,
+                force: true,
+                retryDelay: 1000,
+                maxRetries: 3,
+            })
+            console.log(`Downloading VSCode server for commit ${commitSha}`)
+            await fs.mkdir(versionedExecutableDir, { recursive: true })
+            const directoryName = `server-${vscodeArtifactName}-web`
+            const downloadUrl = `https://update.code.visualstudio.com/commit:${commitSha}/${directoryName}/stable`
+            await withTempDir(async tmpDir => {
+                //can be either zip or gzip
+                const archiveFile = path.join(tmpDir, 'archive')
+                await downloadFile(downloadUrl, archiveFile)
+                const unpackedPath = path.join(tmpDir, 'unzip')
+                await new Promise((ok, fail) =>
+                    szip.unpack(archiveFile, unpackedPath, err => {
+                        if (err) {
+                            fail(err)
+                        }
+                        ok(void 0)
+                    })
+                )
+                await fs.rename(
+                    path.join(unpackedPath, `vscode-${directoryName}`),
+                    versionedExecutableDir
+                )
+                await fs.writeFile(path.join(versionedExecutableDir, 'ok'), 'ok')
+            })
         }
     } finally {
-        releaseServerDownloadLock()
+        await releaseLock()
     }
+    if ((await fs.readFile(path.join(versionedExecutableDir, 'ok'), 'utf-8')) !== 'ok') {
+        throw new Error('VSCode server not found')
+    }
+    return versionedExecutableDir
+}
+
+async function waitForVSCodeServerV2(
+    config: {
+        versionedServerExecutableDir: string
+        args: string[]
+        env: Record<string, string>
+        extensionHostDebugPort: number | null
+    } & Pick<TestContext, 'validOptions'>
+) {
+    // const nodePath = path.join(versionedExecutableDir, isWindows() ? 'node.exe' : 'node')
+    const extendedArgs = ['out/server-main.js', ...config.args]
+    const serverProcess = spawn(isWindows() ? 'node.exe' : 'node', extendedArgs, {
+        env: config.env,
+        cwd: config.versionedServerExecutableDir,
+        stdio: ['inherit', 'pipe', 'inherit'],
+        detached: false,
+    })
+    const startPromise = new Promise<boolean>(ready => {
+        serverProcess.on('exit', () => {
+            ready(false)
+        })
+        serverProcess.stdout.addListener('data', (data: Buffer) => {
+            //wiat for "Extension host agent started"
+            const message = data.toString()
+            if (message.includes('Extension host agent started')) {
+                serverProcess.stdout.removeAllListeners('data')
+                ready(true)
+            }
+        })
+    })
+
+    if (!(await startPromise)) {
+        throw new Error('VSCode server not started')
+    }
+    serverProcess.stdout.removeAllListeners('data')
+    serverProcess.removeAllListeners('exit')
+    return serverProcess
 }
 
 async function installExtensions({
-    codeCliPath,
+    versionedServerExecutableDir,
     validOptions,
     extensionsDir,
 }: Pick<TestContext, 'validOptions'> & {
-    codeCliPath: string
+    versionedServerExecutableDir: string
     extensionsDir: string
     userDataDir: string
 }) {
     // We start by installing all extensions to a shared cache dir. This speeds up tests without any risk of flake.
-
+    const nodeExecutable = isWindows() ? 'node.exe' : 'node'
     const sharedExtensionsDir = path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.vscodeExtensionCacheDir)
     if (validOptions.vscodeExtensions.length) {
         await fs.mkdir(sharedExtensionsDir, { recursive: true })
@@ -372,13 +387,15 @@ async function installExtensions({
         })
         try {
             const args = [
+                'out/server-main.js',
                 `--extensions-dir=${sharedExtensionsDir}`,
                 ...validOptions.vscodeExtensions.map(extension => `--install-extension=${extension}`),
             ]
-            await pspawn(codeCliPath, args, {
+            await pspawn(nodeExecutable, args, {
                 env: {
                     ...process.env,
                 },
+                cwd: versionedServerExecutableDir,
                 stdio: ['inherit', 'ignore', 'inherit'],
             })
         } finally {
@@ -416,12 +433,17 @@ async function installExtensions({
     }
 
     // Finally by listing the extensions it generates a extensions.json file which ensures that when VSCode starts it doesn't trigger a reload.
-    await pspawn(codeCliPath, [`--extensions-dir=${extensionsDir}`, '--list-extensions'], {
-        env: {
-            ...process.env,
-        },
-        stdio: ['inherit', 'ignore', 'inherit'],
-    })
+    await pspawn(
+        nodeExecutable,
+        ['out/server-main.js', `--extensions-dir=${extensionsDir}`, '--list-extensions'],
+        {
+            env: {
+                ...process.env,
+            },
+            cwd: versionedServerExecutableDir,
+            stdio: ['inherit', 'ignore', 'inherit'],
+        }
+    )
 }
 
 async function readExtensionMetadata(
@@ -436,65 +458,6 @@ async function readExtensionMetadata(
         )
     }
     return { publisher, name, version }
-}
-
-/**
- * This ensures only a single process is actually downloading VSCode
- */
-async function downloadOrWaitForVSCode({
-    executableDir,
-    validOptions,
-}: Pick<TestContext, 'validOptions'> & { executableDir: string }) {
-    const lockfilePath = path.join(executableDir, '.lock')
-    const releaseLock = await waitForLock(executableDir, { lockfilePath, delay: 500 })
-
-    try {
-        const electronPath = await downloadAndUnzipVSCode({
-            cachePath: executableDir,
-            version: 'stable',
-            reporter: new CustomConsoleReporter(process.stdout.isTTY),
-        })
-        const installPath = path.join(
-            executableDir,
-            path.relative(executableDir, electronPath).split(path.sep)[0]
-        )
-        const [cliPath] = resolveCliArgsFromVSCodeExecutablePath(electronPath)
-        //replce code with code-tunnel(.exe) either if the last binary or if code.exe
-        const tunnelPath = cliPath
-            .replace(/code$/, 'code-tunnel')
-            .replace(/code\.(?:exe|cmd)$/, 'code-tunnel.exe')
-
-        // we need to make sure vscode has global configuration set
-        const res = await pspawn(tunnelPath, ['version', 'show'], {
-            stdio: ['inherit', 'pipe', 'inherit'],
-        })
-        if (res.code !== 0 || res.stdout.includes('No existing installation found')) {
-            if (!validOptions.allowGlobalVSCodeModification) {
-                throw new Error('Global VSCode path modification is not allowed')
-            }
-            await pspawn(tunnelPath, ['version', 'use', 'stable', '--install-dir', installPath], {
-                stdio: ['inherit', 'ignore', 'inherit'],
-            })
-        } else if (res.code !== 0) {
-            throw new Error(JSON.stringify(res))
-        }
-        return [cliPath, tunnelPath]
-        //If this fails I assume we haven't configured VSCode globally. Since
-        //getting portable mode to work is annoying we just set this
-        //installation as the global one.
-    } finally {
-        releaseLock()
-    }
-}
-
-// A custom version of the VS Code download reporter that silences matching installation
-// notifications as these otherwise are emitted on every test run
-class CustomConsoleReporter extends ConsoleReporter {
-    public report(report: ProgressReport): void {
-        if (report.stage !== ProgressReportStage.FoundMatchingInstall) {
-            super.report(report)
-        }
-    }
 }
 
 async function getFilesRecursive(dir: string): Promise<Array<Dirent>> {
@@ -519,4 +482,38 @@ async function getFilesRecursive(dir: string): Promise<Array<Dirent>> {
         }
     }
     return files
+}
+
+function getVSCodeArtifactName(platform: NodeJS.Platform, arch: string): string {
+    //copied from https://github.com/microsoft/vscode/blob/main/cli/src/update_service.rs#L239
+    switch (`${platform}/${arch}`) {
+        case 'linux/x64':
+            return 'linux-x64'
+        case 'linux/arm64':
+            return 'linux-arm64'
+        case 'linux/arm':
+            return 'linux-armhf'
+        case 'darwin/x64':
+            return 'darwin'
+        case 'darwin/arm64':
+            return 'darwin-arm64'
+        case 'win32/x64':
+            return 'win32-x64'
+        case 'win32/ia32':
+            return 'win32'
+        case 'win32/arm64':
+            return 'win32-arm64'
+        case 'linux/x64/legacy':
+            return 'linux-legacy-x64'
+        case 'linux/arm64/legacy':
+            return 'linux-legacy-arm64'
+        case 'linux/arm/legacy':
+            return 'linux-legacy-armhf'
+        case 'linux/alpine/x64':
+            return 'linux-alpine'
+        case 'linux/alpine/arm64':
+            return 'alpine-arm64'
+        default:
+            throw new Error(`Unsupported platform: ${platform}/${arch}`)
+    }
 }

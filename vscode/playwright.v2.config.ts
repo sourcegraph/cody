@@ -39,10 +39,10 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
         symlinkExtensions: ['.'],
         globalTmpDir: path.join(testRootDir, 'runs', process.env.RUN_ID),
         vscodeVersion: 'stable',
-        vscodeTmpDir: path.join(testRootDir, 'global', 'vscode'),
-        vscodeExtensionCacheDir: path.join(testRootDir, 'global', 'vscode-extensions'),
-        vscodeServerTmpDir: path.join(testRootDir, 'global', 'vscode-server'),
-        binaryTmpDir: path.join(testRootDir, 'global', 'bin'),
+        vscodeTmpDir: path.join(testRootDir, 'global/vscode'),
+        vscodeExtensionCacheDir: path.join(testRootDir, 'global/vscode-extension'),
+        vscodeServerTmpDir: path.join(testRootDir, 'global/vscode-server'),
+        binaryTmpDir: path.join(testRootDir, 'global/bin'),
         waitForExtensionHostDebugger: false,
         recordIfMissing:
             typeof process.env.CODY_RECORD_IF_MISSING === 'string'
