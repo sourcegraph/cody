@@ -22,6 +22,7 @@ export interface TestContext {
         url: string
         token: string
         extensionHostDebugPort: number | null
+        payload: string[][]
     }
     serverRootDir: Directory
     validOptions: TestOptions & WorkerOptions
