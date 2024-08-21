@@ -75,9 +75,35 @@ export function computeAppliedDecorations(task: FixupTask): Decorations | undefi
     return decorations
 }
 
-function getRemainingLinesFromRange(range: vscode.Range, index: number) {
+/**
+ * Given a VS Code range, trims empty lines from the start and end of the range.
+ * These ranges are useful for diffing, but not for decorating as we will always
+ * decorate an entire line.
+ */
+function trimEmptyLinesFromRange(range: vscode.Range, document: vscode.TextDocument): vscode.Range {
+    let startLineIndex = range.start.line
+    let endLineIndex = range.end.line
+
+    const startLine = document.lineAt(startLineIndex)
+    if (range.start.character === startLine.range.end.character || startLine.text.length === 0) {
+        startLineIndex++
+    }
+
+    const endLine = document.lineAt(startLineIndex)
+    if (range.end.character === 0 || endLine.text.length === 0) {
+        endLineIndex--
+    }
+
+    return new vscode.Range(
+        new vscode.Position(startLineIndex, 0),
+        new vscode.Position(endLineIndex, document.lineAt(endLineIndex).text.length)
+    )
+}
+
+function getRemainingLinesFromRange(range: vscode.Range, index: number, document: vscode.TextDocument) {
+    const trimmedRange = trimEmptyLinesFromRange(range, document)
     const result: vscode.Range[] = []
-    const totalLines = range.end.line - range.start.line
+    const totalLines = trimmedRange.end.line - trimmedRange.start.line
     for (let i = index; i <= totalLines; i++) {
         const line = new vscode.Position(range.start.line + i, 0)
         result.push(new vscode.Range(line, line))
@@ -110,7 +136,9 @@ export function computeOngoingDecorations(
     const currentLineIndex = currentLine.range.start.line - task.selectionRange.start.line
     const unvisitedLines =
         prevComputed?.unvisitedLines ||
-        getRemainingLinesFromRange(task.selectionRange, currentLineIndex + 1).map(range => ({ range }))
+        getRemainingLinesFromRange(task.selectionRange, currentLineIndex + 1, task.document).map(
+            range => ({ range })
+        )
     const decorations: Decorations = {
         linesAdded: [],
         linesRemoved: [],
@@ -149,7 +177,8 @@ export function computeOngoingDecorations(
         // We know that preceding lines are visited, but following lines are not, so highlight those too
         decorations.unvisitedLines = getRemainingLinesFromRange(
             task.selectionRange,
-            foundLine + currentLineIndex + 1
+            foundLine + currentLineIndex + 1,
+            task.document
         ).map(range => ({
             range,
         }))

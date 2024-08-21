@@ -77,7 +77,8 @@ describe('Edit', () => {
           	messages,
           	setChatID,
           	isLoading,
-          }: ChatColumnProps) {	useEffect(() => {
+          }: ChatColumnProps) {
+          	useEffect(() => {
           		if (!isLoading) {
           			setChatID(messages[0].chatID);
           		}
