@@ -1,7 +1,7 @@
 import { type CodyCommand, CustomCommandType, type Prompt } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import { PlusIcon } from 'lucide-react'
-import { type ComponentProps, type FunctionComponent, useCallback, useEffect, useState } from 'react'
+import { type ComponentProps, type FunctionComponent, useCallback, useState } from 'react'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { useConfig } from '../../utils/useConfig'
 import { useDebounce } from '../../utils/useDebounce'
@@ -63,33 +63,6 @@ export const PromptList: React.FunctionComponent<{
     const [query, setQuery] = useState('')
     const debouncedQuery = useDebounce(query, 250)
     const { value: result, error } = usePromptsQuery(debouncedQuery)
-
-    // Query and error telemetry.
-    useEffect(() => {
-        if (result) {
-            telemetryRecorder.recordEvent('cody.promptList', 'query', {
-                metadata: {
-                    queryLength: debouncedQuery.length,
-                    resultCount:
-                        (result.prompts.type === 'results' ? result.prompts.results.length : 0) +
-                        (result.commands?.length ?? 0),
-                    resultCountPromptsOnly:
-                        result.prompts.type === 'results' ? result.prompts.results.length : 0,
-                    resultCountCommandsOnly: result.commands?.length ?? 0,
-                    supportsPrompts: result.prompts.type !== 'unsupported' ? 1 : 0,
-                    hasUsePromptsQueryError: error ? 1 : 0,
-                    hasPromptsResultError: result.prompts.type === 'error' ? 1 : 0,
-                    ...telemetryPublicMetadata,
-                },
-                privateMetadata: {
-                    query: debouncedQuery,
-                    usePromptsQueryErrorMessage: error?.message,
-                    promptsResultErrorMessage:
-                        result.prompts.type === 'error' ? result.prompts.error : undefined,
-                },
-            })
-        }
-    }, [result, error, debouncedQuery, telemetryRecorder.recordEvent, telemetryPublicMetadata])
 
     const onSelect = useCallback(
         (rowValue: string): void => {
