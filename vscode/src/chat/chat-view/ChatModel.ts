@@ -38,6 +38,18 @@ export class ChatModel {
         return this.messages.length === 0
     }
 
+    public setLastMessageIntent(intent: ChatMessage['intent']): void {
+        const lastMessage = this.messages.at(-1)
+        if (!lastMessage) {
+            throw new Error('no last message')
+        }
+        if (lastMessage.speaker !== 'human') {
+            throw new Error('Cannot set intent for bot message')
+        }
+
+        lastMessage.intent = intent
+    }
+
     public setLastMessageContext(
         newContextUsed: ContextItem[],
         contextAlternatives?: RankedContext[]

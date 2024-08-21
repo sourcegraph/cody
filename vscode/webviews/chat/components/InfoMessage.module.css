@@ -1,0 +1,6 @@
+.info-message {
+    --mention-color-opacity: 70%;
+
+    border: 1px solid color-mix(in lch, var(--vscode-inputOption-activeBackground) calc(1.2* var(--mention-color-opacity)), transparent);
+    background-color: color-mix(in lch, var(--vscode-inputOption-activeBackground) var(--mention-color-opacity), transparent);
+}

@@ -220,6 +220,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     guardrails={guardrails}
                     userHistory={userHistory ?? []}
                     smartApplyEnabled={config.config.smartApply}
+                    experimentalOneBoxEnabled={config.config.experimentalOneBox}
                 />
             )}
         </ComposedWrappers>

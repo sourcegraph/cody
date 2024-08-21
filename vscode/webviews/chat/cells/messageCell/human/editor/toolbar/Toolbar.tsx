@@ -1,4 +1,5 @@
 import type { Model } from '@sourcegraph/cody-shared'
+import type { ChatMessage, Model } from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import { type FunctionComponent, useCallback, useMemo } from 'react'
@@ -20,7 +21,7 @@ export const Toolbar: FunctionComponent<{
 
     onMentionClick?: () => void
 
-    onSubmitClick: () => void
+    onSubmitClick: (intent?: ChatMessage['intent']) => void
     submitState: SubmitButtonState
 
     /** Handler for clicks that are in the "gap" (dead space), not any toolbar items. */
@@ -31,6 +32,7 @@ export const Toolbar: FunctionComponent<{
 
     hidden?: boolean
     className?: string
+    experimentalOneBoxEnabled?: boolean
 }> = ({
     userInfo,
     isEditorFocused,
@@ -42,6 +44,7 @@ export const Toolbar: FunctionComponent<{
     appendTextToEditor,
     hidden,
     className,
+    experimentalOneBoxEnabled,
 }) => {
     /**
      * If the user clicks in a gap or on the toolbar outside of any of its buttons, report back to
@@ -91,11 +94,12 @@ export const Toolbar: FunctionComponent<{
                     className="tw-mr-1"
                 />
             </div>
-            <div className="tw-flex tw-justify-end tw-flex-1 tw-text-right">
+            <div className="tw-flex-1 tw-flex tw-justify-end">
                 <SubmitButton
                     onClick={onSubmitClick}
                     isEditorFocused={isEditorFocused}
                     state={submitState}
+                    experimentalOneBoxEnabled={experimentalOneBoxEnabled}
                 />
             </div>
         </menu>

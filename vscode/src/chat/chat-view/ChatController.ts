@@ -17,6 +17,7 @@ import {
     DOTCOM_URL,
     type DefaultChatCommands,
     type EventSource,
+    FeatureFlag,
     type Guardrails,
     type Message,
     ModelUsage,
@@ -288,27 +289,29 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.setWebviewView(View.Chat)
                 break
             case 'submit': {
-                await this.handleUserMessageSubmission(
-                    uuid.v4(),
-                    PromptString.unsafe_fromUserQuery(message.text),
-                    message.submitType,
-                    message.contextItems ?? [],
-                    message.editorState as SerializedPromptEditorState,
-                    message.addEnhancedContext ?? false,
-                    this.startNewSubmitOrEditOperation(),
-                    'chat'
-                )
+                await this.handleUserMessageSubmission({
+                    requestID: uuid.v4(),
+                    inputText: PromptString.unsafe_fromUserQuery(message.text),
+                    submitType: message.submitType,
+                    mentions: message.contextItems ?? [],
+                    editorState: message.editorState as SerializedPromptEditorState,
+                    legacyAddEnhancedContext: message.addEnhancedContext ?? false,
+                    signal: this.startNewSubmitOrEditOperation(),
+                    source: 'chat',
+                    intent: message.intent,
+                })
                 break
             }
             case 'edit': {
-                await this.handleEdit(
-                    uuid.v4(),
-                    PromptString.unsafe_fromUserQuery(message.text),
-                    message.index ?? undefined,
-                    message.contextItems ?? [],
-                    message.editorState as SerializedPromptEditorState,
-                    message.addEnhancedContext || false
-                )
+                await this.handleEdit({
+                    requestID: uuid.v4(),
+                    text: PromptString.unsafe_fromUserQuery(message.text),
+                    index: message.index ?? undefined,
+                    contextFiles: message.contextItems ?? [],
+                    editorState: message.editorState as SerializedPromptEditorState,
+                    addEnhancedContext: message.addEnhancedContext || false,
+                    intent: message.intent,
+                })
                 break
             }
             case 'abort':
@@ -526,11 +529,26 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return this.extensionClient.capabilities?.edit !== 'none'
     }
 
+    private async isOneBoxEnabled(): Promise<boolean> {
+        /* TODO(naman): uncomment this
+        if (this.authProvider.getAuthStatus().isDotCom) {
+            // Only supported on Sourcegraph enterprise instances right now.
+            return false
+        }
+        */
+
+        return (
+            vscode.workspace.getConfiguration().get<boolean>('cody.internal.onebox') ||
+            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalOneBox))
+        )
+    }
+
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const config = getConfigWithEndpoint()
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
+        const experimentalOneBox = await this.isOneBoxEnabled()
 
         return {
             agentIDE: config.agentIDE ?? CodyIDE.VSCode,
@@ -541,6 +559,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             serverEndpoint: config.serverEndpoint,
             experimentalNoodle: config.experimentalNoodle,
             smartApply: this.isSmartApplyEnabled(),
+            experimentalOneBox,
             webviewType,
             multipleWebviewsEnabled: !sidebarViewOnly,
             internalDebugContext: config.internalDebugContext,
@@ -618,17 +637,29 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     /**
      * Handles user input text for both new and edit submissions
      */
-    public async handleUserMessageSubmission(
-        requestID: string,
-        inputText: PromptString,
-        submitType: ChatSubmitType,
-        mentions: ContextItem[],
-        editorState: SerializedPromptEditorState | null,
-        legacyAddEnhancedContext: boolean,
-        signal: AbortSignal,
-        source?: EventSource,
+    public async handleUserMessageSubmission({
+        requestID,
+        inputText,
+        submitType,
+        mentions,
+        editorState,
+        legacyAddEnhancedContext,
+        signal,
+        source,
+        command,
+        intent: detectedIntent,
+    }: {
+        requestID: string
+        inputText: PromptString
+        submitType: ChatSubmitType
+        mentions: ContextItem[]
+        editorState: SerializedPromptEditorState | null
+        legacyAddEnhancedContext: boolean
+        signal: AbortSignal
+        source?: EventSource
         command?: DefaultChatCommands
-    ): Promise<void> {
+        intent?: ChatMessage['intent']
+    }): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             span.setAttribute('sampled', true)
             const authStatus = authProvider.instance!.statusAuthed
@@ -662,12 +693,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     signal.throwIfAborted()
                 }
 
-                this.chatModel.addHumanMessage({ text: inputText, editorState })
+                this.chatModel.addHumanMessage({ text: inputText, editorState, intent: detectedIntent })
                 await this.saveSession()
                 signal.throwIfAborted()
 
                 this.postEmptyMessageInProgress()
-                this.contextAPIClient?.detectChatIntent(requestID, inputText.toString())
+
+                const oneBoxEnabled = this.isOneBoxEnabled()
 
                 // All mentions we receive are either source=initial or source=user. If the caller
                 // forgot to set the source, assume it's from the user.
@@ -695,6 +727,31 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
                 signal.throwIfAborted()
                 const corpusContext = contextAlternatives[0].items
+
+                const mentionsRepository = mentions.find(contextItem =>
+                    ['repository', 'tree'].includes(contextItem.type)
+                )
+
+                if ((await oneBoxEnabled) && mentionsRepository) {
+                    const intent = detectedIntent
+                        ? detectedIntent
+                        : await this.detectChatIntent({ requestID, text: inputText.toString() })
+                              .then(async intent => {
+                                  signal.throwIfAborted()
+                                  this.chatModel.setLastMessageIntent(intent)
+                                  this.postViewTranscript()
+                                  return intent
+                              })
+                              .catch(() => undefined)
+                    signal.throwIfAborted()
+                    if (intent === 'search') {
+                        return await this.handleSearchIntent({
+                            context: corpusContext,
+                            signal,
+                            contextAlternatives,
+                        })
+                    }
+                }
 
                 const explicitMentions = corpusContext.filter(c => c.source === ContextItemSource.User)
                 const implicitMentions = corpusContext.filter(c => c.source !== ContextItemSource.User)
@@ -741,6 +798,43 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }
             })
         })
+    }
+
+    private async detectChatIntent({
+        requestID,
+        text,
+    }: { requestID?: string; text: string }): Promise<ChatMessage['intent'] | undefined> {
+        const response = await this.contextAPIClient
+            ?.detectChatIntent(requestID || '', text)
+            .catch(() => null)
+
+        if (response && !isError(response)) {
+            return response.intent === 'search' ? 'search' : 'chat'
+        }
+
+        return
+    }
+
+    private async handleSearchIntent({
+        context,
+        signal,
+        contextAlternatives,
+    }: {
+        context: ContextItem[]
+        signal: AbortSignal
+        contextAlternatives: RankedContext[]
+    }): Promise<void> {
+        signal.throwIfAborted()
+
+        this.chatModel.setLastMessageContext(context, contextAlternatives)
+        this.chatModel.addBotMessage({
+            text: PromptString.unsafe_fromLLMResponse(
+                'You have set `"cody.internal.onebox": true` in your vscode settings.'
+            ),
+        })
+
+        void this.saveSession()
+        this.postViewTranscript()
     }
 
     private async sendChatExecutedTelemetry(
@@ -905,14 +999,23 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      * before submitting the replacement text as a new question.
      * When no index is provided, default to the last human message.
      */
-    private async handleEdit(
-        requestID: string,
-        text: PromptString,
-        index: number | undefined,
-        contextFiles: ContextItem[],
-        editorState: SerializedPromptEditorState | null,
-        addEnhancedContext = true
-    ): Promise<void> {
+    private async handleEdit({
+        requestID,
+        text,
+        index,
+        contextFiles,
+        editorState,
+        addEnhancedContext = true,
+        intent,
+    }: {
+        requestID: string
+        text: PromptString
+        index: number | undefined
+        contextFiles: ContextItem[]
+        editorState: SerializedPromptEditorState | null
+        addEnhancedContext?: boolean
+        intent?: ChatMessage['intent']
+    }): Promise<void> {
         const abortSignal = this.startNewSubmitOrEditOperation()
 
         telemetryRecorder.recordEvent('cody.editChatButton', 'clicked', {
@@ -928,16 +1031,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 return
             }
             this.chatModel.removeMessagesFromIndex(humanMessage, 'human')
-            return await this.handleUserMessageSubmission(
+            return await this.handleUserMessageSubmission({
                 requestID,
-                text,
-                'user',
-                contextFiles,
+                inputText: text,
+                submitType: 'user',
+                mentions: contextFiles,
                 editorState,
-                addEnhancedContext,
-                abortSignal,
-                'chat'
-            )
+                legacyAddEnhancedContext: addEnhancedContext,
+                signal: abortSignal,
+                source: 'chat',
+                intent,
+            })
         } catch {
             this.postError(new Error('Failed to edit prompt'), 'transcript')
         }
@@ -1505,6 +1609,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             modelsService.instance!.setSelectedModel(ModelUsage.Chat, model)
                         )
                     },
+                    detectIntent: text =>
+                        promiseFactoryToObservable<ChatMessage['intent']>(signal =>
+                            this.detectChatIntent({ text })
+                        ),
                 }
             )
         )

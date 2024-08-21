@@ -1,4 +1,5 @@
 import {
+    type ChatMessage,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
     type Model,
     type SerializedPromptEditorState,
@@ -51,7 +52,7 @@ export const HumanMessageEditor: FunctionComponent<{
     disabled?: boolean
 
     onChange?: (editorState: SerializedPromptEditorValue) => void
-    onSubmit: (editorValue: SerializedPromptEditorValue) => void
+    onSubmit: (editorValue: SerializedPromptEditorValue, intent?: ChatMessage['intent']) => void
     onStop: () => void
 
     isFirstInteraction?: boolean
@@ -63,6 +64,8 @@ export const HumanMessageEditor: FunctionComponent<{
 
     /** For use in storybooks only. */
     __storybook__focus?: boolean
+
+    experimentalOneBoxEnabled?: boolean
 }> = ({
     userInfo,
     initialEditorState,
@@ -80,6 +83,7 @@ export const HumanMessageEditor: FunctionComponent<{
     className,
     editorRef: parentEditorRef,
     __storybook__focus,
+    experimentalOneBoxEnabled,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -106,45 +110,63 @@ export const HumanMessageEditor: FunctionComponent<{
           ? 'emptyEditorValue'
           : 'submittable'
 
-    const onSubmitClick = useCallback(() => {
-        if (submitState === 'emptyEditorValue') {
-            return
-        }
+    const onSubmitClick = useCallback(
+        (intent?: ChatMessage['intent']) => {
+            if (submitState === 'emptyEditorValue') {
+                return
+            }
 
-        if (submitState === 'waitingResponseComplete') {
-            onStop()
-            return
-        }
+            if (submitState === 'waitingResponseComplete') {
+                onStop()
+                return
+            }
 
-        if (!editorRef.current) {
-            throw new Error('No editorRef')
-        }
+            if (!editorRef.current) {
+                throw new Error('No editorRef')
+            }
 
-        const value = editorRef.current.getSerializedValue()
-        parentOnSubmit(value)
+            const value = editorRef.current.getSerializedValue()
+            parentOnSubmit(value, intent)
 
-        telemetryRecorder.recordEvent('cody.humanMessageEditor', 'submit', {
-            metadata: {
-                isFirstMessage: isFirstMessage ? 1 : 0,
-                isEdit: isSent ? 1 : 0,
-                messageLength: value.text.length,
-                contextItems: value.contextItems.length,
-            },
-            billingMetadata: {
-                product: 'cody',
-                category: 'billable',
-            },
-        })
-    }, [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent])
+            telemetryRecorder.recordEvent('cody.humanMessageEditor', 'submit', {
+                metadata: {
+                    isFirstMessage: isFirstMessage ? 1 : 0,
+                    isEdit: isSent ? 1 : 0,
+                    messageLength: value.text.length,
+                    contextItems: value.contextItems.length,
+                    intent: [undefined, 'chat', 'search'].findIndex(i => i === intent),
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
+        },
+        [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent]
+    )
 
     const onEditorEnterKey = useCallback(
         (event: KeyboardEvent | null): void => {
             // Submit input on Enter press (without shift) when input is not empty.
-            if (event && !event.shiftKey && !event.isComposing && !isEmptyEditorValue) {
-                event.preventDefault()
-                onSubmitClick()
+            if (!event || event.isComposing || isEmptyEditorValue || event.shiftKey) {
                 return
             }
+
+            event.preventDefault()
+
+            // Submit search intent query when CMD + Options + Enter is pressed.
+            if ((event.metaKey || event.ctrlKey) && event.altKey) {
+                onSubmitClick('search')
+                return
+            }
+
+            // Submit chat intent query when CMD + Enter is pressed.
+            if (event.metaKey || event.ctrlKey) {
+                onSubmitClick('chat')
+                return
+            }
+
+            onSubmitClick()
         },
         [isEmptyEditorValue, onSubmitClick]
     )
@@ -345,6 +367,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     appendTextToEditor={appendTextToEditor}
                     hidden={!focused && isSent}
                     className={styles.toolbar}
+                    experimentalOneBoxEnabled={experimentalOneBoxEnabled}
                 />
             )}
         </div>

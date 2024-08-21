@@ -30,11 +30,8 @@ function notNull<T>(value: T | null | undefined): value is T {
 export class ContextAPIClient {
     constructor(private readonly apiClient: SourcegraphGraphQLAPIClient) {}
 
-    public async detectChatIntent(
-        interactionID: string,
-        query: string
-    ): Promise<ChatIntentResult | Error | undefined> {
-        if (!(await this.isServerSideContextAPIEnabled())) {
+    public async detectChatIntent(interactionID: string, query: string) {
+        if (!(await this.isIntentDetectionAPIEnabled())) {
             return
         }
         return this.apiClient.chatIntent(interactionID, query)
@@ -64,5 +61,13 @@ export class ContextAPIClient {
             return true
         }
         return await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyServerSideContextAPI)
+    }
+
+    private async isIntentDetectionAPIEnabled(): Promise<boolean> {
+        if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.intentDetectionAPI')) {
+            return true
+        }
+
+        return await this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyIntentDetectionAPI)
     }
 }

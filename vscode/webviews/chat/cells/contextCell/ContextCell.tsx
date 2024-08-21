@@ -31,6 +31,7 @@ export const ContextCell: FunctionComponent<{
     model?: Model['id']
     isForFirstMessage: boolean
     className?: string
+    defaultOpen?: boolean
 
     /** For use in storybooks only. */
     __storybook__initialOpen?: boolean
@@ -41,6 +42,7 @@ export const ContextCell: FunctionComponent<{
         model,
         isForFirstMessage,
         className,
+        defaultOpen,
         __storybook__initialOpen,
     }) => {
         const [selectedAlternative, setSelectedAlternative] = useState<number | undefined>(undefined)
@@ -107,7 +109,7 @@ export const ContextCell: FunctionComponent<{
             <Accordion
                 type="single"
                 collapsible
-                defaultValue={(__storybook__initialOpen && 'item-1') || undefined}
+                defaultValue={((__storybook__initialOpen || defaultOpen) && 'item-1') || undefined}
                 asChild={true}
             >
                 <AccordionItem value="item-1" asChild>
