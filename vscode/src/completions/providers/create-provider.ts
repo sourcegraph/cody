@@ -92,112 +92,6 @@ export async function createProviderConfigFromVSCodeConfig(
     }
 }
 
-export async function createProviderConfig(
-    config: ConfigurationWithAccessToken,
-    client: CodeCompletionsClient,
-    authStatus: AuthStatus
-): Promise<ProviderConfig | null> {
-    /**
-     * Look for the autocomplete provider in VSCode settings and return matching provider config.
-     */
-
-    const providerAndModelFromVSCodeConfig = await resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
-        config.autocompleteAdvancedProvider,
-        authStatus.isDotCom
-    )
-    if (providerAndModelFromVSCodeConfig) {
-        const { provider, model } = providerAndModelFromVSCodeConfig
-        return createProviderConfigFromVSCodeConfig(client, authStatus, model, provider, config)
-    }
-    const info = getAutocompleteModelInfo(authStatus)
-    if (!info) {
-        /**
-         * If autocomplete provider is not defined neither in VSCode nor in Sourcegraph instance site config,
-         * use the default provider config ("anthropic").
-         */
-        return createAnthropicProviderConfig({ client })
-    }
-    if (info instanceof Error) {
-        logError('createProviderConfig', info.message)
-        return null
-    }
-    /**
-     * If autocomplete provider is not defined in the VSCode settings,
-     * check the completions provider in the connected Sourcegraph instance site config
-     * and return the matching provider config.
-     */
-    const { provider, modelId, model } = info
-    switch (provider) {
-        case 'openai':
-        case 'azure-openai':
-            return createUnstableOpenAIProviderConfig({
-                client,
-                // Model name for azure openai provider is a deployment name. It shouldn't appear in logs.
-                model: provider === 'azure-openai' && modelId ? '' : modelId,
-            })
-
-        case 'fireworks': {
-            const { anonymousUserID } = await localStorage.anonymousUserID()
-            return createFireworksProviderConfig({
-                client,
-                timeouts: config.autocompleteTimeouts,
-                model: modelId ?? null,
-                authStatus,
-                config,
-                anonymousUserID,
-            })
-        }
-        case 'experimental-openaicompatible':
-            // TODO(slimsag): self-hosted-models: deprecate and remove this once customers are upgraded
-            // to non-experimental version
-            return createExperimentalOpenAICompatibleProviderConfig({
-                client,
-                timeouts: config.autocompleteTimeouts,
-                model: modelId ?? null,
-                authStatus,
-                config,
-            })
-        case 'openaicompatible':
-            if (model) {
-                return createOpenAICompatibleProviderConfig({
-                    client,
-                    timeouts: config.autocompleteTimeouts,
-                    model: model,
-                    authStatus,
-                    config,
-                })
-            }
-            logError(
-                'createProviderConfig',
-                'Model definition is missing for openaicompatible provider.',
-                modelId
-            )
-            return null
-        case 'aws-bedrock':
-        case 'anthropic':
-            return createAnthropicProviderConfig({
-                client,
-                // Only pass through the upstream-defined model if we're using Cody Gateway
-                model:
-                    authStatus.configOverwrites?.provider === 'sourcegraph'
-                        ? authStatus.configOverwrites.completionModel
-                        : undefined,
-            })
-        case 'google':
-            if (authStatus.configOverwrites?.completionModel?.includes('claude')) {
-                return createAnthropicProviderConfig({
-                    client, // Model name for google provider is a deployment name. It shouldn't appear in logs.
-                    model: undefined,
-                })
-            }
-            // Gemini models
-            return createGeminiProviderConfig({ client, model: modelId })
-        default:
-            logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
-            return null
-    }
-}
-
 async function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<
     typeof resolveDefaultModelFromVSCodeConfigOrFeatureFlags
 > {
@@ -307,13 +201,15 @@ interface AutocompleteModelInfo {
 
 function getAutocompleteModelInfo(authStatus: AuthStatus): AutocompleteModelInfo | Error | undefined {
     const model = modelsService.getDefaultModel(ModelUsage.Autocomplete)
+
     if (model) {
         let provider = model.provider
         if (model.clientSideConfig?.openAICompatible) {
             provider = 'openaicompatible'
         }
-        return { provider, modelId: model.model, model }
+        return { provider, modelId: model.id, model }
     }
+
     if (authStatus.configOverwrites?.provider) {
         return parseProviderAndModel({
             provider: authStatus.configOverwrites.provider,
@@ -362,4 +258,110 @@ function parseProviderAndModel({
             : `Model missing but delimiter ${delimiter} expected`) +
             `for '${provider}' completions provider.`
     )
+}
+
+export async function createProviderConfig(
+    config: ConfigurationWithAccessToken,
+    client: CodeCompletionsClient,
+    authStatus: AuthStatus
+): Promise<ProviderConfig | null> {
+    /**
+     * Look for the autocomplete provider in VSCode settings and return matching provider config.
+     */
+
+    const providerAndModelFromVSCodeConfig = await resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
+        config.autocompleteAdvancedProvider,
+        authStatus.isDotCom
+    )
+    if (providerAndModelFromVSCodeConfig) {
+        const { provider, model } = providerAndModelFromVSCodeConfig
+        return createProviderConfigFromVSCodeConfig(client, authStatus, model, provider, config)
+    }
+    const info = getAutocompleteModelInfo(authStatus)
+    if (!info) {
+        /**
+         * If autocomplete provider is not defined neither in VSCode nor in Sourcegraph instance site config,
+         * use the default provider config ("anthropic").
+         */
+        return createAnthropicProviderConfig({ client })
+    }
+    if (info instanceof Error) {
+        logError('createProviderConfig', info.message)
+        return null
+    }
+    /**
+     * If autocomplete provider is not defined in the VSCode settings,
+     * check the completions provider in the connected Sourcegraph instance site config
+     * and return the matching provider config.
+     */
+    const { provider, modelId, model } = info
+    switch (provider) {
+        case 'openai':
+        case 'azure-openai':
+            return createUnstableOpenAIProviderConfig({
+                client,
+                // Model name for azure openai provider is a deployment name. It shouldn't appear in logs.
+                model: provider === 'azure-openai' && modelId ? '' : modelId,
+            })
+
+        case 'fireworks': {
+            const { anonymousUserID } = await localStorage.anonymousUserID()
+            return createFireworksProviderConfig({
+                client,
+                timeouts: config.autocompleteTimeouts,
+                model: modelId ?? null,
+                authStatus,
+                config,
+                anonymousUserID,
+            })
+        }
+        case 'experimental-openaicompatible':
+            // TODO(slimsag): self-hosted-models: deprecate and remove this once customers are upgraded
+            // to non-experimental version
+            return createExperimentalOpenAICompatibleProviderConfig({
+                client,
+                timeouts: config.autocompleteTimeouts,
+                model: modelId ?? null,
+                authStatus,
+                config,
+            })
+        case 'openaicompatible':
+            if (model) {
+                return createOpenAICompatibleProviderConfig({
+                    client,
+                    timeouts: config.autocompleteTimeouts,
+                    model: model,
+                    authStatus,
+                    config,
+                })
+            }
+            logError(
+                'createProviderConfig',
+                'Model definition is missing for openaicompatible provider.',
+                modelId
+            )
+            return null
+        case 'aws-bedrock':
+        case 'anthropic':
+            return createAnthropicProviderConfig({
+                client,
+                // Only pass through the upstream-defined model if we're using Cody Gateway
+                model:
+                    authStatus.configOverwrites?.provider === 'sourcegraph'
+                        ? authStatus.configOverwrites.completionModel
+                        : undefined,
+            })
+        case 'google':
+            if (authStatus.configOverwrites?.completionModel?.includes('claude')) {
+                return createAnthropicProviderConfig({
+                    client, // Model name for google provider is a deployment name. It shouldn't appear in logs.
+                    model: undefined,
+                })
+            }
+            // Gemini models
+            return createGeminiProviderConfig({ client, model: modelId })
+        default:
+            logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
+            return null
+    }
 }

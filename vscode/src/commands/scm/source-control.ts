@@ -146,7 +146,7 @@ export class CodySourceControl implements vscode.Disposable {
                 this.statusUpdate()
             })
 
-            const { model, contextWindow } = this.model
+            const { id: model, contextWindow } = this.model
             const { prompt, ignoredContext } = await this.buildPrompt(
                 contextWindow,
                 getSimplePreamble(model, 1, COMMIT_COMMAND_PROMPTS.intro),
@@ -233,7 +233,7 @@ export class CodySourceControl implements vscode.Disposable {
 
     public setAuthStatus(_: AuthStatus): void {
         const models = modelsService.getModels(ModelUsage.Chat)
-        const preferredModel = models.find(p => p.model.includes('claude-3-haiku'))
+        const preferredModel = models.find(p => p.id.includes('claude-3-haiku'))
         this.model = preferredModel ?? models[0]
     }
 

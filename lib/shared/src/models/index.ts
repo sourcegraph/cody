@@ -164,7 +164,7 @@ export class Model {
      * TODO(PRIME-282): Replace this with a `ModelRefStr` instance and introduce a separate
      * "modelId" that is distinct from the "modelName". (e.g. "claude-3-sonnet" vs. "claude-3-sonnet-20240229")
      */
-    public readonly model: string
+    public readonly id: string
     /**
      * The usage of the model, e.g. chat or edit.
      */
@@ -192,7 +192,7 @@ export class Model {
     public readonly modelRef?: ModelRef
 
     constructor({
-        model,
+        id,
         modelRef,
         usage,
         contextWindow = {
@@ -211,14 +211,14 @@ export class Model {
         } else if (typeof modelRef === 'string') {
             this.modelRef = Model.parseModelRef(modelRef)
         } else {
-            const info = getModelInfo(model)
+            const info = getModelInfo(id)
             this.modelRef = {
                 providerId: provider ?? info.provider,
                 apiVersionId: 'unknown',
                 modelId: title ?? info.title,
             }
         }
-        this.model = model
+        this.id = id
         this.usage = usage
         this.contextWindow = contextWindow
         this.clientSideConfig = clientSideConfig
@@ -239,7 +239,7 @@ export class Model {
     }: ServerModel) {
         const ref = Model.parseModelRef(modelRef)
         return new Model({
-            model: ref.modelId,
+            id: ref.modelId,
             modelRef: ref,
             usage: capabilities.flatMap(capabilityToUsage),
             contextWindow: {
@@ -284,7 +284,7 @@ export class Model {
 }
 
 interface ModelParams {
-    model: string
+    id: string
     modelRef?: ModelRefStr | ModelRef
     usage: ModelUsage[]
     contextWindow?: ModelContextWindow
@@ -393,7 +393,7 @@ export class ModelsService {
      * Sets the primary models available to the user.
      */
     public setModels(models: Model[]): void {
-        logDebug('ModelsService', `Setting primary models: ${JSON.stringify(models.map(m => m.model))}`)
+        logDebug('ModelsService', `Setting primary models: ${JSON.stringify(models.map(m => m.id))}`)
         this.primaryModels = models
     }
 
@@ -457,7 +457,7 @@ export class ModelsService {
         if (!currentModel) {
             return models
         }
-        return [currentModel].concat(models.filter(m => m.model !== currentModel.model))
+        return [currentModel].concat(models.filter(m => m.id !== currentModel.id))
     }
 
     public getDefaultModel(type: ModelUsage): Model | undefined {
@@ -478,11 +478,11 @@ export class ModelsService {
     }
 
     public getDefaultEditModel(): EditModel | undefined {
-        return this.getDefaultModel(ModelUsage.Edit)?.model
+        return this.getDefaultModel(ModelUsage.Edit)?.id
     }
 
     public getDefaultChatModel(): ChatModel | undefined {
-        return this.getDefaultModel(ModelUsage.Chat)?.model
+        return this.getDefaultModel(ModelUsage.Chat)?.id
     }
 
     public async setSelectedModel(type: ModelUsage, model: Model | string): Promise<void> {
@@ -491,10 +491,10 @@ export class ModelsService {
             return
         }
         if (!resolved.usage.includes(type)) {
-            throw new Error(`Model "${resolved.model}" is not compatible with usage type "${type}".`)
+            throw new Error(`Model "${resolved.id}" is not compatible with usage type "${type}".`)
         }
-        logDebug('ModelsService', `Setting selected ${type} model to ${resolved.model}`)
-        this.preferences.selected[type] = resolved.model
+        logDebug('ModelsService', `Setting selected ${type} model to ${resolved.id}`)
+        this.preferences.selected[type] = resolved.id
         await this.flush()
     }
 
@@ -534,25 +534,25 @@ export class ModelsService {
             return modelID
         }
 
-        return this.models.find(m => modelID.includes(m.model))
+        return this.models.find(m => modelID.includes(m.id))
     }
 
     /**
      * Finds the model provider with the given model ID and returns its Context Window.
      */
     public getContextWindowByID(modelID: string): ModelContextWindow {
-        const model = this.models.find(m => m.model === modelID)
+        const model = this.models.find(m => m.id === modelID)
         return model
             ? model.contextWindow
             : { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET }
     }
 
     public getModelByID(modelID: string): Model | undefined {
-        return this.models.find(m => m.model === modelID)
+        return this.models.find(m => m.id === modelID)
     }
 
     public getModelByIDSubstringOrError(modelSubstring: string): Model {
-        const models = this.models.filter(m => m.model.includes(modelSubstring))
+        const models = this.models.filter(m => m.id.includes(modelSubstring))
         if (models.length === 1) {
             return models[0]
         }
@@ -560,7 +560,7 @@ export class ModelsService {
             models.length > 1
                 ? `Multiple models found for substring ${modelSubstring}.`
                 : `No models found for substring ${modelSubstring}.`
-        const modelsList = this.models.map(m => m.model).join(', ')
+        const modelsList = this.models.map(m => m.id).join(', ')
         throw new Error(`${errorMessage} Available models: ${modelsList}`)
     }
 }

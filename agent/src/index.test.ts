@@ -153,7 +153,7 @@ describe('Agent', () => {
         const {
             models: [initModel],
         } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
-        expect(initModel.model).toStrictEqual(initModelName)
+        expect(initModel.id).toStrictEqual(initModelName)
 
         const invalid = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
@@ -182,7 +182,7 @@ describe('Agent', () => {
             modelUsage: ModelUsage.Chat,
         })
         expect(reauthenticatedModels.models).not.toStrictEqual([])
-        expect(reauthenticatedModels.models[0].model).toStrictEqual(initModelName)
+        expect(reauthenticatedModels.models[0].id).toStrictEqual(initModelName)
 
         // Please don't update the recordings to use a different account without consulting #team-cody-core.
         // When changing an account, you also need to update the REDACTED_ hash above.
@@ -317,7 +317,7 @@ describe('Agent', () => {
             } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
 
             const id2 = await client.request('chat/restore', {
-                modelID: model.model,
+                modelID: model.id,
                 messages: reply1.messages,
                 chatID: new Date().toISOString(), // Create new Chat ID with a different timestamp
             })

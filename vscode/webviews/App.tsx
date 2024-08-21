@@ -187,7 +187,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         (selected: Model): void => {
             vscodeAPI.postMessage({
                 command: 'chatModel',
-                model: selected.model,
+                model: selected.id,
             })
         },
         [vscodeAPI]

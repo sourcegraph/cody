@@ -8,7 +8,7 @@ export function getCompletionsModelConfig(modelID: string): CompletionsModelConf
     }
 
     const {
-        model,
+        id: model,
         clientSideConfig: { apiKey = '', apiEndpoint } = {},
     } = provider
     const strippedModelName = model.split('/').pop() || model
