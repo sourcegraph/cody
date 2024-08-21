@@ -783,7 +783,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {
-        // fetch Cody LLM provider separately for backward compatability
+        // fetch Cody LLM provider separately for backward compatibility
         const [configResponse, providerResponse, smartContextWindow] = await Promise.all([
             this.fetchSourcegraphAPI<APIResponse<CodyLLMSiteConfigurationResponse>>(
                 CURRENT_SITE_CODY_LLM_CONFIGURATION

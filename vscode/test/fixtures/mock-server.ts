@@ -483,6 +483,20 @@ export class MockServer {
                     case 'EvaluateFeatureFlag':
                         res.send(JSON.stringify({ data: { evaluatedFeatureFlag: true } }))
                         break
+                    case 'CurrentSiteCodyLlmProvider': {
+                        res.send(
+                            JSON.stringify({
+                                data: {
+                                    site: {
+                                        codyLLMConfiguration: {
+                                            provider: 'sourcegraph',
+                                        },
+                                    },
+                                },
+                            })
+                        )
+                        break
+                    }
                     case 'CurrentSiteCodyLlmConfiguration': {
                         res.send(
                             JSON.stringify({
