@@ -39,7 +39,7 @@ export const DEFAULT_DOT_COM_MODELS = [
     // --------------------------------
     {
         title: 'Claude 3.5 Sonnet',
-        model: 'anthropic/claude-3-5-sonnet-20240620',
+        id: 'anthropic/claude-3-5-sonnet-20240620',
         provider: 'Anthropic',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
@@ -47,7 +47,7 @@ export const DEFAULT_DOT_COM_MODELS = [
     },
     {
         title: 'Claude 3 Opus',
-        model: 'anthropic/claude-3-opus-20240229',
+        id: 'anthropic/claude-3-opus-20240229',
         provider: 'Anthropic',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
@@ -55,7 +55,7 @@ export const DEFAULT_DOT_COM_MODELS = [
     },
     {
         title: 'Claude 3 Haiku',
-        model: 'anthropic/claude-3-haiku-20240307',
+        id: 'anthropic/claude-3-haiku-20240307',
         provider: 'Anthropic',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: basicContextWindow,
@@ -67,7 +67,7 @@ export const DEFAULT_DOT_COM_MODELS = [
     // --------------------------------
     {
         title: 'GPT-4o',
-        model: 'openai/gpt-4o',
+        id: 'openai/gpt-4o',
         provider: 'OpenAI',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
@@ -79,7 +79,7 @@ export const DEFAULT_DOT_COM_MODELS = [
     // --------------------------------
     {
         title: 'Gemini 1.5 Flash',
-        model: 'google/gemini-1.5-flash-latest',
+        id: 'google/gemini-1.5-flash-latest',
         provider: 'Google',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
@@ -87,7 +87,7 @@ export const DEFAULT_DOT_COM_MODELS = [
     },
     {
         title: 'Gemini 1.5 Pro',
-        model: 'google/gemini-1.5-pro-latest',
+        id: 'google/gemini-1.5-pro-latest',
         provider: 'Google',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
@@ -97,7 +97,7 @@ export const DEFAULT_DOT_COM_MODELS = [
     // TODO (tom) Improve prompt for Mixtral + Edit to see if we can use it there too.
     {
         title: 'Mixtral 8x7B',
-        model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
+        id: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
         provider: 'Mistral',
         usage: [ModelUsage.Chat],
         contextWindow: basicContextWindow,
@@ -105,7 +105,7 @@ export const DEFAULT_DOT_COM_MODELS = [
     },
     {
         title: 'Mixtral 8x22B',
-        model: 'fireworks/accounts/fireworks/models/mixtral-8x22b-instruct',
+        id: 'fireworks/accounts/fireworks/models/mixtral-8x22b-instruct',
         provider: 'Mistral',
         usage: [ModelUsage.Chat],
         contextWindow: basicContextWindow,

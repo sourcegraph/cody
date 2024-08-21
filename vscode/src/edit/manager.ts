@@ -296,6 +296,7 @@ export class EditManager implements vscode.Disposable {
         const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
 
         const selection = await getSmartApplySelection(
+            configuration.id,
             configuration.instruction,
             replacementCode,
             configuration.document,

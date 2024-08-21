@@ -28,7 +28,7 @@ import styles from './ContextCell.module.css'
 export const ContextCell: FunctionComponent<{
     contextItems: ContextItem[] | undefined
     contextAlternatives?: RankedContext[]
-    model?: Model['model']
+    model?: Model['id']
     isForFirstMessage: boolean
     className?: string
 
