@@ -51,8 +51,12 @@ export class JvmFormatter {
             // TODO: emit @Nullable
             return ''
         }
+        if (this.language === JvmLanguage.CSharp) {
+            return this.isNullable(tpe) ? '?' : ''
+        }
         return this.isNullable(tpe) ? '?' : ''
     }
+
     public isNullable(tpe: scip.Type): boolean {
         if (tpe.has_type_ref) {
             return this.isNullish(tpe.type_ref.symbol)
@@ -88,6 +92,9 @@ export class JvmFormatter {
                 if (this.language === JvmLanguage.Kotlin) {
                     return `Map<${key}, ${value}>`
                 }
+                if (this.language === JvmLanguage.CSharp) {
+                    return `Dictionary<${key}, ${value}>`
+                }
                 return `java.util.Map<${key}, ${value}>`
             }
             const keyword = typescriptKeywordSyntax(this.language, parameterOrResultType.type_ref.symbol)
@@ -100,10 +107,13 @@ export class JvmFormatter {
                 if (this.language === JvmLanguage.Kotlin) {
                     return `List<${elementType}>`
                 }
+                if (this.language === JvmLanguage.CSharp) {
+                    return `List<${elementType}>`
+                }
                 return `java.util.List<${elementType}>`
             }
             if (keyword) {
-                return keyword
+                return this.languageSpecificKeyword(keyword)
             }
             return this.typeName(this.symtab.info(parameterOrResultType.type_ref.symbol))
         }
@@ -163,6 +173,26 @@ export class JvmFormatter {
                 2
             )}`
         )
+    }
+
+    private languageSpecificKeyword(keyword: string): string {
+        switch (this.language) {
+            case JvmLanguage.Java:
+                return keyword
+            case JvmLanguage.Kotlin:
+                return keyword === 'Boolean' ? 'Boolean' : keyword
+            case JvmLanguage.CSharp:
+                switch (keyword) {
+                    case 'Boolean':
+                        return 'bool'
+                    case 'String':
+                        return 'string'
+                    case 'Long':
+                        return 'long'
+                    default:
+                        return keyword
+                }
+        }
     }
 
     public readonly ignoredProperties = [
@@ -233,7 +263,12 @@ export class JvmFormatter {
             const needsBacktick = isKeyword || !/^[a-zA-Z0-9_]+$/.test(escaped)
             return needsBacktick ? `\`${escaped}\`` : escaped
         }
-
+        if (this.language === JvmLanguage.CSharp) {
+            return escaped
+                .split('_')
+                .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+                .join('')
+        }
         // Java
         const isKeyword = this.javaKeywords.has(escaped)
         if (isKeyword) {

@@ -7,6 +7,10 @@ export class CodePrinter {
     }
 
     public addImport(text: string): void {
+        if (!this.out.length) {
+            this.out.push(`${text}\n`)
+            return
+        }
         if (this.out.find(line => line.includes(text))) {
             return
         }
@@ -20,7 +24,14 @@ export class CodePrinter {
             this.out[packageIndex] = `${this.out[packageIndex]}\n\n${text}`
             return
         }
-        throw new Error(`Could not find import or package statement in ${this.out.join('\n')}`)
+        const usingDirectives = this.out.findIndex(line => line.startsWith('using '))
+        if (usingDirectives >= 0) {
+            this.out[usingDirectives] = `${text}\n${this.out[usingDirectives]}`
+            return
+        }
+        throw new Error(
+            `Could not find import, using, package, or namespace statement in ${this.out.join('\n')}`
+        )
     }
 
     public sectionComment(label: string): void {

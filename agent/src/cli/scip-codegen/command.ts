@@ -13,6 +13,7 @@ export interface CodegenOptions {
     language: string
     protocol: string
     kotlinPackage: string
+    namespace: string
     discriminatedUnions: 'flat' | 'nested'
     severity: string
 }
@@ -21,6 +22,7 @@ enum CodegenLanguage {
     Java = 'java',
     Kotlin = 'kotlin',
     Markdown = 'markdown',
+    CSharp = 'csharp',
 }
 
 function discriminatedUnion(value: string): 'flat' | 'nested' {
@@ -44,9 +46,11 @@ function languageOption(value: string): CodegenLanguage {
             return CodegenLanguage.Java
         case 'markdown':
             return CodegenLanguage.Markdown
+        case 'csharp':
+            return CodegenLanguage.CSharp
         default:
             throw new InvalidOptionArgumentError(
-                `Invalid language. Valid options are ${CodegenLanguage.Kotlin}, ${CodegenLanguage.Java}, ${CodegenLanguage.Markdown}.`
+                `Invalid language. Valid options are ${CodegenLanguage.Kotlin}, ${CodegenLanguage.Java}, ${CodegenLanguage.Markdown}, ${CodegenLanguage.CSharp}.`
             )
     }
 }
@@ -95,6 +99,8 @@ async function initializeCodegen(options: CodegenOptions): Promise<BaseCodegen> 
             return new JvmCodegen(JvmLanguage.Kotlin, options, symtab, reporter)
         case CodegenLanguage.Java:
             return new JvmCodegen(JvmLanguage.Java, options, symtab, reporter)
+        case CodegenLanguage.CSharp:
+            return new JvmCodegen(JvmLanguage.CSharp, options, symtab, reporter)
         case CodegenLanguage.Markdown:
             return new MarkdownCodegen(options, symtab, reporter)
         default:
