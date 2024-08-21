@@ -13,6 +13,7 @@ const workerOptionsSchema = zod.object({
     repoRootDir: zAbsPath().describe(
         'DEPRECATED: The .git root of this project. Might still get used for some path defaults so must be set'
     ),
+    vscodeCommitSha: zod.string().nullable().default(null),
     vscodeExtensionCacheDir: zAbsPath(),
     globalTmpDir: zAbsPath(),
     vscodeTmpDir: zAbsPath(),
@@ -67,6 +68,7 @@ export const optionsFixture: ReturnType<
                 recordingDir,
                 globalTmpDir,
                 vscodeTmpDir,
+                vscodeCommitSha,
                 vscodeServerTmpDir,
                 vscodeExtensionCacheDir,
                 keepRuntimeDirs,
@@ -83,6 +85,7 @@ export const optionsFixture: ReturnType<
                     binaryTmpDir,
                     recordingDir,
                     globalTmpDir,
+                    vscodeCommitSha,
                     vscodeTmpDir,
                     vscodeServerTmpDir,
                     vscodeExtensionCacheDir,
