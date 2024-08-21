@@ -437,6 +437,15 @@ class FireworksProvider extends Provider {
         }
         // Add a condition for adding extra stop tokens here
 
+        if (requestParams.model === MODEL_MAP[DEEPSEEK_CODER_V2_LITE_BASE]) {
+            const m = `fireworks/${
+                this.authStatus.isDotCom
+                    ? MODEL_MAP[DEEPSEEK_CODER_V2_LITE_BASE]
+                    : DEEPSEEK_CODER_V2_LITE_BASE
+            }`
+            requestParams.model = m
+        }
+
         tracer?.params(requestParams)
 
         const completionsGenerators = Array.from({ length: this.options.n }).map(() => {
