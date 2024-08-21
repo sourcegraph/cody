@@ -13,20 +13,23 @@ test.describe('Auth', () => {
         executeCommand,
         workspaceDir,
     }) => {
-        await uix.cody.preAuthenticate({ workspaceDir })
-        await uix.vscode.startSession({ page, vscodeUI, executeCommand, workspaceDir })
-        await uix.cody.waitForStartup()
+        await test.step('setup', async () => {
+            await uix.cody.preAuthenticate({ workspaceDir })
+            await uix.vscode.startSession({ page, vscodeUI, executeCommand, workspaceDir })
+            await uix.cody.waitForStartup({ page })
 
-        await executeCommand('workbench.view.extension.cody')
+            await executeCommand('workbench.view.extension.cody')
+        })
 
-        const sidebar = uix.vscode.Sidebar.get({ page })
+        await test.step('can view account info', async () => {
+            const [sidebar] = await uix.cody.WebView.all({ page }, { atLeast: 1 })
+            await sidebar.content
+                .locator('[id="radix-\\:r0\\:-trigger-account"]')
+                .getByRole('button')
+                .click()
 
-        await sidebar.locator
-            .locator('div[aria-label="Settings & Support"]')
-            .locator('div[aria-label="Account"]')
-            .click()
-
-        await expect(page.getByText('Signed in as SourcegraphBot')).toBeVisible()
-        await expect(page.getByText('Plan: Cody Pro')).toBeVisible()
+            await expect(page.getByText('Signed in as SourcegraphBot')).toBeVisible()
+            await expect(page.getByText('Plan: Cody Pro')).toBeVisible()
+        })
     })
 })
