@@ -116,7 +116,7 @@ export async function startSession({
                         2
                     )
                     const settingsData = new TextEncoder().encode(settingsJSON)
-                    const putRequest = store.put(settingsData, '/User/settings.json')
+                    const putRequest = store.put(settingsData, '/User/settings.json') // this path is not OS specific
                     putRequest.onsuccess = () => {
                         resolve(void 0)
                     }
