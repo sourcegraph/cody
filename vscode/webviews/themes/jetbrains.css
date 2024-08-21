@@ -182,7 +182,7 @@ html[data-ide='JetBrains'] {
     --vscode-editorIndentGuide-activeBackground5: var(--jetbrains-Menu-selectionForeground);
     --vscode-editorIndentGuide-activeBackground6: var(--jetbrains-TextPane-selectionForeground);
     --vscode-editorIndentGuide-background: var(--jetbrains-Separator-foreground);
-    --vscode-editorIndentGuide-background1: var(--jetbrains-Scrollbar-foreground);
+    --vscode-editorIndentGuide-background1: var(--jetbrains-scrollbar);
     --vscode-editorIndentGuide-background2: var(--jetbrains-Scrollbar-background);
     --vscode-editorIndentGuide-background3: var(--jetbrains-Scrollbar-thumb);
     --vscode-editorIndentGuide-background4: var(--jetbrains-Scrollbar-thumbShadow);
@@ -391,10 +391,10 @@ html[data-ide='JetBrains'] {
     --vscode-remoteHub-decorations-submoduleForegroundColor: var(--jetbrains-ActionButton-hoverBackground);
     --vscode-remoteHub-decorations-workspaceRepositoriesView-hasUncommittedChangesForegroundColor: var(--jetbrains-ActionButton-pressedBackground);
     --vscode-scm-historyItemStatisticsBorder: var(--jetbrains-VersionControl-Log-Commit-currentBranchBackground);
-    --vscode-scrollbar-shadow: var(--jetbrains-ScrollBar-thumbDarkShadow:);
-    --vscode-scrollbarSlider-activeBackground: var(--jetbrains-ScrollBar-track);
+    --vscode-scrollbar-shadow: var(--jetbrains-ScrollBar-thumbShadow);
+    --vscode-scrollbarSlider-activeBackground: var(--jetbrains-ScrollBar-trackHighlight);
     --vscode-scrollbarSlider-background: var(--jetbrains-ScrollBar-track);
-    --vscode-scrollbarSlider-hoverBackground: var(--jetbrains-ScrollBar-track);
+    --vscode-scrollbarSlider-hoverBackground: var(--jetbrains-ScrollBar-trackHighlight);
     --vscode-search-resultsInfoForeground: var(--jetbrains-InfoText);
     --vscode-searchEditor-findMatchBorder: var(--jetbrains-SearchEverywhere-list-separatorColor);
     --vscode-searchEditor-textInputBorder: var(--jetbrains-SearchEverywhere-searchField-infoForeground);
@@ -589,10 +589,6 @@ html[data-ide='JetBrains'] {
 
     /* todo: get this from the vscode implementation instead of hardcoded on this theme file*/
     --vscode-font-size: 13px;
-
-    /* Mimic rules injected by VSCode */
-    scrollbar-color: var(--vscode-scrollbarSlider-background) var(--vscode-editor-background);
-
 }
 
 /* Mimic rules injected by VSCode */
