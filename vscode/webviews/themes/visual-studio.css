@@ -265,13 +265,13 @@ html[data-ide='VisualStudio'] {
     --vscode-input-border: var(--visualstudio-comboboxborder);
     --vscode-input-foreground: var(--visualstudio-comboboxtext);
     --vscode-input-placeholderForeground: var(--visualstudio-comboboxitemtextinactive);
-    --vscode-inputOption-activeBackground: var(--visualstudio-);
-    --vscode-inputOption-activeBorder: var(--visualstudio-);
-    --vscode-inputOption-activeForeground: var(--visualstudio-);
-    --vscode-inputValidation-errorBackground: var(--visualstudio-);
-    --vscode-inputValidation-errorBorder: var(--visualstudio-);
-    --vscode-inputValidation-infoBackground: var(--visualstudio-);
-    --vscode-inputValidation-infoBorder: var(--visualstudio-);
+    --vscode-inputOption-activeBackground: var(--visualstudio-statusbarhighlight);
+    --vscode-inputOption-activeBorder: var(--visualstudio-statusbarhighlight);
+    --vscode-inputOption-activeForeground: var(--visualstudio-statusbartext);
+    --vscode-inputValidation-errorBackground: var(--visualstudio-statusbardebugging);
+    --vscode-inputValidation-errorBorder: var(--visualstudio-statusbardebugging);
+    --vscode-inputValidation-infoBackground: var(--visualstudio-statusbarbuilding);
+    --vscode-inputValidation-infoBorder: var(--visualstudio-statusbarbuilding);
     --vscode-inputValidation-warningBackground: var(--visualstudio-);
     --vscode-inputValidation-warningBorder: var(--visualstudio-);
     --vscode-interactive-activeCodeBorder: var(--visualstudio-);
@@ -638,7 +638,7 @@ html[data-ide='VisualStudio'] .model-selector-popover::-webkit-scrollbar {
 }
 
 /* color-mix is not supported on VisualStudio webview */
-html[data-ide=VisualStudio] .context-item-mention-node {
+html[data-ide='VisualStudio'] .context-item-mention-node {
     color: var(--vscode-inputOption-activeForeground);
     background-color: var(--vscode-badge-background);
     gap: 0.2rem;

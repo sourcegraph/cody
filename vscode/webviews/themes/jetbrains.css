@@ -585,7 +585,6 @@ html[data-ide='JetBrains'] {
     --vscode-editor-font-weight: var(--font-weight);
     --vscode-editor-font-size: var(--type-ramp-minus1-font-size);
 
-
     --vscode-widget-shadow: rgba(0, 0, 0, 0.36);
 
     /* todo: get this from the vscode implementation instead of hardcoded on this theme file*/
@@ -640,38 +639,13 @@ html[data-ide='JetBrains'] pre code {
     padding: 0;
 }
 
-html[data-ide='JetBrains'] pre::-webkit-scrollbar {
-    width: 14px;
-    height: 14px;
-    background-color: transparent;
-}
-
-html[data-ide='JetBrains'] pre::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 100px;
-    border: 3px solid var(--jetbrains-Desktop-background);
-}
-
 html[data-ide='JetBrains'] blockquote {
     background: var(--vscode-textBlockQuote-background);
     border-color: var(--vscode-textBlockQuote-border);
 }
 
-
-html[data-ide='JetBrains'] .model-selector-popover::-webkit-scrollbar {
-    width: 10px;
-    height: 8px;
-    background-color: transparent;
-}
-
-html[data-ide='JetBrains'] .model-selector-popover::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 100px;
-    border: 1px solid var(--vscode-sideBar-background);
-}
-
 /* color-mix is not supported on JetBrains webview */
-html[data-ide=JetBrains] .context-item-mention-node {
+html[data-ide='JetBrains'] .context-item-mention-node {
     color: var(--vscode-inputOption-activeForeground);
     background-color: var(--vscode-badge-background);
     gap: 0.2rem;
@@ -682,10 +656,10 @@ html[data-ide=JetBrains] .context-item-mention-node {
     }
 }
 
-html[data-ide=JetBrains] .container {
+html[data-ide='JetBrains'] .container {
     background-color: var(--vscode-input-background);
 }
 
-html[data-ide=JetBrains] .hover\:tw-bg-muted-transparent:hover {
+html[data-ide='JetBrains'] .tw-bg-muted-transparent:hover {
     background-color: var(--jetbrains-ActionButton-hoverBackground);
 }
