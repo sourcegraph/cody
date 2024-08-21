@@ -61,25 +61,6 @@ export const defaultAuthStatus: AuthStatus = {
     codyApiVersion: 0,
 }
 
-export const enterpriseAuthStatus: AuthStatus = {
-    endpoint: '',
-    isDotCom: false,
-    isLoggedIn: true,
-    isFireworksTracingEnabled: false,
-    showInvalidAccessTokenError: false,
-    authenticated: true,
-    hasVerifiedEmail: true,
-    requiresVerifiedEmail: false,
-    siteHasCodyEnabled: true,
-    siteVersion: '',
-    userCanUpgrade: false,
-    username: '',
-    primaryEmail: '',
-    displayName: '',
-    avatarURL: '',
-    codyApiVersion: 0,
-}
-
 export const unauthenticatedStatus: AuthStatus = {
     endpoint: '',
     isDotCom: true,

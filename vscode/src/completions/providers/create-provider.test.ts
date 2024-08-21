@@ -6,7 +6,6 @@ import {
     type ConfigurationWithAccessToken,
     type GraphQLAPIClientConfig,
     defaultAuthStatus,
-    enterpriseAuthStatus,
     graphqlClient,
 } from '@sourcegraph/cody-shared'
 import { beforeAll, describe, expect, it } from 'vitest'
