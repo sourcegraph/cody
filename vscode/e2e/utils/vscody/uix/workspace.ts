@@ -10,7 +10,7 @@ export function modifySettings(
         'Modify Workspace Settings',
         async () => {
             const existingConfig: string | undefined = await fs
-                .readFile(path.join(workspaceDir, '.vscode', 'settings.json'), 'utf-8')
+                .readFile(path.join(workspaceDir, '.vscode/settings.json'), 'utf-8')
                 .catch(err => {
                     if (err.code === 'ENOENT') {
                         return undefined
@@ -20,7 +20,7 @@ export function modifySettings(
             const updatedConfig = modifyFn(existingConfig ? JSON.parse(existingConfig) : undefined)
             await fs.mkdir(path.join(workspaceDir, '.vscode'), { recursive: true })
             fs.writeFile(
-                path.join(workspaceDir, '.vscode', 'settings.json'),
+                path.join(workspaceDir, '.vscode/settings.json'),
                 JSON.stringify(updatedConfig, null, 2)
             )
         },

@@ -4,6 +4,7 @@ import jsonStableStringify from 'fast-json-stable-stringify'
 import 'node:http'
 import 'node:https'
 import path from 'node:path'
+import normalizeUrl from 'normalize-url'
 import type { TestContext, WorkerContext } from '.'
 import { redactAuthorizationHeader } from '../../../../src/testutils/CodyPersisterV2'
 import { CODY_VSCODE_ROOT_DIR } from '../../helpers'
@@ -17,11 +18,7 @@ import { getFirstOrValue } from './util'
 export const pollyFixture = _test.extend<TestContext, WorkerContext>({
     polly: [
         async ({ validOptions }, use, testInfo) => {
-            const relativeTestPath = path.relative(
-                path.resolve(CODY_VSCODE_ROOT_DIR, testInfo.project.testDir),
-                testInfo.file
-            )
-            const polly = new Polly(`${testInfo.project.name}/${relativeTestPath}/${testInfo.title}`, {
+            const polly = new Polly(testInfo.title, {
                 flushRequestsOnStop: true,
                 recordIfMissing: validOptions.recordIfMissing ?? validOptions.recordingMode === 'record',
                 mode: validOptions.recordingMode,
@@ -36,7 +33,6 @@ export const pollyFixture = _test.extend<TestContext, WorkerContext>({
                     method: true,
                     url(url, req) {
                         const parsed = new URL(url)
-                        parsed.searchParams.delete('client-version')
                         const mitmProxy = getFirstOrValue(req.headers[MITM_PROXY_SERVICE_NAME_HEADER])
                         if (mitmProxy) {
                             parsed.hostname = `${mitmProxy}.proxy`
@@ -44,7 +40,9 @@ export const pollyFixture = _test.extend<TestContext, WorkerContext>({
                             parsed.protocol = 'http:'
                         }
                         //todo: replace host with semantic name if available
-                        return parsed.toString()
+                        return normalizeUrl(parsed.toString(), {
+                            removeQueryParameters: ['client-version'],
+                        })
                     },
                     // Canonicalize JSON bodies so that we can replay the recording even if the JSON strings
                     // differ by semantically meaningless things like object key enumeration order.
@@ -88,7 +86,17 @@ export const pollyFixture = _test.extend<TestContext, WorkerContext>({
                 persisterOptions: {
                     keepUnusedRequests: validOptions.keepUnusedRecordings ?? true,
                     fs: {
-                        recordingsDir: path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.recordingDir),
+                        recordingsDir: path.resolve(
+                            CODY_VSCODE_ROOT_DIR,
+                            validOptions.recordingDir,
+                            testInfo.project.name,
+                            path.dirname(
+                                path.relative(
+                                    path.resolve(CODY_VSCODE_ROOT_DIR, testInfo.project.testDir),
+                                    testInfo.file
+                                )
+                            )
+                        ),
                     },
                 },
             })
