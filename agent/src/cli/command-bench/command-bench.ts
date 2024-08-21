@@ -361,7 +361,7 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
         // can only modify this setting by changing it through the quickpick
         // menu in VSC.
         const provider = modelsService.getModelByIDSubstringOrError(editModel)
-        baseGlobalState.editModel = provider.model
+        baseGlobalState.editModel = provider.id
     }
 
     if (isDefined(options.context)) {

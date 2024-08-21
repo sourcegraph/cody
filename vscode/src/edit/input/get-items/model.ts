@@ -33,7 +33,7 @@ export const getModelOptionItems = (modelOptions: Model[], isCodyPro: boolean): 
                 label: `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX} ${icon} ${modelOption.title}`,
                 description: `by ${modelOption.provider}`,
                 alwaysShow: true,
-                model: modelOption.model,
+                model: modelOption.id,
                 modelTitle: modelOption.title,
                 codyProOnly: isCodyProModel(modelOption),
             }

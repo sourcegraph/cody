@@ -54,8 +54,7 @@ describe('Edit', () => {
         await client.openFile(uri)
         const task = await client.request('editCommands/code', {
             instruction: 'Add types to these props. Introduce new interfaces as necessary',
-            model: modelsService.getModelByIDSubstringOrError('anthropic/claude-3-5-sonnet-20240620')
-                .model,
+            model: modelsService.getModelByIDSubstringOrError('anthropic/claude-3-5-sonnet-20240620').id,
         })
         await client.acceptEditTask(uri, task)
         expect(client.documentText(uri)).toMatchInlineSnapshot(
@@ -106,8 +105,7 @@ describe('Edit', () => {
         const task = await client.request('editCommands/code', {
             instruction:
                 'Create and export a Heading component that uses these props. Do not use default exports',
-            model: modelsService.getModelByIDSubstringOrError('anthropic/claude-3-5-sonnet-20240620')
-                .model,
+            model: modelsService.getModelByIDSubstringOrError('anthropic/claude-3-5-sonnet-20240620').id,
         })
         await client.acceptEditTask(uri, task)
         expect(client.documentText(uri)).toMatchInlineSnapshot(
@@ -136,7 +134,7 @@ describe('Edit', () => {
         await client.openFile(uri, { removeCursor: true })
         const task = await client.request('editCommands/code', {
             instruction: 'Convert this to use a switch statement',
-            model: modelsService.getModelByIDSubstringOrError('anthropic/claude-3-opus').model,
+            model: modelsService.getModelByIDSubstringOrError('anthropic/claude-3-opus').id,
         })
         await client.acceptEditTask(uri, task)
         expect(client.documentText(uri)).toMatchInlineSnapshot(

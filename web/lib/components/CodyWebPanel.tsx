@@ -122,7 +122,7 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
             // and the host will return the updated change models via onMessage.
             vscodeAPI.postMessage({
                 command: 'chatModel',
-                model: selected.model,
+                model: selected.id,
             })
         },
         [chatModels, vscodeAPI]
