@@ -1395,6 +1395,7 @@
     "detect-indent": "7.0.0",
     "diff": "^5.2.0",
     "fast-xml-parser": "^4.3.2",
+    "fzf": "^0.5.2",
     "glob": "^7.2.3",
     "graceful-fs": "^4.2.11",
     "he": "^1.2.0",

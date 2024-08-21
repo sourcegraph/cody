@@ -1,3 +1,6 @@
+## 0.5.2 
+- Improves repository mention result ordering (for repositories, files and directories mentions)
+
 ## 0.5.1
 - Fixes problem with initial context can't be removed (lexical context item text node key problem)
 - Fixes rendering toolbar for Cody Web
