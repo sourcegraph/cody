@@ -6,6 +6,7 @@ import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
+import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
 import java.beans.PropertyChangeListener
 import javax.swing.JComponent
@@ -20,15 +21,11 @@ class WebPanelEditor(private val file: VirtualFile) : FileEditor {
   }
 
   val age = epoch++
-  private val userData: MutableMap<Any, Any?> = mutableMapOf()
+  private val userData = UserDataHolderBase()
 
-  override fun <T : Any?> getUserData(key: Key<T>): T? {
-    return userData[key] as T?
-  }
+  override fun <T : Any?> getUserData(key: Key<T>): T? = userData.getUserData(key)
 
-  override fun <T : Any?> putUserData(key: Key<T>, value: T?) {
-    userData[key] = value
-  }
+  override fun <T : Any?> putUserData(key: Key<T>, value: T?) = userData.putUserData(key, value)
 
   override fun dispose() {
     // TODO: Implement this
