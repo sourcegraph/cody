@@ -490,6 +490,7 @@ export class MockServer {
                                     site: {
                                         codyLLMConfiguration: {
                                             chatModel: 'foo/test-chat-default-model',
+                                            completionModel: 'fireworks/starcoder',
                                             provider: 'sourcegraph',
                                         },
                                     },
