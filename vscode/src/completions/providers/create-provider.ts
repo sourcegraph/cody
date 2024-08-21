@@ -33,13 +33,19 @@ import { createProviderConfig as createOpenAICompatibleProviderConfig } from './
 import type { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
-export async function createProviderConfigFromVSCodeConfig(
-    client: CodeCompletionsClient,
-    authStatus: AuthStatus,
-    model: string | undefined,
-    provider: string,
+interface CreateConfigHelperParams {
+    client: CodeCompletionsClient
+    authStatus: AuthStatus
+    model: string | undefined | null
+    provider: string
     config: ConfigurationWithAccessToken
+}
+
+export async function createProviderHelper(
+    params: CreateConfigHelperParams
 ): Promise<ProviderConfig | null> {
+    const { client, authStatus, model, provider, config } = params
+
     switch (provider) {
         case 'azure-openai':
         case 'unstable-openai': {
@@ -93,7 +99,7 @@ export async function createProviderConfigFromVSCodeConfig(
 }
 
 async function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<
-    typeof resolveDefaultModelFromVSCodeConfigOrFeatureFlags
+    typeof resolveConfigFromFeatureFlags
 > {
     /**
      * The traffic allocated to the fine-tuned-base feature flag is further split between multiple feature flag in function.
@@ -139,16 +145,20 @@ async function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<
     return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
 }
 
-async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
-    configuredProvider: string | null,
-    isDotCom: boolean
-): Promise<{
-    provider: string
-    model?: FireworksOptions['model'] | AnthropicOptions['model']
-} | null> {
+function resolveConfigFromVSCodeConfig(configuredProvider: string | null) {
     if (configuredProvider) {
         return { provider: configuredProvider }
     }
+}
+
+interface ProviderConfigFromFeatureFlags {
+    provider: string
+    model?: FireworksOptions['model'] | AnthropicOptions['model']
+}
+
+async function resolveConfigFromFeatureFlags(
+    isDotCom: boolean
+): Promise<ProviderConfigFromFeatureFlags | null> {
     const [starCoder2Hybrid, starCoderHybrid, claude3, fimModelExperimentFlag, deepseekV2LiteBase] =
         await Promise.all([
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
@@ -199,7 +209,7 @@ interface AutocompleteModelInfo {
     model?: Model
 }
 
-function getAutocompleteModelInfo(authStatus: AuthStatus): AutocompleteModelInfo | Error | undefined {
+function getAutocompleteModelInfo(authStatus: AuthStatus): AutocompleteModelInfo | Error {
     const model = modelsService.getDefaultModel(ModelUsage.Autocomplete)
 
     if (model) {
@@ -217,8 +227,17 @@ function getAutocompleteModelInfo(authStatus: AuthStatus): AutocompleteModelInfo
         })
     }
 
-    // If no provider info specified, return undefined to fall back to default provider
-    return
+    // Fallback to the Fireworks autocomplete provider only for PLG users.
+    if (authStatus.isDotCom) {
+        return {
+            provider: 'fireworks',
+        }
+    }
+
+    // Fail with error for enterprises.
+    return new Error(
+        'Failed to get autocomplete model info. Please configure the `completionModel` using site configuration.'
+    )
 }
 /**
  * For certain completions providers configured in the Sourcegraph instance site config
@@ -265,36 +284,40 @@ export async function createProviderConfig(
     client: CodeCompletionsClient,
     authStatus: AuthStatus
 ): Promise<ProviderConfig | null> {
-    /**
-     * Look for the autocomplete provider in VSCode settings and return matching provider config.
-     */
+    // Resolve the provider config from the VS Code config.
+    if (config.autocompleteAdvancedProvider) {
+        return createProviderHelper({
+            client,
+            authStatus,
+            model: config.autocompleteAdvancedModel,
+            provider: config.autocompleteAdvancedProvider,
+            config,
+        })
+    }
 
-    const providerAndModelFromVSCodeConfig = await resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
-        config.autocompleteAdvancedProvider,
-        authStatus.isDotCom
-    )
-    if (providerAndModelFromVSCodeConfig) {
-        const { provider, model } = providerAndModelFromVSCodeConfig
-        return createProviderConfigFromVSCodeConfig(client, authStatus, model, provider, config)
+    // Check if a user participates in autocomplete model experiments.
+    const configFromFeatureFlags = await resolveConfigFromFeatureFlags(authStatus.isDotCom)
+
+    // Use the experiment model if available.
+    if (configFromFeatureFlags) {
+        return createProviderHelper({
+            client,
+            authStatus,
+            model: configFromFeatureFlags.model,
+            provider: configFromFeatureFlags.provider,
+            config,
+        })
     }
+
     const info = getAutocompleteModelInfo(authStatus)
-    if (!info) {
-        /**
-         * If autocomplete provider is not defined neither in VSCode nor in Sourcegraph instance site config,
-         * use the default provider config ("anthropic").
-         */
-        return createAnthropicProviderConfig({ client })
-    }
+
     if (info instanceof Error) {
         logError('createProviderConfig', info.message)
         return null
     }
-    /**
-     * If autocomplete provider is not defined in the VSCode settings,
-     * check the completions provider in the connected Sourcegraph instance site config
-     * and return the matching provider config.
-     */
+
     const { provider, modelId, model } = info
+
     switch (provider) {
         case 'openai':
         case 'azure-openai':
