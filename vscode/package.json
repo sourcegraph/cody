@@ -1447,6 +1447,7 @@
     "http-proxy-middleware": "^3.0.0",
     "mocha": "^10.2.0",
     "node-fetch": "^2.6.4",
+    "normalize-url": "^5.3.1",
     "on-headers": "^1.0.2",
     "ovsx": "^0.8.2",
     "pako": "^2.1.0",

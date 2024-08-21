@@ -790,6 +790,9 @@ importers:
       node-fetch:
         specifier: ^2.6.4
         version: 2.7.0
+      normalize-url:
+        specifier: ^5.3.1
+        version: 5.3.1
       on-headers:
         specifier: ^1.0.2
         version: 1.0.2
@@ -12615,6 +12618,11 @@ packages:
   /normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
     engines: {node: '>=0.10.0'}
+
+  /normalize-url@5.3.1:
+    resolution: {integrity: sha512-K1c7+vaAP+Yh5bOGmA10PGPpp+6h7WZrl7GwqKhUflBc9flU9pzG27DDeB9+iuhZkE3BJZOcgN1P/2sS5pqrWw==}
+    engines: {node: '>=10'}
+    dev: true
 
   /npm-run-path@4.0.1:
     resolution: {integrity: sha512-S48WzZW777zhNIrn7gxOlISNAqi9ZC/uQFnRdbeIHhZhCA6UqpkOT8T1G7BvfdgP4Er8gF4sUbaS0i7QvIfCWw==}
