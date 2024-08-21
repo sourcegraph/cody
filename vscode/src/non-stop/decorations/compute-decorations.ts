@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import { isStreamedIntent } from '../../edit/utils/edit-intent'
 import type { FixupTask } from '../FixupTask'
-import { getDecorationSuitableText, getLastFullLine, getVisibleDocument } from './utils'
+import { getDecorationSuitableText, getLastFullLine } from './utils'
 
 export interface Decorations {
     linesAdded: vscode.DecorationOptions[]
@@ -11,11 +11,6 @@ export interface Decorations {
 }
 
 export function computeAppliedDecorations(task: FixupTask): Decorations | undefined {
-    const visibleDocument = getVisibleDocument(task)
-    if (!visibleDocument) {
-        return
-    }
-
     const decorations: Decorations = {
         linesAdded: [],
         linesRemoved: [],
@@ -53,7 +48,7 @@ export function computeAppliedDecorations(task: FixupTask): Decorations | undefi
         if (edit.type === 'decoratedReplacement') {
             const linesDeleted = edit.oldText.split('\n')
             for (let i = 0; i <= countChanged; i++) {
-                const decorationText = getDecorationSuitableText(linesDeleted[i], visibleDocument)
+                const decorationText = getDecorationSuitableText(linesDeleted[i], task.document)
                 const line = new vscode.Position(edit.range.start.line + i, 0)
                 decorations.linesRemoved.push({
                     range: new vscode.Range(line, line),
