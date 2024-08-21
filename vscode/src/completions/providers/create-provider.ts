@@ -36,7 +36,7 @@ import { createProviderConfig as createUnstableOpenAIProviderConfig } from './un
 interface CreateConfigHelperParams {
     client: CodeCompletionsClient
     authStatus: AuthStatus
-    model: string | undefined | null
+    model: string | undefined
     provider: string
     config: ConfigurationWithAccessToken
 }
@@ -143,12 +143,6 @@ async function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<
     }
     // Extra free traffic - redirect to the current production model which could be different than control
     return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
-}
-
-function resolveConfigFromVSCodeConfig(configuredProvider: string | null) {
-    if (configuredProvider) {
-        return { provider: configuredProvider }
-    }
 }
 
 interface ProviderConfigFromFeatureFlags {
@@ -289,7 +283,7 @@ export async function createProviderConfig(
         return createProviderHelper({
             client,
             authStatus,
-            model: config.autocompleteAdvancedModel,
+            model: config.autocompleteAdvancedModel || undefined,
             provider: config.autocompleteAdvancedProvider,
             config,
         })
