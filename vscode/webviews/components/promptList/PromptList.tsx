@@ -98,9 +98,39 @@ export const PromptList: React.FunctionComponent<{
                     nameWithOwner: prompt ? prompt.nameWithOwner : undefined,
                 },
             })
+            if (result) {
+                telemetryRecorder.recordEvent('cody.promptList', 'query', {
+                    metadata: {
+                        queryLength: debouncedQuery.length,
+                        resultCount:
+                            (result.prompts.type === 'results' ? result.prompts.results.length : 0) +
+                            (result.commands?.length ?? 0),
+                        resultCountPromptsOnly:
+                            result.prompts.type === 'results' ? result.prompts.results.length : 0,
+                        resultCountCommandsOnly: result.commands?.length ?? 0,
+                        supportsPrompts: result.prompts.type !== 'unsupported' ? 1 : 0,
+                        hasUsePromptsQueryError: error ? 1 : 0,
+                        hasPromptsResultError: result.prompts.type === 'error' ? 1 : 0,
+                        ...telemetryPublicMetadata,
+                    },
+                    privateMetadata: {
+                        query: debouncedQuery,
+                        usePromptsQueryErrorMessage: error?.message,
+                        promptsResultErrorMessage:
+                            result.prompts.type === 'error' ? result.prompts.error : undefined,
+                    },
+                })
+            }
             parentOnSelect(entry)
         },
-        [result, telemetryRecorder.recordEvent, parentOnSelect, telemetryPublicMetadata]
+        [
+            result,
+            telemetryRecorder.recordEvent,
+            parentOnSelect,
+            telemetryPublicMetadata,
+            debouncedQuery,
+            error,
+        ]
     )
 
     const endpointURL = new URL(useConfig().authStatus.endpoint)
