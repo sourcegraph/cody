@@ -43,15 +43,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         provider: 'Anthropic',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Accuracy, ModelTag.Recommended, ModelTag.Free],
-    },
-    {
-        title: 'Claude 3 Sonnet',
-        model: 'anthropic/claude-3-sonnet-20240229',
-        provider: 'Anthropic',
-        usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: expandedContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Recommended, ModelTag.Balanced],
+        tags: [ModelTag.Gateway, ModelTag.Balanced, ModelTag.Recommended, ModelTag.Free],
     },
     {
         title: 'Claude 3 Opus',
@@ -59,7 +51,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         provider: 'Anthropic',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Pro, ModelTag.Recommended, ModelTag.Accuracy],
+        tags: [ModelTag.Gateway, ModelTag.Pro, ModelTag.Power],
     },
     {
         title: 'Claude 3 Haiku',
@@ -79,36 +71,12 @@ export const DEFAULT_DOT_COM_MODELS = [
         provider: 'OpenAI',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Pro, ModelTag.Recommended, ModelTag.Accuracy],
-    },
-    {
-        title: 'GPT-4 Turbo',
-        model: 'openai/gpt-4-turbo',
-        provider: 'OpenAI',
-        usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: basicContextWindow,
         tags: [ModelTag.Gateway, ModelTag.Pro, ModelTag.Balanced],
-    },
-    {
-        title: 'GPT-3.5 Turbo',
-        model: 'openai/gpt-3.5-turbo',
-        provider: 'OpenAI',
-        usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: basicContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Speed],
     },
 
     // --------------------------------
     // Google models
     // --------------------------------
-    {
-        title: 'Gemini 1.5 Pro',
-        model: 'google/gemini-1.5-pro-latest',
-        provider: 'Google',
-        usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: expandedContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Accuracy],
-    },
     {
         title: 'Gemini 1.5 Flash',
         model: 'google/gemini-1.5-flash-latest',
@@ -116,6 +84,14 @@ export const DEFAULT_DOT_COM_MODELS = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
         tags: [ModelTag.Gateway, ModelTag.Speed],
+    },
+    {
+        title: 'Gemini 1.5 Pro',
+        model: 'google/gemini-1.5-pro-latest',
+        provider: 'Google',
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: expandedContextWindow,
+        tags: [ModelTag.Gateway, ModelTag.Power],
     },
 
     // TODO (tom) Improve prompt for Mixtral + Edit to see if we can use it there too.
@@ -133,7 +109,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         provider: 'Mistral',
         usage: [ModelUsage.Chat],
         contextWindow: basicContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Accuracy],
+        tags: [ModelTag.Gateway, ModelTag.Power],
     },
 ] as const satisfies Model[]
 

@@ -1,6 +1,8 @@
 .container {
     outline: none;
-    border-radius: 0;
+
+    /* In order to override shadcn tailwind tw-rounded-md */
+    border-radius: 0 !important;
 }
 
 .item {

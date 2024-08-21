@@ -18,7 +18,7 @@ export interface ModelRef {
     modelId: ModelId
 }
 
-export type ModelCategory = ModelTag.Accuracy | ModelTag.Balanced | ModelTag.Speed
+export type ModelCategory = ModelTag.Power | ModelTag.Balanced | ModelTag.Speed
 export type ModelStatus = ModelTag.Experimental | ModelTag.Experimental | 'stable' | ModelTag.Deprecated
 export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise
 export type ModelCapability = 'chat' | 'autocomplete'

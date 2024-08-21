@@ -38,6 +38,7 @@ import {
     GET_FEATURE_FLAGS_QUERY,
     GET_REMOTE_FILE_QUERY,
     GET_URL_CONTENT_QUERY,
+    LEGACY_CONTEXT_SEARCH_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
     PACKAGE_LIST_QUERY,
@@ -285,6 +286,7 @@ interface FileMatchSearchResponse {
             results: {
                 __typename: string
                 repository: {
+                    id: string
                     name: string
                 }
                 file: {
@@ -980,18 +982,49 @@ export class SourcegraphGraphQLAPIClient {
         return extractDataOrError(response, data => data)
     }
 
-    public async contextSearch(
-        repoIDs: string[],
-        query: string,
+    /**
+     * Checks if the current site version is valid based on the given criteria.
+     *
+     * @param options - The options for version validation.
+     * @param options.minimumVersion - The minimum version required.
+     * @param options.insider - Whether to consider insider builds as valid. Defaults to true.
+     * @returns A promise that resolves to a boolean indicating if the version is valid.
+     */
+    public async isValidSiteVersion({
+        minimumVersion,
+        insider = true,
+    }: { minimumVersion: string; insider?: boolean }): Promise<boolean> {
+        const version = await this.getSiteVersion()
+        if (isError(version)) {
+            return false
+        }
+
+        const isInsiderBuild = version.length > 12 || version.includes('dev')
+
+        return (insider && isInsiderBuild) || semver.gte(version, minimumVersion)
+    }
+
+    public async contextSearch({
+        repoIDs,
+        query,
+        signal,
+        filePatterns,
+    }: {
+        repoIDs: string[]
+        query: string
         signal?: AbortSignal
-    ): Promise<ContextSearchResult[] | null | Error> {
+        filePatterns?: string[]
+    }): Promise<ContextSearchResult[] | null | Error> {
+        const isValidVersion = await this.isValidSiteVersion({ minimumVersion: '5.7.0' })
+
         return this.fetchSourcegraphAPI<APIResponse<ContextSearchResponse>>(
-            CONTEXT_SEARCH_QUERY,
+            isValidVersion ? CONTEXT_SEARCH_QUERY : LEGACY_CONTEXT_SEARCH_QUERY,
             {
                 repos: repoIDs,
                 query,
                 codeResultsCount: 15,
                 textResultsCount: 5,
+                ...(isValidVersion ? { filePatterns } : {}),
             },
             signal
         ).then(response =>

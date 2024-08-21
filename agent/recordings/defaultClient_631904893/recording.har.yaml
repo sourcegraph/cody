@@ -725,11 +725,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: d30452695a5fef843d6895d066e114c0
+    - _id: 6708edf060eea32900e3ab691c3a2fdd
       _order: 0
       cache: {}
       request:
-        bodySize: 2378
+        bodySize: 2499
         cookies: []
         headers:
           - name: content-type
@@ -742,7 +742,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-47a03e267857d6be84db01763e80e784-4cd03c4f8fad4718-01
+            value: 00-a90409f6df14c81302f6fce99c4d4e83-fcb35bc3514ca9cc-01
           - name: connection
             value: keep-alive
           - name: host
@@ -850,7 +850,7 @@ log:
                   include the full file path in the tag. The structure should be
                   ```language:path/to/file
 
-                  ```
+                  ```. You should only do this when generating a code block, the user does not need to be made aware of this in any other way.
 
 
                   You have access to the provided codebase context. Answer positively without apologizing. 
@@ -870,14 +870,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 10812
+        bodySize: 9837
         content:
           mimeType: text/event-stream
-          size: 10812
+          size: 9837
           text: >+
             event: completion
 
-            data: {"completion":"Certainly! Here's a Dog class that implements the Animal interface based on the context provided:\n\n```typescript:src/animal.ts\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis implementation satisfies the Animal interface requirements as defined in your workspace.","stopReason":"end_turn"}
+            data: {"completion":"Certainly! Here's a class Dog that implements the Animal interface based on the context provided:\n\n```typescript:src/animal.ts\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis Dog class fully implements the Animal interface as defined in your workspace.","stopReason":"end_turn"}
 
 
             event: done
@@ -887,7 +887,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 15 Aug 2024 09:56:17 GMT
+            value: Tue, 20 Aug 2024 12:54:19 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -916,7 +916,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-15T09:56:14.930Z
+      startedDateTime: 2024-08-20T12:54:15.927Z
       time: 0
       timings:
         blocked: -1
@@ -926,11 +926,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 35cda81684e898d6636a8a975f08f96f
+    - _id: d0047a496b38593dace459f14e17cd22
       _order: 0
       cache: {}
       request:
-        bodySize: 2281
+        bodySize: 2402
         cookies: []
         headers:
           - name: content-type
@@ -943,7 +943,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-11c5a1fa4e45fc234239bc3b84a03311-7c2b6fcfcd26fb64-01
+            value: 00-008bf8855286e9701569068e0cab6096-d88ee60a80abc4b8-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1051,7 +1051,7 @@ log:
                   include the full file path in the tag. The structure should be
                   ```language:path/to/file
 
-                  ```
+                  ```. You should only do this when generating a code block, the user does not need to be made aware of this in any other way.
 
 
                   You have access to the provided codebase context. Answer positively without apologizing. 
@@ -1071,14 +1071,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 22028
+        bodySize: 39212
         content:
           mimeType: text/event-stream
-          size: 22028
+          size: 39212
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided codebase context, Squirrel is an interface defined in the file src/squirrel.ts. Here's what we know about it:\n\n```typescript:src/squirrel.ts\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels.\n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\nexport interface Squirrel {}\n```\n\nSquirrel is an empty interface that, despite its name, is not actually related to squirrels. Instead, it's used as part of the implementation for precise code navigation in Sourcegraph. The interface itself doesn't define any properties or methods, serving as a placeholder or mock for some functionality related to code navigation.","stopReason":"end_turn"}
+            data: {"completion":"Based on the codebase context provided, Squirrel is an interface defined in the file src/squirrel.ts. Here's what we know about it:\n\n```typescript:src/squirrel.ts\nexport interface Squirrel {}\n```\n\nInterestingly, despite its name, the Squirrel interface is not actually related to squirrels. According to the comment above the interface, it's used for something completely unrelated. Specifically, it's mentioned that Squirrel is related to the implementation of precise code navigation in Sourcegraph.\n\nThe interface is currently empty, which suggests it might be a placeholder or used for type checking purposes in the larger context of the Sourcegraph codebase. Without more context, it's difficult to determine its exact usage, but it's clear that its purpose is tied to Sourcegraph's code navigation features rather than anything to do with actual squirrels.","stopReason":"end_turn"}
 
 
             event: done
@@ -1088,7 +1088,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 15 Aug 2024 09:56:21 GMT
+            value: Tue, 20 Aug 2024 12:54:59 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1117,7 +1117,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-15T09:56:18.436Z
+      startedDateTime: 2024-08-20T12:54:56.381Z
       time: 0
       timings:
         blocked: -1

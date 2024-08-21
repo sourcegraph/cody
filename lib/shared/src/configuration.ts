@@ -101,6 +101,7 @@ export enum CodyIDE {
     Emacs = 'Emacs',
     Web = 'Web',
     VisualStudio = 'VisualStudio',
+    Eclipse = 'Eclipse',
 }
 
 export interface AutocompleteTimeouts {
