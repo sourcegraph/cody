@@ -3,7 +3,10 @@ package com.sourcegraph.cody.ui
 import com.intellij.ui.CellRendererPanel
 import com.intellij.util.ui.JBUI
 import com.sourcegraph.cody.Icons
-import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
+import com.sourcegraph.cody.agent.protocol_extensions.displayName
+import com.sourcegraph.cody.agent.protocol_extensions.getIcon
+import com.sourcegraph.cody.agent.protocol_extensions.isCodyProOnly
+import com.sourcegraph.cody.agent.protocol_generated.Model
 import com.sourcegraph.cody.chat.ui.LlmDropdown
 import com.sourcegraph.cody.edit.EditCommandPrompt
 import java.awt.BorderLayout
@@ -18,25 +21,24 @@ class LlmComboBoxRenderer(private val llmDropdown: LlmDropdown) : DefaultListCel
 
   override fun getListCellRendererComponent(
       list: JList<*>?,
-      chatModelProvider: Any?,
+      model: Any?,
       index: Int,
       isSelected: Boolean,
       cellHasFocus: Boolean
   ): Component {
-    val component =
-        super.getListCellRendererComponent(list, chatModelProvider, index, isSelected, cellHasFocus)
-    if (chatModelProvider !is ChatModelsResponse.ChatModelProvider) {
+    val component = super.getListCellRendererComponent(list, model, index, isSelected, cellHasFocus)
+    if (model !is Model) {
       return this
     }
     val panel = CellRendererPanel(BorderLayout())
-    val iconLabel = JLabel(chatModelProvider.getIcon())
+    val iconLabel = JLabel(model.getIcon())
     panel.add(iconLabel, BorderLayout.WEST)
 
     val textBadgePanel = JPanel(BorderLayout())
-    val displayNameLabel = JLabel(chatModelProvider.displayName())
+    val displayNameLabel = JLabel(model.displayName())
     textBadgePanel.add(displayNameLabel, BorderLayout.CENTER)
     textBadgePanel.border = BorderFactory.createEmptyBorder(0, 5, 0, 0)
-    if (chatModelProvider.isCodyProOnly() && llmDropdown.isCurrentUserFree()) {
+    if (model.isCodyProOnly() && llmDropdown.isCurrentUserFree()) {
       textBadgePanel.add(JLabel(Icons.LLM.ProSticker), BorderLayout.EAST)
     }
     val isInline = llmDropdown.parentDialog != null

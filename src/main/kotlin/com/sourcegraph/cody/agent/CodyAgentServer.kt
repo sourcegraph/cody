@@ -5,8 +5,6 @@ package com.sourcegraph.cody.agent
 import com.sourcegraph.cody.agent.protocol.AutocompleteParams
 import com.sourcegraph.cody.agent.protocol.AutocompleteResult
 import com.sourcegraph.cody.agent.protocol.ChatHistoryResponse
-import com.sourcegraph.cody.agent.protocol.ChatModelsParams
-import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.agent.protocol.CompletionItemParams
 import com.sourcegraph.cody.agent.protocol.CurrentUserCodySubscription
 import com.sourcegraph.cody.agent.protocol.Event
@@ -18,6 +16,8 @@ import com.sourcegraph.cody.agent.protocol.InlineEditParams
 import com.sourcegraph.cody.agent.protocol.NetworkRequest
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol.TelemetryEvent
+import com.sourcegraph.cody.agent.protocol_generated.Chat_ModelsParams
+import com.sourcegraph.cody.agent.protocol_generated.Chat_ModelsResult
 import com.sourcegraph.cody.agent.protocol_generated.ClientInfo
 import com.sourcegraph.cody.agent.protocol_generated.CodeActions_ProvideParams
 import com.sourcegraph.cody.agent.protocol_generated.CodeActions_ProvideResult
@@ -63,6 +63,9 @@ interface _SubsetGeneratedCodyAgentServer {
 
   @JsonRequest("codeActions/trigger")
   fun codeActions_trigger(params: CodeActions_TriggerParams): CompletableFuture<EditTask>
+
+  @JsonRequest("chat/models")
+  fun chat_models(params: Chat_ModelsParams): CompletableFuture<Chat_ModelsResult>
 
   @JsonRequest("extensionConfiguration/getSettingsSchema")
   fun extensionConfiguration_getSettingsSchema(params: Null?): CompletableFuture<String>
@@ -160,9 +163,6 @@ interface _LegacyAgentServer {
 
   @JsonRequest("webview/resolveWebviewView")
   fun webviewResolveWebviewView(params: WebviewResolveWebviewViewParams): CompletableFuture<Any>
-
-  @JsonRequest("chat/models")
-  fun chatModels(params: ChatModelsParams): CompletableFuture<ChatModelsResponse>
 
   @JsonRequest("chat/export") fun chatExport(): CompletableFuture<List<ChatHistoryResponse>>
 

@@ -28,11 +28,11 @@ import com.intellij.util.messages.MessageBusConnection
 import com.intellij.util.ui.ImageUtil
 import com.intellij.util.ui.JBUI
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.agent.protocol.InlineEditParams
 import com.sourcegraph.cody.agent.protocol.ModelUsage
 import com.sourcegraph.cody.agent.protocol_generated.EditTask
 import com.sourcegraph.cody.agent.protocol_generated.EditTask_RetryParams
+import com.sourcegraph.cody.agent.protocol_generated.Model
 import com.sourcegraph.cody.chat.PromptHistory
 import com.sourcegraph.cody.chat.ui.LlmDropdown
 import com.sourcegraph.cody.edit.EditUtil.namedButton
@@ -148,9 +148,9 @@ class EditCommandPrompt(
       LlmDropdown(
               modelUsage = ModelUsage.EDIT,
               project = project,
-              onSetSelectedItem = { model = it.model },
+              onSetSelectedItem = { model = it.id },
               this,
-              chatModelProviderFromState = null,
+              chatModelFromState = null,
               model = model)
           .apply {
             foreground = boldLabelColor()
@@ -165,12 +165,12 @@ class EditCommandPrompt(
                   }
                 })
             renderer =
-                object : ListCellRenderer<ChatModelsResponse.ChatModelProvider> {
+                object : ListCellRenderer<Model> {
                   private val defaultRenderer = renderer
 
                   override fun getListCellRendererComponent(
-                      list: JList<out ChatModelsResponse.ChatModelProvider>?,
-                      value: ChatModelsResponse.ChatModelProvider?,
+                      list: JList<out Model>?,
+                      value: Model?,
                       index: Int,
                       isSelected: Boolean,
                       cellHasFocus: Boolean

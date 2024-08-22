@@ -3,7 +3,7 @@ package com.sourcegraph.cody.history.state
 import com.intellij.openapi.components.BaseState
 import com.intellij.util.xmlb.annotations.OptionTag
 import com.intellij.util.xmlb.annotations.Tag
-import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
+import com.sourcegraph.cody.agent.protocol_generated.Model
 
 @Tag("llm")
 class LLMState : BaseState() {
@@ -18,13 +18,13 @@ class LLMState : BaseState() {
   @get:OptionTag(tag = "usage", nameAttribute = "") var usage: MutableList<String> by list()
 
   companion object {
-    fun fromChatModel(chatModelProvider: ChatModelsResponse.ChatModelProvider): LLMState {
+    fun fromChatModel(chatModel: Model): LLMState {
       return LLMState().also {
-        it.model = chatModelProvider.model
-        it.title = chatModelProvider.title
-        it.provider = chatModelProvider.provider
-        it.tags = chatModelProvider.tags ?: mutableListOf()
-        it.usage = chatModelProvider.usage ?: mutableListOf()
+        it.model = chatModel.id
+        it.title = chatModel.title
+        it.provider = chatModel.provider
+        it.tags = chatModel.tags.toMutableList()
+        it.usage = chatModel.usage.toMutableList()
       }
     }
   }

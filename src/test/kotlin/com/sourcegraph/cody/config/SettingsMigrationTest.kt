@@ -2,7 +2,8 @@ package com.sourcegraph.cody.config
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.testFramework.registerServiceInstance
-import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
+import com.sourcegraph.cody.agent.protocol_generated.Model
+import com.sourcegraph.cody.agent.protocol_generated.ModelContextWindow
 import com.sourcegraph.cody.config.migration.ChatTagsLlmMigration
 import com.sourcegraph.cody.config.migration.DeprecatedChatLlmMigration
 import com.sourcegraph.cody.config.migration.SettingsMigration
@@ -99,12 +100,15 @@ class SettingsMigrationTest : BasePlatformTestCase() {
         HistoryState().also {
           it.defaultLlm =
               LLMState.fromChatModel(
-                  ChatModelsResponse.ChatModelProvider(
+                  Model(
+                      id = "T-800",
+                      usage = listOf("chat"),
+                      contextWindow = ModelContextWindow(0, 0, null),
+                      clientSideConfig = null,
                       provider = "Cyberdyne",
                       title = "Terminator",
-                      model = "T-800",
-                      default = true,
-                      codyProOnly = false))
+                      tags = emptyList(),
+                      modelRef = null))
           it.defaultEnhancedContext =
               EnhancedContextState().also {
                 it.isEnabled = true
@@ -148,8 +152,15 @@ class SettingsMigrationTest : BasePlatformTestCase() {
                     it.accountId = "dave"
                     it.llm =
                         LLMState.fromChatModel(
-                            ChatModelsResponse.ChatModelProvider(
-                                "Uni of IL", "HAL", "HAL 9000", codyProOnly = true))
+                            Model(
+                                id = "HAL 9000",
+                                usage = listOf("chat"),
+                                contextWindow = ModelContextWindow(0, 0, null),
+                                clientSideConfig = null,
+                                provider = "Uni of IL",
+                                title = "HAL",
+                                tags = listOf("pro"),
+                                modelRef = null))
                     it.messages =
                         mutableListOf(
                             MessageState().also {
@@ -195,21 +206,27 @@ class SettingsMigrationTest : BasePlatformTestCase() {
   fun `test DeprecatedChatLlmMigration`() {
     fun createLlmModel(
         version: String,
-        isDefault: Boolean = false,
         isDeprecated: Boolean = false,
-    ): ChatModelsResponse.ChatModelProvider {
-      return ChatModelsResponse.ChatModelProvider(
-          "Anthropic",
-          "Claude $version",
-          "anthropic/claude-$version",
-          default = isDefault,
-          deprecated = isDeprecated)
+    ): Model {
+      val myTags = mutableListOf<String>()
+      if (isDeprecated) myTags.add("deprecated")
+
+      return Model(
+          id = "anthropic/claude-$version",
+          usage = listOf("chat"),
+          contextWindow = ModelContextWindow(0, 0, null),
+          clientSideConfig = null,
+          provider = "Anthropic",
+          title = "Claude $version",
+          tags = myTags,
+          modelRef = null)
     }
 
     val claude20 = createLlmModel("2.0", isDeprecated = true)
     val claude21 = createLlmModel("2.1", isDeprecated = true)
-    val claude30 = createLlmModel("3.0", isDefault = true)
-    val models = listOf(claude20, claude21, claude30)
+    val claude30 = createLlmModel("3.0")
+    // first one is the default
+    val models = listOf(claude30, claude20, claude21, claude30)
 
     val accountData =
         mutableListOf(
@@ -250,7 +267,7 @@ class SettingsMigrationTest : BasePlatformTestCase() {
     assertEquals(2, accountData.size)
     accountData.forEach { ad ->
       ad.chats.forEach { chat ->
-        assertEquals(claude30.model, chat.llm?.model)
+        assertEquals(claude30.id, chat.llm?.model)
         assertEquals(claude30.title, chat.llm?.title)
       }
     }
@@ -263,15 +280,19 @@ class SettingsMigrationTest : BasePlatformTestCase() {
         isCodyPro: Boolean = false,
         usage: List<String> = listOf("chat", "edit"),
         tags: List<String> = listOf()
-    ): ChatModelsResponse.ChatModelProvider {
-      return ChatModelsResponse.ChatModelProvider(
-          "Anthropic",
-          "Claude $version",
-          "anthropic/claude-$version",
-          usage = usage.toMutableList(),
-          tags = tags.toMutableList(),
-          deprecated = isDeprecated,
-          codyProOnly = isCodyPro)
+    ): Model {
+      val myTags = tags.toMutableList()
+      if (isDeprecated) myTags.add("deprecated")
+      if (isCodyPro) myTags.add("pro")
+      return Model(
+          id = "anthropic/claude-$version",
+          usage = usage,
+          contextWindow = ModelContextWindow(0, 0, null),
+          clientSideConfig = null,
+          provider = "Anthropic",
+          title = "Claude $version",
+          tags = myTags,
+          modelRef = null)
     }
 
     val claude20Old = createLlmModel("2.0", isDeprecated = true)
@@ -315,7 +336,7 @@ class SettingsMigrationTest : BasePlatformTestCase() {
             })
 
     fun getTagsAndUsage(chat: ChatState): Pair<List<String>, List<String>> {
-      val llm = chat.llm ?: return Pair(listOf<String>(), listOf<String>())
+      val llm = chat.llm ?: return Pair(listOf(), listOf())
       return Pair(llm.tags.toList(), llm.usage.toList())
     }
 
@@ -324,17 +345,17 @@ class SettingsMigrationTest : BasePlatformTestCase() {
     accountData.forEach { ad ->
       ad.chats.forEach { chat ->
         when (chat.llm?.model) {
-          claude20Old.model -> {
+          claude20Old.id -> {
             val (tags, usage) = getTagsAndUsage(chat)
             assertEquals(listOf("deprecated", "free"), tags)
             assertEquals(listOf("chat", "edit"), usage)
           }
-          claude21Old.model -> {
+          claude21Old.id -> {
             val (tags, usage) = getTagsAndUsage(chat)
             assertEquals(listOf("deprecated", "pro"), tags)
             assertEquals(listOf("chat", "edit"), usage)
           }
-          claude30Old.model -> {
+          claude30Old.id -> {
             val (tags, usage) = getTagsAndUsage(chat)
             assertEquals(listOf("pro", "other"), tags)
             assertEquals(listOf("edit"), usage)
