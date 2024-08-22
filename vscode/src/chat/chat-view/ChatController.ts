@@ -728,11 +728,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 signal.throwIfAborted()
                 const corpusContext = contextAlternatives[0].items
 
-                const mentionsRepository = mentions.find(contextItem =>
+                const repositoryMentioned = mentions.find(contextItem =>
                     ['repository', 'tree'].includes(contextItem.type)
                 )
 
-                if ((await oneBoxEnabled) && mentionsRepository) {
+                if ((await oneBoxEnabled) && repositoryMentioned) {
                     const intent = detectedIntent
                         ? detectedIntent
                         : await this.detectChatIntent({ requestID, text: inputText.toString() })
