@@ -39,6 +39,7 @@ import com.sourcegraph.cody.config.ui.AccountConfigurable
 import com.sourcegraph.cody.sidebar.WebTheme
 import com.sourcegraph.cody.sidebar.WebThemeController
 import com.sourcegraph.common.BrowserOpener
+import java.awt.Component
 import java.awt.datatransfer.StringSelection
 import java.io.IOException
 import java.net.URI
@@ -365,6 +366,53 @@ class WebUIHostImpl(
 
 class WebUIProxy(private val host: WebUIHost, private val browser: JBCefBrowserBase) {
   companion object {
+
+    /**
+     * TODO: Hopefully this can be removed when JetBrains will patch focus handler implementation
+     *   https://youtrack.jetbrains.com/issue/IJPL-158952/Focus-issue-when-using-multiple-JCEF-instances
+     *   Focus switching is caused by something higher in the call stack, so best we can do here is
+     *   to break the chain of focus stealing
+     */
+    private fun patchBrowserFocusHandler(browser: JBCefBrowserBase) {
+      val myFocusHandlerField = browser.jbCefClient.javaClass.getDeclaredField("myFocusHandler")
+      myFocusHandlerField.isAccessible = true
+      val myFocusHandler = myFocusHandlerField.get(browser.jbCefClient)
+      val clearMethod = myFocusHandler.javaClass.getDeclaredMethod("clear")
+      clearMethod.isAccessible = true
+      clearMethod.invoke(myFocusHandler)
+
+      browser.jbCefClient.addFocusHandler(
+          object : CefFocusHandlerAdapter() {
+            val previouslyFocused = mutableListOf<Pair<Component, Long>>()
+
+            // Circuit breaker to prevent focus flickering between different WebViews
+            fun isFocusAllowed(component: Component): Boolean {
+              val currentTime = System.currentTimeMillis()
+              val recentFocus = previouslyFocused.lastOrNull { it.first == component }
+              if (recentFocus != null && currentTime - recentFocus.second < 50) {
+                return false
+              }
+
+              previouslyFocused.add(Pair(component, currentTime))
+              if (previouslyFocused.size > 10) { // Keep only the last 10 entries
+                previouslyFocused.removeFirst()
+              }
+
+              return true
+            }
+
+            override fun onSetFocus(
+                browser: CefBrowser,
+                source: CefFocusHandler.FocusSource
+            ): Boolean {
+              return !browser.uiComponent.hasFocus() &&
+                  isFocusAllowed(browser.uiComponent) &&
+                  browser.uiComponent.requestFocusInWindow()
+            }
+          },
+          browser.cefBrowser)
+    }
+
     fun create(host: WebUIHost): WebUIProxy {
       val browser =
           JBCefBrowserBuilder()
@@ -377,23 +425,7 @@ class WebUIProxy(private val host: WebUIHost, private val browser: JBCefBrowserB
               }
               .build()
 
-      browser.jbCefClient.addFocusHandler(
-          object : CefFocusHandlerAdapter() {
-            override fun onGotFocus(browser: CefBrowser) {
-              println("onGotFocus $browser")
-            }
-
-            override fun onSetFocus(
-                browser: CefBrowser,
-                source: CefFocusHandler.FocusSource
-            ): Boolean {
-              val x = super.onSetFocus(browser, source)
-              println("onSetFocus $browser $x")
-              return x
-            }
-          },
-          browser.cefBrowser)
-
+      patchBrowserFocusHandler(browser)
       val proxy = WebUIProxy(host, browser)
 
       val viewToHost =

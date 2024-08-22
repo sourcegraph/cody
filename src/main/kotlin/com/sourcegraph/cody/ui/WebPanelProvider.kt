@@ -1,7 +1,12 @@
 package com.sourcegraph.cody.ui
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileEditor.*
+import com.intellij.openapi.fileEditor.FileEditor
+import com.intellij.openapi.fileEditor.FileEditorLocation
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.FileEditorPolicy
+import com.intellij.openapi.fileEditor.FileEditorProvider
+import com.intellij.openapi.fileEditor.FileEditorState
 import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
@@ -60,32 +65,31 @@ class WebPanelEditor(private val file: VirtualFile) : FileEditor {
 }
 
 class WebPanelProvider : FileEditorProvider, DumbAware {
-  private var creatingEditor = 0
+  @Volatile private var scheduledForDisposal: VirtualFile? = null
 
   override fun accept(project: Project, file: VirtualFile): Boolean =
       file.fileType == WebPanelFileType.INSTANCE
 
+  private fun runScheduledDisposal() {
+    scheduledForDisposal?.getUserData(WebPanelEditor.WEB_UI_PROXY_KEY)?.dispose()
+  }
+
   override fun createEditor(project: Project, file: VirtualFile): FileEditor {
     ApplicationManager.getApplication().assertIsDispatchThread()
-    try {
-      this.creatingEditor++
-      // If this file is already open elsewhere, close it.
-      (FileEditorManager.getInstance(project) as? FileEditorManagerEx)?.closeFile(file)
-      return WebPanelEditor(file)
-    } finally {
-      this.creatingEditor--
-    }
+    // If this file is already open elsewhere, close it.
+    (FileEditorManager.getInstance(project) as? FileEditorManagerEx)?.closeFile(file)
+
+    // If file was reopened we don't want to dispose WebView, as it means panel was just moved
+    // between editors
+    if (scheduledForDisposal != file) runScheduledDisposal()
+    scheduledForDisposal = null
+
+    return WebPanelEditor(file)
   }
 
   override fun disposeEditor(editor: FileEditor) {
-    ApplicationManager.getApplication().assertIsDispatchThread()
-    if (this.creatingEditor > 0) {
-      // We are synchronously creating an editor, which means we do not want to dispose the webview:
-      // It will be
-      // adopted by the new editor.
-      return
-    }
-    editor.file.getUserData(WebPanelEditor.WEB_UI_PROXY_KEY)?.let { it.dispose() }
+    runScheduledDisposal()
+    scheduledForDisposal = editor.file
   }
 
   // TODO: Implement readState, writeState if we need this to manage, restore.
