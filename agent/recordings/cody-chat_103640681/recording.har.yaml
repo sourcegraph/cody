@@ -88,11 +88,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b5ceae943af989c36c626faa496b3c02
+    - _id: 7e8f56ab45a3dc7757964706df7e1df2
       _order: 0
       cache: {}
       request:
-        bodySize: 259
+        bodySize: 436
         cookies: []
         headers:
           - name: content-type
@@ -118,7 +118,15 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.
+
+
+                  Additional rules:
+
+                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
+
+                  ```.
               - speaker: human
                 text: respond with "hello" and nothing else
             model: claude-3.5-sonnet
@@ -148,7 +156,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 13 Aug 2024 19:01:31 GMT
+            value: Thu, 22 Aug 2024 13:29:36 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -177,7 +185,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-13T19:01:29.569Z
+      startedDateTime: 2024-08-22T13:29:35.594Z
       time: 0
       timings:
         blocked: -1
@@ -187,11 +195,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 981e59f977afc47f300f9c5268dda27e
+    - _id: e119836577ea7930f84c6d55f363d344
       _order: 0
       cache: {}
       request:
-        bodySize: 808
+        bodySize: 719
         cookies: []
         headers:
           - name: content-type
@@ -217,11 +225,19 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.
+
+
+                  Additional rules:
+
+                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
+
+                  ```.
               - speaker: human
                 text: |-
                   Codebase context from file animal.ts:
-                  ```typescript
+                  ```typescript:animal.ts
                   interface StrangeAnimal {
                       makesSound(): 'coo' | 'moo'
                   }
@@ -230,13 +246,6 @@ log:
                 text: Ok.
               - speaker: human
                 text: >-
-                  When generating fenced code blocks in Markdown, ensure you
-                  include the full file path in the tag. The structure should be
-                  ```language:path/to/file
-
-                  ```. You should only do this when generating a code block, the user does not need to be made aware of this in any other way.
-
-
                   You have access to the provided codebase context. 
 
 
@@ -254,14 +263,14 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=1&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 2960
+        bodySize: 2428
         content:
           mimeType: text/event-stream
-          size: 2960
+          size: 2428
           text: >+
             event: completion
 
-            data: {"completion":"Here's the implementation of a cow without any explanation:\n\n```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
+            data: {"completion":"```typescript:cow.ts\nimport { StrangeAnimal } from './animal';\n\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
 
 
             event: done
@@ -271,7 +280,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 20 Aug 2024 12:54:22 GMT
+            value: Thu, 22 Aug 2024 13:29:37 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -300,7 +309,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-20T12:54:21.365Z
+      startedDateTime: 2024-08-22T13:29:36.754Z
       time: 0
       timings:
         blocked: -1
