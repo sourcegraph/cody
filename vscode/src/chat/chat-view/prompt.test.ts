@@ -34,21 +34,28 @@ describe('DefaultPrompter', () => {
         chat.addHumanMessage({ text: ps`Hello` })
 
         const { prompt, context } = await new DefaultPrompter([], []).makePrompt(chat, 0)
+        expect(prompt).toMatchInlineSnapshot(`
+          [
+            {
+              "speaker": "human",
+              "text": "You are Cody, an AI coding assistant from Sourcegraph.
 
-        expect(prompt).toEqual<Message[]>([
-            {
-                speaker: 'human',
-                text: ps`You are Cody, an AI coding assistant from Sourcegraph.`,
+          Additional rules:
+          - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be \`\`\`language:path/to/file
+          \`\`\`.",
             },
             {
-                speaker: 'assistant',
-                text: ps`I am Cody, an AI coding assistant from Sourcegraph.`,
+              "speaker": "assistant",
+              "text": "I am Cody, an AI coding assistant from Sourcegraph.",
             },
             {
-                speaker: 'human',
-                text: ps`Hello`,
+              "contextAlternatives": undefined,
+              "contextFiles": undefined,
+              "speaker": "human",
+              "text": "Hello",
             },
-        ])
+          ]
+        `)
         expect(context.used).toEqual([])
         expect(context.ignored).toEqual([])
     })
@@ -106,21 +113,30 @@ describe('DefaultPrompter', () => {
         chat.addHumanMessage({ text: ps`Hello` })
 
         const { prompt, context } = await new DefaultPrompter([], []).makePrompt(chat, 0)
+        expect(prompt).toMatchInlineSnapshot(`
+          [
+            {
+              "speaker": "human",
+              "text": "You are Cody, an AI coding assistant from Sourcegraph.
 
-        expect(prompt).toEqual<Message[]>([
-            {
-                speaker: 'human',
-                text: ps`You are Cody, an AI coding assistant from Sourcegraph. Always respond with 🧀 emojis`,
+          Additional rules:
+          - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be \`\`\`language:path/to/file
+          \`\`\`. 
+
+          Always respond with 🧀 emojis",
             },
             {
-                speaker: 'assistant',
-                text: ps`I am Cody, an AI coding assistant from Sourcegraph.`,
+              "speaker": "assistant",
+              "text": "I am Cody, an AI coding assistant from Sourcegraph.",
             },
             {
-                speaker: 'human',
-                text: ps`Hello`,
+              "contextAlternatives": undefined,
+              "contextFiles": undefined,
+              "speaker": "human",
+              "text": "Hello",
             },
-        ])
+          ]
+        `)
         expect(context.used).toEqual([])
         expect(context.ignored).toEqual([])
     })
