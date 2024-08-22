@@ -12,7 +12,7 @@ const CHAT_PREAMBLE = psDedent`
     ${DEFAULT_PREAMBLE}
 
     Additional rules:
-    - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be \`\`\`language:path/to/file\n\`\`\`. You should only do this when generating a code block, the user does not need to be made aware of this in any other way.
+    - If generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be \`\`\`language:path/to/file\n\`\`\`. You should only do this when generating a code block, the user does not need to be made aware of this in any other way.
 `.trim()
 
 export function getSimplePreamble(
