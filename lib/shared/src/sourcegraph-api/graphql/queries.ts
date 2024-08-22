@@ -249,7 +249,7 @@ query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $
 }`
 
 export const CONTEXT_SEARCH_QUERY = `
-query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!, $filePatterns: [String!]!) {
+query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!, $filePatterns: [String!]) {
 	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount, filePatterns: $filePatterns) {
         ...on FileChunkContext {
             blob {
