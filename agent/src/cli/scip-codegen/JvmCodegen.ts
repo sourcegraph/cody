@@ -144,7 +144,7 @@ export class JvmCodegen extends BaseCodegen {
             p.line()
             if (this.language === JvmLanguage.Kotlin) {
                 p.line('object Constants {')
-            } else if (this.language === JvmLanguage.Java) {
+            } else {
                 p.line('public final class Constants {')
             }
         }
@@ -269,6 +269,9 @@ export class JvmCodegen extends BaseCodegen {
                             const isHandledCase = new Set<string>()
                             for (const member of union.members) {
                                 if (isHandledCase.has(member.value)) {
+                                    // There's a bug in ContextProvider where
+                                    // two cases have the same discriminator
+                                    // 'search'
                                     this.reporter.warn(
                                         info.symbol,
                                         `duplicate discriminator value ${member.value}`
@@ -400,6 +403,10 @@ export class JvmCodegen extends BaseCodegen {
                     continue
                 }
                 if (memberSymbol.endsWith('().')) {
+                    // Ignore method members because they should not leak into
+                    // the protocol in the first place because functions don't
+                    // have meaningful JSON serialization. The most common cause
+                    // is that a class leaks into the protocol.
                     continue
                 }
                 const member = symtab.info(memberSymbol)
@@ -494,6 +501,8 @@ export class JvmCodegen extends BaseCodegen {
         if (this.language === JvmLanguage.Kotlin) {
             p.line(`)${params?.heritageClause ?? ''} {`)
         }
+        // Nest enum classe inside data class to avoid naming conflicts with
+        // enums for other data classes in the same package.
         p.block(() => {
             if (this.language === JvmLanguage.Kotlin) {
                 p.addImport('import com.google.gson.annotations.SerializedName;')
@@ -561,36 +570,8 @@ export class JvmCodegen extends BaseCodegen {
         const { f, p, c } = this.startDocument()
         const name = f.typeName(info)
         const alias = this.aliasType(info)
-        if (this.language === JvmLanguage.Kotlin) {
-            p.line(`package ${this.options.kotlinPackage};`)
-            p.line()
-            p.line(
-                '@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")'
-            )
-            p.line(`package ${this.options.kotlinPackage};`)
-            if (alias) {
-                p.line(`typealias ${name} = ${alias}`)
-            }
-        } else if (this.language === JvmLanguage.Java) {
-            p.line(`package ${this.options.kotlinPackage};`)
-            p.line()
-            p.line('@SuppressWarnings("unused")')
-            if (alias) {
-                if (info.display_name === 'Date') {
-                    p.line('public final class Date {}')
-                } else if (info.display_name === 'Null') {
-                    p.line('public final class Null {}')
-                } else {
-                    const constants = this.stringConstantsFromInfo(info)
-                    if (constants.length === 0) {
-                        this.reporter.warn(info.symbol, `no constants for ${info.display_name}`)
-                        p.line(`public final class ${name} {} // TODO: fixme`)
-                    } else {
-                        this.writeEnum(p, name, constants)
-                    }
-                }
-            }
-        } else if (this.language === JvmLanguage.CSharp) {
+
+        if (this.language === JvmLanguage.CSharp) {
             p.addImport('using System.Text.Json.Serialization;')
             p.line()
             p.line(`namespace ${this.options.kotlinPackage}`)
@@ -638,13 +619,49 @@ export class JvmCodegen extends BaseCodegen {
                 }
             })
             p.line('}')
+            const filename = `${info.display_name}.${this.fileExtension()}`.replaceAll('_', '')
+            fspromises.writeFile(path.join(this.options.output, filename), p.build())
+            return
         }
 
-        let filename = `${info.display_name}.${this.fileExtension()}`
-        if (this.language === JvmLanguage.CSharp) {
-            filename = filename.replaceAll('_', '')
+        if (this.language === JvmLanguage.Kotlin) {
+            p.line(
+                '@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")'
+            )
         }
-        fspromises.writeFile(path.join(this.options.output, filename), p.build())
+        p.line(`package ${this.options.kotlinPackage};`)
+        p.line()
+        if (alias) {
+            if (this.language === JvmLanguage.Kotlin) {
+                p.line(`typealias ${name} = ${alias}`)
+            } else {
+                if (info.display_name === 'Date') {
+                    p.line('public final class Date {}')
+                } else if (info.display_name === 'Null') {
+                    p.line('public final class Null {}')
+                } else {
+                    const constants = this.stringConstantsFromInfo(info)
+                    if (constants.length === 0) {
+                        this.reporter.warn(info.symbol, `no constants for ${info.display_name}`)
+                        p.line(`public final class ${name} {} // TODO: fixme`)
+                    } else {
+                        this.writeEnum(p, name, constants)
+                    }
+                }
+            }
+        } else {
+            const discriminatedUnion = this.discriminatedUnions.get(info.symbol)
+            if (discriminatedUnion) {
+                this.writeSealedClass(c, name, info, discriminatedUnion)
+            } else {
+                this.writeDataClass(c, name, info)
+            }
+        }
+        p.line()
+        await fspromises.writeFile(
+            path.join(this.options.output, `${name}.${this.fileExtension()}`),
+            p.build()
+        )
     }
 
     private async writeProtocolInterface(
@@ -728,7 +745,13 @@ export class JvmCodegen extends BaseCodegen {
             p.line()
             p.sectionComment('Notifications')
             for (const notification of symtab.structuralType(symtab.canonicalSymbol(notifications))) {
-                // ... (existing notification handling logic)
+                // We skip the webview protocol because our IDE clients are now
+                // using the string-encoded protocol instead.
+                if (notification.display_name === 'webview/postMessage') {
+                    continue
+                }
+                // Process a JSON-RPC request signature. For example:
+                // type Notifications = { 'textDocument/inlineCompletions': [NotificationParams] }
                 const { parameterType, parameterSyntax } = f.jsonrpcMethodParameter(notification)
                 this.queueClassLikeType(parameterType, notification, 'parameter')
                 if (this.language === JvmLanguage.Kotlin) {

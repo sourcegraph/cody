@@ -12,8 +12,9 @@ export class JvmFormatter {
         private codegen: JvmCodegen
     ) {}
     public functionName(info: scip.SymbolInformation): string {
-        const replacer = this.language === JvmLanguage.CSharp ? '' : '_'
-        return info.display_name.replaceAll('$/', '').replaceAll('/', replacer)
+        return info.display_name
+            .replaceAll('$/', '')
+            .replaceAll('/', this.language === JvmLanguage.CSharp ? '' : '_')
     }
 
     public typeName(info: scip.SymbolInformation): string {
@@ -21,12 +22,11 @@ export class JvmFormatter {
             // HACK, just need to get this compiling
             return 'Uri'
         }
-        const joiner = this.language === JvmLanguage.CSharp ? '' : '_'
         return info.display_name
             .replaceAll('$/', '')
             .split('/')
             .map(part => capitalize(part))
-            .join(joiner)
+            .join(this.language === JvmLanguage.CSharp ? '' : '_')
     }
 
     public jsonrpcMethodParameter(jsonrpcMethod: scip.SymbolInformation): {
@@ -54,7 +54,7 @@ export class JvmFormatter {
             return ''
         }
         if (this.language === JvmLanguage.CSharp) {
-            return ''
+            ;('')
         }
         return this.isNullable(tpe) ? '?' : ''
     }
@@ -110,7 +110,7 @@ export class JvmFormatter {
                     return `List<${elementType}>`
                 }
                 if (this.language === JvmLanguage.CSharp) {
-                    return `List<${elementType}>`
+                    return `${elementType}[]`
                 }
                 return `java.util.List<${elementType}>`
             }
@@ -179,10 +179,9 @@ export class JvmFormatter {
 
     private languageSpecificKeyword(keyword: string): string {
         switch (this.language) {
+            case JvmLanguage.Kotlin:
             case JvmLanguage.Java:
                 return keyword
-            case JvmLanguage.Kotlin:
-                return keyword === 'Boolean' ? 'Boolean' : keyword
             case JvmLanguage.CSharp:
                 switch (keyword) {
                     case 'Boolean':
