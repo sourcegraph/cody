@@ -35,7 +35,7 @@ export interface ChatMessage extends Message {
     model?: string
 
     /* The detected intent of the message */
-    intent?: 'search' | 'chat'
+    intent?: 'search' | 'chat' | undefined | null
 }
 
 // An unsafe version of the {@link ChatMessage} that has the PromptString

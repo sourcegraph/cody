@@ -246,7 +246,7 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
-    intent?: ChatMessage['intent']
+    intent?: ChatMessage['intent'] | undefined | null
 }
 
 interface WebviewEditMessage extends WebviewContextMessage {
@@ -255,7 +255,7 @@ interface WebviewEditMessage extends WebviewContextMessage {
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
-    intent?: ChatMessage['intent']
+    intent?: ChatMessage['intent'] | undefined | null
 }
 
 interface WebviewContextMessage {

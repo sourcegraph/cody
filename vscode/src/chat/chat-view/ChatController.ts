@@ -658,7 +658,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         signal: AbortSignal
         source?: EventSource
         command?: DefaultChatCommands
-        intent?: ChatMessage['intent']
+        intent?: ChatMessage['intent'] | undefined | null
     }): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             span.setAttribute('sampled', true)
@@ -1014,7 +1014,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         contextFiles: ContextItem[]
         editorState: SerializedPromptEditorState | null
         addEnhancedContext?: boolean
-        intent?: ChatMessage['intent']
+        intent?: ChatMessage['intent'] | undefined | null
     }): Promise<void> {
         const abortSignal = this.startNewSubmitOrEditOperation()
 
