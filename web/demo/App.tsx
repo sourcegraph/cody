@@ -23,7 +23,9 @@ const accessTokenStorageKey = `accessToken:${serverEndpoint}`
 let accessToken = localStorage.getItem(accessTokenStorageKey)
 
 const MOCK_INITIAL_DOT_COM_CONTEXT: InitialContext = {
-    fileURL: 'web/demo/App.tsx',
+    fileURL: 'web/demo',
+    fileRange: null,
+    isDirectory: true,
     repository: {
         id: 'UmVwb3NpdG9yeTo2MTMyNTMyOA==',
         name: 'github.com/sourcegraph/cody',

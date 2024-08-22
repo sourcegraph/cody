@@ -1,3 +1,7 @@
+## 0.6.1
+- Adds support for directory initial context (mention) 
+- Changes target build to es modules 
+
 ## 0.6.0
 - Changes API for initial context (now it supports only one repository as an initial context mention)
 - Fixes problem with file and symbol mention search don't respect initial repository as a context

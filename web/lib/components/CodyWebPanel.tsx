@@ -6,10 +6,12 @@ import {
     type ClientStateForWebview,
     CodyIDE,
     type ContextItem,
+    type ContextItemOpenCtx,
     type ContextItemRepository,
     ContextItemSource,
     type Model,
     PromptString,
+    REMOTE_DIRECTORY_PROVIDER_URI,
     type SerializedChatTranscript,
     isErrorLike,
     setDisplayPathEnvInfo,
@@ -137,7 +139,7 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     )
 
     const clientState: ClientStateForWebview = useMemo<ClientStateForWebview>(() => {
-        const { repository, fileURL } = initialContext ?? {}
+        const { repository, fileURL, isDirectory } = initialContext ?? {}
 
         if (!repository) {
             return { initialContext: [] }
@@ -160,20 +162,42 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         ]
 
         if (fileURL) {
-            mentions.push({
-                type: 'file',
-                title: initialContext?.fileRange ? 'Current Selection' : 'Current File',
-                isIgnored: false,
-                range: initialContext?.fileRange
-                    ? {
-                          start: { line: initialContext.fileRange.startLine, character: 0 },
-                          end: { line: initialContext.fileRange.endLine + 1, character: 0 },
-                      }
-                    : undefined,
-                remoteRepositoryName: repository.name,
-                uri: URI.file(repository.name + fileURL),
-                source: ContextItemSource.Initial,
-            })
+            // Repository directory file url in this case is directory path
+            if (isDirectory) {
+                mentions.push({
+                    type: 'openctx',
+                    provider: 'openctx',
+                    title: fileURL,
+                    uri: URI.file(`${repository.name}/${fileURL}/`),
+                    providerUri: REMOTE_DIRECTORY_PROVIDER_URI,
+                    description: ' ',
+                    source: ContextItemSource.Initial,
+                    mention: {
+                        data: {
+                            repoName: repository.name,
+                            repoID: repository.id,
+                            directoryPath: `${fileURL}/`,
+                        },
+                        description: ' ',
+                    }
+                } as ContextItemOpenCtx)
+            } else {
+                // Common file mention with possible file range positions
+                mentions.push({
+                    type: 'file',
+                    title: initialContext?.fileRange ? 'Current Selection' : 'Current File',
+                    isIgnored: false,
+                    range: initialContext?.fileRange
+                        ? {
+                              start: { line: initialContext.fileRange.startLine, character: 0 },
+                              end: { line: initialContext.fileRange.endLine + 1, character: 0 },
+                          }
+                        : undefined,
+                    remoteRepositoryName: repository.name,
+                    uri: URI.file(`${repository.name}/${fileURL}`),
+                    source: ContextItemSource.Initial,
+                })
+            }
         }
 
         return {
