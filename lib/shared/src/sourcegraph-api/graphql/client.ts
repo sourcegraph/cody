@@ -1021,7 +1021,7 @@ export class SourcegraphGraphQLAPIClient {
                 query,
                 codeResultsCount: 15,
                 textResultsCount: 5,
-                ...(isValidVersion && filePatterns?.length ? { filePatterns } : {}),
+                ...(isValidVersion ? { filePatterns } : {}),
             },
             signal
         ).then(response =>
