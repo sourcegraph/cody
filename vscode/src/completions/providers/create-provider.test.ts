@@ -121,7 +121,7 @@ describe('createProviderConfig', () => {
             expect(provider?.model).toBe('starcoder-hybrid')
         })
 
-        it('returns "openai" provider config if specified in VSCode settings; model is ignored', async () => {
+        it('returns "unstable-openai" provider config if specified in VSCode settings; model is ignored', async () => {
             const provider = await createProviderConfig(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'unstable-openai',
