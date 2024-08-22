@@ -103,7 +103,7 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
                     accessToken: accessToken ?? '',
                 })
 
-                // Create an new chat each time.
+                // Create a new chat each time
                 await createChat(client)
 
                 setClient(client)
@@ -113,6 +113,24 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
             }
         })()
     }, [accessToken, serverEndpoint, createAgentWorker, customHeaders, telemetryClientName])
+
+    useEffect(() => {
+        if (!client || isErrorLike(client)) {
+            return
+        }
+
+        // Set initial context after we restore history so context won't be
+        // overridden by the previous chat session context
+        if (initialContext?.repository) {
+            void client.rpc.sendRequest('webview/receiveMessage', {
+                id: activeWebviewPanelID,
+                message: {
+                    command: 'context/choose-remote-search-repo',
+                    explicitRepos: [initialContext?.repository],
+                },
+            })
+        }
+    }, [client, initialContext, activeWebviewPanelID])
 
     const createChat = useCallback(
         async (agent = client) => {
@@ -133,20 +151,8 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
                 id: activeWebviewPanelIDRef.current,
                 message: { chatID: chatId, command: 'restoreHistory' },
             })
-
-            // Set initial context after we restore history so context won't be
-            // overridden by the previous chat session context
-            if (initialContext?.repositories.length) {
-                await agent.rpc.sendRequest('webview/receiveMessage', {
-                    id: activeWebviewPanelIDRef.current,
-                    message: {
-                        command: 'context/choose-remote-search-repo',
-                        explicitRepos: initialContext?.repositories ?? [],
-                    },
-                })
-            }
         },
-        [client, initialContext]
+        [client]
     )
 
     const vscodeAPI = useMemo<VSCodeWrapper | null>(() => {

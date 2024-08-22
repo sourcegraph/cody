@@ -137,25 +137,27 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     )
 
     const clientState: ClientStateForWebview = useMemo<ClientStateForWebview>(() => {
-        const { repositories = [], fileURL } = initialContext ?? {}
+        const { repository, fileURL } = initialContext ?? {}
 
-        if (repositories.length === 0) {
+        if (!repository) {
             return { initialContext: [] }
         }
 
-        const mentions: ContextItem[] = repositories.map<ContextItemRepository>(repo => ({
-            type: 'repository',
-            id: repo.id,
-            name: repo.name,
-            repoID: repo.id,
-            repoName: repo.name,
-            description: repo.name,
-            uri: URI.parse(`repo:${repo.name}`),
-            content: null,
-            source: ContextItemSource.Initial,
-            icon: 'folder',
-            title: 'Current Repository',
-        }))
+        const mentions: ContextItem[] = [
+            {
+                type: 'repository',
+                id: repository.id,
+                name: repository.name,
+                repoID: repository.id,
+                repoName: repository.name,
+                description: repository.name,
+                uri: URI.parse(`repo:${repository.name}`),
+                content: null,
+                source: ContextItemSource.Initial,
+                icon: 'folder',
+                title: 'Current Repository',
+            } as ContextItemRepository,
+        ]
 
         if (fileURL) {
             mentions.push({
@@ -168,8 +170,8 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                           end: { line: initialContext.fileRange.endLine + 1, character: 0 },
                       }
                     : undefined,
-                remoteRepositoryName: repositories[0].name,
-                uri: URI.file(repositories[0].name + fileURL),
+                remoteRepositoryName: repository.name,
+                uri: URI.file(repository.name + fileURL),
                 source: ContextItemSource.Initial,
             })
         }
