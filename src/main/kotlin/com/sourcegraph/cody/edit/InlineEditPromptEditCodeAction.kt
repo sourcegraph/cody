@@ -16,7 +16,7 @@ internal class InlineEditPromptEditCodeAction : DumbAwareAction() {
     getInlineEditPrompt(e)?.performOKAction()
   }
 
-  fun getActionUpdateThread(): ActionUpdateThread {
+  override fun getActionUpdateThread(): ActionUpdateThread {
     return ActionUpdateThread.EDT
   }
 }

@@ -33,7 +33,7 @@ jobs:
             ${{ runner.os }}-gradle-
       - uses: coursier/setup-action@v1
         with:
-          jvm: 'zulu:11'
+          jvm: 'zulu:17'
           apps: scip-java
       - name: Generate SCIP File
         run: scip-java index --build-tool=gradle

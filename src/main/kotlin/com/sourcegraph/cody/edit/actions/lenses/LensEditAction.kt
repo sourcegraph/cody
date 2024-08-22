@@ -17,7 +17,7 @@ abstract class LensEditAction(val editAction: (Project, AnActionEvent, Editor, S
     AnAction(), DumbAware {
   private val logger = Logger.getInstance(LensEditAction::class.java)
 
-  fun getActionUpdateThread(): ActionUpdateThread {
+  override fun getActionUpdateThread(): ActionUpdateThread {
     return ActionUpdateThread.EDT
   }
 

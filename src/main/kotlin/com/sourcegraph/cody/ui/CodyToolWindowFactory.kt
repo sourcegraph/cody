@@ -74,6 +74,7 @@ import org.cef.network.CefCookie
 import org.cef.network.CefRequest
 import org.cef.network.CefResponse
 import org.cef.network.CefURLRequest
+import org.cef.security.CefSSLInfo
 
 /** The subset of the Agent client interface that relates to webviews. */
 interface NativeWebviewProvider {
@@ -673,30 +674,15 @@ class ExtensionRequestHandler(private val proxy: WebUIProxy, private val apiScri
     return false
   }
 
-  override fun onQuotaRequest(
-      browser: CefBrowser?,
-      originUrl: String?,
-      newSize: Long,
-      callback: CefCallback?
-  ): Boolean {
-    // TODO: Filter to the extension origin.
-    callback?.Continue()
-    return true
-  }
-
   override fun onCertificateError(
       browser: CefBrowser?,
-      certError: CefLoadHandler.ErrorCode?,
-      requestUrl: String?,
+      cert_error: CefLoadHandler.ErrorCode?,
+      request_url: String?,
+      sslInfo: CefSSLInfo?,
       callback: CefCallback?
   ): Boolean {
     // TODO: Add Telemetry here.
     return false
-  }
-
-  override fun onPluginCrashed(browser: CefBrowser?, pluginPath: String?) {
-    // TODO: Add Telemetry here.
-    // As we do not use plugins, we do not need to handle this.
   }
 
   override fun onRenderProcessTerminated(
