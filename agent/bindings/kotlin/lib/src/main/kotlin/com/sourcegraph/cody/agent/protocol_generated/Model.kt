@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.agent.protocol_generated;
 
 data class Model(
-  val model: String,
+  val id: String,
   val usage: List<ModelUsage>,
   val contextWindow: ModelContextWindow,
   val clientSideConfig: ClientSideConfig? = null,

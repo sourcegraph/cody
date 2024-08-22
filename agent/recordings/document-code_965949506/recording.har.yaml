@@ -90,11 +90,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 281086a3fa49ce7164441b752dad6975
+    - _id: a8fc9c4aed1634e20a570e9905d8a410
       _order: 0
       cache: {}
       request:
-        bodySize: 2564
+        bodySize: 2566
         cookies: []
         headers:
           - name: content-type
@@ -107,7 +107,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-b76a1fc8bf1050d34d28748a08f659f5-039a2b2a46c20620-01
+            value: 00-d9ee563f73a3584f17ebf57b0aa172dd-113a9fcd6f7a6dd6-01
           - name: connection
             value: keep-alive
           - name: host
@@ -151,7 +151,9 @@ log:
 
                   <SELECTEDCODE7662>export function sum(a: number, b: number): number {
                       /* CURSOR */
-                  }</SELECTEDCODE7662>
+                  }
+
+                  </SELECTEDCODE7662>
 
 
                   The user wants you to generate documentation for the selected code by following their instructions.
@@ -181,14 +183,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 3509
+        bodySize: 3249
         content:
           mimeType: text/event-stream
-          size: 3509
+          size: 3249
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Adds two numbers and returns the result.\n *\n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of `a` and `b`.\n */\n","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Computes the sum of two numbers.\n *\n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of `a` and `b`.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -198,7 +200,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 25 Jun 2024 15:48:14 GMT
+            value: Wed, 21 Aug 2024 13:31:16 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -227,7 +229,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-25T15:48:13.412Z
+      startedDateTime: 2024-08-21T13:31:14.801Z
       time: 0
       timings:
         blocked: -1
@@ -237,7 +239,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: fc0903de93eca781b72e62b368106cb4
+    - _id: 5d0c94931189d2f2610aeed59ac99dc2
       _order: 0
       cache: {}
       request:
@@ -254,7 +256,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-1fe34d59b104c5f37e6975a11bac87a9-d019202fcf4d5a40-01
+            value: 00-be734c60f462c4da95388fbe09e116d1-99ff210a02a9a08c-01
           - name: connection
             value: keep-alive
           - name: host
@@ -319,7 +321,6 @@ log:
                   Codebase context from file path src/TestClass.ts: Codebase
                   context from file src/TestClass.ts:
 
-
                   }
 
 
@@ -347,7 +348,9 @@ log:
                           if (this.shouldGreet) {
                               console.log(/* CURSOR */ 'Hello World!')
                           }
-                      }</SELECTEDCODE7662>
+                      }
+                  </SELECTEDCODE7662>
+
 
                   The user wants you to generate documentation for the selected code by following their instructions.
 
@@ -376,14 +379,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 1232
+        bodySize: 1391
         content:
           mimeType: text/event-stream
-          size: 1232
+          size: 1391
           text: >+
             event: completion
 
-            data: {"completion":"\n/**\n * Outputs 'Hello World!' to the console if the `shouldGreet` flag is true.\n */\n","stopReason":"stop_sequence"}
+            data: {"completion":"\n/**\n * Logs a 'Hello World!' message to the console if the `shouldGreet` parameter is true.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -393,7 +396,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 25 Jun 2024 15:48:15 GMT
+            value: Wed, 21 Aug 2024 13:31:17 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -422,7 +425,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-25T15:48:14.806Z
+      startedDateTime: 2024-08-21T13:31:16.223Z
       time: 0
       timings:
         blocked: -1
@@ -432,7 +435,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: fb4e007414e648770bfed8766c6ae4e2
+    - _id: d7f2b01871529d8bacd1b7abd33071ba
       _order: 0
       cache: {}
       request:
@@ -449,7 +452,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-e404c4732356b5e324e061c7f3206de9-097686ed5b1020fe-01
+            value: 00-61563420314d08735a119a141eeb28eb-6bcfc5ef0424e0e6-01
           - name: connection
             value: keep-alive
           - name: host
@@ -502,7 +505,6 @@ log:
                   Codebase context from file path src/TestLogger.ts: Codebase
                   context from file src/TestLogger.ts:
 
-
                           recordLog()
                       },
                   }
@@ -517,7 +519,9 @@ log:
 
                   <SELECTEDCODE7662>        function recordLog() {
                               console.log(/* CURSOR */ 'Recording the log')
-                          }</SELECTEDCODE7662>
+                          }
+                  </SELECTEDCODE7662>
+
 
                   The user wants you to generate documentation for the selected code by following their instructions.
 
@@ -563,7 +567,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 25 Jun 2024 15:48:16 GMT
+            value: Wed, 21 Aug 2024 13:31:18 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -592,7 +596,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-25T15:48:15.786Z
+      startedDateTime: 2024-08-21T13:31:17.288Z
       time: 0
       timings:
         blocked: -1
@@ -602,7 +606,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 0ef085b47c48ffa3491207b6ae008437
+    - _id: 7eddf1a3608f35f4b5866ef2f0d21def
       _order: 0
       cache: {}
       request:
@@ -619,7 +623,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-f31366e0dbafc629567794fd1659f537-57d314f416693e68-01
+            value: 00-285f5ea34db9eddae12faf09b147e23b-ca8d40978ec078d8-01
           - name: connection
             value: keep-alive
           - name: host
@@ -683,7 +687,6 @@ log:
                 text: >
                   Codebase context from file path src/example.test.ts: Codebase
                   context from file src/example.test.ts:
-
                       })
                   })
               - speaker: assistant
@@ -695,7 +698,9 @@ log:
 
                   The user has the following code in their selection:
 
-                  <SELECTEDCODE7662>        const startTime = performance.now(/* CURSOR */)</SELECTEDCODE7662>
+                  <SELECTEDCODE7662>        const startTime = performance.now(/* CURSOR */)
+
+                  </SELECTEDCODE7662>
 
 
                   The user wants you to generate documentation for the selected code by following their instructions.
@@ -725,14 +730,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 1992
+        bodySize: 1054
         content:
           mimeType: text/event-stream
-          size: 1992
+          size: 1054
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Records the current time in milliseconds since the page was loaded.\n * This can be used to measure the duration of an operation.\n */","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Marks the start time of some operation for performance measurement.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -742,7 +747,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 25 Jun 2024 15:48:17 GMT
+            value: Wed, 21 Aug 2024 13:31:19 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -771,7 +776,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-25T15:48:16.698Z
+      startedDateTime: 2024-08-21T13:31:18.310Z
       time: 0
       timings:
         blocked: -1
@@ -781,11 +786,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 6bff6fcdac8bc5c3f75d93df20de8557
+    - _id: a076f12473e6df0834509ffe95ff8d7c
       _order: 0
       cache: {}
       request:
-        bodySize: 2567
+        bodySize: 2569
         cookies: []
         headers:
           - name: content-type
@@ -798,7 +803,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-60022d72d107aee5b764720cc2c91349-74bf34a8273cc2b4-01
+            value: 00-892a9cd2b1309dd39b0e9346c2e311d1-6761f5789ada8cf1-01
           - name: connection
             value: keep-alive
           - name: host
@@ -844,7 +849,9 @@ log:
                       fun greeting(): String {
                           return "Hello, world!"
                       }
-                  }</SELECTEDCODE7662>
+                  }
+
+                  </SELECTEDCODE7662>
 
 
                   The user wants you to generate documentation for the selected code by following their instructions.
@@ -874,14 +881,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 563
+        bodySize: 795
         content:
           mimeType: text/event-stream
-          size: 563
+          size: 795
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Provides a simple greeting message.\n */","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Represents a Hello object that can greet the world.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -891,7 +898,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 25 Jun 2024 15:48:18 GMT
+            value: Wed, 21 Aug 2024 13:31:20 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -920,7 +927,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-25T15:48:17.985Z
+      startedDateTime: 2024-08-21T13:31:19.774Z
       time: 0
       timings:
         blocked: -1
@@ -1700,119 +1707,6 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-07-03T09:58:11.233Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: b584bf96a3d88ab96114e5cbea1e4bca
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 164
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: document-code / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "164"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 324
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-              
-              query SiteIdentification {
-              	site {
-              		siteID
-              		productSubscription {
-              			license {
-              				hashedKey
-              			}
-              		}
-              	}
-              }
-            variables: {}
-        queryString:
-          - name: SiteIdentification
-            value: null
-        url: https://sourcegraph.com/.api/graphql?SiteIdentification
-      response:
-        bodySize: 212
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 212
-          text: "[\"H4sIAAAAAAAAAzTLsQ6CMBCA4Xe52YX2rgVmF+PI4HztXaWJAdKWwRDf3WDiv/zTd4BwY\
-            xgPqLnp/7crjDCte4n6LLzNDw1wga2sssc27aHGkreW1+UErxx1qT87c51V7vqGEYbo\
-            u9AZm/okmgxi70QZlZzzqNEaJOMNReocCdkgiCk4j4btwJwIPmdfAAAA//8DABj2u36\
-            gAAAA\"]"
-          textDecoded:
-            data:
-              site:
-                productSubscription:
-                  license:
-                    hashedKey: 9c71b123f8fdef24486dea4e56674ec32452725c5165d53bd44fb6742a39aaf5
-                siteID: SourcegraphWeb
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 28 May 2024 08:39:08 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1333
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-28T08:39:07.797Z
       time: 0
       timings:
         blocked: -1

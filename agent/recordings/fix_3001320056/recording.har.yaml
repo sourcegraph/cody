@@ -90,11 +90,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: f87897a8aaa7411ed81fc4f7cdae461a
+    - _id: cef5d5e67011f938393be71baf15c00a
       _order: 0
       cache: {}
       request:
-        bodySize: 2261
+        bodySize: 2263
         cookies: []
         headers:
           - name: content-type
@@ -107,7 +107,7 @@ log:
           - name: user-agent
             value: fix / v1
           - name: traceparent
-            value: 00-b86cb29c1218baf7d72d5afa47c6c905-a000e861fbab9c38-01
+            value: 00-43c7599d8722c5cc45212303dae0ec31-dfbf5280ddb8e5b1-01
           - name: connection
             value: keep-alive
           - name: host
@@ -153,7 +153,9 @@ log:
 
                   <SELECTEDCODE7662>export function fixCommandExample(): number {
                       return '42';
-                  }</SELECTEDCODE7662>
+                  }
+
+                  </SELECTEDCODE7662>
 
 
                   The user wants you to correct problems in their code by following their instructions.
@@ -189,14 +191,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=fix&client-version=v1
       response:
-        bodySize: 659
+        bodySize: 801
         content:
           mimeType: text/event-stream
-          size: 659
+          size: 801
           text: >+
             event: completion
 
-            data: {"completion":"export function fixCommandExample(): number {\n    return 42;\n}","stopReason":"stop_sequence"}
+            data: {"completion":"export function fixCommandExample(): number {\n    return 42;\n}\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -206,7 +208,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 09 Jul 2024 17:21:47 GMT
+            value: Wed, 21 Aug 2024 13:31:17 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -235,7 +237,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-09T17:21:45.550Z
+      startedDateTime: 2024-08-21T13:31:12.435Z
       time: 0
       timings:
         blocked: -1

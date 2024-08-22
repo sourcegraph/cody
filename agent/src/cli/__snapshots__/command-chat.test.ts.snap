@@ -11,7 +11,9 @@ stdout: |+
 
 
 
-  \`\`\`typescript
+  Here's the implementation of a cow without any explanation:
+
+  \`\`\`typescript:animal.ts
   class Cow implements StrangeAnimal {
       makesSound(): 'coo' | 'moo' {
           return 'moo';

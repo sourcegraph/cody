@@ -5,7 +5,9 @@ import type {
     MentionQuery,
 } from '@sourcegraph/cody-shared'
 import {
+    CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
     ContextItemSource,
+    REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_REPOSITORY_PROVIDER_URI,
     memoizeLastValue,
@@ -33,8 +35,12 @@ export function useMentionMenuParams(): {
 
     const isRemoteLikeProviderActive =
         mentionSettings.resolutionMode === 'remote' ||
-        params.parentItem?.id === REMOTE_FILE_PROVIDER_URI ||
-        params.parentItem?.id === REMOTE_REPOSITORY_PROVIDER_URI
+        [
+            REMOTE_FILE_PROVIDER_URI,
+            REMOTE_DIRECTORY_PROVIDER_URI,
+            REMOTE_REPOSITORY_PROVIDER_URI,
+            CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
+        ].includes(params.parentItem?.id || '')
 
     // Increase debounce time in case of remote context item resolution (Cody Web case) or
     // in case of remote-like providers such as remote repositories or remote files

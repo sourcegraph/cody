@@ -96,6 +96,8 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     setChatModels(message.models)
                     break
                 case 'config':
+                    message.config.webviewType = 'sidebar'
+                    message.config.multipleWebviewsEnabled = false
                     setConfig(message)
                     break
                 case 'clientAction':
@@ -120,7 +122,7 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
             // and the host will return the updated change models via onMessage.
             vscodeAPI.postMessage({
                 command: 'chatModel',
-                model: selected.model,
+                model: selected.id,
             })
         },
         [chatModels, vscodeAPI]
@@ -147,15 +149,18 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
             name: repo.name,
             repoID: repo.id,
             repoName: repo.name,
+            description: repo.name,
             uri: URI.parse(`repo:${repo.name}`),
             content: null,
             source: ContextItemSource.Initial,
             icon: 'folder',
+            title: 'Current Repository',
         }))
 
         if (fileURL) {
             mentions.push({
                 type: 'file',
+                title: initialContext?.fileRange ? 'Current Selection' : 'Current File',
                 isIgnored: false,
                 range: initialContext?.fileRange
                     ? {
@@ -177,8 +182,9 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const envVars = useMemo(() => ({ clientType: CodyIDE.Web }), [])
 
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers(vscodeAPI, telemetryRecorder, chatModelContext, clientState, config),
-        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, config]
+        () =>
+            getAppWrappers(vscodeAPI, telemetryRecorder, chatModelContext, clientState, config, envVars),
+        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, config, envVars]
     )
 
     const isLoading = !client || !chatModels || !config || !view || !userHistory
@@ -202,7 +208,7 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                                     userHistory={userHistory}
                                     chatEnabled={true}
                                     showWelcomeMessage={true}
-                                    showIDESnippetActions={true}
+                                    showIDESnippetActions={false}
                                     messageInProgress={messageInProgress}
                                     transcript={transcript}
                                     vscodeAPI={vscodeAPI}

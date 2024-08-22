@@ -483,6 +483,20 @@ export class MockServer {
                     case 'EvaluateFeatureFlag':
                         res.send(JSON.stringify({ data: { evaluatedFeatureFlag: true } }))
                         break
+                    case 'CurrentSiteCodyLlmProvider': {
+                        res.send(
+                            JSON.stringify({
+                                data: {
+                                    site: {
+                                        codyLLMConfiguration: {
+                                            provider: 'sourcegraph',
+                                        },
+                                    },
+                                },
+                            })
+                        )
+                        break
+                    }
                     case 'CurrentSiteCodyLlmConfiguration': {
                         res.send(
                             JSON.stringify({
@@ -490,6 +504,7 @@ export class MockServer {
                                     site: {
                                         codyLLMConfiguration: {
                                             chatModel: 'foo/test-chat-default-model',
+                                            completionModel: 'fireworks/starcoder',
                                             provider: 'sourcegraph',
                                         },
                                     },
@@ -575,13 +590,19 @@ export class MockServer {
 
 const loggedTestRun: Record<string, boolean> = {};
 
-async function logTestingData(data: string): Promise<void> {
+export async function logTestingData(data: string, type?: string, testName?: string, testRunID?: string ): Promise<void> {
     if (process.env.CI === undefined || process.env.NO_LOG_TESTING_TELEMETRY_CALLS) {
         return;
     }
 
+    if (testName) {
+        currentTestName = testName
+    }
+    if (testRunID) {
+        currentTestRunID = testRunID
+    }
     const message = {
-        type: "new",
+        type: type || 'v2-vscode-e2e',
         event: data,
         timestamp: new Date().getTime(),
         test_name: currentTestName,

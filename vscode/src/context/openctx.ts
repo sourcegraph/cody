@@ -1,5 +1,6 @@
 import {
     type AuthStatus,
+    CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
     CodyIDE,
     type Configuration,
     FeatureFlag,
@@ -20,8 +21,10 @@ import { Observable } from 'observable-fns'
 import type { ConfigWatcher } from '../configwatcher'
 import { logDebug, outputChannel } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
+import CurrentRepositoryDirectoryProvider from './openctx/currentRepositoryDirectorySearch'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
+import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openctx/remoteDirectorySearch'
 import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFileSearch'
 import RemoteRepositorySearch, { createRemoteRepositoryProvider } from './openctx/remoteRepositorySearch'
 import { createWebProvider } from './openctx/web'
@@ -43,6 +46,8 @@ export async function exposeOpenCtxClient(
             ? getMergeConfigurationFunction()
             : undefined
 
+        const isValidSiteVersion = await graphqlClient.isValidSiteVersion({ minimumVersion: '5.7.0' })
+
         const controller = createController({
             extensionId: context.extension.id,
             secrets: context.secrets,
@@ -50,7 +55,7 @@ export async function exposeOpenCtxClient(
             features: isCodyWeb ? {} : { annotations: true, statusBar: true },
             providers: isCodyWeb
                 ? Observable.of(getCodyWebOpenCtxProviders())
-                : getOpenCtxProviders(config.changes, authProvider.changes),
+                : getOpenCtxProviders(config.changes, authProvider.changes, isValidSiteVersion),
             mergeConfiguration,
         })
         setOpenCtx({
@@ -64,57 +69,72 @@ export async function exposeOpenCtxClient(
 
 function getOpenCtxProviders(
     configChanges: Observable<Configuration>,
-    authStatusChanges: Observable<AuthStatus>
+    authStatusChanges: Observable<AuthStatus>,
+    isValidSiteVersion: boolean
 ): Observable<ImportedProviderConfiguration[]> {
     return combineLatest([
         configChanges,
         authStatusChanges,
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider),
-    ]).map(([config, authStatus, gitMentionProvider]) => {
-        const providers: ImportedProviderConfiguration[] = [
-            {
-                settings: true,
-                provider: createWebProvider(false),
-                providerUri: WEB_PROVIDER_URI,
-            },
-        ]
+    ]).map(
+        ([config, authStatus, gitMentionProvider]: [Configuration, AuthStatus, boolean | undefined]) => {
+            const providers: ImportedProviderConfiguration[] = [
+                {
+                    settings: true,
+                    provider: createWebProvider(false),
+                    providerUri: WEB_PROVIDER_URI,
+                },
+            ]
 
-        // Remote repository and remote files should be available only for
-        // non-dotcom users
-        if (!authStatus.isDotCom) {
-            providers.push({
-                settings: true,
-                provider: RemoteRepositorySearch,
-                providerUri: RemoteRepositorySearch.providerUri,
-            })
+            // Remote repository and remote files should be available only for
+            // non-dotcom users
+            if (!authStatus.isDotCom) {
+                providers.push({
+                    settings: true,
+                    provider: RemoteRepositorySearch,
+                    providerUri: RemoteRepositorySearch.providerUri,
+                })
 
-            if (config.experimentalNoodle) {
+                if (isValidSiteVersion) {
+                    providers.push({
+                        settings: true,
+                        provider: RemoteDirectoryProvider,
+                        providerUri: RemoteDirectoryProvider.providerUri,
+                    })
+
+                    providers.push({
+                        settings: true,
+                        provider: CurrentRepositoryDirectoryProvider,
+                        providerUri: CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
+                    })
+                }
+
                 providers.push({
                     settings: true,
                     provider: RemoteFileProvider,
                     providerUri: RemoteFileProvider.providerUri,
                 })
             }
-        }
 
-        if (config.experimentalNoodle) {
-            providers.push({
-                settings: true,
-                provider: LinearIssuesProvider,
-                providerUri: LinearIssuesProvider.providerUri,
-            })
-        }
+            if (config.experimentalNoodle) {
+                providers.push({
+                    settings: true,
+                    provider: LinearIssuesProvider,
+                    providerUri: LinearIssuesProvider.providerUri,
+                })
+            }
 
-        if (gitMentionProvider) {
-            providers.push({
-                settings: true,
-                provider: gitMentionsProvider,
-                providerUri: GIT_OPENCTX_PROVIDER_URI,
-            })
-        }
+            if (gitMentionProvider) {
+                providers.push({
+                    settings: true,
+                    provider: gitMentionsProvider,
+                    providerUri: GIT_OPENCTX_PROVIDER_URI,
+                })
+            }
 
-        return providers
-    })
+            return providers
+        }
+    )
 }
 
 function getCodyWebOpenCtxProviders(): ImportedProviderConfiguration[] {
@@ -128,6 +148,11 @@ function getCodyWebOpenCtxProviders(): ImportedProviderConfiguration[] {
             settings: true,
             providerUri: RemoteFileProvider.providerUri,
             provider: createRemoteFileProvider('Files'),
+        },
+        {
+            settings: true,
+            providerUri: RemoteDirectoryProvider.providerUri,
+            provider: createRemoteDirectoryProvider('Directories'),
         },
         {
             settings: true,

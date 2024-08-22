@@ -28,7 +28,7 @@ export const CodyPanel: FunctionComponent<
         | 'guardrails'
         | 'showWelcomeMessage'
         | 'showIDESnippetActions'
-        | 'experimentalSmartApplyEnabled'
+        | 'smartApplyEnabled'
     > &
         Pick<ComponentProps<typeof HistoryTab>, 'userHistory'>
 > = ({
@@ -47,7 +47,7 @@ export const CodyPanel: FunctionComponent<
     showIDESnippetActions,
     showWelcomeMessage,
     userHistory,
-    experimentalSmartApplyEnabled,
+    smartApplyEnabled,
 }) => {
     const tabContainerRef = useRef<HTMLDivElement>(null)
 
@@ -70,15 +70,14 @@ export const CodyPanel: FunctionComponent<
             className={styles.outerContainer}
         >
             {/* Hide tab bar in editor chat panels. */}
-            {config.agentIDE === CodyIDE.Web ||
-                (config.webviewType !== 'editor' && (
-                    <TabsBar
-                        currentView={view}
-                        setView={setView}
-                        IDE={config.agentIDE || CodyIDE.VSCode}
-                        onDownloadChatClick={onDownloadChatClick}
-                    />
-                ))}
+            {(config.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
+                <TabsBar
+                    currentView={view}
+                    setView={setView}
+                    IDE={config.agentIDE || CodyIDE.VSCode}
+                    onDownloadChatClick={onDownloadChatClick}
+                />
+            )}
             {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
             <TabContainer value={view} ref={tabContainerRef}>
                 {view === View.Chat && (
@@ -92,7 +91,7 @@ export const CodyPanel: FunctionComponent<
                         showIDESnippetActions={showIDESnippetActions}
                         showWelcomeMessage={showWelcomeMessage}
                         scrollableParent={tabContainerRef.current}
-                        experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
+                        smartApplyEnabled={smartApplyEnabled}
                         setView={setView}
                     />
                 )}

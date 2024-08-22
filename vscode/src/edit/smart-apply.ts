@@ -10,6 +10,7 @@ export interface SmartApplyArguments {
         replacement: string
         document: vscode.TextDocument
         model?: EditModel
+        isNewFile?: boolean
     }
     source?: EventSource
 }

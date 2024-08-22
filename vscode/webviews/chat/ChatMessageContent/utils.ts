@@ -1,13 +1,13 @@
+import { SHA256 } from 'crypto-js'
+
 export function getFileName(filePath: string): string {
     return filePath.split('/').pop() || filePath
 }
 
 export function getCodeBlockId(contents: string, fileName?: string): string {
-    const trimmedContents = contents.trim()
-
+    let input = contents.trim()
     if (fileName) {
-        return `${fileName}:${trimmedContents}`
+        input = `${fileName}:${input}`
     }
-
-    return trimmedContents
+    return SHA256(input).toString()
 }

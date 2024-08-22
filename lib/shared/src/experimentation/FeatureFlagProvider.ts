@@ -16,8 +16,6 @@ export enum FeatureFlag {
     // This flag is used to track the overall eligibility to use the StarCoder model. The `-hybrid`
     // suffix is no longer relevant
     CodyAutocompleteStarCoderHybrid = 'cody-autocomplete-default-starcoder-hybrid',
-    // Enable StarCoder2 7b and 15b as the default model via Fireworks
-    CodyAutocompleteStarCoder2Hybrid = 'cody-autocomplete-starcoder2-hybrid',
     // Enable the FineTuned model as the default model via Fireworks
     CodyAutocompleteFIMFineTunedModelHybrid = 'cody-autocomplete-fim-fine-tuned-model-hybrid',
     // Enable the deepseek-v2 as the default model via Fireworks
@@ -73,9 +71,6 @@ export enum FeatureFlag {
     CodyServerSideContextAPI = 'cody-server-side-context-api-enabled',
 
     GitMentionProvider = 'git-mention-provider',
-
-    /** Enable experimental smart apply and chat codeblock UI */
-    CodyExperimentalSmartApply = 'cody-experimental-smart-apply',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

@@ -166,7 +166,7 @@ class OpenAICompatibleProvider extends Provider {
         }
 
         const prompt = isStarChat(this.model)
-            ? promptString(promptProps, useInfill, this.model.model)
+            ? promptString(promptProps, useInfill, this.model.id)
             : this.createPrompt(snippets)
 
         const requestParams: CodeCompletionsParams = {
@@ -174,7 +174,7 @@ class OpenAICompatibleProvider extends Provider {
             messages: [{ speaker: 'human', text: prompt }],
             temperature: 0.2,
             topK: 0,
-            model: this.model.model,
+            model: this.model.id,
         }
 
         tracer?.params(requestParams)
@@ -240,7 +240,7 @@ ${intro}${infillPrefix ? infillPrefix : ''}${OPENING_CODE_TAG}${CLOSING_CODE_TAG
  ${OPENING_CODE_TAG}${infillBlock}`
         }
 
-        logDebug('OpenAICompatible', 'Could not generate infilling prompt for model', this.model.model)
+        logDebug('OpenAICompatible', 'Could not generate infilling prompt for model', this.model.id)
         return ps`${intro}${prefix}`
     }
 
@@ -285,7 +285,7 @@ export function createProviderConfig({
                     id: PROVIDER_IDENTIFIER,
                 },
                 {
-                    model: model,
+                    model,
                     maxContextTokens,
                     timeouts,
                     ...otherOptions,
@@ -294,26 +294,26 @@ export function createProviderConfig({
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         identifier: PROVIDER_IDENTIFIER,
-        model: model.model,
+        model: model.id,
     }
 }
 
 // TODO(slimsag): self-hosted-models: eliminate model-specific conditionals here entirely
 // by relying on ClientSideConfig appropriately.
 function isStarChat(model: Model): boolean {
-    return model.model.startsWith('starchat')
+    return model.id.startsWith('starchat')
 }
 
 function isStarCoder(model: Model): boolean {
-    return model.model.startsWith('starcoder')
+    return model.id.startsWith('starcoder')
 }
 
 function isMistral(model: Model): boolean {
-    return model.model.startsWith('mistral')
+    return model.id.startsWith('mistral')
 }
 
 function isMixtral(model: Model): boolean {
-    return model.model.startsWith('mixtral')
+    return model.id.startsWith('mixtral')
 }
 
 interface Prompt {
