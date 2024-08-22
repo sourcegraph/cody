@@ -80,7 +80,12 @@ export const getPrompt = async (
     }
 
     const promptBuilder = await PromptBuilder.create(contextWindow)
-    const preamble = getSimplePreamble(model, codyApiVersion, SMART_APPLY_SELECTION_PROMPT.system)
+    const preamble = getSimplePreamble(
+        model,
+        codyApiVersion,
+        'Default',
+        SMART_APPLY_SELECTION_PROMPT.system
+    )
     promptBuilder.tryAddToPrefix(preamble)
 
     const text = SMART_APPLY_SELECTION_PROMPT.instruction
