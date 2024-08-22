@@ -60,7 +60,8 @@ const EOT_STARCODER = '<|endoftext|>'
 const EOT_LLAMA_CODE = ' <EOT>'
 const EOT_DEEPSEEK_CODE = '<|eos_token|>'
 
-export const FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED = 'fim-lang-specific-model-deepseek-stack-trained'
+export const FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED =
+    'fim-lang-specific-model-deepseek-stack-trained'
 export const FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED = 'fim-lang-specific-model-deepseek-logs-trained'
 export const DEEPSEEK_CODER_V2_LITE_BASE = 'deepseek-coder-v2-lite-base'
 
@@ -379,9 +380,7 @@ class FireworksProvider extends Provider {
     }
 
     private postProcess = (content: string): string => {
-        if (
-            isStarCoderFamily(this.model)
-        ) {
+        if (isStarCoderFamily(this.model)) {
             return content.replace(EOT_STARCODER, '')
         }
         if (isLlamaCode(this.model)) {
