@@ -77,8 +77,6 @@ const MODEL_MAP = {
     starcoder: 'fireworks/starcoder',
     'starcoder-16b': 'fireworks/starcoder-16b',
     'starcoder-7b': 'fireworks/starcoder-7b',
-    'starcoder2-15b': 'fireworks/starcoder2-15b',
-    'starcoder2-7b': 'fireworks/starcoder2-7b',
 
     // Fireworks model identifiers
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
@@ -98,15 +96,10 @@ type FireworksModel =
     | keyof typeof MODEL_MAP
     // `starcoder-hybrid` uses the 16b model for multiline requests and the 7b model for single line
     | 'starcoder-hybrid'
-    // `starcoder2-hybrid` uses the 15b model for multiline requests and the 7b model for single line
-    | 'starcoder2-hybrid'
 
 function getMaxContextTokens(model: FireworksModel): number {
     switch (model) {
         case 'starcoder':
-        case 'starcoder2-hybrid':
-        case 'starcoder2-15b':
-        case 'starcoder2-7b':
         case 'starcoder-hybrid':
         case 'starcoder-16b':
         case 'starcoder-7b': {
@@ -308,11 +301,9 @@ class FireworksProvider extends Provider {
         const useMultilineModel = multiline || this.options.triggerKind !== TriggerKind.Automatic
 
         const model: string =
-            this.model === 'starcoder2-hybrid'
-                ? MODEL_MAP[useMultilineModel ? 'starcoder2-15b' : 'starcoder2-7b']
-                : this.model === 'starcoder-hybrid'
-                  ? MODEL_MAP[useMultilineModel ? 'starcoder-16b' : 'starcoder-7b']
-                  : MODEL_MAP[this.model]
+            this.model === 'starcoder-hybrid'
+                ? MODEL_MAP[useMultilineModel ? 'starcoder-16b' : 'starcoder-7b']
+                : MODEL_MAP[this.model]
         const requestParams = {
             ...partialRequestParams,
             messages: [{ speaker: 'human', text: this.createPrompt(snippets) }],
@@ -321,16 +312,6 @@ class FireworksProvider extends Provider {
             model,
         } satisfies CodeCompletionsParams
 
-        if (requestParams.model.includes('starcoder2')) {
-            requestParams.stopSequences = [
-                ...(requestParams.stopSequences || []),
-                '<fim_prefix>',
-                '<fim_suffix>',
-                '<fim_middle>',
-                '<|endoftext|>',
-                '<file_sep>',
-            ]
-        }
         if (isDeepSeekModelFamily(requestParams.model)) {
             requestParams.stopSequences = [
                 ...(requestParams.stopSequences || []),
@@ -433,7 +414,7 @@ export function createProviderConfig({
             ? otherOptions.authStatus.isDotCom
                 ? DEEPSEEK_CODER_V2_LITE_BASE
                 : 'starcoder-hybrid'
-            : ['starcoder-hybrid', 'starcoder2-hybrid'].includes(model)
+            : ['starcoder-hybrid'].includes(model)
               ? (model as FireworksModel)
               : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
                 ? (model as keyof typeof MODEL_MAP)
