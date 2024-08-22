@@ -46,6 +46,14 @@ export const DEFAULT_DOT_COM_MODELS = [
         tags: [ModelTag.Gateway, ModelTag.Power, ModelTag.Recommended, ModelTag.Free],
     },
     {
+        title: 'Claude 3 Opus',
+        id: 'anthropic/claude-3-opus-20240229',
+        provider: 'Anthropic',
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: expandedContextWindow,
+        tags: [ModelTag.Gateway, ModelTag.Pro, ModelTag.Power],
+    },
+    {
         title: 'GPT-4o',
         id: 'openai/gpt-4o',
         provider: 'OpenAI',
