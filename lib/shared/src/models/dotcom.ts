@@ -82,8 +82,8 @@ export const DEFAULT_DOT_COM_MODELS = [
         tags: [ModelTag.Gateway, ModelTag.Speed],
     },
     {
-        title: 'Mixtral 8x22B',
-        id: 'fireworks/accounts/fireworks/models/mixtral-8x22b-instruct',
+        title: 'Mixtral 8x7B',
+        id: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
         provider: 'Mistral',
         usage: [ModelUsage.Chat],
         contextWindow: basicContextWindow,
