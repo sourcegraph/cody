@@ -8,6 +8,8 @@
     width: 100%;
     overflow: auto;
     scrollbar-width: thin;
+    overflow-y: auto; /* Ensure vertical scrolling */
+    scrollbar-color: var(--vscode-scrollbarSlider-background) var(--vscode-scrollbarSlider-activeBackground); /* Style the scrollbar */
 
     /* Don't allow the input box to become larger than the webview to avoid submit buttons going off the screen */
     max-height: 60vh;
