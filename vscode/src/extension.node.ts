@@ -13,7 +13,7 @@ import type { ExtensionApi } from './extension-api'
 import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-client'
 import { activate as activateCommon } from './extension.common'
 import { initializeNetworkAgent, setCustomAgent } from './fetch.node'
-import {isRunningInsideAgent} from "./jsonrpc/isRunningInsideAgent";
+import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
 import {
     type LocalEmbeddingsConfig,
     type LocalEmbeddingsController,
