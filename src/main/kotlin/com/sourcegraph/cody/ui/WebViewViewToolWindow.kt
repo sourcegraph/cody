@@ -10,11 +10,15 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.testFramework.LightVirtualFile
+import com.intellij.ui.components.JBLabel
 import com.intellij.ui.content.ContentFactory
 import com.sourcegraph.cody.CodyToolWindowContent
+import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.WebviewResolveWebviewViewParams
 import com.sourcegraph.cody.agent.protocol.WebviewCreateWebviewPanelParams
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
 
@@ -119,9 +123,13 @@ class WebviewViewService(val project: Project) {
 
   fun provideCodyToolWindowContent(codyContent: CodyToolWindowContent) {
     // Because the webview may be created lazily, populate a placeholder control.
-    val placeholder = JPanel()
+    val placeholder = JPanel(GridBagLayout())
+    val spinnerLabel =
+        JBLabel("Starting Cody...", Icons.StatusBar.CompletionInProgress, JBLabel.CENTER)
+    placeholder.add(spinnerLabel, GridBagConstraints())
+
     codyContent.allContentPanel.add(
-        JPanel(), CodyToolWindowContent.MAIN_PANEL, CodyToolWindowContent.MAIN_PANEL_INDEX)
+        placeholder, CodyToolWindowContent.MAIN_PANEL, CodyToolWindowContent.MAIN_PANEL_INDEX)
     provideHost(CodyToolWindowContentWebviewHost(codyContent, placeholder))
   }
 
