@@ -81,6 +81,14 @@ export const DEFAULT_DOT_COM_MODELS = [
         contextWindow: basicContextWindow,
         tags: [ModelTag.Gateway, ModelTag.Speed],
     },
+    {
+        title: 'Mixtral 8x22B',
+        id: 'fireworks/accounts/fireworks/models/mixtral-8x22b-instruct',
+        provider: 'Mistral',
+        usage: [ModelUsage.Chat],
+        contextWindow: basicContextWindow,
+        tags: [ModelTag.Gateway, ModelTag.Speed],
+    },
 ] as const satisfies Model[]
 
 /**
