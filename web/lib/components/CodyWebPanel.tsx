@@ -179,7 +179,7 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                             directoryPath: `${fileURL}/`,
                         },
                         description: ' ',
-                    }
+                    },
                 } as ContextItemOpenCtx)
             } else {
                 // Common file mention with possible file range positions
