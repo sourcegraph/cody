@@ -149,15 +149,18 @@ export const CodyWebPanel: FC<CodyWebPanelProps> = props => {
             name: repo.name,
             repoID: repo.id,
             repoName: repo.name,
+            description: repo.name,
             uri: URI.parse(`repo:${repo.name}`),
             content: null,
             source: ContextItemSource.Initial,
             icon: 'folder',
+            title: 'Current Repository',
         }))
 
         if (fileURL) {
             mentions.push({
                 type: 'file',
+                title: initialContext?.fileRange ? 'Current Selection' : 'Current File',
                 isIgnored: false,
                 range: initialContext?.fileRange
                     ? {

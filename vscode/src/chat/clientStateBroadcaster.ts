@@ -2,6 +2,7 @@ import {
     type ContextItem,
     ContextItemSource,
     type ContextItemTree,
+    REMOTE_REPOSITORY_PROVIDER_URI,
     contextFiltersProvider,
     displayLineRange,
     displayPathBasename,
@@ -9,7 +10,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getSelectionOrFileContext } from '../commands/context/selection'
-import { createRemoteRepositoryMention } from '../context/openctx/remoteRepositorySearch'
+import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
 import type { RemoteSearch } from '../context/remote-search'
 import type { ChatModel } from './chat-view/ChatModel'
 import { contextItemMentionFromOpenCtxItem } from './context/chatContext'
@@ -121,11 +122,14 @@ export function getCorpusContextItemsForEditorState({
             }
             items.push({
                 ...contextItemMentionFromOpenCtxItem(
-                    createRemoteRepositoryMention({
-                        id: repo.id,
-                        name: repo.name,
-                        url: repo.name,
-                    })
+                    createRepositoryMention(
+                        {
+                            id: repo.id,
+                            name: repo.name,
+                            url: repo.name,
+                        },
+                        REMOTE_REPOSITORY_PROVIDER_URI
+                    )
                 ),
                 title: 'Current Repository',
                 description: repo.name,
