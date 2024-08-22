@@ -1,7 +1,5 @@
 package com.sourcegraph.cody;
 
-import com.intellij.openapi.actionSystem.ActionManager;
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.DumbAware;
@@ -13,8 +11,6 @@ import com.intellij.ui.content.ContentFactory;
 import com.sourcegraph.cody.config.actions.OpenCodySettingsEditorAction;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.OpenPluginSettingsAction;
-import java.util.ArrayList;
-import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
@@ -38,20 +34,8 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
           customCodySettings.add(new OpenCodySettingsEditorAction());
           customCodySettings.addSeparator();
           toolWindow.setAdditionalGearActions(customCodySettings);
-          List<AnAction> titleActions = new ArrayList<>();
-          createTitleActions(titleActions);
-          if (!titleActions.isEmpty()) {
-            toolWindow.setTitleActions(titleActions);
-          }
           return null;
         });
-  }
-
-  private void createTitleActions(@NotNull List<? super AnAction> titleActions) {
-    AnAction action = ActionManager.getInstance().getAction("cody.newChat");
-    if (action != null) {
-      titleActions.add(action);
-    }
   }
 
   @Override
