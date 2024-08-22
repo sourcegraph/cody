@@ -380,7 +380,7 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
                 'cody.experimental.symf.enabled': ['keyword', 'blended'].includes(
                     options.context?.strategy
                 ), // disabling fixes errors in Polly.js related to fetching the symf binary
-                'cody.experimental.localEmbeddings.disabled': !['embeddings', 'blended'].includes(
+                'cody.experimental.localEmbeddings.enabled': ['embeddings', 'blended'].includes(
                     options.context?.strategy
                 ),
                 'cody.useContext': options.context?.strategy,

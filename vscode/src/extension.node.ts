@@ -13,6 +13,7 @@ import type { ExtensionApi } from './extension-api'
 import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-client'
 import { activate as activateCommon } from './extension.common'
 import { initializeNetworkAgent, setCustomAgent } from './fetch.node'
+import {isRunningInsideAgent} from "./jsonrpc/isRunningInsideAgent";
 import {
     type LocalEmbeddingsConfig,
     type LocalEmbeddingsController,
@@ -40,16 +41,13 @@ export function activate(
     extensionClient ||= defaultVSCodeExtensionClient()
 
     // NOTE: local embeddings are only going to be supported in VSC for now.
-    // Until we revisit this decision, we disable local embeddings for all agent
-    // clients like the JetBrains plugin.
-    let isLocalEmbeddingsDisabled = vscode.workspace
-        .getConfiguration()
-        .get<boolean>('cody.advanced.agent.running', false)
+    // Until we revisit this decision, we disable local embeddings in the agent.
+    let isLocalEmbeddingsEnabled = !isRunningInsideAgent()
 
     // Optional override for local testing.
-    isLocalEmbeddingsDisabled = vscode.workspace
+    isLocalEmbeddingsEnabled = vscode.workspace
         .getConfiguration()
-        .get<boolean>('cody.experimental.localEmbeddings.disabled', isLocalEmbeddingsDisabled)
+        .get<boolean>('cody.experimental.localEmbeddings.enabled', isLocalEmbeddingsEnabled)
 
     const isSymfEnabled = vscode.workspace
         .getConfiguration()
@@ -60,10 +58,10 @@ export function activate(
         .get<boolean>('cody.experimental.telemetry.enabled', true)
 
     return activateCommon(context, {
-        createLocalEmbeddingsController: isLocalEmbeddingsDisabled
-            ? undefined
-            : (config: LocalEmbeddingsConfig): Promise<LocalEmbeddingsController> =>
-                  createLocalEmbeddingsController(context, config),
+        createLocalEmbeddingsController: isLocalEmbeddingsEnabled
+            ? (config: LocalEmbeddingsConfig): Promise<LocalEmbeddingsController> =>
+                  createLocalEmbeddingsController(context, config)
+            : undefined,
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         createCommandsProvider: () => new CommandsProvider(),
         createSymfRunner: isSymfEnabled ? (...args) => new SymfRunner(...args) : undefined,
