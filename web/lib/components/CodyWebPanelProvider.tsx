@@ -126,7 +126,7 @@ export const CodyWebPanelProvider: FunctionComponent<PropsWithChildren<CodyWebPa
                 id: activeWebviewPanelID,
                 message: {
                     command: 'context/choose-remote-search-repo',
-                    explicitRepos: [initialContext?.repository],
+                    explicitRepos: [initialContext.repository],
                 },
             })
         }
