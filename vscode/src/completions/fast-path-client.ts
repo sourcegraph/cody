@@ -31,7 +31,6 @@ interface FastPathParams extends Pick<FireworksOptions, 'authStatus'> {
     isLocalInstance: boolean
     fireworksConfig: ExperimentalFireworksConfig | undefined
     logger: CompletionLogger | undefined
-    shouldAddArtificialDelayForExperiment: boolean
     providerOptions: ProviderOptions
     fastPathAccessToken: string | undefined
     customHeaders: Record<string, string>
@@ -54,7 +53,6 @@ export function createFastPathClient(
         isLocalInstance,
         fireworksConfig,
         logger,
-        shouldAddArtificialDelayForExperiment,
         providerOptions,
         anonymousUserID,
         authStatus,
@@ -67,11 +65,6 @@ export function createFastPathClient(
     const log = logger?.startCompletion(requestParams, url)
 
     return tracer.startActiveSpan(`POST ${url}`, async function* (span): CompletionResponseGenerator {
-        if (shouldAddArtificialDelayForExperiment === true) {
-            // Todo: Remove the condition after the experiment is complete and we have the relevant data points.
-            // This delay introduced here is for the experimentation purpose to see the effect of latency on other metrics, such as CAR, wCAR, Retention, #Sugeestions etc.
-            await new Promise(resolve => setTimeout(resolve, 200))
-        }
         if (abortController.signal.aborted) {
             // return empty completion response and skip the HTTP request
             return {
