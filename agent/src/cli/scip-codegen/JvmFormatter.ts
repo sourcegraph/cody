@@ -54,7 +54,7 @@ export class JvmFormatter {
             return ''
         }
         if (this.language === JvmLanguage.CSharp) {
-            ;('')
+            return ''
         }
         return this.isNullable(tpe) ? '?' : ''
     }
