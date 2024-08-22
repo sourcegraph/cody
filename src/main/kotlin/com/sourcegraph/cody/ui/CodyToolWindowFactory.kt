@@ -292,7 +292,7 @@ class WebUIHostImpl(
       // TODO: Delete this intercept when Cody edits UI is abstracted so JetBrains' native UI can be
       // invoked from the
       // extension TypeScript side through Agent.
-      isCommand && id == "cody.action.command" && decodedJson?.get("arg")?.asString == "edit" -> {
+      isCommand && id == "cody.action.command" && decodedJson.get("arg")?.asString == "edit" -> {
         runInEdt {
           // Invoke the Cody "edit" action in JetBrains directly.
           val actionManager = ActionManager.getInstance()

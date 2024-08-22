@@ -283,7 +283,7 @@ class EditCommandPrompt(
     project.putUserData(EDIT_COMMAND_PROMPT_KEY, this)
   }
 
-  fun isOkActionEnabled() = okButtonGroup.isEnabled && model != null
+  fun isOkActionEnabled() = isVisible && okButtonGroup.isEnabled && model != null
 
   private fun updateDialogPosition() {
     // Convert caret position to screen coordinates.
