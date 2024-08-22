@@ -209,6 +209,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             if (!experimentalOneBoxEnabled) {
                 return
             }
+            setIntent(undefined)
 
             // Only detect intent if a repository is mentioned
             if (
@@ -216,12 +217,11 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     ['repository', 'tree'].includes(contextItem.type)
                 )
             ) {
-                setIntent(undefined)
                 extensionAPI.detectIntent(editorValue.text).subscribe(value => {
                     setIntent(value)
                 })
             }
-        }, 500)
+        }, 300)
     }, [experimentalOneBoxEnabled, extensionAPI])
 
     const onStop = useCallback(() => {
