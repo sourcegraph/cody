@@ -3,12 +3,17 @@ package com.sourcegraph.cody.ui
 import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonParser
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
@@ -266,13 +271,42 @@ class WebUIHostImpl(
   override fun postMessageWebviewToHost(stringEncodedJsonMessage: String) {
     // Some commands can be handled by the client and do not need to round-trip client -> Agent ->
     // client.
-    when (stringEncodedJsonMessage) {
-      // TODO: Remove this redirection when sign in moves to Web UI.
-      "{\"command\":\"command\",\"id\":\"cody.auth.signin\"}",
-      "{\"command\":\"command\",\"id\":\"cody.auth.signout\"}" -> {
+    val stringsOfInterest = listOf("cody.auth.signin", "cody.auth.signout", "cody.action.command")
+    val decodedJson =
+        if (stringsOfInterest.any { stringEncodedJsonMessage.contains(it) }) {
+          JsonParser.parseString(stringEncodedJsonMessage).asJsonObject
+        } else {
+          null
+        }
+    val isCommand = decodedJson?.get("command")?.asString == "command"
+    val id = decodedJson?.get("id")?.asString
+    when {
+      isCommand && id == "cody.auth.signin" || id == "cody.auth.signout" -> {
         runInEdt {
           ShowSettingsUtil.getInstance()
               .showSettingsDialog(project, AccountConfigurable::class.java)
+        }
+      }
+      // TODO: Delete this intercept when Cody edits UI is abstracted so JetBrains' native UI can be
+      // invoked from the
+      // extension TypeScript side through Agent.
+      isCommand && id == "cody.action.command" && decodedJson?.get("arg")?.asString == "edit" -> {
+        runInEdt {
+          // Invoke the Cody "edit" action in JetBrains directly.
+          val actionManager = ActionManager.getInstance()
+          val action = actionManager.getAction("cody.editCodeAction")
+          action?.actionPerformed(
+              AnActionEvent.createFromAnAction(
+                  action,
+                  null,
+                  "",
+                  DataContext { dataId ->
+                    when (dataId) {
+                      CommonDataKeys.EDITOR.name ->
+                          FileEditorManager.getInstance(project).selectedTextEditor
+                      else -> null
+                    }
+                  }))
         }
       }
       else -> {
