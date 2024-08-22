@@ -136,6 +136,8 @@ interface CodyAgentServer {
   fun remoteRepo_has(params: RemoteRepo_HasParams): CompletableFuture<RemoteRepo_HasResult>
   @JsonRequest("remoteRepo/list")
   fun remoteRepo_list(params: RemoteRepo_ListParams): CompletableFuture<RemoteRepo_ListResult>
+  @JsonRequest("context/clearAndReindex")
+  fun context_clearAndReindex(): CompletableFuture<Void>
 
   // =============
   // Notifications

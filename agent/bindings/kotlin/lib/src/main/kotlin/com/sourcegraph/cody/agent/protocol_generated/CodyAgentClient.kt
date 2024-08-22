@@ -24,6 +24,8 @@ interface CodyAgentClient {
   fun workspace_edit(params: WorkspaceEditParams): CompletableFuture<Boolean>
   @JsonRequest("env/openExternal")
   fun env_openExternal(params: Env_OpenExternalParams): CompletableFuture<Boolean>
+  @JsonRequest("context/clearAndReindex")
+  fun context_clearAndReindex(): CompletableFuture<Void>
 
   // =============
   // Notifications

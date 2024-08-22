@@ -459,6 +459,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.registerWebviewHandlers()
                 }
 
+                this.scheduleContextUpdates()
+
                 return {
                     name: 'cody-agent',
                     authenticated: authStatus?.authenticated,
@@ -1410,6 +1412,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             contextFiltersProvider.setTestingContextFilters(contextFilters)
             return null
         })
+
+        this.registerRequest('context/clearAndReindex', async () => {
+            await this.clearAndReindexContext()
+            return null
+        })
     }
 
     private pushPendingPromise(pendingPromise: Promise<unknown>): void {
@@ -1845,5 +1852,21 @@ export class Agent extends MessageHandler implements ExtensionClient {
         }
 
         throw new TypeError(`Expected AgentWorkspaceEdit, got ${edit}`)
+    }
+
+    private scheduleContextUpdates(): void {
+        setInterval(() => {
+            this.updateContext()
+        }, 5 * 60 * 1000) // 5 minutes
+    }
+
+    private async updateContext(): Promise<void> {
+        // Implement the logic to update the context here
+        console.log('Updating context...')
+    }
+
+    private async clearAndReindexContext(): Promise<void> {
+        // Implement the logic to clear context and re-index the workspace here
+        console.log('Clearing context and re-indexing workspace...')
     }
 }
