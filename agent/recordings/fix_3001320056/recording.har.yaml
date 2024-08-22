@@ -90,11 +90,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: cef5d5e67011f938393be71baf15c00a
+    - _id: 3f1f79813408aeb87fec5bcd1b61767b
       _order: 0
       cache: {}
       request:
-        bodySize: 2263
+        bodySize: 2267
         cookies: []
         headers:
           - name: content-type
@@ -107,7 +107,7 @@ log:
           - name: user-agent
             value: fix / v1
           - name: traceparent
-            value: 00-43c7599d8722c5cc45212303dae0ec31-dfbf5280ddb8e5b1-01
+            value: 00-321ee58158d9899f368f1eb81a26f8e8-7e2030a5416fb04a-01
           - name: connection
             value: keep-alive
           - name: host
@@ -123,9 +123,10 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. - You
-                  are an AI programming assistant who is an expert in fixing
-                  errors within code.
+                  You are Cody, an AI coding assistant from Sourcegraph. 
+
+
+                  - You are an AI programming assistant who is an expert in fixing errors within code.
 
                   - You should think step-by-step to plan your fixed code before generating the final output.
 
@@ -191,10 +192,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=fix&client-version=v1
       response:
-        bodySize: 801
+        bodySize: 684
         content:
           mimeType: text/event-stream
-          size: 801
+          size: 684
           text: >+
             event: completion
 
@@ -208,7 +209,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 21 Aug 2024 13:31:17 GMT
+            value: Thu, 22 Aug 2024 14:11:44 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -237,7 +238,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-21T13:31:12.435Z
+      startedDateTime: 2024-08-22T14:11:42.431Z
       time: 0
       timings:
         blocked: -1

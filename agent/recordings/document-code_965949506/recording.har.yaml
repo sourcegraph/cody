@@ -90,11 +90,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: a8fc9c4aed1634e20a570e9905d8a410
+    - _id: d8d75f47a3969906310db6f70a68a310
       _order: 0
       cache: {}
       request:
-        bodySize: 2566
+        bodySize: 2570
         cookies: []
         headers:
           - name: content-type
@@ -107,7 +107,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-d9ee563f73a3584f17ebf57b0aa172dd-113a9fcd6f7a6dd6-01
+            value: 00-306cb70d958e67f9aa1e581f814c017d-1ad9c278a3acf226-01
           - name: connection
             value: keep-alive
           - name: host
@@ -123,9 +123,10 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. - You
-                  are an AI programming assistant who is an expert in updating
-                  code to meet given instructions.
+                  You are Cody, an AI coding assistant from Sourcegraph. 
+
+
+                  - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
                   - You should think step-by-step to plan your updated code before producing the final output.
 
@@ -183,14 +184,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 3249
+        bodySize: 3227
         content:
           mimeType: text/event-stream
-          size: 3249
+          size: 3227
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Computes the sum of two numbers.\n *\n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of `a` and `b`.\n */\n","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of the two numbers.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -200,7 +201,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 21 Aug 2024 13:31:16 GMT
+            value: Thu, 22 Aug 2024 14:11:45 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -229,7 +230,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-21T13:31:14.801Z
+      startedDateTime: 2024-08-22T14:11:44.645Z
       time: 0
       timings:
         blocked: -1
@@ -239,11 +240,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 5d0c94931189d2f2610aeed59ac99dc2
+    - _id: 9349f9e27866c61847a2206a354dc01e
       _order: 0
       cache: {}
       request:
-        bodySize: 3501
+        bodySize: 3505
         cookies: []
         headers:
           - name: content-type
@@ -256,7 +257,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-be734c60f462c4da95388fbe09e116d1-99ff210a02a9a08c-01
+            value: 00-54fc839c70d4e3ef3bdca83f5dd1b02d-ef89c61f1192a92b-01
           - name: connection
             value: keep-alive
           - name: host
@@ -272,9 +273,10 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. - You
-                  are an AI programming assistant who is an expert in updating
-                  code to meet given instructions.
+                  You are Cody, an AI coding assistant from Sourcegraph. 
+
+
+                  - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
                   - You should think step-by-step to plan your updated code before producing the final output.
 
@@ -379,14 +381,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 1391
+        bodySize: 1269
         content:
           mimeType: text/event-stream
-          size: 1391
+          size: 1269
           text: >+
             event: completion
 
-            data: {"completion":"\n/**\n * Logs a 'Hello World!' message to the console if the `shouldGreet` parameter is true.\n */\n","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Logs a \"Hello World!\" message to the console if the `shouldGreet` property is true.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -396,7 +398,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 21 Aug 2024 13:31:17 GMT
+            value: Thu, 22 Aug 2024 14:11:46 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -425,7 +427,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-21T13:31:16.223Z
+      startedDateTime: 2024-08-22T14:11:45.852Z
       time: 0
       timings:
         blocked: -1
@@ -435,11 +437,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: d7f2b01871529d8bacd1b7abd33071ba
+    - _id: 8081d8f0c56c4c6e9771ad9bd11d93ac
       _order: 0
       cache: {}
       request:
-        bodySize: 3044
+        bodySize: 3048
         cookies: []
         headers:
           - name: content-type
@@ -452,7 +454,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-61563420314d08735a119a141eeb28eb-6bcfc5ef0424e0e6-01
+            value: 00-45c5acfd44b2fa1c60a98ec35a5ae8fc-c9f1bd31e1c67e73-01
           - name: connection
             value: keep-alive
           - name: host
@@ -468,9 +470,10 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. - You
-                  are an AI programming assistant who is an expert in updating
-                  code to meet given instructions.
+                  You are Cody, an AI coding assistant from Sourcegraph. 
+
+
+                  - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
                   - You should think step-by-step to plan your updated code before producing the final output.
 
@@ -567,7 +570,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 21 Aug 2024 13:31:18 GMT
+            value: Thu, 22 Aug 2024 14:11:47 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -596,7 +599,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-21T13:31:17.288Z
+      startedDateTime: 2024-08-22T14:11:46.775Z
       time: 0
       timings:
         blocked: -1
@@ -606,11 +609,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 7eddf1a3608f35f4b5866ef2f0d21def
+    - _id: ed3b7e4dd640991a51bca56984f25ac2
       _order: 0
       cache: {}
       request:
-        bodySize: 3297
+        bodySize: 3301
         cookies: []
         headers:
           - name: content-type
@@ -623,7 +626,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-285f5ea34db9eddae12faf09b147e23b-ca8d40978ec078d8-01
+            value: 00-96fb768ba7922d853b76e414df5f4487-6c87070f30801876-01
           - name: connection
             value: keep-alive
           - name: host
@@ -639,9 +642,10 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. - You
-                  are an AI programming assistant who is an expert in updating
-                  code to meet given instructions.
+                  You are Cody, an AI coding assistant from Sourcegraph. 
+
+
+                  - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
                   - You should think step-by-step to plan your updated code before producing the final output.
 
@@ -730,14 +734,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 1054
+        bodySize: 3504
         content:
           mimeType: text/event-stream
-          size: 1054
+          size: 3504
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Marks the start time of some operation for performance measurement.\n */","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Captures the current time in milliseconds using the high-resolution `performance.now()` timer.\n * This can be used to measure elapsed time for performance profiling or benchmarking.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -747,7 +751,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 21 Aug 2024 13:31:19 GMT
+            value: Thu, 22 Aug 2024 14:11:48 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -776,7 +780,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-21T13:31:18.310Z
+      startedDateTime: 2024-08-22T14:11:47.657Z
       time: 0
       timings:
         blocked: -1
@@ -786,11 +790,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: a076f12473e6df0834509ffe95ff8d7c
+    - _id: 1868f61ced8a36a03c8bac6d01c65efa
       _order: 0
       cache: {}
       request:
-        bodySize: 2569
+        bodySize: 2573
         cookies: []
         headers:
           - name: content-type
@@ -803,7 +807,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-892a9cd2b1309dd39b0e9346c2e311d1-6761f5789ada8cf1-01
+            value: 00-f36c658e26c8b8a95f6d6b1585a597f8-f6c1a1eeffa088b7-01
           - name: connection
             value: keep-alive
           - name: host
@@ -819,9 +823,10 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. - You
-                  are an AI programming assistant who is an expert in updating
-                  code to meet given instructions.
+                  You are Cody, an AI coding assistant from Sourcegraph. 
+
+
+                  - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
                   - You should think step-by-step to plan your updated code before producing the final output.
 
@@ -881,14 +886,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 795
+        bodySize: 792
         content:
           mimeType: text/event-stream
-          size: 795
+          size: 792
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Represents a Hello object that can greet the world.\n */","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Represents a simple \"Hello, world!\" greeting.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -898,7 +903,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 21 Aug 2024 13:31:20 GMT
+            value: Thu, 22 Aug 2024 14:11:49 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -927,7 +932,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-21T13:31:19.774Z
+      startedDateTime: 2024-08-22T14:11:48.907Z
       time: 0
       timings:
         blocked: -1

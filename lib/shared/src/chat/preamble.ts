@@ -22,7 +22,7 @@ export function getSimplePreamble(
     preInstruction?: PromptString
 ): Message[] {
     const preamble = type === 'Chat' ? CHAT_PREAMBLE : DEFAULT_PREAMBLE
-    const intro = ps`${preamble} ${preInstruction ?? ''}`.trim()
+    const intro = ps`${preamble} ${preInstruction ? ps`\n\n${preInstruction}` : ''}`.trim()
 
     // API Version 1 onward support system prompts, however only enable it for
     // Claude 3 models for now
