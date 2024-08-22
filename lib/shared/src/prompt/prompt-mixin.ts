@@ -6,7 +6,7 @@ import { PromptString, ps } from './prompt-string'
  * Used so that we can parse file paths to support applying code directly to files
  * from chat.
  */
-const CODEBLOCK_PREMAMBLE = ps`When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be \`\`\`language:path/to/file\n\`\`\``
+const CODEBLOCK_PREMAMBLE = ps`When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be \`\`\`language:path/to/file\n\`\`\`. You should only do this when generating a code block, the user does not need to be made aware of this in any other way.`
 
 /**
  * The preamble we add to the start of the last human open-end chat message that has context items.
@@ -30,18 +30,12 @@ export class PromptMixin {
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
      * Add hedging prevention prompt to specific models who need this.
      */
-    public static mixInto(
-        humanMessage: ChatMessage,
-        modelID: string,
-        options?: { experimentalSmartApplyEnabled?: boolean }
-    ): ChatMessage {
+    public static mixInto(humanMessage: ChatMessage, modelID: string): ChatMessage {
         // Default Mixin is added at the end so that it cannot be overriden by other mixins.
         let mixins = PromptString.join(
-            [
-                ...PromptMixin.mixins,
-                ...(options?.experimentalSmartApplyEnabled ? [PromptMixin.codeBlockMixin] : []),
-                PromptMixin.contextMixin,
-            ].map(mixin => mixin.prompt),
+            [...PromptMixin.mixins, PromptMixin.codeBlockMixin, PromptMixin.contextMixin].map(
+                mixin => mixin.prompt
+            ),
             ps`\n\n`
         )
 

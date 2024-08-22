@@ -25,7 +25,7 @@ describe('DefaultPrompter', () => {
     it('constructs a prompt with no context', async () => {
         modelsService.setModels([
             new Model({
-                model: 'a-model-id',
+                id: 'a-model-id',
                 usage: [ModelUsage.Chat],
                 contextWindow: { input: 100000, output: 100 },
             }),
@@ -97,7 +97,7 @@ describe('DefaultPrompter', () => {
 
         modelsService.setModels([
             new Model({
-                model: 'a-model-id',
+                id: 'a-model-id',
                 usage: [ModelUsage.Chat],
                 contextWindow: { input: 100000, output: 100 },
             }),
@@ -128,7 +128,7 @@ describe('DefaultPrompter', () => {
     it('prefers latest enhanced context', async () => {
         modelsService.setModels([
             new Model({
-                model: 'a-model-id',
+                id: 'a-model-id',
                 usage: [ModelUsage.Chat],
                 contextWindow: { input: 100000, output: 100 },
             }),

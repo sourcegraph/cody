@@ -32,8 +32,9 @@ export const AccountTab: React.FC = () => {
             }, [userInfo]),
         },
         {
-            text: 'Switch Account',
-            onClick: () => getVSCodeAPI().postMessage({ command: 'command', id: 'cody.auth.signin' }),
+            text: 'Settings',
+            onClick: () =>
+                getVSCodeAPI().postMessage({ command: 'command', id: 'cody.status-bar.interacted' }),
         },
         {
             text: 'Sign Out',

@@ -14,7 +14,9 @@ export class MockServerTelemetryExporter implements TelemetryExporter {
     constructor(private anonymousUserID: string) {}
 
     public async exportEvents(events: TelemetryEventInput[]): Promise<void> {
-        const resultOrError = await this.postTestEventRecording(events)
+        const resultOrError = await this.postTestEventRecording(
+            events.map(event => ({ ...event, testOnlyAnonymousUserID: this.anonymousUserID }))
+        )
         if (isError(resultOrError)) {
             logError('MockServerTelemetryExporter', 'Error exporting telemetry events:', resultOrError)
         }

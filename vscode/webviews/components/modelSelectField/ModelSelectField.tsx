@@ -61,7 +61,7 @@ export const ModelSelectField: React.FunctionComponent<{
                     isCodyProUser: isCodyProUser ? 1 : 0,
                 },
                 privateMetadata: {
-                    modelId: model.model,
+                    modelId: model.id,
                     modelProvider: model.provider,
                     modelTitle: model.title,
                 },
@@ -82,7 +82,7 @@ export const ModelSelectField: React.FunctionComponent<{
             getVSCodeAPI().postMessage({
                 command: 'event',
                 eventName: 'CodyVSCodeExtension:chooseLLM:clicked',
-                properties: { LLM_provider: model.model },
+                properties: { LLM_provider: model.id },
             })
             parentOnModelSelect(model)
         },
@@ -118,7 +118,7 @@ export const ModelSelectField: React.FunctionComponent<{
             models.map(m => {
                 const availability = modelAvailability(userInfo, serverSentModelsEnabled, m)
                 return {
-                    value: m.model,
+                    value: m.id,
                     title: (
                         <ModelTitleWithIcon
                             model={m}
@@ -147,7 +147,7 @@ export const ModelSelectField: React.FunctionComponent<{
 
     const onChange = useCallback(
         (value: string | undefined) => {
-            onModelSelect(models.find(m => m.model === value)!)
+            onModelSelect(models.find(m => m.id === value)!)
         },
         [onModelSelect, models]
     )
@@ -165,7 +165,7 @@ export const ModelSelectField: React.FunctionComponent<{
         return null
     }
 
-    const value = selectedModel.model
+    const value = selectedModel.id
     return (
         <ToolbarPopoverItem
             role="combobox"
@@ -296,7 +296,7 @@ const ModelTitleWithIcon: FunctionComponent<{
             [styles.disabled]: modelAvailability !== 'available',
         })}
     >
-        {showIcon && <ChatModelIcon model={model.model} className={styles.modelIcon} />}
+        {showIcon && <ChatModelIcon model={model.id} className={styles.modelIcon} />}
         <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
         {modelAvailability === 'needs-cody-pro' && (
             <Badge variant="secondary" className={clsx(styles.badge, 'tw-opacity-75')}>
@@ -326,15 +326,15 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 
 /** Common {@link ModelsService.uiGroup} values. */
 export const ModelUIGroup: Record<string, string> = {
-    Accuracy: 'Optimized for Accuracy',
-    Balanced: 'Balanced (Speed & Accuracy)',
-    Speed: 'Optimized for Speed',
-    Ollama: 'Ollama (Local)',
+    Power: 'More powerful models',
+    Balanced: 'Balanced for power and speed',
+    Speed: 'Faster models',
+    Ollama: 'Ollama (Local models)',
     Other: 'Other',
 }
 
 const getModelDropDownUIGroup = (model: Model): string => {
-    if (model.tags.includes(ModelTag.Accuracy)) return ModelUIGroup.Accuracy
+    if (model.tags.includes(ModelTag.Power)) return ModelUIGroup.Power
     if (model.tags.includes(ModelTag.Balanced)) return ModelUIGroup.Balanced
     if (model.tags.includes(ModelTag.Speed)) return ModelUIGroup.Speed
     if (model.tags.includes(ModelTag.Ollama)) return ModelUIGroup.Ollama
@@ -345,7 +345,7 @@ const optionByGroup = (
     options: SelectListOption[]
 ): { group: string; options: SelectListOption[] }[] => {
     const groupOrder = [
-        ModelUIGroup.Accuracy,
+        ModelUIGroup.Power,
         ModelUIGroup.Balanced,
         ModelUIGroup.Speed,
         ModelUIGroup.Ollama,

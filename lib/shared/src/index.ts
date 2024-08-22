@@ -237,7 +237,8 @@ export {
     type ContextFilters,
     type CodyContextFilterItem,
     type RepoListResponse,
-    type RepoSearchResponse,
+    type SuggestionsRepo,
+    type RepoSuggestionsSearchResponse,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
@@ -304,6 +305,8 @@ export {
     openCtx,
     REMOTE_REPOSITORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
+    REMOTE_DIRECTORY_PROVIDER_URI,
+    CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
     WEB_PROVIDER_URI,
     GIT_OPENCTX_PROVIDER_URI,
 } from './context/openctx/api'

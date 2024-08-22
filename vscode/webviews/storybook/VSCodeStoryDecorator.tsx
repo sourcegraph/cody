@@ -99,7 +99,7 @@ function useDummyChatModelContext(): ChatModelContext {
     const [chatModels, setChatModels] = useState(getDotComDefaultModels())
     const onCurrentChatModelChange = (value: Model): void => {
         setChatModels(chatModels =>
-            chatModels.map(model => ({ ...model, default: model.model === value.model }))
+            chatModels.map(model => ({ ...model, default: model.id === value.id }))
         )
     }
     return { chatModels, onCurrentChatModelChange }

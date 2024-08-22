@@ -25,7 +25,6 @@ import {
     modelsService,
     setUserAgent,
 } from '@sourcegraph/cody-shared'
-import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import { ChatModel } from '../../vscode/src/chat/chat-view/ChatModel'
@@ -36,6 +35,8 @@ import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 import { mkdirSync, statSync } from 'node:fs'
 import { PassThrough } from 'node:stream'
 import type { Har } from '@pollyjs/persister'
+import { TESTING_TELEMETRY_EXPORTER } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
+import { type TelemetryEventParameters, TestTelemetryExporter } from '@sourcegraph/telemetry'
 import { copySync } from 'fs-extra'
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
@@ -744,6 +745,22 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
             return { closestBody: closest }
         })
+        this.registerAuthenticatedRequest('testing/exportedTelemetryEvents', async () => {
+            const events = TESTING_TELEMETRY_EXPORTER.getExported()
+            return {
+                events: events.map(event => ({
+                    feature: event.feature,
+                    action: event.action,
+                    source: {
+                        client: event.source.client,
+                        clientVersion: event.source.clientVersion ?? '',
+                    },
+                    timestamp: event.timestamp,
+                    // TODO add parameters (metadata, privateMetadata, billingMetadata)
+                    testOnlyAnonymousUserID: event.testOnlyAnonymousUserID,
+                })),
+            }
+        })
         this.registerAuthenticatedRequest('testing/requestErrors', async () => {
             const requests = this.params.requestErrors ?? []
             return {
@@ -808,6 +825,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('testing/reset', async () => {
             await this.workspace.reset()
             this.globalState?.reset()
+            // reset the telemetry recorded events
+            TESTING_TELEMETRY_EXPORTER.reset()
             return null
         })
 
@@ -831,6 +850,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 return { documents }
             }
         )
+        TESTING_TELEMETRY_EXPORTER.delegate = new TestTelemetryExporter()
 
         this.registerAuthenticatedRequest('command/execute', async params => {
             await vscode.commands.executeCommand(params.command, ...(params.arguments ?? []))

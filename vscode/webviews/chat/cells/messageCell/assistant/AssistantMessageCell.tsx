@@ -46,7 +46,7 @@ export const AssistantMessageCell: FunctionComponent<{
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
-    experimentalSmartApplyEnabled?: boolean
+    smartApplyEnabled?: boolean
     smartApply?: CodeBlockActionsProps['smartApply']
 
     postMessage?: ApiPostMessage
@@ -65,7 +65,7 @@ export const AssistantMessageCell: FunctionComponent<{
         postMessage,
         guardrails,
         smartApply,
-        experimentalSmartApplyEnabled,
+        smartApplyEnabled,
     }) => {
         const displayMarkdown = useMemo(
             () => reformatBotMessageForChat(message.text ?? ps``).toString(),
@@ -73,7 +73,7 @@ export const AssistantMessageCell: FunctionComponent<{
         )
 
         const chatModel = useChatModelByID(message.model)
-        const ModelIcon = chatModel ? chatModelIconComponent(chatModel.model) : null
+        const ModelIcon = chatModel ? chatModelIconComponent(chatModel.id) : null
         const isAborted = isAbortErrorOrSocketHangUp(message.error)
 
         return (
@@ -82,7 +82,7 @@ export const AssistantMessageCell: FunctionComponent<{
                 speakerTitle={
                     <span data-testid="chat-model">
                         {chatModel
-                            ? chatModel.title ?? `Model ${chatModel.model} by ${chatModel.provider}`
+                            ? chatModel.title ?? `Model ${chatModel.id} by ${chatModel.provider}`
                             : 'Model'}
                     </span>
                 }
@@ -107,7 +107,7 @@ export const AssistantMessageCell: FunctionComponent<{
                                 insertButtonOnSubmit={insertButtonOnSubmit}
                                 guardrails={guardrails}
                                 humanMessage={humanMessage}
-                                experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
+                                smartApplyEnabled={smartApplyEnabled}
                                 smartApply={smartApply}
                                 userInfo={userInfo}
                             />

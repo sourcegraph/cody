@@ -158,12 +158,12 @@ test.extend<ExpectedV2Events>({
     await expectContextCellCounts(contextCell, { files: 6 })
     await openContextCell(contextCell)
     // Display the context files to confirm no hidden files are included
-    await expect(chatPanel.getByRole('link', { name: '.mydotfile:1-2' })).not.toBeVisible()
-    await expect(chatPanel.getByRole('link', { name: 'error.ts:1-9' })).toBeVisible()
-    await expect(chatPanel.getByRole('link', { name: 'Main.java:1-9' })).toBeVisible()
-    await expect(chatPanel.getByRole('link', { name: 'buzz.test.ts:1-12' })).toBeVisible()
-    await expect(chatPanel.getByRole('link', { name: 'buzz.ts:1-15' })).toBeVisible()
-    await expect(chatPanel.getByRole('link', { name: 'index.html:1-11' })).toBeVisible()
+    await expect(chatPanel.getByRole('button', { name: '.mydotfile:1-2' })).not.toBeVisible()
+    await expect(chatPanel.getByRole('button', { name: 'error.ts:1-9' })).toBeVisible()
+    await expect(chatPanel.getByRole('button', { name: 'Main.java:1-9' })).toBeVisible()
+    await expect(chatPanel.getByRole('button', { name: 'buzz.test.ts:1-12' })).toBeVisible()
+    await expect(chatPanel.getByRole('button', { name: 'buzz.ts:1-15' })).toBeVisible()
+    await expect(chatPanel.getByRole('button', { name: 'index.html:1-11' })).toBeVisible()
 
     /* Test: context.filePath with filePath command */
     // Locate the filePath command in the tree view and execute it from there to verify
@@ -183,11 +183,11 @@ test.extend<ExpectedV2Events>({
     await expectContextCellCounts(contextCell, { files: 2 })
     await openContextCell(contextCell)
     await expect(
-        chatPanel.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
+        chatPanel.getByRole('button', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
     ).toBeVisible()
     // Click on the file link should open the 'var.go file in the editor
     await contextCell
-        .getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
+        .getByRole('button', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
         .click()
     await expect(page.getByRole('tab', { name: 'var.go' })).toBeVisible()
 
@@ -201,9 +201,9 @@ test.extend<ExpectedV2Events>({
     // The files from the open tabs should be added as context
     await expectContextCellCounts(contextCell, { files: 2 })
     await openContextCell(contextCell)
-    await expect(contextCell.getByRole('link', { name: 'index.html' })).toBeVisible()
+    await expect(contextCell.getByRole('button', { name: 'index.html' })).toBeVisible()
     await expect(
-        contextCell.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go') })
+        contextCell.getByRole('button', { name: withPlatformSlashes('lib/batches/env/var.go') })
     ).toBeVisible()
 })
 
@@ -299,5 +299,7 @@ testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => 
     const contextCell = getContextCell(panel)
     await expectContextCellCounts(contextCell, { files: 2 })
     await openContextCell(contextCell)
-    await expect(contextCell.getByRole('link', { name: withPlatformSlashes('/git diff') })).toBeVisible()
+    await expect(
+        contextCell.getByRole('button', { name: withPlatformSlashes('/git diff') })
+    ).toBeVisible()
 })

@@ -33,7 +33,7 @@ interface ChatMessageContentProps {
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
-    experimentalSmartApplyEnabled?: boolean
+    smartApplyEnabled?: boolean
     smartApply?: CodeBlockActionsProps['smartApply']
 
     guardrails?: Guardrails
@@ -51,7 +51,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     insertButtonOnSubmit,
     guardrails,
     className,
-    experimentalSmartApplyEnabled,
+    smartApplyEnabled,
     smartApply,
     userInfo,
 }) => {
@@ -113,7 +113,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 const fileName = codeElement?.getAttribute('data-file-path') || undefined
                 let buttons: HTMLElement
 
-                if (experimentalSmartApplyEnabled) {
+                if (smartApplyEnabled) {
                     const smartApplyId = getCodeBlockId(preText, fileName)
                     const smartApplyState = smartApplyStates[smartApplyId]
                     buttons = createButtonsExperimentalUI(
@@ -180,7 +180,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     }, [
         copyButtonOnSubmit,
         insertButtonOnSubmit,
-        experimentalSmartApplyEnabled,
+        smartApplyEnabled,
         smartApplyInterceptor,
         guardrails,
         displayMarkdown,

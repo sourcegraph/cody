@@ -1,3 +1,12 @@
+## 0.5.2 
+- Improves repository mention result ordering (for repositories, files and directories mentions)
+
+## 0.5.1
+- Fixes problem with initial context can't be removed (lexical context item text node key problem)
+- Fixes rendering toolbar for Cody Web
+- Fixes styles around at-mention popover menu
+- Fixes create new chat command for Cody Web
+
 ## 0.5.0 
 - Improves bundle size 
 - Now allows you to have lazily loaded modules within cody web agent web-worker

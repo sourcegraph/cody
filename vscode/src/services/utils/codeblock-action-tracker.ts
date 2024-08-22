@@ -137,8 +137,11 @@ export async function handleSmartApply(
     const uri =
         fileUri && workspaceUri ? Utils.joinPath(workspaceUri, fileUri) : activeEditor?.document.uri
 
-    if (uri && !(await doesFileExist(uri))) {
-        return handleNewFileWithCode(code, uri)
+    const isNewFile = uri && !(await doesFileExist(uri))
+    if (isNewFile) {
+        const workspaceEditor = new vscode.WorkspaceEdit()
+        workspaceEditor.createFile(uri, { ignoreIfExists: false })
+        await vscode.workspace.applyEdit(workspaceEditor)
     }
 
     const document = uri ? await vscode.workspace.openTextDocument(uri) : activeEditor?.document
@@ -165,19 +168,10 @@ export async function handleSmartApply(
             instruction: PromptString.unsafe_fromUserQuery(instruction || ''),
             model: getSmartApplyModel(authStatus),
             replacement: code,
+            isNewFile,
         },
         source: 'chat',
     })
-}
-
-export async function handleNewFileWithCode(code: string, uri: vscode.Uri): Promise<void> {
-    const workspaceEditor = new vscode.WorkspaceEdit()
-    workspaceEditor.createFile(uri, { ignoreIfExists: false })
-    const range = new vscode.Range(0, 0, 0, 0)
-    workspaceEditor.replace(uri, range, code.trimEnd())
-    setLastStoredCode(code, 'applyButton')
-    await vscode.workspace.applyEdit(workspaceEditor)
-    return vscode.commands.executeCommand('vscode.open', uri)
 }
 
 /**

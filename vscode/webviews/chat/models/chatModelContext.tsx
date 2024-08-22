@@ -18,13 +18,13 @@ export function useChatModelContext(): ChatModelContext {
 
 export function useChatModelByID(
     model: string | undefined
-): Pick<Model, 'model' | 'title' | 'provider'> | undefined {
+): Pick<Model, 'id' | 'title' | 'provider'> | undefined {
     const { chatModels } = useChatModelContext()
     return (
-        chatModels?.find(m => m.model === model) ??
+        chatModels?.find(m => m.id === model) ??
         (model
             ? {
-                  model,
+                  id: model,
                   title: model,
                   provider: 'unknown',
               }

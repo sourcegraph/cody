@@ -1,7 +1,6 @@
 import type { Item, Mention } from '@openctx/client'
 import {
     REMOTE_FILE_PROVIDER_URI,
-    contextFiltersProvider,
     displayPathBasename,
     graphqlClient,
     isDefined,
@@ -9,6 +8,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 
+import { getRepositoryMentions } from './common/get-repository-mentions'
 import type { OpenCtxProvider } from './types'
 
 const RemoteFileProvider = createRemoteFileProvider()
@@ -28,7 +28,7 @@ export function createRemoteFileProvider(customTitle?: string): OpenCtxProvider 
             const [repoName, filePath] = query?.split(':') || []
 
             if (!query?.includes(':') || !repoName.trim()) {
-                return await getRepoMentions(query?.trim())
+                return await getRepositoryMentions(query?.trim() ?? '', REMOTE_FILE_PROVIDER_URI)
             }
 
             return await getFileMentions(repoName, filePath.trim())
@@ -46,29 +46,6 @@ export function createRemoteFileProvider(customTitle?: string): OpenCtxProvider 
             )
         },
     }
-}
-
-async function getRepoMentions(query?: string): Promise<Mention[]> {
-    const dataOrError = await graphqlClient.searchRepos(10, undefined, query)
-
-    if (isError(dataOrError) || dataOrError === null) {
-        return []
-    }
-
-    const repositories = dataOrError.repositories.nodes
-
-    return repositories.map(
-        repo =>
-            ({
-                uri: repo.url,
-                title: repo.name,
-                description: ' ',
-                data: {
-                    repoName: repo.name,
-                    isIgnored: contextFiltersProvider.isRepoNameIgnored(repo.name),
-                },
-            }) satisfies Mention
-    )
 }
 
 async function getFileMentions(repoName: string, filePath?: string): Promise<Mention[]> {
@@ -131,7 +108,7 @@ async function getFileItem(repoName: string, filePath: string, rev = 'HEAD'): Pr
     ] satisfies Item[]
 }
 
-function escapeRegExp(str: string): string {
+export function escapeRegExp(str: string): string {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 

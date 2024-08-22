@@ -14,7 +14,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { ContextAPIClient } from './chat/context/contextAPIClient'
-import { createClient as createCodeCompletionsClient } from './completions/client'
+import { createClient as createCodeCompletionsClient } from './completions/default-client'
 import type { ConfigWatcher } from './configwatcher'
 import type { PlatformContext } from './extension.common'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
