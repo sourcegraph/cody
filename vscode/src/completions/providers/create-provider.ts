@@ -93,7 +93,7 @@ export async function createProviderConfigHelper(
                 return createOpenAICompatibleProviderConfig({
                     client,
                     timeouts: config.autocompleteTimeouts,
-                    model: model,
+                    model,
                     authStatus,
                     config,
                 })
@@ -121,7 +121,8 @@ export async function createProviderConfigHelper(
         case 'google': {
             if (authStatus.configOverwrites?.completionModel?.includes('claude')) {
                 return createAnthropicProviderConfig({
-                    client, // Model name for google provider is a deployment name. It shouldn't appear in logs.
+                    client,
+                    // Model name for google provider is a deployment name. It shouldn't appear in logs.
                     model: undefined,
                 })
             }
