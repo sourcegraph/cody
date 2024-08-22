@@ -1013,10 +1013,10 @@ _commands?.registerCommand?.('vscode.executeWorkspaceSymbolProvider', query => {
 _commands?.registerCommand?.('vscode.executeFormatDocumentProvider', uri => {
     return Promise.resolve([])
 })
-_commands?.registerCommand?.('vscode.open', async (uri: vscode.Uri) => {
+_commands?.registerCommand?.('vscode.open', async (uri: vscode.Uri, options?: vscode.TextDocumentShowOptions) => {
     const result = toUri(uri?.path)
     if (result) {
-        return _window.showTextDocument(result)
+        return _window.showTextDocument(result, options)
     }
     return open(uri.toString())
 })
