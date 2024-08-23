@@ -17,7 +17,7 @@ describe('getRepoNamesFromWorkspaceUri', () => {
         authProvider.instance = {
             changes: EMPTY,
             getAuthStatus: () =>
-                ({ ...defaultAuthStatus, isLoggedIn: true, isDotCom: false }) satisfies AuthStatus,
+                ({ ...defaultAuthStatus, authenticated: true, isDotCom: false }) satisfies AuthStatus,
         } as unknown as AuthProvider
         repoNameResolver.init()
 
@@ -53,7 +53,7 @@ describe('getRepoNamesFromWorkspaceUri', () => {
         authProvider.instance = {
             changes: EMPTY,
             getAuthStatus: () =>
-                ({ ...defaultAuthStatus, isLoggedIn: true, isDotCom: true }) satisfies AuthStatus,
+                ({ ...defaultAuthStatus, authenticated: true, isDotCom: true }) satisfies AuthStatus,
         } as unknown as AuthProvider
         repoNameResolver.init()
 

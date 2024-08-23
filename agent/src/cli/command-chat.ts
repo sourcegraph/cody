@@ -17,7 +17,7 @@ import type { ClientInfo } from '../protocol-alias'
 import { Streams } from './Streams'
 import { codyCliClientName } from './codyCliClientName'
 import { AuthenticatedAccount } from './command-auth/AuthenticatedAccount'
-import { notLoggedIn } from './command-auth/messages'
+import { notLoggedIn as notAuthenticated } from './command-auth/messages'
 import { isNonEmptyArray } from './isNonEmptyArray'
 
 declare const process: { pkg: { entrypoint: string } } & NodeJS.Process
@@ -157,8 +157,8 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         })
     }
 
-    if (!serverInfo.authStatus?.isLoggedIn) {
-        notLoggedIn(spinner)
+    if (!serverInfo.authStatus?.authenticated) {
+        notAuthenticated(spinner)
         return 1
     }
 

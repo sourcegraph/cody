@@ -84,7 +84,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
     // Display quickpick to select endpoint to sign in to
     public async signinMenu(type?: 'enterprise' | 'dotcom' | 'token', uri?: string): Promise<void> {
-        const mode = this.status.isLoggedIn ? 'switch' : 'signin'
+        const mode = this.status.authenticated ? 'switch' : 'signin'
         logDebug('AuthProvider:signinMenu', mode)
         telemetryRecorder.recordEvent('cody.auth.login', 'clicked')
         const item = await AuthMenu(mode, this.endpointHistory)
@@ -124,7 +124,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
                     endpoint: selectedEndpoint,
                     token: token || null,
                 })
-                if (!authStatus?.isLoggedIn) {
+                if (!authStatus?.authenticated) {
                     const newToken = await showAccessTokenInputBox(item.uri)
                     if (!newToken) {
                         return
@@ -151,7 +151,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         })
         telemetryRecorder.recordEvent('cody.auth.signin.token', 'clicked', {
             metadata: {
-                success: authState.isLoggedIn ? 1 : 0,
+                success: authState.authenticated ? 1 : 0,
             },
         })
         await showAuthResultMessage(instanceUrl, authState)
@@ -322,16 +322,20 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
                 await this.storeAuthInfo(config.serverEndpoint, config.accessToken)
             }
 
-            await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
+            await vscode.commands.executeCommand(
+                'setContext',
+                'cody.activated',
+                authStatus.authenticated
+            )
 
             await this.setAuthStatus(authStatus)
 
             // If the extension is authenticated on startup, it can't be a user's first
             // ever authentication. We store this to prevent logging first-ever events
             // for already existing users.
-            if (isExtensionStartup && authStatus.isLoggedIn) {
+            if (isExtensionStartup && authStatus.authenticated) {
                 await this.setHasAuthenticatedBefore()
-            } else if (authStatus.isLoggedIn) {
+            } else if (authStatus.authenticated) {
                 this.handleFirstEverAuthentication()
             }
 
@@ -383,7 +387,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
             let eventValue: 'disconnected' | 'connected' | 'failed'
             if (authStatus.showNetworkError || authStatus.showInvalidAccessTokenError) {
                 eventValue = 'failed'
-            } else if (authStatus.isLoggedIn) {
+            } else if (authStatus.authenticated) {
                 eventValue = 'connected'
             } else {
                 eventValue = 'disconnected'
@@ -409,10 +413,10 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         const authState = await this.auth({ endpoint, token, customHeaders })
         telemetryRecorder.recordEvent('cody.auth.fromCallback.web', 'succeeded', {
             metadata: {
-                success: authState?.isLoggedIn ? 1 : 0,
+                success: authState?.authenticated ? 1 : 0,
             },
         })
-        if (authState?.isLoggedIn) {
+        if (authState?.authenticated) {
             await vscode.window.showInformationMessage(`Signed in to ${endpoint}`)
         } else {
             await showAuthFailureMessage(endpoint)
@@ -532,7 +536,7 @@ async function showAuthResultMessage(
     endpoint: string,
     authStatus: AuthStatus | undefined
 ): Promise<void> {
-    if (authStatus?.isLoggedIn) {
+    if (authStatus?.authenticated) {
         const authority = vscode.Uri.parse(endpoint).authority
         await vscode.window.showInformationMessage(`Signed in to ${authority || endpoint}`)
     } else {

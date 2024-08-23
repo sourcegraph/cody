@@ -451,15 +451,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                 'succeeded',
                                 {
                                     metadata: {
-                                        success: authStatus?.isLoggedIn ? 1 : 0,
+                                        success: authStatus?.authenticated ? 1 : 0,
                                     },
                                 }
                             )
-                            if (!authStatus?.isLoggedIn) {
+                            if (!authStatus?.authenticated) {
                                 void vscode.window.showErrorMessage(
                                     'Authentication failed. Please check your token and try again.'
                                 )
                             }
+                            // TODO!(sqs): check for siteHasCodyEnabled & verified emails?
                         }
                     )
 
@@ -502,7 +503,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                 endpoint: DOTCOM_URL.href,
                                 token,
                             })
-                            if (!authStatus?.isLoggedIn) {
+                            if (!authStatus?.authenticated) {
                                 void vscode.window.showErrorMessage(
                                     'Authentication failed. Please check your token and try again.'
                                 )
@@ -517,7 +518,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 const nextAuth = authProvider.instance!.getAuthStatus()
                 telemetryRecorder.recordEvent('cody.troubleshoot', 'reloadAuth', {
                     metadata: {
-                        success: nextAuth.isLoggedIn ? 1 : 0,
+                        success: nextAuth.authenticated ? 1 : 0,
                     },
                 })
                 break
@@ -560,7 +561,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         void this.sendConfig()
 
         // Get the latest model list available to the current user to update the ChatModel.
-        if (status.isLoggedIn) {
+        if (status.authenticated) {
             this.handleSetChatModel(getDefaultModelID())
         }
     }
@@ -1073,7 +1074,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private postChatModels(): void {
         const authStatus = authProvider.instance!.getAuthStatus()
-        if (!authStatus?.isLoggedIn) {
+        if (!authStatus?.authenticated) {
             return
         }
         const models = modelsService.instance!.getModels(ModelUsage.Chat)

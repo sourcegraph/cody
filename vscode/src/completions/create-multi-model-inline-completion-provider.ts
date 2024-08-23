@@ -73,7 +73,10 @@ export async function createInlineCompletionItemFromMultipleProviders({
     // The primary purpose of this method is to get the completions generated from multiple providers,
     // which helps judge the quality of code completions
     const authStatus = authProvider.instance!.getAuthStatus()
-    if (!authStatus.isLoggedIn || config.autocompleteExperimentalMultiModelCompletions === undefined) {
+    if (
+        !authStatus.authenticated ||
+        config.autocompleteExperimentalMultiModelCompletions === undefined
+    ) {
         return {
             dispose: () => {},
         }

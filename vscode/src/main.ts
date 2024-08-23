@@ -528,7 +528,7 @@ function registerUpgradeHandlers(
         // Check if user has just moved back from a browser window to upgrade cody pro
         vscode.window.onDidChangeWindowState(async ws => {
             const authStatus = authProvider.instance!.getAuthStatus()
-            if (ws.focused && authStatus.isDotCom && authStatus.isLoggedIn) {
+            if (ws.focused && authStatus.isDotCom && authStatus.authenticated) {
                 const res = await graphqlClient.getCurrentUserCodyProEnabled()
                 if (res instanceof Error) {
                     logError('onDidChangeWindowState', 'getCurrentUserCodyProEnabled', res)

@@ -26,7 +26,6 @@ export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
     const {
         isOfflineMode,
         endpoint,
-        siteHasCodyEnabled,
         username,
         authenticated,
         isDotCom,
@@ -46,7 +45,6 @@ export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
             : options.primaryEmail?.email || ''
     const requiresVerifiedEmail = isDotCom
     const hasVerifiedEmail = requiresVerifiedEmail && options.hasVerifiedEmail
-    const isAllowed = !requiresVerifiedEmail || hasVerifiedEmail
     return {
         ...options,
         showInvalidAccessTokenError: false,
@@ -54,7 +52,6 @@ export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
         primaryEmail,
         requiresVerifiedEmail,
         hasVerifiedEmail,
-        isLoggedIn: siteHasCodyEnabled && authenticated && isAllowed,
         codyApiVersion: inferCodyApiVersion(siteVersion, isDotCom),
         isFireworksTracingEnabled:
             isDotCom && !!userOrganizations?.nodes.find(org => org.name === 'sourcegraph'),

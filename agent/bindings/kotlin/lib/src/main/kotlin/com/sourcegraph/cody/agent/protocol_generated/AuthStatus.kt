@@ -5,7 +5,6 @@ data class AuthStatus(
   val username: String,
   val endpoint: String,
   val isDotCom: Boolean,
-  val isLoggedIn: Boolean,
   val isFireworksTracingEnabled: Boolean,
   val showInvalidAccessTokenError: Boolean,
   val authenticated: Boolean,

@@ -91,7 +91,7 @@ export class SymfRunner implements vscode.Disposable {
         this.disposables.push(
             subscriptionDisposable(
                 authProvider.instance!.changes.subscribe(authStatus => {
-                    if (!isInitialized && authStatus.isLoggedIn && !isEnterpriseUser(authStatus)) {
+                    if (!isInitialized && authStatus.authenticated && !isEnterpriseUser(authStatus)) {
                         // Only initialize symf after the user has authenticated AND it's not an enterprise account.
                         isInitialized = true
                         this.disposables.push(initializeSymfIndexManagement(this))

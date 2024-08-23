@@ -87,7 +87,7 @@ export class ChatsController implements vscode.Disposable {
     }
 
     private async setAuthStatus(authStatus: AuthStatus): Promise<void> {
-        const hasLoggedOut = !authStatus.isLoggedIn
+        const hasLoggedOut = !authStatus.authenticated
         const hasSwitchedAccount =
             this.currentAuthAccount && this.currentAuthAccount.endpoint !== authStatus.endpoint
         if (hasLoggedOut || hasSwitchedAccount) {
@@ -347,7 +347,7 @@ export class ChatsController implements vscode.Disposable {
     private async exportHistory(): Promise<void> {
         telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
         const authStatus = authProvider.instance!.getAuthStatus()
-        if (authStatus.isLoggedIn) {
+        if (authStatus.authenticated) {
             try {
                 const historyJson = chatHistory.getLocalHistory(authStatus)
                 const exportPath = await vscode.window.showSaveDialog({

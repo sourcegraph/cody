@@ -42,7 +42,6 @@ const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
 const DUMMY_AUTH_STATUS: AuthStatus = {
     endpoint: 'https://fastsourcegraph.com',
     isDotCom: true,
-    isLoggedIn: true,
     isFireworksTracingEnabled: false,
     showInvalidAccessTokenError: false,
     authenticated: true,
