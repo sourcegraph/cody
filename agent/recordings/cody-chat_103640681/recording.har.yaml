@@ -88,11 +88,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 7e8f56ab45a3dc7757964706df7e1df2
+    - _id: 5c57622e2ebbfa5eb9cd7f8f12b8f53d
       _order: 0
       cache: {}
       request:
-        bodySize: 436
+        bodySize: 431
         cookies: []
         headers:
           - name: content-type
@@ -119,14 +119,12 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: human
                 text: respond with "hello" and nothing else
             model: claude-3.5-sonnet
@@ -156,7 +154,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:29:36 GMT
+            value: Fri, 23 Aug 2024 08:33:25 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -185,7 +183,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:29:35.594Z
+      startedDateTime: 2024-08-23T08:33:24.210Z
       time: 0
       timings:
         blocked: -1
@@ -195,11 +193,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: e119836577ea7930f84c6d55f363d344
+    - _id: 068fb12b6fe876d07eb89d5528a4154e
       _order: 0
       cache: {}
       request:
-        bodySize: 719
+        bodySize: 714
         cookies: []
         headers:
           - name: content-type
@@ -226,14 +224,12 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: human
                 text: |-
                   Codebase context from file animal.ts:
@@ -263,14 +259,14 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=1&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 2428
+        bodySize: 3027
         content:
           mimeType: text/event-stream
-          size: 2428
+          size: 3027
           text: >+
             event: completion
 
-            data: {"completion":"```typescript:cow.ts\nimport { StrangeAnimal } from './animal';\n\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
+            data: {"completion":"Here's the implementation of a cow based on the provided context:\n\n```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
 
 
             event: done
@@ -280,7 +276,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:29:37 GMT
+            value: Fri, 23 Aug 2024 08:33:26 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -309,7 +305,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:29:36.754Z
+      startedDateTime: 2024-08-23T08:33:25.264Z
       time: 0
       timings:
         blocked: -1

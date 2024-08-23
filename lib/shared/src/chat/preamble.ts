@@ -1,4 +1,4 @@
-import { type PromptString, ps, psDedent } from '../prompt/prompt-string'
+import { type PromptString, ps } from '../prompt/prompt-string'
 import type { Message } from '../sourcegraph-api'
 
 const DEFAULT_PREAMBLE = ps`You are Cody, an AI coding assistant from Sourcegraph.`
@@ -8,13 +8,9 @@ const DEFAULT_PREAMBLE = ps`You are Cody, an AI coding assistant from Sourcegrap
  * produce code blocks that we can associate with existing file paths.
  * We want to read these file paths to support applying code directly to files from chat.
  */
-const SMART_APPLY_PREAMBLE = ps`If your answer contains fenced code blocks in Markdown, include the full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH\n\`\`\`.`
-const CHAT_PREAMBLE = DEFAULT_PREAMBLE.join(SMART_APPLY_PREAMBLE)
-    ${DEFAULT_PREAMBLE}
+const SMART_APPLY_PREAMBLE = ps`If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH\n$CONTENT\`\`\`.`
 
-    Additional rules:
-    - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be \`\`\`language:path/to/file\n\`\`\`.
-`.trim()
+const CHAT_PREAMBLE = DEFAULT_PREAMBLE.concat(SMART_APPLY_PREAMBLE)
 
 export function getSimplePreamble(
     model: string | undefined,
@@ -23,7 +19,7 @@ export function getSimplePreamble(
     preInstruction?: PromptString
 ): Message[] {
     const preamble = type === 'Chat' ? CHAT_PREAMBLE : DEFAULT_PREAMBLE
-    const intro = ps`${preamble}\n\n${preInstruction.toString() ?? ''}`.trim()
+    const intro = ps`${preamble}\n\n${preInstruction ?? ''}`.trim()
 
     // API Version 1 onward support system prompts, however only enable it for
     // Claude 3 models for now

@@ -90,11 +90,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 3f1f79813408aeb87fec5bcd1b61767b
+    - _id: a3437619d7c064df2285fbb36db46aa0
       _order: 0
       cache: {}
       request:
-        bodySize: 2267
+        bodySize: 2266
         cookies: []
         headers:
           - name: content-type
@@ -107,7 +107,7 @@ log:
           - name: user-agent
             value: fix / v1
           - name: traceparent
-            value: 00-321ee58158d9899f368f1eb81a26f8e8-7e2030a5416fb04a-01
+            value: 00-3f0d5d4d3854805f311f966ca2761756-ecfa2eff8c16cd85-01
           - name: connection
             value: keep-alive
           - name: host
@@ -123,7 +123,7 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. 
+                  You are Cody, an AI coding assistant from Sourcegraph.
 
 
                   - You are an AI programming assistant who is an expert in fixing errors within code.
@@ -192,10 +192,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=fix&client-version=v1
       response:
-        bodySize: 684
+        bodySize: 607
         content:
           mimeType: text/event-stream
-          size: 684
+          size: 607
           text: >+
             event: completion
 
@@ -209,7 +209,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 14:11:44 GMT
+            value: Fri, 23 Aug 2024 08:08:27 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -238,7 +238,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T14:11:42.431Z
+      startedDateTime: 2024-08-23T08:08:25.877Z
       time: 0
       timings:
         blocked: -1

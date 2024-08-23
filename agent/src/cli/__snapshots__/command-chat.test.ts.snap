@@ -11,9 +11,9 @@ stdout: |+
 
 
 
-  \`\`\`typescript:cow.ts
-  import { StrangeAnimal } from './animal';
+  Here's the implementation of a cow based on the provided context:
 
+  \`\`\`typescript:animal.ts
   class Cow implements StrangeAnimal {
       makesSound(): 'coo' | 'moo' {
           return 'moo';

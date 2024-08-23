@@ -120,6 +120,7 @@ describe('Edit', () => {
 
           export const Heading: React.FC<HeadingProps> = ({ text, level = 1 }) => {
               const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements;
+
               return <HeadingTag>{text}</HeadingTag>;
           };
 
@@ -148,7 +149,8 @@ describe('Edit', () => {
                   default:
                       return a - b
               }
-          }"
+          }
+          "
         `,
             explainPollyError
         )

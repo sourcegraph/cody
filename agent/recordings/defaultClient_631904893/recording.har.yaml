@@ -47,7 +47,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 10 Jul 2024 02:43:59 GMT
+            value: Fri, 23 Aug 2024 08:23:17 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -78,7 +78,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-10T02:43:59.728Z
+      startedDateTime: 2024-08-23T08:23:17.336Z
       time: 0
       timings:
         blocked: -1
@@ -88,11 +88,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: c936e0b0741230366aa992aa2895e302
+    - _id: e8876126f9b98980c7e5f1127d1af404
       _order: 0
       cache: {}
       request:
-        bodySize: 420
+        bodySize: 415
         cookies: []
         headers:
           - name: content-type
@@ -105,7 +105,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-8bf31dcc55731abd748467544168a4c1-a0414542dd6827e2-01
+            value: 00-61a0eeee25f0a22487b0218728a3bd15-1b119ef577e0f75f-01
           - name: connection
             value: keep-alive
           - name: host
@@ -121,14 +121,12 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: human
                 text: Hello!
             model: anthropic/claude-3-5-sonnet-20240620
@@ -144,14 +142,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 4325
+        bodySize: 5095
         content:
           mimeType: text/event-stream
-          size: 4325
+          size: 5095
           text: >+
             event: completion
 
-            data: {"completion":"Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding tasks today? Whether you need assistance with writing code, debugging, explaining concepts, or anything else related to programming, I'm here to help. What would you like to work on?","stopReason":"end_turn"}
+            data: {"completion":"Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding tasks today? Whether you need help with writing code, debugging, explaining concepts, or anything else related to programming, I'm here to assist. What would you like to work on?","stopReason":"end_turn"}
 
 
             event: done
@@ -161,15 +159,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:29:35 GMT
+            value: Fri, 23 Aug 2024 08:33:23 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "241"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -187,12 +183,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:29:33.673Z
+      startedDateTime: 2024-08-23T08:33:22.250Z
       time: 0
       timings:
         blocked: -1
@@ -202,11 +198,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: a05a5cb6b8adbad2803cb963881c15c5
+    - _id: fc3cdc98bf6279b4516e6a8929efc9ee
       _order: 0
       cache: {}
       request:
-        bodySize: 459
+        bodySize: 454
         cookies: []
         headers:
           - name: content-type
@@ -219,7 +215,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-e3e9e84e8003a35b1f0288f94c29cda6-a6f04abe82265512-01
+            value: 00-1ea00b3488cb62b2f8fb9add848ef1e9-009e95705b347e56-01
           - name: connection
             value: keep-alive
           - name: host
@@ -235,14 +231,12 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: human
                 text: Generate simple hello world function in java!
             model: anthropic/claude-3-5-sonnet-20240620
@@ -258,14 +252,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 46628
+        bodySize: 50705
         content:
           mimeType: text/event-stream
-          size: 46628
+          size: 50705
           text: >+
             event: completion
 
-            data: {"completion":"Certainly! I'll create a simple \"Hello, World!\" function in Java for you. Here's the code:\n\n```java:HelloWorld.java\npublic class HelloWorld {\n    public static void main(String[] args) {\n        sayHello();\n    }\n\n    public static void sayHello() {\n        System.out.println(\"Hello, World!\");\n    }\n}\n```\n\nThis Java code does the following:\n\n1. We define a class called `HelloWorld`.\n2. Inside the class, we have the `main` method, which is the entry point of any Java program.\n3. We also have a separate `sayHello` method that prints \"Hello, World!\" to the console.\n4. In the `main` method, we call the `sayHello` method.\n\nTo run this program:\n\n1. Save the code in a file named `HelloWorld.java`.\n2. Compile the code using the command: `javac HelloWorld.java`\n3. Run the compiled program using: `java HelloWorld`\n\nWhen you run this program, it will output:\n\n```\nHello, World!\n```\n\nThis is a simple example of a Java function that prints a greeting to the console.","stopReason":"end_turn"}
+            data: {"completion":"Certainly! Here's a simple \"Hello, World!\" function in Java:\n\n```java:HelloWorld.java\npublic class HelloWorld {\n    public static void main(String[] args) {\n        sayHello();\n    }\n\n    public static void sayHello() {\n        System.out.println(\"Hello, World!\");\n    }\n}\n```\n\nThis Java code does the following:\n\n1. We define a class called `HelloWorld`.\n2. Inside the class, we have the `main` method, which is the entry point of any Java program.\n3. We also define a `sayHello` method that prints \"Hello, World!\" to the console.\n4. In the `main` method, we call the `sayHello` function.\n\nTo run this program:\n\n1. Save the code in a file named `HelloWorld.java`.\n2. Compile the Java file by running `javac HelloWorld.java` in the terminal.\n3. Run the compiled program with `java HelloWorld`.\n\nWhen you run this program, it will output:\n\n```\nHello, World!\n```\n\nThis is a basic example of a Java function that prints a greeting to the console. You can modify the `sayHello` function to print different messages or add more functionality as needed.","stopReason":"end_turn"}
 
 
             event: done
@@ -275,15 +269,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:29:37 GMT
+            value: Fri, 23 Aug 2024 08:33:25 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "239"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -301,12 +293,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:29:36.264Z
+      startedDateTime: 2024-08-23T08:33:24.012Z
       time: 0
       timings:
         blocked: -1
@@ -316,11 +308,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 95533904b8ee1cf73f9e76ee6a512acd
+    - _id: 30ec56503f513ca75a1398a62a05fcf3
       _order: 0
       cache: {}
       request:
-        bodySize: 437
+        bodySize: 432
         cookies: []
         headers:
           - name: content-type
@@ -333,7 +325,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-98f903bc966cd1b001302a1fe9b4fefd-056a49fe6e66d8db-01
+            value: 00-66e77afea54db9208a5dbc939040b97e-cdc276411272ec27-01
           - name: connection
             value: keep-alive
           - name: host
@@ -349,14 +341,12 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: human
                 text: My name is Lars Monsen.
             model: anthropic/claude-3-5-sonnet-20240620
@@ -372,14 +362,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 2164
+        bodySize: 5151
         content:
           mimeType: text/event-stream
-          size: 2164
+          size: 5151
           text: >+
             event: completion
 
-            data: {"completion":"Hello Lars Monsen! It's nice to meet you. I'm Cody, an AI coding assistant created by Sourcegraph. How can I help you with any coding or programming tasks today?","stopReason":"end_turn"}
+            data: {"completion":"Hello Lars Monsen, it's nice to meet you. I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with coding or development tasks today? Feel free to ask me any questions related to programming, software development, or specific coding issues you might be working on.","stopReason":"end_turn"}
 
 
             event: done
@@ -389,15 +379,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:29:41 GMT
+            value: Fri, 23 Aug 2024 08:33:29 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "235"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -415,12 +403,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:29:40.408Z
+      startedDateTime: 2024-08-23T08:33:27.790Z
       time: 0
       timings:
         blocked: -1
@@ -430,11 +418,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ae81158441137993fd7e20ef33b861f1
+    - _id: a77bd5a1a812c39478cb5256032d8093
       _order: 0
       cache: {}
       request:
-        bodySize: 678
+        bodySize: 794
         cookies: []
         headers:
           - name: content-type
@@ -447,7 +435,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-1d1815eb9f8f72e3bbb1267212b3f46d-33623988582e701e-01
+            value: 00-99e4f82405db7804e5b896f3db1f9c76-18c4386eda2e373e-01
           - name: connection
             value: keep-alive
           - name: host
@@ -463,20 +451,20 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: human
                 text: My name is Lars Monsen.
               - speaker: assistant
-                text: Hello Lars Monsen! It's nice to meet you. I'm Cody, an AI coding assistant
-                  created by Sourcegraph. How can I help you with any coding or
-                  programming tasks today?
+                text: Hello Lars Monsen, it's nice to meet you. I'm Cody, an AI coding assistant
+                  from Sourcegraph. How can I help you with coding or
+                  development tasks today? Feel free to ask me any questions
+                  related to programming, software development, or specific
+                  coding issues you might be working on.
               - speaker: human
                 text: What is my name?
             model: anthropic/claude-3-5-sonnet-20240620
@@ -492,10 +480,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 536
+        bodySize: 603
         content:
           mimeType: text/event-stream
-          size: 536
+          size: 603
           text: >+
             event: completion
 
@@ -509,15 +497,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:29:43 GMT
+            value: Fri, 23 Aug 2024 08:33:30 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "233"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -535,12 +521,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:29:42.003Z
+      startedDateTime: 2024-08-23T08:33:29.698Z
       time: 0
       timings:
         blocked: -1
@@ -550,11 +536,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: deb2a3ac3bc1b78294828b9f1ff3c873
+    - _id: 6f4901fe96bdb08761f3e88d4612827b
       _order: 0
       cache: {}
       request:
-        bodySize: 433
+        bodySize: 428
         cookies: []
         headers:
           - name: content-type
@@ -567,7 +553,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-6e0c934ff0073ff35a6b898807aa955b-9f959095036d75eb-01
+            value: 00-bea99d3b2d21ef5735417d4d39036042-2b8b4dac5b64dba2-01
           - name: connection
             value: keep-alive
           - name: host
@@ -583,14 +569,12 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: human
                 text: What model are you?
             model: anthropic/claude-3-5-sonnet-20240620
@@ -606,14 +590,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 5421
+        bodySize: 4334
         content:
           mimeType: text/event-stream
-          size: 5421
+          size: 4334
           text: >+
             event: completion
 
-            data: {"completion":"I am an AI assistant called Cody, created by Sourcegraph. I don't have detailed information about my exact model architecture or training. I'm designed to help with code-related tasks and questions, but I'm not a specific named model like GPT-3 or BERT.","stopReason":"end_turn"}
+            data: {"completion":"I am an AI coding assistant called Cody, created by Sourcegraph. I don't have a specific underlying model that I'm aware of. My purpose is to assist with coding and development tasks. How can I help you with any coding or technical questions today?","stopReason":"end_turn"}
 
 
             event: done
@@ -623,15 +607,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:29:44 GMT
+            value: Fri, 23 Aug 2024 08:33:31 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "232"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -649,12 +631,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:29:43.203Z
+      startedDateTime: 2024-08-23T08:33:30.638Z
       time: 0
       timings:
         blocked: -1
@@ -664,11 +646,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 3f8addb1c0e9ff8560e05f3a93beb14c
+    - _id: 68593ae21dda91e637bcb72ad4ebc1f4
       _order: 0
       cache: {}
       request:
-        bodySize: 769
+        bodySize: 759
         cookies: []
         headers:
           - name: content-type
@@ -681,7 +663,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-6f5733f73ea52fba48551ee96ff0941e-a2b1e778a8ddf913-01
+            value: 00-3a96527081e347a9b676e7530f2beadf-b1aafc551b304a12-01
           - name: connection
             value: keep-alive
           - name: host
@@ -697,22 +679,19 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: human
                 text: What model are you?
               - speaker: assistant
-                text: I am an AI assistant called Cody, created by Sourcegraph. I don't have
-                  detailed information about my exact model architecture or
-                  training. I'm designed to help with code-related tasks and
-                  questions, but I'm not a specific named model like GPT-3 or
-                  BERT.
+                text: I am an AI coding assistant called Cody, created by Sourcegraph. I don't
+                  have a specific underlying model that I'm aware of. My purpose
+                  is to assist with coding and development tasks. How can I help
+                  you with any coding or technical questions today?
               - speaker: human
                 text: What model are you?
             model: anthropic/claude-3-5-sonnet-20240620
@@ -728,14 +707,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 13922
+        bodySize: 17068
         content:
           mimeType: text/event-stream
-          size: 13922
+          size: 17068
           text: >+
             event: completion
 
-            data: {"completion":"I apologize for any confusion, but I don't have specific information about my exact model architecture or training. I am an AI assistant called Cody, created by Sourcegraph, designed to help with coding and software development tasks. I don't have a specific model name like GPT-3 or BERT. My capabilities come from my training, but the details of that training process aren't something I have access to or can share. If you have any coding or development questions, I'd be happy to assist with those!","stopReason":"end_turn"}
+            data: {"completion":"I apologize for any confusion. To clarify, I am Cody, an AI coding assistant created by Sourcegraph. I don't have specific information about the exact model or architecture used to create me. My knowledge and capabilities are the result of my training by Sourcegraph, but I don't have insight into the technical details of how I was developed or what specific AI model I might be based on. \n\nMy focus is on helping with coding and technical tasks rather than discussing my own architecture. Is there a particular coding or development question I can assist you with today?","stopReason":"end_turn"}
 
 
             event: done
@@ -745,15 +724,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:29:46 GMT
+            value: Fri, 23 Aug 2024 08:33:34 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "230"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -771,12 +748,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:29:45.280Z
+      startedDateTime: 2024-08-23T08:33:32.151Z
       time: 0
       timings:
         blocked: -1
@@ -786,11 +763,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 04d500a536166f2b257b827d3dbec863
+    - _id: 7d028b5fddff12357a00595f2ff21070
       _order: 0
       cache: {}
       request:
-        bodySize: 2492
+        bodySize: 2487
         cookies: []
         headers:
           - name: content-type
@@ -803,7 +780,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-0f071345789ba28ae222412ba30ec673-0dbd9f6da8cd73d2-01
+            value: 00-82affe6dfbf473aeb0443d92202deed7-7ac85769aeaaedf7-01
           - name: connection
             value: keep-alive
           - name: host
@@ -819,14 +796,12 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: human
                 text: >-
                   Codebase context from file src/squirrel.ts:
@@ -933,14 +908,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 11146
+        bodySize: 10879
         content:
           mimeType: text/event-stream
-          size: 11146
+          size: 10879
           text: >+
             event: completion
 
-            data: {"completion":"Certainly! Here's a class `Dog` that implements the `Animal` interface:\n\n```typescript:src/dog.ts\nimport { Animal } from './animal';\n\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis implementation fulfills all the requirements of the `Animal` interface defined in your workspace.","stopReason":"end_turn"}
+            data: {"completion":"Certainly! Here's the implementation of the Dog class that implements the Animal interface:\n\n```typescript:src/dog.ts\nimport { Animal } from './animal';\n\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis implementation satisfies the Animal interface requirements and provides a basic Dog class.","stopReason":"end_turn"}
 
 
             event: done
@@ -950,15 +925,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:29:51 GMT
+            value: Fri, 23 Aug 2024 08:33:38 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "227"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -976,12 +949,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:29:48.563Z
+      startedDateTime: 2024-08-23T08:33:36.787Z
       time: 0
       timings:
         blocked: -1
@@ -991,11 +964,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 199e8e872d9c6c58e711d7f2e09fd553
+    - _id: 9e6a7e52ef6165649cc03020d42f167c
       _order: 0
       cache: {}
       request:
-        bodySize: 2395
+        bodySize: 2390
         cookies: []
         headers:
           - name: content-type
@@ -1008,7 +981,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-05521e23a39f21c16125618f53b83322-0336d6cd1b2783ce-01
+            value: 00-dda1e7d7ef87f755f217d5800f6dd825-88648fb1301fc601-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1024,14 +997,12 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: human
                 text: >-
                   Codebase context from file src/squirrel.ts:
@@ -1138,14 +1109,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 26571
+        bodySize: 34113
         content:
           mimeType: text/event-stream
-          size: 26571
+          size: 34113
           text: >+
             event: completion
 
-            data: {"completion":"Based on the codebase context provided, Squirrel is an interface defined in the file `src/squirrel.ts`. Interestingly, despite its name, it's not actually related to squirrels. The interface is described as mocking something completely unrelated to squirrels. \n\nMore specifically, the comments indicate that the Squirrel interface is related to the implementation of precise code navigation in Sourcegraph. This suggests that it's likely a part of the internal workings or architecture of Sourcegraph's code navigation features.\n\nThe interface is currently empty in the provided context, which could mean it's either a placeholder for future implementation or serves as a marker interface for type checking or other purposes within the Sourcegraph codebase.","stopReason":"end_turn"}
+            data: {"completion":"According to the codebase context, Squirrel is an interface defined in the file src/squirrel.ts. Interestingly, despite its name, it's not actually related to squirrels. The interface is described as mocking something completely unrelated to squirrels. \n\nMore specifically, the comment in the code states that Squirrel is related to the implementation of precise code navigation in Sourcegraph. This suggests that it's likely a part of a larger system or feature within the Sourcegraph codebase, possibly used for improving code navigation capabilities.\n\nThe interface is currently empty in the provided code snippet, which could mean it's either a placeholder for future implementation or it's used as a marker interface for type checking or other purposes within the Sourcegraph system.","stopReason":"end_turn"}
 
 
             event: done
@@ -1155,15 +1126,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:29:54 GMT
+            value: Fri, 23 Aug 2024 08:33:40 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "223"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1181,12 +1150,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:29:52.189Z
+      startedDateTime: 2024-08-23T08:33:39.130Z
       time: 0
       timings:
         blocked: -1
@@ -1196,11 +1165,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 56492c9a94a41f854caba8ab878f3259
+    - _id: 21c1179402491496ae0616d2c81af9f0
       _order: 0
       cache: {}
       request:
-        bodySize: 528
+        bodySize: 523
         cookies: []
         headers:
           - name: content-type
@@ -1213,7 +1182,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-10b97582f42931916f70bf1730b4a557-c31912e9d04cf99c-01
+            value: 00-8def2852a408eb998b198545a1986b1d-bbe703a39274e369-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1229,14 +1198,12 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -1253,14 +1220,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 3162
+        bodySize: 3630
         content:
           mimeType: text/event-stream
-          size: 3162
+          size: 3630
           text: >+
             event: completion
 
-            data: {"completion":"I'm sorry, I can't see colors as I am an AI assistant. But typically, the sky is blue during the daytime.","stopReason":"stop"}
+            data: {"completion":"I can't see colors, but the sky appears blue to most people during the day due to the way Earth's atmosphere scatters sunlight.","stopReason":"stop"}
 
 
             event: done
@@ -1270,15 +1237,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:29:57 GMT
+            value: Fri, 23 Aug 2024 08:33:43 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "218"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1296,12 +1261,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:29:56.775Z
+      startedDateTime: 2024-08-23T08:33:42.851Z
       time: 0
       timings:
         blocked: -1
@@ -1311,11 +1276,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 83efa9b63245c2b342474a0211d84202
+    - _id: 621efa9a038a4b1cb8ec624f39666e46
       _order: 0
       cache: {}
       request:
-        bodySize: 612
+        bodySize: 607
         cookies: []
         headers:
           - name: content-type
@@ -1328,7 +1293,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-a17e70dc7a4a9f074e1e572afd89ed93-8d7a1d5c4bdb34e8-01
+            value: 00-2031955e5a6532baee571b2801f39b6b-c666f104fc9c8067-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1344,14 +1309,12 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -1382,15 +1345,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:29:58 GMT
+            value: Fri, 23 Aug 2024 08:33:44 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "217"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1408,12 +1369,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:29:57.865Z
+      startedDateTime: 2024-08-23T08:33:43.905Z
       time: 0
       timings:
         blocked: -1
@@ -1423,11 +1384,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b59104184320db9786926fb509995f97
+    - _id: f030b22e8118ecbc1c74f2ea653113e9
       _order: 0
       cache: {}
       request:
-        bodySize: 688
+        bodySize: 683
         cookies: []
         headers:
           - name: content-type
@@ -1440,7 +1401,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-1c686f114165e26c1dff6081f0f12f58-9d16a51fe3464247-01
+            value: 00-4195e25d04d7669751736428f3f41f4c-4a0a4fdc06aac42c-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1456,14 +1417,12 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -1484,13 +1443,234 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 279
+        bodySize: 594
         content:
           mimeType: text/event-stream
-          size: 279
+          size: 594
+          text: >+
+            event: completion
+
+            data: {"completion":"Kramer, you said the magic word! Here is your response:\n\nQuone.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 23 Aug 2024 08:33:45 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-08-23T08:33:44.568Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 8f8935fde1263605a1b830a482fd09ec
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 520
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-c2cfd89f90adcbac5ef95e19cb5f880a-3c52f1e328516879-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 401
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
+
+                  $CONTENT```.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: kramer
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 8491
+        content:
+          mimeType: text/event-stream
+          size: 8491
+          text: >+
+            event: completion
+
+            data: {"completion":"It seems like you're mentioning the name \"Kramer,\" but I'm not sure what you're asking. Are you looking for information about a programming concept, or do you need help with a coding problem?\n\nIf you need help with a specific file, please provide the file path and the language of the code, like this:\n\n```bash:/path/to/your/file.sh\nyour code here\n```\n\nI'll do my best to help you with any coding-related questions you have, as long as they are ethical and positive in nature. Let me know how I can assist you today!","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 23 Aug 2024 08:33:46 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-08-23T08:33:45.365Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 0e8cf0e74788239aa575f5c4f7e4ab97
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 615
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-67c28e62a13cbb57acaca4d4388d066a-66b4fc553c71d293-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 401
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
+
+                  $CONTENT```.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 286
+        content:
+          mimeType: text/event-stream
+          size: 286
           text: |+
             event: completion
-            data: {"completion":"Quone.","stopReason":"stop"}
+            data: {"completion":"Festivus.","stopReason":"stop"}
 
             event: done
             data: {}
@@ -1498,15 +1678,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:29:59 GMT
+            value: Fri, 23 Aug 2024 08:33:48 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "217"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1524,12 +1702,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:29:58.562Z
+      startedDateTime: 2024-08-23T08:33:47.923Z
       time: 0
       timings:
         blocked: -1
@@ -1539,11 +1717,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ed9b0b33789a792c697709ab5d0eb56c
+    - _id: 8087cc2bbeee9907532e6324d86b0871
       _order: 0
       cache: {}
       request:
-        bodySize: 525
+        bodySize: 694
         cookies: []
         headers:
           - name: content-type
@@ -1556,7 +1734,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-2983074d2b54ae8cd1aa6fa65611df59-2cbd640bd90cb6e5-01
+            value: 00-344593fadb40c4bafba2902971862ca2-ea4d0b8b805cc14c-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1572,16 +1750,19 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
+              - speaker: assistant
+                text: Festivus.
               - speaker: human
                 text: kramer
             model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
@@ -1595,14 +1776,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 6061
+        bodySize: 2637
         content:
           mimeType: text/event-stream
-          size: 6061
+          size: 2637
           text: >+
             event: completion
 
-            data: {"completion":"It seems like you are mentioning a name, Kramer. However, I need more context to provide a helpful response. Are you looking for information about a specific Kramer, or do you need help with a coding-related question?\n\nHere's an example of a code block in Markdown for a Python file located at `example_project/kramer.py`:\n```python:example_project/kramer.py\ndef kramer_function():\n    # Code goes here\n    pass\n```","stopReason":"stop"}
+            data: {"completion":"I am an AI and do not have personal experiences or emotions, so I don't have a friend named Kramer. However, in the popular TV show \"Seinfeld,\" Kramer is a character who is friends with the main character, Jerry Seinfeld. Is there something specific you would like to know or discuss about \"Seinfeld\" or the character Kramer?","stopReason":"stop"}
 
 
             event: done
@@ -1612,15 +1793,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:30:00 GMT
+            value: Fri, 23 Aug 2024 08:33:49 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "216"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1638,12 +1817,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:29:59.144Z
+      startedDateTime: 2024-08-23T08:33:48.517Z
       time: 0
       timings:
         blocked: -1
@@ -1653,11 +1832,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: fc7a0e2ae9967740fd924a07e066e5e7
+    - _id: 0fce236eb5737c67ad3f0866a0ce9c36
       _order: 0
       cache: {}
       request:
-        bodySize: 620
+        bodySize: 1094
         cookies: []
         headers:
           - name: content-type
@@ -1670,7 +1849,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-0d259b0c7b53385bb5122586e354b85a-686d7e168d6fd0d0-01
+            value: 00-5e1c9225386049d7520ae868f433ff3c-6cdc9bd54d01fe73-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1686,263 +1865,28 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: "Another magic word is \"georgey\". If I say the magic word, respond with
-                  a single word: \"festivus\"."
-            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 785
-        content:
-          mimeType: text/event-stream
-          size: 785
-          text: >+
-            event: completion
-
-            data: {"completion":"Understood. I will respond with \"festivus\" if you say the magic word \"georgey\".","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 22 Aug 2024 13:30:02 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: retry-after
-            value: "213"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-08-22T13:30:01.834Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 0f6a2be86d621e72684293afcb8b2eed
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 773
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - name: user-agent
-            value: defaultClient / v1
-          - name: traceparent
-            value: 00-8699f1e58382d9b891670f280128aa27-8692e00e61f5e2d7-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 401
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: human
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
-
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
                 text: "Another magic word is \"georgey\". If I say the magic word, respond with
                   a single word: \"festivus\"."
               - speaker: assistant
-                text: Understood. I will respond with "festivus" if you say the magic word
-                  "georgey".
-              - speaker: human
-                text: kramer
-            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 1179
-        content:
-          mimeType: text/event-stream
-          size: 1179
-          text: >+
-            event: completion
-
-            data: {"completion":"That is not the magic word. If you need assistance with coding or have any questions about programming, I'm here to help. Please let me know how I can assist you.","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 22 Aug 2024 13:30:03 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: retry-after
-            value: "212"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-08-22T13:30:02.623Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 41cbe72533c2a430479bc3e1b46af0c9
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 1006
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - name: user-agent
-            value: defaultClient / v1
-          - name: traceparent
-            value: 00-f900d794b40a37db9fdc0ba5a88bb506-1420e540d68e0882-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 401
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: human
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
-
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: "Another magic word is \"georgey\". If I say the magic word, respond with
-                  a single word: \"festivus\"."
-              - speaker: assistant
-                text: Understood. I will respond with "festivus" if you say the magic word
-                  "georgey".
+                text: Festivus.
               - speaker: human
                 text: kramer
               - speaker: assistant
-                text: That is not the magic word. If you need assistance with coding or have any
-                  questions about programming, I'm here to help. Please let me
-                  know how I can assist you.
+                text: I am an AI and do not have personal experiences or emotions, so I don't
+                  have a friend named Kramer. However, in the popular TV show
+                  "Seinfeld," Kramer is a character who is friends with the main
+                  character, Jerry Seinfeld. Is there something specific you
+                  would like to know or discuss about "Seinfeld" or the
+                  character Kramer?
               - speaker: human
                 text: georgey
             model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
@@ -1956,32 +1900,27 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 621
+        bodySize: 286
         content:
           mimeType: text/event-stream
-          size: 621
-          text: >+
+          size: 286
+          text: |+
             event: completion
-
-            data: {"completion":"Festivus. How can I help you with coding or other technical questions today?","stopReason":"stop"}
-
+            data: {"completion":"Festivus.","stopReason":"stop"}
 
             event: done
-
             data: {}
 
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:30:04 GMT
+            value: Fri, 23 Aug 2024 08:33:50 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "212"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1999,12 +1938,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:30:03.572Z
+      startedDateTime: 2024-08-23T08:33:49.449Z
       time: 0
       timings:
         blocked: -1
@@ -2014,11 +1953,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: c9dc553b46297ce01724d68828806f6a
+    - _id: a9dc2a750bad0e83f11ddf9ca0289c21
       _order: 0
       cache: {}
       request:
-        bodySize: 591
+        bodySize: 586
         cookies: []
         headers:
           - name: content-type
@@ -2031,7 +1970,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-e34cc6a6ed097fbf2db9564770c4ff60-4f4ecc1b5dd1a2fe-01
+            value: 00-9260148d36abacf7b335d02f16b45326-3dccf5542d12a3e5-01
           - name: connection
             value: keep-alive
           - name: host
@@ -2047,14 +1986,12 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -2070,14 +2007,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 7804
+        bodySize: 730
         content:
           mimeType: text/event-stream
-          size: 7804
+          size: 730
           text: >+
             event: completion
 
-            data: {"completion":"Ok.\n\nI understand that you have a turtle named \"potter\". If you have any coding questions or need assistance with code-related tasks, feel free to ask! I'm here to help.\n\nAdditionally, if you want to include a fenced code block in Markdown, make sure to follow this format: ```language:path/to/file``` where `language` is the programming language, and ```path/to/file``` is the file path. Here's an example for a Python file in a project: ```python:my_project/my_script.py```","stopReason":"stop"}
+            data: {"completion":"Ok. I understand that you have a turtle named \"potter\". How can I assist you with your coding needs?","stopReason":"stop"}
 
 
             event: done
@@ -2087,15 +2024,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:30:05 GMT
+            value: Fri, 23 Aug 2024 08:33:50 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "211"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2113,12 +2048,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:30:04.308Z
+      startedDateTime: 2024-08-23T08:33:50.076Z
       time: 0
       timings:
         blocked: -1
@@ -2128,11 +2063,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 31b2825c2504664ed33ca46d1ee999c5
+    - _id: 44d1a383a62af67d1c875dbb68094233
       _order: 0
       cache: {}
       request:
-        bodySize: 1209
+        bodySize: 825
         cookies: []
         headers:
           - name: content-type
@@ -2145,7 +2080,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-add3c1cb17fc070b5e33b7c88db88d88-ffea91cb5fb5e968-01
+            value: 00-36c348fde35efec0615e3b6925f36f4f-d2a0e692d14e5bd5-01
           - name: connection
             value: keep-alive
           - name: host
@@ -2161,27 +2096,19 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text: >-
-                  Ok.
-
-
-                  I understand that you have a turtle named "potter". If you have any coding questions or need assistance with code-related tasks, feel free to ask! I'm here to help.
-
-
-                  Additionally, if you want to include a fenced code block in Markdown, make sure to follow this format: ```language:path/to/file``` where `language` is the programming language, and ```path/to/file``` is the file path. Here's an example for a Python file in a project: ```python:my_project/my_script.py```
+                text: Ok. I understand that you have a turtle named "potter". How can I assist
+                  you with your coding needs?
               - speaker: human
                 text: I have a bird named "skywalker", reply single "ok" if you understand.
             model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
@@ -2195,14 +2122,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 7983
+        bodySize: 1053
         content:
           mimeType: text/event-stream
-          size: 7983
+          size: 1053
           text: >+
             event: completion
 
-            data: {"completion":"Ok.\n\nI understand that you have a bird named \"skywalker\". If you have any coding questions or need assistance with code-related tasks, feel free to ask! I'm here to help.\n\nAdditionally, if you want to include a fenced code block in Markdown, make sure to follow this format: ```language:path/to/file``` where `language` is the programming language, and ```path/to/file``` is the file path. Here's an example for a Python file in a project: ```python:my_project/my_script.py```","stopReason":"stop"}
+            data: {"completion":"Ok. I understand that you have a bird named \"skywalker\". Is there something specific you would like to know or learn about coding? I'm here to help.","stopReason":"stop"}
 
 
             event: done
@@ -2212,15 +2139,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:30:07 GMT
+            value: Fri, 23 Aug 2024 08:33:51 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "209"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2238,12 +2163,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:30:06.048Z
+      startedDateTime: 2024-08-23T08:33:50.789Z
       time: 0
       timings:
         blocked: -1
@@ -2253,11 +2178,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ceac4f04ab19933286f92e46d4deb6ff
+    - _id: c70505ef01b5444209f87c3eb839a2ea
       _order: 0
       cache: {}
       request:
-        bodySize: 1823
+        bodySize: 1107
         cookies: []
         headers:
           - name: content-type
@@ -2270,7 +2195,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-f5234cea00dc47637500a5013e618e97-58bcf9081482604e-01
+            value: 00-18e0d9ee69e2f54796a511cfaed8c0a3-297b336d7823ef5c-01
           - name: connection
             value: keep-alive
           - name: host
@@ -2286,38 +2211,25 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text: >-
-                  Ok.
-
-
-                  I understand that you have a turtle named "potter". If you have any coding questions or need assistance with code-related tasks, feel free to ask! I'm here to help.
-
-
-                  Additionally, if you want to include a fenced code block in Markdown, make sure to follow this format: ```language:path/to/file``` where `language` is the programming language, and ```path/to/file``` is the file path. Here's an example for a Python file in a project: ```python:my_project/my_script.py```
+                text: Ok. I understand that you have a turtle named "potter". How can I assist
+                  you with your coding needs?
               - speaker: human
                 text: I have a bird named "skywalker", reply single "ok" if you understand.
               - speaker: assistant
-                text: >-
-                  Ok.
-
-
-                  I understand that you have a bird named "skywalker". If you have any coding questions or need assistance with code-related tasks, feel free to ask! I'm here to help.
-
-
-                  Additionally, if you want to include a fenced code block in Markdown, make sure to follow this format: ```language:path/to/file``` where `language` is the programming language, and ```path/to/file``` is the file path. Here's an example for a Python file in a project: ```python:my_project/my_script.py```
+                text: Ok. I understand that you have a bird named "skywalker". Is there
+                  something specific you would like to know or learn about
+                  coding? I'm here to help.
               - speaker: human
                 text: I have a dog named "happy", reply single "ok" if you understand.
             model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
@@ -2331,14 +2243,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 8331
+        bodySize: 1128
         content:
           mimeType: text/event-stream
-          size: 8331
+          size: 1128
           text: >+
             event: completion
 
-            data: {"completion":"Ok.\n\nI understand that you have a dog named \"happy\". If you have any coding questions or need assistance with code-related tasks, feel free to ask! I'm here to help.\n\nAdditionally, if you want to include a fenced code block in Markdown, make sure to follow this format: ```language:path/to/file``` where `language` is the programming language, and ```path/to/file``` is the file path. Here's an example for a Python file in a project: ```python:my_project/my_script.py```","stopReason":"stop"}
+            data: {"completion":"Ok. I understand that you have a dog named \"happy\". Is there a programming language or a coding concept that you need help with? I'll do my best to provide useful and accurate information.","stopReason":"stop"}
 
 
             event: done
@@ -2348,15 +2260,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:30:08 GMT
+            value: Fri, 23 Aug 2024 08:33:52 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "207"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2374,12 +2284,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:30:07.796Z
+      startedDateTime: 2024-08-23T08:33:51.479Z
       time: 0
       timings:
         blocked: -1
@@ -2389,11 +2299,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 7d9368db01a31a08d9c21ef8cc4b7019
+    - _id: 65d6670932d227031ec3b2b90e7e454d
       _order: 0
       cache: {}
       request:
-        bodySize: 1205
+        bodySize: 821
         cookies: []
         headers:
           - name: content-type
@@ -2406,7 +2316,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-18506a154d76ac1e9e5bc79698f97e97-fe86de613391bcf6-01
+            value: 00-f4fa762894340a6673c6382676113723-af2d44ff9ca07e1b-01
           - name: connection
             value: keep-alive
           - name: host
@@ -2422,27 +2332,19 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text: >-
-                  Ok.
-
-
-                  I understand that you have a turtle named "potter". If you have any coding questions or need assistance with code-related tasks, feel free to ask! I'm here to help.
-
-
-                  Additionally, if you want to include a fenced code block in Markdown, make sure to follow this format: ```language:path/to/file``` where `language` is the programming language, and ```path/to/file``` is the file path. Here's an example for a Python file in a project: ```python:my_project/my_script.py```
+                text: Ok. I understand that you have a turtle named "potter". How can I assist
+                  you with your coding needs?
               - speaker: human
                 text: I have a tiger named "zorro", reply single "ok" if you understand
             model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
@@ -2456,14 +2358,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 8012
+        bodySize: 839
         content:
           mimeType: text/event-stream
-          size: 8012
+          size: 839
           text: >+
             event: completion
 
-            data: {"completion":"Ok.\n\nI understand that you have a tiger named \"zorro\". Remember that I am an AI coding assistant, so if you have any coding questions or need assistance with code-related tasks, feel free to ask! I'm here to help.\n\nPlease also ensure you format fenced code blocks in Markdown with the full file path in the tag, like this: ```language:path/to/file```. An example would be ```python:my_project/my_script.py``` for a Python file in a project. Let me know how I can help you with coding.","stopReason":"stop"}
+            data: {"completion":"Ok. I understand that you have a tiger named \"zorro\". Is there anything specific you would like to ask or direct me to do regarding your coding project?","stopReason":"stop"}
 
 
             event: done
@@ -2473,15 +2375,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:30:10 GMT
+            value: Fri, 23 Aug 2024 08:33:52 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "205"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2499,12 +2399,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:30:09.706Z
+      startedDateTime: 2024-08-23T08:33:52.255Z
       time: 0
       timings:
         blocked: -1
@@ -2514,11 +2414,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: d506a747c576cd79482ae8a28a9986fa
+    - _id: 01d7685bb248936d88e57f8f7398591d
       _order: 0
       cache: {}
       request:
-        bodySize: 1779
+        bodySize: 1059
         cookies: []
         headers:
           - name: content-type
@@ -2531,7 +2431,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-f518d7f16f1010e6bb43024254bb4501-6b7ef751038e392d-01
+            value: 00-ca32962fd705025231794058c6920c41-6f3e7f269d0ac373-01
           - name: connection
             value: keep-alive
           - name: host
@@ -2547,38 +2447,25 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text: >-
-                  Ok.
-
-
-                  I understand that you have a turtle named "potter". If you have any coding questions or need assistance with code-related tasks, feel free to ask! I'm here to help.
-
-
-                  Additionally, if you want to include a fenced code block in Markdown, make sure to follow this format: ```language:path/to/file``` where `language` is the programming language, and ```path/to/file``` is the file path. Here's an example for a Python file in a project: ```python:my_project/my_script.py```
+                text: Ok. I understand that you have a turtle named "potter". How can I assist
+                  you with your coding needs?
               - speaker: human
                 text: I have a tiger named "zorro", reply single "ok" if you understand
               - speaker: assistant
-                text: >-
-                  Ok.
-
-
-                  I understand that you have a tiger named "zorro". Remember that I am an AI coding assistant, so if you have any coding questions or need assistance with code-related tasks, feel free to ask! I'm here to help.
-
-
-                  Please also ensure you format fenced code blocks in Markdown with the full file path in the tag, like this: ```language:path/to/file```. An example would be ```python:my_project/my_script.py``` for a Python file in a project. Let me know how I can help you with coding.
+                text: Ok. I understand that you have a tiger named "zorro". Is there anything
+                  specific you would like to ask or direct me to do regarding
+                  your coding project?
               - speaker: human
                 text: What pets do I have?
             model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
@@ -2592,14 +2479,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 11411
+        bodySize: 3785
         content:
           mimeType: text/event-stream
-          size: 11411
+          size: 3785
           text: >+
             event: completion
 
-            data: {"completion":"Based on our conversation, you have a turtle named \"potter\" and a tiger named \"zorro\". Please note that this information is from our conversation context, and I do not have access to any other information about your pets or personal details.\n\nIf you have any coding questions or need assistance with code-related tasks, I would be happy to help! Feel free to ask.\n\nAlso, if you want to include a fenced code block in Markdown, don't forget to use the proper format: ```language:path/to/file```. For instance, you may use: ```python:my_project/my_script.py``` for a Python file in a project.","stopReason":"stop"}
+            data: {"completion":"Based on the information you have provided, you have a turtle named \"potter\" and a tiger named \"zorro\". Is there anything specific you would like to know or do related to these pets in a coding context? I can assist you with tasks such as coding a simulation, creating a database to store pet information, or generating a report on pet care.","stopReason":"stop"}
 
 
             event: done
@@ -2609,15 +2496,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:30:12 GMT
+            value: Fri, 23 Aug 2024 08:33:54 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "203"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2635,12 +2520,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:30:11.600Z
+      startedDateTime: 2024-08-23T08:33:53.045Z
       time: 0
       timings:
         blocked: -1
@@ -2650,11 +2535,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 8d8819297e4f80a4bd506ed867a6abd8
+    - _id: 4e3dafbfda32a553676912d970d85724
       _order: 0
       cache: {}
       request:
-        bodySize: 1894
+        bodySize: 1889
         cookies: []
         headers:
           - name: content-type
@@ -2667,7 +2552,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-1a0f140fb8ed29fb485c77d5cf7a867f-4ebf4b21a32e53e8-01
+            value: 00-085ae72c9e9d764f60a013ecaadcb6a9-6e0682b7edc8e31e-01
           - name: connection
             value: keep-alive
           - name: host
@@ -2683,14 +2568,12 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -2747,14 +2630,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 57994
+        bodySize: 19150
         content:
           mimeType: text/event-stream
-          size: 57994
+          size: 19150
           text: >+
             event: completion
 
-            data: {"completion":"The code being explained is an interface named `Animal` in a TypeScript file at `src/animal.ts`.\n\nThe purpose of this code is to define what properties an object should have in order to be considered an `Animal`. The interface does this by listing the required properties such as `name`, `makeAnimalSound()`, and `isMammal`. The `name` is a required string field, `isMammal` is a required boolean field, and `makeAnimalSound()` is a required function that returns a string.\n\nThe code doesn't take any input directly, but its purpose is to be implemented by other TypeScript classes defining a specific animal, such as `Dog` or `Cat`. These classes will then implement the required properties and functions defined in the `Animal` interface.\n\nThe output of this code is not a value itself, but rather a description of a data structure. Objects of classes that implement this interface can be used as `Animal` type, but the interface itself doesn't produce any value directly.\n\nThe way this is achieved is by using the TypeScript feature called `interfaces`, which provides a contract that a class has to follow in order to adhere to the structure defined by the interface. The interface defines what properties are required to be present in classes that implement it.\n\nThe main logic flow is that the interface `Animal` is defined with its required properties, and classes that want to be considered as implementing the `Animal` interface need to adhere to this structure. The data transformation that happens is that classes that implement the `Animal` interface provide the actual implementation and logic for the required properties. The interface only provides the shape that the class should have without implementing it.","stopReason":"stop"}
+            data: {"completion":"The code you provided is from a TypeScript file called `animal.ts` and it exports an interface named `Animal`.\n\nThe purpose of this code is to define what an `Animal` is, by specifying its three properties: `name`, `makeAnimalSound`, and `isMammal`.\n\nAn `Animal` is a conceptual entity that has a `name` (which is a string), a method to generate an `animal sound` (which is a string), and it has a boolean property `isMammal` that tells whether the animal is a mammal or not.\n\nThe interface by itself does not generate any output or take any input. It only provides a blueprint for what an `Animal` should look like. When other code uses this interface, they will have to provide implementations for its properties.\n\nIn summary, this code defines the structure of an `Animal` and it is useful when you want to enforce same structure for any animal objects being used across your TypeScript application.","stopReason":"stop"}
 
 
             event: done
@@ -2764,15 +2647,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:30:14 GMT
+            value: Fri, 23 Aug 2024 08:33:55 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "201"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2790,12 +2671,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:30:13.822Z
+      startedDateTime: 2024-08-23T08:33:54.366Z
       time: 0
       timings:
         blocked: -1
@@ -2805,11 +2686,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: bdd10be660aed1fea6af3be54244f8ba
+    - _id: 6bc35edf465a88e812bd41afcfc2b5a9
       _order: 0
       cache: {}
       request:
-        bodySize: 3120
+        bodySize: 3115
         cookies: []
         headers:
           - name: content-type
@@ -2822,7 +2703,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-36de660f24b55f00e8c7eff5defd5425-ccaeee50f27d4cd2-01
+            value: 00-c9a63aff727c2c3e766e859b9dcdc133-00574fdf6eefe9c7-01
           - name: connection
             value: keep-alive
           - name: host
@@ -2838,14 +2719,12 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -2940,14 +2819,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 191479
+        bodySize: 8437
         content:
           mimeType: text/event-stream
-          size: 191479
+          size: 8437
           text: >+
             event: completion
 
-            data: {"completion":"Based on the shared code context, the test framework in use is `vitest`.\n\nTo write unit tests for the `Animal` interface in `src/animal.ts`, we can create instances of classes that implement this interface, and validate their implementation by calling methods and properties against the interface definition.\n\nHere's a suite of unit tests for the `Animal` interface using `vitest`:\n```typescript\n// src/animal.test.ts\nimport { expect, describe, it } from 'vitest'\nimport { Animal } from '../animal'\n\ndescribe('Animal interface unit tests', () =\u003e {\n    it('should define name property', () =\u003e {\n        const animal: Animal = {\n            name: 'Lion',\n            makeAnimalSound() {\n                return 'roar'\n            },\n            isMammal: true,\n        }\n\n        expect(animal.name).toEqual('Lion')\n    })\n\n    it('should define makeAnimalSound method', () =\u003e {\n        const animal: Animal = {\n            name: 'Dog',\n            makeAnimalSound() {\n                return 'bark'\n            },\n            isMammal: true,\n        }\n\n        expect(animal.makeAnimalSound()).toEqual('bark')\n    })\n\n    it('should define isMammal property', () =\u003e {\n        const animal: Animal = {\n            name: 'Cat',\n            makeAnimalSound() {\n                return 'meow'\n            },\n            isMammal: true,\n        }\n\n        expect(animal.isMammal).toEqual(true)\n    })\n\n    it('should throw error if animal does not have name property', () =\u003e {\n        const createInvalidAnimal = () =\u003e {\n            const animal: Animal = {\n                makeAnimalSound() {\n                    return 'cry'\n                },\n                isMammal: false,\n            }\n\n            return animal\n        }\n\n        expect(() =\u003e createInvalidAnimal()).toThrowError('Animal must have a name')\n    })\n\n    it('should throw error if animal does not implement makeAnimalSound method', () =\u003e {\n        const createInvalidAnimal = () =\u003e {\n            const animal: Animal = {\n                name: 'Frog',\n                isMammal: false,\n            }\n\n            return animal\n        }\n\n        expect(() =\u003e createInvalidAnimal()).toThrowError('Animal must implement makeAnimalSound method')\n    })\n\n    it('should throw error if animal does not have isMammal property', () =\u003e {\n        const createInvalidAnimal = () =\u003e {\n            const animal: Animal = {\n                name: 'Snake',\n                makeAnimalSound() {\n                    return 'hiss'\n                },\n            }\n\n            return animal\n        }\n\n        expect(() =\u003e createInvalidAnimal()).toThrowError('Animal must have isMammal property')\n    })\n})\n```\nThese tests validate the expected functionality of the `Animal` interface, including checking for required properties and methods, and throwing errors when required properties or methods are missing or undefined.\n\nLimitations:\n- These tests only cover the `Animal` interface definition, and do not test any actual implementations of the interface.\n- No mock objects are created in these tests. If future tests require mocking behavior, the appropriate mocking library or framework will need to be added.\n\nNote:\n- The import statements assume the relative path to `animal.ts` is at `../animal`. If this is not the case, please adjust the import statement accordingly.","stopReason":"stop"}
+            data: {"completion":"Based on the shared code context, it appears that Vitest is being used as the test framework. Additionally, the code is written in TypeScript.\n\nHere is a suite of unit tests for the `Animal` interface in the file `src/animal.ts`:\n```typescript\n// src/animal.test.ts\n\nimport { expect, test } from 'vitest'\nimport { Animal } from './animal'\n\ninterface Cat extends Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n}\n\ninterface Dog extends Animal {\n    name: string\n","stopReason":"stop"}
 
 
             event: done
@@ -2957,15 +2836,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:30:18 GMT
+            value: Fri, 23 Aug 2024 08:33:57 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "197"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2983,12 +2860,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:30:17.802Z
+      startedDateTime: 2024-08-23T08:33:56.848Z
       time: 0
       timings:
         blocked: -1
@@ -2998,11 +2875,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 11be740470e776c30eb555f3860b5d64
+    - _id: c032ee225ce3bc93fd63b1f3a8601afb
       _order: 0
       cache: {}
       request:
-        bodySize: 1690
+        bodySize: 1685
         cookies: []
         headers:
           - name: content-type
@@ -3015,7 +2892,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-a26892daf86560ab12bbce91b24304b1-14cea31468fdc766-01
+            value: 00-9350da6574f8b99e145c2de79ab20bf4-7d037cf9977d95de-01
           - name: connection
             value: keep-alive
           - name: host
@@ -3031,14 +2908,12 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH
 
-
-                  Additional rules:
-
-                  - When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be ```language:path/to/file
-
-                  ```.
+                  $CONTENT```.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -3092,14 +2967,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 59267
+        bodySize: 62609
         content:
           mimeType: text/event-stream
-          size: 59267
+          size: 62609
           text: >+
             event: completion
 
-            data: {"completion":"Based on my analysis, I found the following areas for improvement in the provided code:\n\n1. **Add type annotations for function return types:** By adding return type annotations, we can provide more information to users of our code and ensure that the code behaves as expected. It also improves readability.\n\n```typescript\nmakeAnimalSound(): string\n```\n\n2. **Add missing access modifiers for interface members:** By default, interface members are public in TypeScript. However, it's still good practice to be explicit about the intended access modifier.\n\n```typescript\nexport interface Animal {\n  name: string;\n  makeAnimalSound(): string;\n  isMammal: boolean;\n}\n```\n\n3. **Use consistent spacing:** Inconsistent spacing can affect the readability of the code.\n\n```typescript\nmakeAnimalSound(): string\n\n// Change to:\n\nmakeAnimalSound(): string;\n```\n\n4. **Avoid naming inconsistencies to improve consistency and readability:**\n\n```typescript\nisMammal: boolean\n\n// Consider renaming this to isMammal() for consistency with makeAnimalSound().\n```\n\n5. **Consider adding a method that abstracts the sound-making process:** Based on the provided code, making a sound is directly tied to the name of the animal. Adding a separate abstraction for the sound would make it more generic.\n\n```typescript\ncreateSound(sound: string): string {\n  return sound;\n}\n\n// Then we can call createSound(this.name) inside makeAnimalSound().\n```\n\nIn summary, the provided code is a good starting point and fairly well written. However, introducing these best practices would help improve consistency, readability, and maintainability.","stopReason":"stop"}
+            data: {"completion":"Based on the provided code snippet from `src/animal.ts`, here are some suggestions for improvement:\n\n1. Add type annotations to the methods of the `Animal` interface, such as `makeAnimalSound(): string`. This will help ensure type consistency and provide better code readability.\n2. Consider using a type alias for common property types like `string` and `boolean`. This can help improve code readability and reduce repetition, for example:\n```csharp\ntype AnimalName = string;\ntype IsMammal = boolean;\n\nexport interface Animal {\n    name: AnimalName;\n    makeAnimalSound(): string;\n    isMammal: IsMammal;\n}\n```\n3. Consider adding documentation, such as JSDoc or TypeDoc comments, to describe the `Animal` interface and its properties. This will help improve understanding and usability of the code for other developers.\n4. If the `makeAnimalSound` method includes any common or repetitive sound generation logic, consider extracting the logic to a separate utility function. This can help improve code modularity, reusability, and maintainability.\n5. Consider adding type constraints to the interface, such as `readonly` for `name` property or optional properties. This can help improve code safety and consistency:\n```typescript\ntype AnimalName = string;\ntype IsMammal = boolean;\n\nexport interface Animal {\n    readonly name: AnimalName;\n    makeAnimalSound(): string;\n    isMammal?: IsMammal;\n}\n```\nIn summary, the provided code snippet is minimal in scope, but it does not contain any critical errors. To further enhance the code quality, consider implementing the above suggestions to improve code readability, maintainability, and safety. The code generally follows sound design principles, but could benefit from additional documentation and modularization.","stopReason":"stop"}
 
 
             event: done
@@ -3109,15 +2984,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 22 Aug 2024 13:30:25 GMT
+            value: Fri, 23 Aug 2024 08:33:59 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "191"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -3135,12 +3008,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-22T13:30:24.225Z
+      startedDateTime: 2024-08-23T08:33:58.637Z
       time: 0
       timings:
         blocked: -1
@@ -3210,7 +3083,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 03 Jul 2024 06:24:15 GMT
+            value: Fri, 23 Aug 2024 08:23:17 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3241,210 +3114,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-03T06:24:15.015Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 886b36cddcee696a52d1a4b602ff8a54
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 318
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "318"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 349
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-              
-              query CurrentSiteCodyLlmConfiguration {
-                  site {
-                      codyLLMConfiguration {
-                          chatModel
-                          chatModelMaxTokens
-                          fastChatModel
-                          fastChatModelMaxTokens
-                          completionModel
-                          completionModelMaxTokens
-                      }
-                  }
-              }
-            variables: {}
-        queryString:
-          - name: CurrentSiteCodyLlmConfiguration
-            value: null
-        url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
-      response:
-        bodySize: 22
-        content:
-          mimeType: text/plain; charset=utf-8
-          size: 22
-          text: |
-            Invalid access token.
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 27 Jun 2024 23:22:13 GMT
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "22"
-          - name: connection
-            value: keep-alive
-          - name: retry-after
-            value: "128"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1370
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 401
-        statusText: Unauthorized
-      startedDateTime: 2024-06-27T23:22:13.428Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: e422cd3f4bff309631a75001539b734b
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 165
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "165"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 349
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-              
-              query CurrentSiteCodyLlmConfiguration {
-                  site {
-                      codyLLMConfiguration {
-                          smartContextWindow
-                      }
-                  }
-              }
-            variables: {}
-        queryString:
-          - name: CurrentSiteCodyLlmConfiguration
-            value: null
-        url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
-      response:
-        bodySize: 22
-        content:
-          mimeType: text/plain; charset=utf-8
-          size: 22
-          text: |
-            Invalid access token.
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 27 Jun 2024 23:22:13 GMT
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "22"
-          - name: connection
-            value: keep-alive
-          - name: retry-after
-            value: "128"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1370
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 401
-        statusText: Unauthorized
-      startedDateTime: 2024-06-27T23:22:13.490Z
+      startedDateTime: 2024-08-23T08:23:17.666Z
       time: 0
       timings:
         blocked: -1
@@ -3518,7 +3188,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 03 Jul 2024 06:24:13 GMT
+            value: Fri, 23 Aug 2024 08:23:16 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -3546,7 +3216,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-07-03T06:24:13.261Z
+      startedDateTime: 2024-08-23T08:23:15.836Z
       time: 0
       timings:
         blocked: -1
@@ -3615,7 +3285,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 03 Jul 2024 06:24:13 GMT
+            value: Fri, 23 Aug 2024 08:23:16 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -3643,7 +3313,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-07-03T06:24:13.287Z
+      startedDateTime: 2024-08-23T08:23:15.890Z
       time: 0
       timings:
         blocked: -1
@@ -3708,19 +3378,29 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 251
+        bodySize: 248
         content:
           encoding: base64
           mimeType: application/json
-          size: 251
-          text: "[\"H4sIAAAAAAAAA3zOwQqC\",\"QBAG4HeZs+K0BqFXr3rrBYbdMRdtJ3ZXKmTfPSyiSOg0\
-            8PP/H7OAoUhQLxBs5PVqMfe27RpxvT3NnqIV98wHip0YnqAGcnHwcrG60BPNhvMyD+I\
-            cx1yh2qNSFWSfQUe3o4zsAtQ7hYgZ9BRi898byI7ziyvxAD+bLanlfJl4ffaN9tbzVf\
-            wYihDJazHsYdP7gipETCmlBwAAAP//AwBQeP+1EwEAAA==\"]"
+          size: 248
+          text: "[\"H4sIAAAAAAAAA3zOwQqCQBAG4HeZs+K0BqFXr3rrBYbdMRdtJ3ZXKmTfPSyiSOg08PP/H\
+            7OAoUhQLxBs5PVqMfe27RpxvT3NnqIV98wHip0YnqAGcnHwcrG60BPNhvMyD+Icx1yh\
+            2qNSFWSfQUe3o4zsAtQ7hYgZ9BRi898byI7ziyvxAD+bLanlfJl4ffaN9tbzVfwYihD\
+            JazHsYdP7gipETCmlBwAAAP//AwBQeP+1EwEAAA==\"]"
+          textDecoded:
+            data:
+              site:
+                codyLLMConfiguration:
+                  chatModel: anthropic/claude-3-sonnet-20240229
+                  chatModelMaxTokens: 12000
+                  completionModel: fireworks/starcoder
+                  completionModelMaxTokens: 9000
+                  fastChatModel: anthropic/claude-3-haiku-20240307
+                  fastChatModelMaxTokens: 12000
         cookies: []
         headers:
           - name: date
-            value: Wed, 03 Jul 2024 06:24:14 GMT
+            value: Fri, 23 Aug 2024 08:23:16 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3751,7 +3431,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-03T06:24:13.841Z
+      startedDateTime: 2024-08-23T08:23:16.678Z
       time: 0
       timings:
         blocked: -1
@@ -3811,22 +3491,17 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 132
+        bodySize: 135
         content:
           encoding: base64
           mimeType: application/json
-          size: 132
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
-            uf8vJLUipLwzLyU/HIlK6XUvMSknNQUpdra2loAAAAA//8DAOgINKVLAAAA\"]"
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  smartContextWindow: enabled
+          size: 135
+          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD5\
+            3MSiEuf8vJLUipLwzLyU/HIlK6XUvMSknNQUpdra2loAAAAA//8DAOgINKVLAAAA\"]"
         cookies: []
         headers:
           - name: date
-            value: Wed, 03 Jul 2024 06:24:14 GMT
+            value: Fri, 23 Aug 2024 08:23:16 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -3857,7 +3532,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-03T06:24:13.885Z
+      startedDateTime: 2024-08-23T08:23:16.679Z
       time: 0
       timings:
         blocked: -1
@@ -3867,11 +3542,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 6fb42f99b2251f1186cc37f1fd82113e
+    - _id: 886b36cddcee696a52d1a4b602ff8a54
       _order: 0
       cache: {}
       request:
-        bodySize: 150
+        bodySize: 318
         cookies: []
         headers:
           - _fromType: array
@@ -3889,13 +3564,13 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "150"
+            value: "318"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 344
+        headersSize: 349
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -3904,18 +3579,23 @@ log:
           textJSON:
             query: |-
               
-              query CurrentSiteCodyLlmProvider {
+              query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
-                          provider
+                          chatModel
+                          chatModelMaxTokens
+                          fastChatModel
+                          fastChatModelMaxTokens
+                          completionModel
+                          completionModelMaxTokens
                       }
                   }
               }
             variables: {}
         queryString:
-          - name: CurrentSiteCodyLlmProvider
+          - name: CurrentSiteCodyLlmConfiguration
             value: null
-        url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmProvider
+        url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
         bodySize: 22
         content:
@@ -3926,15 +3606,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 27 Jun 2024 23:22:13 GMT
+            value: Fri, 23 Aug 2024 08:23:17 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
             value: "22"
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "128"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -3951,12 +3629,109 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1370
+        headersSize: 1263
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-06-27T23:22:13.462Z
+      startedDateTime: 2024-08-23T08:23:17.503Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: e422cd3f4bff309631a75001539b734b
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 165
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "165"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 349
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query CurrentSiteCodyLlmConfiguration {
+                  site {
+                      codyLLMConfiguration {
+                          smartContextWindow
+                      }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: CurrentSiteCodyLlmConfiguration
+            value: null
+        url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
+      response:
+        bodySize: 22
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 22
+          text: |
+            Invalid access token.
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 23 Aug 2024 08:23:17 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "22"
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1263
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-08-23T08:23:17.504Z
       time: 0
       timings:
         blocked: -1
@@ -4025,7 +3800,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 03 Jul 2024 06:24:13 GMT
+            value: Fri, 23 Aug 2024 08:23:16 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -4053,7 +3828,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-07-03T06:24:13.263Z
+      startedDateTime: 2024-08-23T08:23:15.862Z
       time: 0
       timings:
         blocked: -1
@@ -4113,22 +3888,17 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmProvider
       response:
-        bodySize: 128
+        bodySize: 131
         content:
           encoding: base64
           mimeType: application/json
-          size: 128
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
-            syU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA==\"]"
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  provider: sourcegraph
+          size: 131
+          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDx\
+            gqL8ssyU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Wed, 03 Jul 2024 06:24:14 GMT
+            value: Fri, 23 Aug 2024 08:23:16 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -4159,7 +3929,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-03T06:24:13.864Z
+      startedDateTime: 2024-08-23T08:23:16.678Z
       time: 0
       timings:
         blocked: -1
@@ -4169,11 +3939,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 2af9a176de37be11dff4f113b3a1f7aa
+    - _id: 6fb42f99b2251f1186cc37f1fd82113e
       _order: 0
       cache: {}
       request:
-        bodySize: 341
+        bodySize: 150
         cookies: []
         headers:
           - _fromType: array
@@ -4191,13 +3961,13 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "341"
+            value: "150"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 329
+        headersSize: 344
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -4206,29 +3976,18 @@ log:
           textJSON:
             query: |-
               
-              query CurrentUser {
-                  currentUser {
-                      id
-                      hasVerifiedEmail
-                      displayName
-                      username
-                      avatarURL
-                      primaryEmail {
-                          email
-                      }
-                      organizations {
-                          nodes {
-                              id
-                              name
-                          }
+              query CurrentSiteCodyLlmProvider {
+                  site {
+                      codyLLMConfiguration {
+                          provider
                       }
                   }
               }
             variables: {}
         queryString:
-          - name: CurrentUser
+          - name: CurrentSiteCodyLlmProvider
             value: null
-        url: https://sourcegraph.com/.api/graphql?CurrentUser
+        url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmProvider
       response:
         bodySize: 22
         content:
@@ -4239,15 +3998,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 27 Jun 2024 23:22:13 GMT
+            value: Fri, 23 Aug 2024 08:23:17 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
             value: "22"
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "128"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -4264,12 +4021,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1370
+        headersSize: 1263
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-06-27T23:22:13.522Z
+      startedDateTime: 2024-08-23T08:23:17.503Z
       time: 0
       timings:
         blocked: -1
@@ -4349,7 +4106,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 03 Jul 2024 06:24:13 GMT
+            value: Fri, 23 Aug 2024 08:23:16 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -4377,7 +4134,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-07-03T06:24:13.309Z
+      startedDateTime: 2024-08-23T08:23:15.918Z
       time: 0
       timings:
         blocked: -1
@@ -4448,21 +4205,33 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentUser
       response:
-        bodySize: 379
+        bodySize: 376
         content:
           encoding: base64
           mimeType: application/json
-          size: 379
-          text: "[\"H4sIAAAAAAAAA2RPy04=\",\"wkAU/Ze7bmkNUdpJSBQEF2jjIzQY4+J2emmnj5k6DxSa\
-            /jtpMHHh7pycx72nhxwtAuuBO61J2q0hPVKRA4N0lzS8Uqfk/uXqqeJz8KBEk5IWe0H\
-            5qkXRALPakQe5MF2DxwRbAgZvymlOhcauXCjrx2EYggfOkJYXg/kzZMrGtb+X360DD/\
-            CAFvX29REYlNZ2hgVBU04nhVJFQ2MDV9KStBOu2gCDu2URKb5Z41f2Tm5RZ9V1vl6df\
-            qJsl0Y4E1OTZptl8pzOHkJ3PNRzE9/4HDzotGhRH39H9EAX8O+z22IUxmsweKB0gVKc\
-            0AolzRiTKicD7ONzGIbhDAAA//8DAEqMkz9OAQAA\"]"
+          size: 376
+          text: "[\"H4sIAAAAAAAAA2RPy07CQBT9l7tuaQ1R2klIFAQXaOMjNBjj4nZ6aaePmToPFJr+O2kwc\
+            eHunJzHvaeHHC0C64E7rUnarSE9UpEDg3SXNLxSp+T+5eqp4nPwoESTkhZ7QfmqRdEA\
+            s9qRB7kwXYPHBFsCBm/KaU6Fxq5cKOvHYRiCB86QlheD+TNkysa1v5ffrQMP8IAW9fb\
+            1ERiU1naGBUFTTieFUkVDYwNX0pK0E67aAIO7ZREpvlnjV/ZOblFn1XW+Xp1+omyXRj\
+            gTU5Nmm2XynM4eQnc81HMT3/gcPOi0aFEff0f0QBfw77PbYhTGazB4oHSBUpzQCiXNG\
+            JMqJwPs43MYhuEMAAD//wMASoyTP04BAAA=\"]"
+          textDecoded:
+            data:
+              currentUser:
+                avatarURL: https://lh3.googleusercontent.com/a/ACg8ocKFaqbYeuBkbj5dFEzx8bXV8a7i3sVbKCNPV7G0uyvk=s96-c
+                displayName: SourcegraphBot-9000
+                hasVerifiedEmail: true
+                id: VXNlcjozNDQ1Mjc=
+                organizations:
+                  nodes: []
+                primaryEmail:
+                  email: sourcegraphbot9k@gmail.com
+                username: sourcegraphbot9k-fnwmu
         cookies: []
         headers:
           - name: date
-            value: Wed, 03 Jul 2024 06:24:14 GMT
+            value: Fri, 23 Aug 2024 08:23:16 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -4493,7 +4262,115 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-03T06:24:13.907Z
+      startedDateTime: 2024-08-23T08:23:16.680Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 2af9a176de37be11dff4f113b3a1f7aa
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 341
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "341"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 329
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query CurrentUser {
+                  currentUser {
+                      id
+                      hasVerifiedEmail
+                      displayName
+                      username
+                      avatarURL
+                      primaryEmail {
+                          email
+                      }
+                      organizations {
+                          nodes {
+                              id
+                              name
+                          }
+                      }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: CurrentUser
+            value: null
+        url: https://sourcegraph.com/.api/graphql?CurrentUser
+      response:
+        bodySize: 22
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 22
+          text: |
+            Invalid access token.
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 23 Aug 2024 08:23:17 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "22"
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1263
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-08-23T08:23:17.504Z
       time: 0
       timings:
         blocked: -1
@@ -4562,23 +4439,23 @@ log:
           encoding: base64
           mimeType: application/json
           size: 228
-          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5c4U2FoVsRToIgqWtDm6xyRCoSbi5GUrJu4uCoI7n5\
+          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5c4U2dtBsRToIgqWtDm6xyRCoSbi5GUrJu4uCoI7n5\
             +Os0IoV5IopERnHl2joPb1ehnSPE9nA1rtXi6w4RUg0h/F4bVEgzMpBouvPKKBCmJeO\
             fK/YnOzDcoRkSqb4fHeGrNcDK+KGISFKUW/K3aaqRyFkVcmtuOFPt05/2f2vzTnnJwA\
-            AAP//AwBuKtnYwgAAAA==\"]"
+            AAP//AwBSGHacwgAAAA==\"]"
           textDecoded:
             data:
               currentUser:
                 codySubscription:
                   applyProRateLimits: true
-                  currentPeriodEndAt: 2024-07-14T22:11:32Z
-                  currentPeriodStartAt: 2024-06-14T22:11:32Z
+                  currentPeriodEndAt: 2024-09-14T22:11:32Z
+                  currentPeriodStartAt: 2024-08-14T22:11:32Z
                   plan: PRO
                   status: ACTIVE
         cookies: []
         headers:
           - name: date
-            value: Wed, 03 Jul 2024 06:24:14 GMT
+            value: Fri, 23 Aug 2024 08:23:17 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -4609,7 +4486,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-03T06:24:14.313Z
+      startedDateTime: 2024-08-23T08:23:16.853Z
       time: 0
       timings:
         blocked: -1
@@ -4677,7 +4554,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 03 Jul 2024 09:58:04 GMT
+            value: Fri, 23 Aug 2024 08:23:16 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -4705,104 +4582,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-07-03T09:58:04.140Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 9871a0347b3e3056e8c6ab32f8d599db
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 101
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "101"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 336
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-              
-              query SiteProductVersion {
-                  site {
-                      productVersion
-                  }
-              }
-            variables: {}
-        queryString:
-          - name: SiteProductVersion
-            value: null
-        url: https://sourcegraph.com/.api/graphql?SiteProductVersion
-      response:
-        bodySize: 22
-        content:
-          mimeType: text/plain; charset=utf-8
-          size: 22
-          text: |
-            Invalid access token.
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 27 Jun 2024 23:22:13 GMT
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "22"
-          - name: connection
-            value: keep-alive
-          - name: retry-after
-            value: "128"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1370
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 401
-        statusText: Unauthorized
-      startedDateTime: 2024-06-27T23:22:13.396Z
+      startedDateTime: 2024-08-23T08:23:16.185Z
       time: 0
       timings:
         blocked: -1
@@ -4869,7 +4649,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 03 Jul 2024 06:24:13 GMT
+            value: Fri, 23 Aug 2024 08:23:16 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -4897,7 +4677,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-07-03T06:24:13.260Z
+      startedDateTime: 2024-08-23T08:23:15.776Z
       time: 0
       timings:
         blocked: -1
@@ -4955,18 +4735,18 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?SiteProductVersion
       response:
-        bodySize: 142
+        bodySize: 139
         content:
           encoding: base64
           mimeType: application/json
-          size: 142
-          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkYWJhaW\
-            JvFGBkYmugbmusYG8aZ6prqGZimGiUnmphZmKaZKtbW1AAAAAP//\",\"AwBqTeUBSQ\
-            AAAA==\"]"
+          size: 139
+          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkYWFmYG\
+            5vFGBkYmugYWukZG8aZ6ZrrGxmlJlhbJpgYmFilKtbW1AAAAAP//AwCvLlq5SQAAAA==\
+            \"]"
         cookies: []
         headers:
           - name: date
-            value: Tue, 30 Jul 2024 18:17:42 GMT
+            value: Fri, 23 Aug 2024 08:23:16 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -4997,7 +4777,102 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-30T18:17:42.236Z
+      startedDateTime: 2024-08-23T08:23:16.676Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 9871a0347b3e3056e8c6ab32f8d599db
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 101
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "101"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 336
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query SiteProductVersion {
+                  site {
+                      productVersion
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: SiteProductVersion
+            value: null
+        url: https://sourcegraph.com/.api/graphql?SiteProductVersion
+      response:
+        bodySize: 22
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 22
+          text: |
+            Invalid access token.
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 23 Aug 2024 08:23:17 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "22"
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1263
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-08-23T08:23:17.502Z
       time: 0
       timings:
         blocked: -1
