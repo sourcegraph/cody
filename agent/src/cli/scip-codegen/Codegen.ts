@@ -393,8 +393,8 @@ export class Codegen extends BaseCodegen {
                                 )
                             })
                             break
-                            default:
-                                p.line('}')
+                        default:
+                            p.line('}')
                     }
                 })
             })
