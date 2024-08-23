@@ -623,7 +623,14 @@ const _window: typeof vscode.window = {
     onDidChangeWindowState: emptyEvent(),
     onDidCloseTerminal: emptyEvent(),
     onDidOpenTerminal: emptyEvent(),
-    registerUriHandler: () => emptyDisposable,
+    registerUriHandler: (vsceHandler: vscode.UriHandler) => {
+        if (agent?.authenticationHandler) {
+            const handler = agent?.authenticationHandler
+            handler.setTokenCallbackHandler(vsceHandler.handleUri)
+            return new Disposable(() => handler?.dispose())
+        }
+        return emptyDisposable
+    },
     registerWebviewViewProvider: (
         viewId: string,
         provider: vscode.WebviewViewProvider,

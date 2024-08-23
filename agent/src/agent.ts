@@ -55,6 +55,7 @@ import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
+import { AgentAuthHandler } from './AgentAuthHandler'
 import { AgentFixupControls } from './AgentFixupControls'
 import { AgentProviders } from './AgentProviders'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
@@ -345,6 +346,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
     public webPanels = new AgentWebviewPanels()
     public webviewViewProviders = new Map<string, vscode.WebviewViewProvider>()
 
+    public authenticationHandler: AgentAuthHandler | null = null
     private authenticationPromise: Promise<AuthStatus | undefined> = Promise.resolve(undefined)
 
     private clientInfo: ClientInfo | null = null
@@ -407,6 +409,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     // Forward policy change notifications to the client.
                     this.notify('ignore/didChange', null)
                 })
+            }
+            if (clientInfo.capabilities?.authentication === 'enabled') {
+                this.authenticationHandler = new AgentAuthHandler(clientInfo.name)
             }
             if (process.env.CODY_DEBUG === 'true') {
                 console.error(
