@@ -26,6 +26,6 @@ test('chat keyboard shortcuts for sidebar chat', async ({ page, sidebar }) => {
 
     // Alt+L with a selection opens a new chat (with selection mention).
     await selectLineRangeInEditorTab(page, 3, 5)
-    await page.keyboard.press('Alt+L')
+    await page.keyboard.press('Alt+/')
     await expect(chatSidebarInput).toContainText('buzz.ts buzz.ts:3-5 ')
 })
