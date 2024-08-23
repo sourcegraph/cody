@@ -158,7 +158,7 @@ export type ClientRequests = {
     ]
     // The ID parameter should match ProtocolCodeAction.id from
     // codeActions/provide.
-    'codeActions/trigger': [{ id: string }, EditTask]
+    'codeActions/trigger': [{ id: string }, CustomCommandResult | null]
 
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
 
@@ -1021,10 +1021,12 @@ export type CustomCommandResult = CustomChatCommandResult | CustomEditCommandRes
 export interface CustomChatCommandResult {
     type: 'chat'
     chatResult: string
+    editResult?: undefined | null
 }
 export interface CustomEditCommandResult {
     type: 'edit'
     editResult: EditTask
+    chatResult?: undefined | null
 }
 
 export interface GetFoldingRangeParams {
@@ -1078,11 +1080,38 @@ export interface ProtocolCodeAction {
     // IDs from old codeActions/provide results are invalidated as soon as you
     // send a new codeActions/provide request.
     id: string
-    // Stable string ID of the VS Code command that will be triggered if you
-    // send a request to codeActions/trigger. Use this ID over `title`
-    commandID?: string | undefined | null
+
+    /**@deprecated Use kind instead. Multiple semantically different actions can use the same commandID so it's not stable enough to uniquely identify the action. */
+    commandID?: undefined | null
+    /** WARNING: only use this title to show to the user. This is not guaranteed
+     * to be stable and might even change depending on i18n settings. */
     title: string
     diagnostics?: ProtocolDiagnostic[] | undefined | null
+    /**
+     * A dot-separated camelCase (usually) string that hierarchically identifies
+     * the kind of the code action. `Example:
+     * `quickfix.cody.fixupCode.diagnostic.generic`.
+     *
+     * Use this if you need to identify / classify actions into categories,
+     * typicially with a simple prefix match. It is usually an antipattern to
+     * use this kind to match specific actions as new CodeActionProviders are
+     * constantly added and removed. However if your client only wants to show a
+     * subset of actions, this is a good way to do that.
+     *
+     * All cody specific commands are prefixed by `<VSCODE_PREFIX>.cody`.
+     *
+     * Common VSCode Prefixes:
+     * - quickfix
+     * - refactor
+     * - extract
+     * - inline
+     * - move
+     * - rewrite
+     * - source
+     * - organizeImports
+     * - fixAll
+     * - notebook
+     */
     kind?: string | undefined | null
     isPreferred?: boolean | undefined | null
     disabled?:

@@ -2,9 +2,13 @@ import * as vscode from 'vscode'
 
 import type { CodyCommandArgs } from '../commands/types'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
+import { CodyCodeActionKind } from './kind'
 
 export class DocumentCodeAction implements vscode.CodeActionProvider {
-    public static readonly providedCodeActionKinds = [vscode.CodeActionKind.RefactorRewrite]
+    public static readonly providedCodeActionKinds = [
+        CodyCodeActionKind.RefactorRewrite.append('documentCode'),
+    ] as const
+    public static readonly documentSelector = '*'
 
     public provideCodeActions(document: vscode.TextDocument, range: vscode.Range): vscode.CodeAction[] {
         const [documentableNode] = execQueryWrapper({
@@ -42,7 +46,7 @@ export class DocumentCodeAction implements vscode.CodeActionProvider {
         range: vscode.Range,
         displayText: string
     ): vscode.CodeAction {
-        const action = new vscode.CodeAction(displayText, vscode.CodeActionKind.RefactorRewrite)
+        const action = new vscode.CodeAction(displayText, DocumentCodeAction.providedCodeActionKinds[0])
         const source = 'code-action:document'
         action.command = {
             command: 'cody.command.document-code',

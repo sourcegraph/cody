@@ -1,9 +1,14 @@
 import * as vscode from 'vscode'
 
 import type { ExecuteEditArguments } from '../edit/execute'
+import { CodyCodeActionKind } from './kind'
 
 export class EditCodeAction implements vscode.CodeActionProvider {
-    public static readonly providedCodeActionKinds = [vscode.CodeActionKind.RefactorRewrite]
+    public static readonly providedCodeActionKinds = [
+        CodyCodeActionKind.RefactorRewrite.append('editCode.generate'),
+        CodyCodeActionKind.RefactorRewrite.append('editCode.edit'),
+    ] as const
+    public static readonly documentSelector = '*'
 
     public provideCodeActions(document: vscode.TextDocument): vscode.CodeAction[] {
         const editor = vscode.window.activeTextEditor
@@ -35,7 +40,7 @@ export class EditCodeAction implements vscode.CodeActionProvider {
     ): vscode.CodeAction {
         const displayText = 'Cody: Generate Code'
         const source = 'code-action:generate'
-        const action = new vscode.CodeAction(displayText, vscode.CodeActionKind.RefactorRewrite)
+        const action = new vscode.CodeAction(displayText, EditCodeAction.providedCodeActionKinds[0])
         action.command = {
             command: 'cody.command.edit-code',
             arguments: [
@@ -60,7 +65,7 @@ export class EditCodeAction implements vscode.CodeActionProvider {
     ): vscode.CodeAction {
         const displayText = 'Cody: Edit Code'
         const source = 'code-action:edit'
-        const action = new vscode.CodeAction(displayText, vscode.CodeActionKind.RefactorRewrite)
+        const action = new vscode.CodeAction(displayText, EditCodeAction.providedCodeActionKinds[1])
         action.command = {
             command: 'cody.command.edit-code',
             arguments: [

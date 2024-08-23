@@ -24,6 +24,7 @@ sealed class CustomCommandResult {
 data class CustomChatCommandResult(
   val type: TypeEnum, // Oneof: chat
   val chatResult: String,
+  val editResult: String? = null,
 ) : CustomCommandResult() {
 
   enum class TypeEnum {
@@ -34,6 +35,7 @@ data class CustomChatCommandResult(
 data class CustomEditCommandResult(
   val type: TypeEnum, // Oneof: edit
   val editResult: EditTask,
+  val chatResult: String? = null,
 ) : CustomCommandResult() {
 
   enum class TypeEnum {

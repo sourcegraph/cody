@@ -39,7 +39,6 @@ import { TESTING_TELEMETRY_EXPORTER } from '@sourcegraph/cody-shared/src/telemet
 import { type TelemetryEventParameters, TestTelemetryExporter } from '@sourcegraph/telemetry'
 import { copySync } from 'fs-extra'
 import levenshtein from 'js-levenshtein'
-import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
 import type { CommandResult } from '../../vscode/src/CommandResult'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
@@ -51,6 +50,7 @@ import { getModelOptionItems } from '../../vscode/src/edit/input/get-items/model
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient, ExtensionObjects } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
+import { FixupTask } from '../../vscode/src/non-stop/FixupTask'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
@@ -84,8 +84,8 @@ import type {
     ProtocolTextDocument,
     TextEdit,
 } from './protocol-alias'
+import { protocolFactory } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
-import { vscodeLocation, vscodeRange } from './vscode-type-converters'
 
 const inMemorySecretStorageMap = new Map<string, string>()
 
@@ -589,51 +589,37 @@ export class Agent extends MessageHandler implements ExtensionClient {
         // Store in-memory copy of the most recent Code action
         const codeActionById = new Map<string, vscode.CodeAction>()
         this.registerAuthenticatedRequest('codeActions/provide', async (params, token) => {
+            //todo: filter out actions based on client capabilities
             codeActionById.clear()
-            const document = this.workspace.getDocument(vscode.Uri.parse(params.location.uri))
+            const uri = protocolFactory.Uri.vsc(params.location.uri)
+            const document = this.workspace.getDocument(uri)
             if (!document) {
                 throw new Error(`codeActions/provide: document not found for ${params.location.uri}`)
             }
             const codeActions: agent_protocol.ProtocolCodeAction[] = []
             const diagnostics = vscode.languages.getDiagnostics(document.uri)
+            const range = protocolFactory.ProtocolRange.vsc(params.location.range)
             for (const providers of this.codeAction.providers()) {
                 const result = await providers.provideCodeActions(
                     document,
-                    vscodeRange(params.location.range),
+                    range,
                     {
                         diagnostics,
                         only: undefined,
-                        triggerKind:
-                            params.triggerKind === 'Automatic'
-                                ? vscode.CodeActionTriggerKind.Automatic
-                                : vscode.CodeActionTriggerKind.Invoke,
+                        triggerKind: protocolFactory.CodeActionTriggerKind.vsc(params.triggerKind),
                     },
                     token
                 )
-                for (const vscAction of result ?? []) {
-                    if (vscAction instanceof vscode.CodeAction) {
-                        const diagnostics: agent_protocol.ProtocolDiagnostic[] = []
-                        for (const diagnostic of vscAction.diagnostics ?? []) {
-                            diagnostics.push({
-                                location: {
-                                    uri: document.uri.toString(),
-                                    range: diagnostic.range,
-                                },
-                                severity: 'error',
-                                source: diagnostic.source,
-                                message: diagnostic.message,
-                            })
-                        }
-                        const id = uuid.v4()
-                        const codeAction: agent_protocol.ProtocolCodeAction = {
-                            id,
-                            title: vscAction.title,
-                            commandID: vscAction.command?.command,
-                            diagnostics,
-                        }
-                        codeActionById.set(id, vscAction)
-                        codeActions.push(codeAction)
+                for (const action of result ?? []) {
+                    if (!(action instanceof vscode.CodeAction)) {
+                        logDebug('codeActions/provide', 'ignoring deprecated Command code-action', {
+                            command: action,
+                        })
+                        continue
                     }
+                    const protocolAction = protocolFactory.ProtocolCodeAction.from(document.uri, action)
+                    codeActionById.set(protocolAction.id, action)
+                    codeActions.push(protocolAction)
                 }
             }
             return { codeActions }
@@ -641,45 +627,61 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('codeActions/trigger', async ({ id }) => {
             const codeAction = codeActionById.get(id)
-            if (!codeAction || !codeAction.command) {
+            if (!codeAction) {
                 throw new Error(`codeActions/trigger: unknown ID ${id}`)
             }
-            const args: ExecuteEditArguments = codeAction.command.arguments?.[0]
-            if (!args) {
-                throw new Error(`codeActions/trigger: no arguments for ID ${id}`)
+
+            const { edit, command } = codeAction
+            // According to VSCode docs a code action first executes the edit
+            // and then the command.
+            if (edit) {
+                throw new Error("Workspace edits aren't supported yet")
+                //TODO: Once we have a good factory for vscode.WorkspaceEdit <=>
+                // agent_protocol.WorkspaceEdit we can enable this. Currently no
+                // commands use it yet.
+
+                /**
+                 * const isRefactoring = codeAction.kind
+                 *     ? vscode.CodeActionKind.Refactor.contains(codeAction.kind)
+                 *     : false
+                 * this.applyWorkspaceEdit(edit, { isRefactoring })
+                 */
             }
-            return this.createEditTask(
-                executeEdit(args).then<CommandResult | undefined>(task => ({
-                    type: 'edit',
-                    task,
-                }))
-            )
+
+            if (command) {
+                // We await the promise here and convert it to a resolved
+                // promise for `executeCustomCommand`. This way we only return
+                // null if the return type wasn't one we support yet (which is
+                // fine), but not if the command actually fails.
+                const anyCommandResult = await vscode.commands.executeCommand<
+                    CommandResult | FixupTask | unknown
+                >(command.command, ...(command.arguments ?? []))
+                try {
+                    const commandResult: any =
+                        // TODO: Unfortunately `edit-code` is inconsistent with the
+                        // other commands in that it doesn't return a CommandResult.
+                        // That's why we manaully have to create one.
+                        anyCommandResult instanceof FixupTask
+                            ? ({ type: 'edit', task: anyCommandResult } satisfies CommandResult)
+                            : anyCommandResult
+                    return await this.executeCustomCommand(Promise.resolve(commandResult))
+                } catch {
+                    return null
+                }
+            }
+
+            return null
         })
 
         this.registerAuthenticatedRequest('diagnostics/publish', async params => {
             const result = new Map<vscode_shim.UriString, vscode.Diagnostic[]>()
             for (const diagnostic of params.diagnostics) {
-                const location = vscodeLocation(diagnostic.location)
-
-                const diagnostics = result.get(vscode_shim.UriString.fromUri(location.uri)) ?? []
-
-                const relatedInformation: vscode.DiagnosticRelatedInformation[] = []
-                for (const related of diagnostic.relatedInformation ?? []) {
-                    relatedInformation.push({
-                        location: vscodeLocation(related.location),
-                        message: related.message,
-                    })
-                }
-                diagnostics.push({
-                    message: diagnostic.message,
-                    range: location.range,
-                    severity: vscode.DiagnosticSeverity.Error,
-                    code: diagnostic.code ?? undefined,
-                    source: diagnostic.source ?? undefined,
-                    relatedInformation,
-                })
-                //this ensures it's added to the map if it didn't already
-                result.set(vscode_shim.UriString.fromUri(location.uri), diagnostics)
+                const uri = vscode_shim.UriString.fromUri(
+                    protocolFactory.Uri.vsc(diagnostic.location.uri)
+                )
+                const uriDiagnostics = result.get(uri) ?? []
+                uriDiagnostics.push(protocolFactory.ProtocolDiagnostic.vsc(diagnostic))
+                result.set(uri, uriDiagnostics)
             }
             vscode_shim.diagnostics.publish(result)
             return null
@@ -1112,7 +1114,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 instruction: instruction,
                 userContextFiles: [],
                 model: models.find(item => item.modelTitle === params.model)?.model ?? models[0].model,
-                range: vscodeRange(params.range),
+                range: protocolFactory.ProtocolRange.vsc(params.range),
                 intent: 'edit',
                 mode: params.mode,
             }

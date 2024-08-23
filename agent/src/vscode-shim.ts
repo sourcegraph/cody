@@ -75,6 +75,7 @@ export {
     CommentThreadCollapsibleState,
     ConfigurationTarget,
     TextEditorRevealType,
+    Diagnostic,
     DiagnosticSeverity,
     FoldingRange,
     Disposable,

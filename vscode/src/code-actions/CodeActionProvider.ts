@@ -6,6 +6,7 @@ import { DocumentCodeAction } from './document'
 import { EditCodeAction } from './edit'
 import { ExplainCodeAction } from './explain'
 import { FixupCodeAction } from './fixup'
+import type { CodyCodeActionKind } from './kind'
 import { TestCodeAction } from './test'
 
 export class CodeActionProvider implements vscode.Disposable {
@@ -40,11 +41,16 @@ export class CodeActionProvider implements vscode.Disposable {
 
     private addActionProvider(ActionType: {
         new (): vscode.CodeActionProvider
-        providedCodeActionKinds: vscode.CodeActionKind[]
+        providedCodeActionKinds: readonly CodyCodeActionKind[]
+        documentSelector: vscode.DocumentSelector
     }): void {
-        const provider = vscode.languages.registerCodeActionsProvider('*', new ActionType(), {
-            providedCodeActionKinds: ActionType.providedCodeActionKinds,
-        })
+        const provider = vscode.languages.registerCodeActionsProvider(
+            ActionType.documentSelector,
+            new ActionType(),
+            {
+                providedCodeActionKinds: ActionType.providedCodeActionKinds,
+            }
+        )
         this.actionProviders.push(provider)
     }
 

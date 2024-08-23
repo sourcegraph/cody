@@ -63,7 +63,7 @@ interface CodyAgentServer {
   @JsonRequest("codeActions/provide")
   fun codeActions_provide(params: CodeActions_ProvideParams): CompletableFuture<CodeActions_ProvideResult>
   @JsonRequest("codeActions/trigger")
-  fun codeActions_trigger(params: CodeActions_TriggerParams): CompletableFuture<EditTask>
+  fun codeActions_trigger(params: CodeActions_TriggerParams): CompletableFuture<CustomCommandResult?>
   @JsonRequest("autocomplete/execute")
   fun autocomplete_execute(params: AutocompleteParams): CompletableFuture<AutocompleteResult>
   @JsonRequest("graphql/getRepoIds")

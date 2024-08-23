@@ -1,8 +1,8 @@
 import isEqual from 'lodash/isEqual'
 import type { AgentTextEditor } from './AgentTextEditor'
 import type { ProtocolTextDocument } from './protocol-alias'
+import { protocolFactory } from './protocol-alias'
 import { renderUnifiedDiff } from './renderUnifiedDiff'
-import { protocolRange, vscodeRange } from './vscode-type-converters'
 
 // Allows the client to send a "source of truth" document that reflects the
 // client's current state.  Should only be used during testing (or local
@@ -48,7 +48,7 @@ export function panicWhenClientIsOutOfSync(
                 // bugs.
             }
             const serverCompareObject = {
-                selection: protocolRange(serverEditor.selection),
+                selection: protocolFactory.ProtocolRange.from(serverEditor.selection),
             }
             if (!isEqual(clientCompareObject, serverCompareObject)) {
                 const diff = renderUnifiedDiff(
@@ -68,7 +68,9 @@ export function panicWhenClientIsOutOfSync(
 
     if (typeof mostRecentlySentClientDocument.testing?.selectedText === 'string') {
         const serverSelectedText = serverDocument.protocolDocument.selection
-            ? serverDocument.getText(vscodeRange(serverDocument.protocolDocument.selection))
+            ? serverDocument.getText(
+                  protocolFactory.ProtocolRange.vsc(serverDocument.protocolDocument.selection)
+              )
             : ''
         if (mostRecentlySentClientDocument.testing.selectedText !== serverSelectedText) {
             params.doPanic(

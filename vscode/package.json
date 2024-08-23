@@ -1492,6 +1492,7 @@
     "postcss": "^8.4.38",
     "progress": "^2.0.3",
     "react-head": "^3.4.2",
+    "type-fest": "^4.25.0",
     "typescript-language-server": "^4.3.3",
     "ulidx": "^2.3.0",
     "vite-plugin-svgr": "^4.2.0",

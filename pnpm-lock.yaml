@@ -844,6 +844,9 @@ importers:
       react-head:
         specifier: ^3.4.2
         version: 3.4.2(react-dom@18.2.0)(react@18.2.0)
+      type-fest:
+        specifier: ^4.25.0
+        version: 4.25.0
       typescript-language-server:
         specifier: ^4.3.3
         version: 4.3.3
@@ -16433,6 +16436,11 @@ packages:
   /type-fest@2.19.0:
     resolution: {integrity: sha512-RAH822pAdBgcNMAfWnCBU3CFZcfZ/i1eZjwFU/dsLKumyuuP3niueg2UAukXYF0E2AAoc82ZSSf9J0WQBinzHA==}
     engines: {node: '>=12.20'}
+    dev: true
+
+  /type-fest@4.25.0:
+    resolution: {integrity: sha512-bRkIGlXsnGBRBQRAY56UXBm//9qH4bmJfFvq83gSz41N282df+fjy8ofcEgc1sM8geNt5cl6mC2g9Fht1cs8Aw==}
+    engines: {node: '>=16'}
     dev: true
 
   /type-is@1.6.18:

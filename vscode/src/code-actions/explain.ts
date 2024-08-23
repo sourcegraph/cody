@@ -1,9 +1,13 @@
 import { PromptString, ps } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { ExecuteChatArguments } from '../commands/execute/ask'
+import { CodyCodeActionKind } from './kind'
 
 export class ExplainCodeAction implements vscode.CodeActionProvider {
-    public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix]
+    public static readonly providedCodeActionKinds = [
+        CodyCodeActionKind.QuickFix.append('explain.diagnostic'),
+    ] as const
+    public static readonly documentSelector = '*'
 
     public provideCodeActions(
         document: vscode.TextDocument,
@@ -18,14 +22,15 @@ export class ExplainCodeAction implements vscode.CodeActionProvider {
         if (diagnostics.length === 0) {
             return []
         }
-        return [this.createCommandCodeAction(document.uri, diagnostics)]
+        return [this.createExplainDiagnosticCommand(document.uri, diagnostics)]
     }
 
-    private createCommandCodeAction(
+    private createExplainDiagnosticCommand(
         uri: vscode.Uri,
         diagnostics: vscode.Diagnostic[]
     ): vscode.CodeAction {
-        const action = new vscode.CodeAction('Ask Cody to Explain', vscode.CodeActionKind.QuickFix)
+        const displayText = 'Cody: Explain' //TODO: Pull out into package.nls.json
+        const action = new vscode.CodeAction(displayText, ExplainCodeAction.providedCodeActionKinds[0])
         const instruction = this.getCodeActionInstruction(uri, diagnostics)
         action.command = {
             command: 'cody.action.chat',
@@ -36,7 +41,7 @@ export class ExplainCodeAction implements vscode.CodeActionProvider {
                     submitType: 'user-newchat',
                 } satisfies ExecuteChatArguments,
             ],
-            title: 'Ask Cody to Explain',
+            title: displayText,
         }
         action.diagnostics = diagnostics
         return action
