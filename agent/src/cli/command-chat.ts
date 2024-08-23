@@ -23,7 +23,7 @@ import {
     accessTokenOption,
     endpointOption,
 } from './command-auth/command-login'
-import { errorSpinner, notLoggedIn } from './command-auth/messages'
+import { errorSpinner, notAuthenticated } from './command-auth/messages'
 import { isNonEmptyArray } from './isNonEmptyArray'
 
 declare const process: { pkg: { entrypoint: string } } & NodeJS.Process
@@ -89,7 +89,7 @@ Enterprise Only:
                 process.exit(1)
             }
             if (!account?.username) {
-                notLoggedIn(spinner)
+                notAuthenticated(spinner)
                 process.exit(1)
             }
             options.accessToken = account.accessToken
@@ -143,8 +143,8 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     }
     spinner.text = 'Initializing...'
     const { serverInfo, client, messageHandler } = await newEmbeddedAgentClient(clientInfo, activate)
-    if (!serverInfo.authStatus?.isLoggedIn) {
-        notLoggedIn(spinner)
+    if (!serverInfo.authStatus?.authenticated) {
+        notAuthenticated(spinner)
         return 1
     }
 

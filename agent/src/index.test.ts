@@ -63,7 +63,7 @@ describe('Agent', () => {
             // with a new access token.
             accessToken: 'sgp_INVALIDACCESSTOK_ENTHISSHOULDFAILEEEEEEEEEEEEEEEEEEEEEEE2',
         })
-        expect(serverInfo?.authStatus?.isLoggedIn).toBeFalsy()
+        expect(serverInfo?.authStatus?.authenticated).toBeFalsy()
 
         // Log in so test cases are authenticated by default
         const valid = await client.request('extensionConfiguration/change', {
@@ -73,7 +73,7 @@ describe('Agent', () => {
             serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? DOTCOM_URL.toString(),
             customHeaders: {},
         })
-        expect(valid?.isLoggedIn).toBeTruthy()
+        expect(valid?.authenticated).toBeTruthy()
 
         for (const name of [
             'src/animal.ts',
@@ -166,7 +166,7 @@ describe('Agent', () => {
             serverEndpoint: 'https://sourcegraph.com/',
             customHeaders: {},
         })
-        expect(invalid?.isLoggedIn).toBeFalsy()
+        expect(invalid?.authenticated).toBeFalsy()
         const invalidModels = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
         const remoteInvalidModels = invalidModels.models.filter(model => model.provider !== 'Ollama')
         expect(remoteInvalidModels).toStrictEqual([])
@@ -178,7 +178,7 @@ describe('Agent', () => {
             serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? DOTCOM_URL.toString(),
             customHeaders: {},
         })
-        expect(valid?.isLoggedIn).toBeTruthy()
+        expect(valid?.authenticated).toBeTruthy()
 
         const reauthenticatedModels = await client.request('chat/models', {
             modelUsage: ModelUsage.Chat,
@@ -1234,7 +1234,7 @@ describe('Agent', () => {
         beforeAll(async () => {
             const serverInfo = await rateLimitedClient.initialize()
 
-            expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
+            expect(serverInfo.authStatus?.authenticated).toBeTruthy()
             expect(serverInfo.authStatus?.username).toStrictEqual('sourcegraphcodyclients-1-efapb')
         }, 10_000)
 

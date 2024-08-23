@@ -6,7 +6,7 @@ import ora from 'ora'
 import { AuthenticatedAccount } from './AuthenticatedAccount'
 import { booleanToText } from './command-auth'
 import { type AuthenticationOptions, accessTokenOption, endpointOption } from './command-login'
-import { notLoggedIn, unknownErrorSpinner } from './messages'
+import { notAuthenticated, unknownErrorSpinner } from './messages'
 import { loadUserSettings } from './settings'
 
 export const accountsCommand = new Command('accounts')
@@ -18,7 +18,7 @@ export const accountsCommand = new Command('accounts')
         try {
             const settings = loadUserSettings()
             if (!settings?.accounts || settings.accounts.length === 0) {
-                notLoggedIn(spinner)
+                notAuthenticated(spinner)
                 process.exit(1)
             }
             const t = new Table()

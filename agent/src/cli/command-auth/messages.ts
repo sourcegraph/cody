@@ -1,7 +1,7 @@
 import type { Ora } from 'ora'
 import type { AuthenticationOptions } from './command-login'
 
-export function notLoggedIn(spinner: Ora): void {
+export function notAuthenticated(spinner: Ora): void {
     if (!spinner.isSpinning) {
         return
     }

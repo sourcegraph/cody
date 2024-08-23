@@ -100,10 +100,10 @@ export function createStatusBar(): CodyStatusBar {
     let authStatus: AuthStatus | undefined
     const command = vscode.commands.registerCommand(STATUS_BAR_INTERACTION_COMMAND, async () => {
         telemetryRecorder.recordEvent('cody.statusbarIcon', 'clicked', {
-            privateMetadata: { loggedIn: Boolean(authStatus?.isLoggedIn) },
+            privateMetadata: { loggedIn: Boolean(authStatus?.authenticated) },
         })
 
-        if (!authStatus?.isLoggedIn) {
+        if (!authStatus?.authenticated) {
             // Bring up the sidebar view
             void vscode.commands.executeCommand('cody.chat.focus')
             return
@@ -325,7 +325,7 @@ export function createStatusBar(): CodyStatusBar {
                 statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground')
                 return
             }
-            if (!authStatus.isLoggedIn) {
+            if (!authStatus.authenticated) {
                 statusBarItem.text = '$(cody-logo-heavy) Sign In'
                 statusBarItem.tooltip = 'Sign in to get started with Cody'
                 statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
