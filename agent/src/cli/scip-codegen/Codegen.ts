@@ -549,11 +549,20 @@ export class Codegen extends BaseCodegen {
                         break
                     case TargetLanguage.CSharp:
                         p.line(`[JsonProperty(PropertyName = "${member.display_name}")]`)
+                        if (oneofSyntax.includes('-')) {
+                            p.line(
+                                `public string ${this.f.formatFieldName(
+                                    member.display_name
+                                )} { get; set; }${oneofSyntax}`
+                            )
+                            enums.length = 0
+                        } else {
                         p.line(
                             `public ${memberTypeSyntax} ${this.f.formatFieldName(
                                 member.display_name
                             )} { get; set; }${oneofSyntax}`
                         )
+                        }
                         break
                 }
                 hasMembers = true
@@ -668,7 +677,7 @@ export class Codegen extends BaseCodegen {
                     if (this.isStringTypeInfo(info)) {
                         const constants = this.stringConstantsFromInfo(info)
                         if (constants.length > 0) {
-                            this.writeEnum(p, name, constants)
+                                this.writeEnum(p, name, constants)
                         } else {
                             p.line(`public class ${name}`)
                             p.line('{')
