@@ -373,18 +373,18 @@ export class Codegen extends BaseCodegen {
                                     })
                                     break
                             }
+                            if (this.language === TargetLanguage.CSharp) {
+                                p.line('}')
+                            }
                         })
-                        p.line('}')
                     })
+                    p.line('}')
                     switch (this.language) {
                         case TargetLanguage.Kotlin:
-                            p.line('}')
                             break
                         case TargetLanguage.Java:
-                            p.line('};')
                             break
                         case TargetLanguage.CSharp:
-                            p.line('}')
                             p.line(
                                 'public override void Write(Utf8JsonWriter writer, ${name} value, JsonSerializerOptions options)'
                             )
@@ -394,21 +394,13 @@ export class Codegen extends BaseCodegen {
                                     'JsonSerializer.Serialize(writer, value, value.GetType(), options);'
                                 )
                             })
+                            p.line('}')
                             break
                     }
-                    if (this.language === TargetLanguage.CSharp) {
-                        p.line('}')
-                    }
                 })
-                if (this.language === TargetLanguage.CSharp) {
-                    p.line('}')
-                }
             })
-            if (this.language === TargetLanguage.CSharp) {
-                p.line('}')
-            }
         })
-        if (this.language === TargetLanguage.Kotlin) {
+        if (this.language === TargetLanguage.Kotlin || this.language === TargetLanguage.CSharp) {
             p.line('}')
         }
         for (const member of union.members) {
@@ -432,7 +424,7 @@ export class Codegen extends BaseCodegen {
                           : ` : ${name}`,
             })
         }
-        if (this.language === TargetLanguage.Java) {
+        if (this.language === TargetLanguage.Java || this.language === TargetLanguage.CSharp) {
             p.line('}')
         }
     }
@@ -557,11 +549,11 @@ export class Codegen extends BaseCodegen {
                             )
                             enums.length = 0
                         } else {
-                        p.line(
-                            `public ${memberTypeSyntax} ${this.f.formatFieldName(
-                                member.display_name
-                            )} { get; set; }${oneofSyntax}`
-                        )
+                            p.line(
+                                `public ${memberTypeSyntax} ${this.f.formatFieldName(
+                                    member.display_name
+                                )} { get; set; }${oneofSyntax}`
+                            )
                         }
                         break
                 }
@@ -677,7 +669,7 @@ export class Codegen extends BaseCodegen {
                     if (this.isStringTypeInfo(info)) {
                         const constants = this.stringConstantsFromInfo(info)
                         if (constants.length > 0) {
-                                this.writeEnum(p, name, constants)
+                            this.writeEnum(p, name, constants)
                         } else {
                             p.line(`public class ${name}`)
                             p.line('{')
@@ -691,6 +683,7 @@ export class Codegen extends BaseCodegen {
                                     `public static implicit operator ${name}(string value) => new ${name} { Value = value };`
                                 )
                             })
+                            p.line('}')
                         }
                     } else {
                         p.line(`public class ${name} : ${alias} { }`)
