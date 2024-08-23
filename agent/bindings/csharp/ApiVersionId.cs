@@ -8,4 +8,5 @@ namespace Cody.Core.Agent.Protocol
 
     public static implicit operator string(ApiVersionId value) => value.Value;
     public static implicit operator ApiVersionId(string value) => new ApiVersionId { Value = value };
+  }
 }

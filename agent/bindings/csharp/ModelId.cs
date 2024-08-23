@@ -8,4 +8,5 @@ namespace Cody.Core.Agent.Protocol
 
     public static implicit operator string(ModelId value) => value.Value;
     public static implicit operator ModelId(string value) => new ModelId { Value = value };
+  }
 }

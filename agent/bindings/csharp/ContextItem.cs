@@ -26,14 +26,13 @@ namespace Cody.Core.Agent.Protocol
               return JsonSerializer.Deserialize<ContextItemOpenCtx>(jsonDoc.RootElement.GetRawText(), options);
             default:
               throw new JsonException($"Unknown discriminator {discriminator}");
-          }
+            }
         }
         public override void Write(Utf8JsonWriter writer, ${name} value, JsonSerializerOptions options)
         {
           JsonSerializer.Serialize(writer, value, value.GetType(), options);
         }
-      }
-    }
+  }
 
   public class ContextItemFile : ContextItem
   {
@@ -261,5 +260,6 @@ namespace Cody.Core.Agent.Protocol
       [EnumMember(Value = "openctx")]
       Openctx,
     }
+  }
   }
 }

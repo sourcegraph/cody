@@ -24,14 +24,13 @@ namespace Cody.Core.Agent.Protocol
               return JsonSerializer.Deserialize<EditFileOperation>(jsonDoc.RootElement.GetRawText(), options);
             default:
               throw new JsonException($"Unknown discriminator {discriminator}");
-          }
+            }
         }
         public override void Write(Utf8JsonWriter writer, ${name} value, JsonSerializerOptions options)
         {
           JsonSerializer.Serialize(writer, value, value.GetType(), options);
         }
-      }
-    }
+  }
 
   public class CreateFileOperation : WorkspaceEditOperation
   {
@@ -81,5 +80,6 @@ namespace Cody.Core.Agent.Protocol
     public string Uri { get; set; }
     [JsonProperty(PropertyName = "edits")]
     public TextEdit[] Edits { get; set; }
+  }
   }
 }

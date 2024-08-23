@@ -8,4 +8,5 @@ namespace Cody.Core.Agent.Protocol
 
     public static implicit operator string(CompletionLogID value) => value.Value;
     public static implicit operator CompletionLogID(string value) => new CompletionLogID { Value = value };
+  }
 }
