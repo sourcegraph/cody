@@ -291,7 +291,7 @@ describe('PromptBuilder', () => {
         })
 
         it('should not remove user-added with overlapping ranges even when full file is provided', async () => {
-            const builder = await PromptBuilder.create({ input: 55, output: 50 })
+            const builder = await PromptBuilder.create({ input: 100, output: 50 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
