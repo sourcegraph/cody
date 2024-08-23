@@ -110,7 +110,7 @@ export class Codegen extends BaseCodegen {
                     p.line('public static void register(com.google.gson.GsonBuilder gson) {')
                     break
                 case TargetLanguage.CSharp:
-                    p.line('public static void Register(System.Text.Json.JsonSerializerOptions options)')
+                    p.line('public static void Register(JsonSerializerOptions options)')
                     p.line('{')
                     break
             }
@@ -362,6 +362,7 @@ export class Codegen extends BaseCodegen {
                                             'throw new JsonException($"Unknown discriminator {discriminator}");'
                                         )
                                     })
+                                    p.line('}')
                                     break
                             }
                         })
@@ -389,6 +390,7 @@ export class Codegen extends BaseCodegen {
                                     'JsonSerializer.Serialize(writer, value, value.GetType(), options);'
                                 )
                             })
+                            p.line('}')
                             p.line('}')
                             break
                     }
@@ -751,123 +753,130 @@ export class Codegen extends BaseCodegen {
         notifications: string
     ): Promise<void> {
         const { f, p, symtab } = this.startDocument()
-        switch (this.language) {
-            case TargetLanguage.Kotlin:
-                p.line('@file:Suppress("FunctionName", "ClassName", "RedundantNullable")')
-                p.line(`package ${this.options.kotlinPackage};`)
-                p.line()
-                p.line('import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;')
-                p.line('import org.eclipse.lsp4j.jsonrpc.services.JsonRequest;')
-                p.line('import java.util.concurrent.CompletableFuture;')
-                break
-            case TargetLanguage.Java:
-                p.line(`package ${this.options.kotlinPackage};`)
-                p.line()
-                p.line('import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;')
-                p.line('import org.eclipse.lsp4j.jsonrpc.services.JsonRequest;')
-                p.line('import java.util.concurrent.CompletableFuture;')
-                break
-            case TargetLanguage.CSharp:
-                p.addImport('using System.Threading.Tasks;')
-                p.line()
-                p.line(`namespace ${this.options.kotlinPackage};`)
-                p.line('{')
-                break
+
+        interface LanguageConfig {
+            suppressAnnotation?: string
+            packageDeclaration?: string
+            imports: string[]
+            namespaceDeclaration?: string
+            interfaceDeclaration: string
+        }
+
+        const languageConfig: Record<TargetLanguage, LanguageConfig> = {
+            [TargetLanguage.Kotlin]: {
+                suppressAnnotation: '@file:Suppress("FunctionName", "ClassName", "RedundantNullable")',
+                packageDeclaration: `package ${this.options.kotlinPackage};`,
+                imports: [
+                    'import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;',
+                    'import org.eclipse.lsp4j.jsonrpc.services.JsonRequest;',
+                    'import java.util.concurrent.CompletableFuture;',
+                ],
+                interfaceDeclaration: `@Suppress("unused")\ninterface ${name} {`,
+            },
+            [TargetLanguage.Java]: {
+                packageDeclaration: `package ${this.options.kotlinPackage};`,
+                imports: [
+                    'import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;',
+                    'import org.eclipse.lsp4j.jsonrpc.services.JsonRequest;',
+                    'import java.util.concurrent.CompletableFuture;',
+                ],
+                interfaceDeclaration: `@SuppressWarnings("unused")\npublic interface ${name} {`,
+            },
+            [TargetLanguage.CSharp]: {
+                imports: ['using System.Threading.Tasks;'],
+                namespaceDeclaration: `namespace ${this.options.kotlinPackage};`,
+                interfaceDeclaration: `public interface ${name}\n{`,
+            },
+        }
+
+        const config = languageConfig[this.language]
+
+        if (config.suppressAnnotation) {
+            p.line(config.suppressAnnotation)
+        }
+        p.line(config.packageDeclaration)
+        p.line()
+        for (const _import of config.imports) {
+            p.line(_import)
         }
         p.line()
-        switch (this.language) {
-            case TargetLanguage.Kotlin:
-                p.line('@Suppress("unused")')
-                p.line(`interface ${name} {`)
-                break
-            case TargetLanguage.Java:
-                p.line('@SuppressWarnings("unused")')
-                p.line(`public interface ${name} {`)
-                break
-            case TargetLanguage.CSharp:
-                p.line('public interface ' + name)
-                p.line('{')
-                break
+        if (config.namespaceDeclaration) {
+            p.line(config.namespaceDeclaration)
+            p.line('{')
         }
+        p.line()
+        p.line(config.interfaceDeclaration)
+
+        const skipRequests = ['webview/receiveMessage', 'chat/submitMessage', 'chat/editMessage']
+        const skipNotifications = ['webview/postMessage']
+
+        const processRequest = (request: any) => {
+            if (skipRequests.includes(request.display_name)) {
+                return
+            }
+
+            const resultType = request.signature.value_signature.tpe.type_ref.type_arguments?.[1]
+            if (!resultType) {
+                this.reporter.error(
+                    request.symbol,
+                    `missing result type for request. To fix this problem, add a second element to the array type like this: 'example/method: [RequestParams, RequestResult]'`
+                )
+                return
+            }
+
+            const { parameterType, parameterSyntax } = f.jsonrpcMethodParameter(request)
+            this.queueClassLikeType(parameterType, request, 'parameter')
+            this.queueClassLikeType(resultType, request, 'result')
+            const resultTypeSyntax = f.jsonrpcTypeName(request, resultType, 'result')
+
+            const methodDeclaration = {
+                [TargetLanguage.Kotlin]: `@JsonRequest("${request.display_name}")\nfun ${f.functionName(
+                    request
+                )}(${parameterSyntax}): CompletableFuture<${resultTypeSyntax}>`,
+                [TargetLanguage.Java]: `@JsonRequest("${
+                    request.display_name
+                }")\nCompletableFuture<${resultTypeSyntax}> ${f.functionName(
+                    request
+                )}(${parameterSyntax});`,
+                [TargetLanguage.CSharp]: `[JsonRpcMethod("${request.display_name}")]\n${
+                    resultTypeSyntax === 'Void' ? 'Task' : `Task<${resultTypeSyntax}>`
+                } ${capitalize(f.functionName(request))}(${
+                    parameterSyntax.startsWith('Void') ? '' : parameterSyntax
+                });`,
+            }
+
+            p.line(methodDeclaration[this.language])
+        }
+
+        const processNotification = (notification: any) => {
+            if (skipNotifications.includes(notification.display_name)) {
+                return
+            }
+
+            const { parameterType, parameterSyntax } = f.jsonrpcMethodParameter(notification)
+            this.queueClassLikeType(parameterType, notification, 'parameter')
+            const notificationName = f.functionName(notification)
+
+            const methodDeclaration = {
+                [TargetLanguage.Kotlin]: `@JsonNotification("${notification.display_name}")\nfun ${notificationName}(${parameterSyntax})`,
+                [TargetLanguage.Java]: `@JsonNotification("${notification.display_name}")\nvoid ${notificationName}(${parameterSyntax});`,
+                [TargetLanguage.CSharp]: `[JsonRpcMethod("${
+                    notification.display_name
+                }")]\nvoid ${capitalize(notificationName)}(${parameterSyntax});`,
+            }
+
+            p.line(methodDeclaration[this.language])
+        }
+
         p.block(() => {
             p.sectionComment('Requests')
-            for (const request of symtab.structuralType(symtab.canonicalSymbol(requests))) {
-                // We skip the webview protocol because our IDE clients are now
-                // using the string-encoded protocol instead.
-                if (
-                    request.display_name === 'webview/receiveMessage' ||
-                    request.display_name === 'chat/submitMessage' ||
-                    request.display_name === 'chat/editMessage'
-                ) {
-                    continue
-                }
-                // Process a JSON-RPC request signature. For example:
-                // type Requests = { 'textDocument/inlineCompletions': [RequestParams, RequestResult] }
-                const resultType = request.signature.value_signature.tpe.type_ref.type_arguments?.[1]
-                if (resultType === undefined) {
-                    this.reporter.error(
-                        request.symbol,
-                        `missing result type for request. To fix this problem, add a second element to the array type like this: 'example/method: [RequestParams, RequestResult]'`
-                    )
-                    continue
-                }
-                const { parameterType, parameterSyntax } = f.jsonrpcMethodParameter(request)
-                this.queueClassLikeType(parameterType, request, 'parameter')
-                this.queueClassLikeType(resultType, request, 'result')
-                const resultTypeSyntax = f.jsonrpcTypeName(request, resultType, 'result')
-                switch (this.language) {
-                    case TargetLanguage.Kotlin:
-                        p.line(`@JsonRequest("${request.display_name}")`)
-                        p.line(
-                            `fun ${f.functionName(request)}(${parameterSyntax}): ` +
-                                `CompletableFuture<${resultTypeSyntax}>`
-                        )
-                        break
-                    case TargetLanguage.Java:
-                        p.line(`@JsonRequest("${request.display_name}")`)
-                        p.line(
-                            `CompletableFuture<${resultTypeSyntax}> ${f.functionName(
-                                request
-                            )}(${parameterSyntax});`
-                        )
-                        break
-                    case TargetLanguage.CSharp: {
-                        p.line(`[JsonRpcMethod("${request.display_name}")]`)
-                        const _task = resultTypeSyntax === 'Void' ? 'Task' : `Task<${resultTypeSyntax}>`
-                        const _params = parameterSyntax.startsWith('Void') ? '' : parameterSyntax
-                        const _func = capitalize(f.functionName(request))
-                        p.line(`${_task} ${_func}(${_params});`)
-                        break
-                    }
-                }
+            for (const req of symtab.structuralType(symtab.canonicalSymbol(requests))) {
+                processRequest(req)
             }
             p.line()
             p.sectionComment('Notifications')
-            for (const notification of symtab.structuralType(symtab.canonicalSymbol(notifications))) {
-                // We skip the webview protocol because our IDE clients are now
-                // using the string-encoded protocol instead.
-                if (notification.display_name === 'webview/postMessage') {
-                    continue
-                }
-                // Process a JSON-RPC request signature. For example:
-                // type Notifications = { 'textDocument/inlineCompletions': [NotificationParams] }
-                const { parameterType, parameterSyntax } = f.jsonrpcMethodParameter(notification)
-                this.queueClassLikeType(parameterType, notification, 'parameter')
-                const notificationName = f.functionName(notification)
-                switch (this.language) {
-                    case TargetLanguage.Kotlin:
-                        p.line(`@JsonNotification("${notification.display_name}")`)
-                        p.line(`fun ${notificationName}(${parameterSyntax})`)
-                        break
-                    case TargetLanguage.Java:
-                        p.line(`@JsonNotification("${notification.display_name}")`)
-                        p.line(`void ${notificationName}(${parameterSyntax});`)
-                        break
-                    case TargetLanguage.CSharp:
-                        p.line(`[JsonRpcMethod("${notification.display_name}")]`)
-                        p.line(`void ${capitalize(notificationName)}(${parameterSyntax});`)
-                        break
-                }
+            for (const noti of symtab.structuralType(symtab.canonicalSymbol(notifications))) {
+                processNotification(noti)
             }
         })
 
