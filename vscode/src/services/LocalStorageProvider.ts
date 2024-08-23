@@ -1,23 +1,17 @@
+import _ from 'lodash'
 import * as uuid from 'uuid'
 import type { Memento } from 'vscode'
 
 import type {
+    AccountKeyedChatHistory,
     AuthStatus,
-    ChatHistory,
+    ChatHistoryKey,
     ConfigurationWithAccessToken,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
 
 import { isSourcegraphToken } from '../chat/protocol'
 
-type ChatHistoryKey = `${string}-${string}`
-type AccountKeyedChatHistory = {
-    [key: ChatHistoryKey]: PersistedUserLocalHistory
-}
-
-interface PersistedUserLocalHistory {
-    chat: ChatHistory
-}
 
 export type ChatLocation = 'editor' | 'sidebar'
 
@@ -116,7 +110,7 @@ class LocalStorage {
     public async setChatHistory(authStatus: AuthStatus, history: UserLocalHistory): Promise<void> {
         try {
             const key = getKeyForAuthStatus(authStatus)
-            let fullHistory = this.storage.get<{ [key: ChatHistoryKey]: UserLocalHistory } | null>(
+            let fullHistory = this.storage.get<AccountKeyedChatHistory | null>(
                 this.KEY_LOCAL_HISTORY,
                 null
             )
@@ -138,6 +132,19 @@ class LocalStorage {
         } catch (error) {
             console.error(error)
         }
+    }
+
+    public async importChatHistory(history: AccountKeyedChatHistory, merge: boolean): Promise<void> {
+        if (merge) {
+            let fullHistory = this.storage.get<AccountKeyedChatHistory | null>(
+                this.KEY_LOCAL_HISTORY,
+                null
+            )
+
+            _.merge(history, fullHistory)
+        }
+
+            await this.storage.update(this.KEY_LOCAL_HISTORY, history)
     }
 
     public async deleteChatHistory(authStatus: AuthStatus, chatID: string): Promise<void> {

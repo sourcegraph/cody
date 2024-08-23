@@ -1,4 +1,4 @@
-import type { AuthStatus, SerializedChatTranscript, UserLocalHistory } from '@sourcegraph/cody-shared'
+import type { AccountKeyedChatHistory, AuthStatus, SerializedChatTranscript, UserLocalHistory } from '@sourcegraph/cody-shared'
 
 import { debounce } from 'lodash'
 import * as vscode from 'vscode'
@@ -36,6 +36,11 @@ export class ChatHistoryManager implements vscode.Disposable {
         await localStorage.setChatHistory(authStatus, history)
         this.notifyChatHistoryChanged(authStatus)
         return history
+    }
+
+    public async importChatHistory(history: AccountKeyedChatHistory, merge: boolean, authStatus: AuthStatus): Promise<void> {
+        await localStorage.importChatHistory(history, merge)
+        this.notifyChatHistoryChanged(authStatus)
     }
 
     public async deleteChat(authStatus: AuthStatus, chatID: string): Promise<void> {
