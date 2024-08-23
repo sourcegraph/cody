@@ -1,8 +1,8 @@
 import fspromises from 'node:fs/promises'
 import { Command, InvalidOptionArgumentError, Option } from 'commander'
 import type { BaseCodegen } from './BaseCodegen'
+import { Codegen, TargetLanguage } from './Codegen'
 import { ConsoleReporter } from './ConsoleReporter'
-import { JvmCodegen, JvmLanguage } from './JvmCodegen'
 import { MarkdownCodegen } from './MarkdownCodegen'
 import { SymbolTable } from './SymbolTable'
 import { scip } from './scip'
@@ -95,11 +95,11 @@ async function initializeCodegen(options: CodegenOptions): Promise<BaseCodegen> 
     const reporter = new ConsoleReporter(index, { severity: options.severity as any })
     switch (options.language) {
         case CodegenLanguage.Kotlin:
-            return new JvmCodegen(JvmLanguage.Kotlin, options, symtab, reporter)
+            return new Codegen(TargetLanguage.Kotlin, options, symtab, reporter)
         case CodegenLanguage.Java:
-            return new JvmCodegen(JvmLanguage.Java, options, symtab, reporter)
+            return new Codegen(TargetLanguage.Java, options, symtab, reporter)
         case CodegenLanguage.CSharp:
-            return new JvmCodegen(JvmLanguage.CSharp, options, symtab, reporter)
+            return new Codegen(TargetLanguage.CSharp, options, symtab, reporter)
         case CodegenLanguage.Markdown:
             return new MarkdownCodegen(options, symtab, reporter)
         default:
