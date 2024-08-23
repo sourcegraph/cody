@@ -371,19 +371,17 @@ export class Codegen extends BaseCodegen {
                                             'throw new JsonException($"Unknown discriminator {discriminator}");'
                                         )
                                     })
+                                    p.line('}')
                                     break
                             }
-                            if (this.language === TargetLanguage.CSharp) {
-                                p.line('}')
-                            }
                         })
+                        if (this.language === TargetLanguage.Java) {
+                            p.line('};')
+                        } else {
+                            p.line('}')
+                        }
                     })
-                    p.line('}')
                     switch (this.language) {
-                        case TargetLanguage.Kotlin:
-                            break
-                        case TargetLanguage.Java:
-                            break
                         case TargetLanguage.CSharp:
                             p.line(
                                 'public override void Write(Utf8JsonWriter writer, ${name} value, JsonSerializerOptions options)'
@@ -394,11 +392,13 @@ export class Codegen extends BaseCodegen {
                                     'JsonSerializer.Serialize(writer, value, value.GetType(), options);'
                                 )
                             })
-                            p.line('}')
                             break
+                            default:
+                                p.line('}')
                     }
                 })
             })
+            p.line('}')
         })
         if (this.language === TargetLanguage.Kotlin || this.language === TargetLanguage.CSharp) {
             p.line('}')
