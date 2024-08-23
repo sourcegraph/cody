@@ -7,6 +7,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Added
 
 ### Fixed
+- Revert: A recent version bump of a dependency was potentially causing some Out-of-Memory issues resultling in a grey screen. The `rehype-highlight` version has been reverted. [pull/5315](https://github.com/sourcegraph/cody/pull/5315)
 
 ### Changed
 
