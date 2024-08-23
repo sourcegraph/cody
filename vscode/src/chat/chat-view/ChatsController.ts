@@ -542,10 +542,9 @@ export class ChatsController implements vscode.Disposable {
 }
 
 function getNewChatLocation(): ChatLocation {
-    const chatDefaultLocation =
-        vscode.workspace
-            .getConfiguration()
-            .get<'sticky' | 'sidebar' | 'editor'>('cody.chat.defaultLocation') ?? 'sticky'
+    const chatDefaultLocation = vscode.workspace
+        .getConfiguration()
+        .get<'sticky' | 'sidebar' | 'editor'>('cody.chat.defaultLocation', 'sidebar')
 
     if (chatDefaultLocation === 'sticky') {
         return localStorage.getLastUsedChatModality()
