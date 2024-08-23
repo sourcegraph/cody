@@ -51,7 +51,12 @@ export class DefaultPrompter {
             )
 
             // Add preamble messages
-            const preambleMessages = getSimplePreamble(chat.modelID, codyApiVersion, preInstruction)
+            const preambleMessages = getSimplePreamble(
+                chat.modelID,
+                codyApiVersion,
+                'Chat',
+                preInstruction
+            )
             if (!promptBuilder.tryAddToPrefix(preambleMessages)) {
                 throw new Error(`Preamble length exceeded context window ${chat.contextWindow.input}`)
             }
