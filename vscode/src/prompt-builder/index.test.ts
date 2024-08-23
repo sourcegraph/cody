@@ -319,7 +319,7 @@ describe('PromptBuilder', () => {
         })
 
         it('should deduplicate context from different token usage types', async () => {
-            const builder = await PromptBuilder.create({ input: 55, output: 50 })
+            const builder = await PromptBuilder.create({ input: 100, output: 50 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
