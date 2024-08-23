@@ -82,7 +82,10 @@ export type ClientRequests = {
     'chat/export': [null | { fullHistory: boolean }, ChatExportResult[]]
 
     // history is Map of {endpoint}-{username} to chat transcripts by date
-    'chat/import': [{ history: Record<string, Record<string, SerializedChatTranscript>>, merge: boolean}, null]
+    'chat/import': [
+        { history: Record<string, Record<string, SerializedChatTranscript>>; merge: boolean },
+        null,
+    ]
     'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] | undefined | null }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage

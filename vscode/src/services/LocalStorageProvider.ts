@@ -12,7 +12,6 @@ import type {
 
 import { isSourcegraphToken } from '../chat/protocol'
 
-
 export type ChatLocation = 'editor' | 'sidebar'
 
 class LocalStorage {
@@ -136,7 +135,7 @@ class LocalStorage {
 
     public async importChatHistory(history: AccountKeyedChatHistory, merge: boolean): Promise<void> {
         if (merge) {
-            let fullHistory = this.storage.get<AccountKeyedChatHistory | null>(
+            const fullHistory = this.storage.get<AccountKeyedChatHistory | null>(
                 this.KEY_LOCAL_HISTORY,
                 null
             )
@@ -144,7 +143,7 @@ class LocalStorage {
             _.merge(history, fullHistory)
         }
 
-            await this.storage.update(this.KEY_LOCAL_HISTORY, history)
+        await this.storage.update(this.KEY_LOCAL_HISTORY, history)
     }
 
     public async deleteChatHistory(authStatus: AuthStatus, chatID: string): Promise<void> {

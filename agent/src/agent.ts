@@ -2,7 +2,13 @@ import { spawn } from 'node:child_process'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
-import { AccountKeyedChatHistory, ChatHistoryKey, type CodyCommand, ModelUsage, telemetryRecorder } from '@sourcegraph/cody-shared'
+import {
+    type AccountKeyedChatHistory,
+    type ChatHistoryKey,
+    type CodyCommand,
+    ModelUsage,
+    telemetryRecorder,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 import packageJson from '../../vscode/package.json'
@@ -1258,12 +1264,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
             return []
         })
-        this.registerAuthenticatedRequest('chat/import', async ({history, merge}) => {
+        this.registerAuthenticatedRequest('chat/import', async ({ history, merge }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
 
             const accountKeyedChatHistory: AccountKeyedChatHistory = {}
             for (const [account, chats] of Object.entries(history)) {
-                accountKeyedChatHistory[account as ChatHistoryKey] = {chat: chats}
+                accountKeyedChatHistory[account as ChatHistoryKey] = { chat: chats }
             }
             await chatHistory.importChatHistory(accountKeyedChatHistory, merge, authStatus)
             return null
