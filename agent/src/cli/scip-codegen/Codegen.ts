@@ -214,12 +214,12 @@ export class Codegen extends BaseCodegen {
         switch (this.language) {
             case TargetLanguage.Kotlin:
                 p.line(`package ${this.options.kotlinPackage};`)
-        p.line()
+                p.line()
                 p.line('typealias Null = Void?')
                 break
             case TargetLanguage.Java:
                 p.line(`package ${this.options.kotlinPackage};`)
-        p.line()
+                p.line()
                 p.line('public final class Null {}')
                 break
             case TargetLanguage.CSharp:
