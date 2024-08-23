@@ -38,8 +38,7 @@ describe('DefaultPrompter', () => {
           [
             {
               "speaker": "human",
-              "text": "You are Cody, an AI coding assistant from Sourcegraph.If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH
-          $CONTENT\`\`\`.",
+              "text": "You are Cody, an AI coding assistant from Sourcegraph.If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH\`\`\`.",
             },
             {
               "speaker": "assistant",
@@ -114,8 +113,7 @@ describe('DefaultPrompter', () => {
           [
             {
               "speaker": "human",
-              "text": "You are Cody, an AI coding assistant from Sourcegraph.If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH
-          $CONTENT\`\`\`.
+              "text": "You are Cody, an AI coding assistant from Sourcegraph.If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH\`\`\`.
 
           Always respond with 🧀 emojis",
             },
