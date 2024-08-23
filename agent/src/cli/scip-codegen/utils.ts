@@ -1,11 +1,11 @@
-import { JvmLanguage } from './JvmCodegen'
+import { TargetLanguage } from './Codegen'
 
-export function typescriptKeywordSyntax(language: JvmLanguage, symbol: string): string | undefined {
+export function typescriptKeywordSyntax(language: TargetLanguage, symbol: string): string | undefined {
     switch (symbol) {
         case 'scip-typescript npm typescript . array#':
             return 'List'
         case 'scip-typescript npm typescript . null#':
-            return language === JvmLanguage.Kotlin ? 'Null' : 'Void'
+            return language === TargetLanguage.Kotlin ? 'Null' : 'Void'
         case 'scip-typescript npm typescript . string#':
             return 'String'
         case 'scip-typescript npm typescript . false#':
@@ -16,7 +16,7 @@ export function typescriptKeywordSyntax(language: JvmLanguage, symbol: string): 
             return 'Long'
         case 'scip-typescript npm typescript . any#':
         case 'scip-typescript npm typescript . unknown#':
-            return language === JvmLanguage.Kotlin ? 'Any' : 'Object'
+            return language === TargetLanguage.Kotlin ? 'Any' : 'Object'
         default:
             return undefined
     }
@@ -29,7 +29,7 @@ export function capitalize(text: string): string {
     return text[0].toUpperCase() + text.slice(1)
 }
 
-export function isTypescriptKeyword(language: JvmLanguage, symbol: string): boolean {
+export function isTypescriptKeyword(language: TargetLanguage, symbol: string): boolean {
     return (
         typescriptKeywordSyntax(language, symbol) !== undefined &&
         symbol !== 'scip-typescript npm typescript . array#'
