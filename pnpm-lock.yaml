@@ -558,6 +558,9 @@ importers:
       fast-xml-parser:
         specifier: ^4.3.2
         version: 4.3.2
+      fzf:
+        specifier: ^0.5.2
+        version: 0.5.2
       glob:
         specifier: ^7.2.3
         version: 7.2.3
@@ -10383,6 +10386,10 @@ packages:
   /fuzzysort@2.0.4:
     resolution: {integrity: sha512-Api1mJL+Ad7W7vnDZnWq5pGaXJjyencT+iKGia2PlHUcSsSzWwIQ3S1isiMpwpavjYtGd2FzhUIhnnhOULZgDw==}
     dev: true
+
+  /fzf@0.5.2:
+    resolution: {integrity: sha512-Tt4kuxLXFKHy8KT40zwsUPUkg1CrsgY25FxA2U/j/0WgEDCk3ddc/zLTCCcbSHX9FcKtLuVaDGtGE/STWC+j3Q==}
+    dev: false
 
   /gauge@4.0.4:
     resolution: {integrity: sha512-f9m+BEN5jkg6a0fZjleidjN51VE1X+mPFQ2DJ0uv1V39oCLCbsGe6yjbBnp7eK7z/+GAon99a3nHuqbuuthyPg==}

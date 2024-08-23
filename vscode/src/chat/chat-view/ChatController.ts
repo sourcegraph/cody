@@ -1129,6 +1129,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const repos =
             explicitRepos ??
             (await this.repoPicker?.show(this.remoteSearch.getRepos(RepoInclusion.Manual)))
+
         if (repos) {
             this.chatModel.setSelectedRepos(repos)
             this.remoteSearch.setRepos(repos, RepoInclusion.Manual)

@@ -126,20 +126,21 @@ query Repositories($first: Int!, $after: String) {
 }
 `
 
-export const REPOSITORY_SEARCH_QUERY = `
-query RepositoriesSearch($first: Int!, $after: String, $query: String) {
-    repositories(first: $first, after: $after, query: $query) {
-        nodes {
-            id
-            name
-            url
-        }
-        pageInfo {
-            endCursor
+export const REPOS_SUGGESTIONS_QUERY = `
+    query SuggestionsRepo($query: String!) {
+        search(patternType: regexp, query: $query) {
+            results {
+                repositories {
+                    id
+                    name
+                    stars
+                    url
+                }
+            }
         }
     }
-}
 `
+
 export const FILE_CONTENTS_QUERY = `
 query FileContentsQuery($repoName: String!, $filePath: String!, $rev: String!) {
     repository(name: $repoName){
@@ -248,7 +249,7 @@ query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $
 }`
 
 export const CONTEXT_SEARCH_QUERY = `
-query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!, $filePatterns: [String!]!) {
+query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!, $filePatterns: [String!]) {
 	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount, filePatterns: $filePatterns) {
         ...on FileChunkContext {
             blob {

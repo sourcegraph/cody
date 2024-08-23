@@ -86,7 +86,7 @@ export async function getFileContextFiles(options: FileContextItemsOptions): Pro
             source: ContextItemSource.User,
             remoteRepositoryName: item.repository.name,
             isIgnored: contextFiltersProvider.isRepoNameIgnored(item.repository.name),
-            uri: URI.file(item.repository.name + item.file.path),
+            uri: URI.file(`${item.repository.name}/${item.file.path}`),
         }))
     }
 
@@ -192,7 +192,7 @@ export async function getSymbolContextFiles(
             item.symbols.map(symbol => ({
                 type: 'symbol',
                 remoteRepositoryName: item.repository.name,
-                uri: URI.file(item.repository.name + symbol.location.resource.path),
+                uri: URI.file(`${item.repository.name}/${symbol.location.resource.path}`),
                 isIgnored: contextFiltersProvider.isRepoNameIgnored(item.repository.name),
                 source: ContextItemSource.User,
                 symbolName: symbol.name,
@@ -461,7 +461,7 @@ async function resolveFileOrSymbolContextItem(
             return {
                 ...contextItem,
                 title: path,
-                uri: URI.parse(`${graphqlClient.endpoint}${repository}/-/blob/${path}`),
+                uri: URI.parse(`${graphqlClient.endpoint}${repository}/-/blob${path}`),
                 content: resultOrError,
                 repoName: repository,
                 source: ContextItemSource.Unified,

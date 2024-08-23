@@ -36,18 +36,31 @@ import { createProviderConfig as createUnstableOpenAIProviderConfig } from './un
 interface CreateConfigHelperParams {
     client: CodeCompletionsClient
     authStatus: AuthStatus
-    model: string | undefined
+    modelId: string | undefined
     provider: string
     config: ConfigurationWithAccessToken
+    model?: Model
 }
 
-export async function createProviderHelper(
+export async function createProviderConfigHelper(
     params: CreateConfigHelperParams
 ): Promise<ProviderConfig | null> {
-    const { client, authStatus, model, provider, config } = params
+    const { client, authStatus, modelId, model, provider, config } = params
 
     switch (provider) {
-        case 'azure-openai':
+        case 'openai': {
+            return createUnstableOpenAIProviderConfig({
+                client,
+                model: modelId,
+            })
+        }
+        case 'azure-openai': {
+            return createUnstableOpenAIProviderConfig({
+                client,
+                // Model name for azure openai provider is a deployment name. It shouldn't appear in logs.
+                model: modelId ? '' : modelId,
+            })
+        }
         case 'unstable-openai': {
             return createUnstableOpenAIProviderConfig({
                 client,
@@ -57,33 +70,68 @@ export async function createProviderHelper(
             const { anonymousUserID } = await localStorage.anonymousUserID()
             return createFireworksProviderConfig({
                 client,
-                model: config.autocompleteAdvancedModel ?? model ?? null,
+                model: modelId ?? null,
                 timeouts: config.autocompleteTimeouts,
                 authStatus,
                 config,
                 anonymousUserID,
             })
         }
-        case 'anthropic': {
-            return createAnthropicProviderConfig({
-                client,
-                model: model ?? authStatus.isDotCom ? DEFAULT_PLG_ANTHROPIC_MODEL : undefined,
-            })
-        }
-        case 'gemini':
-        case 'unstable-gemini': {
-            return createGeminiProviderConfig({ client, model })
-        }
         case 'experimental-openaicompatible': {
             // TODO(slimsag): self-hosted-models: deprecate and remove this once customers are upgraded
             // to non-experimental version
             return createExperimentalOpenAICompatibleProviderConfig({
                 client,
-                model: config.autocompleteAdvancedModel ?? model ?? null,
+                model: modelId ?? null,
                 timeouts: config.autocompleteTimeouts,
                 authStatus,
                 config,
             })
+        }
+        case 'openaicompatible': {
+            if (model) {
+                return createOpenAICompatibleProviderConfig({
+                    client,
+                    timeouts: config.autocompleteTimeouts,
+                    model,
+                    authStatus,
+                    config,
+                })
+            }
+            logError(
+                'createProviderConfig',
+                'Model definition is missing for openaicompatible provider.',
+                modelId
+            )
+            return null
+        }
+        case 'aws-bedrock':
+        case 'anthropic': {
+            return createAnthropicProviderConfig({
+                client,
+                // Only pass through the upstream-defined model if we're using Cody Gateway
+                model:
+                    authStatus.configOverwrites?.provider === 'sourcegraph'
+                        ? authStatus.configOverwrites.completionModel
+                        : authStatus.isDotCom
+                          ? DEFAULT_PLG_ANTHROPIC_MODEL
+                          : undefined,
+            })
+        }
+        case 'google': {
+            if (authStatus.configOverwrites?.completionModel?.includes('claude')) {
+                return createAnthropicProviderConfig({
+                    client,
+                    // Model name for google provider is a deployment name. It shouldn't appear in logs.
+                    model: undefined,
+                })
+            }
+            // Gemini models
+            return createGeminiProviderConfig({ client, model: modelId })
+        }
+        case 'gemini':
+        case 'unstable-gemini': {
+            return createGeminiProviderConfig({ client, model: modelId })
         }
         case 'experimental-ollama':
         case 'unstable-ollama': {
@@ -153,16 +201,14 @@ interface ProviderConfigFromFeatureFlags {
 async function resolveConfigFromFeatureFlags(
     isDotCom: boolean
 ): Promise<ProviderConfigFromFeatureFlags | null> {
-    const [starCoder2Hybrid, starCoderHybrid, claude3, fimModelExperimentFlag, deepseekV2LiteBase] =
-        await Promise.all([
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
-            featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteFIMModelExperimentBaseFeatureFlag
-            ),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase),
-        ])
+    const [starCoderHybrid, claude3, fimModelExperimentFlag, deepseekV2LiteBase] = await Promise.all([
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
+        featureFlagProvider.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteFIMModelExperimentBaseFeatureFlag
+        ),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase),
+    ])
 
     // We run fine tuning experiment for VSC client only.
     // We disable for all agent clients like the JetBrains plugin.
@@ -174,11 +220,9 @@ async function resolveConfigFromFeatureFlags(
         // The traffic in this feature flag is interpreted as a traffic allocated to the fine-tuned experiment.
         return resolveFIMModelExperimentFromFeatureFlags()
     }
+
     if (isDotCom && deepseekV2LiteBase) {
         return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
-    }
-    if (starCoder2Hybrid) {
-        return { provider: 'fireworks', model: 'starcoder2-hybrid' }
     }
 
     if (starCoderHybrid) {
@@ -273,10 +317,10 @@ export async function createProviderConfig(
 ): Promise<ProviderConfig | null> {
     // Resolve the provider config from the VS Code config.
     if (config.autocompleteAdvancedProvider) {
-        return createProviderHelper({
+        return createProviderConfigHelper({
             client,
             authStatus,
-            model: config.autocompleteAdvancedModel || undefined,
+            modelId: config.autocompleteAdvancedModel || undefined,
             provider: config.autocompleteAdvancedProvider,
             config,
         })
@@ -287,91 +331,30 @@ export async function createProviderConfig(
 
     // Use the experiment model if available.
     if (configFromFeatureFlags) {
-        return createProviderHelper({
+        return createProviderConfigHelper({
             client,
             authStatus,
-            model: configFromFeatureFlags.model,
+            modelId: configFromFeatureFlags.model,
             provider: configFromFeatureFlags.provider,
             config,
         })
     }
 
-    const info = getAutocompleteModelInfo(authStatus)
+    const modelInfoOrError = getAutocompleteModelInfo(authStatus)
 
-    if (info instanceof Error) {
-        logError('createProviderConfig', info.message)
+    if (modelInfoOrError instanceof Error) {
+        logError('createProviderConfig', modelInfoOrError.message)
         return null
     }
 
-    const { provider, modelId, model } = info
+    const { provider, modelId, model } = modelInfoOrError
 
-    switch (provider) {
-        case 'openai':
-        case 'azure-openai':
-            return createUnstableOpenAIProviderConfig({
-                client,
-                // Model name for azure openai provider is a deployment name. It shouldn't appear in logs.
-                model: provider === 'azure-openai' && modelId ? '' : modelId,
-            })
-
-        case 'fireworks': {
-            const { anonymousUserID } = await localStorage.anonymousUserID()
-            return createFireworksProviderConfig({
-                client,
-                timeouts: config.autocompleteTimeouts,
-                model: modelId ?? null,
-                authStatus,
-                config,
-                anonymousUserID,
-            })
-        }
-        case 'experimental-openaicompatible':
-            // TODO(slimsag): self-hosted-models: deprecate and remove this once customers are upgraded
-            // to non-experimental version
-            return createExperimentalOpenAICompatibleProviderConfig({
-                client,
-                timeouts: config.autocompleteTimeouts,
-                model: modelId ?? null,
-                authStatus,
-                config,
-            })
-        case 'openaicompatible':
-            if (model) {
-                return createOpenAICompatibleProviderConfig({
-                    client,
-                    timeouts: config.autocompleteTimeouts,
-                    model: model,
-                    authStatus,
-                    config,
-                })
-            }
-            logError(
-                'createProviderConfig',
-                'Model definition is missing for openaicompatible provider.',
-                modelId
-            )
-            return null
-        case 'aws-bedrock':
-        case 'anthropic':
-            return createAnthropicProviderConfig({
-                client,
-                // Only pass through the upstream-defined model if we're using Cody Gateway
-                model:
-                    authStatus.configOverwrites?.provider === 'sourcegraph'
-                        ? authStatus.configOverwrites.completionModel
-                        : undefined,
-            })
-        case 'google':
-            if (authStatus.configOverwrites?.completionModel?.includes('claude')) {
-                return createAnthropicProviderConfig({
-                    client, // Model name for google provider is a deployment name. It shouldn't appear in logs.
-                    model: undefined,
-                })
-            }
-            // Gemini models
-            return createGeminiProviderConfig({ client, model: modelId })
-        default:
-            logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
-            return null
-    }
+    return createProviderConfigHelper({
+        client,
+        authStatus,
+        modelId,
+        model,
+        provider,
+        config,
+    })
 }

@@ -57,40 +57,6 @@ export class DeepSeekPromptExtractor implements FIMModelSpecificPromptExtractor 
     }
 }
 
-export class FinetunedModelV1PromptExtractor implements FIMModelSpecificPromptExtractor {
-    getContextPrompt(param: FIMContextPromptParams): PromptString {
-        // Fine-tuned model has a additional <file_sep> tag.
-        return ps`<file_sep>Here is a reference snippet of code from ${PromptString.fromDisplayPath(
-            param.filename
-        )}\n${param.content}`
-    }
-
-    getInfillingPrompt(param: FIMInfillingPromptParams): PromptString {
-        const prompt = ps`${param.intro}<fim_suffix>${param.filename}\n${param.suffix}<fim_prefix>${param.prefix}<fim_middle>`
-        if (param.repoName) {
-            return ps`<repo_name>${param.repoName}\n${prompt}`
-        }
-        return prompt
-    }
-}
-
-export class CodeQwenModelPromptExtractor implements FIMModelSpecificPromptExtractor {
-    // https://github.com/QwenLM/CodeQwen1.5?tab=readme-ov-file#2-file-level-code-completion-fill-in-the-middle
-
-    getContextPrompt(param: FIMContextPromptParams): PromptString {
-        // Fine-tuned model has a additional <file_sep> tag.
-        return ps`<file_sep>${PromptString.fromDisplayPath(param.filename)}\n${param.content}`
-    }
-
-    getInfillingPrompt(param: FIMInfillingPromptParams): PromptString {
-        const prompt = ps`${param.intro}\n<file_sep>${param.filename}\n<fim_prefix>${param.prefix}<fim_suffix>${param.suffix}<fim_middle>`
-        if (param.repoName) {
-            return ps`<reponame>${param.repoName}\n${prompt}`
-        }
-        return prompt
-    }
-}
-
 export class DefaultModelPromptExtractor implements FIMModelSpecificPromptExtractor {
     getContextPrompt(param: FIMContextPromptParams): PromptString {
         return getDefaultContextPrompt(param.filename, param.content)
