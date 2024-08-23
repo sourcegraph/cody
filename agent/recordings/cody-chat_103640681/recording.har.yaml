@@ -88,11 +88,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 5c57622e2ebbfa5eb9cd7f8f12b8f53d
+    - _id: a760bf87999178632a0f589ff5e1a8a9
       _order: 0
       cache: {}
       request:
-        bodySize: 431
+        bodySize: 421
         cookies: []
         headers:
           - name: content-type
@@ -118,13 +118,10 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH
-
-                  $CONTENT```.
+                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                  contains fenced code blocks in Markdown, include the relevant
+                  full file path in the code block tag using this structure:
+                  ```$LANGUAGE:$FILEPATH```."
               - speaker: human
                 text: respond with "hello" and nothing else
             model: claude-3.5-sonnet
@@ -154,7 +151,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 08:33:25 GMT
+            value: Fri, 23 Aug 2024 09:43:06 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -183,7 +180,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-23T08:33:24.210Z
+      startedDateTime: 2024-08-23T09:43:04.959Z
       time: 0
       timings:
         blocked: -1
@@ -193,11 +190,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 068fb12b6fe876d07eb89d5528a4154e
+    - _id: 6429134c6421698cdc80f7359d7bcd68
       _order: 0
       cache: {}
       request:
-        bodySize: 714
+        bodySize: 704
         cookies: []
         headers:
           - name: content-type
@@ -223,13 +220,10 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH
-
-                  $CONTENT```.
+                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                  contains fenced code blocks in Markdown, include the relevant
+                  full file path in the code block tag using this structure:
+                  ```$LANGUAGE:$FILEPATH```."
               - speaker: human
                 text: |-
                   Codebase context from file animal.ts:
@@ -259,14 +253,14 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=1&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 3027
+        bodySize: 3646
         content:
           mimeType: text/event-stream
-          size: 3027
+          size: 3646
           text: >+
             event: completion
 
-            data: {"completion":"Here's the implementation of a cow based on the provided context:\n\n```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
+            data: {"completion":"Here's the implementation of a cow based on the provided `StrangeAnimal` interface:\n\n```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
 
 
             event: done
@@ -276,7 +270,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 08:33:26 GMT
+            value: Fri, 23 Aug 2024 09:43:07 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -305,7 +299,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-23T08:33:25.264Z
+      startedDateTime: 2024-08-23T09:43:06.323Z
       time: 0
       timings:
         blocked: -1

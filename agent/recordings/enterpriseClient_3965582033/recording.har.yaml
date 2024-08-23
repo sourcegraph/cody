@@ -5,11 +5,11 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 8542fbaae71a54ab213b807e595e541b
+    - _id: eccee9d56e699d2809f3c0a43f270585
       _order: 0
       cache: {}
       request:
-        bodySize: 531
+        bodySize: 521
         cookies: []
         headers:
           - name: content-type
@@ -22,7 +22,7 @@ log:
           - name: user-agent
             value: enterpriseClient / v1
           - name: traceparent
-            value: 00-12459a4e44f20cd695967f86b5b964c9-19f04fad6bd63022-01
+            value: 00-81225df30cf02335bb71046d2feaf130-2553eb7af8bd8c36-01
           - name: connection
             value: keep-alive
           - name: host
@@ -37,13 +37,10 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH
-
-                  $CONTENT```.
+                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                  contains fenced code blocks in Markdown, include the relevant
+                  full file path in the code block tag using this structure:
+                  ```$LANGUAGE:$FILEPATH```."
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -70,7 +67,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 08:33:33 GMT
+            value: Fri, 23 Aug 2024 09:43:09 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -99,7 +96,7 @@ log:
         redirectURL: ""
         status: 400
         statusText: Bad Request
-      startedDateTime: 2024-08-23T08:33:33.487Z
+      startedDateTime: 2024-08-23T09:43:08.794Z
       time: 0
       timings:
         blocked: -1

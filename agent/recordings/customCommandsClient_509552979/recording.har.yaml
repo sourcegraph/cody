@@ -415,11 +415,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 8d77bb177f66506e0aa90c1fcdd476fa
+    - _id: ad4b1317824c457ab152b1b64ce6e34f
       _order: 0
       cache: {}
       request:
-        bodySize: 1125
+        bodySize: 1115
         cookies: []
         headers:
           - name: content-type
@@ -432,7 +432,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-cd96b73992b81a1b0e4adea22e987564-e9247cd83f3481bb-01
+            value: 00-172e639152690ef123e5eacd39f02c90-b0d2eebd92921561-01
           - name: connection
             value: keep-alive
           - name: host
@@ -447,13 +447,10 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH
-
-                  $CONTENT```.
+                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                  contains fenced code blocks in Markdown, include the relevant
+                  full file path in the code block tag using this structure:
+                  ```$LANGUAGE:$FILEPATH```."
               - speaker: human
                 text: >
                   Codebase context from file path src/example3.ts: export
@@ -497,14 +494,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 1836
+        bodySize: 1524
         content:
           mimeType: text/event-stream
-          size: 1836
+          size: 1524
           text: >+
             event: completion
 
-            data: {"completion":"Here are the names of the files you have shared with me so far, formatted as a bulleted list:\n\n• example3.ts\n• example2.ts\n• example1.ts","stopReason":"end_turn"}
+            data: {"completion":"Here's a bulleted list of the filenames you've shared with me so far:\n\n• example3.ts\n• example2.ts\n• example1.ts","stopReason":"end_turn"}
 
 
             event: done
@@ -514,7 +511,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 08:33:26 GMT
+            value: Fri, 23 Aug 2024 09:43:07 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -543,7 +540,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-23T08:33:25.662Z
+      startedDateTime: 2024-08-23T09:43:06.441Z
       time: 0
       timings:
         blocked: -1
@@ -553,11 +550,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: f8e94d73ad197b9b437e83c6b7cb7c70
+    - _id: da71c8a0da3f31bb105c9f8a27143ec3
       _order: 0
       cache: {}
       request:
-        bodySize: 493
+        bodySize: 483
         cookies: []
         headers:
           - name: content-type
@@ -570,7 +567,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-9c4396718bcf745af63cfdc3ed2a3f21-e9497164f29d3b68-01
+            value: 00-184a712d0b33eb2f419a12a56e18fa49-a75e39cc6642bd0b-01
           - name: connection
             value: keep-alive
           - name: host
@@ -585,13 +582,10 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH
-
-                  $CONTENT```.
+                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                  contains fenced code blocks in Markdown, include the relevant
+                  full file path in the code block tag using this structure:
+                  ```$LANGUAGE:$FILEPATH```."
               - speaker: human
                 text: Did I share any code with you? If yes, reply single word 'yes'. If none,
                   reply 'no'.
@@ -622,7 +616,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 08:33:28 GMT
+            value: Fri, 23 Aug 2024 09:43:08 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -651,7 +645,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-23T08:33:27.142Z
+      startedDateTime: 2024-08-23T09:43:07.757Z
       time: 0
       timings:
         blocked: -1
@@ -661,11 +655,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 06a04382e77dd5039514026706990e2a
+    - _id: 66f6fc3c9243d46bdae4cda141086218
       _order: 0
       cache: {}
       request:
-        bodySize: 1882
+        bodySize: 1872
         cookies: []
         headers:
           - name: content-type
@@ -678,7 +672,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-ad6b4766ae5a843a95ab1f2dbbad8f00-96a662ff231ec0ac-01
+            value: 00-63164aaa1703d35eb56f258267abf98b-30351214fadd101b-01
           - name: connection
             value: keep-alive
           - name: host
@@ -693,13 +687,10 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH
-
-                  $CONTENT```.
+                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                  contains fenced code blocks in Markdown, include the relevant
+                  full file path in the code block tag using this structure:
+                  ```$LANGUAGE:$FILEPATH```."
               - speaker: human
                 text: >
                   Codebase context from file path src/sum.ts: export function
@@ -797,7 +788,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 08:33:29 GMT
+            value: Fri, 23 Aug 2024 09:43:10 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -826,7 +817,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-23T08:33:28.181Z
+      startedDateTime: 2024-08-23T09:43:08.587Z
       time: 0
       timings:
         blocked: -1
