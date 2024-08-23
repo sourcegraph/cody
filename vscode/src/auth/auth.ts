@@ -17,7 +17,7 @@ export async function showSignInMenu(
     uri?: string
 ): Promise<void> {
     const authStatus = authProvider.instance!.status
-    const mode = authStatus.isLoggedIn ? 'switch' : 'signin'
+    const mode = authStatus.authenticated ? 'switch' : 'signin'
     logDebug('AuthProvider:signinMenu', mode)
     telemetryRecorder.recordEvent('cody.auth.login', 'clicked')
     const item = await showAuthMenu(mode)
@@ -57,7 +57,7 @@ export async function showSignInMenu(
                 endpoint: selectedEndpoint,
                 token: token || null,
             })
-            if (!authStatus?.isLoggedIn) {
+            if (!authStatus?.authenticated) {
                 const newToken = await showAccessTokenInputBox(item.uri)
                 if (!newToken) {
                     return
@@ -213,7 +213,7 @@ async function signinMenuForInstanceUrl(instanceUrl: string): Promise<void> {
     })
     telemetryRecorder.recordEvent('cody.auth.signin.token', 'clicked', {
         metadata: {
-            success: authState.isLoggedIn ? 1 : 0,
+            success: authState.authenticated ? 1 : 0,
         },
     })
     await showAuthResultMessage(instanceUrl, authState)
@@ -246,7 +246,7 @@ async function showAuthResultMessage(
     endpoint: string,
     authStatus: AuthStatus | undefined
 ): Promise<void> {
-    if (authStatus?.isLoggedIn) {
+    if (authStatus?.authenticated) {
         const authority = vscode.Uri.parse(endpoint).authority
         await vscode.window.showInformationMessage(`Signed in to ${authority || endpoint}`)
     } else {
@@ -280,10 +280,10 @@ export async function tokenCallbackHandler(
     const authState = await authProvider.instance!.auth({ endpoint, token, customHeaders })
     telemetryRecorder.recordEvent('cody.auth.fromCallback.web', 'succeeded', {
         metadata: {
-            success: authState?.isLoggedIn ? 1 : 0,
+            success: authState?.authenticated ? 1 : 0,
         },
     })
-    if (authState?.isLoggedIn) {
+    if (authState?.authenticated) {
         await vscode.window.showInformationMessage(`Signed in to ${endpoint}`)
     } else {
         await showAuthFailureMessage(endpoint)

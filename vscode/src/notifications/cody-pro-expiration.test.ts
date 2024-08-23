@@ -72,7 +72,7 @@ describe('Cody Pro expiration notifications', () => {
                 return authStatus
             },
         } as AuthProvider
-        authStatus = { ...defaultAuthStatus, isLoggedIn: true, endpoint: DOTCOM_URL.toString() }
+        authStatus = { ...defaultAuthStatus, authenticated: true, endpoint: DOTCOM_URL.toString() }
         localStorageData = {}
     })
 
@@ -164,8 +164,8 @@ describe('Cody Pro expiration notifications', () => {
         expect(localStorageData[localStorageKey]).toBeTruthy()
     })
 
-    it('does not show if not logged in', async () => {
-        authStatus.isLoggedIn = false
+    it('does not show if not authenticated', async () => {
+        authStatus.authenticated = false
         await createNotifier().triggerExpirationCheck()
         expectNoNotification()
     })
@@ -212,12 +212,12 @@ describe('Cody Pro expiration notifications', () => {
 
     it('shows later if auth status changes', async () => {
         // Not shown initially because not logged in
-        authStatus.isLoggedIn = false
+        authStatus.authenticated = false
         await createNotifier().triggerExpirationCheck()
         expectNoNotification()
 
         // Simulate login status change.
-        authStatus.isLoggedIn = true
+        authStatus.authenticated = true
         authChangeListener()
 
         // Allow time async operations (checking feature flags) to run as part of the check

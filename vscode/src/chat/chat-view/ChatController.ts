@@ -457,11 +457,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                 'succeeded',
                                 {
                                     metadata: {
-                                        success: authStatus?.isLoggedIn ? 1 : 0,
+                                        success: authStatus?.authenticated ? 1 : 0,
                                     },
                                 }
                             )
-                            if (!authStatus?.isLoggedIn) {
+                            if (!authStatus?.authenticated) {
                                 void vscode.window.showErrorMessage(
                                     'Authentication failed. Please check your token and try again.'
                                 )
@@ -508,7 +508,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                 endpoint: DOTCOM_URL.href,
                                 token,
                             })
-                            if (!authStatus?.isLoggedIn) {
+                            if (!authStatus?.authenticated) {
                                 void vscode.window.showErrorMessage(
                                     'Authentication failed. Please check your token and try again.'
                                 )
@@ -523,7 +523,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 const nextAuth = authProvider.instance!.status
                 telemetryRecorder.recordEvent('cody.troubleshoot', 'reloadAuth', {
                     metadata: {
-                        success: nextAuth.isLoggedIn ? 1 : 0,
+                        success: nextAuth.authenticated ? 1 : 0,
                     },
                 })
                 break
@@ -566,7 +566,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         void this.sendConfig()
 
         // Get the latest model list available to the current user to update the ChatModel.
-        if (status.isLoggedIn) {
+        if (status.authenticated) {
             this.chatModel.updateModel(getDefaultModelID())
         }
     }
