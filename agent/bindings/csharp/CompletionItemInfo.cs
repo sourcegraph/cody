@@ -9,7 +9,7 @@ namespace Cody.Core.Agent.Protocol
     [JsonProperty(PropertyName = "lineTruncatedCount")]
     public int LineTruncatedCount { get; set; }
     [JsonProperty(PropertyName = "truncatedWith")]
-    public TruncatedWithEnum TruncatedWith { get; set; } // Oneof: tree-sitter, indentation
+    public string TruncatedWith { get; set; } // Oneof: tree-sitter, indentation
     [JsonProperty(PropertyName = "nodeTypes")]
     public NodeTypesParams NodeTypes { get; set; }
     [JsonProperty(PropertyName = "nodeTypesWithCompletion")]
@@ -22,13 +22,5 @@ namespace Cody.Core.Agent.Protocol
     public string InsertText { get; set; }
     [JsonProperty(PropertyName = "stopReason")]
     public string StopReason { get; set; }
-
-    public enum TruncatedWithEnum
-    {
-      [EnumMember(Value = "tree-sitter")]
-      Tree-sitter,
-      [EnumMember(Value = "indentation")]
-      Indentation,
-    }
   }
 }

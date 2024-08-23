@@ -36,7 +36,7 @@ namespace Cody.Core.Agent.Protocol
   public class CreateFileOperation : WorkspaceEditOperation
   {
     [JsonProperty(PropertyName = "type")]
-    public TypeEnum Type { get; set; } // Oneof: create-file
+    public string Type { get; set; } // Oneof: create-file
     [JsonProperty(PropertyName = "uri")]
     public string Uri { get; set; }
     [JsonProperty(PropertyName = "options")]
@@ -45,18 +45,12 @@ namespace Cody.Core.Agent.Protocol
     public string TextContents { get; set; }
     [JsonProperty(PropertyName = "metadata")]
     public WorkspaceEditEntryMetadata Metadata { get; set; }
-
-    public enum TypeEnum
-    {
-      [EnumMember(Value = "create-file")]
-      Create-file,
-    }
   }
 
   public class RenameFileOperation : WorkspaceEditOperation
   {
     [JsonProperty(PropertyName = "type")]
-    public TypeEnum Type { get; set; } // Oneof: rename-file
+    public string Type { get; set; } // Oneof: rename-file
     [JsonProperty(PropertyName = "oldUri")]
     public string OldUri { get; set; }
     [JsonProperty(PropertyName = "newUri")]
@@ -65,45 +59,27 @@ namespace Cody.Core.Agent.Protocol
     public WriteFileOptions Options { get; set; }
     [JsonProperty(PropertyName = "metadata")]
     public WorkspaceEditEntryMetadata Metadata { get; set; }
-
-    public enum TypeEnum
-    {
-      [EnumMember(Value = "rename-file")]
-      Rename-file,
-    }
   }
 
   public class DeleteFileOperation : WorkspaceEditOperation
   {
     [JsonProperty(PropertyName = "type")]
-    public TypeEnum Type { get; set; } // Oneof: delete-file
+    public string Type { get; set; } // Oneof: delete-file
     [JsonProperty(PropertyName = "uri")]
     public string Uri { get; set; }
     [JsonProperty(PropertyName = "deleteOptions")]
     public DeleteOptionsParams DeleteOptions { get; set; }
     [JsonProperty(PropertyName = "metadata")]
     public WorkspaceEditEntryMetadata Metadata { get; set; }
-
-    public enum TypeEnum
-    {
-      [EnumMember(Value = "delete-file")]
-      Delete-file,
-    }
   }
 
   public class EditFileOperation : WorkspaceEditOperation
   {
     [JsonProperty(PropertyName = "type")]
-    public TypeEnum Type { get; set; } // Oneof: edit-file
+    public string Type { get; set; } // Oneof: edit-file
     [JsonProperty(PropertyName = "uri")]
     public string Uri { get; set; }
     [JsonProperty(PropertyName = "edits")]
     public TextEdit[] Edits { get; set; }
-
-    public enum TypeEnum
-    {
-      [EnumMember(Value = "edit-file")]
-      Edit-file,
-    }
   }
 }
