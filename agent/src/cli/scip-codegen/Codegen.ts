@@ -557,11 +557,11 @@ export class Codegen extends BaseCodegen {
                             )
                             enums.length = 0
                         } else {
-                        p.line(
-                            `public ${memberTypeSyntax} ${this.f.formatFieldName(
-                                member.display_name
-                            )} { get; set; }${oneofSyntax}`
-                        )
+                            p.line(
+                                `public ${memberTypeSyntax} ${this.f.formatFieldName(
+                                    member.display_name
+                                )} { get; set; }${oneofSyntax}`
+                            )
                         }
                         break
                 }
@@ -677,7 +677,7 @@ export class Codegen extends BaseCodegen {
                     if (this.isStringTypeInfo(info)) {
                         const constants = this.stringConstantsFromInfo(info)
                         if (constants.length > 0) {
-                                this.writeEnum(p, name, constants)
+                            this.writeEnum(p, name, constants)
                         } else {
                             p.line(`public class ${name}`)
                             p.line('{')
