@@ -49,6 +49,9 @@ export interface CorpusDiff {
 
 function parseJSONToCorpusDiff(json: string): CorpusDiff {
     const obj = JSON.parse(json)
+    if (!obj.changedFiles) {
+        obj.changedFiles = []
+    }
     if (obj.maybeChangedFiles === undefined && obj.changedFiles === undefined) {
         throw new Error(`malformed CorpusDiff: ${json}`)
     }
@@ -268,13 +271,11 @@ export class SymfRunner implements vscode.Disposable {
     private async statIndex(scopeDir: FileURI): Promise<CorpusDiff | null> {
         const { indexDir } = this.getIndexDir(scopeDir)
         const symfPath = await this.mustSymfPath()
+        const args = ['--index-root', indexDir.fsPath, 'status', scopeDir.fsPath]
+
+        logDebug('SymfRunner', 'statIndex', symfPath, args.join(' '))
         try {
-            const { stdout } = await execFile(symfPath, [
-                '--index-root',
-                indexDir.fsPath,
-                'status',
-                scopeDir.fsPath,
-            ])
+            const { stdout } = await execFile(symfPath, args)
             return parseJSONToCorpusDiff(stdout)
         } catch (error) {
             logDebug('SymfRunner', 'symf status error', error)
