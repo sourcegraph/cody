@@ -632,18 +632,19 @@ export class Codegen extends BaseCodegen {
                 const serializedName = (() => {
                     switch (this.language) {
                         case TargetLanguage.CSharp:
-                            return `[EnumMember(Value = "${member}")]`
+                            return ''
                         case TargetLanguage.Kotlin:
                             return `@SerializedName("${member}")`
-                        default:
+                        case TargetLanguage.Java:
                             return `@com.google.gson.annotations.SerializedName("${member}")`
+                        default:
+                            return ''
                     }
                 })()
                 const enumName = this.f.formatFieldName(capitalize(member))
                 switch (this.language) {
                     case TargetLanguage.CSharp:
-                        p.line(`${serializedName}`)
-                        p.line(`${enumName},`)
+                        p.line(`${enumName}, // ${member}`)
                         break
                     default:
                         p.line(`${serializedName} ${enumName},`)
