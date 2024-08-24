@@ -2,6 +2,11 @@
 
 This is a log of all notable changes to Cody for VS Code. [Unreleased] changes are included in the nightly pre-release builds.
 
+## 1.32.2
+
+### Fixed
+- Fixed an issue where chats could hang if there have been no changes since the last local indexing. [pull/5319](https://github.com/sourcegraph/cody/pull/5319)
+
 ## 1.32.1
 
 ### Fixed 
