@@ -244,7 +244,7 @@ export class Codegen extends BaseCodegen {
         union: DiscriminatedUnion
     ): Promise<void> {
         if (this.language === TargetLanguage.CSharp) {
-            p.addImport('using System.Text.Json.Serialization;')
+            p.addImport('using Newtonsoft.Json;')
         } else {
             p.line('import com.google.gson.Gson;')
             p.line('import com.google.gson.JsonDeserializationContext;')
@@ -584,7 +584,7 @@ export class Codegen extends BaseCodegen {
             if (this.language === TargetLanguage.Kotlin) {
                 p.addImport('import com.google.gson.annotations.SerializedName;')
             } else if (this.language === TargetLanguage.CSharp) {
-                p.addImport('using System.Text.Json.Serialization;')
+                p.addImport('using Newtonsoft.Json;')
             }
 
             for (const { name, members } of enums) {
@@ -660,7 +660,7 @@ export class Codegen extends BaseCodegen {
         const alias = this.aliasType(info)
 
         if (this.language === TargetLanguage.CSharp) {
-            p.addImport('using System.Text.Json.Serialization;')
+            p.addImport('using Newtonsoft.Json;')
             p.line()
             p.line(`namespace ${this.options.kotlinPackage}`)
             p.line('{')
