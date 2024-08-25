@@ -1,40 +1,51 @@
-import { CodyIDE, logDebug } from '@sourcegraph/cody-shared'
-import express from 'express'
+import type { IncomingMessage, Server, ServerResponse } from 'node:http'
+import http from 'node:http'
+import { type CodyIDE, getCodyAuthReferralCode, logDebug } from '@sourcegraph/cody-shared'
 import open from 'open'
 import { URI } from 'vscode-uri'
+
+type CallbackHandler = (url: URI, token?: string) => void
 
 export class AgentAuthHandler {
     private readonly port = 43452
     private readonly IDE: CodyIDE
     private endpointUri: URI | null = null
-    private tokenCallbackHandler: ((url: URI) => void) | null = null
-    private server: express.Application | null = null
+    private tokenCallbackHandlers: CallbackHandler[] = []
+    private server: Server | null = null
 
     constructor(agentClientName: string) {
         this.IDE = agentClientName as CodyIDE
     }
 
-    public setTokenCallbackHandler(handler: (url: URI) => void): void {
-        this.tokenCallbackHandler = handler
+    public setTokenCallbackHandler(handler: CallbackHandler): void {
+        this.tokenCallbackHandlers.push(handler)
     }
 
     private startServer(callbackUri: string): void {
-        if (!this.tokenCallbackHandler) {
+        if (!this.tokenCallbackHandlers?.length) {
             logDebug('AgentAuthHandler', 'Token callback handler is not set.')
             return
         }
 
-        this.server = express()
+        this.server = http.createServer((req: IncomingMessage, res: ServerResponse) => {
+            if (req.url?.startsWith('/api/sourcegraph/token')) {
+                const url = new URL(req.url, `http://localhost:${this.port}`)
+                const token = url.searchParams.get('token')
 
-        // http://localhost:$PORT/api/sourcegraph/token?token=$TOKEN
-        this.server.get('/api/sourcegraph/token', (req, res) => {
-            const { token } = req.query
-            if (typeof token === 'string') {
-                this.tokenCallbackHandler?.(URI.parse(req.originalUrl))
-                res.send('Token received. You can now close this window.')
-                this.closeServer()
+                if (token) {
+                    for (const handler of this.tokenCallbackHandlers) {
+                        handler(URI.parse(req.url), token)
+                    }
+                    res.writeHead(200, { 'Content-Type': 'text/plain' })
+                    res.end('Token received. You can now close this window.')
+                    this.closeServer()
+                } else {
+                    res.writeHead(400, { 'Content-Type': 'text/plain' })
+                    res.end('Token not found.')
+                }
             } else {
-                res.status(400).send('Token not found.')
+                res.writeHead(404, { 'Content-Type': 'text/plain' })
+                res.end('Not found')
             }
         })
 
@@ -51,9 +62,15 @@ export class AgentAuthHandler {
     }
 
     private closeServer(): void {
-        logDebug('AgentAuthHandler', 'Auth server closed')
+        if (this.server) {
+            logDebug('AgentAuthHandler', 'Auth server closed')
+            this.server.close()
+        }
         this.endpointUri = null
-        process.exit(0)
+    }
+
+    public handleCallback(url: URI): void {
+        this.startServer(url.toString())
     }
 
     public redirectToEndpointLoginPage(endpoint: string): void {
@@ -64,44 +81,13 @@ export class AgentAuthHandler {
         }
         this.endpointUri = endpointUri
         const callbackUri = new URL('/user/settings/tokens/new/callback', this.endpointUri.toString())
-        callbackUri.searchParams.append(
-            'requestFrom',
-            `${getCodyAuthReferralCode(this.IDE)}-${this.port}`
-        )
+        callbackUri.searchParams.append('requestFrom', `${referralCode}-${this.port}`)
         this.startServer(callbackUri.toString())
     }
 
     public dispose(): void {
         this.closeServer()
     }
-}
-
-/**
- * Returns a known referral code to use based on the current VS Code environment.
- */
-export function getCodyAuthReferralCode(ideName: CodyIDE, uriScheme?: string): string | undefined {
-    const referralCodes: Record<CodyIDE, string> = {
-        [CodyIDE.JetBrains]: 'CODY_JETBRAINS',
-        [CodyIDE.Neovim]: 'CODY_NEOVIM',
-        [CodyIDE.Emacs]: 'CODY_EMACS',
-        [CodyIDE.VisualStudio]: 'VISUAL_STUDIO',
-        [CodyIDE.Eclipse]: 'ECLIPSE',
-        [CodyIDE.VSCode]: 'CODY',
-        [CodyIDE.Web]: 'CODY',
-    }
-
-    if (ideName === CodyIDE.VSCode) {
-        switch (uriScheme) {
-            case 'vscode-insiders':
-                return 'CODY_INSIDERS'
-            case 'vscodium':
-                return 'CODY_VSCODIUM'
-            case 'cursor':
-                return 'CODY_CURSOR'
-        }
-    }
-
-    return referralCodes[ideName] || undefined
 }
 
 export function formatURL(uri: string): URI | null {

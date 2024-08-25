@@ -11,9 +11,7 @@ import signInLogoGoogle from './sign-in-logo-google.svg'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './OnboardingExperiment.module.css'
-import { ClientSignInForm } from './components/ClientSignInForm'
 import { useTelemetryRecorder } from './utils/telemetry'
-import { useConfig } from './utils/useConfig'
 
 interface LoginProps {
     simplifiedLoginRedirect: (method: AuthMethod) => void
@@ -71,7 +69,6 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
     vscodeAPI,
     codyIDE,
 }) => {
-    const authStatus = useConfig().authStatus
     const telemetryRecorder = useTelemetryRecorder()
     const otherSignInClick = (): void => {
         vscodeAPI.postMessage({ command: 'auth', authKind: 'signin' })
@@ -86,7 +83,7 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                     <h1>Cody Free or Cody Pro</h1>
                     <div className={styles.buttonWidthSizer}>
                         <div className={styles.buttonStack}>
-                            {isCodyWebUI || isNonVSCodeIDE ? (
+                            {isCodyWebUI ? (
                                 <WebLogin
                                     telemetryRecorder={telemetryRecorder}
                                     vscodeAPI={vscodeAPI}
@@ -141,28 +138,24 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                         </div>
                     </div>
                 </div>
-                {isCodyWebUI || codyIDE === CodyIDE.VSCode ? (
-                    <div className={styles.section}>
-                        <h1>Cody Enterprise</h1>
-                        <div className={styles.buttonWidthSizer}>
-                            <div className={styles.buttonStack}>
-                                <VSCodeButton
-                                    className={styles.button}
-                                    type="button"
-                                    onClick={otherSignInClick}
-                                >
-                                    Sign In to Your Enterprise&nbsp;Instance
-                                </VSCodeButton>
-                            </div>
+                <div className={styles.section}>
+                    <h1>Cody Enterprise</h1>
+                    <div className={styles.buttonWidthSizer}>
+                        <div className={styles.buttonStack}>
+                            <VSCodeButton
+                                className={styles.button}
+                                type="button"
+                                onClick={otherSignInClick}
+                            >
+                                Sign In to Your Enterprise&nbsp;Instance
+                            </VSCodeButton>
                         </div>
-                        <p>
-                            Learn more about{' '}
-                            <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a>
-                        </p>
                     </div>
-                ) : (
-                    <ClientSignInForm authStatus={authStatus} />
-                )}
+                    <p>
+                        Learn more about{' '}
+                        <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a>
+                    </p>
+                </div>
             </div>
             <div className={styles.terms}>
                 By signing in to Cody you agree to our{' '}

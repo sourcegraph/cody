@@ -403,7 +403,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         closeAuthProgressIndicator()
 
         const params = new URLSearchParams(uri.query)
-        const token = params.get('code')
+        const token = params.get('code') || params.get('token')
         const endpoint = this.status.endpoint
         if (!token || !endpoint) {
             return

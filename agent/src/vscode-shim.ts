@@ -1,6 +1,5 @@
 import { execSync } from 'node:child_process'
 import path from 'node:path'
-
 import { extensionForLanguage, logDebug, logError, setClientNameVersion } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
@@ -1047,6 +1046,12 @@ const _env: Partial<typeof vscode.env> = {
         writeText: () => Promise.resolve(),
     },
     openExternal: (uri: vscode.Uri): Thenable<boolean> => {
+        // Handle the case where the user is trying to authenticate with redirect URI.
+        if (uri.toString()?.includes('user/settings/tokens/new/callback?requestFrom')) {
+            agent?.authenticationHandler?.handleCallback(uri)
+            return Promise.resolve(true)
+        }
+
         try {
             open(uri.toString())
             return Promise.resolve(true)

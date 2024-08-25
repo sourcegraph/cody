@@ -1,19 +1,19 @@
-import express from 'express'
+import http from 'node:http'
 import open from 'open'
 import { describe, expect, it, vi } from 'vitest'
 import { AgentAuthHandler } from './AgentAuthHandler'
 
 vi.mock('open')
-vi.mock('express', () => {
-    const mockExpress = vi.fn().mockReturnValue({
-        get: vi.fn(),
-        listen: vi.fn().mockImplementation((port, callback) => {
-            callback()
+vi.mock('node:http', () => ({
+    default: {
+        createServer: vi.fn().mockReturnValue({
+            listen: vi.fn().mockImplementation((port, callback) => {
+                callback()
+            }),
+            on: vi.fn(),
         }),
-        on: vi.fn(),
-    })
-    return { default: mockExpress }
-})
+    },
+}))
 
 describe('AgentAuthHandler', () => {
     describe('redirectToEndpointLoginPage', () => {
@@ -50,7 +50,7 @@ describe('AgentAuthHandler', () => {
                 )
             } else {
                 agentAuthHandler.redirectToEndpointLoginPage(endpointUri)
-                expect(express).toHaveBeenCalled()
+                expect(http.createServer).toHaveBeenCalled()
                 expect(open).toHaveBeenCalledWith(expectedUrl)
             }
         })
