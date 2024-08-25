@@ -224,6 +224,7 @@ export class EditManager implements vscode.Disposable {
             editor.active.revealRange(proposedRange)
         }
 
+        
         // Open the existing test file in VSCode
         if(task.destinationFile) {
             await vscode.window.showTextDocument(vscode.Uri.parse(task.destinationFile.toString()))
