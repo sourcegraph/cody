@@ -4,12 +4,12 @@ import { expect } from 'vitest'
 
 import {
     type AuthStatus,
+    type ClientConfiguration,
+    type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
     type CompletionParameters,
     type CompletionResponse,
     CompletionStopReason,
-    type Configuration,
-    type ConfigurationWithAccessToken,
     defaultAuthStatus,
     testFileUri,
 } from '@sourcegraph/cody-shared'
@@ -55,8 +55,8 @@ const URI_FIXTURE = testFileUri('test.ts')
 
 const dummyAuthStatus: AuthStatus = defaultAuthStatus
 const getVSCodeConfigurationWithAccessToken = (
-    config: Partial<Configuration> = {}
-): ConfigurationWithAccessToken => ({
+    config: Partial<ClientConfiguration> = {}
+): ClientConfigurationWithAccessToken => ({
     ...DEFAULT_VSCODE_SETTINGS,
     ...config,
     serverEndpoint: 'https://example.com',
@@ -71,7 +71,7 @@ type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'd
         params: CompletionParameters
     ) => Generator<CompletionResponse> | AsyncGenerator<CompletionResponse>
     providerOptions?: Partial<ProviderOptions>
-    configuration?: Partial<Configuration>
+    configuration?: Partial<ClientConfiguration>
 }
 
 export interface ParamsResult extends InlineCompletionsParams {
@@ -81,7 +81,7 @@ export interface ParamsResult extends InlineCompletionsParams {
      * request manager in autocomplete tests.
      */
     completionResponseGeneratorPromise: Promise<unknown>
-    configuration?: Partial<Configuration>
+    configuration?: Partial<ClientConfiguration>
 }
 
 /**
@@ -369,7 +369,7 @@ export async function getInlineCompletionsFullResponse(
 
     const result = await _getInlineCompletions(params)
     if (!result) {
-        completionProviderConfig.setConfig({} as Configuration)
+        completionProviderConfig.setConfig({} as ClientConfiguration)
     }
 
     return result
@@ -403,8 +403,8 @@ export async function getInlineCompletionsInsertText(params: ParamsResult): Prom
 
 export type V = Awaited<ReturnType<typeof getInlineCompletions>>
 
-export function initCompletionProviderConfig(config: Partial<Configuration>) {
-    return completionProviderConfig.init(config as Configuration, emptyMockFeatureFlagProvider)
+export function initCompletionProviderConfig(config: Partial<ClientConfiguration>) {
+    return completionProviderConfig.init(config as ClientConfiguration, emptyMockFeatureFlagProvider)
 }
 
 expect.extend({

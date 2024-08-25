@@ -1,8 +1,8 @@
 import {
     type AuthStatusProvider,
+    type ClientConfiguration,
+    type ClientConfigurationWithAccessToken,
     CodyIDE,
-    type Configuration,
-    type ConfigurationWithAccessToken,
     type ExtensionDetails,
     type LogEventMode,
     MockServerTelemetryRecorderProvider,
@@ -24,7 +24,7 @@ const { platform, arch } = getOSArch()
 
 export const getExtensionDetails = (
     config: Pick<
-        Configuration,
+        ClientConfiguration,
         'agentIDE' | 'agentIDEVersion' | 'agentExtensionVersion' | 'telemetryClientName'
     >
 ): ExtensionDetails => ({
@@ -56,7 +56,7 @@ const debugLogLabel = 'telemetry-v2'
  * https://sourcegraph.com/docs/dev/background-information/telemetry
  */
 export async function createOrUpdateTelemetryRecorderProvider(
-    config: ConfigurationWithAccessToken,
+    config: ClientConfigurationWithAccessToken,
     /**
      * Hardcode isExtensionModeDevOrTest to false to test real exports - when
      * true, exports are logged to extension output instead.

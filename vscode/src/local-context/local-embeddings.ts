@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import {
-    type ConfigurationWithAccessToken,
+    type ClientConfigurationWithAccessToken,
     type ContextGroup,
     type ContextStatusProvider,
     type EmbeddingsModelConfig,
@@ -42,7 +42,7 @@ export async function createLocalEmbeddingsController(
 }
 
 export type LocalEmbeddingsConfig = Pick<
-    ConfigurationWithAccessToken,
+    ClientConfigurationWithAccessToken,
     'serverEndpoint' | 'accessToken'
 > & {
     testingModelConfig: EmbeddingsModelConfig | undefined
