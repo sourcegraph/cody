@@ -7,6 +7,7 @@ import { jsonrpcCommand } from './command-jsonrpc-stdio'
 import { serverCommand } from './command-jsonrpc-websocket'
 
 import { version } from '../../package.json'
+import { contextCommand } from './command-context/command-context'
 
 export const rootCommand = new Command()
     .name('cody')
@@ -17,4 +18,4 @@ export const rootCommand = new Command()
     .addCommand(authCommand())
     .addCommand(chatCommand())
     .addCommand(new Command('api').addCommand(serverCommand).addCommand(jsonrpcCommand))
-    .addCommand(new Command('internal').addCommand(benchCommand))
+    .addCommand(new Command('internal').addCommand(benchCommand).addCommand(contextCommand))
