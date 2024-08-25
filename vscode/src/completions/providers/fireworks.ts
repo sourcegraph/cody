@@ -2,11 +2,11 @@ import {
     type AuthStatus,
     type AutocompleteContextSnippet,
     type AutocompleteTimeouts,
+    type ClientConfiguration,
+    type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
-    type Configuration,
-    type ConfigurationWithAccessToken,
     dotcomTokenToGatewayToken,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
@@ -39,7 +39,7 @@ export interface FireworksOptions {
     anonymousUserID?: string
     timeouts: AutocompleteTimeouts
     config: Pick<
-        ConfigurationWithAccessToken,
+        ClientConfigurationWithAccessToken,
         'accessToken' | 'autocompleteExperimentalFireworksOptions'
     >
     authStatus: Pick<
@@ -137,7 +137,7 @@ class FireworksProvider extends Provider {
         'userCanUpgrade' | 'isDotCom' | 'endpoint' | 'isFireworksTracingEnabled'
     >
     private isLocalInstance: boolean
-    private fireworksConfig?: Configuration['autocompleteExperimentalFireworksOptions']
+    private fireworksConfig?: ClientConfiguration['autocompleteExperimentalFireworksOptions']
     private modelHelper: DefaultModel
     private anonymousUserID: string | undefined
 

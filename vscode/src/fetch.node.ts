@@ -2,7 +2,7 @@ import http from 'node:http'
 import https from 'node:https'
 import { parse as parseUrl } from 'node:url'
 import { agent } from '@sourcegraph/cody-shared'
-import type { Configuration } from '@sourcegraph/cody-shared'
+import type { ClientConfiguration } from '@sourcegraph/cody-shared'
 import { HttpProxyAgent } from 'http-proxy-agent'
 import { HttpsProxyAgent } from 'https-proxy-agent'
 import { SocksProxyAgent } from 'socks-proxy-agent'
@@ -26,7 +26,9 @@ let socksProxyAgent: SocksProxyAgent
 let httpProxyAgent: HttpProxyAgent<string>
 let httpsProxyAgent: HttpsProxyAgent<string>
 
-function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
+function getCustomAgent({
+    proxy,
+}: ClientConfiguration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
     return ({ protocol }) => {
         const proxyURL = proxy || getSystemProxyURI(protocol, process.env)
         if (!proxyURL) {
@@ -73,7 +75,7 @@ function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'pro
 }
 
 export function setCustomAgent(
-    configuration: Configuration
+    configuration: ClientConfiguration
 ): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
     agent.current = getCustomAgent(configuration)
     return agent.current as ({ protocol }: Pick<URL, 'protocol'>) => http.Agent

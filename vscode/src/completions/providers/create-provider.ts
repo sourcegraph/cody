@@ -1,7 +1,7 @@
 import {
     type AuthStatus,
+    type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
-    type ConfigurationWithAccessToken,
     FeatureFlag,
     type Model,
     ModelUsage,
@@ -38,7 +38,7 @@ interface CreateConfigHelperParams {
     authStatus: AuthStatus
     modelId: string | undefined
     provider: string
-    config: ConfigurationWithAccessToken
+    config: ClientConfigurationWithAccessToken
     model?: Model
 }
 
@@ -311,7 +311,7 @@ function parseProviderAndModel({
 }
 
 export async function createProviderConfig(
-    config: ConfigurationWithAccessToken,
+    config: ClientConfigurationWithAccessToken,
     client: CodeCompletionsClient,
     authStatus: AuthStatus
 ): Promise<ProviderConfig | null> {
