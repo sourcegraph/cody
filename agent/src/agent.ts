@@ -54,7 +54,6 @@ import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldi
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
-import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import { AgentAuthHandler } from './AgentAuthHandler'
 import { AgentFixupControls } from './AgentFixupControls'
 import { AgentProviders } from './AgentProviders'
@@ -64,6 +63,7 @@ import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebvi
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
 import { codyPaths } from './codyPaths'
 import { AgentGlobalState } from './global-state/AgentGlobalState'
+import { AgentSecretStorage } from './global-state/AgentSecretStorage'
 import {
     MessageHandler,
     type RequestCallback,
@@ -87,8 +87,6 @@ import type {
 } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
 import { vscodeLocation, vscodeRange } from './vscode-type-converters'
-
-const inMemorySecretStorageMap = new Map<string, string>()
 
 /** The VS Code extension's `activate` function. */
 type ExtensionActivate = (
@@ -156,19 +154,7 @@ export async function initializeVscodeExtension(
         globalState,
         logUri: vscode.Uri.file(paths.log),
         logPath: paths.log,
-        secrets: {
-            onDidChange: emptyEvent(),
-            get(key) {
-                return Promise.resolve(inMemorySecretStorageMap.get(key))
-            },
-            store(key, value) {
-                inMemorySecretStorageMap.set(key, value)
-                return Promise.resolve()
-            },
-            delete() {
-                return Promise.resolve()
-            },
-        },
+        secrets: new AgentSecretStorage(extensionClient.capabilities?.authentication),
         storageUri: vscode.Uri.file(paths.data),
         subscriptions: [],
 
@@ -438,11 +424,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.globalState
                 )
 
-                this.authenticationPromise = clientInfo.extensionConfiguration
+                this.authenticationPromise = clientInfo.extensionConfiguration?.accessToken
                     ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
                           forceAuthentication: true,
                       })
                     : this.authStatus()
+
                 const authStatus = await this.authenticationPromise
 
                 const webviewKind = clientInfo.capabilities?.webview || 'agentic'
