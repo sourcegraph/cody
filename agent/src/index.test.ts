@@ -9,8 +9,8 @@ import {
     ContextItemSource,
     DOTCOM_URL,
     ModelUsage,
-    isWindows,
     type SerializedChatTranscript,
+    isWindows,
 } from '@sourcegraph/cody-shared'
 
 import * as uuid from 'uuid'
@@ -23,8 +23,8 @@ import { TestClient, asTranscriptMessage } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 import { decodeURIs } from './decodeURIs'
 import { explainPollyError } from './explainPollyError'
+import type { ChatExportResult } from './protocol-alias'
 import { trimEndOfLine } from './trimEndOfLine'
-import { ChatExportResult } from './protocol-alias'
 const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
 
 const mayRecord =
@@ -481,7 +481,7 @@ describe('Agent', () => {
                     {
                         humanMessage: {
                             speaker: 'human',
-                        text: 'My name is Lars Monsen.',
+                            text: 'My name is Lars Monsen.',
                         },
                         assistantMessage: {
                             speaker: 'assistant',
@@ -519,12 +519,15 @@ describe('Agent', () => {
                 },
                 someOtherUser: {
                     [transcript3.id]: transcript3,
-                }
+                },
             }
 
-            await client.request('chat/import', {history, merge: true})
+            await client.request('chat/import', { history, merge: true })
             const exported = await client.request('chat/export', null)
-            const expected: ChatExportResult[] = [toChatExportResult(transcript1), toChatExportResult(transcript2)]
+            const expected: ChatExportResult[] = [
+                toChatExportResult(transcript1),
+                toChatExportResult(transcript2),
+            ]
 
             expect(exported).toEqual(expected)
         })
