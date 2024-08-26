@@ -47,15 +47,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 05 Aug 2024 10:11:46 GMT
+            value: Mon, 26 Aug 2024 07:30:22 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "403"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -75,12 +73,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1449
+        headersSize: 1342
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-05T10:11:45.841Z
+      startedDateTime: 2024-08-26T07:30:22.152Z
       time: 0
       timings:
         blocked: -1
@@ -90,7 +88,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 37dce854386a858ed2c3697d18a6de44
+    - _id: 796f873f7ef51ab98298eeb1df3821ee
       _order: 0
       cache: {}
       request:
@@ -107,7 +105,7 @@ log:
           - name: user-agent
             value: JetBrains / 6.0-localbuild
           - name: traceparent
-            value: 00-0ec7441b05369c730163041565b0a6c3-ec2f5176d73290f6-01
+            value: 00-41896a63966beae4308e5dce22206b09-46ab82fcca3ea645-01
           - name: connection
             value: keep-alive
           - name: host
@@ -150,7 +148,6 @@ log:
                   /src/testProjects/documentCode/src/main/java/Foo.java:
 
 
-
                   public class Foo {
 
                       public void foo() {
@@ -176,7 +173,9 @@ log:
 
                   The user has the following code in their selection:
 
-                  <SELECTEDCODE7662>import java.util.*;</SELECTEDCODE7662>
+                  <SELECTEDCODE7662>import java.util.*;
+
+                  </SELECTEDCODE7662>
 
 
                   The user wants you to generate documentation for the selected code by following their instructions.
@@ -206,14 +205,14 @@ log:
             value: 6.0-localbuild
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=jetbrains&client-version=6.0-localbuild
       response:
-        bodySize: 1837
+        bodySize: 1443
         content:
           mimeType: text/event-stream
-          size: 1837
+          size: 1443
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Imports the necessary Java utility classes, including {@link java.util.List} and {@link java.util.ArrayList}.\n */","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Imports the Java Collections Framework, providing classes such as List and ArrayList.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -223,15 +222,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 05 Aug 2024 10:11:48 GMT
+            value: Mon, 26 Aug 2024 07:30:25 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "401"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -249,12 +246,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-05T10:11:47.322Z
+      startedDateTime: 2024-08-26T07:30:23.633Z
       time: 0
       timings:
         blocked: -1
@@ -314,30 +311,23 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?ContextFilters
       response:
-        bodySize: 104
+        bodySize: 107
         content:
           encoding: base64
           mimeType: application/json
-          size: 104
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLEciWrv\
-            NKcnNra2loAAAAA//8DADYuyGU1AAAA\"]"
-          textDecoded:
-            data:
-              site:
-                codyContextFilters:
-                  raw: null
+          size: 107
+          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLE\
+            ciWrvNKcnNra2loAAAAA//8DADYuyGU1AAAA\"]"
         cookies: []
         headers:
           - name: date
-            value: Mon, 05 Aug 2024 10:11:46 GMT
+            value: Mon, 26 Aug 2024 07:30:22 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "403"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -357,12 +347,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1440
+        headersSize: 1333
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-05T10:11:46.212Z
+      startedDateTime: 2024-08-26T07:30:22.560Z
       time: 0
       timings:
         blocked: -1
@@ -449,15 +439,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 05 Aug 2024 10:11:45 GMT
+            value: Mon, 26 Aug 2024 07:30:21 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "404"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -477,12 +465,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1440
+        headersSize: 1333
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-05T10:11:44.993Z
+      startedDateTime: 2024-08-26T07:30:21.398Z
       time: 0
       timings:
         blocked: -1
@@ -557,15 +545,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 05 Aug 2024 10:11:45 GMT
+            value: Mon, 26 Aug 2024 07:30:21 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "404"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -585,12 +571,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1440
+        headersSize: 1333
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-05T10:11:45.025Z
+      startedDateTime: 2024-08-26T07:30:21.435Z
       time: 0
       timings:
         blocked: -1
@@ -650,30 +636,24 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmProvider
       response:
-        bodySize: 124
+        bodySize: 134
         content:
           encoding: base64
           mimeType: application/json
-          size: 124
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
-            syU1CIlK6W0zKLU8vyi7GKl2traWgAAAAD//wMAf38NDUMAAAA=\"]"
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  provider: fireworks
+          size: 134
+          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDx\
+            gqL8ssyU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//\",\"AwAfFAXARQAAAA==\"\
+            ]"
         cookies: []
         headers:
           - name: date
-            value: Mon, 05 Aug 2024 10:11:45 GMT
+            value: Mon, 26 Aug 2024 07:30:21 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "404"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -693,12 +673,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1440
+        headersSize: 1333
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-05T10:11:45.009Z
+      startedDateTime: 2024-08-26T07:30:21.417Z
       time: 0
       timings:
         blocked: -1
@@ -795,15 +775,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 05 Aug 2024 10:11:45 GMT
+            value: Mon, 26 Aug 2024 07:30:21 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "404"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -823,12 +801,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1440
+        headersSize: 1333
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-05T10:11:45.041Z
+      startedDateTime: 2024-08-26T07:30:21.454Z
       time: 0
       timings:
         blocked: -1
@@ -897,31 +875,29 @@ log:
           encoding: base64
           mimeType: application/json
           size: 228
-          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5c4U2FpRsRToIgqWtDm6xyRCoSbi5GUrJu4uCoI7n5\
+          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5c4U2dtBsRToIgqWtDm6xyRCoSbi5GUrJu4uCoI7n5\
             +Os0IoV5IopERnHl2joPb1ehnSPE9nA1rtXi6w4RUg0h/F4bVEgzMpBouvPKKBCmJeO\
             fK/YnOzDcoRkSqb4fHeGrNcDK+KGISFKUW/K3aaqRyFkVcmtuOFPt05/2f2vzTnnJwA\
-            AAP//AwB81vXLwgAAAA==\"]"
+            AAP//AwBSGHacwgAAAA==\"]"
           textDecoded:
             data:
               currentUser:
                 codySubscription:
                   applyProRateLimits: true
-                  currentPeriodEndAt: 2024-08-14T22:11:32Z
-                  currentPeriodStartAt: 2024-07-14T22:11:32Z
+                  currentPeriodEndAt: 2024-09-14T22:11:32Z
+                  currentPeriodStartAt: 2024-08-14T22:11:32Z
                   plan: PRO
                   status: ACTIVE
         cookies: []
         headers:
           - name: date
-            value: Mon, 05 Aug 2024 10:11:45 GMT
+            value: Mon, 26 Aug 2024 07:30:21 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "403"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -941,12 +917,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1440
+        headersSize: 1333
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-05T10:11:45.289Z
+      startedDateTime: 2024-08-26T07:30:21.675Z
       time: 0
       timings:
         blocked: -1
@@ -1009,21 +985,19 @@ log:
           encoding: base64
           mimeType: application/json
           size: 139
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkYWphamxvFGB\
-            kYmugYWugam8aZ6prqpxsZGhkYmZpYWlqlKtbW1AAAAAP//\",\"AwDZmR/0SQAAAA==\
+          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkYWFmYG\
+            5vFGBkYmugYWukZG8aZ6ZrrGxmlJlhbJpgYmFilKtbW1AAAAAP//AwCvLlq5SQAAAA==\
             \"]"
         cookies: []
         headers:
           - name: date
-            value: Mon, 05 Aug 2024 10:11:45 GMT
+            value: Mon, 26 Aug 2024 07:30:21 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "404"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1043,12 +1017,12 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1440
+        headersSize: 1333
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-05T10:11:44.958Z
+      startedDateTime: 2024-08-26T07:30:21.359Z
       time: 0
       timings:
         blocked: -1
