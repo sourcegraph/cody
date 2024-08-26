@@ -23,7 +23,6 @@ val isForceAgentBuild =
     isForceBuild ||
         properties("forceCodyBuild") == "true" ||
         properties("forceAgentBuild") == "true"
-val isForceProtocolCopy = isForceAgentBuild || properties("forceProtocolCopy") == "true"
 val isForceCodeSearchBuild = isForceBuild || properties("forceCodeSearchBuild") == "true"
 
 // As https://www.jetbrains.com/updates/updates.xml adds a new "IntelliJ IDEA" YYYY.N version, add
@@ -319,9 +318,6 @@ tasks {
   }
 
   val buildCodyDir = layout.buildDirectory.asFile.get().resolve("sourcegraph").resolve("agent")
-  val protocolGeneratedDir =
-      layout.projectDirectory.asFile.resolve(
-          "src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated")
 
   fun buildCody(): File {
     if (!isForceAgentBuild && (buildCodyDir.listFiles()?.size ?: 0) > 0) {
@@ -353,12 +349,6 @@ tasks {
   }
 
   fun copyProtocol() {
-    // This is just a temporary solution to make it easier to use certain generated protocol
-    // messages.
-    // Ultimately this should entirely be replaced by use of the generated protocol.
-    if (!isForceProtocolCopy && (protocolGeneratedDir.listFiles()?.size ?: 0) > 0) {
-      return
-    }
     val codyDir = downloadCody()
     val sourceDir =
         codyDir.resolve(
