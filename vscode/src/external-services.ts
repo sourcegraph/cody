@@ -2,8 +2,8 @@ import type * as vscode from 'vscode'
 
 import {
     ChatClient,
+    type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
-    type ConfigurationWithAccessToken,
     type Guardrails,
     type GuardrailsClientConfig,
     type SourcegraphCompletionsClient,
@@ -36,7 +36,7 @@ interface ExternalServices {
 }
 
 type ExternalServicesConfiguration = Pick<
-    ConfigurationWithAccessToken,
+    ClientConfigurationWithAccessToken,
     | 'serverEndpoint'
     | 'codebase'
     | 'useContext'

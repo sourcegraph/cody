@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { type Configuration, OLLAMA_DEFAULT_URL, ps } from '@sourcegraph/cody-shared'
+import { type ClientConfiguration, OLLAMA_DEFAULT_URL, ps } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from './configuration'
 import { DEFAULT_VSCODE_SETTINGS } from './testutils/mocks'
@@ -160,6 +160,6 @@ describe('getConfiguration', () => {
             autocompleteExperimentalHotStreakAndSmartThrottle: false,
             testingModelConfig: undefined,
             experimentalGuardrailsTimeoutSeconds: undefined,
-        } satisfies Configuration)
+        } satisfies ClientConfiguration)
     })
 })

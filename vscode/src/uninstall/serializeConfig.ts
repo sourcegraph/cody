@@ -3,7 +3,7 @@ import * as os from 'node:os'
 import * as path from 'node:path'
 import type {
     AuthStatus,
-    ConfigurationWithAccessToken,
+    ClientConfigurationWithAccessToken,
     ExtensionDetails,
 } from '@sourcegraph/cody-shared'
 
@@ -44,7 +44,7 @@ function writeSnapshot(directory: string, filename: string, content: any) {
 }
 
 interface UninstallerConfig {
-    config?: ConfigurationWithAccessToken
+    config?: ClientConfigurationWithAccessToken
     authStatus?: AuthStatus
     extensionDetails: ExtensionDetails
     anonymousUserID: string

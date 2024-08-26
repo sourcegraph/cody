@@ -4,7 +4,8 @@ export interface Repository {
 }
 
 export type InitialContext = {
-    repositories: Repository[]
-    fileURL?: string
-    fileRange?: { startLine: number; endLine: number }
+    repository: Repository
+    isDirectory: boolean
+    fileURL: string | null
+    fileRange: { startLine: number; endLine: number } | null
 }

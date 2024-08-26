@@ -149,7 +149,8 @@ describe('Edit', () => {
                   default:
                       return a - b
               }
-          }"
+          }
+          "
         `,
             explainPollyError
         )

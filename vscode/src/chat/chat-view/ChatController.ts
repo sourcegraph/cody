@@ -303,6 +303,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             case 'initialized':
                 await this.handleInitialized()
+                this.setWebviewView(View.Chat)
                 break
             case 'submit': {
                 await this.handleUserMessageSubmission(
@@ -587,21 +588,20 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // #region top-level view action handlers
     // =======================================================================
 
-    public setAuthStatus(_: AuthStatus): void {
+    public setAuthStatus(status: AuthStatus): void {
         // Run this async because this method may be called during initialization
         // and awaiting on this.postMessage may result in a deadlock
         void this.sendConfig()
 
         // Get the latest model list available to the current user to update the ChatModel.
-        this.handleSetChatModel(getDefaultModelID())
+        if (status.isLoggedIn) {
+            this.handleSetChatModel(getDefaultModelID())
+        }
     }
 
     // When the webview sends the 'ready' message, respond by posting the view config
     private async handleReady(): Promise<void> {
         await this.sendConfig()
-
-        // Update the chat model providers again to ensure the correct token limit is set on ready
-        this.handleSetChatModel(this.chatModel.modelID)
     }
 
     private async sendConfig(): Promise<void> {
@@ -643,7 +643,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             chatID: this.chatModel.sessionID,
         })
 
-        this.postChatModels()
+        // Update the chat model providers to ensure the correct token limit is set
+        this.handleSetChatModel(this.chatModel.modelID)
+
         await this.saveSession()
         this.initDoer.signalInitialized()
         await this.sendConfig()
@@ -1126,6 +1128,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const repos =
             explicitRepos ??
             (await this.repoPicker?.show(this.remoteSearch.getRepos(RepoInclusion.Manual)))
+
         if (repos) {
             this.chatModel.setSelectedRepos(repos)
             this.remoteSearch.setRepos(repos, RepoInclusion.Manual)
@@ -1656,8 +1659,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }
             )
         )
-
-        void this.sendConfig()
 
         return viewOrPanel
     }
