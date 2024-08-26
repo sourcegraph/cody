@@ -1238,11 +1238,6 @@
             }
           }
         },
-        "cody.autocomplete.experimental.hotStreakAndSmartThrottle": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Changes the debounce time for autocomplete requests based on the amount of time since the last request."
-        },
         "cody.autocomplete.experimental.preloadDebounceInterval": {
           "type": "number",
           "default": 0,

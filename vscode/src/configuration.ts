@@ -163,10 +163,6 @@ export function getConfiguration(
             'autocomplete.experimental.multiModelCompletions',
             undefined
         ),
-        autocompleteExperimentalHotStreakAndSmartThrottle: getHiddenSetting(
-            'autocomplete.experimental.hotStreakAndSmartThrottle',
-            false
-        ),
         autocompleteExperimentalPreloadDebounceInterval: getHiddenSetting(
             'autocomplete.experimental.preloadDebounceInterval',
             0
@@ -180,16 +176,6 @@ export function getConfiguration(
         agentIDE: getHiddenSetting<CodyIDE>('advanced.agent.ide'),
         agentIDEVersion: getHiddenSetting('advanced.agent.ide.version'),
         agentExtensionVersion: getHiddenSetting('advanced.agent.extension.version'),
-        autocompleteTimeouts: {
-            multiline: getHiddenSetting<number | undefined>(
-                'autocomplete.advanced.timeout.multiline',
-                undefined
-            ),
-            singleline: getHiddenSetting<number | undefined>(
-                'autocomplete.advanced.timeout.singleline',
-                undefined
-            ),
-        },
         autocompleteFirstCompletionTimeout: getHiddenSetting<number>(
             'autocomplete.advanced.timeout.firstCompletion',
             3_500
