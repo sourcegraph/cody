@@ -90,9 +90,9 @@ class CompletionProviderConfig {
         //
         // The rollout values to set:
         // - CodyAutocompletePreloadingExperimentBaseFeatureFlag 75%
-        // - CodyAutocompleteHotStreak 33%
-        // - CodyAutocompleteSmartThrottle 100%
-        // - CodyAutocompleteSmartThrottleExtended 50%
+        // - CodyAutocompleteVariant1 33%
+        // - CodyAutocompleteVariant2 100%
+        // - CodyAutocompleteVariant3 50%
         if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag)) {
             if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompletePreloadingExperimentVariant1)) {
                 return 'variant1'

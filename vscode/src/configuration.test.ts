@@ -102,8 +102,6 @@ describe('getConfiguration', () => {
                         return 1500
                     case 'cody.autocomplete.experimental.preloadDebounceInterval':
                         return 0
-                    case 'cody.autocomplete.experimental.hotStreakAndSmartThrottle':
-                        return false
                     case 'cody.experimental.guardrailsTimeoutSeconds':
                         return undefined
                     default:
