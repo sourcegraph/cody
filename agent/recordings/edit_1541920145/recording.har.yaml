@@ -90,11 +90,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 1d3d536766046f6be02ade2dd4f4135d
+    - _id: 4ed13d4e8174ce33a3d8910b83fc79fd
       _order: 0
       cache: {}
       request:
-        bodySize: 2809
+        bodySize: 1973
         cookies: []
         headers:
           - name: content-type
@@ -107,7 +107,7 @@ log:
           - name: user-agent
             value: edit / v1
           - name: traceparent
-            value: 00-800dd19ae4017dc4e76a2b062b4f4450-c8965409bb1884b1-01
+            value: 00-8929c3f1f84a668491ea3dc1cf39074d-6e5fc861dedff2ff-01
           - name: connection
             value: keep-alive
           - name: host
@@ -123,180 +123,10 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. - You
-                  are an AI programming assistant who is an expert in adding new
-                  code by following instructions.
-
-                  - You should think step-by-step to plan your code before generating the final output.
-
-                  - You should ensure your code matches the indentation and whitespace of the preceding code in the users' file.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - You will be provided with code that is above the users' cursor, enclosed in <PRECEDINGCODE3493></PRECEDINGCODE3493> XML tags. You must use this code to help you plan your updated code. You must not repeat this code in your output unless necessary.
-
-                  - You will be provided with code that is below the users' cursor, enclosed in <FOLLOWINGCODE2472></FOLLOWINGCODE2472> XML tags. You must use this code to help you plan your updated code. You must not repeat this code in your output unless necessary.
-
-                  - You will be provided with instructions on what to generate, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the code you added. Only respond with the generated code.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/Heading.tsx: Below is the
-                  code from file path src/Heading.tsx. Review the code outside
-                  the XML tags to detect the functionality, formats, style,
-                  patterns, and logics in use. Then, use what you detect and
-                  reuse methods/libraries to complete and enclose completed code
-                  only inside XML tags precisely without duplicating existing
-                  implementations. Here is the code:
-
-                  <PRECEDINGCODE3493>import React = require("react");
+                  You are Cody, an AI coding assistant from Sourcegraph.
 
 
-                  interface HeadingProps {
-                      text: string;
-                      level?: number;
-                  }
-
-
-                  </PRECEDINGCODE3493><CODE5711></CODE5711><FOLLOWINGCODE2472>
-
-                  </FOLLOWINGCODE2472>
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  The user is currently in the file: src/Heading.tsx
-
-
-                  Provide your generated code using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Create and export a Heading component that uses these props. Do not use default exports
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: |-
-                  <PRECEDINGCODE3493>import React = require("react");
-
-                  interface HeadingProps {
-                      text: string;
-                      level?: number;
-                  }
-
-                  </PRECEDINGCODE3493><CODE5711>
-            model: anthropic/claude-3-5-sonnet-20240620
-            stopSequences:
-              - </CODE5711>
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: edit
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=edit&client-version=v1
-      response:
-        bodySize: 4705
-        content:
-          mimeType: text/event-stream
-          size: 4705
-          text: >+
-            event: completion
-
-            data: {"completion":"export const Heading: React.FC\u003cHeadingProps\u003e = ({ text, level = 1 }) =\u003e {\n    const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;\n    \n    return \u003cHeadingTag\u003e{text}\u003c/HeadingTag\u003e;\n};\n","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 25 Jun 2024 17:12:48 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: retry-after
-            value: "187"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-06-25T17:12:47.230Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 8016afaf768cb516de4e232ed2cd87ea
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 1970
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - name: user-agent
-            value: edit / v1
-          - name: traceparent
-            value: 00-45968779e9c171796c70e38096546827-fb0f2402edbfd901-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 397
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. - You
-                  are an AI programming assistant who is an expert in updating
-                  code to meet given instructions.
+                  - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
                   - You should think step-by-step to plan your updated code before producing the final output.
 
@@ -370,7 +200,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 21 Aug 2024 13:31:04 GMT
+            value: Fri, 23 Aug 2024 08:08:13 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -399,7 +229,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-21T13:31:02.090Z
+      startedDateTime: 2024-08-23T08:08:11.021Z
       time: 0
       timings:
         blocked: -1
@@ -409,11 +239,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 55344e59ff337ea1a8f1fd48957107ff
+    - _id: de1f01e705825d05430759dd517cd69a
       _order: 0
       cache: {}
       request:
-        bodySize: 2519
+        bodySize: 2522
         cookies: []
         headers:
           - name: content-type
@@ -426,7 +256,7 @@ log:
           - name: user-agent
             value: edit / v1
           - name: traceparent
-            value: 00-14c58c3ff495ea915096e9613a09873c-8065c5d5ee4210a8-01
+            value: 00-b6fb1eba877efbfa2ea2103e8ad06446-d2d684ed3c0182c8-01
           - name: connection
             value: keep-alive
           - name: host
@@ -442,9 +272,10 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. - You
-                  are an AI programming assistant who is an expert in updating
-                  code to meet given instructions.
+                  You are Cody, an AI coding assistant from Sourcegraph.
+
+
+                  - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
                   - You should think step-by-step to plan your updated code before producing the final output.
 
@@ -525,14 +356,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=edit&client-version=v1
       response:
-        bodySize: 4781
+        bodySize: 4739
         content:
           mimeType: text/event-stream
-          size: 4781
+          size: 4739
           text: >+
             event: completion
 
-            data: {"completion":"\ninterface Message {\n    chatID: string;\n    text: string;\n}\n\ninterface ChatColumnProps {\n    messages: Message[];\n    setChatID: (chatID: string) =\u003e void;\n    isLoading: boolean;\n}\n\nexport default function ChatColumn({\n    messages,\n    setChatID,\n    isLoading,\n}: ChatColumnProps) {\n","stopReason":"stop_sequence"}
+            data: {"completion":"interface Message {\n    chatID: string;\n    text: string;\n}\n\ninterface ChatColumnProps {\n    messages: Message[];\n    setChatID: (chatID: string) =\u003e void;\n    isLoading: boolean;\n}\n\nexport default function ChatColumn({\n    messages,\n    setChatID,\n    isLoading,\n}: ChatColumnProps) {\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -542,7 +373,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 21 Aug 2024 13:31:08 GMT
+            value: Fri, 23 Aug 2024 08:08:14 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -571,7 +402,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-21T13:31:04.611Z
+      startedDateTime: 2024-08-23T08:08:13.171Z
       time: 0
       timings:
         blocked: -1
@@ -581,11 +412,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 5c42f294e56f182d20287f13b6dc92c8
+    - _id: dc6a9200c4b5d3b09bb2524aa3e791e5
       _order: 0
       cache: {}
       request:
-        bodySize: 2129
+        bodySize: 2812
         cookies: []
         headers:
           - name: content-type
@@ -598,7 +429,7 @@ log:
           - name: user-agent
             value: edit / v1
           - name: traceparent
-            value: 00-b20b15656bd97ee2d8323a0351d5f7c4-acb4a84a99ba3ac9-01
+            value: 00-6bc9f7adb5330c5be70a967354c4a40d-5c71c9df16b0023c-01
           - name: connection
             value: keep-alive
           - name: host
@@ -614,9 +445,180 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. - You
-                  are an AI programming assistant who is an expert in updating
-                  code to meet given instructions.
+                  You are Cody, an AI coding assistant from Sourcegraph.
+
+
+                  - You are an AI programming assistant who is an expert in adding new code by following instructions.
+
+                  - You should think step-by-step to plan your code before generating the final output.
+
+                  - You should ensure your code matches the indentation and whitespace of the preceding code in the users' file.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - You will be provided with code that is above the users' cursor, enclosed in <PRECEDINGCODE3493></PRECEDINGCODE3493> XML tags. You must use this code to help you plan your updated code. You must not repeat this code in your output unless necessary.
+
+                  - You will be provided with code that is below the users' cursor, enclosed in <FOLLOWINGCODE2472></FOLLOWINGCODE2472> XML tags. You must use this code to help you plan your updated code. You must not repeat this code in your output unless necessary.
+
+                  - You will be provided with instructions on what to generate, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the code you added. Only respond with the generated code.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/Heading.tsx: Below is the
+                  code from file path src/Heading.tsx. Review the code outside
+                  the XML tags to detect the functionality, formats, style,
+                  patterns, and logics in use. Then, use what you detect and
+                  reuse methods/libraries to complete and enclose completed code
+                  only inside XML tags precisely without duplicating existing
+                  implementations. Here is the code:
+
+                  <PRECEDINGCODE3493>import React = require("react");
+
+
+                  interface HeadingProps {
+                      text: string;
+                      level?: number;
+                  }
+
+
+                  </PRECEDINGCODE3493><CODE5711></CODE5711><FOLLOWINGCODE2472>
+
+                  </FOLLOWINGCODE2472>
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  The user is currently in the file: src/Heading.tsx
+
+
+                  Provide your generated code using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Create and export a Heading component that uses these props. Do not use default exports
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: |-
+                  <PRECEDINGCODE3493>import React = require("react");
+
+                  interface HeadingProps {
+                      text: string;
+                      level?: number;
+                  }
+
+                  </PRECEDINGCODE3493><CODE5711>
+            model: anthropic/claude-3-5-sonnet-20240620
+            stopSequences:
+              - </CODE5711>
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: edit
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=edit&client-version=v1
+      response:
+        bodySize: 4021
+        content:
+          mimeType: text/event-stream
+          size: 4021
+          text: >+
+            event: completion
+
+            data: {"completion":"export const Heading: React.FC\u003cHeadingProps\u003e = ({ text, level = 1 }) =\u003e {\n    const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;\n    \n    return \u003cHeadingTag\u003e{text}\u003c/HeadingTag\u003e;\n};\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 23 Aug 2024 08:08:16 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-08-23T08:08:14.944Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 2010d6def65571353b4a854312d6e24c
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2132
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: edit / v1
+          - name: traceparent
+            value: 00-76a2d599a8b1bfff73dd735ba6dc88fb-1bc71d9d9de73641-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 397
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.
+
+
+                  - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
                   - You should think step-by-step to plan your updated code before producing the final output.
 
@@ -684,14 +686,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=edit&client-version=v1
       response:
-        bodySize: 3429
+        bodySize: 3541
         content:
           mimeType: text/event-stream
-          size: 3429
+          size: 3541
           text: >+
             event: completion
 
-            data: {"completion":"export function trickyLogic(a: number, b: number): number {\n    switch (true) {\n        case a === 0:\n            return 1\n        case b === 2:\n            return 1\n        default:\n            return a - b\n    }\n}","stopReason":"stop_sequence"}
+            data: {"completion":"export function trickyLogic(a: number, b: number): number {\n    switch (true) {\n        case a === 0:\n            return 1\n        case b === 2:\n            return 1\n        default:\n            return a - b\n    }\n}\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -701,7 +703,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 21 Aug 2024 13:31:11 GMT
+            value: Fri, 23 Aug 2024 08:08:19 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -730,7 +732,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-21T13:31:08.619Z
+      startedDateTime: 2024-08-23T08:08:16.893Z
       time: 0
       timings:
         blocked: -1

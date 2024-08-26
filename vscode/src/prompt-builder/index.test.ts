@@ -263,7 +263,7 @@ describe('PromptBuilder', () => {
         })
 
         it('should remove context with overlapping ranges when full file is provided', async () => {
-            const builder = await PromptBuilder.create({ input: 50, output: 50 })
+            const builder = await PromptBuilder.create({ input: 100, output: 50 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
@@ -291,7 +291,7 @@ describe('PromptBuilder', () => {
         })
 
         it('should not remove user-added with overlapping ranges even when full file is provided', async () => {
-            const builder = await PromptBuilder.create({ input: 55, output: 50 })
+            const builder = await PromptBuilder.create({ input: 100, output: 50 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
@@ -319,7 +319,7 @@ describe('PromptBuilder', () => {
         })
 
         it('should deduplicate context from different token usage types', async () => {
-            const builder = await PromptBuilder.create({ input: 55, output: 50 })
+            const builder = await PromptBuilder.create({ input: 100, output: 50 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
@@ -376,7 +376,7 @@ describe('PromptBuilder', () => {
             expect(promptContent).toMatchInlineSnapshot(`
               "preamble
               Codebase context from file ${displayPath(file.uri)}:
-              \`\`\`go
+              \`\`\`go:${displayPath(file.uri)}
               foo\`\`\`
               Ok.
               Hi!

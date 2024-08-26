@@ -52,7 +52,7 @@ async function doRewrite(
     query: PromptString,
     signal?: AbortSignal
 ): Promise<string[]> {
-    const preamble = getSimplePreamble(undefined, 0)
+    const preamble = getSimplePreamble(undefined, 0, 'Default')
     const stream = completionsClient.stream(
         {
             messages: [

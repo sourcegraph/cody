@@ -1,6 +1,6 @@
 import {
     type AuthStatus,
-    type Configuration,
+    type ClientConfiguration,
     type GraphQLAPIClientConfig,
     contextFiltersProvider,
     graphqlClient,
@@ -418,7 +418,7 @@ describe('InlineCompletionItemProvider preloading', () => {
     const autocompleteConfig = {
         autocompleteExperimentalPreloadDebounceInterval: 150,
         autocompleteAdvancedProvider: 'fireworks',
-    } satisfies Partial<Configuration>
+    } satisfies Partial<ClientConfiguration>
 
     const onDidChangeTextEditorSelection = vi.spyOn(vsCodeMocks.window, 'onDidChangeTextEditorSelection')
 

@@ -88,11 +88,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 9118f0ca128e7b0bee2f69725f58a619
+    - _id: 614237f63791d6c8b92e2fd53fa77dd7
       _order: 0
       cache: {}
       request:
-        bodySize: 296
+        bodySize: 370
         cookies: []
         headers:
           - _fromType: array
@@ -119,7 +119,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "296"
+            value: "370"
           - name: host
             value: sourcegraph.com
         headersSize: 396
@@ -142,6 +142,11 @@ log:
             stopSequences:
               - "\n\n"
               - "\n\r\n"
+              - <fim_prefix>
+              - <fim_suffix>
+              - <fim_middle>
+              - <|endoftext|>
+              - <file_sep>
             stream: true
             temperature: 0.2
             topK: 0
@@ -152,13 +157,13 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
       response:
-        bodySize: 235
+        bodySize: 233
         content:
           mimeType: text/event-stream
-          size: 235
+          size: 233
           text: |+
             event: completion
-            data: {"completion":"return a + b;","stopReason":"stop"}
+            data: {"completion":"return a + b","stopReason":"stop"}
 
             event: done
             data: {}
@@ -166,7 +171,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 18 Jul 2024 12:00:45 GMT
+            value: Fri, 23 Aug 2024 05:33:40 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -195,7 +200,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-18T12:00:45.227Z
+      startedDateTime: 2024-08-23T05:33:39.424Z
       time: 0
       timings:
         blocked: -1
@@ -205,11 +210,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 9020708fd372a773be5e10325e67a1e9
+    - _id: d8a95d0c8cd1705c4d6bd934f9267e43
       _order: 0
       cache: {}
       request:
-        bodySize: 429
+        bodySize: 503
         cookies: []
         headers:
           - _fromType: array
@@ -236,7 +241,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "429"
+            value: "503"
           - name: host
             value: sourcegraph.com
         headersSize: 396
@@ -272,6 +277,11 @@ log:
             stopSequences:
               - "\n\n"
               - "\n\r\n"
+              - <fim_prefix>
+              - <fim_suffix>
+              - <fim_middle>
+              - <|endoftext|>
+              - <file_sep>
             stream: true
             temperature: 0.2
             topK: 0
@@ -282,14 +292,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
       response:
-        bodySize: 3345
+        bodySize: 4530
         content:
           mimeType: text/event-stream
-          size: 3345
+          size: 4530
           text: >+
             event: completion
 
-            data: {"completion":"for (let i = 0; i \u003c nums.length; i++) {\n        for (let j = 0; j \u003c nums.length - i - 1; j++) {\n            if (nums[j] \u003e nums[j + 1]) {\n                [nums[j], nums[j + 1]] = [nums[j + 1], nums[j]];\n            }\n        }\n    }","stopReason":"stop"}
+            data: {"completion":"for (let i = 0; i \u003c nums.length; i++) {\n        for (let j = 0; j \u003c nums.length - i - 1; j++) {\n            if (nums[j] \u003e nums[j + 1]) {\n                [nums[j], nums[j + 1]] = [nums[j + 1], nums[j]]\n            }\n        }\n    }\n    return nums","stopReason":"stop"}
 
 
             event: done
@@ -299,7 +309,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 18 Jul 2024 12:00:46 GMT
+            value: Fri, 23 Aug 2024 05:33:42 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -328,7 +338,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-18T12:00:45.941Z
+      startedDateTime: 2024-08-23T05:33:41.535Z
       time: 0
       timings:
         blocked: -1

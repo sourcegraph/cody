@@ -5,7 +5,7 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 import {
-    type ConfigurationWithAccessToken,
+    type ClientConfigurationWithAccessToken,
     FeatureFlag,
     featureFlagProvider,
 } from '@sourcegraph/cody-shared'
@@ -17,7 +17,7 @@ import { CodyTraceExporter } from './CodyTraceExport'
 import { ConsoleBatchSpanExporter } from './console-batch-span-exporter'
 
 export type OpenTelemetryServiceConfig = Pick<
-    ConfigurationWithAccessToken,
+    ClientConfigurationWithAccessToken,
     'serverEndpoint' | 'experimentalTracing' | 'debugVerbose' | 'accessToken'
 >
 
