@@ -898,6 +898,9 @@ importers:
       buffer:
         specifier: ^6.0.3
         version: 6.0.3
+      classnames:
+        specifier: ^2.5.1
+        version: 2.5.1
       cody-ai:
         specifier: workspace:*
         version: link:../vscode
@@ -8630,6 +8633,10 @@ packages:
     dependencies:
       clsx: 2.0.0
     dev: false
+
+  /classnames@2.5.1:
+    resolution: {integrity: sha512-saHYOzhIQs6wy2sVxTM6bUDsQO4F50V9RQ22qBpEdCW+I+/Wmke2HOl6lS6dTpdxVhb88/I6+Hs+438c3lfUow==}
+    dev: true
 
   /clean-stack@2.2.0:
     resolution: {integrity: sha512-4diC9HaTE+KRAMWhDhrGOECgWZxoevMc5TlkObMqNSsVU62PYzXZ/SMTjzyGAFF1YusgxGcSWTEXBhp0CPwQ1A==}
