@@ -350,7 +350,9 @@ export class ModelsService {
         }
         const endpoint = this.authStatus?.endpoint
         if (!endpoint) {
-            logError('ModelsService::preferences', 'No auth status set')
+            if (!process.env.VITEST) {
+                logError('ModelsService::preferences', 'No auth status set')
+            }
             return empty
         }
         // If global cache is missing, try loading from storage

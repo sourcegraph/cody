@@ -75,7 +75,7 @@ export interface Configuration {
      */
     autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | 'tsc' | 'tsc-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
-    autocompleteExperimentalFireworksOptions?: FireworksOptions
+    autocompleteExperimentalFireworksOptions?: ExperimentalFireworksConfig
     autocompleteExperimentalMultiModelCompletions?: MultimodelSingleModelConfig[]
     autocompleteExperimentalHotStreakAndSmartThrottle?: boolean
     autocompleteExperimentalPreloadDebounceInterval?: number
@@ -242,7 +242,7 @@ export interface OllamaGenerateParameters {
     tfs_z?: number
 }
 
-export interface FireworksOptions {
+export interface ExperimentalFireworksConfig {
     url: string
     token: string
     model: string

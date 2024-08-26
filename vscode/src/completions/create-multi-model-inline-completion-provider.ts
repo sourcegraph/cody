@@ -5,7 +5,7 @@ import { logDebug } from '../log'
 import type { InlineCompletionItemProviderArgs } from './create-inline-completion-item-provider'
 import type { MultiModelCompletionsResults } from './inline-completion-item-provider'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
-import { createProviderHelper } from './providers/create-provider'
+import { createProviderConfigHelper } from './providers/create-provider'
 
 interface providerConfig {
     providerName: string
@@ -111,10 +111,10 @@ export async function createInlineCompletionItemFromMultipleProviders({
         // Don't use the advanced provider config to get the model
         newConfig.autocompleteAdvancedModel = null
 
-        const providerConfig = await createProviderHelper({
+        const providerConfig = await createProviderConfigHelper({
             client,
             authStatus,
-            model: currentProviderConfig.model,
+            modelId: currentProviderConfig.model,
             provider: currentProviderConfig.provider,
             config: newConfig,
         })

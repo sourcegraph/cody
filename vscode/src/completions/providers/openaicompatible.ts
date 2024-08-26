@@ -285,7 +285,7 @@ export function createProviderConfig({
                     id: PROVIDER_IDENTIFIER,
                 },
                 {
-                    model: model,
+                    model,
                     maxContextTokens,
                     timeouts,
                     ...otherOptions,
