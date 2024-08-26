@@ -609,6 +609,14 @@ export class LocalEmbeddingsController
                 'number of changed files:',
                 changedFiles
             )
+
+            telemetryRecorder.recordEvent('cody.context.embeddings', 'reindexed', {
+                metadata: {
+                    timeSinceLastIndexedCommitSeconds: timeSinceLastIndexedCommit / 1000,
+                    numChangedFiles: changedFiles,
+                },
+            })
+
             await this.indexRequest({
                 repoPath: this.lastRepo.dir.fsPath,
                 mode: {
