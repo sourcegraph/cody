@@ -7,6 +7,10 @@ interface ChatSkeletonProps {
     className?: string
 }
 
+/**
+ * Skeleton UI for Cody Web Chat UI (loading mock UI state), currently is used only
+ * for Cody Web UI since it takes noticeable time to load and initialize.
+ */
 export const ChatSkeleton: FC<ChatSkeletonProps> = props => {
     const { className } = props
     return (

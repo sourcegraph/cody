@@ -15,11 +15,15 @@ import { URI } from 'vscode-uri'
 import { createAgentClient } from '../agent/agent.client'
 import type { InitialContext } from '../types'
 
-// Usually the CodyWebPanelProvider VSCode API wrapper listens only to messages from the Extension host
-// which matches the current active panel id. But this message id check can be corrupted
-// by race conditions in different events that the extension host sends during chat-switching.
-// Some events should always be handled by the client regardless of which active panel they
-// came from.
+/**
+ * List of events that bypass active panel ID check in the listeners.
+ *
+ * Usually the CodyWebPanelProvider VSCode API wrapper listens only to messages from
+ * the Extension host which matches the current active panel id. But this message id
+ * check can be corrupted by race conditions in different events that the extension
+ * host sends during chat-switching. Some events should always be handled by the client
+ * regardless of which active panel they came from.
+ */
 const GLOBAL_MESSAGE_TYPES: Array<ExtensionMessage['type']> = ['rpc/response']
 
 export interface AgentClient {
@@ -95,7 +99,7 @@ export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentRes
         void createNewChat(client)
     }, [client, createNewChat])
 
-    // Notify the extension host that we are ready to receive events.
+    // Notify the extension host that we are ready to receive events
     useLayoutEffect(() => {
         if (client && !isErrorLike(client) && vscodeAPI) {
             vscodeAPI.postMessage({ command: 'ready' })
@@ -155,7 +159,7 @@ function useVSCodeAPI(input: useVSCodeAPIInput): VSCodeWrapper | null {
                 if (!isErrorLike(client)) {
                     onMessageCallbacksRef.current.push(callback)
                     return () => {
-                        // Remove callback from onMessageCallbacks.
+                        // Remove callback from onMessageCallbacks
                         const index = onMessageCallbacksRef.current.indexOf(callback)
                         if (index >= 0) {
                             onMessageCallbacksRef.current.splice(index, 1)

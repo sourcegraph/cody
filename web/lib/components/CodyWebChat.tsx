@@ -57,8 +57,11 @@ export interface CodyWebChatProps {
     className?: string
 }
 /**
- * The root store/provider node for Cody Web, creates and shares
- * agent client and maintains active web panel ID, chat history and vscodeAPI.
+ * The root component node for Cody Web Chat, implements Cody Agent client
+ * and connects VSCode Cody Chat UI with web-worker agent. The main component
+ * to use in Cody Web Consumers.
+ *
+ * You can see the demo usage of this component in demo/App.tsx
  */
 export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
     serverEndpoint,
@@ -177,7 +180,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 return
             }
             // Notify the host about the manual change,
-            // and the host will return the updated change models via onMessage.
+            // and the host will return the updated change models via onMessage
             vscodeAPI.postMessage({
                 command: 'chatModel',
                 model: selected.id,
