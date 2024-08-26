@@ -80,9 +80,6 @@ export interface ProviderOptions {
     firstCompletionTimeout: number
     completionLogId: CompletionLogger.CompletionLogID
 
-    // feature flags
-    hotStreak?: boolean
-
     /**
      * Git related context information. Currently only supports a repo name, which is used by various FIM models in prompt.
      */

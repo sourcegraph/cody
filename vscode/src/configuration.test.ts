@@ -151,13 +151,8 @@ describe('getConfiguration', () => {
                 model: 'codellama:7b-code',
                 url: OLLAMA_DEFAULT_URL,
             },
-            autocompleteTimeouts: {
-                multiline: undefined,
-                singleline: undefined,
-            },
             autocompleteFirstCompletionTimeout: 1500,
             autocompleteExperimentalPreloadDebounceInterval: 0,
-            autocompleteExperimentalHotStreakAndSmartThrottle: false,
             testingModelConfig: undefined,
             experimentalGuardrailsTimeoutSeconds: undefined,
         } satisfies ClientConfiguration)

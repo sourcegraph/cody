@@ -38,13 +38,6 @@ export enum FeatureFlag {
     // Enable latency adjustments based on accept/reject streaks
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
 
-    // - Hot Streak:
-    //              Continue generations after a single-line completion and use the response to see the next line
-    //              if the first completion is accepted.
-    // - Smart Throttle:
-    //              Enable smart-throttling for more aggressive request cancellation and lower initial latencies
-    CodyAutocompleteHotStreakAndSmartThrottle = 'cody-autocomplete-hot-streak-and-smart-throttle',
-
     CodyAutocompletePreloadingExperimentBaseFeatureFlag = 'cody-autocomplete-preloading-experiment-flag',
     CodyAutocompletePreloadingExperimentVariant1 = 'cody-autocomplete-preloading-experiment-variant-1',
     CodyAutocompletePreloadingExperimentVariant2 = 'cody-autocomplete-preloading-experiment-variant-2',
