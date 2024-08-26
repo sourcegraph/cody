@@ -53,9 +53,9 @@ val skippedFailureLevels =
 plugins {
   id("java")
   id("jvm-test-suite")
-  id("org.jetbrains.kotlin.jvm") version "1.9.25"
-  id("org.jetbrains.intellij") version "1.17.3"
-  id("org.jetbrains.changelog") version "2.2.0"
+  id("org.jetbrains.kotlin.jvm") version "2.0.20"
+  id("org.jetbrains.intellij") version "1.17.4"
+  id("org.jetbrains.changelog") version "2.2.1"
   id("com.diffplug.spotless") version "6.25.0"
 }
 
@@ -118,12 +118,7 @@ spotless {
 }
 
 java {
-  toolchain {
-    // Always compile the codebase with Java 11 regardless of what Java
-    // version is installed on the computer. Gradle will download Java 11
-    // even if you already have it installed on your computer.
-    languageVersion.set(JavaLanguageVersion.of(properties("javaVersion").toInt()))
-  }
+  toolchain { languageVersion.set(JavaLanguageVersion.of(properties("javaVersion").toInt())) }
 }
 
 tasks.named("classpathIndexCleanup") { dependsOn("compileIntegrationTestKotlin") }

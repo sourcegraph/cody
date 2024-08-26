@@ -13,8 +13,8 @@ our [issue tracker](https://github.com/sourcegraph/cody/issues/new/choose).
 
 ### Prerequisites
 
-**Java 11:** we recommend installing via SDKMAN! https://sdkman.io. Once you have SDKMAN! installed,
-run `sdk use java 11.0.15-tem`. Confirm that you have Java 11 installed with `java -version`.
+**Java 17:** we recommend installing via SDKMAN! https://sdkman.io. Once you have SDKMAN! installed,
+run `sdk use java 17-zulu`. Confirm that you have Java 17 installed with `java -version`.
 
 > 🤞 On Windows, SDKMAN requires some Linux tools. If you don't have WSL, use the git bash environment and then:
 >
@@ -25,7 +25,7 @@ run `sdk use java 11.0.15-tem`. Confirm that you have Java 11 installed with `ja
 > curl -s "https://beta.sdkman.io" | bash
 > source "${HOME}/.sdkman/bin/sdkman-init.sh"
 > sdk selfupdate force
-> sdk use java 11.0.15-tem
+> sdk use java 17-zulu
 > ```
   
 **Set up the Cody agent dev environment:**
@@ -93,7 +93,7 @@ Few tips and tricks regarding versioning of the tooling:
 
 You should build everything in PowerShell. Git Bash, Ubuntu and MinGW all offer unique challenges. If you get it to build and run, add instructions here.
 
-- Install JDK 11 from https://www.oracle.com/java/technologies/javase/jdk11-archive-downloads.html
+- Install JDK 17 from https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html
   - Oracle will make you create an account in order to download it. 🙄 
 - Install the pnpm version in `./tool-versions`
   - Set `PNPM_HOME` env var for whole system (not just for your account) to the path where `pnpm.cmd` is.
