@@ -13,6 +13,7 @@ import com.intellij.testFramework.LightVirtualFile
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.content.ContentFactory
 import com.sourcegraph.cody.CodyToolWindowContent
+import com.sourcegraph.cody.CodyToolWindowContent.Companion.MAIN_PANEL
 import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.WebviewResolveWebviewViewParams
@@ -77,9 +78,15 @@ class CodyToolWindowContentWebviewHost(
       }
 
   override fun adopt(proxy: WebUIProxy) {
+    val isVisible =
+        owner.allContentPanel.getComponent(CodyToolWindowContent.MAIN_PANEL_INDEX).isVisible
+
     owner.allContentPanel.remove(placeholder)
-    owner.allContentPanel.add(
-        proxy.component, CodyToolWindowContent.MAIN_PANEL, CodyToolWindowContent.MAIN_PANEL_INDEX)
+    owner.allContentPanel.add(proxy.component, MAIN_PANEL, CodyToolWindowContent.MAIN_PANEL_INDEX)
+
+    if (isVisible) {
+      owner.allContentLayout.show(owner.allContentPanel, MAIN_PANEL)
+    }
   }
 }
 
@@ -128,8 +135,7 @@ class WebviewViewService(val project: Project) {
         JBLabel("Starting Cody...", Icons.StatusBar.CompletionInProgress, JBLabel.CENTER)
     placeholder.add(spinnerLabel, GridBagConstraints())
 
-    codyContent.allContentPanel.add(
-        placeholder, CodyToolWindowContent.MAIN_PANEL, CodyToolWindowContent.MAIN_PANEL_INDEX)
+    codyContent.allContentPanel.add(placeholder, MAIN_PANEL, CodyToolWindowContent.MAIN_PANEL_INDEX)
     provideHost(CodyToolWindowContentWebviewHost(codyContent, placeholder))
   }
 

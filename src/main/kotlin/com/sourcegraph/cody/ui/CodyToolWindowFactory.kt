@@ -6,7 +6,6 @@ import com.google.gson.JsonParser
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
@@ -35,7 +34,7 @@ import com.sourcegraph.cody.agent.WebviewSetTitleParams
 import com.sourcegraph.cody.agent.protocol.WebviewCreateWebviewPanelParams
 import com.sourcegraph.cody.agent.protocol.WebviewOptions
 import com.sourcegraph.cody.chat.actions.ExportChatsAction.Companion.gson
-import com.sourcegraph.cody.config.ui.AccountConfigurable
+import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.config.ui.CodyConfigurable
 import com.sourcegraph.cody.sidebar.WebTheme
 import com.sourcegraph.cody.sidebar.WebThemeController
@@ -274,54 +273,50 @@ class WebUIHostImpl(
   override fun postMessageWebviewToHost(stringEncodedJsonMessage: String) {
     // Some commands can be handled by the client and do not need to round-trip client -> Agent ->
     // client.
-    val stringsOfInterest =
-        listOf("cody.auth.signin", "cody.auth.signout", "cody.action.command", "command")
+    val stringsOfInterest = listOf("auth", "command")
     val decodedJson =
         if (stringsOfInterest.any { stringEncodedJsonMessage.contains(it) }) {
           JsonParser.parseString(stringEncodedJsonMessage).asJsonObject
         } else {
           null
         }
-    val isCommand = decodedJson?.get("command")?.asString == "command"
+
+    val command = decodedJson?.get("command")?.asString
+    val isCommand = command == "command"
     val id = decodedJson?.get("id")?.asString
-    when {
-      isCommand && id == "cody.auth.signin" || id == "cody.auth.signout" -> {
-        runInEdt {
-          ShowSettingsUtil.getInstance()
-              .showSettingsDialog(project, AccountConfigurable::class.java)
-        }
+
+    if (command == "auth") {
+      val authKind = decodedJson.get("authKind")?.asString
+      if (authKind == "signout") {
+        CodyAuthenticationManager.getInstance(project).setActiveAccount(null)
       }
+    } else if (isCommand && id == "cody.action.command") {
+      val arg = decodedJson.get("arg")?.asString
       // TODO: Delete this intercept when Cody edits UI is abstracted so JetBrains' native UI can be
       // invoked from the extension TypeScript side through Agent.
-      isCommand && id == "cody.action.command" && decodedJson.get("arg")?.asString == "edit" -> {
+      if (arg == "edit") {
         runInEdt {
           // Invoke the Cody "edit" action in JetBrains directly.
           val actionManager = ActionManager.getInstance()
           val action = actionManager.getAction("cody.editCodeAction")
           action?.actionPerformed(
-              AnActionEvent.createFromAnAction(
-                  action,
-                  null,
-                  "",
-                  DataContext { dataId ->
-                    when (dataId) {
-                      CommonDataKeys.EDITOR.name ->
-                          FileEditorManager.getInstance(project).selectedTextEditor
-                      else -> null
-                    }
-                  }))
+              AnActionEvent.createFromAnAction(action, null, "") { dataId ->
+                when (dataId) {
+                  CommonDataKeys.EDITOR.name ->
+                      FileEditorManager.getInstance(project).selectedTextEditor
+                  else -> null
+                }
+              })
         }
       }
-      isCommand && id == "cody.status-bar.interacted" -> {
-        runInEdt {
-          ShowSettingsUtil.getInstance().showSettingsDialog(project, CodyConfigurable::class.java)
-        }
+    } else if (isCommand && id == "cody.status-bar.interacted") {
+      runInEdt {
+        ShowSettingsUtil.getInstance().showSettingsDialog(project, CodyConfigurable::class.java)
       }
-      else -> {
-        CodyAgentService.withAgent(project) {
-          it.server.webviewReceiveMessageStringEncoded(
-              WebviewReceiveMessageStringEncodedParams(handle, stringEncodedJsonMessage))
-        }
+    } else {
+      CodyAgentService.withAgent(project) {
+        it.server.webviewReceiveMessageStringEncoded(
+            WebviewReceiveMessageStringEncodedParams(handle, stringEncodedJsonMessage))
       }
     }
   }

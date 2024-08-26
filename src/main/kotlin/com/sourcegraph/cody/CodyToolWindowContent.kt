@@ -16,7 +16,7 @@ import javax.swing.JPanel
 
 @Service(Service.Level.PROJECT)
 class CodyToolWindowContent(private val project: Project) {
-  private val allContentLayout = CardLayout()
+  val allContentLayout = CardLayout()
   val allContentPanel = JPanel(allContentLayout)
 
   init {
