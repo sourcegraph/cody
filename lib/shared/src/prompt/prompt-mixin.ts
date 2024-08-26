@@ -2,13 +2,6 @@ import type { ChatMessage } from '../chat/transcript/messages'
 import { PromptString, ps } from './prompt-string'
 
 /**
- * The preamble we add to the start of the last human open-end chat message.
- * Used so that we can parse file paths to support applying code directly to files
- * from chat.
- */
-const CODEBLOCK_PREMAMBLE = ps`When generating fenced code blocks in Markdown, ensure you include the full file path in the tag. The structure should be \`\`\`language:path/to/file\n\`\`\`. You should only do this when generating a code block, the user does not need to be made aware of this in any other way.`
-
-/**
  * The preamble we add to the start of the last human open-end chat message that has context items.
  */
 const CONTEXT_PREAMBLE = ps`You have access to the provided codebase context. `
@@ -23,7 +16,6 @@ const HEDGES_PREVENTION = ps`Answer positively without apologizing. `
  */
 export class PromptMixin {
     private static mixins: PromptMixin[] = []
-    private static codeBlockMixin: PromptMixin = new PromptMixin(CODEBLOCK_PREMAMBLE)
     private static contextMixin: PromptMixin = new PromptMixin(CONTEXT_PREAMBLE)
 
     /**
@@ -33,9 +25,7 @@ export class PromptMixin {
     public static mixInto(humanMessage: ChatMessage, modelID: string): ChatMessage {
         // Default Mixin is added at the end so that it cannot be overriden by other mixins.
         let mixins = PromptString.join(
-            [...PromptMixin.mixins, PromptMixin.codeBlockMixin, PromptMixin.contextMixin].map(
-                mixin => mixin.prompt
-            ),
+            [...PromptMixin.mixins, PromptMixin.contextMixin].map(mixin => mixin.prompt),
             ps`\n\n`
         )
 

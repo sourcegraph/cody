@@ -1,26 +1,19 @@
 import {
     type AuthStatus,
     type AutocompleteContextSnippet,
-    type AutocompleteTimeouts,
+    type ClientConfiguration,
+    type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
-    type Configuration,
-    type ConfigurationWithAccessToken,
-    PromptString,
     dotcomTokenToGatewayToken,
-    ps,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
-import type * as vscode from 'vscode'
-import { type LanguageConfig, getLanguageConfig } from '../../tree-sitter/language'
-import { getSuffixAfterFirstNewline } from '../text-processing'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
-import * as fimPromptUtils from './fim-prompt-utils'
-import type { FIMModelSpecificPromptExtractor } from './fim-prompt-utils'
 
 import { createFastPathClient } from '../fast-path-client'
 import { TriggerKind } from '../get-inline-completions'
+import { type DefaultModel, getModelHelpers } from '../model-helpers'
 import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
@@ -43,9 +36,8 @@ export interface FireworksOptions {
     maxContextTokens?: number
     client: CodeCompletionsClient
     anonymousUserID?: string
-    timeouts: AutocompleteTimeouts
     config: Pick<
-        ConfigurationWithAccessToken,
+        ClientConfigurationWithAccessToken,
         'accessToken' | 'autocompleteExperimentalFireworksOptions'
     >
     authStatus: Pick<
@@ -55,10 +47,6 @@ export interface FireworksOptions {
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
-
-const EOT_STARCODER = '<|endoftext|>'
-const EOT_LLAMA_CODE = ' <EOT>'
-const EOT_DEEPSEEK_CODE = '<|eos_token|>'
 
 export const FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED =
     'fim-lang-specific-model-deepseek-stack-trained'
@@ -140,15 +128,14 @@ class FireworksProvider extends Provider {
     private model: FireworksModel
     private promptChars: number
     private client: CodeCompletionsClient
-    private timeouts?: AutocompleteTimeouts
     private fastPathAccessToken?: string
     private authStatus: Pick<
         AuthStatus,
         'userCanUpgrade' | 'isDotCom' | 'endpoint' | 'isFireworksTracingEnabled'
     >
     private isLocalInstance: boolean
-    private fireworksConfig?: Configuration['autocompleteExperimentalFireworksOptions']
-    private promptExtractor: FIMModelSpecificPromptExtractor
+    private fireworksConfig?: ClientConfiguration['autocompleteExperimentalFireworksOptions']
+    private modelHelper: DefaultModel
     private anonymousUserID: string | undefined
 
     constructor(
@@ -157,16 +144,14 @@ class FireworksProvider extends Provider {
             model,
             maxContextTokens,
             client,
-            timeouts,
             config,
             authStatus,
             anonymousUserID,
         }: Required<Omit<FireworksOptions, 'anonymousUserID'>> & { anonymousUserID?: string }
     ) {
         super(options)
-        this.timeouts = timeouts
         this.model = model
-        this.promptExtractor = this.getFIMPromptExtractorForModel()
+        this.modelHelper = getModelHelpers(model)
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
         this.authStatus = authStatus
@@ -196,98 +181,6 @@ class FireworksProvider extends Provider {
         }
     }
 
-    private getFIMPromptExtractorForModel(): FIMModelSpecificPromptExtractor {
-        if (isStarCoderFamily(this.model)) {
-            return new fimPromptUtils.StarcoderPromptExtractor()
-        }
-        if (isLlamaCode(this.model)) {
-            return new fimPromptUtils.CodeLlamaPromptExtractor()
-        }
-        if (isDeepSeekModelFamily(this.model)) {
-            return new fimPromptUtils.DeepSeekPromptExtractor()
-        }
-        console.error(
-            'Using default model prompt extractor, could not get prompt extractor for',
-            this.model
-        )
-        return new fimPromptUtils.DefaultModelPromptExtractor()
-    }
-
-    private createPrompt(snippets: AutocompleteContextSnippet[]): PromptString {
-        const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
-            this.options.docContext,
-            this.options.document.uri
-        )
-
-        const intro: PromptString[] = []
-        let prompt = ps``
-
-        const languageConfig = getLanguageConfig(this.options.document.languageId)
-
-        if (isLlamaCode(this.model)) {
-            intro.push(ps`Path: ${PromptString.fromDisplayPath(this.options.document.uri)}`)
-        }
-
-        for (let snippetsToInclude = 0; snippetsToInclude < snippets.length + 1; snippetsToInclude++) {
-            if (snippetsToInclude > 0) {
-                const snippet = snippets[snippetsToInclude - 1]
-                const contextPrompts = PromptString.fromAutocompleteContextSnippet(snippet)
-
-                if (contextPrompts.symbol) {
-                    intro.push(
-                        ps`Additional documentation for \`${contextPrompts.symbol}\`:\n\n${contextPrompts.content}`
-                    )
-                } else {
-                    intro.push(
-                        this.promptExtractor.getContextPrompt({
-                            filename: snippet.uri as vscode.Uri,
-                            content: contextPrompts.content,
-                        })
-                    )
-                }
-            }
-
-            const introString = this.getIntroString(intro, languageConfig)
-
-            // We want to remove the same line suffix from a completion request since both StarCoder and Llama
-            // code can't handle this correctly.
-            const suffixAfterFirstNewline = getSuffixAfterFirstNewline(suffix)
-            const nextPrompt = this.promptExtractor.getInfillingPrompt({
-                repoName: this.options.gitContext
-                    ? PromptString.fromAutocompleteGitContext(
-                          this.options.gitContext,
-                          this.options.document.uri
-                      ).repoName
-                    : undefined,
-                filename: PromptString.fromDisplayPath(this.options.document.uri),
-                intro: introString,
-                prefix,
-                suffix: suffixAfterFirstNewline,
-            })
-
-            if (nextPrompt.length >= this.promptChars) {
-                return prompt
-            }
-
-            prompt = nextPrompt
-        }
-
-        return prompt
-    }
-
-    private getIntroString(intro: PromptString[], languageConfig: LanguageConfig | null): PromptString {
-        if (isDeepSeekModelFamily(this.model)) {
-            // These model families take code from the context files without comments.
-            return ps`${PromptString.join(intro, ps`\n\n`)}\n`
-        }
-        return ps`${PromptString.join(
-            PromptString.join(intro, ps`\n\n`)
-                .split('\n')
-                .map(line => ps`${languageConfig ? languageConfig.commentStart : ps`// `}${line}`),
-            ps`\n`
-        )}\n`
-    }
-
     public generateCompletions(
         abortSignal: AbortSignal,
         snippets: AutocompleteContextSnippet[],
@@ -295,7 +188,6 @@ class FireworksProvider extends Provider {
     ): AsyncGenerator<FetchCompletionResult[]> {
         const partialRequestParams = getCompletionParams({
             providerOptions: this.options,
-            timeouts: this.timeouts,
             lineNumberDependentCompletionParams,
         })
 
@@ -306,24 +198,21 @@ class FireworksProvider extends Provider {
             this.model === 'starcoder-hybrid'
                 ? MODEL_MAP[useMultilineModel ? 'starcoder-16b' : 'starcoder-7b']
                 : MODEL_MAP[this.model]
-        const requestParams = {
+
+        const prompt = this.modelHelper.getFireworksPrompt({
+            snippets,
+            docContext: this.options.docContext,
+            document: this.options.document,
+            promptChars: this.promptChars,
+        })
+
+        const requestParams = this.modelHelper.getFireworksRequestParams({
             ...partialRequestParams,
-            messages: [{ speaker: 'human', text: this.createPrompt(snippets) }],
+            messages: [{ speaker: 'human', text: prompt }],
             temperature: 0.2,
             topK: 0,
             model,
-        } satisfies CodeCompletionsParams
-
-        if (isDeepSeekModelFamily(requestParams.model)) {
-            requestParams.stopSequences = [
-                ...(requestParams.stopSequences || []),
-                '<｜fim▁begin｜>',
-                '<｜fim▁hole｜>',
-                '<｜fim▁end｜>',
-                '<|eos_token|>',
-            ]
-        }
-        // Add a condition for adding extra stop tokens here
+        } satisfies CodeCompletionsParams)
 
         tracer?.params(requestParams)
 
@@ -339,7 +228,7 @@ class FireworksProvider extends Provider {
             return fetchAndProcessDynamicMultilineCompletions({
                 completionResponseGenerator,
                 abortController,
-                providerSpecificPostProcess: this.postProcess,
+                providerSpecificPostProcess: this.modelHelper.postProcess,
                 providerOptions: this.options,
             })
         })
@@ -360,19 +249,6 @@ class FireworksProvider extends Provider {
          * as with promises.
          */
         return zipGenerators(completionsGenerators)
-    }
-
-    private postProcess = (content: string): string => {
-        if (isStarCoderFamily(this.model)) {
-            return content.replace(EOT_STARCODER, '')
-        }
-        if (isLlamaCode(this.model)) {
-            return content.replace(EOT_LLAMA_CODE, '')
-        }
-        if (isDeepSeekModelFamily(this.model)) {
-            return content.replace(EOT_DEEPSEEK_CODE, '')
-        }
-        return content
     }
 
     private getCustomHeaders = (): Record<string, string> => {
@@ -404,28 +280,25 @@ class FireworksProvider extends Provider {
     }
 }
 
+function getClientModel(model: string | null, isDotCom: boolean): FireworksModel {
+    if (model === null || model === '') {
+        return isDotCom ? DEEPSEEK_CODER_V2_LITE_BASE : 'starcoder-hybrid'
+    }
+
+    if (model === 'starcoder-hybrid' || Object.prototype.hasOwnProperty.call(MODEL_MAP, model)) {
+        return model as FireworksModel
+    }
+
+    throw new Error(`Unknown model: \`${model}\``)
+}
+
 export function createProviderConfig({
     model,
-    timeouts,
     ...otherOptions
 }: Omit<FireworksOptions, 'model' | 'maxContextTokens'> & {
     model: string | null
 }): ProviderConfig {
-    const clientModel =
-        model === null || model === ''
-            ? otherOptions.authStatus.isDotCom
-                ? DEEPSEEK_CODER_V2_LITE_BASE
-                : 'starcoder-hybrid'
-            : ['starcoder-hybrid'].includes(model)
-              ? (model as FireworksModel)
-              : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
-                ? (model as keyof typeof MODEL_MAP)
-                : null
-
-    if (clientModel === null) {
-        throw new Error(`Unknown model: \`${model}\``)
-    }
-
+    const clientModel = getClientModel(model, otherOptions.authStatus.isDotCom)
     const maxContextTokens = getMaxContextTokens(clientModel)
 
     return {
@@ -438,7 +311,6 @@ export function createProviderConfig({
                 {
                     model: clientModel,
                     maxContextTokens,
-                    timeouts,
                     ...otherOptions,
                 }
             )
@@ -447,20 +319,4 @@ export function createProviderConfig({
         identifier: PROVIDER_IDENTIFIER,
         model: clientModel,
     }
-}
-
-function isStarCoderFamily(model: string): boolean {
-    return model.startsWith('starcoder')
-}
-
-function isLlamaCode(model: string): boolean {
-    return model.startsWith('llama-code')
-}
-
-function isDeepSeekModelFamily(model: string): boolean {
-    return [
-        DEEPSEEK_CODER_V2_LITE_BASE,
-        FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED,
-        FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED,
-    ].includes(model)
 }

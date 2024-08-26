@@ -4,8 +4,8 @@ import {
     type AuthStatus,
     type AuthStatusProvider,
     ClientConfigSingleton,
+    type ClientConfigurationWithAccessToken,
     CodyIDE,
-    type ConfigurationWithAccessToken,
     DOTCOM_URL,
     SourcegraphGraphQLAPIClient,
     defaultAuthStatus,
@@ -35,7 +35,10 @@ import { secretStorage } from './SecretStorageProvider'
 
 const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
 
-type AuthConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+type AuthConfig = Pick<
+    ClientConfigurationWithAccessToken,
+    'serverEndpoint' | 'accessToken' | 'customHeaders'
+>
 export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
     private endpointHistory: string[] = []
     private client: SourcegraphGraphQLAPIClient | null = null
@@ -209,7 +212,10 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
     // Create Auth Status
     private async makeAuthStatus(
-        config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
+        config: Pick<
+            ClientConfigurationWithAccessToken,
+            'serverEndpoint' | 'accessToken' | 'customHeaders'
+        >,
         isOfflineMode?: boolean
     ): Promise<AuthStatus> {
         const endpoint = config.serverEndpoint

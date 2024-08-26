@@ -13,12 +13,12 @@ import { logger } from '../../log'
 import { getLanguageConfig } from '../../tree-sitter/language'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
+import { type DefaultModel, getModelHelpers } from '../model-helpers'
 import { getSuffixAfterFirstNewline } from '../text-processing'
 import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
 } from './fetch-and-process-completions'
-import { type OllamaModel, getModelHelpers } from './ollama-models'
 import {
     type CompletionProviderTracer,
     Provider,
@@ -61,7 +61,7 @@ class ExperimentalOllamaProvider extends Provider {
     protected createPromptContext(
         snippets: AutocompleteContextSnippet[],
         isInfill: boolean,
-        modelHelpers: OllamaModel
+        modelHelper: DefaultModel
     ): OllamaPromptContext {
         const { languageId, uri } = this.options.document
         const config = getLanguageConfig(languageId)
@@ -104,7 +104,7 @@ class ExperimentalOllamaProvider extends Provider {
 
             for (const snippet of snippets) {
                 const extendedSnippets = [...prompt.snippets, snippet]
-                const promptLengthWithSnippet = modelHelpers.getPrompt({
+                const promptLengthWithSnippet = modelHelper.getOllamaPrompt({
                     ...prompt,
                     snippets: extendedSnippets,
                 }).length
@@ -134,10 +134,10 @@ class ExperimentalOllamaProvider extends Provider {
         const promptContext = this.createPromptContext(snippets, useInfill, modelHelpers)
 
         const requestParams = {
-            prompt: modelHelpers.getPrompt(promptContext),
+            prompt: modelHelpers.getOllamaPrompt(promptContext),
             template: '{{ .Prompt }}',
             model: this.ollamaOptions.model,
-            options: modelHelpers.getRequestOptions(isMultiline),
+            options: modelHelpers.getOllamaRequestOptions(isMultiline),
         } satisfies OllamaGenerateParams
 
         if (this.ollamaOptions.parameters) {

@@ -2,7 +2,7 @@ import type { init as browserInit } from '@sentry/browser'
 import type { init as nodeInit } from '@sentry/node'
 
 import {
-    type ConfigurationWithEndpoint,
+    type ClientConfigurationWithEndpoint,
     NetworkError,
     isAbortError,
     isAuthError,
@@ -21,14 +21,16 @@ export type SentryOptions = NonNullable<Parameters<typeof nodeInit | typeof brow
 export abstract class SentryService {
     constructor(
         protected config: Pick<
-            ConfigurationWithEndpoint,
+            ClientConfigurationWithEndpoint,
             'serverEndpoint' | 'isRunningInsideAgent' | 'agentIDE'
         >
     ) {
         this.prepareReconfigure()
     }
 
-    public onConfigurationChange(newConfig: Pick<ConfigurationWithEndpoint, 'serverEndpoint'>): void {
+    public onConfigurationChange(
+        newConfig: Pick<ClientConfigurationWithEndpoint, 'serverEndpoint'>
+    ): void {
         this.config = newConfig
         this.prepareReconfigure()
     }

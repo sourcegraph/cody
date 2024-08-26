@@ -1,7 +1,7 @@
 import {
     type AuthStatus,
+    type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
-    type ConfigurationWithAccessToken,
     FeatureFlag,
     type Model,
     ModelUsage,
@@ -38,7 +38,7 @@ interface CreateConfigHelperParams {
     authStatus: AuthStatus
     modelId: string | undefined
     provider: string
-    config: ConfigurationWithAccessToken
+    config: ClientConfigurationWithAccessToken
     model?: Model
 }
 
@@ -71,7 +71,6 @@ export async function createProviderConfigHelper(
             return createFireworksProviderConfig({
                 client,
                 model: modelId ?? null,
-                timeouts: config.autocompleteTimeouts,
                 authStatus,
                 config,
                 anonymousUserID,
@@ -83,7 +82,6 @@ export async function createProviderConfigHelper(
             return createExperimentalOpenAICompatibleProviderConfig({
                 client,
                 model: modelId ?? null,
-                timeouts: config.autocompleteTimeouts,
                 authStatus,
                 config,
             })
@@ -92,7 +90,6 @@ export async function createProviderConfigHelper(
             if (model) {
                 return createOpenAICompatibleProviderConfig({
                     client,
-                    timeouts: config.autocompleteTimeouts,
                     model,
                     authStatus,
                     config,
@@ -311,7 +308,7 @@ function parseProviderAndModel({
 }
 
 export async function createProviderConfig(
-    config: ConfigurationWithAccessToken,
+    config: ClientConfigurationWithAccessToken,
     client: CodeCompletionsClient,
     authStatus: AuthStatus
 ): Promise<ProviderConfig | null> {

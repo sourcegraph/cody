@@ -1,6 +1,6 @@
 import {
     type AuthStatus,
-    type Configuration,
+    type ClientConfiguration,
     type GraphQLAPIClientConfig,
     contextFiltersProvider,
     graphqlClient,
@@ -194,9 +194,7 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
         let getCompletionProviderSpy: MockInstance
 
         beforeAll(async () => {
-            await initCompletionProviderConfig({
-                autocompleteExperimentalHotStreakAndSmartThrottle: true,
-            })
+            await initCompletionProviderConfig({})
             localStorage.setStorage({
                 get: () => null,
                 update: () => {},
@@ -418,7 +416,7 @@ describe('InlineCompletionItemProvider preloading', () => {
     const autocompleteConfig = {
         autocompleteExperimentalPreloadDebounceInterval: 150,
         autocompleteAdvancedProvider: 'fireworks',
-    } satisfies Partial<Configuration>
+    } satisfies Partial<ClientConfiguration>
 
     const onDidChangeTextEditorSelection = vi.spyOn(vsCodeMocks.window, 'onDidChangeTextEditorSelection')
 

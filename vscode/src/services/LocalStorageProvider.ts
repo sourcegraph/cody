@@ -6,7 +6,7 @@ import type {
     AccountKeyedChatHistory,
     AuthStatus,
     ChatHistoryKey,
-    ConfigurationWithAccessToken,
+    ClientConfigurationWithAccessToken,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
 
@@ -215,11 +215,11 @@ class LocalStorage {
         return { anonymousUserID: id, created }
     }
 
-    public async setConfig(config: ConfigurationWithAccessToken): Promise<void> {
+    public async setConfig(config: ClientConfigurationWithAccessToken): Promise<void> {
         return this.set(this.KEY_CONFIG, config)
     }
 
-    public getConfig(): ConfigurationWithAccessToken | null {
+    public getConfig(): ClientConfigurationWithAccessToken | null {
         return this.get(this.KEY_CONFIG)
     }
 

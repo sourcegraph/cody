@@ -1,0 +1,117 @@
+:root {
+    --cody-web-skeleton-main-color: #3e475e;
+    --cody-web-skeleton-blink-color: #4d5875;
+}
+
+.root {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.header {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.25rem;
+    align-items: center;
+}
+
+.chat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    &-input {
+        width: 100%;
+        border-radius: 3px;
+        border: 2px solid var(--vscode-widget-border);
+        padding: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    &-mentions-row {
+        display: flex;
+        gap: 0.25rem;
+        align-items: center;
+    }
+
+    &-submit-button {
+        margin-left: auto;
+    }
+}
+
+.message {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    &-content {
+        margin-top: 0.5rem;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+}
+
+.line {
+    width: 100%;
+    max-width: 7rem;
+    height: 0.75rem;
+    flex-grow: 0;
+    flex-shrink: 0;
+    border-radius: 3px;
+    background-size: 200% 100%;
+    animation: shine-lines 1s infinite linear;
+
+    background-image: linear-gradient(
+        100deg,
+        var(--cody-web-skeleton-main-color) 0,
+        var(--cody-web-skeleton-blink-color) 40px,
+        var(--cody-web-skeleton-main-color) 80px
+    );
+
+    &-circle {
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 50%;
+        flex-grow: 0;
+        flex-shrink: 0;
+
+        &-small {
+            width: 1rem;
+            height: 1rem;
+        }
+    }
+
+    &-small {
+        max-width: 5rem;
+        height: 0.5rem;
+    }
+
+    &-short-text {
+
+        max-width: 3rem;
+    }
+
+    &-text {
+
+        max-width: 8rem;
+    }
+
+    &-long-text {
+
+        max-width: 20rem;
+    }
+
+}
+
+@keyframes shine-lines {
+    100% {
+        background-position-x: -200%;
+    }
+}

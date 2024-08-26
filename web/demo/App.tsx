@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 
-import { CodyWebPanel, CodyWebPanelProvider, type InitialContext } from '../lib'
+import { CodyWebChat, type InitialContext } from '../lib'
 
 // @ts-ignore
 import AgentWorker from '../lib/agent/agent.worker.ts?worker'
@@ -16,7 +16,7 @@ const DOTCOM_SERVER_ENDPOINT = 'https://sourcegraph.com'
 
 // To set:
 //
-//   localStorage.setItem('serverEndpoint', 'https://sourcegraph.test:3443')
+// localStorage.setItem('serverEndpoint', 'https://sourcegraph.test:3443')
 const serverEndpoint = localStorage.getItem('serverEndpoint') || DOTCOM_SERVER_ENDPOINT
 
 const accessTokenStorageKey = `accessToken:${serverEndpoint}`
@@ -42,16 +42,13 @@ if (!accessToken) {
 
 export const App: FC = () => {
     return (
-        <CodyWebPanelProvider
+        <CodyWebChat
             accessToken={accessToken}
             serverEndpoint={serverEndpoint}
             createAgentWorker={CREATE_AGENT_WORKER}
             telemetryClientName="codydemo.testing"
             initialContext={MOCK_INITIAL_DOT_COM_CONTEXT}
-        >
-            <div className={styles.root}>
-                <CodyWebPanel className={styles.container} />
-            </div>
-        </CodyWebPanelProvider>
+            className={styles.root}
+        />
     )
 }
