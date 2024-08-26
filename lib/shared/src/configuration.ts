@@ -79,7 +79,6 @@ export interface ClientConfiguration {
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: ExperimentalFireworksConfig
     autocompleteExperimentalMultiModelCompletions?: MultimodelSingleModelConfig[]
-    autocompleteExperimentalHotStreakAndSmartThrottle?: boolean
     autocompleteExperimentalPreloadDebounceInterval?: number
 
     /**
@@ -89,7 +88,6 @@ export interface ClientConfiguration {
     agentIDE?: CodyIDE
     agentIDEVersion?: string
     agentExtensionVersion?: string
-    autocompleteTimeouts: AutocompleteTimeouts
     autocompleteFirstCompletionTimeout: number
 
     testingModelConfig: EmbeddingsModelConfig | undefined
@@ -103,11 +101,6 @@ export enum CodyIDE {
     Web = 'Web',
     VisualStudio = 'VisualStudio',
     Eclipse = 'Eclipse',
-}
-
-export interface AutocompleteTimeouts {
-    multiline?: number
-    singleline?: number
 }
 
 export type ClientConfigurationWithEndpoint = Omit<ClientConfigurationWithAccessToken, 'accessToken'>

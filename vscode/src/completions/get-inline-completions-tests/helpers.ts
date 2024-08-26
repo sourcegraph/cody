@@ -163,7 +163,6 @@ export function params(
     const providerConfig = createProviderConfig({
         client,
         providerOptions,
-        timeouts: {},
         authStatus: dummyAuthStatus,
         model: configuration?.autocompleteAdvancedModel!,
         config: configWithAccessToken,

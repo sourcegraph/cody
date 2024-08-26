@@ -13,7 +13,6 @@ import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-util
 
 import levenshtein from 'js-levenshtein'
 import { logDebug } from '../log'
-import { completionProviderConfig } from './completion-provider-config'
 import {
     InlineCompletionsResultSource,
     type LastInlineCompletionCandidate,
@@ -125,15 +124,12 @@ export class RequestManager {
 
         addAutocompleteDebugEvent('RequestManager.request')
 
-        const shouldHonorCancellation = completionProviderConfig.smartThrottle
-
         // When request recycling is enabled, we do not pass the original abort signal forward as to
         // not interrupt requests that are no longer relevant. Instead, we let all previous requests
         // complete and try to see if their results can be reused for other inflight requests.
-        const abortController: AbortController =
-            shouldHonorCancellation && params.requestParams.abortSignal
-                ? forkSignal(params.requestParams.abortSignal)
-                : new AbortController()
+        const abortController: AbortController = params.requestParams.abortSignal
+            ? forkSignal(params.requestParams.abortSignal)
+            : new AbortController()
 
         const request = new InflightRequest(requestParams, abortController)
         this.inflightRequests.add(request)

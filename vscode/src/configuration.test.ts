@@ -102,8 +102,6 @@ describe('getConfiguration', () => {
                         return 1500
                     case 'cody.autocomplete.experimental.preloadDebounceInterval':
                         return 0
-                    case 'cody.autocomplete.experimental.hotStreakAndSmartThrottle':
-                        return false
                     case 'cody.experimental.guardrailsTimeoutSeconds':
                         return undefined
                     default:
@@ -151,13 +149,8 @@ describe('getConfiguration', () => {
                 model: 'codellama:7b-code',
                 url: OLLAMA_DEFAULT_URL,
             },
-            autocompleteTimeouts: {
-                multiline: undefined,
-                singleline: undefined,
-            },
             autocompleteFirstCompletionTimeout: 1500,
             autocompleteExperimentalPreloadDebounceInterval: 0,
-            autocompleteExperimentalHotStreakAndSmartThrottle: false,
             testingModelConfig: undefined,
             experimentalGuardrailsTimeoutSeconds: undefined,
         } satisfies ClientConfiguration)
