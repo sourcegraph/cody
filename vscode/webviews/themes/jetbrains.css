@@ -376,9 +376,9 @@ html[data-ide='JetBrains'] {
     --vscode-profileBadge-background: var(--jetbrains-ProgressBar-background);
     --vscode-profileBadge-foreground: var(--jetbrains-ProgressBar-foreground);
     --vscode-progressBar-background: var(--jetbrains-ProgressBar-background);
-    --vscode-quickInput-background: var(--jetbrains-TextArea-background);
-    --vscode-quickInput-foreground: var(--jetbrains-ToolTip-foreground);
-    --vscode-quickInputTitle-background: var(--jetbrains-Tooltip-Learning-foreground);
+    --vscode-quickInput-background: var(--jetbrains-MainToolbar-Icon-pressedBackground);
+    --vscode-quickInput-foreground: var(--jetbrains-ToolBar-foreground);
+    --vscode-quickInputTitle-background: var(--jetbrains-ToolBar-background);
     --vscode-remoteHub-decorations-addedForegroundColor: var(--jetbrains-ActionButton-hoverBackground);
     --vscode-remoteHub-decorations-conflictForegroundColor: var(--jetbrains-ValidationTooltip-warningBorderColor);
     --vscode-remoteHub-decorations-deletedForegroundColor: var(--jetbrains-ActionButton-pressedBackground);
