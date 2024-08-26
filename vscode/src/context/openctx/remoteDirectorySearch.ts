@@ -1,6 +1,6 @@
 import { REMOTE_DIRECTORY_PROVIDER_URI } from '@sourcegraph/cody-shared'
-import { getRepoMentions } from './remoteFileSearch'
 
+import { getRepositoryMentions } from './common/get-repository-mentions'
 import { getDirectoryItem, getDirectoryMentions } from './currentRepositoryDirectorySearch'
 import type { OpenCtxProvider } from './types'
 
@@ -21,7 +21,7 @@ export function createRemoteDirectoryProvider(customTitle?: string): OpenCtxProv
             const [repoName, directoryPath] = query?.split(':') || []
 
             if (!query?.includes(':') || !repoName.trim()) {
-                return await getRepoMentions(query?.trim())
+                return await getRepositoryMentions(query?.trim() ?? '', REMOTE_DIRECTORY_PROVIDER_URI)
             }
 
             return await getDirectoryMentions(repoName, directoryPath.trim())

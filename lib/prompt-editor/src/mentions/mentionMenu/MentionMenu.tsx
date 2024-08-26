@@ -142,7 +142,7 @@ export const MentionMenu: FunctionComponent<
                         item.mention?.data?.repoName &&
                         !item.mention?.data?.filePath) ||
                     (item.providerUri === REMOTE_DIRECTORY_PROVIDER_URI &&
-                        item.mention?.data?.repoID &&
+                        item.mention?.data?.repoName &&
                         !item.mention?.data?.directoryPath)
                 ) {
                     // Do not set the selected item as mention if it is repo item from the remote file search provider.

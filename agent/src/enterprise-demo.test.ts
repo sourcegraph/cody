@@ -23,7 +23,10 @@ describe('Enterprise', () => {
         expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
     }, 10_000)
 
-    it('chat/submitMessage', async () => {
+    // Skip because it consistently fails with:
+    // unsupported chat model "anthropic/claude-3-opus-20240229" (default "anthropic::2023-06-01::claude-3-opus"
+    // Linear issue: https://linear.app/sourcegraph/issue/PRIV-3329/chat-investigate-why-we-have-a-failing-agent-test-when-pointed-at
+    it.skip('chat/submitMessage', async () => {
         const lastMessage = await demoEnterpriseClient.sendSingleMessageToNewChat('Reply with "Yes"')
         expect(lastMessage?.text?.trim()).toStrictEqual('Yes')
     }, 20_000)

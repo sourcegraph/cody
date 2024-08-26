@@ -1,5 +1,5 @@
 import {
-    type ConfigurationWithAccessToken,
+    type ClientConfigurationWithAccessToken,
     fromVSCodeEvent,
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
@@ -16,15 +16,15 @@ export interface ConfigWatcher<C> extends vscode.Disposable {
     get(): C
 }
 
-export class BaseConfigWatcher implements ConfigWatcher<ConfigurationWithAccessToken> {
-    private currentConfig: ConfigurationWithAccessToken
+export class BaseConfigWatcher implements ConfigWatcher<ClientConfigurationWithAccessToken> {
+    private currentConfig: ClientConfigurationWithAccessToken
     private disposables: vscode.Disposable[] = []
-    private configChangeEvent = new vscode.EventEmitter<ConfigurationWithAccessToken>()
+    private configChangeEvent = new vscode.EventEmitter<ClientConfigurationWithAccessToken>()
 
     public static async create(
         authProvider: AuthProvider,
         disposables: vscode.Disposable[]
-    ): Promise<ConfigWatcher<ConfigurationWithAccessToken>> {
+    ): Promise<ConfigWatcher<ClientConfigurationWithAccessToken>> {
         const w = new BaseConfigWatcher(await getFullConfig())
         disposables.push(w)
         disposables.push(
@@ -46,12 +46,12 @@ export class BaseConfigWatcher implements ConfigWatcher<ConfigurationWithAccessT
         return w
     }
 
-    constructor(initialConfig: ConfigurationWithAccessToken) {
+    constructor(initialConfig: ClientConfigurationWithAccessToken) {
         this.currentConfig = initialConfig
         this.disposables.push(this.configChangeEvent)
     }
 
-    public changes: Observable<ConfigurationWithAccessToken> = fromVSCodeEvent(
+    public changes: Observable<ClientConfigurationWithAccessToken> = fromVSCodeEvent(
         this.configChangeEvent.event,
         () => this.currentConfig
     )
@@ -63,11 +63,11 @@ export class BaseConfigWatcher implements ConfigWatcher<ConfigurationWithAccessT
         this.disposables = []
     }
 
-    public get(): ConfigurationWithAccessToken {
+    public get(): ClientConfigurationWithAccessToken {
         return this.currentConfig
     }
 
-    private set(config: ConfigurationWithAccessToken): void {
+    private set(config: ClientConfigurationWithAccessToken): void {
         const oldConfig = JSON.stringify(this.currentConfig)
         const newConfig = JSON.stringify(config)
         if (oldConfig === newConfig) {

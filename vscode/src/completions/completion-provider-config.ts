@@ -1,8 +1,12 @@
-import { type Configuration, FeatureFlag, type FeatureFlagProvider } from '@sourcegraph/cody-shared'
+import {
+    type ClientConfiguration,
+    FeatureFlag,
+    type FeatureFlagProvider,
+} from '@sourcegraph/cody-shared'
 import type { ContextStrategy } from './context/context-strategy'
 
 class CompletionProviderConfig {
-    private _config?: Configuration
+    private _config?: ClientConfiguration
 
     /**
      * Use the injected feature flag provider to make testing easier.
@@ -14,7 +18,6 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompleteUserLatency,
         FeatureFlag.CodyAutocompleteTracing,
         FeatureFlag.CodyAutocompleteContextExtendLanguagePool,
-        FeatureFlag.CodyAutocompleteHotStreakAndSmartThrottle,
         FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag,
         FeatureFlag.CodyAutocompletePreloadingExperimentVariant1,
         FeatureFlag.CodyAutocompletePreloadingExperimentVariant2,
@@ -33,14 +36,17 @@ class CompletionProviderConfig {
      * Should be called before `InlineCompletionItemProvider` instance is created, so that the singleton
      * with resolved values is ready for downstream use.
      */
-    public async init(config: Configuration, featureFlagProvider: FeatureFlagProvider): Promise<void> {
+    public async init(
+        config: ClientConfiguration,
+        featureFlagProvider: FeatureFlagProvider
+    ): Promise<void> {
         this._config = config
         this.featureFlagProvider = featureFlagProvider
 
         await Promise.all(this.flagsToResolve.map(flag => featureFlagProvider.evaluateFeatureFlag(flag)))
     }
 
-    public setConfig(config: Configuration) {
+    public setConfig(config: ClientConfiguration) {
         this._config = config
     }
 
@@ -84,9 +90,9 @@ class CompletionProviderConfig {
         //
         // The rollout values to set:
         // - CodyAutocompletePreloadingExperimentBaseFeatureFlag 75%
-        // - CodyAutocompleteHotStreak 33%
-        // - CodyAutocompleteSmartThrottle 100%
-        // - CodyAutocompleteSmartThrottleExtended 50%
+        // - CodyAutocompleteVariant1 33%
+        // - CodyAutocompleteVariant2 100%
+        // - CodyAutocompleteVariant3 50%
         if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag)) {
             if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompletePreloadingExperimentVariant1)) {
                 return 'variant1'
@@ -122,34 +128,6 @@ class CompletionProviderConfig {
             default:
                 return 0
         }
-    }
-
-    private getLatencyExperimentGroup(): 'hot-streak-and-smart-throttle' | 'control' {
-        // The desired distribution:
-        // - Hot-streak + Smart-throttle 50%
-        // - Control group 50%
-        //
-        // The rollout values to set:
-        // - CodyAutocompleteHotStreakAndSmartThrottle 50%
-        if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteHotStreakAndSmartThrottle)) {
-            return 'hot-streak-and-smart-throttle'
-        }
-
-        return 'control'
-    }
-
-    public get hotStreak(): boolean {
-        return (
-            this.config.autocompleteExperimentalHotStreakAndSmartThrottle ||
-            this.getLatencyExperimentGroup() === 'hot-streak-and-smart-throttle'
-        )
-    }
-
-    public get smartThrottle(): boolean {
-        return (
-            this.config.autocompleteExperimentalHotStreakAndSmartThrottle ||
-            this.getLatencyExperimentGroup() === 'hot-streak-and-smart-throttle'
-        )
     }
 }
 

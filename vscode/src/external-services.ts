@@ -2,8 +2,8 @@ import type * as vscode from 'vscode'
 
 import {
     ChatClient,
+    type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
-    type ConfigurationWithAccessToken,
     type Guardrails,
     type GuardrailsClientConfig,
     type SourcegraphCompletionsClient,
@@ -14,7 +14,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { ContextAPIClient } from './chat/context/contextAPIClient'
-import { createClient as createCodeCompletionsClient } from './completions/client'
+import { createClient as createCodeCompletionsClient } from './completions/default-client'
 import type { ConfigWatcher } from './configwatcher'
 import type { PlatformContext } from './extension.common'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
@@ -36,7 +36,7 @@ interface ExternalServices {
 }
 
 type ExternalServicesConfiguration = Pick<
-    ConfigurationWithAccessToken,
+    ClientConfigurationWithAccessToken,
     | 'serverEndpoint'
     | 'codebase'
     | 'useContext'

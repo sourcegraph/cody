@@ -1,8 +1,8 @@
 import {
     type AuthStatus,
     CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
+    type ClientConfiguration,
     CodyIDE,
-    type Configuration,
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
     WEB_PROVIDER_URI,
@@ -15,7 +15,10 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
-import type { ClientConfiguration, ImportedProviderConfiguration } from '@openctx/client'
+import type {
+    ImportedProviderConfiguration,
+    ClientConfiguration as OpenCtxClientConfiguration,
+} from '@openctx/client'
 import type { createController } from '@openctx/vscode-lib'
 import { Observable } from 'observable-fns'
 import type { ConfigWatcher } from '../configwatcher'
@@ -31,7 +34,7 @@ import { createWebProvider } from './openctx/web'
 
 export async function exposeOpenCtxClient(
     context: Pick<vscode.ExtensionContext, 'extension' | 'secrets'>,
-    config: ConfigWatcher<Configuration>,
+    config: ConfigWatcher<ClientConfiguration>,
     authProvider: AuthProvider,
     createOpenCtxController: typeof createController | undefined
 ): Promise<void> {
@@ -68,7 +71,7 @@ export async function exposeOpenCtxClient(
 }
 
 function getOpenCtxProviders(
-    configChanges: Observable<Configuration>,
+    configChanges: Observable<ClientConfiguration>,
     authStatusChanges: Observable<AuthStatus>,
     isValidSiteVersion: boolean
 ): Observable<ImportedProviderConfiguration[]> {
@@ -77,7 +80,11 @@ function getOpenCtxProviders(
         authStatusChanges,
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider),
     ]).map(
-        ([config, authStatus, gitMentionProvider]: [Configuration, AuthStatus, boolean | undefined]) => {
+        ([config, authStatus, gitMentionProvider]: [
+            ClientConfiguration,
+            AuthStatus,
+            boolean | undefined,
+        ]) => {
             const providers: ImportedProviderConfiguration[] = [
                 {
                     settings: true,
@@ -169,7 +176,7 @@ function getMergeConfigurationFunction(): Parameters<typeof createController>[0]
     // TODO before this is regarded as ready, we need to introduce some sort
     // of retry and expiry like we do for feature flags. For now we log once.
     const viewerSettingsProvidersCached = getViewerSettingsProviders()
-    return async (configuration: ClientConfiguration) => {
+    return async (configuration: OpenCtxClientConfiguration) => {
         const providers = await viewerSettingsProvidersCached
         if (!providers) {
             return configuration
@@ -185,7 +192,7 @@ function getMergeConfigurationFunction(): Parameters<typeof createController>[0]
     }
 }
 
-async function getViewerSettingsProviders(): Promise<ClientConfiguration['providers']> {
+async function getViewerSettingsProviders(): Promise<OpenCtxClientConfiguration['providers']> {
     try {
         const settings = await graphqlClient.viewerSettings()
         if (isError(settings)) {

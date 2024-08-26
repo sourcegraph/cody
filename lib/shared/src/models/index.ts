@@ -1,5 +1,5 @@
 import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
-import { CodyIDE, type Configuration } from '../configuration'
+import { type ClientConfiguration, CodyIDE } from '../configuration'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { logDebug, logError } from '../logger'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
@@ -350,7 +350,9 @@ export class ModelsService {
         }
         const endpoint = this.authStatus?.endpoint
         if (!endpoint) {
-            logError('ModelsService::preferences', 'No auth status set')
+            if (!process.env.VITEST) {
+                logError('ModelsService::preferences', 'No auth status set')
+            }
             return empty
         }
         // If global cache is missing, try loading from storage
@@ -370,7 +372,7 @@ export class ModelsService {
         return empty
     }
 
-    public async onConfigChange(config: Configuration): Promise<void> {
+    public async onConfigChange(config: ClientConfiguration): Promise<void> {
         try {
             const isCodyWeb = config.agentIDE === CodyIDE.Web
 

@@ -8,7 +8,7 @@ import { escapeRegExp } from 'lodash'
 import semver from 'semver'
 import type { AuthStatus } from '../../auth/types'
 import { dependentAbortController, onAbort } from '../../common/abortController'
-import type { Configuration, ConfigurationWithAccessToken } from '../../configuration'
+import type { ClientConfiguration, ClientConfigurationWithAccessToken } from '../../configuration'
 import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
@@ -49,7 +49,7 @@ import {
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
     REPOSITORY_LIST_QUERY,
-    REPOSITORY_SEARCH_QUERY,
+    REPOS_SUGGESTIONS_QUERY,
     REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
     VIEWER_SETTINGS_QUERY,
@@ -272,14 +272,21 @@ export interface RepoListResponse {
     }
 }
 
-export interface RepoSearchResponse {
-    repositories: {
-        nodes: { name: string; id: string; url: string }[]
-        pageInfo: {
-            endCursor: string | null
-        }
-    }
+export interface SuggestionsRepo {
+    id: string
+    name: string
+    stars: number
+    url: string
 }
+
+export interface RepoSuggestionsSearchResponse {
+    search: {
+        results: {
+            repositories: Array<SuggestionsRepo>
+        }
+    } | null
+}
+
 interface FileMatchSearchResponse {
     search: {
         results: {
@@ -541,10 +548,10 @@ export interface event {
 }
 
 export type GraphQLAPIClientConfig = Pick<
-    ConfigurationWithAccessToken,
+    ClientConfigurationWithAccessToken,
     'serverEndpoint' | 'accessToken' | 'customHeaders'
 > &
-    Pick<Partial<Configuration>, 'telemetryLevel'>
+    Pick<Partial<ClientConfiguration>, 'telemetryLevel'>
 
 export let customUserAgent: string | undefined
 export function addCustomUserAgent(headers: Headers): void {
@@ -783,7 +790,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {
-        // fetch Cody LLM provider separately for backward compatability
+        // fetch Cody LLM provider separately for backward compatibility
         const [configResponse, providerResponse, smartContextWindow] = await Promise.all([
             this.fetchSourcegraphAPI<APIResponse<CodyLLMSiteConfigurationResponse>>(
                 CURRENT_SITE_CODY_LLM_CONFIGURATION
@@ -864,23 +871,13 @@ export class SourcegraphGraphQLAPIClient {
         }).then(response => extractDataOrError(response, data => data))
     }
 
-    /**
-     * Searches for repositories from the Sourcegraph instance.
-     * @param first the number of repositories to retrieve.
-     * @param after the last repository retrieved, if any, to continue enumerating the list.
-     * @param query the query to search the repositories.
-     * @returns the list of repositories. If `endCursor` is null, this is the end of the list.
-     */
-    public async searchRepos(
-        first: number,
-        after?: string,
-        query?: string
-    ): Promise<RepoSearchResponse | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<RepoSearchResponse>>(REPOSITORY_SEARCH_QUERY, {
-            first,
-            after: after || null,
-            query,
-        }).then(response => extractDataOrError(response, data => data))
+    public async searchRepoSuggestions(query: string): Promise<RepoSuggestionsSearchResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RepoSuggestionsSearchResponse>>(
+            REPOS_SUGGESTIONS_QUERY,
+            {
+                query: `context:global type:repo count:10 repo:${query}`,
+            }
+        ).then(response => extractDataOrError(response, data => data))
     }
 
     public async searchFileMatches(query?: string): Promise<FileMatchSearchResponse | Error> {

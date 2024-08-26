@@ -106,7 +106,7 @@ export const buildInteraction = async ({
         })
     const promptBuilder = await PromptBuilder.create(modelsService.getContextWindowByID(model))
 
-    const preamble = getSimplePreamble(model, codyApiVersion, prompt.system)
+    const preamble = getSimplePreamble(model, codyApiVersion, 'Default', prompt.system)
     promptBuilder.tryAddToPrefix(preamble)
 
     // Add pre-instruction for edit commands to end of human prompt to override the default
