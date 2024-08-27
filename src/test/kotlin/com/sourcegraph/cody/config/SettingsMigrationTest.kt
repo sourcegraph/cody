@@ -4,6 +4,10 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.testFramework.registerServiceInstance
 import com.sourcegraph.cody.agent.protocol_generated.Model
 import com.sourcegraph.cody.agent.protocol_generated.ModelContextWindow
+import com.sourcegraph.cody.agent.protocol_generated.SerializedChatInteraction
+import com.sourcegraph.cody.agent.protocol_generated.SerializedChatMessage
+import com.sourcegraph.cody.agent.protocol_generated.SerializedChatTranscript
+import com.sourcegraph.cody.config.migration.ChatHistoryMigration
 import com.sourcegraph.cody.config.migration.ChatTagsLlmMigration
 import com.sourcegraph.cody.config.migration.DeprecatedChatLlmMigration
 import com.sourcegraph.cody.config.migration.SettingsMigration
@@ -16,6 +20,7 @@ import com.sourcegraph.cody.history.state.LLMState
 import com.sourcegraph.cody.history.state.MessageState
 import com.sourcegraph.cody.history.state.MessageState.SpeakerState
 import com.sourcegraph.cody.history.state.RemoteRepositoryState
+import java.time.LocalDateTime
 import kotlin.test.assertContains
 
 class SettingsMigrationTest : BasePlatformTestCase() {
@@ -363,5 +368,115 @@ class SettingsMigrationTest : BasePlatformTestCase() {
         }
       }
     }
+  }
+
+  fun `test toChatInput`() {
+    val account1 =
+        CodyAccount(name = "account1", server = SourcegraphServerPath("https://sourcegraph.com"))
+    val account2 =
+        CodyAccount(name = "account2", server = SourcegraphServerPath("https://sourcegraph.com"))
+
+    val chat1 =
+        ChatState("chat1").apply {
+          updatedAt = LocalDateTime.now().toString()
+          messages =
+              mutableListOf(
+                  MessageState().apply {
+                    text = "Hello"
+                    speaker = SpeakerState.HUMAN
+                  },
+                  MessageState().apply {
+                    text = "Hi there!"
+                    speaker = SpeakerState.ASSISTANT
+                  })
+          llm =
+              LLMState.fromChatModel(
+                  Model(
+                      id = "model1",
+                      usage = listOf("chat"),
+                      contextWindow = ModelContextWindow(0, 0, null),
+                      clientSideConfig = null,
+                      provider = "Anthropic",
+                      title = "Claude",
+                      tags = emptyList(),
+                      modelRef = null))
+        }
+
+    val chat2 =
+        ChatState("chat2").apply {
+          updatedAt = LocalDateTime.now().minusDays(1).toString()
+          messages =
+              mutableListOf(
+                  MessageState().apply {
+                    text = "What's up?"
+                    speaker = SpeakerState.HUMAN
+                  },
+                  MessageState().apply {
+                    text = "Not much."
+                    speaker = SpeakerState.ASSISTANT
+                  })
+          llm =
+              LLMState.fromChatModel(
+                  Model(
+                      id = "model2",
+                      usage = listOf("chat"),
+                      contextWindow = ModelContextWindow(0, 0, null),
+                      clientSideConfig = null,
+                      provider = "Anthropic",
+                      title = "Claude",
+                      tags = emptyList(),
+                      modelRef = null))
+        }
+
+    val chats = mapOf(account1 to listOf(chat1), account2 to listOf(chat2))
+
+    val result = ChatHistoryMigration.toChatInput(chats)
+
+    val expectedResult =
+        mapOf(
+            "https://sourcegraph.com-account1" to
+                mapOf(
+                    chat1.internalId to
+                        SerializedChatTranscript(
+                            id = chat1.internalId!!,
+                            lastInteractionTimestamp = chat1.updatedAt!!,
+                            interactions =
+                                listOf(
+                                    SerializedChatInteraction(
+                                        humanMessage =
+                                            SerializedChatMessage(
+                                                text = "Hello",
+                                                model = "model1",
+                                                speaker = SerializedChatMessage.SpeakerEnum.Human),
+                                        assistantMessage =
+                                            SerializedChatMessage(
+                                                text = "Hi there!",
+                                                model = "model1",
+                                                speaker =
+                                                    SerializedChatMessage.SpeakerEnum
+                                                        .Assistant))))),
+            "https://sourcegraph.com-account2" to
+                mapOf(
+                    chat2.internalId to
+                        SerializedChatTranscript(
+                            id = chat2.internalId!!,
+                            lastInteractionTimestamp = chat2.updatedAt!!,
+                            interactions =
+                                listOf(
+                                    SerializedChatInteraction(
+                                        humanMessage =
+                                            SerializedChatMessage(
+                                                text = "What's up?",
+                                                model = "model2",
+                                                speaker = SerializedChatMessage.SpeakerEnum.Human),
+                                        assistantMessage =
+                                            SerializedChatMessage(
+                                                text = "Not much.",
+                                                model = "model2",
+                                                speaker =
+                                                    SerializedChatMessage.SpeakerEnum
+                                                        .Assistant))))))
+
+    assertEquals(expectedResult, result)
   }
 }

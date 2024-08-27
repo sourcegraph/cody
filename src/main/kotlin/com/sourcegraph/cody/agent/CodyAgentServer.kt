@@ -16,22 +16,7 @@ import com.sourcegraph.cody.agent.protocol.InlineEditParams
 import com.sourcegraph.cody.agent.protocol.NetworkRequest
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol.TelemetryEvent
-import com.sourcegraph.cody.agent.protocol_generated.Chat_ModelsParams
-import com.sourcegraph.cody.agent.protocol_generated.Chat_ModelsResult
-import com.sourcegraph.cody.agent.protocol_generated.ClientInfo
-import com.sourcegraph.cody.agent.protocol_generated.CodeActions_ProvideParams
-import com.sourcegraph.cody.agent.protocol_generated.CodeActions_ProvideResult
-import com.sourcegraph.cody.agent.protocol_generated.CodeActions_TriggerParams
-import com.sourcegraph.cody.agent.protocol_generated.Diagnostics_PublishParams
-import com.sourcegraph.cody.agent.protocol_generated.EditTask
-import com.sourcegraph.cody.agent.protocol_generated.EditTask_AcceptParams
-import com.sourcegraph.cody.agent.protocol_generated.EditTask_CancelParams
-import com.sourcegraph.cody.agent.protocol_generated.EditTask_GetTaskDetailsParams
-import com.sourcegraph.cody.agent.protocol_generated.EditTask_RetryParams
-import com.sourcegraph.cody.agent.protocol_generated.EditTask_UndoParams
-import com.sourcegraph.cody.agent.protocol_generated.ExtensionConfiguration
-import com.sourcegraph.cody.agent.protocol_generated.Null
-import com.sourcegraph.cody.agent.protocol_generated.ServerInfo
+import com.sourcegraph.cody.agent.protocol_generated.*
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
@@ -165,6 +150,8 @@ interface _LegacyAgentServer {
   fun webviewResolveWebviewView(params: WebviewResolveWebviewViewParams): CompletableFuture<Any>
 
   @JsonRequest("chat/export") fun chatExport(): CompletableFuture<List<ChatHistoryResponse>>
+
+  @JsonRequest("chat/import") fun chat_import(params: Chat_ImportParams): CompletableFuture<Null?>
 
   @JsonRequest("ignore/test")
   fun ignoreTest(params: IgnoreTestParams): CompletableFuture<IgnoreTestResponse>

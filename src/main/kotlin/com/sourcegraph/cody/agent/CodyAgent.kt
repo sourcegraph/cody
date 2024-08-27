@@ -126,6 +126,7 @@ private constructor(
                               ignore = ClientCapabilities.IgnoreEnum.Enabled,
                               untitledDocuments = ClientCapabilities.UntitledDocumentsEnum.Enabled,
                               codeActions = ClientCapabilities.CodeActionsEnum.Enabled,
+                              globalState = ClientCapabilities.GlobalStateEnum.`Server-managed`,
                               webview = ClientCapabilities.WebviewEnum.Native,
                               webviewNativeConfig =
                                   WebviewNativeConfigParams(

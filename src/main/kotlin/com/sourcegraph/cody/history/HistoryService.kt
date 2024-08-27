@@ -41,6 +41,9 @@ class HistoryService(private val project: Project) :
   fun findActiveAccountChat(internalId: String): ChatState? =
       getActiveAccountHistory()?.chats?.find { it.internalId == internalId }
 
+  @Synchronized
+  fun getChatHistoryFor(accountId: String): List<ChatState>? = findEntry(accountId)?.chats
+
   private fun findEntry(accountId: String): AccountData? =
       state.accountData.find { it.accountId == accountId }
 

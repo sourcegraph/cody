@@ -54,16 +54,19 @@ class SettingsMigration : Activity {
       organiseChatsByAccount(project)
     }
     RunOnceUtil.runOnceForApp("CodyApplicationSettingsMigration") { migrateApplicationSettings() }
-    RunOnceUtil.runOnceForApp("ToggleCodyToolWindowAfterMigration") {
+    RunOnceUtil.runOnceForProject(project, "ToggleCodyToolWindowAfterMigration") {
       toggleCodyToolbarWindow(project)
     }
-    RunOnceUtil.runOnceForApp("CodyAccountsIdsRefresh") { refreshAccountsIds(project) }
-    RunOnceUtil.runOnceForApp("CodyAssignOrphanedChatsToActiveAccount") {
+    RunOnceUtil.runOnceForProject(project, "CodyAccountsIdsRefresh") { refreshAccountsIds(project) }
+    RunOnceUtil.runOnceForProject(project, "CodyAssignOrphanedChatsToActiveAccount") {
       migrateOrphanedChatsToActiveAccount(project)
     }
 
     DeprecatedChatLlmMigration.migrate(project)
     ChatTagsLlmMigration.migrate(project)
+    RunOnceUtil.runOnceForProject(project, "CodyMigrateChatHistory") {
+      ChatHistoryMigration.migrate(project)
+    }
   }
 
   private fun migrateOrphanedChatsToActiveAccount(project: Project) {
