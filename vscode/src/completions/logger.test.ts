@@ -25,6 +25,8 @@ const defaultContextSummary = {
     strategy: 'none',
     duration: 0.1337,
     totalChars: 3,
+    prefixChars: 0,
+    suffixChars: 3,
     retrieverStats: {},
 } satisfies ContextSummary
 

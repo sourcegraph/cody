@@ -90,7 +90,7 @@ export function createFastPathClient(
             stop: [...(requestParams.stopSequences || []), ...(fireworksConfig?.parameters?.stop || [])],
             stream: true,
             languageId: providerOptions.document.languageId,
-            anonymousUserID,
+            user: anonymousUserID,
         }
         const headers = new Headers(customHeaders)
         // Force HTTP connection reuse to reduce latency.
