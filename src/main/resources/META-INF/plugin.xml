@@ -405,6 +405,12 @@
                     <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift L" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Open Log"/>
                 </action>
+                <action id="cody.enableOffScreenRenderingAction"
+                        class="com.sourcegraph.cody.config.actions.EnableOffScreenRenderingAction"
+                        text="Enable OffScreen Rendering"
+                        description="Enable offScreen rendering in webview">
+                    <override-text place="GoToAction" text="Cody: Enable OffScreen Rendering"/>
+                </action>
             </group>
         </group>
 

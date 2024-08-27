@@ -6,7 +6,6 @@ import com.google.gson.JsonParser
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
@@ -34,6 +33,7 @@ import com.sourcegraph.cody.agent.WebviewSetTitleParams
 import com.sourcegraph.cody.agent.protocol.WebviewCreateWebviewPanelParams
 import com.sourcegraph.cody.agent.protocol.WebviewOptions
 import com.sourcegraph.cody.chat.actions.ExportChatsAction.Companion.gson
+import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.config.ui.CodyConfigurable
 import com.sourcegraph.cody.sidebar.WebTheme
@@ -419,9 +419,7 @@ class WebUIProxy(private val host: WebUIHost, private val browser: JBCefBrowserB
       val browser =
           JBCefBrowserBuilder()
               .apply {
-                val isOffScreenRenderingSupported =
-                    ApplicationInfo.getInstance().build.baselineVersion >= 232
-                setOffScreenRendering(isOffScreenRenderingSupported)
+                setOffScreenRendering(CodyApplicationSettings.instance.isOffScreenRenderingEnabled)
                 // TODO: Make this conditional on running in a debug configuration.
                 setEnableOpenDevToolsMenuItem(true)
               }
