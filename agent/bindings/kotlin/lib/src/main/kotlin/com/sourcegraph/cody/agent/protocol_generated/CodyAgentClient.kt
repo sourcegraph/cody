@@ -54,8 +54,6 @@ interface CodyAgentClient {
   fun progress_report(params: ProgressReportParams)
   @JsonNotification("progress/end")
   fun progress_end(params: Progress_EndParams)
-  @JsonNotification("uri/readUTF8")
-  fun uri_readUTF8(params: Uri_ReadUTF8Params)
   @JsonNotification("remoteRepo/didChange")
   fun remoteRepo_didChange(params: Null?)
   @JsonNotification("remoteRepo/didChangeState")
