@@ -122,7 +122,7 @@ class CodyFixHighlightPass(val file: PsiFile, val editor: Editor) :
                   .get()
           myRangeActions[range] =
               provideResponse.codeActions.map {
-                CodeActionQuickFixParams(title = it.title, kind = it.kind, location = location)
+                CodeActionQuickFixParams(action = it, location = location)
               }
         }
         done.complete(Unit)

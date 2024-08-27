@@ -2,34 +2,36 @@ package com.sourcegraph.cody.inspections
 
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.intention.PriorityAction
+import com.intellij.codeInspection.HintAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_generated.CodeActions_ProvideParams
 import com.sourcegraph.cody.agent.protocol_generated.CodeActions_TriggerParams
+import com.sourcegraph.cody.agent.protocol_generated.ProtocolCodeAction
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolLocation
 import com.sourcegraph.cody.edit.actions.EditCodeAction
 
 data class CodeActionQuickFixParams(
-    val title: String,
-    val kind: String?,
+    val action: ProtocolCodeAction,
     val location: ProtocolLocation,
 )
 
 class CodeActionQuickFix(private val params: CodeActionQuickFixParams) :
-    IntentionAction, PriorityAction {
+    IntentionAction, HintAction, PriorityAction {
   companion object {
     const val FAMILY_NAME = "Cody Code Action"
   }
 
   override fun getPriority(): PriorityAction.Priority {
     return if (isFixAction()) {
-      PriorityAction.Priority.TOP
+      PriorityAction.Priority.NORMAL
     } else if (isExplainAction()) {
       PriorityAction.Priority.LOW
     } else {
-      PriorityAction.Priority.HIGH
+      if (params.action.isPreferred == true) PriorityAction.Priority.NORMAL
+      else PriorityAction.Priority.LOW
     }
   }
 
@@ -39,17 +41,17 @@ class CodeActionQuickFix(private val params: CodeActionQuickFixParams) :
   }
 
   override fun getText(): String {
-    return params.title
+    return params.action.title
   }
 
   private fun isFixAction(): Boolean {
     // TODO: Ideally we have some flag indicating the semantic action type
-    return params.title.lowercase() == "ask cody to fix"
+    return params.action.title.lowercase() == "ask cody to fix"
   }
 
   private fun isExplainAction(): Boolean {
     // TODO: Ideally we have some flag indicating the semantic action type
-    return params.title.lowercase() == "ask cody to explain"
+    return params.action.title.lowercase() == "ask cody to explain"
   }
 
   private fun isKnownAction(): Boolean {
@@ -94,7 +96,9 @@ class CodeActionQuickFix(private val params: CodeActionQuickFixParams) :
                   CodeActions_ProvideParams(location = params.location, triggerKind = "Invoke"))
               .get()
       val action =
-          provideResponse.codeActions.find { it.title == params.title && it.kind == params.kind }
+          provideResponse.codeActions.find {
+            it.title == params.action.title && it.kind == params.action.kind
+          }
       if (action == null) {
         // TODO: handle this with a user notification
         throw Exception("Could not find action")
@@ -103,5 +107,9 @@ class CodeActionQuickFix(private val params: CodeActionQuickFixParams) :
       val result = agent.server.codeActions_trigger(CodeActions_TriggerParams(id = action.id)).get()
       EditCodeAction.completedEditTasks[result.id] = result
     }
+  }
+
+  override fun showHint(editor: Editor): Boolean {
+    return true
   }
 }

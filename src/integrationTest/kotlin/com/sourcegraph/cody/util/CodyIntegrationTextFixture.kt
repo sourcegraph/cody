@@ -136,6 +136,7 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
         AnActionEvent.createFromAnAction(action, null, "", createEditorContext(myFixture.editor))
     action.update(event)
     val presentation = event.presentation
+    assertEquals("Action description should be empty", "", presentation.description)
     assertTrue("Action should be enabled", presentation.isEnabled)
     assertTrue("Action should be visible", presentation.isVisible)
   }
