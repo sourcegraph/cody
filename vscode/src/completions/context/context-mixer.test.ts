@@ -74,7 +74,7 @@ describe('ContextMixer', () => {
                 strategy: 'none',
                 totalChars: 8,
                 prefixChars: 8,
-                suffixChars: 0
+                suffixChars: 0,
             })
         })
     })

@@ -22,9 +22,9 @@ import { createProviderConfig as createExperimentalOpenAICompatibleProviderConfi
 import {
     DEEPSEEK_CODER_V2_LITE_BASE,
     DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE,
-    DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192,
-    DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384,
-    DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768,
+    FIREWORKS_DEEPSEEK_7B_LANG_ALL,
+    FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0,
+    FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1,
     type FireworksOptions,
     createProviderConfig as createFireworksProviderConfig,
 } from './fireworks'
@@ -167,17 +167,16 @@ async function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<
         ),
     ])
     if (fimModelVariant1) {
-        // Variant 1: Current production model with +200msec latency to quantity the effect of latency increase while keeping same quality
         return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE }
     }
     if (fimModelVariant2) {
-        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192 }
+        return { provider: 'fireworks', model: FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0 }
     }
     if (fimModelVariant3) {
-        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384 }
+        return { provider: 'fireworks', model: FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1 }
     }
     if (fimModelVariant4) {
-        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768 }
+        return { provider: 'fireworks', model: FIREWORKS_DEEPSEEK_7B_LANG_ALL }
     }
     if (fimModelCurrentBest) {
         return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }

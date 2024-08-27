@@ -161,7 +161,7 @@ export class ContextMixer implements vscode.Disposable {
                         duration: results.find(r => r.identifier === retrieverId)?.duration ?? 0,
                     }
                 }
-                retrieverStats[retrieverId].retrieverChars+=snippet.content.length
+                retrieverStats[retrieverId].retrieverChars += snippet.content.length
                 retrieverStats[retrieverId].suggestedItems++
                 // Only log the position for the first 32 results to avoid overflowing the bitmap
                 if (position < 32) {
