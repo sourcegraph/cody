@@ -1480,6 +1480,7 @@
     "path-browserify": "^1.0.1",
     "playwright": "1.44.1",
     "postcss": "^8.4.38",
+    "postcss-nested": "^6.0.1",
     "progress": "^2.0.3",
     "react-head": "^3.4.2",
     "typescript-language-server": "^4.3.3",
