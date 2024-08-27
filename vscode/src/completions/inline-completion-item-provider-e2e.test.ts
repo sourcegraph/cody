@@ -50,10 +50,7 @@ const DUMMY_AUTH_STATUS: AuthStatus = {
     requiresVerifiedEmail: true,
     siteHasCodyEnabled: true,
     siteVersion: '1234',
-    primaryEmail: 'heisenberg@exmaple.com',
     username: 'uwu',
-    displayName: 'w.w.',
-    avatarURL: '',
     userCanUpgrade: false,
     codyApiVersion: 0,
 }
@@ -194,9 +191,7 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
         let getCompletionProviderSpy: MockInstance
 
         beforeAll(async () => {
-            await initCompletionProviderConfig({
-                autocompleteExperimentalHotStreakAndSmartThrottle: true,
-            })
+            await initCompletionProviderConfig({})
             localStorage.setStorage({
                 get: () => null,
                 update: () => {},

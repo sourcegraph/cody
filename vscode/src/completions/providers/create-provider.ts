@@ -67,11 +67,10 @@ export async function createProviderConfigHelper(
             })
         }
         case 'fireworks': {
-            const { anonymousUserID } = await localStorage.anonymousUserID()
+            const { anonymousUserID } = localStorage.anonymousUserID()
             return createFireworksProviderConfig({
                 client,
                 model: modelId ?? null,
-                timeouts: config.autocompleteTimeouts,
                 authStatus,
                 config,
                 anonymousUserID,
@@ -83,7 +82,6 @@ export async function createProviderConfigHelper(
             return createExperimentalOpenAICompatibleProviderConfig({
                 client,
                 model: modelId ?? null,
-                timeouts: config.autocompleteTimeouts,
                 authStatus,
                 config,
             })
@@ -92,7 +90,6 @@ export async function createProviderConfigHelper(
             if (model) {
                 return createOpenAICompatibleProviderConfig({
                     client,
-                    timeouts: config.autocompleteTimeouts,
                     model,
                     authStatus,
                     config,

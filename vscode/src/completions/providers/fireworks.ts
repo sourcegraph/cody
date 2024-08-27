@@ -1,7 +1,6 @@
 import {
     type AuthStatus,
     type AutocompleteContextSnippet,
-    type AutocompleteTimeouts,
     type ClientConfiguration,
     type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
@@ -37,7 +36,6 @@ export interface FireworksOptions {
     maxContextTokens?: number
     client: CodeCompletionsClient
     anonymousUserID?: string
-    timeouts: AutocompleteTimeouts
     config: Pick<
         ClientConfigurationWithAccessToken,
         'accessToken' | 'autocompleteExperimentalFireworksOptions'
@@ -130,7 +128,6 @@ class FireworksProvider extends Provider {
     private model: FireworksModel
     private promptChars: number
     private client: CodeCompletionsClient
-    private timeouts?: AutocompleteTimeouts
     private fastPathAccessToken?: string
     private authStatus: Pick<
         AuthStatus,
@@ -147,14 +144,12 @@ class FireworksProvider extends Provider {
             model,
             maxContextTokens,
             client,
-            timeouts,
             config,
             authStatus,
             anonymousUserID,
         }: Required<Omit<FireworksOptions, 'anonymousUserID'>> & { anonymousUserID?: string }
     ) {
         super(options)
-        this.timeouts = timeouts
         this.model = model
         this.modelHelper = getModelHelpers(model)
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
@@ -193,7 +188,6 @@ class FireworksProvider extends Provider {
     ): AsyncGenerator<FetchCompletionResult[]> {
         const partialRequestParams = getCompletionParams({
             providerOptions: this.options,
-            timeouts: this.timeouts,
             lineNumberDependentCompletionParams,
         })
 
@@ -300,7 +294,6 @@ function getClientModel(model: string | null, isDotCom: boolean): FireworksModel
 
 export function createProviderConfig({
     model,
-    timeouts,
     ...otherOptions
 }: Omit<FireworksOptions, 'model' | 'maxContextTokens'> & {
     model: string | null
@@ -318,7 +311,6 @@ export function createProviderConfig({
                 {
                     model: clientModel,
                     maxContextTokens,
-                    timeouts,
                     ...otherOptions,
                 }
             )

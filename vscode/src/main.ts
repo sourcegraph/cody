@@ -7,6 +7,7 @@ import {
     type ClientConfigurationWithAccessToken,
     type ClientConfigurationWithEndpoint,
     type CodeCompletionsClient,
+    type ConfigWatcher,
     type DefaultCodyCommands,
     type Guardrails,
     PromptString,
@@ -49,7 +50,7 @@ import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { createInlineCompletionItemFromMultipleProviders } from './completions/create-multi-model-inline-completion-provider'
 import { getFullConfig } from './configuration'
-import { BaseConfigWatcher, type ConfigWatcher } from './configwatcher'
+import { BaseConfigWatcher } from './configwatcher'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
 import { exposeOpenCtxClient } from './context/openctx'
 import { EditManager } from './edit/manager'
@@ -559,7 +560,7 @@ function registerUpgradeHandlers(
                 }
                 // Re-auth if user's cody pro status has changed
                 const isCurrentCodyProUser = !authStatus.userCanUpgrade
-                if (res.codyProEnabled !== isCurrentCodyProUser) {
+                if (res && res.codyProEnabled !== isCurrentCodyProUser) {
                     authProvider.reloadAuthStatus()
                 }
             }

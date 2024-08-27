@@ -61,7 +61,7 @@ export const loginCommand = new Command('login')
                 process.exit(1)
             }
             const userInfo = await account.getCurrentUserInfo()
-            if (isError(userInfo)) {
+            if (!userInfo || isError(userInfo)) {
                 spinner.fail(
                     `Failed to fetch username for account ${account.id} in ${account.serverEndpoint}`
                 )
@@ -123,6 +123,10 @@ export async function loginAction(
     const userInfo = await client.getCurrentUserInfo()
     if (isError(userInfo)) {
         spinner.fail('Failed to get username from GraphQL. Error: ' + String(userInfo))
+        return undefined
+    }
+    if (userInfo === null) {
+        spinner.fail('No user info returned from GraphQL.')
         return undefined
     }
     const oldSettings = loadUserSettings()
@@ -251,7 +255,7 @@ async function promptUserAboutLoginMethod(spinner: Ora, options: LoginOptions): 
             customHeaders: {},
         })
         const userInfo = await client.getCurrentUserInfo()
-        const isValidAccessToken = !isError(userInfo)
+        const isValidAccessToken = userInfo && !isError(userInfo)
         if (isValidAccessToken) {
             spinner.stopAndPersist()
             const cliLogin = `Yes, log in as ${userInfo.username} on ${options.endpoint}`

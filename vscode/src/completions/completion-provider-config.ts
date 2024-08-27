@@ -18,7 +18,6 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompleteUserLatency,
         FeatureFlag.CodyAutocompleteTracing,
         FeatureFlag.CodyAutocompleteContextExtendLanguagePool,
-        FeatureFlag.CodyAutocompleteHotStreakAndSmartThrottle,
         FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag,
         FeatureFlag.CodyAutocompletePreloadingExperimentVariant1,
         FeatureFlag.CodyAutocompletePreloadingExperimentVariant2,
@@ -91,9 +90,9 @@ class CompletionProviderConfig {
         //
         // The rollout values to set:
         // - CodyAutocompletePreloadingExperimentBaseFeatureFlag 75%
-        // - CodyAutocompleteHotStreak 33%
-        // - CodyAutocompleteSmartThrottle 100%
-        // - CodyAutocompleteSmartThrottleExtended 50%
+        // - CodyAutocompleteVariant1 33%
+        // - CodyAutocompleteVariant2 100%
+        // - CodyAutocompleteVariant3 50%
         if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag)) {
             if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompletePreloadingExperimentVariant1)) {
                 return 'variant1'
@@ -129,34 +128,6 @@ class CompletionProviderConfig {
             default:
                 return 0
         }
-    }
-
-    private getLatencyExperimentGroup(): 'hot-streak-and-smart-throttle' | 'control' {
-        // The desired distribution:
-        // - Hot-streak + Smart-throttle 50%
-        // - Control group 50%
-        //
-        // The rollout values to set:
-        // - CodyAutocompleteHotStreakAndSmartThrottle 50%
-        if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteHotStreakAndSmartThrottle)) {
-            return 'hot-streak-and-smart-throttle'
-        }
-
-        return 'control'
-    }
-
-    public get hotStreak(): boolean {
-        return (
-            this.config.autocompleteExperimentalHotStreakAndSmartThrottle ||
-            this.getLatencyExperimentGroup() === 'hot-streak-and-smart-throttle'
-        )
-    }
-
-    public get smartThrottle(): boolean {
-        return (
-            this.config.autocompleteExperimentalHotStreakAndSmartThrottle ||
-            this.getLatencyExperimentGroup() === 'hot-streak-and-smart-throttle'
-        )
     }
 }
 

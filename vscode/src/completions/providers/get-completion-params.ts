@@ -1,4 +1,4 @@
-import type { AutocompleteTimeouts, CodeCompletionsParams } from '@sourcegraph/cody-shared'
+import type { CodeCompletionsParams } from '@sourcegraph/cody-shared'
 
 import type { ProviderOptions } from './provider'
 
@@ -40,35 +40,18 @@ export function getLineNumberDependentCompletionParams(
 interface GetCompletionParamsAndFetchImplParams {
     providerOptions: Readonly<ProviderOptions>
     lineNumberDependentCompletionParams: LineNumberDependentCompletionParamsByType
-    timeouts?: AutocompleteTimeouts | undefined
 }
 
 export function getCompletionParams(
     params: GetCompletionParamsAndFetchImplParams
 ): Omit<CodeCompletionsParams, 'messages'> {
-    const {
-        timeouts,
-        providerOptions: { multiline: isMultiline, hotStreak },
-        lineNumberDependentCompletionParams: { singlelineParams, multilineParams },
-    } = params
-
-    const useExtendedGeneration = isMultiline || hotStreak
+    const { multilineParams } = params.lineNumberDependentCompletionParams
 
     const partialRequestParams = {
-        ...(useExtendedGeneration ? multilineParams : singlelineParams),
+        ...multilineParams,
         temperature: 0.2,
         topK: 0,
     } satisfies Omit<CodeCompletionsParams, 'messages'>
-
-    // Apply custom multiline timeouts if they are defined.
-    if (timeouts?.multiline && useExtendedGeneration) {
-        partialRequestParams.timeoutMs = timeouts.multiline
-    }
-
-    // Apply custom singleline timeouts if they are defined.
-    if (timeouts?.singleline && !useExtendedGeneration) {
-        partialRequestParams.timeoutMs = timeouts.singleline
-    }
 
     return partialRequestParams
 }

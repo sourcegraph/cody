@@ -926,13 +926,8 @@ export const DEFAULT_VSCODE_SETTINGS = {
         model: 'codellama:7b-code',
         url: OLLAMA_DEFAULT_URL,
     },
-    autocompleteTimeouts: {
-        multiline: undefined,
-        singleline: undefined,
-    },
     autocompleteFirstCompletionTimeout: 3500,
     autocompleteExperimentalPreloadDebounceInterval: 0,
-    autocompleteExperimentalHotStreakAndSmartThrottle: false,
     testingModelConfig: undefined,
     experimentalGuardrailsTimeoutSeconds: undefined,
 } satisfies ClientConfiguration

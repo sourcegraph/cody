@@ -1,7 +1,6 @@
 import {
     type AuthStatus,
     type AutocompleteContextSnippet,
-    type AutocompleteTimeouts,
     type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
@@ -45,7 +44,6 @@ interface OpenAICompatibleOptions {
     model: Model
     maxContextTokens?: number
     client: CodeCompletionsClient
-    timeouts: AutocompleteTimeouts
     config: Pick<ClientConfigurationWithAccessToken, 'accessToken'>
     authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
 }
@@ -56,14 +54,12 @@ class OpenAICompatibleProvider extends Provider {
     private model: Model
     private promptChars: number
     private client: CodeCompletionsClient
-    private timeouts?: AutocompleteTimeouts
 
     constructor(
         options: ProviderOptions,
-        { model, maxContextTokens, client, timeouts }: Required<OpenAICompatibleOptions>
+        { model, maxContextTokens, client }: Required<OpenAICompatibleOptions>
     ) {
         super(options)
-        this.timeouts = timeouts
         this.model = model
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
@@ -137,7 +133,6 @@ class OpenAICompatibleProvider extends Provider {
     ): AsyncGenerator<FetchCompletionResult[]> {
         const partialRequestParams = getCompletionParams({
             providerOptions: this.options,
-            timeouts: this.timeouts,
             lineNumberDependentCompletionParams:
                 isStarChat(this.model) || isStarCoder(this.model)
                     ? getLineNumberDependentCompletionParams({
@@ -264,7 +259,6 @@ ${intro}${infillPrefix ? infillPrefix : ''}${OPENING_CODE_TAG}${CLOSING_CODE_TAG
 
 export function createProviderConfig({
     model,
-    timeouts,
     ...otherOptions
 }: Omit<OpenAICompatibleOptions, 'maxContextTokens'>): ProviderConfig {
     logDebug('OpenAICompatible', 'autocomplete provider using model', JSON.stringify(model))
@@ -287,7 +281,6 @@ export function createProviderConfig({
                 {
                     model,
                     maxContextTokens,
-                    timeouts,
                     ...otherOptions,
                 }
             )
