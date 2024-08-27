@@ -4,23 +4,28 @@ import type { AgentTextDocument } from './AgentTextDocument'
 import type { EditFunction } from './AgentWorkspaceDocuments'
 
 export class AgentTextEditor implements vscode.TextEditor {
+    private _selection: vscode.Selection
     constructor(
         private readonly agentDocument: AgentTextDocument,
         private readonly params?: { edit?: EditFunction }
-    ) {}
+    ) {
+        this._selection = new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(0, 0))
+    }
     get document(): AgentTextDocument {
         return this.agentDocument
     }
     get selection(): vscode.Selection {
         const protocolSelection = this.agentDocument.protocolDocument.selection
-        const selection: vscode.Selection = protocolSelection
-            ? new vscode.Selection(
-                  new vscode.Position(protocolSelection.start.line, protocolSelection.start.character),
-                  new vscode.Position(protocolSelection.end.line, protocolSelection.end.character)
-              )
-            : // Default to putting the cursor at the start of the file.
-              new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(0, 0))
-        return selection
+        if (protocolSelection) {
+            this._selection = new vscode.Selection(
+                new vscode.Position(protocolSelection.start.line, protocolSelection.start.character),
+                new vscode.Position(protocolSelection.end.line, protocolSelection.end.character)
+            )
+        }
+        return this._selection
+    }
+    set selection(newSelection: vscode.Selection) {
+        this._selection = newSelection
     }
     get selections(): readonly vscode.Selection[] {
         return [this.selection]

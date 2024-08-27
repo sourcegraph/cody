@@ -218,17 +218,12 @@ export class EditManager implements vscode.Disposable {
                 model: task.model,
             },
         })
-        if (editor.active && intent == 'doc') {
+        if (editor.active && (intent === 'doc' || intent === 'test')) {
             const newPosition = proposedRange.start
             editor.active.selection = new vscode.Selection(newPosition, newPosition)
-            editor.active.revealRange(proposedRange)
+            editor.active.revealRange(new vscode.Range(newPosition, newPosition), vscode.TextEditorRevealType.InCenter)
         }
 
-        
-        // Open the existing test file in VSCode
-        if(task.destinationFile) {
-            await vscode.window.showTextDocument(vscode.Uri.parse(task.destinationFile.toString()))
-        }
         const provider = this.getProviderForTask(task)
         await provider.startEdit()
         return task
