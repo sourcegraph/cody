@@ -22,6 +22,8 @@ interface CodyAgentClient {
   fun textDocument_show(params: TextDocument_ShowParams): CompletableFuture<Boolean>
   @JsonRequest("workspace/edit")
   fun workspace_edit(params: WorkspaceEditParams): CompletableFuture<Boolean>
+  @JsonRequest("uri/readUTF8")
+  fun uri_readUTF8(params: Uri_ReadUTF8Params): CompletableFuture<Uri_ReadUTF8Result>
   @JsonRequest("env/openExternal")
   fun env_openExternal(params: Env_OpenExternalParams): CompletableFuture<Boolean>
 
@@ -46,6 +48,8 @@ interface CodyAgentClient {
   fun progress_report(params: ProgressReportParams)
   @JsonNotification("progress/end")
   fun progress_end(params: Progress_EndParams)
+  @JsonNotification("uri/readUTF8")
+  fun uri_readUTF8(params: Uri_ReadUTF8Params)
   @JsonNotification("remoteRepo/didChange")
   fun remoteRepo_didChange(params: Null?)
   @JsonNotification("remoteRepo/didChangeState")

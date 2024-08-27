@@ -1852,13 +1852,17 @@ export async function addWebviewViewHTML(
     const uri = getWebviewUri(extensionUri, extensionClient.capabilities)
     logDebug('ChatController', 'addWebviewViewHTML', uri.toString())
     const html = await loadWebviewAsset(extensionClient, uri)
-    const resources = view.webview.asWebviewUri(uri)
+
+    let resources: vscode.Uri | undefined
+    if (config?.assetLoader !== 'webviewasset') {
+        resources = view.webview.asWebviewUri(uri)
+    }
     view.webview.html = transformHTML({ html, resources, config, cspSource: view.webview.cspSource })
 }
 
 interface TransformHTMLOptions {
     html: string
-    resources: vscode.Uri
+    resources?: vscode.Uri
     config?: ClientCapabilities['webviewNativeConfig']
     cspSource: string
 }
@@ -1866,11 +1870,11 @@ interface TransformHTMLOptions {
 const transformHTML = ({ html, resources, config, cspSource }: TransformHTMLOptions): string => {
     // This replace variables from the vscode/dist/index.html with webview info
     // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
+    if (resources) {
+        html = html.replaceAll('./', `${resources.toString()}/`)
+    }
     // 2. Update URIs for content security policy to only allow specific scripts to be run
-    html = html
-        .replaceAll('./', `${resources.toString()}/`)
-        .replaceAll("'self'", cspSource)
-        .replaceAll('{cspSource}', cspSource)
+    html = html.replaceAll("'self'", cspSource).replaceAll('{cspSource}', cspSource)
 
     // If a script or style is injected, replace the placeholder with the script or style
     // and drop the content-security-policy meta tag which prevents inline scripts and styles

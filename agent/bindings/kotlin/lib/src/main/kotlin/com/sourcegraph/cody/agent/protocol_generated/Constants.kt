@@ -41,6 +41,7 @@ object Constants {
   const val fetching = "fetching"
   const val file = "file"
   const val free = "free"
+  const val fs = "fs"
   const val function = "function"
   const val gateway = "gateway"
   const val history = "history"
@@ -89,5 +90,6 @@ object Constants {
   const val use = "use"
   const val user = "user"
   const val warning = "warning"
+  const val webviewasset = "webviewasset"
   const val workspace = "workspace"
 }

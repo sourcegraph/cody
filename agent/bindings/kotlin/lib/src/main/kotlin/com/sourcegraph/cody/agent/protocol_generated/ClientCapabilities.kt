@@ -19,7 +19,8 @@ data class ClientCapabilities(
   val webviewMessages: WebviewMessagesEnum? = null, // Oneof: object-encoded, string-encoded
   val globalState: GlobalStateEnum? = null, // Oneof: stateless, server-managed, client-managed
   val webview: WebviewEnum? = null, // Oneof: agentic, native
-  val webviewNativeConfig: WebviewNativeConfigParams? = null,
+  val uriSchemeLoaders: List<String>? = null,
+  val webviewNativeConfig: WebviewNativeConfig? = null,
 ) {
 
   enum class CompletionsEnum {

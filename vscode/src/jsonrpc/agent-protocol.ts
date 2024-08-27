@@ -638,23 +638,22 @@ export interface ClientCapabilities {
     // webviewBundleServingPrefix is prepended to resource paths under 'dist' in
     // asWebviewUri (note, multiple prefixes are not yet implemented.)
     // Set the view to 'single' when client only support single chat view, e.g. sidebar chat.
-    webviewNativeConfig?:
-        | {
-              view: 'multiple' | 'single'
-              cspSource: string
-              // if assetLoader is 'webviewasset', the client must implement the
-              // webviewasset:// protocol. The agent will call into the extension client
-              // to resolve the webview. If assetLoader is 'fs' or undefined, the
-              // agent will attempt to load the asset from the file system at
-              // (rootDir ?? codyPaths())/dist/webviews.
-              assetLoader?: 'fs' | 'webviewasset' | undefined | null
-              webviewBundleServingPrefix: string
-              rootDir?: string | undefined | null
-              injectScript?: string | undefined | null
-              injectStyle?: string | undefined | null
-          }
-        | undefined
-        | null
+    webviewNativeConfig?: WebviewNativeConfig | undefined | null
+}
+
+export interface WebviewNativeConfig {
+    view: 'multiple' | 'single'
+    cspSource: string
+    // if assetLoader is 'webviewasset', the client must implement the
+    // webviewasset:// protocol. The agent will call into the extension client
+    // to resolve the webview. If assetLoader is 'fs' or undefined, the
+    // agent will attempt to load the asset from the file system at
+    // (rootDir ?? codyPaths())/dist/webviews.
+    assetLoader?: 'fs' | 'webviewasset' | undefined | null
+    webviewBundleServingPrefix: string
+    rootDir?: string | undefined | null
+    injectScript?: string | undefined | null
+    injectStyle?: string | undefined | null
 }
 
 export interface ServerInfo {
