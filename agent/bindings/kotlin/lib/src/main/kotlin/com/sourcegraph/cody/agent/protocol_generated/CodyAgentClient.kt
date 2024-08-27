@@ -24,6 +24,12 @@ interface CodyAgentClient {
   fun workspace_edit(params: WorkspaceEditParams): CompletableFuture<Boolean>
   @JsonRequest("uri/readUTF8")
   fun uri_readUTF8(params: Uri_ReadUTF8Params): CompletableFuture<Uri_ReadUTF8Result>
+  @JsonRequest("secrets/get")
+  fun secrets_get(params: Secrets_GetParams): CompletableFuture<String?>
+  @JsonRequest("secrets/store")
+  fun secrets_store(params: Secrets_StoreParams): CompletableFuture<String?>
+  @JsonRequest("secrets/delete")
+  fun secrets_delete(params: Secrets_DeleteParams): CompletableFuture<String?>
   @JsonRequest("env/openExternal")
   fun env_openExternal(params: Env_OpenExternalParams): CompletableFuture<Boolean>
 

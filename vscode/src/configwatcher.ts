@@ -1,5 +1,6 @@
 import {
     type ClientConfigurationWithAccessToken,
+    type ConfigWatcher,
     fromVSCodeEvent,
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
@@ -7,14 +8,6 @@ import type { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 import { getFullConfig } from './configuration'
 import type { AuthProvider } from './services/AuthProvider'
-
-/**
- * A wrapper around a configuration source that lets the client retrieve the current config and watch for changes.
- */
-export interface ConfigWatcher<C> extends vscode.Disposable {
-    changes: Observable<C>
-    get(): C
-}
 
 export class BaseConfigWatcher implements ConfigWatcher<ClientConfigurationWithAccessToken> {
     private currentConfig: ClientConfigurationWithAccessToken

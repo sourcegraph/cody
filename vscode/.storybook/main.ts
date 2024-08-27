@@ -1,4 +1,5 @@
 import type { StorybookConfig } from '@storybook/react-vite'
+import postcssNested from 'postcss-nested'
 import { defineProjectWithDefaults } from '../../.config/viteShared'
 
 const config: StorybookConfig = {
@@ -31,7 +32,10 @@ const config: StorybookConfig = {
             ...config,
             define: { 'process.env': '{}' },
             css: {
-                postcss: __dirname + '/../webviews',
+                postcss: {
+                    plugins: [postcssNested],
+                    config: __dirname + '/../webviews',
+                },
             },
         }),
     staticDirs: ['./static'],

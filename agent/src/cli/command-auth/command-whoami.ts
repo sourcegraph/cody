@@ -16,11 +16,11 @@ export const whoamiCommand = new Command('whoami')
                 process.exit(1)
             }
             const userInfo = await account.getCurrentUserInfo()
-            if (isError(userInfo)) {
+            if (!userInfo || isError(userInfo)) {
                 failSpinner(
                     spinner,
                     `Failed to fetch username for account ${account.id} in ${account.serverEndpoint}`,
-                    userInfo
+                    userInfo ?? new Error('no authenticated user')
                 )
                 process.exit(1)
             } else {

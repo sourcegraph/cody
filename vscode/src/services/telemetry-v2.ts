@@ -74,7 +74,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
         return
     }
 
-    const { anonymousUserID, created: newAnonymousUser } = await localStorage.anonymousUserID()
+    const { anonymousUserID, created: newAnonymousUser } = localStorage.anonymousUserID()
     const initialize = telemetryRecorderProvider === undefined
 
     /**

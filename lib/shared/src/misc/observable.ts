@@ -480,16 +480,16 @@ export function pick<T, K extends keyof T>(
     )
 }
 
-export function shareReplay<Out, In extends Out>(): (observable: ObservableLike<In>) => Observable<Out> {
-    return (observable: ObservableLike<In>): Observable<Out> => {
-        const subject = new Subject<In>()
+export function shareReplay<T>(): (observable: ObservableLike<T>) => Observable<T> {
+    return (observable: ObservableLike<T>): Observable<T> => {
+        const subject = new Subject<T>()
         // biome-ignore lint/suspicious/noConfusingVoidType:
         let subscription: Unsubscribable | (() => void) | void | null = null
         let hasValue = false
-        let latestValue: In
+        let latestValue: T
         let refCount = 0
 
-        return new Observable<Out>(observer => {
+        return new Observable<T>(observer => {
             refCount++
             if (hasValue) {
                 observer.next(latestValue)
@@ -521,12 +521,12 @@ export function shareReplay<Out, In extends Out>(): (observable: ObservableLike<
     }
 }
 
-export function distinctUntilChanged<Out, In extends Out>(
-    isEqualFn: (a: In, b: In) => boolean = isEqualJSON
-): (observable: ObservableLike<In>) => Observable<Out> {
-    return (observable: ObservableLike<In>): Observable<Out> => {
-        return new Observable<Out>(observer => {
-            let lastInput: In | typeof NO_VALUES_YET = NO_VALUES_YET
+export function distinctUntilChanged<T>(
+    isEqualFn: (a: T, b: T) => boolean = isEqualJSON
+): (observable: ObservableLike<T>) => Observable<T> {
+    return (observable: ObservableLike<T>): Observable<T> => {
+        return new Observable<T>(observer => {
+            let lastInput: T | typeof NO_VALUES_YET = NO_VALUES_YET
 
             const scheduler = new AsyncSerialScheduler(observer)
 
@@ -539,7 +539,7 @@ export function distinctUntilChanged<Out, In extends Out>(
                 },
                 next(input) {
                     scheduler.schedule(async next => {
-                        if (lastInput === NO_VALUES_YET || !isEqualFn(lastInput as In, input)) {
+                        if (lastInput === NO_VALUES_YET || !isEqualFn(lastInput as T, input)) {
                             lastInput = input
                             next(input)
                         }

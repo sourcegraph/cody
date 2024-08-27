@@ -16,8 +16,15 @@ import { URI } from 'vscode-uri'
 export function renderContextItem(contextItem: ContextItem): ContextMessage | null {
     const { source, range } = contextItem
     const { content, repoName, title } = PromptString.fromContextItem(contextItem)
-    // Do not create context item for empty file
-    if (!content?.trim()?.length) {
+
+    // If true, this context item appears in the chat input as a context chip.
+    const isRequestedInChatInput =
+        source === ContextItemSource.User || source === ContextItemSource.Initial
+
+    // Do not create context item for empty file unless the context item is
+    // explicitly listed in the chat input. See CODY-3421 why we want to include
+    // empty files so that they can target URIs for smart apply.
+    if (content === undefined || (!isRequestedInChatInput && content.trim().length === 0)) {
         return null
     }
 

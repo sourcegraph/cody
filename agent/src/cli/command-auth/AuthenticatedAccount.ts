@@ -12,7 +12,7 @@ import { type Account, loadUserSettings } from './settings'
 export class AuthenticatedAccount {
     public graphqlClient: SourcegraphGraphQLAPIClient
 
-    private userInfo: CurrentUserInfo | Error | undefined
+    private userInfo: CurrentUserInfo | Error | null = null
     private constructor(
         public readonly account: Account,
         public readonly accessToken: string
@@ -24,7 +24,7 @@ export class AuthenticatedAccount {
         })
     }
 
-    public async getCurrentUserInfo(): Promise<CurrentUserInfo | Error> {
+    public async getCurrentUserInfo(): Promise<CurrentUserInfo | null | Error> {
         if (!this.userInfo) {
             this.userInfo = await this.graphqlClient.getCurrentUserInfo()
         }

@@ -8,6 +8,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Autocomplete: Enable deepseek-coder-v2-lite-base model for enterprise users. [pull/5272](https://github.com/sourcegraph/cody/pull/5272)
+
 ### Changed
 
 - Autocomplete: Enabled hot-streak and smart-throttle for enterprise users. [pull/5339](https://github.com/sourcegraph/cody/pull/5339)

@@ -1,23 +1,16 @@
+import _ from 'lodash'
 import * as uuid from 'uuid'
 import type { Memento } from 'vscode'
 
 import type {
+    AccountKeyedChatHistory,
     AuthStatus,
-    ChatHistory,
+    ChatHistoryKey,
     ClientConfigurationWithAccessToken,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
 
 import { isSourcegraphToken } from '../chat/protocol'
-
-type ChatHistoryKey = `${string}-${string}`
-type AccountKeyedChatHistory = {
-    [key: ChatHistoryKey]: PersistedUserLocalHistory
-}
-
-interface PersistedUserLocalHistory {
-    chat: ChatHistory
-}
 
 export type ChatLocation = 'editor' | 'sidebar'
 
@@ -116,7 +109,7 @@ class LocalStorage {
     public async setChatHistory(authStatus: AuthStatus, history: UserLocalHistory): Promise<void> {
         try {
             const key = getKeyForAuthStatus(authStatus)
-            let fullHistory = this.storage.get<{ [key: ChatHistoryKey]: UserLocalHistory } | null>(
+            let fullHistory = this.storage.get<AccountKeyedChatHistory | null>(
                 this.KEY_LOCAL_HISTORY,
                 null
             )
@@ -138,6 +131,19 @@ class LocalStorage {
         } catch (error) {
             console.error(error)
         }
+    }
+
+    public async importChatHistory(history: AccountKeyedChatHistory, merge: boolean): Promise<void> {
+        if (merge) {
+            const fullHistory = this.storage.get<AccountKeyedChatHistory | null>(
+                this.KEY_LOCAL_HISTORY,
+                null
+            )
+
+            _.merge(history, fullHistory)
+        }
+
+        await this.storage.update(this.KEY_LOCAL_HISTORY, history)
     }
 
     public async deleteChatHistory(authStatus: AuthStatus, chatID: string): Promise<void> {
@@ -194,17 +200,15 @@ class LocalStorage {
      * Return the anonymous user ID stored in local storage or create one if none exists (which
      * occurs on a fresh installation).
      */
-    public async anonymousUserID(): Promise<{ anonymousUserID: string; created: boolean }> {
+    public anonymousUserID(): { anonymousUserID: string; created: boolean } {
         let id = this.storage.get<string>(this.ANONYMOUS_USER_ID_KEY)
         let created = false
         if (!id) {
             created = true
             id = uuid.v4()
-            try {
-                await this.storage.update(this.ANONYMOUS_USER_ID_KEY, id)
-            } catch (error) {
-                console.error(error)
-            }
+            Promise.resolve(this.storage.update(this.ANONYMOUS_USER_ID_KEY, id).then(undefined)).catch(
+                error => console.error(error)
+            )
         }
         return { anonymousUserID: id, created }
     }

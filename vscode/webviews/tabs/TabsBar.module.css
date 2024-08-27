@@ -9,3 +9,54 @@
     color: var(--vscode-button-background);
     border-width: 1.25px;
 }
+
+:root {
+    --vscode-overlay-background: rgba(0, 0, 0, 0.5);
+    --vscode-modal-background: var(--vscode-sideBar-background);
+}
+
+.dialog {
+    &-overlay {
+        inset: 0;
+        position: fixed;
+        background-color: var(--vscode-overlay-background);
+    }
+
+    &-content {
+        background-color: var(--vscode-modal-background);
+        border-radius: 6px;
+        box-shadow: hsl(206 22% 7% / 35%) 0 10px 38px -10px, hsl(206 22% 7% / 20%) 0 10px 20px -15px;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90vw;
+        max-width: 450px;
+        max-height: 85vh;
+        padding: 25px;
+
+        &:focus {
+            outline: none;
+        }
+    }
+
+    &-title {
+        margin: 0;
+        font-weight: 500;
+        font-size: 17px;
+    }
+
+    &-description {
+        margin: 10px 0 20px;
+        font-size: 15px;
+        line-height: 1.5;
+    }
+
+    &-footer {
+        margin-top: 1.5rem;
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
+}

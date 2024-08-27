@@ -11,7 +11,7 @@ import { captureException } from '../../services/sentry/sentry'
 
 // Available releases: https://github.com/sourcegraph/bfg/releases
 export type BfgVersionString = SemverString<''>
-export const defaultBfgVersion: BfgVersionString = '5.4.6040'
+export const defaultBfgVersion: BfgVersionString = '5.6.2618'
 
 export const _config = {
     //delay before trying to re-lock a active file
