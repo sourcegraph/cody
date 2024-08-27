@@ -263,7 +263,14 @@ class FireworksProvider extends Provider {
     private getCustomHeaders = (): Record<string, string> => {
         // Enabled Fireworks tracing for Sourcegraph teammates.
         // https://readme.fireworks.ai/docs/enabling-tracing
-        return this.authStatus.isFireworksTracingEnabled ? { 'X-Fireworks-Genie': 'true' } : {}
+        let customHeader: Record<string, string> = {}
+        if (this.authStatus.isFireworksTracingEnabled) {
+            customHeader['X-Fireworks-Genie'] = 'true'
+        }
+        if (this.shouldEnableDirectRoute) {
+            customHeader['X-Sourcegraph-Use-Direct-Route'] = 'true'
+        }
+        return customHeader
     }
 
     private createClient(
