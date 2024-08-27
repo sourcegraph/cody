@@ -10,4 +10,5 @@ export const allClientCapabilitiesEnabled: ClientCapabilities = {
     showWindowMessage: 'request',
     ignore: 'enabled',
     codeActions: 'enabled',
+    secrets: 'client-managed',
 }

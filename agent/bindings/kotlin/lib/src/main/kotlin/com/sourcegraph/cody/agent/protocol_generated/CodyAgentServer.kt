@@ -178,4 +178,6 @@ interface CodyAgentServer {
   fun progress_cancel(params: Progress_CancelParams)
   @JsonNotification("webview/didDisposeNative")
   fun webview_didDisposeNative(params: Webview_DidDisposeNativeParams)
+  @JsonNotification("secrets/didChange")
+  fun secrets_didChange(params: Secrets_DidChangeParams)
 }

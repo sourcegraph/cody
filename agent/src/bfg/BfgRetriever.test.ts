@@ -14,6 +14,7 @@ import { getCurrentDocContext } from '../../../vscode/src/completions/get-curren
 import { initTreeSitterParser } from '../../../vscode/src/completions/test-helpers'
 import { defaultVSCodeExtensionClient } from '../../../vscode/src/extension-client'
 import { activate } from '../../../vscode/src/extension.node'
+import { AgentStatelessSecretStorage } from '../AgentSecretStorage'
 import { initializeVscodeExtension, newEmbeddedAgentClient } from '../agent'
 import { AgentGlobalState } from '../global-state/AgentGlobalState'
 import * as vscode_shim from '../vscode-shim'
@@ -41,7 +42,8 @@ describe('BfgRetriever', async () => {
             vscode.Uri.file(process.cwd()),
             activate,
             defaultVSCodeExtensionClient(),
-            new AgentGlobalState('vscode')
+            new AgentGlobalState('vscode'),
+            new AgentStatelessSecretStorage()
         )
 
         if (shouldCreateGitDir) {
