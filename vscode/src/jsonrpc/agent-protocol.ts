@@ -452,8 +452,6 @@ export type ServerNotifications = {
 
     'progress/end': [{ id: string }]
 
-    'uri/readUTF8': [{ uri: string }, { text: string }]
-
     // The list of remote repositories changed. Results from remoteRepo/list
     // may be stale and should be requeried.
     'remoteRepo/didChange': [null]
