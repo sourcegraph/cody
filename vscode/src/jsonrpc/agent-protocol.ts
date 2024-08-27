@@ -337,6 +337,10 @@ export type ServerRequests = {
     ]
     'workspace/edit': [WorkspaceEditParams, boolean]
 
+    'secrets/get': [{ key: string }, string | null | undefined]
+    'secrets/store': [{ key: string; value: string }, null | undefined]
+    'secrets/delete': [{ key: string }, null | undefined]
+
     // TODO: Add VSCode support for registerWebviewPanelSerializer.
 
     'env/openExternal': [{ uri: string }, boolean]
@@ -409,6 +413,8 @@ export type ClientNotifications = {
     // Consequently they have their own dispose notification. c.f.
     // webview/dispose client request.
     'webview/didDisposeNative': [{ handle: string }]
+
+    'secrets/didChange': [{ key: string }]
 }
 
 // ================
@@ -617,6 +623,12 @@ export interface ClientCapabilities {
     // JSON-RPC request to handle the saving of the client state. This is needed to safely share state
     // between concurrent agent processes (assuming there is one IDE client process managing multiple agent processes).
     globalState?: 'stateless' | 'server-managed' | 'client-managed' | undefined | null
+
+    // Secrets controls how the agent should handle storing secrets.
+    // - Stateless: the secrets are not persisted between agent processes.
+    // - Client managed: the client must implement the 'secrets/get',
+    // 'secrets/store', and 'secrets/delete' requests.
+    secrets?: 'stateless' | 'client-managed' | undefined | null
     // Whether the client supports the VSCode WebView API. If 'agentic', uses
     // AgentWebViewPanel which just delegates bidirectional postMessage over
     // the Agent protocol. If 'native', implements a larger subset of the VSCode
