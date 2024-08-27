@@ -76,7 +76,11 @@ export async function configureExternalServices(
         )
     }
 
-    const localEmbeddings = await platform.createLocalEmbeddingsController?.(initialConfig)
+    // Disable local embeddings for enterprise users.
+    const localEmbeddings =
+        authProvider.getAuthStatus().isLoggedIn && authProvider.getAuthStatus().isDotCom
+            ? await platform.createLocalEmbeddingsController?.(initialConfig)
+            : undefined
 
     const chatClient = new ChatClient(completionsClient, () => authProvider.getAuthStatus())
 
