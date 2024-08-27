@@ -42,13 +42,14 @@ if (!accessToken) {
 
 export const App: FC = () => {
     return (
-        <CodyWebChat
-            accessToken={accessToken}
-            serverEndpoint={serverEndpoint}
-            createAgentWorker={CREATE_AGENT_WORKER}
-            telemetryClientName="codydemo.testing"
-            initialContext={MOCK_INITIAL_DOT_COM_CONTEXT}
-            className={styles.root}
-        />
+        <div className={styles.root}>
+            <CodyWebChat
+                accessToken={accessToken}
+                serverEndpoint={serverEndpoint}
+                createAgentWorker={CREATE_AGENT_WORKER}
+                telemetryClientName="codydemo.testing"
+                initialContext={MOCK_INITIAL_DOT_COM_CONTEXT}
+            />
+        </div>
     )
 }

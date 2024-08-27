@@ -5,6 +5,7 @@
     box-sizing: border-box;
     height: 100%;
     overflow: hidden;
+    isolation: isolate;
 }
 
 .error-container {
@@ -19,7 +20,6 @@
     padding: 1rem;
     color: var(--vscode-input-foreground);
     background-color: var(--vscode-inputValidation-errorBackground);
-    align-items: center;
     min-height: 2rem;
     position: relative;
     overflow: auto;
