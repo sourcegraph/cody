@@ -199,14 +199,14 @@ class FireworksProvider extends Provider {
                 ? MODEL_MAP[useMultilineModel ? 'starcoder-16b' : 'starcoder-7b']
                 : MODEL_MAP[this.model]
 
-        const prompt = this.modelHelper.getFireworksPrompt({
+        const prompt = this.modelHelper.getPrompt({
             snippets,
             docContext: this.options.docContext,
             document: this.options.document,
             promptChars: this.promptChars,
         })
 
-        const requestParams = this.modelHelper.getFireworksRequestParams({
+        const requestParams = this.modelHelper.getRequestParams({
             ...partialRequestParams,
             messages: [{ speaker: 'human', text: prompt }],
             temperature: 0.2,

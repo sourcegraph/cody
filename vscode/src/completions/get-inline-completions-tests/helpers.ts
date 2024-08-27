@@ -1,6 +1,7 @@
 import dedent from 'dedent'
 import { isEqual } from 'lodash'
 import { expect } from 'vitest'
+import type { URI } from 'vscode-uri'
 
 import {
     type AuthStatus,
@@ -51,8 +52,6 @@ import { sleep } from '../utils'
 // mimicking the default indentation of four spaces
 export const T = '\t'
 
-const URI_FIXTURE = testFileUri('test.ts')
-
 const dummyAuthStatus: AuthStatus = defaultAuthStatus
 const getVSCodeConfigurationWithAccessToken = (
     config: Partial<ClientConfiguration> = {}
@@ -72,6 +71,7 @@ type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'd
     ) => Generator<CompletionResponse> | AsyncGenerator<CompletionResponse>
     providerOptions?: Partial<ProviderOptions>
     configuration?: Partial<ClientConfiguration>
+    documentUri?: URI
 }
 
 export interface ParamsResult extends InlineCompletionsParams {
@@ -104,6 +104,7 @@ export function params(
         isDotComUser = false,
         providerOptions,
         configuration,
+        documentUri = testFileUri('test.ts'),
         ...restParams
     } = params
 
@@ -168,7 +169,7 @@ export function params(
         config: configWithAccessToken,
     })
 
-    const { document, position } = documentAndPosition(code, languageId, URI_FIXTURE.toString())
+    const { document, position } = documentAndPosition(code, languageId, documentUri.toString())
 
     const parser = getParser(document.languageId as SupportedLanguage)
     if (parser) {
@@ -256,7 +257,7 @@ interface ParamsWithInlinedCompletion extends Params {
  *   return result█
  * }
  */
-function paramsWithInlinedCompletion(
+export function paramsWithInlinedCompletion(
     code: string,
     { delayBetweenChunks, ...completionParams }: ParamsWithInlinedCompletion = {}
 ): ParamsResult {
