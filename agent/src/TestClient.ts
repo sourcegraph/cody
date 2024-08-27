@@ -9,8 +9,8 @@ import path from 'node:path'
 import { type ContextItem, type SerializedChatMessage, logError } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { applyPatch } from 'fast-myers-diff'
-import * as vscode from 'vscode'
 import type { Uri } from 'vscode'
+import * as vscode from 'vscode'
 import {
     type MessageConnection,
     StreamMessageReader,
@@ -52,8 +52,8 @@ import type {
     WebviewPostMessageParams,
     WorkspaceEditParams,
 } from './protocol-alias'
+import { protocolFactory } from './protocol-alias'
 import { trimEndOfLine } from './trimEndOfLine'
-import { protocolRange } from './vscode-type-converters'
 
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
 
@@ -463,8 +463,8 @@ export class TestClient extends MessageHandler {
             sourceOfTruthDocument: {
                 uri: clientDocument.uri.toString(),
                 content: clientDocument.getText(),
-                selection: protocolRange(clientEditor.selection),
-                visibleRange: visibleRange ? protocolRange(visibleRange) : undefined,
+                selection: protocolFactory.ProtocolRange.vsc(clientEditor.selection),
+                visibleRange: visibleRange ? protocolFactory.ProtocolRange.vsc(visibleRange) : undefined,
             },
         }
 

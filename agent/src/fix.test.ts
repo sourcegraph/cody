@@ -39,12 +39,16 @@ describe.skipIf(isWindows())('Fix', () => {
             triggerKind: 'Invoke',
         })
         expect(codeActions).toHaveLength(2)
-        const fixAction = codeActions.find(action => action.title.toLowerCase() === 'ask cody to fix')
+        const fixAction = codeActions.find(action =>
+            action.kind?.startsWith('quickfix.cody.fixupCode.diagnostic')
+        )
         if (fixAction === undefined) {
             throw new Error('Could not find fix action')
         }
-        const editTask = await client.request('codeActions/trigger', { id: fixAction.id })
-        await client.acceptEditTask(uri, editTask)
+        const actionResult = await client.request('codeActions/trigger', { id: fixAction.id })
+        expect(actionResult?.type).toBe('edit')
+        expect(actionResult?.editResult).toBeDefined()
+        await client.acceptEditTask(uri, actionResult?.editResult!)
         expect(client.workspace.getDocument(uri)?.getText()).toMatchInlineSnapshot(`
           "export function fixCommandExample(): number {
               return 42;

@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { PromptString, ps } from '@sourcegraph/cody-shared'
 import type { ExecuteEditArguments } from '../edit/execute'
 import { getSmartSelection } from '../editor/utils'
+import { CodyCodeActionKind } from './kind'
 
 const FIX_PROMPT_TOPICS = {
     SOURCE: ps`PROBLEMCODE4179`,
@@ -10,7 +11,11 @@ const FIX_PROMPT_TOPICS = {
 }
 
 export class FixupCodeAction implements vscode.CodeActionProvider {
-    public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix]
+    public static readonly providedCodeActionKinds = [
+        CodyCodeActionKind.QuickFix.append('fixupCode.diagnostic.generic'),
+        //TODO: we can generate more specific code actions that tweak the prompt and UI label. For instance, "Cody: Update Imports"
+    ]
+    public static readonly documentSelector = '*'
 
     public async provideCodeActions(
         document: vscode.TextDocument,
@@ -41,16 +46,17 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         const newRange = targetAreaRange
             ? new vscode.Range(targetAreaRange.start, targetAreaRange.end)
             : expandedRange
-        const codeAction = await this.createCommandCodeAction(document, diagnostics, newRange)
+        const codeAction = await this.createFixupDiagnosticAction(document, diagnostics, newRange)
         return [codeAction]
     }
 
-    private async createCommandCodeAction(
+    private async createFixupDiagnosticAction(
         document: vscode.TextDocument,
         diagnostics: vscode.Diagnostic[],
         range: vscode.Range
     ): Promise<vscode.CodeAction> {
-        const action = new vscode.CodeAction('Ask Cody to Fix', vscode.CodeActionKind.QuickFix)
+        const displayText = 'Cody: Fix It' //TODO: Pull out into package.nls.json
+        const action = new vscode.CodeAction(displayText, FixupCodeAction.providedCodeActionKinds[0])
         const instruction = await this.getCodeActionInstruction(
             document.uri,
             PromptString.fromDocumentText(document, range),
@@ -71,7 +77,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
                     },
                 } satisfies ExecuteEditArguments,
             ],
-            title: 'Ask Cody to Fix',
+            title: displayText,
         }
         action.diagnostics = diagnostics
         return action

@@ -2,14 +2,15 @@ import path from 'node:path'
 import { PromptString, ps } from '@sourcegraph/cody-shared'
 import { glob } from 'glob'
 import * as vscode from 'vscode'
+import { CodyCodeActionKind } from '../../../../vscode/src/code-actions/kind'
 import { ProtocolTextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { pathExists } from '../../../../vscode/src/local-context/utils'
 import { redactAuthorizationHeader } from '../../../../vscode/src/testutils/CodyPersister'
 import { AgentTextDocument } from '../../AgentTextDocument'
 import { TestClient } from '../../TestClient'
 import type { RpcMessageHandler } from '../../jsonrpc-alias'
+import { protocolFactory } from '../../protocol-alias'
 import { renderUnifiedDiff } from '../../renderUnifiedDiff'
-import { vscodeRange } from '../../vscode-type-converters'
 import { EvaluationDocument } from './EvaluationDocument'
 import type { CodyBenchOptions } from './command-bench'
 import { evaluateEachFile } from './evaluateEachFile'
@@ -64,14 +65,20 @@ export async function evaluateFixStrategy(
                 location: diagnostic.location,
                 triggerKind: 'Invoke',
             })
-            const fixAction = codeActions.find(action => action.title === 'Ask Cody to Fix')
-            if (!fixAction || !fixAction.commandID) {
+            const fixAction = codeActions.find(action =>
+                action.kind?.startsWith(CodyCodeActionKind.QuickFix.append('fixupCode').value)
+            )
+            if (!fixAction) {
                 console.log('No fix action found')
                 console.log(prettyDiagnostic(diagnostic))
                 continue
             }
-            const editTask = await client.request('codeActions/trigger', { id: fixAction.id })
-            await client.acceptEditTask(params.uri, editTask)
+            const result = await client.request('codeActions/trigger', { id: fixAction.id })
+            if (result?.type !== 'edit') {
+                console.log('No edit result found')
+                continue
+            }
+            await client.acceptEditTask(params.uri, result.editResult)
             const { diagnostics: newDiagnostics } = await client.request('testing/diagnostics', {
                 uri: params.uri.toString(),
             })
@@ -123,8 +130,7 @@ export async function evaluateFixStrategy(
             testCount -= 1
             scores.push(score)
             document.pushItem({
-                range: vscodeRange(diagnostic.location.range),
-
+                range: protocolFactory.ProtocolRange.vsc(diagnostic.location.range),
                 editDiff: renderUnifiedDiff(
                     { header: '(before)', text: params.content },
                     { header: '(after)', text: newText }

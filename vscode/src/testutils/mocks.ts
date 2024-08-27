@@ -155,12 +155,7 @@ export enum ExtensionMode {
     Development = 2,
     Test = 3,
 }
-export class DiagnosticRelatedInformation {
-    constructor(
-        public readonly location: Location,
-        public readonly message: string
-    ) {}
-}
+
 export enum DiagnosticSeverity {
     Error = 0,
     Warning = 1,
@@ -210,7 +205,7 @@ export enum ViewColumn {
 }
 export class CodeAction {
     edit?: WorkspaceEdit
-    diagnostics?: vscode_types.Diagnostic[]
+    diagnostics?: Diagnostic[]
     command?: vscode_types.Command
     isPreferred?: boolean
     disabled?: {
@@ -218,23 +213,70 @@ export class CodeAction {
     }
     constructor(
         public readonly title: string,
-        public readonly kind?: vscode_types.CodeActionKind
+        public readonly kind?: CodeActionKind
     ) {}
 }
-export class CodeActionKind {
-    static readonly Empty = new CodeActionKind('Empty')
-    static readonly QuickFix = new CodeActionKind('QuickFix')
-    static readonly Refactor = new CodeActionKind('Refactor')
-    static readonly RefactorExtract = new CodeActionKind('RefactorExtract')
-    static readonly RefactorInline = new CodeActionKind('RefactorInline')
-    static readonly RefactorMove = new CodeActionKind('RefactorMove')
-    static readonly RefactorRewrite = new CodeActionKind('RefactorRewrite')
-    static readonly Source = new CodeActionKind('Source')
-    static readonly SourceOrganizeImports = new CodeActionKind('SourceOrganizeImports')
-    static readonly SourceFixAll = new CodeActionKind('SourceFixAll')
+export class CodeActionKind implements vscode_types.CodeActionKind {
+    private static readonly sep = '.'
+    public static Empty: CodeActionKind
+    public static QuickFix: CodeActionKind
+    public static Refactor: CodeActionKind
+    public static RefactorExtract: CodeActionKind
+    public static RefactorInline: CodeActionKind
+    public static RefactorMove: CodeActionKind
+    public static RefactorRewrite: CodeActionKind
+    public static Source: CodeActionKind
+    public static SourceOrganizeImports: CodeActionKind
+    public static SourceFixAll: CodeActionKind
+    public static Notebook: CodeActionKind
 
     constructor(public readonly value: string) {}
+
+    public append(parts: string): CodeActionKind {
+        return new CodeActionKind(this.value ? this.value + CodeActionKind.sep + parts : parts)
+    }
+
+    public intersects(other: CodeActionKind): boolean {
+        return this.contains(other) || other.contains(this)
+    }
+
+    public contains(other: CodeActionKind): boolean {
+        return this.value === other.value || other.value.startsWith(this.value + CodeActionKind.sep)
+    }
 }
+// This is initialized outside of the class to ensure that the static properties
+// are initialized before they are used.
+CodeActionKind.Empty = new CodeActionKind('')
+CodeActionKind.QuickFix = CodeActionKind.Empty.append('quickfix')
+CodeActionKind.Refactor = CodeActionKind.Empty.append('refactor')
+CodeActionKind.RefactorExtract = CodeActionKind.Refactor.append('extract')
+CodeActionKind.RefactorInline = CodeActionKind.Refactor.append('inline')
+CodeActionKind.RefactorMove = CodeActionKind.Refactor.append('move')
+CodeActionKind.RefactorRewrite = CodeActionKind.Refactor.append('rewrite')
+CodeActionKind.Source = CodeActionKind.Empty.append('source')
+CodeActionKind.SourceOrganizeImports = CodeActionKind.Source.append('organizeImports')
+CodeActionKind.SourceFixAll = CodeActionKind.Source.append('fixAll')
+CodeActionKind.Notebook = CodeActionKind.Empty.append('notebook')
+
+export class Diagnostic implements vscode_types.Diagnostic {
+    constructor(
+        public readonly range: Range,
+        public readonly message: string,
+        public readonly severity: DiagnosticSeverity,
+        public readonly source?: string,
+        public readonly code?: string | number | { value: string | number; target: Uri },
+        public readonly relatedInformation?: DiagnosticRelatedInformation[],
+        public readonly tags?: vscode_types.DiagnosticTag[]
+    ) {}
+}
+
+export class DiagnosticRelatedInformation implements vscode_types.DiagnosticRelatedInformation {
+    constructor(
+        public readonly location: Location,
+        public readonly message: string
+    ) {}
+}
+
 // biome-ignore lint/complexity/noStaticOnlyClass: mock
 export class QuickInputButtons {
     public static readonly Back: vscode_types.QuickInputButton = {

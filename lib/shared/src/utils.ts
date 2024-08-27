@@ -126,3 +126,11 @@ type TupleFromUnion<T, U = T> = [T] extends [never]
 
 // Helper type to ensure an array contains all members of T
 export type ArrayContainsAll<T extends string> = TupleFromUnion<T>
+
+/**
+ * assertExhaustiveSwitch is useful in switch cases for ensuring that all cases are handled.
+ * It throws both a compile-time and runtime error if the switch is not exhaustive.
+ */
+export function assertExhaustiveSwitch(value: never): never {
+    throw new Error(`Unexpected value: ${value}`)
+}
