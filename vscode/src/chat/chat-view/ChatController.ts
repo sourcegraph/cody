@@ -71,6 +71,7 @@ import type { RemoteRepoPicker } from '../../context/repo-picker'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
+import type { ClientCapabilities } from '../../jsonrpc/agent-protocol'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
@@ -1848,41 +1849,76 @@ export async function addWebviewViewHTML(
         return
     }
     const config = extensionClient.capabilities?.webviewNativeConfig
-    const webviewPath = config?.rootDir
-        ? vscode.Uri.parse(config?.rootDir, true)
-        : vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
-    // Create Webview using vscode/index.html
-    if (
-        extensionClient.capabilities?.uriSchemeLoaders?.includes('webviewasset') &&
-        extensionClient.readUriUTF8
-    ) {
-        const decoded = await extensionClient.readUriUTF8(
-            vscode.Uri.from({ scheme: 'webviewasset', path: 'index.html' })
-        )
-        return
-    }
-    const root = vscode.Uri.joinPath(webviewPath, 'index.html')
-    const bytes = await vscode.workspace.fs.readFile(root)
-    const decoded = new TextDecoder('utf-8').decode(bytes)
-    const resources = view.webview.asWebviewUri(webviewPath)
+    const uri = getWebviewUri(extensionUri, extensionClient.capabilities)
+    logDebug('ChatController', 'addWebviewViewHTML', uri.toString())
+    const html = await loadWebviewAsset(extensionClient, uri)
+    const resources = view.webview.asWebviewUri(uri)
+    view.webview.html = transformHTML({ html, resources, config, cspSource: view.webview.cspSource })
+}
 
+interface TransformHTMLOptions {
+    html: string
+    resources: vscode.Uri
+    config?: ClientCapabilities['webviewNativeConfig']
+    cspSource: string
+}
+
+const transformHTML = ({ html, resources, config, cspSource }: TransformHTMLOptions): string => {
     // This replace variables from the vscode/dist/index.html with webview info
     // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
     // 2. Update URIs for content security policy to only allow specific scripts to be run
-    view.webview.html = decoded
+    html = html
         .replaceAll('./', `${resources.toString()}/`)
-        .replaceAll("'self'", view.webview.cspSource)
-        .replaceAll('{cspSource}', view.webview.cspSource)
+        .replaceAll("'self'", cspSource)
+        .replaceAll('{cspSource}', cspSource)
 
     // If a script or style is injected, replace the placeholder with the script or style
     // and drop the content-security-policy meta tag which prevents inline scripts and styles
     if (config?.injectScript || config?.injectStyle) {
-        // drop all text betweeb <-- START CSP --> and <-- END CSP -->
-        view.webview.html = decoded
+        // drop all text between <-- START CSP --> and <-- END CSP -->
+        html = html
             .replace(/<-- START CSP -->.*<!-- END CSP -->/s, '')
             .replaceAll('/*injectedScript*/', config?.injectScript ?? '')
             .replaceAll('/*injectedStyle*/', config?.injectStyle ?? '')
     }
+
+    return html
+}
+
+const loadWebviewAsset = async (extensionClient: ExtensionClient, uri: vscode.Uri): Promise<string> => {
+    if (
+        extensionClient.capabilities?.uriSchemeLoaders?.includes(uri.scheme) &&
+        extensionClient.readUriUTF8
+    ) {
+        const utf8 = await extensionClient.readUriUTF8(uri)
+        if (!utf8) {
+            throw new Error('Failed to load webview asset: ' + uri.toString())
+        }
+        return utf8
+    }
+
+    const bytes = await vscode.workspace.fs.readFile(uri)
+    return new TextDecoder('utf-8').decode(bytes)
+}
+
+const getWebviewUri = (extensionUri: vscode.Uri, capabilities?: ClientCapabilities): vscode.Uri => {
+    const config = capabilities?.webviewNativeConfig
+
+    // When the client has specified a webview asset loader, and they support webviewasset://,
+    // we will delegate to the client to handle the URI.
+    if (
+        config?.assetLoader === 'webviewasset' &&
+        capabilities?.uriSchemeLoaders?.includes('webviewasset')
+    ) {
+        return vscode.Uri.from({ scheme: 'webviewasset', path: 'index.html' })
+    }
+    // Otherwise, we will use load the webview asset from the file system, either
+    // from a specfic directory provided by the client, or from the default location.
+    const webviewPath = config?.rootDir
+        ? vscode.Uri.parse(config?.rootDir, true)
+        : vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
+
+    return vscode.Uri.joinPath(webviewPath, 'index.html')
 }
 
 // This is the manual ordering of the different retrieved and explicit context sources

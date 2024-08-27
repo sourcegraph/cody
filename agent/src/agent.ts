@@ -1465,6 +1465,21 @@ export class Agent extends MessageHandler implements ExtensionClient {
         return result ? vscode_shim.workspace.openTextDocument(result.uri) : undefined
     }
 
+    public async readUriUTF8(uri: vscode.Uri): Promise<string | undefined> {
+        if (this.clientInfo?.capabilities?.uriSchemeLoaders?.includes(uri.scheme)) {
+            const { text } = await this.request('uri/readUTF8', {
+                uri: uri.toString(),
+            })
+
+            return text
+        }
+        const errorMessage =
+            `Client does not support ${uri.scheme} documents. To fix this problem, add ${uri.scheme} to ` +
+            `ClientCapabilities.uriSchemeLoaders and implement the ${uri.scheme}:// protocol under uri/readUTF8`
+        logError('Agent', 'unsupported operation', errorMessage)
+        throw new Error(errorMessage)
+    }
+
     private maybeExtension: ExtensionObjects | undefined
 
     public async provide(extension: ExtensionObjects): Promise<vscode.Disposable> {

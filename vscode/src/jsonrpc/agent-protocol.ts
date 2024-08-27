@@ -337,6 +337,8 @@ export type ServerRequests = {
     ]
     'workspace/edit': [WorkspaceEditParams, boolean]
 
+    'uri/readUTF8': [{ uri: string }, { text: string }]
+
     // TODO: Add VSCode support for registerWebviewPanelSerializer.
 
     'env/openExternal': [{ uri: string }, boolean]
@@ -450,7 +452,6 @@ export type ServerNotifications = {
 
     'progress/end': [{ id: string }]
 
-    'uri/readBytes': [{ uri: string }, { base64EncodedBytes: string }]
     'uri/readUTF8': [{ uri: string }, { text: string }]
 
     // The list of remote repositories changed. Results from remoteRepo/list
@@ -628,7 +629,9 @@ export interface ClientCapabilities {
     // Defaults to 'agentic'.
     webview?: 'agentic' | 'native' | undefined | null
 
-    uriSchemeLoaders?: string[] // can be ['webviewasset']
+    // Custom URI prefixes that this client supports. If the agent is asked to open a URI
+    // with one of these prefixes, it will delegate to the client to handle the URI.
+    uriSchemeLoaders?: string[] | undefined | null
 
     // If webview === 'native', describes how the client has configured webview resources.
     // cspSource is passed to the extension as the Webview cspSource property.
@@ -639,7 +642,12 @@ export interface ClientCapabilities {
         | {
               view: 'multiple' | 'single'
               cspSource: string
-              assetLoader: 'fs' | 'client'
+              // if assetLoader is 'webviewasset', the client must implement the
+              // webviewasset:// protocol. The agent will call into the extension client
+              // to resolve the webview. If assetLoader is 'fs' or undefined, the
+              // agent will attempt to load the asset from the file system at
+              // (rootDir ?? codyPaths())/dist/webviews.
+              assetLoader?: 'fs' | 'webviewasset' | undefined | null
               webviewBundleServingPrefix: string
               rootDir?: string | undefined | null
               injectScript?: string | undefined | null
