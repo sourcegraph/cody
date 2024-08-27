@@ -254,10 +254,10 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
         logDebug('CodyLLMConfiguration', JSON.stringify(codyLLMConfiguration))
         // check first if it's a network error
-        if (isError(userInfo)) {
-            if (isNetworkError(userInfo)) {
-                return { ...networkErrorAuthStatus, endpoint }
-            }
+        if (isError(userInfo) && isNetworkError(userInfo)) {
+            return { ...networkErrorAuthStatus, endpoint }
+        }
+        if (!userInfo || isError(userInfo)) {
             return { ...unauthenticatedStatus, endpoint }
         }
 
@@ -284,7 +284,10 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         const proStatus = await this.client.getCurrentUserCodySubscription()
         // Pro user without the pending status is the valid pro users
         const isActiveProUser =
-            'plan' in proStatus && proStatus.plan === 'PRO' && proStatus.status !== 'PENDING'
+            proStatus !== null &&
+            'plan' in proStatus &&
+            proStatus.plan === 'PRO' &&
+            proStatus.status !== 'PENDING'
 
         return newAuthStatus({
             ...userInfo,
@@ -404,7 +407,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
     // sending back from sourcegraph.com
     public async tokenCallbackHandler(
         uri: vscode.Uri,
-        customHeaders: Record<string, string>
+        customHeaders: Record<string, string> | undefined
     ): Promise<void> {
         closeAuthProgressIndicator()
 

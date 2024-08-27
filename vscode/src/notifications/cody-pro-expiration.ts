@@ -115,7 +115,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
 
         // Only current Pro users with a Pending state (not already paid/have CC details)
         // will see notifications.
-        if (res.plan !== 'PRO' || res.status !== 'PENDING') return
+        if (res === null || res.plan !== 'PRO' || res.status !== 'PENDING') return
 
         // If we made it here, it's time to show a notification.
         await this.showNotification()

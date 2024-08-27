@@ -4,6 +4,7 @@ import {
     ChatClient,
     type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
+    type ConfigWatcher,
     type Guardrails,
     type GuardrailsClientConfig,
     type SourcegraphCompletionsClient,
@@ -15,7 +16,6 @@ import {
 
 import { ContextAPIClient } from './chat/context/contextAPIClient'
 import { createClient as createCodeCompletionsClient } from './completions/default-client'
-import type { ConfigWatcher } from './configwatcher'
 import type { PlatformContext } from './extension.common'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'

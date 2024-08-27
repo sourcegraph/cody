@@ -194,17 +194,15 @@ class LocalStorage {
      * Return the anonymous user ID stored in local storage or create one if none exists (which
      * occurs on a fresh installation).
      */
-    public async anonymousUserID(): Promise<{ anonymousUserID: string; created: boolean }> {
+    public anonymousUserID(): { anonymousUserID: string; created: boolean } {
         let id = this.storage.get<string>(this.ANONYMOUS_USER_ID_KEY)
         let created = false
         if (!id) {
             created = true
             id = uuid.v4()
-            try {
-                await this.storage.update(this.ANONYMOUS_USER_ID_KEY, id)
-            } catch (error) {
-                console.error(error)
-            }
+            Promise.resolve(this.storage.update(this.ANONYMOUS_USER_ID_KEY, id).then(undefined)).catch(
+                error => console.error(error)
+            )
         }
         return { anonymousUserID: id, created }
     }

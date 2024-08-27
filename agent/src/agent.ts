@@ -977,7 +977,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 throw res
             }
 
-            return res.codyProEnabled
+            return Boolean(res?.codyProEnabled)
         })
 
         this.registerAuthenticatedRequest('graphql/getCurrentUserCodySubscription', async () => {

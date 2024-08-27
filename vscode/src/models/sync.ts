@@ -149,7 +149,7 @@ async function fetchServerSideModels(endpoint: string): Promise<ServerModelConfi
 
     // Get the user's access token, assumed to be already saved in the secret store.
     const userAccessToken = await secretStorage.getToken(endpoint)
-    const customHeaders = getConfiguration().customHeaders ?? {}
+    const customHeaders = getConfiguration().customHeaders
 
     // Fetch the data via REST API.
     // NOTE: We may end up exposing this data via GraphQL, it's still TBD.

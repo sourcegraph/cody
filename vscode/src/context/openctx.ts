@@ -3,6 +3,7 @@ import {
     CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
     type ClientConfiguration,
     CodyIDE,
+    type ConfigWatcher,
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
     WEB_PROVIDER_URI,
@@ -21,7 +22,6 @@ import type {
 } from '@openctx/client'
 import type { createController } from '@openctx/vscode-lib'
 import { Observable } from 'observable-fns'
-import type { ConfigWatcher } from '../configwatcher'
 import { logDebug, outputChannel } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
 import CurrentRepositoryDirectoryProvider from './openctx/currentRepositoryDirectorySearch'

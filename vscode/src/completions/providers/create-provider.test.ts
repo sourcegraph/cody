@@ -41,7 +41,7 @@ describe('createProviderConfig', () => {
     beforeAll(async () => {
         localStorage.setStorage({
             get: () => null,
-            update: () => {},
+            update: () => Promise.resolve(undefined),
         } as any as vscode.Memento)
     })
 
