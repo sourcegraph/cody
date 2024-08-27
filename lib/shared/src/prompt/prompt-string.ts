@@ -350,12 +350,17 @@ export class PromptString {
         }
     }
 
-    public static fromContextItem(contextItem: ContextItem) {
+    public static fromContextItem(contextItem: ContextItem): {
+        content: PromptString | undefined
+        repoName: PromptString | undefined
+        title: PromptString | undefined
+    } {
         const ref = [contextItem.uri]
         return {
-            content: contextItem.content
-                ? internal_createPromptString(contextItem.content, ref)
-                : undefined,
+            content:
+                typeof contextItem.content === 'string'
+                    ? internal_createPromptString(contextItem.content, ref)
+                    : undefined,
             repoName: contextItem.repoName
                 ? internal_createPromptString(contextItem.repoName, ref)
                 : undefined,
