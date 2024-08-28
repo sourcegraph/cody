@@ -4,6 +4,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -29,6 +30,8 @@ enum class IgnorePolicy(val value: String) {
  */
 @Service(Service.Level.PROJECT)
 class IgnoreOracle(private val project: Project) {
+  private val logger = Logger.getInstance(IgnoreOracle::class.java)
+
   data class CacheEntry(val policy: IgnorePolicy, val timestampMsec: Long)
 
   private val cache = SLRUMap<String, CacheEntry>(100, 100)
@@ -136,6 +139,7 @@ class IgnoreOracle(private val project: Project) {
     return try {
       completable.get(policyAwaitTimeoutMs, TimeUnit.MILLISECONDS)
     } catch (timedOut: TimeoutException) {
+      logger.warn(timedOut)
       null
     }
   }

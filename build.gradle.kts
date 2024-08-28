@@ -213,7 +213,7 @@ fun Test.sharedIntegrationTestConfig(buildCodyDir: File, mode: String) {
       "cody.autocomplete.enableFormatting" to
           (project.property("cody.autocomplete.enableFormatting") as String? ?: "true"),
       "cody.integration.testing" to "true",
-      "cody.ignore.policy.timeout" to 500, // Increased to 500ms as CI tends to be slower
+      "cody.ignore.policy.timeout" to 1500, // Increased to 1500ms as CI tends to be slower
       "idea.test.execution.policy" to "com.sourcegraph.cody.test.NonEdtIdeaTestExecutionPolicy",
       "test.resources.dir" to resourcesDir.absolutePath)
 
