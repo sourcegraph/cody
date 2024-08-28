@@ -14,10 +14,10 @@ import { getSelectionOrFileContext } from '../commands/context/selection'
 import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
 import type { RemoteSearch } from '../context/remote-search'
 import { workspaceReposMonitor } from '../repository/repo-metadata-from-git-api'
+import type { AuthProvider } from '../services/AuthProvider'
 import type { ChatModel } from './chat-view/ChatModel'
 import { contextItemMentionFromOpenCtxItem } from './context/chatContext'
 import type { ExtensionMessage } from './protocol'
-import { AuthProvider } from '../services/AuthProvider'
 
 type PostMessage = (message: Extract<ExtensionMessage, { type: 'clientState' }>) => void
 
@@ -30,7 +30,7 @@ export function startClientStateBroadcaster({
     postMessage: rawPostMessage,
     chatModel,
 }: {
-    authProvider: AuthProvider,
+    authProvider: AuthProvider
     getRemoteSearch: () => RemoteSearch | null
     postMessage: PostMessage
     chatModel: ChatModel
@@ -93,10 +93,12 @@ export function startClientStateBroadcaster({
         })
     )
     disposables.push(
-        subscriptionDisposable(authProvider.changes.subscribe(async () => {
-            // Infrequent action, so don't debounce and show immediately in the UI.
-            void sendClientState('immediate')
-        }))
+        subscriptionDisposable(
+            authProvider.changes.subscribe(async () => {
+                // Infrequent action, so don't debounce and show immediately in the UI.
+                void sendClientState('immediate')
+            })
+        )
     )
 
     // Don't debounce for the first invocation so we immediately reflect the state in the UI.
