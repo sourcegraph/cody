@@ -25,7 +25,7 @@ fun Position.isStartOrEndOfDocumentMarker(document: Document): Boolean {
 }
 
 fun Position.getRealLine(document: Document): Int {
-  return min(max(0, document.lineCount - 1), line.toInt())
+  return max(0, min(max(0, document.lineCount - 1), line.toInt()))
 }
 
 fun Position.getRealColumn(document: Document): Int {
