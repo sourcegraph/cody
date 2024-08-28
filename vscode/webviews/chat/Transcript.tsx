@@ -6,6 +6,7 @@ import {
     isAbortErrorOrSocketHangUp,
 } from '@sourcegraph/cody-shared'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
+import { clsx } from 'clsx'
 import isEqual from 'lodash/isEqual'
 import { type FC, memo, useCallback, useMemo, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
@@ -58,7 +59,11 @@ export const Transcript: FC<TranscriptProps> = props => {
     )
 
     return (
-        <div className="tw-px-6 tw-pt-8 tw-pb-12 tw-flex tw-flex-col tw-gap-8">
+        <div
+            className={clsx('tw-px-6 tw-pt-8 tw-pb-12 tw-flex tw-flex-col tw-gap-8', {
+                'tw-flex-grow': transcript.length > 0,
+            })}
+        >
             {interactions.map((interaction, i) => (
                 <TranscriptInteraction
                     // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
@@ -217,6 +222,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isLastInteraction={isLastInteraction}
                 isEditorInitiallyFocused={isLastInteraction}
                 editorRef={humanEditorRef}
+                className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
             />
             {((humanMessage.contextFiles && humanMessage.contextFiles.length > 0) ||
                 isContextLoading) && (
