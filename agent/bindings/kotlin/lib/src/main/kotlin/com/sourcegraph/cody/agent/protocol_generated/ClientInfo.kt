@@ -10,5 +10,6 @@ data class ClientInfo(
   val workspaceRootPath: String? = null,
   val extensionConfiguration: ExtensionConfiguration? = null,
   val capabilities: ClientCapabilities? = null,
+  val legacyNameForServerIdentification: String? = null,
 )
 

@@ -39,10 +39,13 @@ export class AgentGlobalState implements vscode.Memento {
 
     public get<T>(key: string, defaultValue?: unknown): any {
         switch (key) {
-            case localStorage.ANONYMOUS_USER_ID_KEY:
-                return vscode_shim.extensionConfiguration?.anonymousUserID
             case localStorage.LAST_USED_ENDPOINT:
                 return vscode_shim.extensionConfiguration?.serverEndpoint
+            case localStorage.ANONYMOUS_USER_ID_KEY:
+                // biome-ignore lint/suspicious/noFallthroughSwitchClause: This is intentional
+                if (vscode_shim.extensionConfiguration?.anonymousUserID) {
+                    return vscode_shim.extensionConfiguration?.anonymousUserID
+                }
             default:
                 return this.db.get(key) ?? defaultValue
         }

@@ -95,6 +95,7 @@ export interface ClientConfiguration {
     agentIDE?: CodyIDE
     agentIDEVersion?: string
     agentExtensionVersion?: string
+    agentHasPersistentStorage?: boolean
     autocompleteFirstCompletionTimeout: number
 
     testingModelConfig: EmbeddingsModelConfig | undefined
