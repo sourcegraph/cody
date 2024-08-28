@@ -229,7 +229,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     title: fileURL,
                     uri: URI.file(`${repository.name}/${fileURL}/`),
                     providerUri: REMOTE_DIRECTORY_PROVIDER_URI,
-                    description: ' ',
+                    description: 'Current directory',
                     source: ContextItemSource.Initial,
                     mention: {
                         data: {
@@ -237,7 +237,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                             repoID: repository.id,
                             directoryPath: `${fileURL}/`,
                         },
-                        description: ' ',
+                        description: fileURL,
                     },
                 } as ContextItemOpenCtx)
             } else {
