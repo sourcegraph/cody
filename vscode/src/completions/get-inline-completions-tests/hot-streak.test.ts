@@ -23,6 +23,33 @@ describe('[getInlineCompletions] hot streak', () => {
         vi.restoreAllMocks()
     })
 
+    describe('hot-streak issues', () => {
+        it('repro hotstreak issue when the generation is same as suffix', async () => {
+            let request = await getInlineCompletionsWithInlinedChunks(
+                `from experimental table
+                █where other_completion_provider_enabled = false
+                █
+                where other_completion_provider_enabled = false
+                and read = true
+                `,
+                {
+                    configuration: {
+                        autocompleteAdvancedProvider: 'fireworks',
+                    },
+                    delayBetweenChunks: 50,
+                }
+            )
+
+            await vi.runAllTimersAsync()
+
+            expect(request.items).toEqual([])
+
+            request = await request.acceptFirstCompletionAndPressEnter()
+            expect(request.items[0].insertText).toEqual('here other_completion_provider_enabled = false')
+            expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
+        })
+    })
+
     describe('static multiline', () => {
         it('caches hot streaks completions that are streamed in', async () => {
             const thousandConsoleLogLines = 'console.log(1)\n'.repeat(1000)

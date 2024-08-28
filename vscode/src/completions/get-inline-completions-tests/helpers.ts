@@ -331,7 +331,10 @@ export async function getInlineCompletionsWithInlinedChunks(
     }
 
     const acceptFirstCompletionAndPressEnter = () => {
-        const [{ insertText }] = result.items
+        let insertText = ''
+        if (result.items.length > 0) {
+            insertText = result.items[0].insertText
+        }
 
         const newLineString = pressEnterAndGetIndentString(
             insertText,
