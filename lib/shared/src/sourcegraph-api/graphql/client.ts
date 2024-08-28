@@ -311,7 +311,7 @@ interface FileContentsResponse {
     } | null
 }
 
-interface RepositoryIdResponse {
+export interface RepositoryIdResponse {
     repository: { id: string } | null
 }
 

@@ -11,6 +11,7 @@ import * as vscode from 'vscode'
 import { getSelectionOrFileContext } from '../commands/context/selection'
 import { createRemoteRepositoryMention } from '../context/openctx/remoteRepositorySearch'
 import type { RemoteSearch } from '../context/remote-search'
+import { workspaceReposMonitor } from '../repository/repo-metadata-from-git-api'
 import type { ChatModel } from './chat-view/ChatModel'
 import { contextItemMentionFromOpenCtxItem } from './context/chatContext'
 import type { ExtensionMessage } from './protocol'
@@ -21,11 +22,11 @@ type PostMessage = (message: Extract<ExtensionMessage, { type: 'clientState' }>)
  * Listen for changes to the client (such as VS Code) state to send to the webview.
  */
 export function startClientStateBroadcaster({
-    remoteSearch,
+    getRemoteSearch,
     postMessage: rawPostMessage,
     chatModel,
 }: {
-    remoteSearch: RemoteSearch | null
+    getRemoteSearch: () => RemoteSearch | null
     postMessage: PostMessage
     chatModel: ChatModel
 }): vscode.Disposable {
@@ -33,9 +34,10 @@ export function startClientStateBroadcaster({
 
     async function rawSendClientState(signal: AbortSignal | null): Promise<void> {
         const items: ContextItem[] = []
+        const remoteSearch = getRemoteSearch()
 
         const corpusItems = getCorpusContextItemsForEditorState({ remoteSearch })
-        items.push(...corpusItems)
+        items.push(...(await corpusItems))
 
         const { input, context } = chatModel.contextWindow
         const userContextSize = context?.user ?? input
@@ -92,35 +94,33 @@ export function startClientStateBroadcaster({
     return vscode.Disposable.from(...disposables)
 }
 
-export function getCorpusContextItemsForEditorState({
+export async function getCorpusContextItemsForEditorState({
     remoteSearch,
-}: { remoteSearch: RemoteSearch | null }): ContextItem[] {
+}: { remoteSearch: RemoteSearch | null }): Promise<ContextItem[]> {
     const items: ContextItem[] = []
 
     // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
     // remote search). There should be a single internal thing in Cody that lets you monitor the
     // user's current codebase.
-    if (remoteSearch) {
-        // TODO(sqs): Track the last-used repositories. Right now it just uses the current
-        // repository.
-        //
-        // Make a repository item that is the same as what the @-repository OpenCtx provider
-        // would return.
-        const repos = remoteSearch.getRepos('all')
-        for (const repo of repos) {
-            if (contextFiltersProvider.isRepoNameIgnored(repo.name)) {
+    if (remoteSearch && workspaceReposMonitor) {
+        const repoMetadata = await workspaceReposMonitor.getRepoMetadata()
+        for (const repo of repoMetadata) {
+            if (contextFiltersProvider.isRepoNameIgnored(repo.repoName)) {
+                continue
+            }
+            if (repo.remoteID === undefined) {
                 continue
             }
             items.push({
                 ...contextItemMentionFromOpenCtxItem(
                     createRemoteRepositoryMention({
-                        id: repo.id,
-                        name: repo.name,
-                        url: repo.name,
+                        id: repo.remoteID,
+                        name: repo.repoName,
+                        url: repo.repoName,
                     })
                 ),
                 title: 'Current Repository',
-                description: repo.name,
+                description: repo.repoName,
                 source: ContextItemSource.Initial,
                 icon: 'folder',
             })

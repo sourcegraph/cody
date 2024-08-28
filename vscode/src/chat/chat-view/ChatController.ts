@@ -118,9 +118,7 @@ interface ChatControllerOptions {
     authProvider: AuthProvider
     chatClient: ChatClient
 
-    localEmbeddings: LocalEmbeddingsController | null
-    symf: SymfRunner | null
-    enterpriseContext: EnterpriseContextFactory | null
+    retrievers: AuthDependentRetrievers
 
     contextRetriever: ContextRetriever
     contextAPIClient: ContextAPIClient | null
@@ -135,6 +133,39 @@ interface ChatControllerOptions {
 export interface ChatSession {
     webviewPanelOrView: vscode.WebviewView | vscode.WebviewPanel | undefined
     sessionID: string
+}
+
+export class AuthDependentRetrievers {
+    constructor(
+        private authProvider: AuthProvider,
+        private _localEmbeddings: LocalEmbeddingsController | null,
+        private _symf: SymfRunner | null,
+        private _enterpriseContext: EnterpriseContextFactory | null
+    ) {}
+
+    private isCodyWeb(): boolean {
+        return vscode.workspace.getConfiguration().get<string>('cody.advanced.agent.ide') === CodyIDE.Web
+    }
+
+    private isConsumer(): boolean {
+        return this.authProvider.getAuthStatus().isDotCom
+    }
+
+    private allowRemoteContext(): boolean {
+        return this.isCodyWeb() || !this.isConsumer()
+    }
+
+    get localEmbeddings(): LocalEmbeddingsController | null {
+        return this.isConsumer() ? this._localEmbeddings : null
+    }
+
+    get symf(): SymfRunner | null {
+        return this.isConsumer() ? this._symf : null
+    }
+
+    get enterpriseContext(): EnterpriseContextFactory | null {
+        return this.allowRemoteContext() ? this._enterpriseContext : null
+    }
 }
 
 /**
@@ -170,16 +201,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly authProvider: AuthProvider
     private readonly chatClient: ChatClient
 
-    private readonly localEmbeddings: LocalEmbeddingsController | null
-    private readonly symf: SymfRunner | null
-    private readonly remoteSearch: RemoteSearch | null
+    private readonly retrievers: AuthDependentRetrievers
+    private remoteSearch: RemoteSearch | null
+    private repoPicker: RemoteRepoPicker | null
 
     private readonly contextRetriever: ContextRetriever
 
     private readonly editor: VSCodeEditor
     private readonly extensionClient: ExtensionClient
     private readonly guardrails: Guardrails
-    private readonly repoPicker: RemoteRepoPicker | null
+
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
     private readonly contextAPIClient: ContextAPIClient | null
 
@@ -194,11 +225,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         extensionUri,
         authProvider,
         chatClient,
-        localEmbeddings,
-        symf,
+        retrievers,
         editor,
         guardrails,
-        enterpriseContext,
         startTokenReceiver,
         contextAPIClient,
         contextRetriever,
@@ -207,14 +236,18 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.extensionUri = extensionUri
         this.authProvider = authProvider
         this.chatClient = chatClient
-        this.localEmbeddings = localEmbeddings
-        this.symf = symf
-        this.repoPicker = enterpriseContext?.repoPicker || null
-        this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
+        this.retrievers = retrievers
         this.editor = editor
         this.extensionClient = extensionClient
-
         this.contextRetriever = contextRetriever
+
+        this.repoPicker = this.retrievers.enterpriseContext?.repoPicker ?? null
+        this.remoteSearch = this.retrievers.enterpriseContext?.createRemoteSearch() ?? null
+        const authSubscription = this.authProvider.changes.subscribe(() => {
+            this.repoPicker = this.retrievers.enterpriseContext?.repoPicker ?? null
+            this.remoteSearch = this.retrievers.enterpriseContext?.createRemoteSearch() ?? null
+        })
+        this.disposables.push({ dispose: () => authSubscription.unsubscribe() })
 
         this.chatModel = new ChatModel(getDefaultModelID())
 
@@ -227,7 +260,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         // Advise local embeddings to start up if necessary.
-        void this.localEmbeddings?.start()
+        void this.retrievers.localEmbeddings?.start()
 
         // Keep feature flags updated.
         this.disposables.push({
@@ -238,7 +271,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.disposables.push(
             startClientStateBroadcaster({
-                remoteSearch: this.remoteSearch,
+                getRemoteSearch: () => this.remoteSearch,
                 postMessage: (message: ExtensionMessage) => this.postMessage(message),
                 chatModel: this.chatModel,
             })
@@ -368,7 +401,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 void this.handleRemoveRemoteSearchRepo(message.repoId)
                 break
             case 'embeddings/index':
-                void this.localEmbeddings?.index()
+                void this.retrievers.localEmbeddings?.index()
                 break
             case 'show-page':
                 await vscode.commands.executeCommand('cody.show-page', message.page)
@@ -667,7 +700,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // If the legacyAddEnhancedContext param is true, then pretend there is a `@repo` or `@tree`
                 // mention and a mention of the current selection to match the old behavior.
                 if (legacyAddEnhancedContext) {
-                    const corpusMentions = getCorpusContextItemsForEditorState({
+                    const corpusMentions = await getCorpusContextItemsForEditorState({
                         remoteSearch: this.remoteSearch,
                     })
                     mentions = mentions.concat(corpusMentions)
@@ -923,8 +956,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     editor: this.editor,
                     input: { text: inputTextWithoutContextChips, mentions },
                     providers: {
-                        localEmbeddings: this.localEmbeddings,
-                        symf: this.symf,
+                        localEmbeddings: this.retrievers.localEmbeddings,
+                        symf: this.retrievers.symf,
                         remoteSearch: this.remoteSearch,
                     },
                     signal,

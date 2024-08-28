@@ -1,42 +1,36 @@
 import * as vscode from 'vscode'
+import { WorkspaceRepoMapper } from '../context/workspace-repo-mapper'
 import { logDebug } from '../log'
+import type { AuthProvider } from '../services/AuthProvider'
 import { gitCommitIdFromGitExtension, vscodeGitAPI } from './git-extension-api'
 import { repoNameResolver } from './repo-name-resolver'
 
-export interface RepoRevMetaData extends RepoMetaData {
+export interface RepoRevMetaData extends GitHubDotComRepoMetaData {
     commit?: string
+    remoteID?: string
 }
 
 export class WorkspaceReposMonitor implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
+
     private repoMetadata = new Map<string, Promise<RepoRevMetaData[]>>()
 
-    constructor() {
+    private workspaceRepoMapper = new WorkspaceRepoMapper()
+
+    constructor(authProvider: AuthProvider) {
         for (const folderURI of this.getFolderURIs()) {
             this.addWorkspaceFolder(folderURI)
         }
         this.disposables.push(
             vscode.workspace.onDidChangeWorkspaceFolders(evt => this.onDidChangeWorkspaceFolders(evt))
         )
-    }
 
-    private getFolderURIs(): vscode.Uri[] {
-        return vscode.workspace.workspaceFolders?.map(f => f.uri) ?? []
-    }
-
-    private addWorkspaceFolder(folderURI: vscode.Uri): void {
-        const repoMetadata: Promise<RepoRevMetaData[]> = fetchRepoMetadataForFolder(folderURI).then(
-            metadatas =>
-                metadatas.map(m => ({
-                    ...m,
-                    commit: gitCommitIdFromGitExtension(folderURI),
-                }))
-        )
-        this.repoMetadata.set(folderURI.toString(), repoMetadata)
-    }
-
-    private removeWorkspaceFolder(folderURI: vscode.Uri): void {
-        this.repoMetadata.delete(folderURI.toString())
+        const subscription = authProvider.changes.subscribe(() => {
+            for (const folderURI of this.getFolderURIs()) {
+                this.addWorkspaceFolder(folderURI)
+            }
+        })
+        this.disposables.push({ dispose: () => subscription.unsubscribe() })
     }
 
     public dispose(): void {
@@ -53,6 +47,57 @@ export class WorkspaceReposMonitor implements vscode.Disposable {
         return _getRepoMetadataIfPublic(this.getFolderURIs(), this.repoMetadata)
     }
 
+    public async getRepoMetadata(): Promise<RepoRevMetaData[]> {
+        const folderURIs = this.getFolderURIs()
+        const m: Promise<RepoRevMetaData[]>[] = []
+        for (const folderURI of folderURIs) {
+            const p = this.repoMetadata.get(folderURI.toString())
+            if (p) {
+                m.push(p)
+            }
+        }
+        const repoMetadata = await Promise.all(m)
+        return repoMetadata.flat()
+    }
+
+    private getFolderURIs(): vscode.Uri[] {
+        return vscode.workspace.workspaceFolders?.map(f => f.uri) ?? []
+    }
+
+    private addWorkspaceFolder(folderURI: vscode.Uri): void {
+        const repoMetadata: Promise<RepoRevMetaData[]> = fetchRepoMetadataForFolder(folderURI).then(
+            metadatas =>
+                Promise.all(
+                    metadatas.map(async m => {
+                        let remoteID = undefined
+                        try {
+                            remoteID = (await this.workspaceRepoMapper.repoForCodebase(m.repoName))?.id
+                        } catch (err) {
+                            logDebug(
+                                'WorkspaceReposMonitor',
+                                'failed to find repo for codebase',
+                                'repoName',
+                                m.repoName,
+                                'error',
+                                err
+                            )
+                        }
+                        return {
+                            ...m,
+                            commit: gitCommitIdFromGitExtension(folderURI),
+                            remoteID,
+                        }
+                    })
+                )
+        )
+
+        this.repoMetadata.set(folderURI.toString(), repoMetadata)
+    }
+
+    private removeWorkspaceFolder(folderURI: vscode.Uri): void {
+        this.repoMetadata.delete(folderURI.toString())
+    }
+
     private onDidChangeWorkspaceFolders(event: vscode.WorkspaceFoldersChangeEvent): void {
         for (const folder of event.added) {
             this.addWorkspaceFolder(folder.uri)
@@ -65,6 +110,7 @@ export class WorkspaceReposMonitor implements vscode.Disposable {
 
 export let workspaceReposMonitor: WorkspaceReposMonitor | undefined = undefined
 export function initWorkspaceReposMonitor(
+    authProvider: AuthProvider,
     disposables: vscode.Disposable[]
 ): WorkspaceReposMonitor | undefined {
     if (!vscodeGitAPI) {
@@ -74,19 +120,26 @@ export function initWorkspaceReposMonitor(
         )
         return undefined
     }
-    workspaceReposMonitor = new WorkspaceReposMonitor()
+    workspaceReposMonitor = new WorkspaceReposMonitor(authProvider)
     disposables.push(workspaceReposMonitor)
     return workspaceReposMonitor
 }
 
-async function fetchRepoMetadataForFolder(folderURI: vscode.Uri): Promise<RepoMetaData[]> {
+async function fetchRepoMetadataForFolder(folderURI: vscode.Uri): Promise<GitHubDotComRepoMetaData[]> {
     const repoNames = await repoNameResolver.getRepoNamesFromWorkspaceUri(folderURI)
     if (repoNames.length === 0) {
         return []
     }
-    const instance = RepoMetadatafromGitApi.getInstance()
-    return Promise.all(repoNames.map(rn => instance.getRepoMetadataUsingGitUrl(rn))).then(metadatas =>
-        metadatas.filter(m => m).map(m => m as RepoMetaData)
+
+    const instance = GitHubDotComRepoMetadata.getInstance()
+    return Promise.all(
+        repoNames.map(async rn => {
+            const metadata = await instance.getRepoMetadataUsingGitUrl(rn)
+            return {
+                repoName: rn,
+                isPublic: rn === metadata?.repoName && metadata.isPublic,
+            }
+        })
     )
 }
 
@@ -141,43 +194,46 @@ export async function _getRepoMetadataIfPublic(
     }
 }
 
-interface RepoMetaData {
-    owner: string
+interface GitHubDotComRepoMetaData {
+    // The full uniquely identifying name on github.com, e.g., "github.com/sourcegraph/cody"
     repoName: string
+
     isPublic: boolean
 }
 
-export class RepoMetadatafromGitApi {
+export class GitHubDotComRepoMetadata {
     // This class is used to get the metadata from the gitApi.
-    private static instance: RepoMetadatafromGitApi | null = null
-    private cache = new Map<string, RepoMetaData | undefined>()
+    private static instance: GitHubDotComRepoMetadata | null = null
+    private cache = new Map<string, GitHubDotComRepoMetaData | undefined>()
 
     private constructor() {}
 
-    public static getInstance(): RepoMetadatafromGitApi {
-        if (!RepoMetadatafromGitApi.instance) {
-            RepoMetadatafromGitApi.instance = new RepoMetadatafromGitApi()
+    public static getInstance(): GitHubDotComRepoMetadata {
+        if (!GitHubDotComRepoMetadata.instance) {
+            GitHubDotComRepoMetadata.instance = new GitHubDotComRepoMetadata()
         }
-        return RepoMetadatafromGitApi.instance
+        return GitHubDotComRepoMetadata.instance
     }
 
-    public getRepoMetadataIfCached(gitUrl: string): RepoMetaData | undefined {
+    public getRepoMetadataIfCached(gitUrl: string): GitHubDotComRepoMetaData | undefined {
         return this.cache.get(gitUrl)
     }
 
-    public async getRepoMetadataUsingGitUrl(gitUrl: string): Promise<RepoMetaData | undefined> {
+    public async getRepoMetadataUsingGitUrl(
+        gitUrl: string
+    ): Promise<GitHubDotComRepoMetaData | undefined> {
         if (this.cache.has(gitUrl)) {
             return this.cache.get(gitUrl)
         }
-        const repoMetaData = await this.metadataFromGit(gitUrl)
+        const repoMetaData = await this.ghMetadataFromGit(gitUrl)
         if (repoMetaData) {
             this.cache.set(gitUrl, repoMetaData)
         }
         return repoMetaData
     }
 
-    private async metadataFromGit(gitUrl: string): Promise<RepoMetaData | undefined> {
-        const ownerAndRepoName = this.parserOwnerAndRepoName(gitUrl)
+    private async ghMetadataFromGit(gitUrl: string): Promise<GitHubDotComRepoMetaData | undefined> {
+        const ownerAndRepoName = this.parseOwnerAndRepoName(gitUrl)
         if (!ownerAndRepoName) {
             return undefined
         }
@@ -185,19 +241,27 @@ export class RepoMetadatafromGitApi {
         return repoMetaData
     }
 
-    private async queryGitHubApi(owner: string, repoName: string): Promise<RepoMetaData | undefined> {
+    private async queryGitHubApi(
+        owner: string,
+        repoName: string
+    ): Promise<GitHubDotComRepoMetaData | undefined> {
         const apiUrl = `https://api.github.com/repos/${owner}/${repoName}`
-        const metadata = { owner, repoName, isPublic: false }
+        const metadata = { repoName: `github.com/${owner}/${repoName}`, isPublic: false }
         try {
             const response = await fetch(apiUrl, { method: 'HEAD' })
             metadata.isPublic = response.ok
         } catch (error) {
-            console.error('Error fetching repository metadata:', error)
+            logDebug(
+                'queryGitHubApi',
+                'error querying GitHub API (assuming repository is non-public',
+                `${owner}/${repoName}`,
+                error
+            )
         }
         return metadata
     }
 
-    private parserOwnerAndRepoName(gitUrl: string): { owner: string; repoName: string } | undefined {
+    private parseOwnerAndRepoName(gitUrl: string): { owner: string; repoName: string } | undefined {
         const match = gitUrl?.match(/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/)
         if (!match) {
             return undefined

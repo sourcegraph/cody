@@ -8,11 +8,11 @@ describe('_getRepoMetadataIfPublic', () => {
         const folderURIToRepoRevMetadata: Map<string, Promise<RepoRevMetaData[]>> = new Map([
             [
                 'file:///path/to/folder1',
-                Promise.resolve([{ isPublic: false, repoName: 'repo1', owner: '', commit: 'aaa' }]),
+                Promise.resolve([{ isPublic: false, repoName: 'repo1', commit: 'aaa' }]),
             ],
             [
                 'file:///path/to/folder2',
-                Promise.resolve([{ isPublic: false, repoName: 'repo2', owner: '', commit: 'aaa' }]),
+                Promise.resolve([{ isPublic: false, repoName: 'repo2', commit: 'aaa' }]),
             ],
         ])
 
@@ -26,15 +26,15 @@ describe('_getRepoMetadataIfPublic', () => {
             [
                 'file:///path/to/folder1',
                 Promise.resolve([
-                    { isPublic: true, repoName: 'repo1', owner: '', commit: 'aaa' },
-                    { isPublic: false, repoName: 'repo2', owner: '', commit: 'aaa' },
+                    { isPublic: true, repoName: 'repo1', commit: 'aaa' },
+                    { isPublic: false, repoName: 'repo2', commit: 'aaa' },
                 ]),
             ],
             [
                 'file:///path/to/folder2',
                 Promise.resolve([
-                    { isPublic: false, repoName: 'repo3', owner: '', commit: 'aaa' },
-                    { isPublic: true, repoName: 'repo4', owner: '', commit: 'aaa' },
+                    { isPublic: false, repoName: 'repo3', commit: 'aaa' },
+                    { isPublic: true, repoName: 'repo4', commit: 'aaa' },
                 ]),
             ],
         ])
@@ -43,8 +43,8 @@ describe('_getRepoMetadataIfPublic', () => {
         expect(result).toEqual({
             isPublic: true,
             repoMetadata: [
-                { isPublic: true, repoName: 'repo1', owner: '', commit: 'aaa' },
-                { isPublic: true, repoName: 'repo4', owner: '', commit: 'aaa' },
+                { isPublic: true, repoName: 'repo1', commit: 'aaa' },
+                { isPublic: true, repoName: 'repo4', commit: 'aaa' },
             ],
         })
     })
@@ -60,7 +60,7 @@ describe('_getRepoMetadataIfPublic', () => {
         const folderURIToRepoMetadata: Map<string, Promise<RepoRevMetaData[]>> = new Map([
             [
                 'file:///path/to/folder1',
-                Promise.resolve([{ isPublic: true, repoName: 'repo1', owner: '', commit: 'aaa' }]),
+                Promise.resolve([{ isPublic: true, repoName: 'repo1', commit: 'aaa' }]),
             ],
         ])
 
@@ -73,7 +73,9 @@ describe('_getRepoMetadataIfPublic', () => {
         const folderURIToRepoMetadata: Map<string, Promise<RepoRevMetaData[]>> = new Map([
             [
                 'file:///path/to/folder1',
-                Promise.resolve([{ isPublic: true, repoName: 'repo1', owner: '', commit: 'aaa' }]),
+                Promise.resolve<RepoRevMetaData[]>([
+                    { isPublic: true, repoName: 'repo1', commit: 'aaa' },
+                ]),
             ],
             ['file:///path/to/folder2', Promise.reject(new Error('Failed to fetch metadata'))],
         ])
@@ -87,7 +89,7 @@ describe('_getRepoMetadataIfPublic', () => {
         const folderURIToRepoMetadata: Map<string, Promise<RepoRevMetaData[]>> = new Map([
             [
                 'file:///path/to/folder1',
-                Promise.resolve([{ isPublic: true, repoName: 'repo1', owner: '', commit: 'aaa' }]),
+                Promise.resolve([{ isPublic: true, repoName: 'repo1', commit: 'aaa' }]),
             ],
             ['file:///path/to/folder2', Promise.resolve([])],
         ])
