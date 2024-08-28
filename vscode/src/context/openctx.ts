@@ -70,7 +70,7 @@ export async function exposeOpenCtxClient(
     }
 }
 
-function getOpenCtxProviders(
+export function getOpenCtxProviders(
     configChanges: Observable<ClientConfiguration>,
     authStatusChanges: Observable<AuthStatus>,
     isValidSiteVersion: boolean
