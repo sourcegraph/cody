@@ -7,6 +7,7 @@ import {
     displayLineRange,
     displayPathBasename,
     expandToLineRange,
+    logDebug,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getSelectionOrFileContext } from '../commands/context/selection'
@@ -60,6 +61,7 @@ export function startClientStateBroadcaster({
 
         const corpusItems = getCorpusContextItemsForEditorState({ remoteSearch })
         items.push(...corpusItems)
+        logDebug('INITIAL_ITEMS', JSON.stringify(items, null, 2))
 
         postMessage({ type: 'clientState', value: { initialContext: items } })
     }

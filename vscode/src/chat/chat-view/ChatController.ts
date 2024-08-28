@@ -111,6 +111,7 @@ import { CodyChatEditorViewType } from './ChatsController'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { type ContextRetriever, toStructuredMentions } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
+import type { InitialContextKind } from './InitialContextKind'
 import { getChatPanelTitle, openFile } from './chat-helpers'
 import { type HumanInput, getPriorityContext, resolveContext } from './context'
 import { DefaultPrompter } from './prompt'
@@ -1521,11 +1522,20 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
     }
 
-    public async clearAndRestartSession(): Promise<void> {
+    public async clearAndRestartSession(params?: {
+        initialContext?: InitialContextKind
+    }): Promise<void> {
+        if (params?.initialContext) {
+            void this.postMessage({
+                type: 'preferredInitialContextKind',
+                value: params?.initialContext,
+            })
+        }
         this.cancelSubmitOrEditOperation()
         await this.saveSession()
 
         this.chatModel = new ChatModel(this.chatModel.modelID)
+        logDebug('ChatController', 'clearAndRestartSession', JSON.stringify(params, null, 2))
         this.postViewTranscript()
     }
 

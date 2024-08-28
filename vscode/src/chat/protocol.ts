@@ -27,6 +27,7 @@ import type { View } from '../../webviews/tabs/types'
 import type { Repo } from '../context/repo-fetcher'
 import type { FixupTaskID } from '../non-stop/FixupTask'
 import type { CodyTaskState } from '../non-stop/state'
+import type { InitialContextKind } from './chat-view/InitialContextKind'
 
 /**
  * DO NOT USE DIRECTLY - ALWAYS USE a TelemetryRecorder from
@@ -224,6 +225,7 @@ export type ExtensionMessage =
           userContextFiles?: ContextItem[] | undefined | null
       }
     | { type: 'clientState'; value: ClientStateForWebview }
+    | { type: 'preferredInitialContextKind'; value: InitialContextKind }
     | {
           type: 'clientAction'
           addContextItemsToLastHumanInput?: ContextItem[] | null | undefined

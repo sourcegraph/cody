@@ -101,7 +101,18 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         dispatchClientAction(message)
                         break
                     case 'clientState':
-                        setClientState(message.value)
+                        console.log('SET_CLIENT_STATE', message.value)
+                        setClientState(prev => ({
+                            ...prev,
+                            ...message.value,
+                        }))
+                        break
+                    case 'preferredInitialContextKind':
+                        console.log('PREFERRED_INITIAL_CONTEXT_KIND', message.value)
+                        setClientState(prev => ({
+                            ...prev,
+                            preferredInitialContextKind: message.value,
+                        }))
                         break
                     case 'errors':
                         setErrorMessages(prev => [...prev, message.errors].slice(-5))

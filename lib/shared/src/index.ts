@@ -9,6 +9,7 @@ export {
     ModelUsage,
     type ModelContextWindow,
 } from './models/types'
+export { type InitialContextKind } from './chat/types'
 export { getDotComDefaultModels } from './models/dotcom'
 export { ModelTag } from './models/tags'
 export {

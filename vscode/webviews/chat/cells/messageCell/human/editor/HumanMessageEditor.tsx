@@ -4,6 +4,7 @@ import {
     type SerializedPromptEditorValue,
     textContentFromSerializedLexicalNode,
 } from '@sourcegraph/cody-shared'
+import { determineInitialContext } from '@sourcegraph/cody-shared/src/clientState'
 import { PromptEditor, type PromptEditorRefAPI, useClientState } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import {
@@ -256,15 +257,17 @@ export const HumanMessageEditor: FunctionComponent<{
         )
     )
 
-    const initialContext = useClientState().initialContext
+    const { initialContext, preferredInitialContextKind } = useClientState()
     useEffect(() => {
         if (initialContext && !isSent && isFirstMessage) {
             const editor = editorRef.current
             if (editor) {
-                editor.setInitialContextMentions(initialContext)
+                editor.setInitialContextMentions(
+                    determineInitialContext({ initialContext, preferredInitialContextKind })
+                )
             }
         }
-    }, [initialContext, isSent, isFirstMessage])
+    }, [initialContext, preferredInitialContextKind, isSent, isFirstMessage])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 

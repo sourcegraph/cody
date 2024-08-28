@@ -444,6 +444,30 @@
         "icon": "$(new-comment-icon)"
       },
       {
+        "command": "cody.chat.new-public-knowledge",
+        "category": "Cody",
+        "title": "New Chat (Public Knowledge)",
+        "enablement": "cody.activated",
+        "group": "Cody",
+        "icon": "$(new-comment-icon)"
+      },
+      {
+        "command": "cody.chat.new-repo",
+        "category": "Cody",
+        "title": "New Chat (Repository)",
+        "enablement": "cody.activated",
+        "group": "Cody",
+        "icon": "$(new-comment-icon)"
+      },
+      {
+        "command": "cody.chat.new-file",
+        "category": "Cody",
+        "title": "New Chat (File)",
+        "enablement": "cody.activated",
+        "group": "Cody",
+        "icon": "$(new-comment-icon)"
+      },
+      {
         "command": "cody.chat.newEditorPanel",
         "category": "Cody",
         "title": "New Chat in Editor",
