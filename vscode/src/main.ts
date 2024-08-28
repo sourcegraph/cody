@@ -68,6 +68,7 @@ import { registerModelsFromVSCodeConfiguration } from './models/sync'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { initVSCodeGitApi } from './repository/git-extension-api'
+import { initWorkspaceReposMonitor } from './repository/repo-metadata-from-git-api'
 import { repoNameResolver } from './repository/repo-name-resolver'
 import { AuthProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
@@ -177,6 +178,7 @@ const register = async (
 
     // Ensure Git API is available
     disposables.push(await initVSCodeGitApi())
+    initWorkspaceReposMonitor(authProvider, disposables)
 
     registerParserListeners(disposables)
     registerChatListeners(disposables)

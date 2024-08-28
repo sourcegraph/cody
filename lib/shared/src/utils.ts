@@ -29,6 +29,9 @@ export function convertGitCloneURLToCodebaseName(cloneURL: string): string | nul
     return result
 }
 
+// This converts a git clone URL to the what is *likely* the repoName on Sourcegraph.
+// This is not guaranteed to be correct, and we should add an endpoint to Sourcegraph
+// to resolve the repoName from the cloneURL.
 export function convertGitCloneURLToCodebaseNameOrError(cloneURL: string): string | Error {
     if (!cloneURL) {
         return new Error(
