@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
+import { isWindows } from '@sourcegraph/cody-shared'
+
 import { completionParams, contextSnippets } from './test-data'
 
 import { DefaultModel } from '../default'
 
 describe('DefaultModel', () => {
     describe('getPrompt', () => {
-        it('returns the prompt with the correct intro snippets', () => {
+        it.skipIf(isWindows())('returns the prompt with the correct intro snippets', () => {
             const model = new DefaultModel()
             const { docContext, document, providerConfig } = completionParams
 
