@@ -17,7 +17,7 @@ class CurrentConfigFeaturesTest {
   fun `observer is notified`() {
     val current = CurrentConfigFeatures()
     val observer = FakeObserver()
-    val expected = ConfigFeatures(attribution = true, serverSentModels = true)
+    val expected = ConfigFeatures(serverSentModels = true)
     current.attach(observer)
     current.update(expected)
     assertThat(observer.features, hasItems(expected))
@@ -33,7 +33,7 @@ class CurrentConfigFeaturesTest {
     await until
         {
           val beforeCount = cancelledObserver.features.size
-          current.update(ConfigFeatures(attribution = true, serverSentModels = true))
+          current.update(ConfigFeatures(serverSentModels = true))
           val afterCount = cancelledObserver.features.size
           afterCount == beforeCount
         }
@@ -50,12 +50,12 @@ class CurrentConfigFeaturesTest {
     await until
         {
           val beforeCount = cancelledObserver.features.size
-          current.update(ConfigFeatures(attribution = true, serverSentModels = true))
+          current.update(ConfigFeatures(serverSentModels = true))
           val afterCount = cancelledObserver.features.size
           afterCount == beforeCount
         }
     val beforeCount = activeObserver.features.size
-    current.update(ConfigFeatures(attribution = true, serverSentModels = true))
+    current.update(ConfigFeatures(serverSentModels = true))
     val afterCount = activeObserver.features.size
     assertEquals(beforeCount + 1, afterCount)
   }

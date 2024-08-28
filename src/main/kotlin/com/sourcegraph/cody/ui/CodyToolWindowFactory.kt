@@ -24,6 +24,8 @@ import com.jetbrains.rd.util.ConcurrentHashMap
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.CommandExecuteParams
+import com.sourcegraph.cody.agent.ConfigFeatures
+import com.sourcegraph.cody.agent.CurrentConfigFeatures
 import com.sourcegraph.cody.agent.WebviewDidDisposeParams
 import com.sourcegraph.cody.agent.WebviewPostMessageStringEncodedParams
 import com.sourcegraph.cody.agent.WebviewReceiveMessageStringEncodedParams
@@ -92,7 +94,7 @@ interface NativeWebviewProvider {
   fun setTitle(params: WebviewSetTitleParams)
 }
 
-/** A NativeWebviewProvider that thunks to WebUIService. */
+/** A NativeWebviewProvider that thanks to WebUIService. */
 class WebUIServiceWebviewProvider(val project: Project) : NativeWebviewProvider {
   override fun createPanel(params: WebviewCreateWebviewPanelParams) =
       WebUIService.getInstance(project).createWebviewPanel(params)
@@ -174,6 +176,15 @@ class WebUIService(private val project: Project) {
   }
 
   fun postMessageHostToWebview(handle: String, stringEncodedJsonMessage: String) {
+    // Handle the config message
+    val decodedJson = JsonParser.parseString(stringEncodedJsonMessage).asJsonObject
+    if (decodedJson.get("type")?.asString == "config") {
+      val configFeatures = decodedJson.getAsJsonObject("configFeatures")
+      val serverSentModels = configFeatures?.get("serverSentModels")?.asBoolean ?: false
+      val currentConfigFeatures = project.service<CurrentConfigFeatures>()
+      currentConfigFeatures.update(ConfigFeatures(serverSentModels = serverSentModels))
+    }
+
     withProxy(handle) { it.postMessageHostToWebview(stringEncodedJsonMessage) }
   }
 

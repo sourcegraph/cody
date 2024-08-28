@@ -24,7 +24,7 @@ public final class CurrentConfigFeatures implements ConfigFeaturesObserver {
 
   /** Most recent {@link ConfigFeatures}. */
   private final AtomicReference<ConfigFeatures> features =
-      new AtomicReference<>(new ConfigFeatures(false, false));
+      new AtomicReference<>(new ConfigFeatures(false));
 
   /**
    * Observers that are attached (see {@link #attach}) and receive updates

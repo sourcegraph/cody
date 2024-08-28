@@ -32,27 +32,4 @@ data class WebviewDisposeParams(val handle: String)
 // When the client initiates dispose, this is sent to the server.
 data class WebviewDidDisposeParams(val handle: String)
 
-data class ConfigFeatures(val attribution: Boolean, val serverSentModels: Boolean)
-
-data class EnhancedContextContextT(val groups: List<ContextGroup>)
-
-data class ContextGroup(
-    val dir: String? = null, // URI
-    val displayName: String,
-    val providers: List<ContextProvider>
-)
-
-// This is a subset of the ContextProvider type in lib/shared/src/codebase-context/context-status.ts
-// It covers remote search repositories.
-data class ContextProvider(
-    val kind: String, // "embeddings", "search"
-
-    // if kind is "search"
-    val type: String? = null, // "local", "remote"
-
-    // if kind is "search" and type is "remote"
-    val state: String? = null, // "ready", "no-match",
-    val id: String? = null,
-    val inclusion: String? = null, // "auto" or "manual"
-    val isIgnored: Boolean? = null,
-)
+data class ConfigFeatures(val serverSentModels: Boolean)
