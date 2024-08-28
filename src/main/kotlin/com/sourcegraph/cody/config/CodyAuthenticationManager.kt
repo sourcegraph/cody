@@ -251,7 +251,6 @@ class CodyAuthenticationManager(val project: Project) :
   override fun loadState(state: AccountState) {
     val initialAccount =
         state.activeAccountId?.let { id -> accountManager.accounts.find { it.id == id } }
-            ?: getAccounts().firstOrNull()
     if (initialAccount != null) {
       setActiveAccount(initialAccount)
     }

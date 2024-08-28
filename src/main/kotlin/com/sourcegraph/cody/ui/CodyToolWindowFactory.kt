@@ -38,6 +38,7 @@ import com.sourcegraph.cody.agent.protocol.WebviewOptions
 import com.sourcegraph.cody.chat.actions.ExportChatsAction.Companion.gson
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.cody.config.ui.AccountConfigurable
 import com.sourcegraph.cody.config.ui.CodyConfigurable
 import com.sourcegraph.cody.sidebar.WebTheme
 import com.sourcegraph.cody.sidebar.WebThemeController
@@ -298,10 +299,16 @@ class WebUIHostImpl(
     val id = decodedJson?.get("id")?.asString
     val arg = decodedJson?.get("arg")?.asString
 
-    if (command == "auth") {
-      val authKind = decodedJson.get("authKind")?.asString
-      if (authKind == "signout") {
-        CodyAuthenticationManager.getInstance(project).setActiveAccount(null)
+    if ((command == "auth" && decodedJson.get("authKind")?.asString == "signout") ||
+        (isCommand && id == "cody.auth.signout")) {
+      CodyAuthenticationManager.getInstance(project).setActiveAccount(null)
+    } else if (isCommand && id == "cody.auth.switchAccount") {
+      runInEdt {
+        ShowSettingsUtil.getInstance().showSettingsDialog(project, AccountConfigurable::class.java)
+      }
+    } else if (isCommand && id == "cody.status-bar.interacted") {
+      runInEdt {
+        ShowSettingsUtil.getInstance().showSettingsDialog(project, CodyConfigurable::class.java)
       }
     } else if (isCommand && id == "cody.action.command" && arg == "edit") {
       // TODO: Delete this intercept when Cody edits UI is abstracted so JetBrains' native UI can be
@@ -316,10 +323,6 @@ class WebUIHostImpl(
             } ?: SimpleDataContext.EMPTY_CONTEXT
 
         action?.actionPerformed(AnActionEvent.createFromAnAction(action, null, "", dataContext))
-      }
-    } else if (isCommand && id == "cody.status-bar.interacted") {
-      runInEdt {
-        ShowSettingsUtil.getInstance().showSettingsDialog(project, CodyConfigurable::class.java)
       }
     } else {
       CodyAgentService.withAgent(project) {
