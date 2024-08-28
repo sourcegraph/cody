@@ -270,6 +270,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.disposables.push(
             startClientStateBroadcaster({
+                authProvider,
                 getRemoteSearch: () => this.remoteSearch,
                 postMessage: (message: ExtensionMessage) => this.postMessage(message),
                 chatModel: this.chatModel,

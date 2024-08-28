@@ -7,6 +7,7 @@ import {
     displayLineRange,
     displayPathBasename,
     expandToLineRange,
+    subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getSelectionOrFileContext } from '../commands/context/selection'
@@ -16,6 +17,7 @@ import { workspaceReposMonitor } from '../repository/repo-metadata-from-git-api'
 import type { ChatModel } from './chat-view/ChatModel'
 import { contextItemMentionFromOpenCtxItem } from './context/chatContext'
 import type { ExtensionMessage } from './protocol'
+import { AuthProvider } from '../services/AuthProvider'
 
 type PostMessage = (message: Extract<ExtensionMessage, { type: 'clientState' }>) => void
 
@@ -23,10 +25,12 @@ type PostMessage = (message: Extract<ExtensionMessage, { type: 'clientState' }>)
  * Listen for changes to the client (such as VS Code) state to send to the webview.
  */
 export function startClientStateBroadcaster({
+    authProvider,
     getRemoteSearch,
     postMessage: rawPostMessage,
     chatModel,
 }: {
+    authProvider: AuthProvider,
     getRemoteSearch: () => RemoteSearch | null
     postMessage: PostMessage
     chatModel: ChatModel
@@ -87,6 +91,12 @@ export function startClientStateBroadcaster({
             // Infrequent action, so don't debounce and show immediately in the UI.
             void sendClientState('immediate')
         })
+    )
+    disposables.push(
+        subscriptionDisposable(authProvider.changes.subscribe(async () => {
+            // Infrequent action, so don't debounce and show immediately in the UI.
+            void sendClientState('immediate')
+        }))
     )
 
     // Don't debounce for the first invocation so we immediately reflect the state in the UI.
