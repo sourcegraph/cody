@@ -51,7 +51,14 @@ interface UseCodyWebAgentResult {
  * main and web-worker threads, see agent.client.ts for more details
  */
 export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentResult {
-    const { serverEndpoint, accessToken, telemetryClientName, customHeaders, createAgentWorker } = input
+    const {
+        serverEndpoint,
+        accessToken,
+        telemetryClientName,
+        customHeaders,
+        initialContext,
+        createAgentWorker,
+    } = input
 
     const activeWebviewPanelIDRef = useRef<string>('')
     const [client, setClient] = useState<AgentClient | Error | null>(null)
@@ -74,23 +81,38 @@ export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentRes
 
     // Special override for chat creating for Cody Web, otherwise the create new chat doesn't work
     // TODO: Move this special logic to the Cody Web agent handle "chat/web/new"
-    const createNewChat = useCallback(async (agent: AgentClient | Error | null) => {
-        if (!agent || isErrorLike(agent)) {
-            return
-        }
+    const createNewChat = useCallback(
+        async (agent: AgentClient | Error | null) => {
+            if (!agent || isErrorLike(agent)) {
+                return
+            }
 
-        const { panelId, chatId } = await agent.rpc.sendRequest<{
-            panelId: string
-            chatId: string
-        }>('chat/web/new', null)
+            const { panelId, chatId } = await agent.rpc.sendRequest<{
+                panelId: string
+                chatId: string
+            }>('chat/web/new', null)
 
-        activeWebviewPanelIDRef.current = panelId
+            activeWebviewPanelIDRef.current = panelId
 
-        await agent.rpc.sendRequest('webview/receiveMessage', {
-            id: activeWebviewPanelIDRef.current,
-            message: { chatID: chatId, command: 'restoreHistory' },
-        })
-    }, [])
+            await agent.rpc.sendRequest('webview/receiveMessage', {
+                id: activeWebviewPanelIDRef.current,
+                message: { chatID: chatId, command: 'restoreHistory' },
+            })
+
+            // Set initial context after we restore history so context won't be
+            // overridden by the previous chat session context
+            if (initialContext?.repository) {
+                void agent.rpc.sendRequest('webview/receiveMessage', {
+                    id: activeWebviewPanelIDRef.current,
+                    message: {
+                        command: 'context/choose-remote-search-repo',
+                        explicitRepos: [initialContext.repository],
+                    },
+                })
+            }
+        },
+        [initialContext]
+    )
 
     const vscodeAPI = useVSCodeAPI({ activeWebviewPanelIDRef, createNewChat, client })
 
