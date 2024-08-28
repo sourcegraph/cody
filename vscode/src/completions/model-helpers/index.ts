@@ -16,6 +16,10 @@ export function getModelHelpers(model: string): DefaultModel {
         return new DeepseekCoder()
     }
 
+    // "StarChat is a series of language models that are fine-tuned from StarCoder to act as helpful coding assistants."
+    // Source: https://huggingface.co/HuggingFaceH4/starchat-alpha
+    //
+    // That's why we use the StarCoder model-helper here.
     if (model.includes('starcoder') || model.includes('starchat')) {
         return new StarCoder()
     }
