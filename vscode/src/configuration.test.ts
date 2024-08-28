@@ -82,6 +82,8 @@ describe('getConfiguration', () => {
                         return 'bfg'
                     case 'cody.advanced.agent.running':
                         return false
+                    case 'cody.advanced.hasNativeWebview':
+                        return true
                     case 'cody.advanced.agent.ide':
                         return undefined
                     case 'cody.advanced.agent.ide.version':
@@ -133,6 +135,7 @@ describe('getConfiguration', () => {
             commandHints: true,
             isRunningInsideAgent: false,
             agentIDE: undefined,
+            hasNativeWebview: true,
             internalUnstable: false,
             internalDebugContext: false,
             debugVerbose: true,

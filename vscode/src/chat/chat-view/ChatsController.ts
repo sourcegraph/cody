@@ -273,9 +273,10 @@ export class ChatsController implements vscode.Disposable {
      */
     private async getActiveChatController(): Promise<ChatController> {
         // Check if any existing panel is available
-        // NOTE: Never reuse webviews when running inside the agent.
         if (this.activeEditor) {
-            if (getConfiguration().isRunningInsideAgent) {
+            // NOTE: Never reuse webviews when running inside the agent without native webviews
+            // TODO: Find out, document why we don't reuse webviews when running inside agent without native webviews
+            if (!getConfiguration().hasNativeWebview) {
                 return await this.getOrCreateEditorChatController()
             }
             return this.activeEditor

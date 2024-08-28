@@ -90,6 +90,7 @@ export interface ClientConfiguration {
     /**
      * Hidden settings
      */
+    hasNativeWebview: boolean
     isRunningInsideAgent?: boolean
     agentIDE?: CodyIDE
     agentIDEVersion?: string
