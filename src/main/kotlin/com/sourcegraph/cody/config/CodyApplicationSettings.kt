@@ -23,7 +23,7 @@ data class CodyApplicationSettings(
     var isOnboardingGuidanceDismissed: Boolean = false,
     var shouldAcceptNonTrustedCertificatesAutomatically: Boolean = false,
     var shouldCheckForUpdates: Boolean = true,
-    var isOffScreenRenderingEnabled: Boolean = false,
+    var isOffScreenRenderingEnabled: Boolean = true,
 ) : PersistentStateComponent<CodyApplicationSettings> {
   override fun getState(): CodyApplicationSettings = this
 
