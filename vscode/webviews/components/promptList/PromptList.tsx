@@ -318,7 +318,7 @@ const PromptCommandItem: FunctionComponent<{
                     <strong>{prompt.name}</strong>
                 </span>
                 {prompt.draft && (
-                    <Badge variant="outline" className="tw-text-xxs tw-mt-0.5">
+                    <Badge variant="secondary" className="tw-text-xxs tw-mt-0.5">
                         Draft
                     </Badge>
                 )}
@@ -351,7 +351,7 @@ const CodyCommandItem: FunctionComponent<{
                     {command.type === 'default' ? command.description : command.key}
                 </strong>
                 {showCommandOrigins && command.type !== 'default' && (
-                    <Badge variant="outline" className="tw-text-xxs tw-mt-0.5 tw-whitespace-nowrap">
+                    <Badge variant="secondary" className="tw-text-xxs tw-mt-0.5 tw-whitespace-nowrap">
                         {command.type === CustomCommandType.User
                             ? 'Local User Settings'
                             : 'Workspace Settings'}
