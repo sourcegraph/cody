@@ -49,9 +49,10 @@ export class AgentAuthHandler {
             }
         })
 
+        open(callbackUri)
+
         this.server.listen(this.port, () => {
             logDebug('AgentAuthHandler', `Server listening on port ${this.port}`)
-            open(callbackUri)
             setTimeout(() => this.closeServer(), 3 * 60 * 1000)
         })
 
