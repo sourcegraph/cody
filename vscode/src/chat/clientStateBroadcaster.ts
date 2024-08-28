@@ -35,9 +35,6 @@ export function startClientStateBroadcaster({
     async function rawSendClientState(signal: AbortSignal | null): Promise<void> {
         const items: ContextItem[] = []
 
-        const corpusItems = getCorpusContextItemsForEditorState({ remoteSearch })
-        items.push(...corpusItems)
-
         const { input, context } = chatModel.contextWindow
         const userContextSize = context?.user ?? input
 
@@ -60,6 +57,9 @@ export function startClientStateBroadcaster({
 
             items.push(item)
         }
+
+        const corpusItems = getCorpusContextItemsForEditorState({ remoteSearch })
+        items.push(...corpusItems)
 
         postMessage({ type: 'clientState', value: { initialContext: items } })
     }
