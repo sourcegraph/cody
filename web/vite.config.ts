@@ -104,8 +104,8 @@ export default defineProjectWithDefaults(__dirname, {
         assetsDir: '.',
         reportCompressedSize: true,
         lib: {
-            formats: ['cjs'],
-            entry: resolve(__dirname, 'lib/index.ts'),
+            formats: ['es'],
+            entry: [resolve(__dirname, 'lib/index.ts'), resolve(__dirname, 'lib/agent/agent.worker.ts')],
         },
         rollupOptions: {
             external: ['react', 'react/jsx-runtime'],

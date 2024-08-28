@@ -1,5 +1,5 @@
 import type { Span } from '@opentelemetry/api'
-import type { ConfigurationWithAccessToken } from '../../configuration'
+import type { ClientConfigurationWithAccessToken } from '../../configuration'
 
 import { useCustomChatClient } from '../../llm-providers'
 import { recordErrorToSpan } from '../../tracing'
@@ -32,7 +32,7 @@ export interface CompletionRequestParameters {
 }
 
 export type CompletionsClientConfig = Pick<
-    ConfigurationWithAccessToken,
+    ClientConfigurationWithAccessToken,
     'serverEndpoint' | 'accessToken' | 'customHeaders'
 >
 

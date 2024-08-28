@@ -9,9 +9,11 @@ import {
     webviewOpenURIForContextItem,
 } from '@sourcegraph/cody-shared'
 
+import { useMemo } from 'react'
 import type { URI } from 'vscode-uri'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import styles from './FileLink.module.css'
+import { Button } from './shadcn/ui/button'
 
 interface FileLinkProps {
     uri: URI
@@ -60,70 +62,82 @@ export const FileLink: React.FunctionComponent<
     className,
     linkClassName,
 }) => {
-    function logFileLinkClicked() {
-        getVSCodeAPI().postMessage({
-            command: 'event',
-            eventName: 'CodyVSCodeExtension:chat:context:fileLink:clicked',
-            properties: { source },
-        })
+    const linkDetails = useMemo(() => {
+        // Remote search result.
+        if (source === 'unified') {
+            const repoShortName = repoName?.slice(repoName.lastIndexOf('/') + 1)
+            const pathToDisplay = `${repoShortName} ${title}`
+            return {
+                pathWithRange: range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay,
+                tooltip: `${repoName} ${
+                    revision ? `@${revision}` : ''
+                }\nincluded via Enhanced Context (Remote Search)`,
+                // We can skip encoding when the uri path already contains '@'.
+                href: uri.toString(uri.path.includes('@')),
+                target: '_blank' as const,
+            }
+        }
+
+        const pathToDisplay = displayPath(uri)
+        const pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
+        const openURI = webviewOpenURIForContextItem({ uri, range })
+        return {
+            pathWithRange,
+            tooltip: isIgnored
+                ? IGNORE_WARNING
+                : isTooLarge
+                  ? `${LIMIT_WARNING}${isTooLargeReason ? `: ${isTooLargeReason}` : ''}`
+                  : pathWithRange,
+            href: openURI.href,
+            target: openURI.target,
+        }
+    }, [uri, range, source, repoName, title, revision, isIgnored, isTooLarge, isTooLargeReason])
+
+    const onFileLinkClicked = () => {
+        getVSCodeAPI().postMessage({ command: 'openFileLink', uri, range, source })
     }
 
-    let tooltip: string
-    let pathWithRange: string
-    let href: string
-    let target: string | undefined
-    if (source === 'unified') {
-        // Remote search result.
-        const repoShortName = repoName?.slice(repoName.lastIndexOf('/') + 1)
-        const pathToDisplay = `${repoShortName} ${title}`
-        pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
-        tooltip = `${repoName} @${revision}\nincluded via Enhanced Context (Remote Search)`
-        // We can skip encoding when the uri path already contains '@'.
-        href = uri.toString(uri.path.includes('@'))
-        target = '_blank'
-    } else {
-        const pathToDisplay = `${displayPath(uri)}`
-        pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
-        const openURI = webviewOpenURIForContextItem({ uri, range })
-        tooltip = isIgnored
-            ? IGNORE_WARNING
-            : isTooLarge
-              ? `${LIMIT_WARNING}${isTooLargeReason ? `: ${isTooLargeReason}` : ''}`
-              : pathWithRange
-        href = openURI.href
-        target = openURI.target
-    }
+    const iconTitle =
+        source && hoverSourceLabels[source] ? `Included ${hoverSourceLabels[source]}` : undefined
 
     return (
         <div className={clsx('tw-inline-flex tw-items-center tw-max-w-full', className)}>
-            {isIgnored ? (
-                <i className="codicon codicon-warning" title={tooltip} />
-            ) : isTooLarge ? (
-                <i className="codicon codicon-warning" title={tooltip} />
-            ) : null}
-            <a
-                className={linkClassName}
-                title={tooltip}
-                href={href}
-                target={target}
-                onClick={logFileLinkClicked}
-            >
-                <i
-                    className={clsx('codicon', `codicon-${source === 'user' ? 'mention' : 'file'}`)}
-                    title={
-                        (source &&
-                            hoverSourceLabels[source] &&
-                            `Included ${hoverSourceLabels[source]}`) ||
-                        undefined
-                    }
-                />
-                <div
-                    className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}
-                    data-source={source || 'unknown'}
+            {(isIgnored || isTooLarge) && (
+                <i className="codicon codicon-warning" title={linkDetails.tooltip} />
+            )}
+            {source === 'unified' ? (
+                <a
+                    className={linkClassName}
+                    title={linkDetails.tooltip}
+                    href={linkDetails.href}
+                    target={linkDetails.target}
                 >
-                    {pathWithRange}
-                </div>
-            </a>
+                    <i className="codicon codicon-file" title={iconTitle} />
+                    <div
+                        className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}
+                        data-source={source || 'unknown'}
+                    >
+                        {linkDetails.pathWithRange}
+                    </div>
+                </a>
+            ) : (
+                <Button
+                    variant="link"
+                    onClick={onFileLinkClicked}
+                    className="tw-truncate hover:tw-no-underline !tw-p-0"
+                >
+                    <i
+                        className={clsx('codicon', `codicon-${source === 'user' ? 'mention' : 'file'}`)}
+                        title={iconTitle}
+                    />
+                    <div
+                        className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}
+                        data-source={source || 'unknown'}
+                    >
+                        {linkDetails.pathWithRange}
+                    </div>
+                </Button>
+            )}
         </div>
     )
 }

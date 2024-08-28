@@ -60,7 +60,11 @@ export class ContextItemMentionNode extends DecoratorNode<JSX.Element> {
     }
 
     static clone(node: ContextItemMentionNode): ContextItemMentionNode {
-        return new ContextItemMentionNode(node.contextItem, node.isFromInitialContext, node.key)
+        return new ContextItemMentionNode(
+            node.contextItem,
+            node.isFromInitialContext,
+            node.key ?? node.__key
+        )
     }
 
     public readonly contextItem: SerializedContextItem

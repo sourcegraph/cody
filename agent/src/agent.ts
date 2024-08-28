@@ -2,7 +2,13 @@ import { spawn } from 'node:child_process'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
-import { type CodyCommand, ModelUsage, telemetryRecorder } from '@sourcegraph/cody-shared'
+import {
+    type AccountKeyedChatHistory,
+    type ChatHistoryKey,
+    type CodyCommand,
+    ModelUsage,
+    telemetryRecorder,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 import packageJson from '../../vscode/package.json'
@@ -25,7 +31,6 @@ import {
     modelsService,
     setUserAgent,
 } from '@sourcegraph/cody-shared'
-import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import { ChatModel } from '../../vscode/src/chat/chat-view/ChatModel'
@@ -36,6 +41,8 @@ import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 import { mkdirSync, statSync } from 'node:fs'
 import { PassThrough } from 'node:stream'
 import type { Har } from '@pollyjs/persister'
+import { TESTING_TELEMETRY_EXPORTER } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
+import { type TelemetryEventParameters, TestTelemetryExporter } from '@sourcegraph/telemetry'
 import { copySync } from 'fs-extra'
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
@@ -53,9 +60,9 @@ import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldi
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
-import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import { AgentFixupControls } from './AgentFixupControls'
 import { AgentProviders } from './AgentProviders'
+import { AgentClientManagedSecretStorage, AgentStatelessSecretStorage } from './AgentSecretStorage'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
@@ -85,8 +92,6 @@ import type {
 } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
 import { vscodeLocation, vscodeRange } from './vscode-type-converters'
-
-const inMemorySecretStorageMap = new Map<string, string>()
 
 /** The VS Code extension's `activate` function. */
 type ExtensionActivate = (
@@ -133,7 +138,8 @@ export async function initializeVscodeExtension(
     workspaceRoot: vscode.Uri,
     extensionActivate: ExtensionActivate,
     extensionClient: ExtensionClient,
-    globalState: AgentGlobalState
+    globalState: AgentGlobalState,
+    secrets: vscode.SecretStorage
 ): Promise<void> {
     const paths = codyPaths()
     const extensionPath = paths.config
@@ -154,19 +160,7 @@ export async function initializeVscodeExtension(
         globalState,
         logUri: vscode.Uri.file(paths.log),
         logPath: paths.log,
-        secrets: {
-            onDidChange: emptyEvent(),
-            get(key) {
-                return Promise.resolve(inMemorySecretStorageMap.get(key))
-            },
-            store(key, value) {
-                inMemorySecretStorageMap.set(key, value)
-                return Promise.resolve()
-            },
-            delete() {
-                return Promise.resolve()
-            },
-        },
+        secrets,
         storageUri: vscode.Uri.file(paths.data),
         subscriptions: [],
 
@@ -340,6 +334,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             })
         },
     })
+    private secretsDidChange = new vscode.EventEmitter<vscode.SecretStorageChangeEvent>()
 
     public webPanels = new AgentWebviewPanels()
     public webviewViewProviders = new Map<string, vscode.WebviewViewProvider>()
@@ -425,11 +420,17 @@ export class Agent extends MessageHandler implements ExtensionClient {
                   })
 
             try {
+                const secrets =
+                    clientInfo.capabilities?.secrets === 'client-managed'
+                        ? new AgentClientManagedSecretStorage(this, this.secretsDidChange.event)
+                        : new AgentStatelessSecretStorage()
+
                 await initializeVscodeExtension(
                     this.workspace.workspaceRootUri,
                     params.extensionActivate,
                     this,
-                    this.globalState
+                    this.globalState,
+                    secrets
                 )
 
                 this.authenticationPromise = clientInfo.extensionConfiguration
@@ -744,6 +745,22 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
             return { closestBody: closest }
         })
+        this.registerAuthenticatedRequest('testing/exportedTelemetryEvents', async () => {
+            const events = TESTING_TELEMETRY_EXPORTER.getExported()
+            return {
+                events: events.map(event => ({
+                    feature: event.feature,
+                    action: event.action,
+                    source: {
+                        client: event.source.client,
+                        clientVersion: event.source.clientVersion ?? '',
+                    },
+                    timestamp: event.timestamp,
+                    // TODO add parameters (metadata, privateMetadata, billingMetadata)
+                    testOnlyAnonymousUserID: event.testOnlyAnonymousUserID,
+                })),
+            }
+        })
         this.registerAuthenticatedRequest('testing/requestErrors', async () => {
             const requests = this.params.requestErrors ?? []
             return {
@@ -808,6 +825,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('testing/reset', async () => {
             await this.workspace.reset()
             this.globalState?.reset()
+            // reset the telemetry recorded events
+            TESTING_TELEMETRY_EXPORTER.reset()
             return null
         })
 
@@ -831,6 +850,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 return { documents }
             }
         )
+        TESTING_TELEMETRY_EXPORTER.delegate = new TestTelemetryExporter()
 
         this.registerAuthenticatedRequest('command/execute', async params => {
             await vscode.commands.executeCommand(params.command, ...(params.arguments ?? []))
@@ -957,7 +977,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 throw res
             }
 
-            return res.codyProEnabled
+            return Boolean(res?.codyProEnabled)
         })
 
         this.registerAuthenticatedRequest('graphql/getCurrentUserCodySubscription', async () => {
@@ -1238,6 +1258,16 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
             return []
         })
+        this.registerAuthenticatedRequest('chat/import', async ({ history, merge }) => {
+            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+
+            const accountKeyedChatHistory: AccountKeyedChatHistory = {}
+            for (const [account, chats] of Object.entries(history)) {
+                accountKeyedChatHistory[account as ChatHistoryKey] = { chat: chats }
+            }
+            await chatHistory.importChatHistory(accountKeyedChatHistory, merge, authStatus)
+            return null
+        })
 
         this.registerAuthenticatedRequest('chat/delete', async params => {
             await vscode.commands.executeCommand<AuthStatus>('cody.chat.history.delete', {
@@ -1334,6 +1364,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 return null
             }
         )
+        this.registerNotification('secrets/didChange', async ({ key }) => {
+            this.secretsDidChange.fire({ key })
+        })
 
         this.registerAuthenticatedRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
             return featureFlagProvider.evaluateFeatureFlag(

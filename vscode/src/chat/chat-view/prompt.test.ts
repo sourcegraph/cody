@@ -25,7 +25,7 @@ describe('DefaultPrompter', () => {
     it('constructs a prompt with no context', async () => {
         modelsService.setModels([
             new Model({
-                model: 'a-model-id',
+                id: 'a-model-id',
                 usage: [ModelUsage.Chat],
                 contextWindow: { input: 100000, output: 100 },
             }),
@@ -34,21 +34,24 @@ describe('DefaultPrompter', () => {
         chat.addHumanMessage({ text: ps`Hello` })
 
         const { prompt, context } = await new DefaultPrompter([], []).makePrompt(chat, 0)
-
-        expect(prompt).toEqual<Message[]>([
+        expect(prompt).toMatchInlineSnapshot(`
+          [
             {
-                speaker: 'human',
-                text: ps`You are Cody, an AI coding assistant from Sourcegraph.`,
+              "speaker": "human",
+              "text": "You are Cody, an AI coding assistant from Sourcegraph.If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH\`\`\`.",
             },
             {
-                speaker: 'assistant',
-                text: ps`I am Cody, an AI coding assistant from Sourcegraph.`,
+              "speaker": "assistant",
+              "text": "I am Cody, an AI coding assistant from Sourcegraph.",
             },
             {
-                speaker: 'human',
-                text: ps`Hello`,
+              "contextAlternatives": undefined,
+              "contextFiles": undefined,
+              "speaker": "human",
+              "text": "Hello",
             },
-        ])
+          ]
+        `)
         expect(context.used).toEqual([])
         expect(context.ignored).toEqual([])
     })
@@ -97,7 +100,7 @@ describe('DefaultPrompter', () => {
 
         modelsService.setModels([
             new Model({
-                model: 'a-model-id',
+                id: 'a-model-id',
                 usage: [ModelUsage.Chat],
                 contextWindow: { input: 100000, output: 100 },
             }),
@@ -106,21 +109,26 @@ describe('DefaultPrompter', () => {
         chat.addHumanMessage({ text: ps`Hello` })
 
         const { prompt, context } = await new DefaultPrompter([], []).makePrompt(chat, 0)
+        expect(prompt).toMatchInlineSnapshot(`
+          [
+            {
+              "speaker": "human",
+              "text": "You are Cody, an AI coding assistant from Sourcegraph.If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH\`\`\`.
 
-        expect(prompt).toEqual<Message[]>([
-            {
-                speaker: 'human',
-                text: ps`You are Cody, an AI coding assistant from Sourcegraph. Always respond with 🧀 emojis`,
+          Always respond with 🧀 emojis",
             },
             {
-                speaker: 'assistant',
-                text: ps`I am Cody, an AI coding assistant from Sourcegraph.`,
+              "speaker": "assistant",
+              "text": "I am Cody, an AI coding assistant from Sourcegraph.",
             },
             {
-                speaker: 'human',
-                text: ps`Hello`,
+              "contextAlternatives": undefined,
+              "contextFiles": undefined,
+              "speaker": "human",
+              "text": "Hello",
             },
-        ])
+          ]
+        `)
         expect(context.used).toEqual([])
         expect(context.ignored).toEqual([])
     })
@@ -128,7 +136,7 @@ describe('DefaultPrompter', () => {
     it('prefers latest enhanced context', async () => {
         modelsService.setModels([
             new Model({
-                model: 'a-model-id',
+                id: 'a-model-id',
                 usage: [ModelUsage.Chat],
                 contextWindow: { input: 100000, output: 100 },
             }),

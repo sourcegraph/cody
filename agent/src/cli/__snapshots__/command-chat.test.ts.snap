@@ -4,19 +4,26 @@ exports[`--context-file (animal test) 1`] = `
 "command: cody chat chat --context-file animal.ts --show-context -m implement a
   cow. Only print the code without any explanation.
 exitCode: 0
-stdout: |+
+stdout: >+
   > Context items:
+
 
   > 1. WORKING_DIRECTORY/animal.ts
 
 
 
-  \`\`\`typescript
+
+  Here's the implementation of a cow based on the provided \`StrangeAnimal\` interface:
+
+
+  \`\`\`typescript:animal.ts
+
   class Cow implements StrangeAnimal {
       makesSound(): 'coo' | 'moo' {
           return 'moo';
       }
   }
+
   \`\`\`
 
 stderr: ""

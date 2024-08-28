@@ -48,7 +48,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
         providerOptions,
         providerSpecificPostProcess,
     } = params
-    const { hotStreak, docContext, multiline, firstCompletionTimeout } = providerOptions
+    const { docContext, multiline, firstCompletionTimeout } = providerOptions
 
     let hotStreakExtractor: undefined | HotStreakExtractor
 
@@ -75,17 +75,12 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
             },
         }
 
-        // TODO(valery): disable hot-streak for long multiline completions?
-        if (hotStreak) {
-            hotStreakExtractor = createHotStreakExtractor({
-                completedCompletion,
-                ...params,
-            })
+        hotStreakExtractor = createHotStreakExtractor({
+            completedCompletion,
+            ...params,
+        })
 
-            yield* hotStreakExtractor.extract(rawCompletion, isFullResponse)
-        } else {
-            abortController.abort()
-        }
+        yield* hotStreakExtractor.extract(rawCompletion, isFullResponse)
     }
 
     const generatorStartTime = performance.now()

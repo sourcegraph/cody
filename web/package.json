@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/cody-web",
-  "version": "0.4.0",
+  "version": "0.7.1",
   "description": "Cody standalone web app",
   "license": "Apache-2.0",
   "repository": {
@@ -10,7 +10,7 @@
   },
   "main": "dist/index.js",
   "types": "dist/lib/index.d.ts",
-  "sideEffects": false,
+  "sideEffects": true,
   "files": ["dist/*"],
   "scripts": {
     "dev": "vite --mode development",
@@ -28,6 +28,7 @@
     "@vitest/web-worker": "^1.4.0",
     "@vscode/codicons": "^0.0.35",
     "buffer": "^6.0.3",
+    "classnames": "^2.5.1",
     "cody-ai": "workspace:*",
     "events": "^3.3.0",
     "idb": "^8.0.0",

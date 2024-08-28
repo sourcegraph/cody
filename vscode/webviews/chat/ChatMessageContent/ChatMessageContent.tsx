@@ -33,7 +33,7 @@ interface ChatMessageContentProps {
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
-    experimentalSmartApplyEnabled?: boolean
+    smartApplyEnabled?: boolean
     smartApply?: CodeBlockActionsProps['smartApply']
 
     guardrails?: Guardrails
@@ -51,7 +51,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     insertButtonOnSubmit,
     guardrails,
     className,
-    experimentalSmartApplyEnabled,
+    smartApplyEnabled,
     smartApply,
     userInfo,
 }) => {
@@ -87,6 +87,10 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         }, [])
     )
 
+    // See SRCH-942: this `useEffect` is very large and any update to the
+    // dependencies triggers a network request to our guardrails server. Be very
+    // careful about adding more dependencies.  Ideally, we should refactor this
+    // `useEffect` into smaller blocks with more narrow dependencies.
     // biome-ignore lint/correctness/useExhaustiveDependencies: needs to run when `displayMarkdown` changes or else the buttons won't show up.
     useEffect(() => {
         if (!rootRef.current) {
@@ -113,7 +117,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 const fileName = codeElement?.getAttribute('data-file-path') || undefined
                 let buttons: HTMLElement
 
-                if (experimentalSmartApplyEnabled) {
+                if (smartApplyEnabled) {
                     const smartApplyId = getCodeBlockId(preText, fileName)
                     const smartApplyState = smartApplyStates[smartApplyId]
                     buttons = createButtonsExperimentalUI(
@@ -180,8 +184,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     }, [
         copyButtonOnSubmit,
         insertButtonOnSubmit,
-        experimentalSmartApplyEnabled,
-        smartApplyInterceptor,
+        smartApplyEnabled,
         guardrails,
         displayMarkdown,
         isMessageLoading,

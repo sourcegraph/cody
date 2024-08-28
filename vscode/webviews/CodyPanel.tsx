@@ -1,6 +1,6 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import type React from 'react'
-import { type ComponentProps, type FunctionComponent, useRef } from 'react'
+import { type ComponentProps, type FunctionComponent, useCallback, useRef } from 'react'
 import type { ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 import styles from './App.module.css'
 import { Chat } from './Chat'
@@ -28,7 +28,7 @@ export const CodyPanel: FunctionComponent<
         | 'guardrails'
         | 'showWelcomeMessage'
         | 'showIDESnippetActions'
-        | 'experimentalSmartApplyEnabled'
+        | 'smartApplyEnabled'
     > &
         Pick<ComponentProps<typeof HistoryTab>, 'userHistory'>
 > = ({
@@ -47,9 +47,21 @@ export const CodyPanel: FunctionComponent<
     showIDESnippetActions,
     showWelcomeMessage,
     userHistory,
-    experimentalSmartApplyEnabled,
+    smartApplyEnabled,
 }) => {
     const tabContainerRef = useRef<HTMLDivElement>(null)
+
+    // Use native browser download dialog to download chat history as a JSON file.
+    const onDownloadChatClick = useCallback(() => {
+        const json = JSON.stringify(userHistory, null, 2)
+        const blob = new Blob([json], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'cody-chat-history.json'
+        a.click()
+    }, [userHistory])
+
     return (
         <TabRoot
             defaultValue={View.Chat}
@@ -58,9 +70,14 @@ export const CodyPanel: FunctionComponent<
             className={styles.outerContainer}
         >
             {/* Hide tab bar in editor chat panels. */}
-            {config.agentIDE === CodyIDE.Web || config.webviewType !== 'editor' ? (
-                <TabsBar currentView={view} setView={setView} IDE={config.agentIDE || CodyIDE.VSCode} />
-            ) : null}
+            {(config.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
+                <TabsBar
+                    currentView={view}
+                    setView={setView}
+                    IDE={config.agentIDE || CodyIDE.VSCode}
+                    onDownloadChatClick={onDownloadChatClick}
+                />
+            )}
             {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
             <TabContainer value={view} ref={tabContainerRef}>
                 {view === View.Chat && (
@@ -74,7 +91,7 @@ export const CodyPanel: FunctionComponent<
                         showIDESnippetActions={showIDESnippetActions}
                         showWelcomeMessage={showWelcomeMessage}
                         scrollableParent={tabContainerRef.current}
-                        experimentalSmartApplyEnabled={experimentalSmartApplyEnabled}
+                        smartApplyEnabled={smartApplyEnabled}
                         setView={setView}
                     />
                 )}

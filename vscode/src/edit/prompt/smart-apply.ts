@@ -12,6 +12,9 @@ import {
     psDedent,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import type { SmartApplyResult } from '../../chat/protocol'
+import type { FixupTaskID } from '../../non-stop/FixupTask'
+import { CodyTaskState } from '../../non-stop/state'
 import { PromptBuilder } from '../../prompt-builder'
 import { fuzzyFindLocation } from '../../supercompletions/utils/fuzzy-find-location'
 
@@ -77,7 +80,12 @@ export const getPrompt = async (
     }
 
     const promptBuilder = await PromptBuilder.create(contextWindow)
-    const preamble = getSimplePreamble(model, codyApiVersion, SMART_APPLY_SELECTION_PROMPT.system)
+    const preamble = getSimplePreamble(
+        model,
+        codyApiVersion,
+        'Default',
+        SMART_APPLY_SELECTION_PROMPT.system
+    )
     promptBuilder.tryAddToPrefix(preamble)
 
     const text = SMART_APPLY_SELECTION_PROMPT.instruction
@@ -171,6 +179,7 @@ interface SmartSelection {
 }
 
 export async function getSmartApplySelection(
+    id: FixupTaskID,
     instruction: PromptString,
     replacement: PromptString,
     document: vscode.TextDocument,
@@ -194,6 +203,13 @@ export async function getSmartApplySelection(
         vscode.window.showErrorMessage(
             `Error: ${error instanceof Error ? error.message : 'An unknown error occurred'}`
         )
+
+        // Notify the WebView that the Smart Apply failed
+        await vscode.commands.executeCommand('cody.command.markSmartApplyApplied', {
+            taskId: id,
+            taskState: CodyTaskState.Error,
+        } satisfies SmartApplyResult)
+
         return null
     }
 

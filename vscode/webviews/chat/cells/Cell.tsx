@@ -30,7 +30,7 @@ export const Cell: FunctionComponent<
         aria-disabled={ariaDisabled}
         data-testid={dataTestID}
     >
-        <header className="tw-flex tw-gap-4 tw-items-center">{header}</header>
+        <header className="tw-flex tw-gap-4 tw-items-center [&_>_*]:tw-flex-shrink-0">{header}</header>
         <div className={clsx('tw-flex-1 tw-overflow-hidden', contentClassName)}>{children}</div>
     </div>
 )

@@ -41,11 +41,7 @@ export class DefaultPrompter {
     //
     // Returns the reverse prompt and the new context that was used in the prompt for the current message.
     // If user-context added at the last message is ignored, returns the items in the newContextIgnored array.
-    public async makePrompt(
-        chat: ChatModel,
-        codyApiVersion: number,
-        options?: { experimentalSmartApplyEnabled?: boolean }
-    ): Promise<PromptInfo> {
+    public async makePrompt(chat: ChatModel, codyApiVersion: number): Promise<PromptInfo> {
         return wrapInActiveSpan('chat.prompter', async () => {
             const promptBuilder = await PromptBuilder.create(chat.contextWindow)
             const preInstruction: PromptString | undefined = PromptString.fromConfig(
@@ -55,7 +51,12 @@ export class DefaultPrompter {
             )
 
             // Add preamble messages
-            const preambleMessages = getSimplePreamble(chat.modelID, codyApiVersion, preInstruction)
+            const preambleMessages = getSimplePreamble(
+                chat.modelID,
+                codyApiVersion,
+                'Chat',
+                preInstruction
+            )
             if (!promptBuilder.tryAddToPrefix(preambleMessages)) {
                 throw new Error(`Preamble length exceeded context window ${chat.contextWindow.input}`)
             }
@@ -76,7 +77,7 @@ export class DefaultPrompter {
                 !this.isCommand &&
                 Boolean(this.explicitContext.length || historyItems.length || this.corpusContext.length)
             ) {
-                reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0], chat.modelID, options)
+                reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0], chat.modelID)
             }
 
             const messagesIgnored = promptBuilder.tryAddMessages(reverseTranscript)

@@ -25,6 +25,7 @@ import {
     TESTING_CREDENTIALS,
     type TestingCredentials,
 } from '../../vscode/src/testutils/testing-credentials'
+import { AgentStatelessSecretStorage } from './AgentSecretStorage'
 import { AgentTextDocument } from './AgentTextDocument'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { allClientCapabilitiesEnabled } from './allClientCapabilitiesEnabled'
@@ -132,6 +133,7 @@ export function buildAgentBinary(): void {
 }
 
 export class TestClient extends MessageHandler {
+    private secrets = new AgentStatelessSecretStorage()
     private extensionConfigurationDuringInitialization: ExtensionConfiguration | undefined
     public static create({ bin = 'node', ...params }: TestClientParams): TestClient {
         buildAgentBinary()
@@ -195,6 +197,7 @@ export class TestClient extends MessageHandler {
     public workspace = new AgentWorkspaceDocuments({})
     public workspaceEditParams: WorkspaceEditParams[] = []
     public textDocumentEditParams: TextDocumentEditParams[] = []
+    public expectedEvents: string[] = []
 
     get serverEndpoint(): string {
         return this.params.credentials.serverEndpoint
@@ -238,6 +241,17 @@ export class TestClient extends MessageHandler {
                 id: this.progressID(id),
                 message: {},
             })
+        })
+        this.registerRequest('secrets/get', async ({ key }) => {
+            return this.secrets.get(key) ?? null
+        })
+        this.registerRequest('secrets/store', async ({ key, value }) => {
+            await this.secrets.store(key, value)
+            return null
+        })
+        this.registerRequest('secrets/delete', async ({ key }) => {
+            await this.secrets.delete(key)
+            return null
         })
         this.registerRequest('window/showMessage', params => {
             if (this.params.onWindowRequest) {

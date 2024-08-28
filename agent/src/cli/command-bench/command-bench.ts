@@ -361,7 +361,7 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
         // can only modify this setting by changing it through the quickpick
         // menu in VSC.
         const provider = modelsService.getModelByIDSubstringOrError(editModel)
-        baseGlobalState.editModel = provider.model
+        baseGlobalState.editModel = provider.id
     }
 
     if (isDefined(options.context)) {
@@ -380,7 +380,7 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
                 'cody.experimental.symf.enabled': ['keyword', 'blended'].includes(
                     options.context?.strategy
                 ), // disabling fixes errors in Polly.js related to fetching the symf binary
-                'cody.experimental.localEmbeddings.disabled': !['embeddings', 'blended'].includes(
+                'cody.experimental.localEmbeddings.enabled': ['embeddings', 'blended'].includes(
                     options.context?.strategy
                 ),
                 'cody.useContext': options.context?.strategy,

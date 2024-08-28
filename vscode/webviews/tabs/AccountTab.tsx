@@ -19,8 +19,18 @@ export const AccountTab: React.FC = () => {
         return null
     }
 
-    const actions = [
-        {
+    const actions: any[] = []
+
+    actions.push({
+        text: 'Switch Account...',
+        onClick: useCallback(() => {
+            if (userInfo.user.username) {
+                getVSCodeAPI().postMessage({ command: 'command', id: 'cody.auth.switchAccount' })
+            }
+        }, [userInfo]),
+    })
+    if (isDotComUser) {
+        actions.push({
             text: 'Manage Account',
             onClick: useCallback(() => {
                 if (userInfo.user.username) {
@@ -30,16 +40,17 @@ export const AccountTab: React.FC = () => {
                     getVSCodeAPI().postMessage({ command: 'links', value: uri.toString() })
                 }
             }, [userInfo]),
-        },
-        {
-            text: 'Switch Account',
-            onClick: () => getVSCodeAPI().postMessage({ command: 'command', id: 'cody.auth.signin' }),
-        },
-        {
-            text: 'Sign Out',
-            onClick: () => getVSCodeAPI().postMessage({ command: 'auth', authKind: 'signout' }),
-        },
-    ]
+        })
+    }
+    actions.push({
+        text: 'Settings',
+        onClick: () =>
+            getVSCodeAPI().postMessage({ command: 'command', id: 'cody.status-bar.interacted' }),
+    })
+    actions.push({
+        text: 'Sign Out',
+        onClick: () => getVSCodeAPI().postMessage({ command: 'auth', authKind: 'signout' }),
+    })
 
     return (
         <div className="tw-overflow-auto tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-8 tw-py-6 tw-gap-6">

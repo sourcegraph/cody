@@ -58,7 +58,7 @@ export class ChatsController implements vscode.Disposable {
     private activeEditor: ChatController | undefined = undefined
 
     // We keep track of the currently authenticated account and dispose open chats when it changes
-    private currentAuthAccount: undefined | { endpoint: string; primaryEmail: string; username: string }
+    private currentAuthAccount: undefined | { endpoint: string; primaryEmail?: string; username: string }
 
     protected disposables: vscode.Disposable[] = []
 
@@ -273,9 +273,10 @@ export class ChatsController implements vscode.Disposable {
      */
     private async getActiveChatController(): Promise<ChatController> {
         // Check if any existing panel is available
-        // NOTE: Never reuse webviews when running inside the agent.
         if (this.activeEditor) {
-            if (getConfiguration().isRunningInsideAgent) {
+            // NOTE: Never reuse webviews when running inside the agent without native webviews
+            // TODO: Find out, document why we don't reuse webviews when running inside agent without native webviews
+            if (!getConfiguration().hasNativeWebview) {
                 return await this.getOrCreateEditorChatController()
             }
             return this.activeEditor
@@ -373,24 +374,13 @@ export class ChatsController implements vscode.Disposable {
     }
 
     private async clearHistory(chatID?: string): Promise<void> {
-        const clearAllNoConfirm = chatID === 'clear-all-no-confirm'
+        // The chat ID for client to pass in to clear all chats without showing window pop-up for confirmation.
+        const ClearWithoutConfirmID = 'clear-all-no-confirm'
+        const isClearAll = !chatID || chatID === ClearWithoutConfirmID
+        const authStatus = this.options.authProvider.getAuthStatus()
 
-        const authProvider = this.options.authProvider
-        const authStatus = authProvider.getAuthStatus()
-
-        // delete single chat
-        if (chatID) {
-            await chatHistory.deleteChat(authStatus, chatID)
-            this.disposeChat(chatID, true)
-            return
-        }
-
-        // delete all chats
-        if (!chatID || clearAllNoConfirm) {
-            logDebug('ChatsController:clearHistory', 'userConfirmation')
-
-            if (!clearAllNoConfirm) {
-                // Show warning to users and get confirmation if they want to clear all history
+        if (isClearAll) {
+            if (chatID !== ClearWithoutConfirmID) {
                 const userConfirmation = await vscode.window.showWarningMessage(
                     'Are you sure you want to delete all of your chats?',
                     { modal: true },
@@ -400,10 +390,13 @@ export class ChatsController implements vscode.Disposable {
                     return
                 }
             }
-
             await chatHistory.clear(authStatus)
             this.disposeAllChats()
+            return
         }
+
+        await chatHistory.deleteChat(authStatus, chatID)
+        this.disposeChat(chatID, true)
     }
 
     /**

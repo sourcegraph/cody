@@ -1,6 +1,5 @@
 import type { DocumentContext, GitContext } from '@sourcegraph/cody-shared'
 
-import { completionProviderConfig } from './completion-provider-config'
 import { type InlineCompletionsParams, TriggerKind } from './get-inline-completions'
 import type { CompletionLogID } from './logger'
 import type { Provider, ProviderOptions } from './providers/provider'
@@ -32,7 +31,6 @@ export function getCompletionProvider(params: GetCompletionProvidersParams): Pro
         docContext,
         document,
         position,
-        hotStreak: completionProviderConfig.hotStreak,
         // For now the value is static and based on the average multiline completion latency.
         firstCompletionTimeout,
         completionLogId,

@@ -770,11 +770,18 @@ const _window: typeof vscode.window = {
         console.log(new Error().stack)
         throw new Error('Not implemented: vscode.window.showOpenDialog')
     },
-    showSaveDialog: () => {
+    showSaveDialog: options => {
         if (agent) {
-            return agent.request('window/showSaveDialog', null).then(result => {
-                return result ? Uri.parse(result) : undefined
-            })
+            return agent
+                .request('window/showSaveDialog', {
+                    defaultUri: options?.defaultUri?.toString(),
+                    saveLabel: options?.saveLabel,
+                    filters: options?.filters,
+                    title: options?.title,
+                })
+                .then(result => {
+                    return result ? Uri.parse(result) : undefined
+                })
         }
         return Promise.resolve(undefined)
     },
@@ -1006,13 +1013,16 @@ _commands?.registerCommand?.('vscode.executeWorkspaceSymbolProvider', query => {
 _commands?.registerCommand?.('vscode.executeFormatDocumentProvider', uri => {
     return Promise.resolve([])
 })
-_commands?.registerCommand?.('vscode.open', async (uri: vscode.Uri) => {
-    const result = toUri(uri?.path)
-    if (result) {
-        return _window.showTextDocument(result)
+_commands?.registerCommand?.(
+    'vscode.open',
+    async (uri: vscode.Uri, options?: vscode.TextDocumentShowOptions) => {
+        const uriPath = toUri(uri?.path)
+        if (uri.scheme === 'http' || uri.scheme === 'https' || !uriPath) {
+            return open(uri.toString())
+        }
+        return _window.showTextDocument(uriPath, options)
     }
-    return open(uri.toString())
-})
+)
 
 function promisify(value: any): Promise<any> {
     return value instanceof Promise ? value : Promise.resolve(value)

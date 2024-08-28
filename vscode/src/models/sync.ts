@@ -77,7 +77,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
     if (authStatus?.configOverwrites?.chatModel) {
         modelsService.setModels([
             new Model({
-                model: authStatus.configOverwrites.chatModel,
+                id: authStatus.configOverwrites.chatModel,
                 // TODO (umpox) Add configOverwrites.editModel for separate edit support
                 usage: [ModelUsage.Chat, ModelUsage.Edit],
                 contextWindow: getEnterpriseContextWindow(
@@ -124,7 +124,7 @@ export function registerModelsFromVSCodeConfiguration() {
         modelsConfig.map(
             m =>
                 new Model({
-                    model: `${m.provider}/${m.model}`,
+                    id: `${m.provider}/${m.model}`,
                     usage: [ModelUsage.Chat, ModelUsage.Edit],
                     contextWindow: {
                         input: m.inputTokens ?? CHAT_INPUT_TOKEN_BUDGET,
@@ -149,7 +149,7 @@ async function fetchServerSideModels(endpoint: string): Promise<ServerModelConfi
 
     // Get the user's access token, assumed to be already saved in the secret store.
     const userAccessToken = await secretStorage.getToken(endpoint)
-    const customHeaders = getConfiguration().customHeaders ?? {}
+    const customHeaders = getConfiguration().customHeaders
 
     // Fetch the data via REST API.
     // NOTE: We may end up exposing this data via GraphQL, it's still TBD.

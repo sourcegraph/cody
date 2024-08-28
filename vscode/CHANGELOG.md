@@ -6,6 +6,25 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+### Fixed
+
+- Autocomplete: Enable deepseek-coder-v2-lite-base model for enterprise users. [pull/5272](https://github.com/sourcegraph/cody/pull/5272)
+
+### Changed
+
+- Autocomplete: Enabled hot-streak and smart-throttle for enterprise users. [pull/5339](https://github.com/sourcegraph/cody/pull/5339)
+
+## 1.32.1
+
+### Fixed
+
+- Revert: A recent version bump of a dependency was potentially causing some Out-of-Memory issues resultling in a grey screen. The `rehype-highlight` version has been reverted. [pull/5315](https://github.com/sourcegraph/cody/pull/5315)
+- Chat: General improvements to how Cody responds to messages that include code blocks. [pull/5290](https://github.com/sourcegraph/cody/pull/5290)
+
+## 1.32.0
+
+### Added
+
 - Chat/Edit: Added an experimental "Smart Apply" button to code blocks that will attempt to apply the changes to the correct file via the Edit command. [pull/5038](https://github.com/sourcegraph/cody/pull/5038)
 - Edit: Added support to accept/reject specific changes when displaying a diff. [pull/4976](https://github.com/sourcegraph/cody/pull/4976)
 - Agent: Support for multiple workspace roots. [pull/5211](https://github.com/sourcegraph/cody/pull/5211)
@@ -14,6 +33,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Edit: Fixed a case where multiple, duplicate, edit commands would be created unintentionally. [pull/5183](https://github.com/sourcegraph/cody/pull/5183)
 - Debug: Commands for debugging purposes (e.g., "Cody Debug: Export Logs") are available outside of development mode again. [pull/5197](https://github.com/sourcegraph/cody/pull/5197)
+- Edit: Fixed an issue where the inline diff would not be shown if a file became hidden before the edit was applied. [pull/5270](https://github.com/sourcegraph/cody/pull/5270)
+- Edit: Fixed an issue where single-line/short edits would not be correctly applied to the document. [pull/5271](https://github.com/sourcegraph/cody/pull/5271)
 
 ### Changed
 

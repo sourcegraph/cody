@@ -2,7 +2,7 @@ import type { TelemetryEventInput, TelemetryExporter } from '@sourcegraph/teleme
 
 import { logDebug, logError } from '../../logger'
 import { isError } from '../../utils'
-import type { LogEventMode, SourcegraphGraphQLAPIClient } from '../graphql/client'
+import { type LogEventMode, graphqlClient } from '../graphql/client'
 
 /**
  * GraphQLTelemetryExporter exports events via the new Sourcegraph telemetry
@@ -22,14 +22,13 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
         | undefined
 
     constructor(
-        public client: SourcegraphGraphQLAPIClient,
         private anonymousUserID: string,
         /**
          * logEvent mode to use if exporter needs to use a legacy export mode.
          */
         private legacyBackcompatLogEventMode: LogEventMode
     ) {
-        this.client.setAnonymousUserID(anonymousUserID)
+        graphqlClient.setAnonymousUserID(anonymousUserID)
     }
 
     /**
@@ -41,7 +40,7 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
      */
     private async setLegacyEventsStateOnce(): Promise<void> {
         if (this.exportMode === undefined) {
-            const siteVersion = await this.client.getSiteVersion()
+            const siteVersion = await graphqlClient.getSiteVersion()
             if (isError(siteVersion)) {
                 logError(
                     'GraphQLTelemetryExporter',
@@ -71,7 +70,7 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
             logDebug('GraphQLTelemetryExporter', 'evaluated export mode:', this.exportMode)
         }
         if (this.exportMode === 'legacy' && this.legacySiteIdentification === undefined) {
-            const siteIdentification = await this.client.getSiteIdentification()
+            const siteIdentification = await graphqlClient.getSiteIdentification()
             if (isError(siteIdentification)) {
                 /**
                  * Swallow errors. Any instance with a version before https://github.com/sourcegraph/sourcegraph/commit/05184f310f631bb36c6d726792e49ff9d122e4af
@@ -100,7 +99,7 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
         if (this.exportMode === 'legacy') {
             const resultOrError = await Promise.all(
                 events.map(event =>
-                    this.client.logEvent(
+                    graphqlClient.logEvent(
                         {
                             client: event.source.client,
                             event: `${event.feature}.${event.action}`,
@@ -145,7 +144,7 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
         /**
          * Record events with the new mutations.
          */
-        const resultOrError = await this.client.recordTelemetryEvents(events)
+        const resultOrError = await graphqlClient.recordTelemetryEvents(events)
         if (isError(resultOrError)) {
             logError('GraphQLTelemetryExporter', 'Error exporting telemetry events:', resultOrError)
         }

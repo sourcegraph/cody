@@ -2,10 +2,11 @@ import type { URI } from 'vscode-uri'
 
 import type {
     AuthStatus,
+    ClientConfigurationWithEndpoint,
     ClientStateForWebview,
     CodyIDE,
-    ConfigurationWithEndpoint,
     ContextItem,
+    ContextItemSource,
     MentionQuery,
     Model,
     Prompt,
@@ -98,6 +99,12 @@ export type WebviewMessage =
     | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'openURI'; uri: Uri }
+    | {
+          command: 'openFileLink'
+          uri: Uri
+          range?: RangeData | undefined | null
+          source?: ContextItemSource | undefined | null
+      }
     | {
           command: 'show-page'
           page: string
@@ -285,15 +292,18 @@ export interface ExtensionTranscriptMessage {
  */
 export interface ConfigurationSubsetForWebview
     extends Pick<
-        ConfigurationWithEndpoint,
+        ClientConfigurationWithEndpoint,
         | 'experimentalNoodle'
         | 'serverEndpoint'
         | 'agentIDE'
         | 'agentExtensionVersion'
         | 'internalDebugContext'
     > {
-    experimentalSmartApply: boolean
+    smartApply: boolean
+    // Type/location of the current webview.
     webviewType?: WebviewType | undefined | null
+    // Whether support running multiple webviews (e.g. sidebar w/ multiple editor panels).
+    multipleWebviewsEnabled?: boolean | undefined | null
 }
 
 /**

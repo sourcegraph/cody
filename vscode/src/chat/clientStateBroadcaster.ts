@@ -2,6 +2,7 @@ import {
     type ContextItem,
     ContextItemSource,
     type ContextItemTree,
+    REMOTE_REPOSITORY_PROVIDER_URI,
     contextFiltersProvider,
     displayLineRange,
     displayPathBasename,
@@ -9,7 +10,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getSelectionOrFileContext } from '../commands/context/selection'
-import { createRemoteRepositoryMention } from '../context/openctx/remoteRepositorySearch'
+import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
 import type { RemoteSearch } from '../context/remote-search'
 import { workspaceReposMonitor } from '../repository/repo-metadata-from-git-api'
 import type { ChatModel } from './chat-view/ChatModel'
@@ -36,9 +37,6 @@ export function startClientStateBroadcaster({
         const items: ContextItem[] = []
         const remoteSearch = getRemoteSearch()
 
-        const corpusItems = getCorpusContextItemsForEditorState({ remoteSearch })
-        items.push(...(await corpusItems))
-
         const { input, context } = chatModel.contextWindow
         const userContextSize = context?.user ?? input
 
@@ -61,6 +59,9 @@ export function startClientStateBroadcaster({
 
             items.push(item)
         }
+
+        const corpusItems = getCorpusContextItemsForEditorState({ remoteSearch })
+        items.push(...(await corpusItems))
 
         postMessage({ type: 'clientState', value: { initialContext: items } })
     }
@@ -113,11 +114,14 @@ export async function getCorpusContextItemsForEditorState({
             }
             items.push({
                 ...contextItemMentionFromOpenCtxItem(
-                    createRemoteRepositoryMention({
-                        id: repo.remoteID,
-                        name: repo.repoName,
-                        url: repo.repoName,
-                    })
+                    createRepositoryMention(
+                        {
+                            id: repo.remoteID,
+                            name: repo.repoName,
+                            url: repo.repoName,
+                        },
+                        REMOTE_REPOSITORY_PROVIDER_URI
+                    )
                 ),
                 title: 'Current Repository',
                 description: repo.repoName,

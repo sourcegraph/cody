@@ -1,7 +1,6 @@
 import sharedTestDataset from '@sourcegraph/cody-context-filters-test-dataset/dataset.json'
 import { RE2JS as RE2 } from 're2js'
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import {
@@ -10,12 +9,12 @@ import {
     graphqlClient,
 } from '../sourcegraph-api/graphql/client'
 
-import { ContextFiltersProvider } from './context-filters-provider'
+import { ContextFiltersProvider, type GetRepoNamesFromWorkspaceUri } from './context-filters-provider'
 
 describe('ContextFiltersProvider', () => {
     let provider: ContextFiltersProvider
 
-    let getRepoNamesFromWorkspaceUri: Mock<[vscode.Uri], any>
+    let getRepoNamesFromWorkspaceUri: Mock<GetRepoNamesFromWorkspaceUri>
 
     beforeEach(() => {
         provider = new ContextFiltersProvider()
@@ -327,7 +326,7 @@ describe('ContextFiltersProvider', () => {
             })
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
-            getRepoNamesFromWorkspaceUri.mockResolvedValue(undefined)
+            getRepoNamesFromWorkspaceUri.mockResolvedValue(null)
             expect(await provider.isUriIgnored(uri)).toBe('no-repo-found')
         })
 

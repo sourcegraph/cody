@@ -2,6 +2,7 @@ import {
     TelemetryRecorderProvider as BaseTelemetryRecorderProvider,
     NoOpTelemetryExporter,
     type TelemetryEventInput,
+    type TelemetryExporter,
     type TelemetryProcessor,
     TestTelemetryExporter,
     defaultEventRecordingOptions,
@@ -10,12 +11,11 @@ import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry/dist/process
 
 import {
     CONTEXT_SELECTION_ID,
+    type ClientConfiguration,
+    type ClientConfigurationWithAccessToken,
     type CodyIDE,
-    type Configuration,
-    type ConfigurationWithAccessToken,
 } from '../configuration'
-import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
-import type { LogEventMode } from '../sourcegraph-api/graphql/client'
+import { type LogEventMode, graphqlClient } from '../sourcegraph-api/graphql/client'
 import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/GraphQLTelemetryExporter'
 import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockServerTelemetryExporter'
 
@@ -63,12 +63,12 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
 > {
     constructor(
         extensionDetails: ExtensionDetails,
-        config: ConfigurationWithAccessToken,
+        config: ClientConfigurationWithAccessToken,
         authStatusProvider: AuthStatusProvider,
         anonymousUserID: string,
         legacyBackcompatLogEventMode: LogEventMode
     ) {
-        const client = new SourcegraphGraphQLAPIClient(config)
+        graphqlClient.setConfig(config)
         const clientName = extensionDetails.telemetryClientName
             ? extensionDetails.telemetryClientName
             : `${extensionDetails.ide || 'unknown'}.Cody`
@@ -79,8 +79,8 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
                 clientVersion: extensionDetails.version,
             },
             process.env.CODY_TELEMETRY_EXPORTER === 'testing'
-                ? new TestTelemetryExporter()
-                : new GraphQLTelemetryExporter(client, anonymousUserID, legacyBackcompatLogEventMode),
+                ? TESTING_TELEMETRY_EXPORTER.withAnonymousUserID(anonymousUserID)
+                : new GraphQLTelemetryExporter(anonymousUserID, legacyBackcompatLogEventMode),
             [
                 new ConfigurationMetadataProcessor(config, authStatusProvider),
                 // Generate timestamps when recording events, instead of serverside
@@ -93,6 +93,42 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
         )
     }
 }
+
+// This is a special type that is only used in testing to allow for access to anonymousUserID
+type TestTelemetryEventInput = TelemetryEventInput & { testOnlyAnonymousUserID: string }
+
+// creating a delegate to the TESTING_TELEMETRY_EXPORTER to allow for easy access to exported events.
+// This instance must be shared for a consistent view of what has been exported.
+export class DelegateTelemetryExporter implements TelemetryExporter {
+    private exportedEvents: TestTelemetryEventInput[] = []
+    // default to unset to make it clear when it's not set
+    private anonymousUserID = 'unset'
+
+    constructor(public delegate: TestTelemetryExporter) {}
+    async exportEvents(events: TelemetryEventInput[]): Promise<void> {
+        this.exportedEvents.push(
+            ...events.map(event => ({
+                ...event,
+                testOnlyAnonymousUserID: this.anonymousUserID,
+            }))
+        )
+        await this.delegate.exportEvents(events)
+    }
+
+    withAnonymousUserID(anonymousUserID: string): DelegateTelemetryExporter {
+        this.anonymousUserID = anonymousUserID
+        return this
+    }
+
+    getExported(): TestTelemetryEventInput[] {
+        return [...this.exportedEvents]
+    }
+
+    reset(): void {
+        this.exportedEvents = []
+    }
+}
+export const TESTING_TELEMETRY_EXPORTER = new DelegateTelemetryExporter(new TestTelemetryExporter())
 
 /**
  * TelemetryRecorder is the type of recorders returned by
@@ -126,7 +162,7 @@ export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderPr
 > {
     constructor(
         extensionDetails: ExtensionDetails,
-        config: Configuration,
+        config: ClientConfiguration,
         authStatusProvider: AuthStatusProvider,
         anonymousUserID: string
     ) {
@@ -147,7 +183,7 @@ export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderPr
  */
 class ConfigurationMetadataProcessor implements TelemetryProcessor {
     constructor(
-        private config: Configuration,
+        private config: ClientConfiguration,
         private authStatusProvider: AuthStatusProvider
     ) {}
 

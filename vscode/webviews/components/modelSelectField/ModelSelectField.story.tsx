@@ -12,7 +12,7 @@ const MODELS: Model[] = [
     {
         title: 'Llama 3 q4_K f16',
         provider: 'Ollama',
-        model: 'ollama/llama-3',
+        id: 'ollama/llama-3',
         contextWindow: { input: 100, output: 100 },
         usage: [ModelUsage.Chat],
         tags: [ModelTag.Ollama, ModelTag.Local],
@@ -37,7 +37,7 @@ const meta: Meta<typeof ModelSelectField> = {
                 {...args}
                 onModelSelect={model => {
                     updateArgs({
-                        models: MODELS.map(m => ({ ...m, default: m.model === model.model })),
+                        models: MODELS.map(m => ({ ...m, default: m.id === model.id })),
                     })
                 }}
             />

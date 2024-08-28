@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
 
 import {
+    type ClientConfiguration,
+    type ClientConfigurationWithAccessToken,
     type CodyIDE,
-    type Configuration,
     type ConfigurationUseContext,
-    type ConfigurationWithAccessToken,
     DOTCOM_URL,
     OLLAMA_DEFAULT_URL,
     PromptString,
@@ -30,7 +30,7 @@ interface ConfigGetter {
  */
 export function getConfiguration(
     config: ConfigGetter = vscode.workspace.getConfiguration()
-): Configuration {
+): ClientConfiguration {
     const isTesting = process.env.CODY_TESTING === 'true'
 
     function getHiddenSetting<T>(configKey: string, defaultValue?: T): T {
@@ -56,7 +56,7 @@ export function getConfiguration(
     }
 
     let autocompleteAdvancedProvider = config.get<
-        | Configuration['autocompleteAdvancedProvider']
+        | ClientConfiguration['autocompleteAdvancedProvider']
         | 'unstable-ollama'
         | 'unstable-fireworks'
         | 'experimental-openaicompatible'
@@ -163,10 +163,6 @@ export function getConfiguration(
             'autocomplete.experimental.multiModelCompletions',
             undefined
         ),
-        autocompleteExperimentalHotStreakAndSmartThrottle: getHiddenSetting(
-            'autocomplete.experimental.hotStreakAndSmartThrottle',
-            false
-        ),
         autocompleteExperimentalPreloadDebounceInterval: getHiddenSetting(
             'autocomplete.experimental.preloadDebounceInterval',
             0
@@ -177,19 +173,10 @@ export function getConfiguration(
         // when something goes wrong, and to suppress event logging in the agent.
         // Rely on this flag sparingly.
         isRunningInsideAgent: getHiddenSetting('advanced.agent.running', false),
+        hasNativeWebview: getHiddenSetting('advanced.hasNativeWebview', true),
         agentIDE: getHiddenSetting<CodyIDE>('advanced.agent.ide'),
         agentIDEVersion: getHiddenSetting('advanced.agent.ide.version'),
         agentExtensionVersion: getHiddenSetting('advanced.agent.extension.version'),
-        autocompleteTimeouts: {
-            multiline: getHiddenSetting<number | undefined>(
-                'autocomplete.advanced.timeout.multiline',
-                undefined
-            ),
-            singleline: getHiddenSetting<number | undefined>(
-                'autocomplete.advanced.timeout.singleline',
-                undefined
-            ),
-        },
         autocompleteFirstCompletionTimeout: getHiddenSetting<number>(
             'autocomplete.advanced.timeout.firstCompletion',
             3_500
@@ -220,7 +207,7 @@ function sanitizeCodebase(codebase: string | undefined): string {
     return codebase.replace(protocolRegexp, '').trim().replace(trailingSlashRegexp, '')
 }
 
-export function getConfigWithEndpoint(): Omit<ConfigurationWithAccessToken, 'accessToken'> {
+export function getConfigWithEndpoint(): Omit<ClientConfigurationWithAccessToken, 'accessToken'> {
     const config = getConfiguration()
     const isTesting = process.env.CODY_TESTING === 'true'
     const serverEndpoint =
@@ -228,7 +215,7 @@ export function getConfigWithEndpoint(): Omit<ConfigurationWithAccessToken, 'acc
     return { ...config, serverEndpoint }
 }
 
-export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => {
+export const getFullConfig = async (): Promise<ClientConfigurationWithAccessToken> => {
     const accessToken =
         vscode.workspace.getConfiguration().get<string>('cody.accessToken') ||
         (await getAccessToken()) ||

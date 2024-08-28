@@ -1,9 +1,9 @@
 import {
     type AuthStatus,
+    type ClientConfiguration,
+    type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
     type CodyLLMSiteConfiguration,
-    type Configuration,
-    type ConfigurationWithAccessToken,
     type GraphQLAPIClientConfig,
     defaultAuthStatus,
     graphqlClient,
@@ -16,8 +16,8 @@ import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 import { createProviderConfig } from './create-provider'
 
 const getVSCodeConfigurationWithAccessToken = (
-    config: Partial<Configuration> = {}
-): ConfigurationWithAccessToken => ({
+    config: Partial<ClientConfiguration> = {}
+): ClientConfigurationWithAccessToken => ({
     ...DEFAULT_VSCODE_SETTINGS,
     ...config,
     serverEndpoint: 'https://example.com',
@@ -38,12 +38,19 @@ const dummyAuthStatus: AuthStatus = defaultAuthStatus
 graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
 
 describe('createProviderConfig', () => {
+    beforeAll(async () => {
+        localStorage.setStorage({
+            get: () => null,
+            update: () => Promise.resolve(undefined),
+        } as any as vscode.Memento)
+    })
+
     describe('if completions provider fields are defined in VSCode settings', () => {
         it('returns null if completions provider is not supported', async () => {
             const provider = await createProviderConfig(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider:
-                        'nasa-ai' as Configuration['autocompleteAdvancedProvider'],
+                        'nasa-ai' as ClientConfiguration['autocompleteAdvancedProvider'],
                 }),
                 dummyCodeCompletionsClient,
                 dummyAuthStatus
@@ -53,23 +60,16 @@ describe('createProviderConfig', () => {
     })
 
     describe('if completions provider field is not defined in VSCode settings', () => {
-        beforeAll(async () => {
-            localStorage.setStorage({
-                get: () => null,
-                update: () => {},
-            } as any as vscode.Memento)
-        })
-
-        it('returns "anthropic" if completions provider is not configured', async () => {
+        it('returns `null` if completions provider is not configured', async () => {
             const provider = await createProviderConfig(
                 getVSCodeConfigurationWithAccessToken({
-                    autocompleteAdvancedProvider: null as Configuration['autocompleteAdvancedProvider'],
+                    autocompleteAdvancedProvider:
+                        null as ClientConfiguration['autocompleteAdvancedProvider'],
                 }),
                 dummyCodeCompletionsClient,
                 dummyAuthStatus
             )
-            expect(provider?.identifier).toBe('anthropic')
-            expect(provider?.model).toBe('anthropic/claude-instant-1.2')
+            expect(provider).toBeNull()
         })
 
         it('returns "fireworks" provider config and corresponding model if specified', async () => {
@@ -122,7 +122,7 @@ describe('createProviderConfig', () => {
             expect(provider?.model).toBe('starcoder-hybrid')
         })
 
-        it('returns "openai" provider config if specified in VSCode settings; model is ignored', async () => {
+        it('returns "unstable-openai" provider config if specified in VSCode settings; model is ignored', async () => {
             const provider = await createProviderConfig(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'unstable-openai',
@@ -263,7 +263,7 @@ describe('createProviderConfig', () => {
                 // provider not defined (backward compat)
                 {
                     codyLLMConfig: { provider: undefined, completionModel: 'superdupercoder-7b' },
-                    expected: { provider: 'anthropic', model: 'anthropic/claude-instant-1.2' },
+                    expected: null,
                 },
             ]
 
@@ -285,15 +285,5 @@ describe('createProviderConfig', () => {
                 })
             }
         })
-    })
-
-    it('returns anthropic provider config if no completions provider specified in VSCode settings or site config', async () => {
-        const provider = await createProviderConfig(
-            getVSCodeConfigurationWithAccessToken(),
-            dummyCodeCompletionsClient,
-            dummyAuthStatus
-        )
-        expect(provider?.identifier).toBe('anthropic')
-        expect(provider?.model).toBe('anthropic/claude-instant-1.2')
     })
 })

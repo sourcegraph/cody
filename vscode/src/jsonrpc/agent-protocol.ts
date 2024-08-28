@@ -80,6 +80,12 @@ export type ClientRequests = {
 
     'chat/models': [{ modelUsage: ModelUsage }, { models: Model[] }]
     'chat/export': [null | { fullHistory: boolean }, ChatExportResult[]]
+
+    // history is Map of {endpoint}-{username} to chat transcripts by date
+    'chat/import': [
+        { history: Record<string, Record<string, SerializedChatTranscript>>; merge: boolean },
+        null,
+    ]
     'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] | undefined | null }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage
@@ -211,6 +217,7 @@ export type ClientRequests = {
     // for dealing with progress bars then you can send a request to this
     // endpoint to emulate the scenario where the server creates a progress bar.
     'testing/progress': [{ title: string }, { result: string }]
+    'testing/exportedTelemetryEvents': [null, { events: TestingTelemetryEvent[] }]
     'testing/networkRequests': [null, { requests: NetworkRequest[] }]
     'testing/requestErrors': [null, { errors: NetworkRequest[] }]
     'testing/closestPostData': [{ url: string; postData: string }, { closestBody: string }]
@@ -323,7 +330,7 @@ export type ClientRequests = {
 // ================
 export type ServerRequests = {
     'window/showMessage': [ShowWindowMessageParams, string | null]
-    'window/showSaveDialog': [null, string | undefined | null]
+    'window/showSaveDialog': [SaveDialogOptionsParams, string | undefined | null]
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
     'textDocument/openUntitledDocument': [UntitledTextDocument, ProtocolTextDocument | undefined | null]
@@ -335,6 +342,10 @@ export type ServerRequests = {
         boolean,
     ]
     'workspace/edit': [WorkspaceEditParams, boolean]
+
+    'secrets/get': [{ key: string }, string | null | undefined]
+    'secrets/store': [{ key: string; value: string }, null | undefined]
+    'secrets/delete': [{ key: string }, null | undefined]
 
     // TODO: Add VSCode support for registerWebviewPanelSerializer.
 
@@ -408,6 +419,8 @@ export type ClientNotifications = {
     // Consequently they have their own dispose notification. c.f.
     // webview/dispose client request.
     'webview/didDisposeNative': [{ handle: string }]
+
+    'secrets/didChange': [{ key: string }]
 }
 
 // ================
@@ -616,6 +629,12 @@ export interface ClientCapabilities {
     // JSON-RPC request to handle the saving of the client state. This is needed to safely share state
     // between concurrent agent processes (assuming there is one IDE client process managing multiple agent processes).
     globalState?: 'stateless' | 'server-managed' | 'client-managed' | undefined | null
+
+    // Secrets controls how the agent should handle storing secrets.
+    // - Stateless: the secrets are not persisted between agent processes.
+    // - Client managed: the client must implement the 'secrets/get',
+    // 'secrets/store', and 'secrets/delete' requests.
+    secrets?: 'stateless' | 'client-managed' | undefined | null
     // Whether the client supports the VSCode WebView API. If 'agentic', uses
     // AgentWebViewPanel which just delegates bidirectional postMessage over
     // the Agent protocol. If 'native', implements a larger subset of the VSCode
@@ -968,7 +987,16 @@ export interface ProtocolCommand {
     tooltip?: string | undefined | null
     arguments?: any[] | undefined | null
 }
-
+export interface TestingTelemetryEvent {
+    feature: string
+    action: string
+    source: {
+        client: string
+        clientVersion: string
+    }
+    timestamp: string
+    testOnlyAnonymousUserID: string
+}
 export interface NetworkRequest {
     url: string
     body?: string | undefined | null
@@ -980,6 +1008,13 @@ export interface ShowWindowMessageParams {
     message: string
     options?: vscode.MessageOptions | undefined | null
     items?: string[] | undefined | null
+}
+
+export interface SaveDialogOptionsParams {
+    defaultUri?: string | undefined | null
+    saveLabel?: string | undefined | null
+    filters?: Record<string, string[]> | undefined | null
+    title?: string | undefined | null
 }
 
 interface FileIdentifier {

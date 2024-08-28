@@ -176,10 +176,8 @@ export class InlineCompletionItemProvider
             )
         )
 
-        if (completionProviderConfig.smartThrottle) {
-            this.smartThrottleService = new SmartThrottleService()
-            this.disposables.push(this.smartThrottleService)
-        }
+        this.smartThrottleService = new SmartThrottleService()
+        this.disposables.push(this.smartThrottleService)
 
         const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0

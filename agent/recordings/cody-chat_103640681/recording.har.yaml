@@ -88,11 +88,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b5ceae943af989c36c626faa496b3c02
+    - _id: a760bf87999178632a0f589ff5e1a8a9
       _order: 0
       cache: {}
       request:
-        bodySize: 259
+        bodySize: 421
         cookies: []
         headers:
           - name: content-type
@@ -118,7 +118,10 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
+                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                  contains fenced code blocks in Markdown, include the relevant
+                  full file path in the code block tag using this structure:
+                  ```$LANGUAGE:$FILEPATH```."
               - speaker: human
                 text: respond with "hello" and nothing else
             model: claude-3.5-sonnet
@@ -148,7 +151,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 13 Aug 2024 19:01:31 GMT
+            value: Fri, 23 Aug 2024 09:43:06 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -177,7 +180,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-13T19:01:29.569Z
+      startedDateTime: 2024-08-23T09:43:04.959Z
       time: 0
       timings:
         blocked: -1
@@ -187,11 +190,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b33f9ea19dd116f2ef31b76450455f55
+    - _id: 6429134c6421698cdc80f7359d7bcd68
       _order: 0
       cache: {}
       request:
-        bodySize: 532
+        bodySize: 704
         cookies: []
         headers:
           - name: content-type
@@ -217,11 +220,14 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
+                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                  contains fenced code blocks in Markdown, include the relevant
+                  full file path in the code block tag using this structure:
+                  ```$LANGUAGE:$FILEPATH```."
               - speaker: human
                 text: |-
                   Codebase context from file animal.ts:
-                  ```typescript
+                  ```typescript:animal.ts
                   interface StrangeAnimal {
                       makesSound(): 'coo' | 'moo'
                   }
@@ -247,14 +253,14 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=1&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 1297
+        bodySize: 3646
         content:
           mimeType: text/event-stream
-          size: 1297
+          size: 3646
           text: >+
             event: completion
 
-            data: {"completion":"```typescript\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
+            data: {"completion":"Here's the implementation of a cow based on the provided `StrangeAnimal` interface:\n\n```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
 
 
             event: done
@@ -264,7 +270,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 13 Aug 2024 19:01:34 GMT
+            value: Fri, 23 Aug 2024 09:43:07 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -293,7 +299,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-13T19:01:33.443Z
+      startedDateTime: 2024-08-23T09:43:06.323Z
       time: 0
       timings:
         blocked: -1

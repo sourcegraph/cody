@@ -10,7 +10,7 @@ export async function fetchLocalOllamaModels(): Promise<Model[]> {
     return (await ollama.list()).models?.map(
         m =>
             new Model({
-                model: `ollama/${m.name}`,
+                id: `ollama/${m.name}`,
                 usage: [ModelUsage.Chat, ModelUsage.Edit],
                 contextWindow: {
                     input: OLLAMA_DEFAULT_CONTEXT_WINDOW,

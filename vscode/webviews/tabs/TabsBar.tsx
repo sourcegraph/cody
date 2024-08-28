@@ -1,4 +1,6 @@
+import * as Dialog from '@radix-ui/react-dialog'
 import * as Tabs from '@radix-ui/react-tabs'
+
 import clsx from 'clsx'
 import {
     BookTextIcon,
@@ -16,16 +18,19 @@ import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
 import { CodyIDE, isDefined } from '@sourcegraph/cody-shared'
-import { forwardRef, useCallback, useMemo } from 'react'
+import { type FC, Fragment, forwardRef, useCallback, useMemo, useState } from 'react'
 import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { useConfig } from '../utils/useConfig'
+
+import { Button } from '../components/shadcn/ui/button'
 import styles from './TabsBar.module.css'
 
 interface TabsBarProps {
     IDE: CodyIDE
     currentView: View
     setView: (view: View) => void
+    onDownloadChatClick?: () => void
 }
 
 type IconComponent = React.ForwardRefExoticComponent<
@@ -37,7 +42,8 @@ interface TabConfig {
     view: View
     title: string
     command?: string
-    SubIcons?: {
+    changesView?: boolean
+    subActions?: {
         /** Extra content to display in the tooltip (in addition to the title). */
         tooltipExtra?: React.ReactNode
 
@@ -46,18 +52,22 @@ interface TabConfig {
         Icon: IconComponent
         command: string
         arg?: string | undefined | null
+        callback?: () => void
+        confirmation?: {
+            title: string
+            description: string
+            confirmationAction: string
+        }
     }[]
-    changesView?: boolean
 }
 
 interface TabButtonProps {
+    title: string
     Icon: IconComponent
     view?: View
-    command?: string
     isActive?: boolean
-    onClick: () => void
+    onClick?: () => void
     prominent?: boolean
-    title: string
     alwaysShowTitle?: boolean
 
     /** Extra content to display in the tooltip (in addition to the title). */
@@ -107,9 +117,9 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
 )
 TabButton.displayName = 'TabButton'
 
-export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) => {
+export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onDownloadChatClick }) => {
     const {
-        config: { webviewType },
+        config: { webviewType, multipleWebviewsEnabled },
     } = useConfig()
 
     const tabItems = useMemo<TabConfig[]>(
@@ -120,7 +130,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                         view: View.Chat,
                         title: 'Chat',
                         Icon: MessagesSquareIcon,
-                        SubIcons: [
+                        subActions: [
                             {
                                 title: 'New Chat',
                                 alwaysShowTitle: true,
@@ -133,11 +143,13 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                                 ),
                                 Icon: MessageSquarePlusIcon,
                                 command:
-                                    webviewType === 'sidebar'
-                                        ? 'cody.chat.newPanel'
-                                        : 'cody.chat.newEditorPanel',
+                                    IDE === CodyIDE.Web
+                                        ? 'cody.chat.new'
+                                        : webviewType === 'sidebar' || !multipleWebviewsEnabled
+                                          ? 'cody.chat.newPanel'
+                                          : 'cody.chat.newEditorPanel',
                             },
-                            IDE !== CodyIDE.Web
+                            multipleWebviewsEnabled
                                 ? {
                                       title: 'Open in Editor',
                                       Icon: ColumnsIcon,
@@ -151,22 +163,35 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                         view: View.History,
                         title: 'History',
                         Icon: HistoryIcon,
-                        SubIcons: [
-                            IDE !== CodyIDE.Web
-                                ? {
-                                      title: 'Export History',
-                                      Icon: DownloadIcon,
-                                      command: 'cody.chat.history.export',
-                                  }
-                                : null,
+                        subActions: [
+                            {
+                                title: 'Export History',
+                                Icon: DownloadIcon,
+                                command: 'cody.chat.history.export',
+                                callback: onDownloadChatClick,
+                            },
                             {
                                 title: 'Clear Chat History',
                                 Icon: Trash2Icon,
                                 command: 'cody.chat.history.clear',
-                                // We don't have a way to request user confirmation in Cody Web
-                                // (vscode.window.showWarningMessage is not implemented), so bypass
-                                // confirmation.
-                                arg: IDE === CodyIDE.Web ? 'clear-all-no-confirm' : undefined,
+
+                                // Show Cody Chat UI confirmation modal with this message only for
+                                // Cody Web. All other IDE either implements their own native confirmation UI
+                                // or don't have confirmation UI at all.
+                                confirmation:
+                                    IDE === CodyIDE.Web
+                                        ? {
+                                              title: 'Are you sure you want to delete all of your chats?',
+                                              description:
+                                                  'You will not be able to recover them once deleted.',
+                                              confirmationAction: 'Delete all chats',
+                                          }
+                                        : undefined,
+
+                                // We don't have a way to request user confirmation in Cody Agent
+                                // (vscode.window.showWarningMessage is overridable there), so bypass
+                                // confirmation in cody agent and use confirmation UI above.
+                                arg: IDE === CodyIDE.VSCode ? undefined : 'clear-all-no-confirm',
                             },
                         ].filter(isDefined),
                         changesView: true,
@@ -177,7 +202,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                         Icon: BookTextIcon,
                         changesView: true,
                     },
-                    IDE !== CodyIDE.Web
+                    multipleWebviewsEnabled
                         ? {
                               view: View.Settings,
                               title: 'Settings',
@@ -196,9 +221,9 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                         : null,
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, webviewType]
+        [IDE, webviewType, onDownloadChatClick, multipleWebviewsEnabled]
     )
-    const currentViewSubIcons = tabItems.find(tab => tab.view === currentView)?.SubIcons
+    const currentViewSubActions = tabItems.find(tab => tab.view === currentView)?.subActions ?? []
 
     const handleClick = useCallback(
         (view: View, command?: string, changesView?: boolean) => {
@@ -220,14 +245,13 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                 styles.tabsContainer
             )}
         >
-            <div className="tw-flex tw-gap-1">
+            <div className="tw-flex tw-gap-1 [&_>_*]:tw-flex-shrink-0">
                 {tabItems.map(({ Icon, view, command, title, changesView }) => (
                     <Tabs.Trigger key={view} value={view} asChild={true}>
                         <TabButton
                             Icon={Icon}
                             view={view}
                             title={title}
-                            command={command}
                             isActive={currentView === view}
                             onClick={() => handleClick(view, command, changesView)}
                             data-testid={`tab-${view}`}
@@ -235,24 +259,129 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                     </Tabs.Trigger>
                 ))}
             </div>
-            <div className="tw-flex tw-gap-4">
-                {currentViewSubIcons?.map(
-                    ({ Icon, command, title, alwaysShowTitle, tooltipExtra, arg }) => (
-                        <TabButton
-                            key={command}
-                            Icon={Icon}
-                            title={title}
-                            alwaysShowTitle={alwaysShowTitle}
-                            tooltipExtra={tooltipExtra}
-                            command={command}
-                            onClick={() =>
-                                getVSCodeAPI().postMessage({ command: 'command', id: command, arg })
-                            }
-                            prominent
-                        />
+            <div className="tw-flex tw-gap-4 [&_>_*]:tw-flex-shrink-0">
+                {currentViewSubActions.map(
+                    ({
+                        Icon,
+                        command,
+                        title,
+                        alwaysShowTitle,
+                        tooltipExtra,
+                        arg,
+                        callback,
+                        confirmation,
+                    }) => (
+                        <Fragment key={command}>
+                            {confirmation ? (
+                                <ActionButtonWithConfirmation
+                                    title={title}
+                                    Icon={Icon}
+                                    alwaysShowTitle={alwaysShowTitle}
+                                    tooltipExtra={tooltipExtra}
+                                    dialogTitle={confirmation.title}
+                                    dialogDescription={confirmation.description}
+                                    dialogConfirmAction={confirmation.confirmationAction}
+                                    onConfirm={() =>
+                                        callback
+                                            ? callback()
+                                            : getVSCodeAPI().postMessage({
+                                                  command: 'command',
+                                                  id: command,
+                                                  arg,
+                                              })
+                                    }
+                                />
+                            ) : (
+                                <TabButton
+                                    Icon={Icon}
+                                    title={title}
+                                    alwaysShowTitle={alwaysShowTitle}
+                                    tooltipExtra={tooltipExtra}
+                                    onClick={() =>
+                                        callback
+                                            ? callback()
+                                            : getVSCodeAPI().postMessage({
+                                                  command: 'command',
+                                                  id: command,
+                                                  arg,
+                                              })
+                                    }
+                                    prominent
+                                />
+                            )}
+                        </Fragment>
                     )
                 )}
             </div>
         </Tabs.List>
+    )
+}
+
+interface ActionButtonWithConfirmationProps {
+    title: string
+    Icon: IconComponent
+    prominent?: boolean
+    alwaysShowTitle?: boolean
+    /** Extra content to display in the tooltip (in addition to the title). */
+    tooltipExtra?: React.ReactNode
+    onConfirm: () => void
+    dialogTitle: string
+    dialogDescription: string
+    dialogConfirmAction: string
+}
+
+const ActionButtonWithConfirmation: FC<ActionButtonWithConfirmationProps> = props => {
+    const {
+        title,
+        Icon,
+        prominent,
+        alwaysShowTitle,
+        tooltipExtra,
+        onConfirm,
+        dialogTitle,
+        dialogConfirmAction,
+        dialogDescription,
+    } = props
+
+    const [state, setState] = useState<boolean>(false)
+
+    return (
+        <Dialog.Root open={state} onOpenChange={setState}>
+            <TabButton
+                Icon={Icon}
+                title={title}
+                alwaysShowTitle={alwaysShowTitle}
+                tooltipExtra={tooltipExtra}
+                prominent={prominent}
+                onClick={() => setState(true)}
+            />
+
+            <Dialog.Portal>
+                <Dialog.Overlay className={styles.dialogOverlay} />
+                <Dialog.Content className={styles.dialogContent} data-cody-ui-dialog>
+                    <Dialog.Title className={styles.dialogTitle}>{dialogTitle}</Dialog.Title>
+
+                    <Dialog.Description className={styles.dialogDescription}>
+                        {dialogDescription}
+                    </Dialog.Description>
+
+                    <footer className={styles.dialogFooter}>
+                        <Button variant="secondary" onClick={() => setState(false)}>
+                            Cancel
+                        </Button>
+
+                        <Button
+                            variant="default"
+                            onClick={() => {
+                                onConfirm()
+                                setState(false)
+                            }}
+                        >
+                            {dialogConfirmAction}
+                        </Button>
+                    </footer>
+                </Dialog.Content>
+            </Dialog.Portal>
+        </Dialog.Root>
     )
 }
