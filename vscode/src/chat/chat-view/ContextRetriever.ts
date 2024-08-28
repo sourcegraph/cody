@@ -266,25 +266,48 @@ export class ContextRetriever implements vscode.Disposable {
         span: Span,
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
+        const preferServerContext = vscode.workspace
+            .getConfiguration()
+            .get<boolean>('cody.internal.serverSideContext', false)
         const repoIDsOnRemote = new Set<string>()
         const localRootURIs = new Map<string, FileURI>()
-        for (const root of roots) {
-            if (root.remoteRepos.length > 0) {
-                // Note: we just take the first remote. In the future,
-                // we could try to choose the best remote or query each
-                // in succession.
-                for (const rr of root.remoteRepos) {
-                    if (rr.id) {
-                        repoIDsOnRemote.add(rr.id)
-                        break
+
+        if (preferServerContext) {
+            for (const root of roots) {
+                if (root.remoteRepos.length > 0) {
+                    // Note: we just take the first remote. In the future,
+                    // we could try to choose the best remote or query each
+                    // in succession.
+                    for (const rr of root.remoteRepos) {
+                        if (rr.id) {
+                            repoIDsOnRemote.add(rr.id)
+                            break
+                        }
                     }
+                } else if (root.local && isFileURI(root.local)) {
+                    localRootURIs.set(root.local.toString(), root.local)
+                } else {
+                    throw new Error(
+                        `Codebase root ${JSON.stringify(root)} is missing both remote and local root`
+                    )
                 }
-            } else if (root.local && isFileURI(root.local)) {
-                localRootURIs.set(root.local.toString(), root.local)
-            } else {
-                throw new Error(
-                    `Codebase root ${JSON.stringify(root)} is missing both remote and local root`
-                )
+            }
+        } else {
+            for (const root of roots) {
+                if (root.local && isFileURI(root.local)) {
+                    localRootURIs.set(root.local?.toString(), root.local)
+                } else if (root.remoteRepos.length > 0) {
+                    for (const rr of root.remoteRepos) {
+                        if (rr.id) {
+                            repoIDsOnRemote.add(rr.id)
+                            break
+                        }
+                    }
+                } else {
+                    throw new Error(
+                        `Codebase root ${JSON.stringify(root)} is missing both remote and local root`
+                    )
+                }
             }
         }
 

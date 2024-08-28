@@ -22,7 +22,6 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getConfiguration } from '../../configuration'
-import type { RemoteSearch } from '../../context/remote-search'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
@@ -37,7 +36,6 @@ export interface GetContextItemsTelemetry {
 
 export function getMentionMenuData(
     query: MentionQuery,
-    remoteSearch: RemoteSearch | null,
     chatModel: ChatModel
 ): Observable<MentionMenuData> {
     const source = 'chat'
@@ -74,9 +72,6 @@ export function getMentionMenuData(
                     mentionQuery: query,
                     telemetryRecorder: scopedTelemetryRecorder,
                     rangeFilter: !isCodyWeb,
-                    remoteRepositoriesNames: query.includeRemoteRepositories
-                        ? remoteSearch?.getRepos('all')?.map(repo => repo.name)
-                        : undefined,
                 },
                 signal
             ).then(items =>
@@ -122,7 +117,7 @@ interface GetContextItemsOptions {
 
 export async function getChatContextItemsForMention(
     options: GetContextItemsOptions,
-    signal?: AbortSignal
+    _?: AbortSignal
 ): Promise<ContextItem[]> {
     const MAX_RESULTS = 20
     const { mentionQuery, telemetryRecorder, remoteRepositoriesNames, rangeFilter = true } = options

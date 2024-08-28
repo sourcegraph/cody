@@ -12,7 +12,6 @@ import {
 import * as vscode from 'vscode'
 import { getSelectionOrFileContext } from '../commands/context/selection'
 import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
-import type { RemoteSearch } from '../context/remote-search'
 import { workspaceReposMonitor } from '../repository/repo-metadata-from-git-api'
 import type { AuthProvider } from '../services/AuthProvider'
 import type { ChatModel } from './chat-view/ChatModel'
@@ -26,12 +25,12 @@ type PostMessage = (message: Extract<ExtensionMessage, { type: 'clientState' }>)
  */
 export function startClientStateBroadcaster({
     authProvider,
-    getRemoteSearch,
+    useRemoteSearch,
     postMessage: rawPostMessage,
     chatModel,
 }: {
     authProvider: AuthProvider
-    getRemoteSearch: () => RemoteSearch | null
+    useRemoteSearch: boolean
     postMessage: PostMessage
     chatModel: ChatModel
 }): vscode.Disposable {
@@ -39,7 +38,6 @@ export function startClientStateBroadcaster({
 
     async function rawSendClientState(signal: AbortSignal | null): Promise<void> {
         const items: ContextItem[] = []
-        const remoteSearch = getRemoteSearch()
 
         const { input, context } = chatModel.contextWindow
         const userContextSize = context?.user ?? input
@@ -64,7 +62,7 @@ export function startClientStateBroadcaster({
             items.push(item)
         }
 
-        const corpusItems = getCorpusContextItemsForEditorState({ remoteSearch })
+        const corpusItems = getCorpusContextItemsForEditorState(useRemoteSearch)
         items.push(...(await corpusItems))
 
         postMessage({ type: 'clientState', value: { initialContext: items } })
@@ -107,15 +105,13 @@ export function startClientStateBroadcaster({
     return vscode.Disposable.from(...disposables)
 }
 
-export async function getCorpusContextItemsForEditorState({
-    remoteSearch,
-}: { remoteSearch: RemoteSearch | null }): Promise<ContextItem[]> {
+export async function getCorpusContextItemsForEditorState(useRemote: boolean): Promise<ContextItem[]> {
     const items: ContextItem[] = []
 
     // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
     // remote search). There should be a single internal thing in Cody that lets you monitor the
     // user's current codebase.
-    if (remoteSearch && workspaceReposMonitor) {
+    if (useRemote && workspaceReposMonitor) {
         const repoMetadata = await workspaceReposMonitor.getRepoMetadata()
         for (const repo of repoMetadata) {
             if (contextFiltersProvider.isRepoNameIgnored(repo.repoName)) {

@@ -1,3 +1,4 @@
+import { subscriptionDisposable } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { WorkspaceRepoMapper } from '../context/workspace-repo-mapper'
 import { logDebug } from '../log'
@@ -25,12 +26,15 @@ export class WorkspaceReposMonitor implements vscode.Disposable {
             vscode.workspace.onDidChangeWorkspaceFolders(evt => this.onDidChangeWorkspaceFolders(evt))
         )
 
-        const subscription = authProvider.changes.subscribe(() => {
-            for (const folderURI of this.getFolderURIs()) {
-                this.addWorkspaceFolder(folderURI)
-            }
-        })
-        this.disposables.push({ dispose: () => subscription.unsubscribe() })
+        this.disposables.push(
+            subscriptionDisposable(
+                authProvider.changes.subscribe(() => {
+                    for (const folderURI of this.getFolderURIs()) {
+                        this.addWorkspaceFolder(folderURI)
+                    }
+                })
+            )
+        )
     }
 
     public dispose(): void {
