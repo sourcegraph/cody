@@ -206,7 +206,7 @@ function buildInteraction(document: vscode.TextDocument, diff: PromptString): Me
         vscode.window
     )
 
-    const preamble = getSimplePreamble(MODEL, 1, SYSTEM.replaceAll('____', indentation))
+    const preamble = getSimplePreamble(MODEL, 1, 'Default', SYSTEM.replaceAll('____', indentation))
 
     const prompt = PROMPT.replaceAll('{filename}', PromptString.fromDisplayPath(document.uri))
         .replaceAll('{source}', PromptString.fromDocumentText(document))

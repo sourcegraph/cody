@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 
-import { CodyWebPanel, CodyWebPanelProvider, type Repository } from '../lib'
+import { CodyWebChat, type InitialContext } from '../lib'
 
 // @ts-ignore
 import AgentWorker from '../lib/agent/agent.worker.ts?worker'
@@ -16,31 +16,21 @@ const DOTCOM_SERVER_ENDPOINT = 'https://sourcegraph.com'
 
 // To set:
 //
-//   localStorage.setItem('serverEndpoint', 'https://sourcegraph.test:3443')
+// localStorage.setItem('serverEndpoint', 'https://sourcegraph.test:3443')
 const serverEndpoint = localStorage.getItem('serverEndpoint') || DOTCOM_SERVER_ENDPOINT
 
 const accessTokenStorageKey = `accessToken:${serverEndpoint}`
 let accessToken = localStorage.getItem(accessTokenStorageKey)
 
-// Only for testing/demo purpose, in real-life usage consumer
-// should provide context repo information for Cody chat component
-const MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY: Repository[] =
-    serverEndpoint === DOTCOM_SERVER_ENDPOINT
-        ? [
-              {
-                  id: 'UmVwb3NpdG9yeTozNjgwOTI1MA==',
-                  name: 'github.com/sourcegraph/sourcegraph',
-              },
-          ]
-        : []
-
-const MOCK_INITIAL_DOT_COM_CONTEXT =
-    serverEndpoint === DOTCOM_SERVER_ENDPOINT
-        ? {
-              fileURL: 'internal/codeintel/ranking/internal/background/mapper/config.go',
-              repositories: MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY,
-          }
-        : undefined
+const MOCK_INITIAL_DOT_COM_CONTEXT: InitialContext = {
+    fileURL: 'web/demo',
+    fileRange: null,
+    isDirectory: true,
+    repository: {
+        id: 'UmVwb3NpdG9yeTo2MTMyNTMyOA==',
+        name: 'github.com/sourcegraph/cody',
+    },
+}
 
 if (!accessToken) {
     accessToken = window.prompt(`Enter an access token for ${serverEndpoint}:`)
@@ -52,16 +42,14 @@ if (!accessToken) {
 
 export const App: FC = () => {
     return (
-        <CodyWebPanelProvider
-            accessToken={accessToken}
-            serverEndpoint={serverEndpoint}
-            createAgentWorker={CREATE_AGENT_WORKER}
-            telemetryClientName="codydemo.testing"
-            initialContext={MOCK_INITIAL_DOT_COM_CONTEXT}
-        >
-            <div className={styles.root}>
-                <CodyWebPanel className={styles.container} />
-            </div>
-        </CodyWebPanelProvider>
+        <div className={styles.root}>
+            <CodyWebChat
+                accessToken={accessToken}
+                serverEndpoint={serverEndpoint}
+                createAgentWorker={CREATE_AGENT_WORKER}
+                telemetryClientName="codydemo.testing"
+                initialContext={MOCK_INITIAL_DOT_COM_CONTEXT}
+            />
+        </div>
     )
 }

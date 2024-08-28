@@ -88,11 +88,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 9118f0ca128e7b0bee2f69725f58a619
+    - _id: 79b4e33611ddc3dc02848a4f81b12ddb
       _order: 0
       cache: {}
       request:
-        bodySize: 296
+        bodySize: 369
         cookies: []
         headers:
           - _fromType: array
@@ -119,7 +119,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "296"
+            value: "369"
           - name: host
             value: sourcegraph.com
         headersSize: 396
@@ -133,7 +133,8 @@ log:
             messages:
               - speaker: human
                 text: |-
-                  <filename>src/sum.ts<fim_prefix>// 
+                  <filename>src/sum.ts<fim_prefix>
+
                   export function sum(a: number, b: number): number {
                       <fim_suffix>
                   }
@@ -142,6 +143,11 @@ log:
             stopSequences:
               - "\n\n"
               - "\n\r\n"
+              - <fim_prefix>
+              - <fim_suffix>
+              - <fim_middle>
+              - <|endoftext|>
+              - <file_sep>
             stream: true
             temperature: 0.2
             topK: 0
@@ -152,13 +158,13 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
       response:
-        bodySize: 235
+        bodySize: 233
         content:
           mimeType: text/event-stream
-          size: 235
+          size: 233
           text: |+
             event: completion
-            data: {"completion":"return a + b;","stopReason":"stop"}
+            data: {"completion":"return a + b","stopReason":"stop"}
 
             event: done
             data: {}
@@ -166,7 +172,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 18 Jul 2024 12:00:45 GMT
+            value: Tue, 27 Aug 2024 05:22:27 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -195,7 +201,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-18T12:00:45.227Z
+      startedDateTime: 2024-08-27T05:22:25.933Z
       time: 0
       timings:
         blocked: -1
@@ -205,11 +211,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 9020708fd372a773be5e10325e67a1e9
+    - _id: d8c8870dc957bf538d13d35604c8f983
       _order: 0
       cache: {}
       request:
-        bodySize: 429
+        bodySize: 500
         cookies: []
         headers:
           - _fromType: array
@@ -236,7 +242,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "429"
+            value: "500"
           - name: host
             value: sourcegraph.com
         headersSize: 396
@@ -253,8 +259,6 @@ log:
                   <filename>src/bubbleSort.ts<fim_prefix>// Here is a reference
                   snippet of code from src/sum.ts:
 
-                  // 
-
                   // export function sum(a: number, b: number): number {
 
                   //     
@@ -262,6 +266,7 @@ log:
                   // }
 
                   // 
+
 
                   export function bubbleSort(nums: number[]) {
                       <fim_suffix>
@@ -272,6 +277,11 @@ log:
             stopSequences:
               - "\n\n"
               - "\n\r\n"
+              - <fim_prefix>
+              - <fim_suffix>
+              - <fim_middle>
+              - <|endoftext|>
+              - <file_sep>
             stream: true
             temperature: 0.2
             topK: 0
@@ -282,14 +292,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
       response:
-        bodySize: 3345
+        bodySize: 3120
         content:
           mimeType: text/event-stream
-          size: 3345
+          size: 3120
           text: >+
             event: completion
 
-            data: {"completion":"for (let i = 0; i \u003c nums.length; i++) {\n        for (let j = 0; j \u003c nums.length - i - 1; j++) {\n            if (nums[j] \u003e nums[j + 1]) {\n                [nums[j], nums[j + 1]] = [nums[j + 1], nums[j]];\n            }\n        }\n    }","stopReason":"stop"}
+            data: {"completion":"for (let i = 0; i \u003c nums.length; i++) {\n        for (let j = i + 1; j \u003c nums.length; j++) {\n            if (nums[i] \u003e nums[j]) {\n                [nums[i], nums[j]] = [nums[j], nums[i]];\n            }\n        }\n    }","stopReason":"stop"}
 
 
             event: done
@@ -299,7 +309,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 18 Jul 2024 12:00:46 GMT
+            value: Tue, 27 Aug 2024 05:22:29 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -328,7 +338,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-18T12:00:45.941Z
+      startedDateTime: 2024-08-27T05:22:27.831Z
       time: 0
       timings:
         blocked: -1

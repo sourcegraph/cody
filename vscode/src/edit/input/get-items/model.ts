@@ -29,12 +29,13 @@ export const getModelOptionItems = (modelOptions: Model[], isCodyPro: boolean): 
     const allOptions = modelOptions
         .map(modelOption => {
             const icon = getModelProviderIcon(modelOption.provider)
+            const title = modelOption.title || modelOption.id
             return {
-                label: `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX} ${icon} ${modelOption.title}`,
+                label: `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX} ${icon} ${title}`,
                 description: `by ${modelOption.provider}`,
                 alwaysShow: true,
-                model: modelOption.model,
-                modelTitle: modelOption.title,
+                model: modelOption.id,
+                modelTitle: title,
                 codyProOnly: isCodyProModel(modelOption),
             }
         })

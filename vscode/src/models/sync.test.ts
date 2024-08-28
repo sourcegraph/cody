@@ -74,7 +74,7 @@ describe('syncModels', () => {
         expect(setModelsSpy).not.toHaveBeenCalledWith(getDotComDefaultModels())
         expect(setModelsSpy).toHaveBeenCalledWith([
             new Model({
-                model: authStatus.configOverwrites.chatModel,
+                id: authStatus.configOverwrites.chatModel,
                 usage: [ModelUsage.Chat, ModelUsage.Edit],
                 contextWindow: getEnterpriseContextWindow(chatModel, authStatus.configOverwrites),
                 tags: [ModelTag.Enterprise],

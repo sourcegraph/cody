@@ -4,11 +4,10 @@
 import {
     type AuthStatus,
     type AutocompleteContextSnippet,
-    type AutocompleteTimeouts,
+    type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
-    type ConfigurationWithAccessToken,
     PromptString,
     ps,
     tokensToChars,
@@ -45,8 +44,7 @@ interface OpenAICompatibleOptions {
     model: OpenAICompatibleModel
     maxContextTokens?: number
     client: CodeCompletionsClient
-    timeouts: AutocompleteTimeouts
-    config: Pick<ConfigurationWithAccessToken, 'accessToken'>
+    config: Pick<ClientConfigurationWithAccessToken, 'accessToken'>
     authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
 }
 
@@ -107,14 +105,12 @@ class OpenAICompatibleProvider extends Provider {
     private model: OpenAICompatibleModel
     private promptChars: number
     private client: CodeCompletionsClient
-    private timeouts?: AutocompleteTimeouts
 
     constructor(
         options: ProviderOptions,
-        { model, maxContextTokens, client, timeouts }: Required<OpenAICompatibleOptions>
+        { model, maxContextTokens, client }: Required<OpenAICompatibleOptions>
     ) {
         super(options)
-        this.timeouts = timeouts
         this.model = model
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
@@ -188,7 +184,6 @@ class OpenAICompatibleProvider extends Provider {
     ): AsyncGenerator<FetchCompletionResult[]> {
         const partialRequestParams = getCompletionParams({
             providerOptions: this.options,
-            timeouts: this.timeouts,
             lineNumberDependentCompletionParams,
         })
 
@@ -320,7 +315,6 @@ ${intro}${infillPrefix ? infillPrefix : ''}${OPENING_CODE_TAG}${CLOSING_CODE_TAG
 
 export function createProviderConfig({
     model,
-    timeouts,
     ...otherOptions
 }: Omit<OpenAICompatibleOptions, 'model' | 'maxContextTokens'> & {
     model: string | null
@@ -350,7 +344,6 @@ export function createProviderConfig({
                 {
                     model: clientModel,
                     maxContextTokens,
-                    timeouts,
                     ...otherOptions,
                 }
             )

@@ -4,8 +4,8 @@ import {
     type AuthStatus,
     type AuthStatusProvider,
     ClientConfigSingleton,
+    type ClientConfigurationWithAccessToken,
     CodyIDE,
-    type ConfigurationWithAccessToken,
     DOTCOM_URL,
     SourcegraphGraphQLAPIClient,
     defaultAuthStatus,
@@ -35,7 +35,10 @@ import { secretStorage } from './SecretStorageProvider'
 
 const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
 
-type AuthConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+type AuthConfig = Pick<
+    ClientConfigurationWithAccessToken,
+    'serverEndpoint' | 'accessToken' | 'customHeaders'
+>
 export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
     private endpointHistory: string[] = []
     private client: SourcegraphGraphQLAPIClient | null = null
@@ -209,7 +212,10 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
     // Create Auth Status
     private async makeAuthStatus(
-        config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
+        config: Pick<
+            ClientConfigurationWithAccessToken,
+            'serverEndpoint' | 'accessToken' | 'customHeaders'
+        >,
         isOfflineMode?: boolean
     ): Promise<AuthStatus> {
         const endpoint = config.serverEndpoint
@@ -248,10 +254,10 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
         logDebug('CodyLLMConfiguration', JSON.stringify(codyLLMConfiguration))
         // check first if it's a network error
-        if (isError(userInfo)) {
-            if (isNetworkError(userInfo)) {
-                return { ...networkErrorAuthStatus, endpoint }
-            }
+        if (isError(userInfo) && isNetworkError(userInfo)) {
+            return { ...networkErrorAuthStatus, endpoint }
+        }
+        if (!userInfo || isError(userInfo)) {
             return { ...unauthenticatedStatus, endpoint }
         }
 
@@ -278,7 +284,10 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         const proStatus = await this.client.getCurrentUserCodySubscription()
         // Pro user without the pending status is the valid pro users
         const isActiveProUser =
-            'plan' in proStatus && proStatus.plan === 'PRO' && proStatus.status !== 'PENDING'
+            proStatus !== null &&
+            'plan' in proStatus &&
+            proStatus.plan === 'PRO' &&
+            proStatus.status !== 'PENDING'
 
         return newAuthStatus({
             ...userInfo,
@@ -398,7 +407,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
     // sending back from sourcegraph.com
     public async tokenCallbackHandler(
         uri: vscode.Uri,
-        customHeaders: Record<string, string>
+        customHeaders: Record<string, string> | undefined
     ): Promise<void> {
         closeAuthProgressIndicator()
 

@@ -1,3 +1,21 @@
+## 0.7.1
+- Add support for built-in confirmation UI for actions like Clear Chat History
+
+## 0.7.0
+- Simplifies Cody Web Chat component (it requires now using only one root CodyWebChat component)
+- Adds skeleton loading state to Cody Web Chat UI 
+
+## 0.6.1
+- Adds support for directory initial context (mention) 
+- Changes target build to es modules 
+
+## 0.6.0
+- Changes API for initial context (now it supports only one repository as an initial context mention)
+- Fixes problem with file and symbol mention search don't respect initial repository as a context
+
+## 0.5.2 
+- Improves repository mention result ordering (for repositories, files and directories mentions)
+
 ## 0.5.1
 - Fixes problem with initial context can't be removed (lexical context item text node key problem)
 - Fixes rendering toolbar for Cody Web

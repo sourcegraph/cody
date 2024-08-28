@@ -28,6 +28,8 @@ interface CodyAgentServer {
   fun chat_models(params: Chat_ModelsParams): CompletableFuture<Chat_ModelsResult>
   @JsonRequest("chat/export")
   fun chat_export(params: Chat_ExportParams?): CompletableFuture<List<ChatExportResult>>
+  @JsonRequest("chat/import")
+  fun chat_import(params: Chat_ImportParams): CompletableFuture<Null?>
   @JsonRequest("chat/remoteRepos")
   fun chat_remoteRepos(params: Chat_RemoteReposParams): CompletableFuture<Chat_RemoteReposResult>
   @JsonRequest("commands/explain")
@@ -176,4 +178,6 @@ interface CodyAgentServer {
   fun progress_cancel(params: Progress_CancelParams)
   @JsonNotification("webview/didDisposeNative")
   fun webview_didDisposeNative(params: Webview_DidDisposeNativeParams)
+  @JsonNotification("secrets/didChange")
+  fun secrets_didChange(params: Secrets_DidChangeParams)
 }

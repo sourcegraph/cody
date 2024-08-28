@@ -87,6 +87,10 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         }, [])
     )
 
+    // See SRCH-942: this `useEffect` is very large and any update to the
+    // dependencies triggers a network request to our guardrails server. Be very
+    // careful about adding more dependencies.  Ideally, we should refactor this
+    // `useEffect` into smaller blocks with more narrow dependencies.
     // biome-ignore lint/correctness/useExhaustiveDependencies: needs to run when `displayMarkdown` changes or else the buttons won't show up.
     useEffect(() => {
         if (!rootRef.current) {
@@ -181,7 +185,6 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         copyButtonOnSubmit,
         insertButtonOnSubmit,
         smartApplyEnabled,
-        smartApplyInterceptor,
         guardrails,
         displayMarkdown,
         isMessageLoading,

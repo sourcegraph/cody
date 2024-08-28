@@ -37,6 +37,8 @@ export {
     DEFAULT_EVENT_SOURCE,
 } from './chat/transcript/messages'
 export type {
+    AccountKeyedChatHistory,
+    ChatHistoryKey,
     ChatError,
     EventSource,
     ChatHistory,
@@ -237,7 +239,8 @@ export {
     type ContextFilters,
     type CodyContextFilterItem,
     type RepoListResponse,
-    type RepoSearchResponse,
+    type SuggestionsRepo,
+    type RepoSuggestionsSearchResponse,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,

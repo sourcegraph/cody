@@ -11,12 +11,11 @@ import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry/dist/process
 
 import {
     CONTEXT_SELECTION_ID,
+    type ClientConfiguration,
+    type ClientConfigurationWithAccessToken,
     type CodyIDE,
-    type Configuration,
-    type ConfigurationWithAccessToken,
 } from '../configuration'
-import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
-import type { LogEventMode } from '../sourcegraph-api/graphql/client'
+import { type LogEventMode, graphqlClient } from '../sourcegraph-api/graphql/client'
 import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/GraphQLTelemetryExporter'
 import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockServerTelemetryExporter'
 
@@ -64,12 +63,12 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
 > {
     constructor(
         extensionDetails: ExtensionDetails,
-        config: ConfigurationWithAccessToken,
+        config: ClientConfigurationWithAccessToken,
         authStatusProvider: AuthStatusProvider,
         anonymousUserID: string,
         legacyBackcompatLogEventMode: LogEventMode
     ) {
-        const client = new SourcegraphGraphQLAPIClient(config)
+        graphqlClient.setConfig(config)
         const clientName = extensionDetails.telemetryClientName
             ? extensionDetails.telemetryClientName
             : `${extensionDetails.ide || 'unknown'}.Cody`
@@ -81,7 +80,7 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
             },
             process.env.CODY_TELEMETRY_EXPORTER === 'testing'
                 ? TESTING_TELEMETRY_EXPORTER.withAnonymousUserID(anonymousUserID)
-                : new GraphQLTelemetryExporter(client, anonymousUserID, legacyBackcompatLogEventMode),
+                : new GraphQLTelemetryExporter(anonymousUserID, legacyBackcompatLogEventMode),
             [
                 new ConfigurationMetadataProcessor(config, authStatusProvider),
                 // Generate timestamps when recording events, instead of serverside
@@ -163,7 +162,7 @@ export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderPr
 > {
     constructor(
         extensionDetails: ExtensionDetails,
-        config: Configuration,
+        config: ClientConfiguration,
         authStatusProvider: AuthStatusProvider,
         anonymousUserID: string
     ) {
@@ -184,7 +183,7 @@ export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderPr
  */
 class ConfigurationMetadataProcessor implements TelemetryProcessor {
     constructor(
-        private config: Configuration,
+        private config: ClientConfiguration,
         private authStatusProvider: AuthStatusProvider
     ) {}
 

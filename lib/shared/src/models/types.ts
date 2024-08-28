@@ -24,7 +24,7 @@ type Models = typeof DEFAULT_DOT_COM_MODELS
 export type EditModel =
     | {
           [K in keyof Models]: HasUsage<Models[K], ModelUsage.Edit>
-      }[keyof Models]['model']
+      }[keyof Models]['id']
     | (string & {})
 
 /**
@@ -48,7 +48,7 @@ export type EditProvider =
 export type ChatModel =
     | {
           [K in keyof Models]: HasUsage<Models[K], ModelUsage.Chat>
-      }[keyof Models]['model']
+      }[keyof Models]['id']
     | (string & {})
 
 /**

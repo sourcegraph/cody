@@ -23,7 +23,6 @@ export const Image: Story = {
             username: 'sqs',
             avatarURL: 'https://avatars.githubusercontent.com/u/1976',
             endpoint: '',
-            primaryEmail: '',
         },
     },
 }
@@ -32,9 +31,7 @@ export const Text1Letter: Story = {
     args: {
         user: {
             username: 'sqs',
-            avatarURL: '',
             endpoint: '',
-            primaryEmail: '',
         },
     },
 }
@@ -44,9 +41,7 @@ export const Text2Letters: Story = {
         user: {
             username: 'sqs',
             displayName: 'Quinn Slack',
-            avatarURL: '',
             endpoint: '',
-            primaryEmail: '',
         },
     },
 }
@@ -57,7 +52,6 @@ export const SourcegraphGradientBorder: Story = {
             username: 'sqs',
             avatarURL: 'https://avatars.githubusercontent.com/u/1976',
             endpoint: '',
-            primaryEmail: '',
         },
         sourcegraphGradientBorder: true,
     },

@@ -34,6 +34,7 @@ import { type Config, ConfigProvider } from './utils/useConfig'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<Config | null>(null)
+    // NOTE: View state will be set by the extension host during initialization.
     const [view, setView] = useState<View>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
 
@@ -91,12 +92,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     }
                     case 'config':
                         setConfig(message)
-                        setView(message.authStatus.isLoggedIn ? View.Chat : View.Login)
                         updateDisplayPathEnvInfoForWebview(message.workspaceFolderUris)
-                        // Get chat models
-                        if (message.authStatus.isLoggedIn) {
-                            vscodeAPI.postMessage({ command: 'get-chat-models' })
-                        }
                         break
                     case 'history':
                         setUserHistory(Object.values(message.localHistory?.chat ?? {}))
@@ -187,7 +183,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         (selected: Model): void => {
             vscodeAPI.postMessage({
                 command: 'chatModel',
-                model: selected.model,
+                model: selected.id,
             })
         },
         [vscodeAPI]

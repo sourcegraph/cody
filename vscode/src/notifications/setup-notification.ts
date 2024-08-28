@@ -1,13 +1,15 @@
 import * as vscode from 'vscode'
 
-import type { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared'
+import type { ClientConfigurationWithAccessToken } from '@sourcegraph/cody-shared'
 
 import { localStorage } from '../services/LocalStorageProvider'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { showActionNotification } from '.'
 
-export const showSetupNotification = async (config: ConfigurationWithAccessToken): Promise<void> => {
+export const showSetupNotification = async (
+    config: ClientConfigurationWithAccessToken
+): Promise<void> => {
     if (config.serverEndpoint && config.accessToken) {
         // User has already attempted to configure Cody.
         // Regardless of if they are authenticated or not, we don't want to prompt them.

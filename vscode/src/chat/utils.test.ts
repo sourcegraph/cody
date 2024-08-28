@@ -132,16 +132,12 @@ describe('validateAuthStatus', () => {
             siteHasCodyEnabled: true,
             isLoggedIn: true,
             isDotCom: false,
-            displayName: '',
-            primaryEmail: '',
             hasVerifiedEmail: false,
             codyApiVersion: 1,
         }
         expect(
             newAuthStatus({
                 ...options,
-                displayName: '',
-                primaryEmail: '',
                 isDotCom: false,
             })
         ).toEqual(expected)

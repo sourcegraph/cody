@@ -3,10 +3,11 @@ import * as vscode from 'vscode'
 import {
     type ChatClient,
     ClientConfigSingleton,
+    type ClientConfiguration,
+    type ClientConfigurationWithAccessToken,
+    type ClientConfigurationWithEndpoint,
     type CodeCompletionsClient,
-    type Configuration,
-    type ConfigurationWithAccessToken,
-    type ConfigurationWithEndpoint,
+    type ConfigWatcher,
     type DefaultCodyCommands,
     type Guardrails,
     PromptString,
@@ -49,7 +50,7 @@ import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { createInlineCompletionItemFromMultipleProviders } from './completions/create-multi-model-inline-completion-provider'
 import { getFullConfig } from './configuration'
-import { BaseConfigWatcher, type ConfigWatcher } from './configwatcher'
+import { BaseConfigWatcher } from './configwatcher'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
 import { exposeOpenCtxClient } from './context/openctx'
 import { EditManager } from './edit/manager'
@@ -98,17 +99,6 @@ export async function start(
     context: vscode.ExtensionContext,
     platform: PlatformContext
 ): Promise<vscode.Disposable> {
-    // NOTE: Hack to ensure the window is reloaded when extension is restarted after upgrade
-    //  to get the updated sidebar chat UI. Can be removed after the next release (1.28).
-    if (
-        !context.globalState.get('newSidebarChatUI_isReloaded', false) &&
-        process.env.CODY_TESTING !== 'true'
-    ) {
-        // First activation, set the flag and then reload the window
-        await context.globalState.update('newSidebarChatUI_isReloaded', true)
-        await vscode.commands.executeCommand('workbench.action.reloadWindow')
-    }
-
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
@@ -165,7 +155,7 @@ export async function start(
 const register = async (
     context: vscode.ExtensionContext,
     authProvider: AuthProvider,
-    configWatcher: ConfigWatcher<ConfigurationWithAccessToken>,
+    configWatcher: ConfigWatcher<ClientConfigurationWithAccessToken>,
     platform: PlatformContext,
     isExtensionModeDevOrTest: boolean
 ): Promise<vscode.Disposable> => {
@@ -315,7 +305,7 @@ const register = async (
 async function initializeSingletons(
     platform: PlatformContext,
     authProvider: AuthProvider,
-    configWatcher: ConfigWatcher<ConfigurationWithAccessToken>,
+    configWatcher: ConfigWatcher<ClientConfigurationWithAccessToken>,
     isExtensionModeDevOrTest: boolean,
     disposables: vscode.Disposable[]
 ): Promise<void> {
@@ -424,7 +414,7 @@ async function registerOtherCommands(disposables: vscode.Disposable[]) {
 }
 
 function registerCodyCommands(
-    config: ConfigWatcher<Configuration>,
+    config: ConfigWatcher<ClientConfiguration>,
     statusBar: CodyStatusBar,
     sourceControl: CodySourceControl,
     chatClient: ChatClient,
@@ -532,7 +522,7 @@ function registerAuthCommands(authProvider: AuthProvider, disposables: vscode.Di
 }
 
 function registerUpgradeHandlers(
-    configWatcher: ConfigWatcher<Configuration>,
+    configWatcher: ConfigWatcher<ClientConfiguration>,
     authProvider: AuthProvider,
     disposables: vscode.Disposable[]
 ): void {
@@ -559,7 +549,7 @@ function registerUpgradeHandlers(
                 }
                 // Re-auth if user's cody pro status has changed
                 const isCurrentCodyProUser = !authStatus.userCanUpgrade
-                if (res.codyProEnabled !== isCurrentCodyProUser) {
+                if (res && res.codyProEnabled !== isCurrentCodyProUser) {
                     authProvider.reloadAuthStatus()
                 }
             }
@@ -640,7 +630,7 @@ async function tryRegisterTutorial(
  * the returned promise is awaited in parallel with other tasks.
  */
 function registerAutocomplete(
-    configWatcher: ConfigWatcher<ConfigurationWithEndpoint>,
+    configWatcher: ConfigWatcher<ClientConfigurationWithEndpoint>,
     platform: PlatformContext,
     authProvider: AuthProvider,
     statusBar: CodyStatusBar,
@@ -724,7 +714,7 @@ function registerAutocomplete(
 
 async function registerMinion(
     context: vscode.ExtensionContext,
-    config: ConfigWatcher<Configuration>,
+    config: ConfigWatcher<ClientConfiguration>,
     authProvider: AuthProvider,
     symfRunner: SymfRunner | undefined,
     disposables: vscode.Disposable[]
@@ -835,7 +825,7 @@ function registerChat(
  * Create or update events infrastructure, using the new telemetryRecorder.
  */
 async function configureEventsInfra(
-    config: ConfigurationWithAccessToken,
+    config: ClientConfigurationWithAccessToken,
     isExtensionModeDevOrTest: boolean,
     authProvider: AuthProvider
 ): Promise<void> {

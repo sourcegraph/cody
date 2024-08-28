@@ -483,6 +483,20 @@ export class MockServer {
                     case 'EvaluateFeatureFlag':
                         res.send(JSON.stringify({ data: { evaluatedFeatureFlag: true } }))
                         break
+                    case 'CurrentSiteCodyLlmProvider': {
+                        res.send(
+                            JSON.stringify({
+                                data: {
+                                    site: {
+                                        codyLLMConfiguration: {
+                                            provider: 'sourcegraph',
+                                        },
+                                    },
+                                },
+                            })
+                        )
+                        break
+                    }
                     case 'CurrentSiteCodyLlmConfiguration': {
                         res.send(
                             JSON.stringify({
@@ -490,6 +504,7 @@ export class MockServer {
                                     site: {
                                         codyLLMConfiguration: {
                                             chatModel: 'foo/test-chat-default-model',
+                                            completionModel: 'fireworks/starcoder',
                                             provider: 'sourcegraph',
                                         },
                                     },

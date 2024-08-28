@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { type Configuration, OLLAMA_DEFAULT_URL, ps } from '@sourcegraph/cody-shared'
+import { type ClientConfiguration, OLLAMA_DEFAULT_URL, ps } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from './configuration'
 import { DEFAULT_VSCODE_SETTINGS } from './testutils/mocks'
@@ -82,6 +82,8 @@ describe('getConfiguration', () => {
                         return 'bfg'
                     case 'cody.advanced.agent.running':
                         return false
+                    case 'cody.advanced.hasNativeWebview':
+                        return true
                     case 'cody.advanced.agent.ide':
                         return undefined
                     case 'cody.advanced.agent.ide.version':
@@ -102,8 +104,6 @@ describe('getConfiguration', () => {
                         return 1500
                     case 'cody.autocomplete.experimental.preloadDebounceInterval':
                         return 0
-                    case 'cody.autocomplete.experimental.hotStreakAndSmartThrottle':
-                        return false
                     case 'cody.experimental.guardrailsTimeoutSeconds':
                         return undefined
                     default:
@@ -135,6 +135,7 @@ describe('getConfiguration', () => {
             commandHints: true,
             isRunningInsideAgent: false,
             agentIDE: undefined,
+            hasNativeWebview: true,
             internalUnstable: false,
             internalDebugContext: false,
             debugVerbose: true,
@@ -151,15 +152,10 @@ describe('getConfiguration', () => {
                 model: 'codellama:7b-code',
                 url: OLLAMA_DEFAULT_URL,
             },
-            autocompleteTimeouts: {
-                multiline: undefined,
-                singleline: undefined,
-            },
             autocompleteFirstCompletionTimeout: 1500,
             autocompleteExperimentalPreloadDebounceInterval: 0,
-            autocompleteExperimentalHotStreakAndSmartThrottle: false,
             testingModelConfig: undefined,
             experimentalGuardrailsTimeoutSeconds: undefined,
-        } satisfies Configuration)
+        } satisfies ClientConfiguration)
     })
 })

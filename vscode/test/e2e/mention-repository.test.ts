@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
 
-import type { RepoSearchResponse } from '@sourcegraph/cody-shared'
+import type { RepoSuggestionsSearchResponse } from '@sourcegraph/cody-shared'
 import {
     chatInputMentions,
     createEmptyChatPanel,
@@ -17,26 +17,27 @@ testWithGitRemote('@-mention repository', async ({ page, sidebar, server }) => {
     await sidebarSignin(page, sidebar)
     const [chatFrame, lastChatInput] = await createEmptyChatPanel(page)
 
-    server.onGraphQl('RepositoriesSearch').replyJson({
+    server.onGraphQl('SuggestionsRepo').replyJson({
         data: {
-            repositories: {
-                nodes: [
-                    {
-                        id: 'a/b',
-                        name: 'a/b',
-                        url: 'https://example.com/a/b',
-                    },
-                    {
-                        id: 'c/d',
-                        name: 'c/d',
-                        url: 'https://example.com/c/d',
-                    },
-                ],
-                pageInfo: {
-                    endCursor: 'c/d',
+            search: {
+                results: {
+                    repositories: [
+                        {
+                            id: 'a/b',
+                            name: 'a/b',
+                            stars: 10,
+                            url: 'https://example.com/a/b',
+                        },
+                        {
+                            id: 'c/d',
+                            name: 'c/d',
+                            stars: 9,
+                            url: 'https://example.com/c/d',
+                        },
+                    ],
                 },
             },
-        } satisfies RepoSearchResponse,
+        } satisfies RepoSuggestionsSearchResponse,
     })
 
     await openMentionsForProvider(chatFrame, lastChatInput, 'Remote Repositories')
