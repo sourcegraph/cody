@@ -1,5 +1,10 @@
-import { type OllamaGenerateParameters, type PromptString, ps } from '@sourcegraph/cody-shared'
-import { DefaultModel, type FormatFireworksPromptParams, type GetOllamaPromptParams } from './default'
+import { type OllamaGenerateParameters, PromptString, ps } from '@sourcegraph/cody-shared'
+import {
+    DefaultModel,
+    type FormatPromptParams,
+    type GetDefaultIntroSnippetsParams,
+    type GetOllamaPromptParams,
+} from './default'
 
 export class StarCoder extends DefaultModel {
     stopSequences = ['<fim_prefix>', '<fim_suffix>', '<fim_middle>', '<|endoftext|>', '<file_sep>']
@@ -30,11 +35,21 @@ export class StarCoder extends DefaultModel {
         return content.replace('<|endoftext|>', '')
     }
 
-    formatFireworksPrompt(params: FormatFireworksPromptParams): PromptString {
-        const { intro, fileName, prefix, suffix } = params
+    getDefaultIntroSnippets(params: GetDefaultIntroSnippetsParams): PromptString[] {
+        const { document, isInfill } = params
 
-        // c.f. https://huggingface.co/bigcode/starcoder#fill-in-the-middle
-        // c.f. https://arxiv.org/pdf/2305.06161.pdf
-        return ps`<filename>${fileName}<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
+        return isInfill ? [] : [ps`Path: ${PromptString.fromDisplayPath(document.uri)}`]
+    }
+
+    formatPrompt(params: FormatPromptParams): PromptString {
+        const { intro, fileName, prefix, suffix, isInfill } = params
+
+        if (isInfill) {
+            // c.f. https://huggingface.co/bigcode/starcoder#fill-in-the-middle
+            // c.f. https://arxiv.org/pdf/2305.06161.pdf
+            return ps`<filename>${fileName}<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
+        }
+
+        return ps`${intro}${prefix}`
     }
 }

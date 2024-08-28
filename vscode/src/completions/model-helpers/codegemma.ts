@@ -1,5 +1,5 @@
 import { type OllamaGenerateParameters, type PromptString, ps } from '@sourcegraph/cody-shared'
-import { DefaultModel, type FormatFireworksPromptParams, type GetOllamaPromptParams } from './default'
+import { DefaultModel, type FormatPromptParams, type GetOllamaPromptParams } from './default'
 
 export class CodeGemma extends DefaultModel {
     stopSequences = [
@@ -33,7 +33,7 @@ export class CodeGemma extends DefaultModel {
         return params
     }
 
-    formatFireworksPrompt(param: FormatFireworksPromptParams): PromptString {
+    formatPrompt(param: FormatPromptParams): PromptString {
         return ps`${param.intro}<|fim_prefix|>${param.prefix}<|fim_suffix|>${param.suffix}<|fim_middle|>`
     }
 }
