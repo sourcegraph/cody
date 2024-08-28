@@ -284,30 +284,28 @@ class WebUIHostImpl(
     val command = decodedJson?.get("command")?.asString
     val isCommand = command == "command"
     val id = decodedJson?.get("id")?.asString
+    val arg = decodedJson?.get("arg")?.asString
 
     if (command == "auth") {
       val authKind = decodedJson.get("authKind")?.asString
       if (authKind == "signout") {
         CodyAuthenticationManager.getInstance(project).setActiveAccount(null)
       }
-    } else if (isCommand && id == "cody.action.command") {
-      val arg = decodedJson.get("arg")?.asString
+    } else if (isCommand && id == "cody.action.command" && arg == "edit") {
       // TODO: Delete this intercept when Cody edits UI is abstracted so JetBrains' native UI can be
       // invoked from the extension TypeScript side through Agent.
-      if (arg == "edit") {
-        runInEdt {
-          // Invoke the Cody "edit" action in JetBrains directly.
-          val actionManager = ActionManager.getInstance()
-          val action = actionManager.getAction("cody.editCodeAction")
-          action?.actionPerformed(
-              AnActionEvent.createFromAnAction(action, null, "") { dataId ->
-                when (dataId) {
-                  CommonDataKeys.EDITOR.name ->
-                      FileEditorManager.getInstance(project).selectedTextEditor
-                  else -> null
-                }
-              })
-        }
+      runInEdt {
+        // Invoke the Cody "edit" action in JetBrains directly.
+        val actionManager = ActionManager.getInstance()
+        val action = actionManager.getAction("cody.editCodeAction")
+        action?.actionPerformed(
+            AnActionEvent.createFromAnAction(action, null, "") { dataId ->
+              when (dataId) {
+                CommonDataKeys.EDITOR.name ->
+                    FileEditorManager.getInstance(project).selectedTextEditor
+                else -> null
+              }
+            })
       }
     } else if (isCommand && id == "cody.status-bar.interacted") {
       runInEdt {
