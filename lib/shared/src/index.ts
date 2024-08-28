@@ -37,6 +37,8 @@ export {
     DEFAULT_EVENT_SOURCE,
 } from './chat/transcript/messages'
 export type {
+    AccountKeyedChatHistory,
+    ChatHistoryKey,
     ChatError,
     EventSource,
     ChatHistory,

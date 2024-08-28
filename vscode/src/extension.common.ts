@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
 
 import type {
+    ClientConfiguration,
+    ClientConfigurationWithEndpoint,
     CompletionLogger,
     CompletionsClientConfig,
-    Configuration,
-    ConfigurationWithEndpoint,
     SourcegraphCompletionsClient,
 } from '@sourcegraph/cody-shared'
 import type { startTokenReceiver } from './auth/token-receiver'
@@ -46,10 +46,12 @@ export interface PlatformContext {
         config: CompletionsClientConfig,
         logger?: CompletionLogger
     ) => SourcegraphCompletionsClient
-    createSentryService?: (config: Pick<ConfigurationWithEndpoint, 'serverEndpoint'>) => SentryService
+    createSentryService?: (
+        config: Pick<ClientConfigurationWithEndpoint, 'serverEndpoint'>
+    ) => SentryService
     createOpenTelemetryService?: (config: OpenTelemetryServiceConfig) => OpenTelemetryService
     startTokenReceiver?: typeof startTokenReceiver
-    onConfigurationChange?: (configuration: Configuration) => void
+    onConfigurationChange?: (configuration: ClientConfiguration) => void
     extensionClient: ExtensionClient
 }
 

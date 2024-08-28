@@ -2,7 +2,13 @@ import { spawn } from 'node:child_process'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
-import { type CodyCommand, ModelUsage, telemetryRecorder } from '@sourcegraph/cody-shared'
+import {
+    type AccountKeyedChatHistory,
+    type ChatHistoryKey,
+    type CodyCommand,
+    ModelUsage,
+    telemetryRecorder,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 import packageJson from '../../vscode/package.json'
@@ -57,13 +63,13 @@ import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdi
 import { AgentAuthHandler } from './AgentAuthHandler'
 import { AgentFixupControls } from './AgentFixupControls'
 import { AgentProviders } from './AgentProviders'
+import { AgentClientManagedSecretStorage, AgentStatelessSecretStorage } from './AgentSecretStorage'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
 import { codyPaths } from './codyPaths'
 import { AgentGlobalState } from './global-state/AgentGlobalState'
-import { AgentSecretStorage } from './global-state/AgentSecretStorage'
 import {
     MessageHandler,
     type RequestCallback,
@@ -133,7 +139,8 @@ export async function initializeVscodeExtension(
     workspaceRoot: vscode.Uri,
     extensionActivate: ExtensionActivate,
     extensionClient: ExtensionClient,
-    globalState: AgentGlobalState
+    globalState: AgentGlobalState,
+    secrets: vscode.SecretStorage
 ): Promise<void> {
     const paths = codyPaths()
     const extensionPath = paths.config
@@ -154,7 +161,7 @@ export async function initializeVscodeExtension(
         globalState,
         logUri: vscode.Uri.file(paths.log),
         logPath: paths.log,
-        secrets: new AgentSecretStorage(extensionClient.capabilities?.authentication),
+        secrets,
         storageUri: vscode.Uri.file(paths.data),
         subscriptions: [],
 
@@ -328,6 +335,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             })
         },
     })
+    private secretsDidChange = new vscode.EventEmitter<vscode.SecretStorageChangeEvent>()
 
     public webPanels = new AgentWebviewPanels()
     public webviewViewProviders = new Map<string, vscode.WebviewViewProvider>()
@@ -417,11 +425,17 @@ export class Agent extends MessageHandler implements ExtensionClient {
                   })
 
             try {
+                const secrets =
+                    clientInfo.capabilities?.secrets === 'client-managed'
+                        ? new AgentClientManagedSecretStorage(this, this.secretsDidChange.event)
+                        : new AgentStatelessSecretStorage()
+
                 await initializeVscodeExtension(
                     this.workspace.workspaceRootUri,
                     params.extensionActivate,
                     this,
-                    this.globalState
+                    this.globalState,
+                    secrets
                 )
 
                 this.authenticationPromise = clientInfo.extensionConfiguration?.accessToken
@@ -969,7 +983,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 throw res
             }
 
-            return res.codyProEnabled
+            return Boolean(res?.codyProEnabled)
         })
 
         this.registerAuthenticatedRequest('graphql/getCurrentUserCodySubscription', async () => {
@@ -1250,6 +1264,16 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
             return []
         })
+        this.registerAuthenticatedRequest('chat/import', async ({ history, merge }) => {
+            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+
+            const accountKeyedChatHistory: AccountKeyedChatHistory = {}
+            for (const [account, chats] of Object.entries(history)) {
+                accountKeyedChatHistory[account as ChatHistoryKey] = { chat: chats }
+            }
+            await chatHistory.importChatHistory(accountKeyedChatHistory, merge, authStatus)
+            return null
+        })
 
         this.registerAuthenticatedRequest('chat/delete', async params => {
             await vscode.commands.executeCommand<AuthStatus>('cody.chat.history.delete', {
@@ -1346,6 +1370,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 return null
             }
         )
+        this.registerNotification('secrets/didChange', async ({ key }) => {
+            this.secretsDidChange.fire({ key })
+        })
 
         this.registerAuthenticatedRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
             return featureFlagProvider.evaluateFeatureFlag(

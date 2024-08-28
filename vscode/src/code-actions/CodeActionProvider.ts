@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import type { Configuration } from '@sourcegraph/cody-shared'
+import type { ClientConfiguration } from '@sourcegraph/cody-shared'
 import { getConfiguration } from '../configuration'
 import { DocumentCodeAction } from './document'
 import { EditCodeAction } from './edit'
@@ -21,7 +21,7 @@ export class CodeActionProvider implements vscode.Disposable {
         )
     }
 
-    private registerCodeActions(config: Omit<Configuration, 'codebase'>): void {
+    private registerCodeActions(config: Omit<ClientConfiguration, 'codebase'>): void {
         for (const disposable of this.actionProviders) {
             disposable.dispose()
         }

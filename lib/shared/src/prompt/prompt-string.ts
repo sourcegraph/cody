@@ -7,7 +7,6 @@ import type { TerminalOutputArguments } from '../commands/types'
 import { markdownCodeBlockLanguageIDForFilename } from '../common/languages'
 import type { RangeData } from '../common/range'
 import type { AutocompleteContextSnippet, DocumentContext, GitContext } from '../completions/types'
-import type { ConfigGetter } from '../configuration'
 import type { ActiveTextEditorDiagnostic } from '../editor'
 import { createGitDiff } from '../editor/create-git-diff'
 import { displayPath, displayPathWithLines } from '../editor/displayPath'
@@ -210,11 +209,13 @@ export class PromptString {
     // Use this function to create a user-generated PromptString from the VS Code
     // configuration object.
     public static fromConfig<D>(
-        config: ConfigGetter<string>,
+        config: {
+            get(section: string, defaultValue?: string | null): string | null
+        },
         path: string,
         defaultValue: D
     ): PromptString | D {
-        const raw = config.get<string | null>(path, null)
+        const raw = config.get(path, null)
         const value = raw === null ? defaultValue : internal_createPromptString(raw, [])
         return value
     }
@@ -349,12 +350,17 @@ export class PromptString {
         }
     }
 
-    public static fromContextItem(contextItem: ContextItem) {
+    public static fromContextItem(contextItem: ContextItem): {
+        content: PromptString | undefined
+        repoName: PromptString | undefined
+        title: PromptString | undefined
+    } {
         const ref = [contextItem.uri]
         return {
-            content: contextItem.content
-                ? internal_createPromptString(contextItem.content, ref)
-                : undefined,
+            content:
+                typeof contextItem.content === 'string'
+                    ? internal_createPromptString(contextItem.content, ref)
+                    : undefined,
             repoName: contextItem.repoName
                 ? internal_createPromptString(contextItem.repoName, ref)
                 : undefined,

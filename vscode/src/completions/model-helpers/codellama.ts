@@ -1,7 +1,10 @@
-import type * as vscode from 'vscode'
-
 import { PromptString, ps } from '@sourcegraph/cody-shared'
-import { DefaultModel, type FormatFireworksPromptParams, type GetOllamaPromptParams } from './default'
+import {
+    DefaultModel,
+    type FormatPromptParams,
+    type GetDefaultIntroSnippetsParams,
+    type GetOllamaPromptParams,
+} from './default'
 
 export class CodeLlama extends DefaultModel {
     getOllamaPrompt(promptContext: GetOllamaPromptParams): PromptString {
@@ -19,11 +22,11 @@ export class CodeLlama extends DefaultModel {
         return content.replace(' <EOT>', '')
     }
 
-    getDefaultIntroSnippets(document: vscode.TextDocument): PromptString[] {
-        return [ps`Path: ${PromptString.fromDisplayPath(document.uri)}`]
+    getDefaultIntroSnippets(params: GetDefaultIntroSnippetsParams): PromptString[] {
+        return [ps`Path: ${PromptString.fromDisplayPath(params.document.uri)}`]
     }
 
-    formatFireworksPrompt(params: FormatFireworksPromptParams): PromptString {
+    formatPrompt(params: FormatPromptParams): PromptString {
         const { intro, prefix, suffix } = params
 
         // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402

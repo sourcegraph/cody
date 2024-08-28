@@ -1,12 +1,11 @@
 import {
     type AuthStatus,
     type AutocompleteContextSnippet,
-    type AutocompleteTimeouts,
+    type ClientConfiguration,
+    type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
-    type Configuration,
-    type ConfigurationWithAccessToken,
     dotcomTokenToGatewayToken,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
@@ -37,9 +36,8 @@ export interface FireworksOptions {
     maxContextTokens?: number
     client: CodeCompletionsClient
     anonymousUserID?: string
-    timeouts: AutocompleteTimeouts
     config: Pick<
-        ConfigurationWithAccessToken,
+        ClientConfigurationWithAccessToken,
         'accessToken' | 'autocompleteExperimentalFireworksOptions'
     >
     authStatus: Pick<
@@ -50,10 +48,11 @@ export interface FireworksOptions {
 
 const PROVIDER_IDENTIFIER = 'fireworks'
 
-export const FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED =
-    'fim-lang-specific-model-deepseek-stack-trained'
-export const FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED = 'fim-lang-specific-model-deepseek-logs-trained'
+export const FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0 = 'deepseek-finetuned-lang-specific-v0'
+export const FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1 = 'deepseek-finetuned-lang-specific-v1'
+export const FIREWORKS_DEEPSEEK_7B_LANG_ALL = 'deepseek-finetuned-lang-all-v0'
 
+export const DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE = 'deepseek-coder-v2-lite-base-direct-route'
 export const DEEPSEEK_CODER_V2_LITE_BASE = 'deepseek-coder-v2-lite-base'
 
 // Context window experiments with DeepSeek Model
@@ -73,9 +72,12 @@ const MODEL_MAP = {
     // Fireworks model identifiers
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
 
-    [FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED]: FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED,
-    [FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED]: FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED,
-    [DEEPSEEK_CODER_V2_LITE_BASE]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
+    [FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0]: 'finetuned-fim-lang-specific-model-ds2-v0',
+    [FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1]: 'finetuned-fim-lang-specific-model-ds2-v1',
+    [FIREWORKS_DEEPSEEK_7B_LANG_ALL]: 'accounts/sourcegraph/models/finetuned-fim-lang-all-model-ds2-v0',
+    [DEEPSEEK_CODER_V2_LITE_BASE]: 'fireworks/deepseek-coder-v2-lite-base',
+    [DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE]:
+        'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384]:
@@ -103,9 +105,11 @@ function getMaxContextTokens(model: FireworksModel): number {
             // Llama 2 on Fireworks supports up to 4k tokens. We're constraining it here to better
             // compare the results
             return 2048
-        case FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED:
-        case FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED:
-        case DEEPSEEK_CODER_V2_LITE_BASE: {
+        case FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0:
+        case FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1:
+        case FIREWORKS_DEEPSEEK_7B_LANG_ALL:
+        case DEEPSEEK_CODER_V2_LITE_BASE:
+        case DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE: {
             return 2048
         }
         case DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096:
@@ -130,16 +134,16 @@ class FireworksProvider extends Provider {
     private model: FireworksModel
     private promptChars: number
     private client: CodeCompletionsClient
-    private timeouts?: AutocompleteTimeouts
     private fastPathAccessToken?: string
     private authStatus: Pick<
         AuthStatus,
         'userCanUpgrade' | 'isDotCom' | 'endpoint' | 'isFireworksTracingEnabled'
     >
     private isLocalInstance: boolean
-    private fireworksConfig?: Configuration['autocompleteExperimentalFireworksOptions']
+    private fireworksConfig?: ClientConfiguration['autocompleteExperimentalFireworksOptions']
     private modelHelper: DefaultModel
     private anonymousUserID: string | undefined
+    private shouldEnableDirectRoute = false
 
     constructor(
         options: ProviderOptions,
@@ -147,20 +151,19 @@ class FireworksProvider extends Provider {
             model,
             maxContextTokens,
             client,
-            timeouts,
             config,
             authStatus,
             anonymousUserID,
         }: Required<Omit<FireworksOptions, 'anonymousUserID'>> & { anonymousUserID?: string }
     ) {
         super(options)
-        this.timeouts = timeouts
         this.model = model
         this.modelHelper = getModelHelpers(model)
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
         this.authStatus = authStatus
         this.anonymousUserID = anonymousUserID
+        this.shouldEnableDirectRoute = this.checkIfDirectRouteShouldBeEnabled()
         this.isLocalInstance = Boolean(
             this.authStatus.endpoint?.includes('sourcegraph.test') ||
                 this.authStatus.endpoint?.includes('localhost')
@@ -186,6 +189,10 @@ class FireworksProvider extends Provider {
         }
     }
 
+    private checkIfDirectRouteShouldBeEnabled(): boolean {
+        return this.model === DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE
+    }
+
     public generateCompletions(
         abortSignal: AbortSignal,
         snippets: AutocompleteContextSnippet[],
@@ -193,7 +200,6 @@ class FireworksProvider extends Provider {
     ): AsyncGenerator<FetchCompletionResult[]> {
         const partialRequestParams = getCompletionParams({
             providerOptions: this.options,
-            timeouts: this.timeouts,
             lineNumberDependentCompletionParams,
         })
 
@@ -205,14 +211,14 @@ class FireworksProvider extends Provider {
                 ? MODEL_MAP[useMultilineModel ? 'starcoder-16b' : 'starcoder-7b']
                 : MODEL_MAP[this.model]
 
-        const prompt = this.modelHelper.getFireworksPrompt({
+        const prompt = this.modelHelper.getPrompt({
             snippets,
             docContext: this.options.docContext,
             document: this.options.document,
             promptChars: this.promptChars,
         })
 
-        const requestParams = this.modelHelper.getFireworksRequestParams({
+        const requestParams = this.modelHelper.getRequestParams({
             ...partialRequestParams,
             messages: [{ speaker: 'human', text: prompt }],
             temperature: 0.2,
@@ -260,7 +266,14 @@ class FireworksProvider extends Provider {
     private getCustomHeaders = (): Record<string, string> => {
         // Enabled Fireworks tracing for Sourcegraph teammates.
         // https://readme.fireworks.ai/docs/enabling-tracing
-        return this.authStatus.isFireworksTracingEnabled ? { 'X-Fireworks-Genie': 'true' } : {}
+        const customHeader: Record<string, string> = {}
+        if (this.authStatus.isFireworksTracingEnabled) {
+            customHeader['X-Fireworks-Genie'] = 'true'
+        }
+        if (this.shouldEnableDirectRoute) {
+            customHeader['X-Sourcegraph-Use-Direct-Route'] = 'true'
+        }
+        return customHeader
     }
 
     private createClient(
@@ -300,7 +313,6 @@ function getClientModel(model: string | null, isDotCom: boolean): FireworksModel
 
 export function createProviderConfig({
     model,
-    timeouts,
     ...otherOptions
 }: Omit<FireworksOptions, 'model' | 'maxContextTokens'> & {
     model: string | null
@@ -318,7 +330,6 @@ export function createProviderConfig({
                 {
                     model: clientModel,
                     maxContextTokens,
-                    timeouts,
                     ...otherOptions,
                 }
             )

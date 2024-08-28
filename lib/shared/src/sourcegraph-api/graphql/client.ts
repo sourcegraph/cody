@@ -8,7 +8,7 @@ import { escapeRegExp } from 'lodash'
 import semver from 'semver'
 import type { AuthStatus } from '../../auth/types'
 import { dependentAbortController, onAbort } from '../../common/abortController'
-import type { Configuration, ConfigurationWithAccessToken } from '../../configuration'
+import type { ClientConfiguration, ClientConfigurationWithAccessToken } from '../../configuration'
 import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
@@ -548,10 +548,10 @@ export interface event {
 }
 
 export type GraphQLAPIClientConfig = Pick<
-    ConfigurationWithAccessToken,
+    ClientConfigurationWithAccessToken,
     'serverEndpoint' | 'accessToken' | 'customHeaders'
 > &
-    Pick<Partial<Configuration>, 'telemetryLevel'>
+    Pick<Partial<ClientConfiguration>, 'telemetryLevel'>
 
 export let customUserAgent: string | undefined
 export function addCustomUserAgent(headers: Headers): void {
@@ -729,49 +729,39 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.site?.isCodyEnabled ?? false))
     }
 
-    public async getCurrentUserId(): Promise<string | Error> {
+    public async getCurrentUserId(): Promise<string | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(
             CURRENT_USER_ID_QUERY,
             {}
         ).then(response =>
-            extractDataOrError(response, data =>
-                data.currentUser ? data.currentUser.id : new Error('current user not found')
-            )
+            extractDataOrError(response, data => (data.currentUser ? data.currentUser.id : null))
         )
     }
 
-    public async getCurrentUserCodyProEnabled(): Promise<{ codyProEnabled: boolean } | Error> {
+    public async getCurrentUserCodyProEnabled(): Promise<{ codyProEnabled: boolean } | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserCodyProEnabledResponse>>(
             CURRENT_USER_CODY_PRO_ENABLED_QUERY,
             {}
         ).then(response =>
-            extractDataOrError(response, data =>
-                data.currentUser ? { ...data.currentUser } : new Error('current user not found')
-            )
+            extractDataOrError(response, data => (data.currentUser ? { ...data.currentUser } : null))
         )
     }
 
-    public async getCurrentUserCodySubscription(): Promise<CurrentUserCodySubscription | Error> {
+    public async getCurrentUserCodySubscription(): Promise<CurrentUserCodySubscription | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserCodySubscriptionResponse>>(
             CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
             {}
         ).then(response =>
-            extractDataOrError(response, data =>
-                data.currentUser?.codySubscription
-                    ? data.currentUser.codySubscription
-                    : new Error('current user subscription data not found')
-            )
+            extractDataOrError(response, data => data.currentUser?.codySubscription ?? null)
         )
     }
 
-    public async getCurrentUserInfo(): Promise<CurrentUserInfo | Error> {
+    public async getCurrentUserInfo(): Promise<CurrentUserInfo | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserInfoResponse>>(
             CURRENT_USER_INFO_QUERY,
             {}
         ).then(response =>
-            extractDataOrError(response, data =>
-                data.currentUser ? { ...data.currentUser } : new Error('current user not found')
-            )
+            extractDataOrError(response, data => (data.currentUser ? { ...data.currentUser } : null))
         )
     }
 

@@ -8,14 +8,18 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Autocomplete: Enable deepseek-coder-v2-lite-base model for enterprise users. [pull/5272](https://github.com/sourcegraph/cody/pull/5272)
+
 ### Changed
- 
+
+- Autocomplete: Enabled hot-streak and smart-throttle for enterprise users. [pull/5339](https://github.com/sourcegraph/cody/pull/5339)
+
 ## 1.32.1
 
 ### Fixed
 
 - Revert: A recent version bump of a dependency was potentially causing some Out-of-Memory issues resultling in a grey screen. The `rehype-highlight` version has been reverted. [pull/5315](https://github.com/sourcegraph/cody/pull/5315)
-- Chat: General improvements to how Cody responds to messages that include code blocks. [pull/5290](https://github.com/sourcegraph/cody/pull/5290) 
+- Chat: General improvements to how Cody responds to messages that include code blocks. [pull/5290](https://github.com/sourcegraph/cody/pull/5290)
 
 ## 1.32.0
 

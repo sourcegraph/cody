@@ -230,9 +230,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             TestSupport.instance.chatPanelProvider.set(this)
         }
 
-        // Advise local embeddings to start up if necessary.
-        void this.localEmbeddings?.start()
-
         // Push context status to the webview when it changes.
         this.disposables.push(
             this.contextStatusAggregator.onDidChangeStatus(() => this.postContextStatus())

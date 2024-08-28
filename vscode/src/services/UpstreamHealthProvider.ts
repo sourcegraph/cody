@@ -1,6 +1,6 @@
 import {
     type BrowserOrNodeResponse,
-    type ConfigurationWithAccessToken,
+    type ClientConfigurationWithAccessToken,
     addCustomUserAgent,
     addTraceparent,
     isDotCom,
@@ -26,7 +26,7 @@ class UpstreamHealthProvider implements vscode.Disposable {
     private lastGatewayLatency?: number
 
     private config: Pick<
-        ConfigurationWithAccessToken,
+        ClientConfigurationWithAccessToken,
         'serverEndpoint' | 'customHeaders' | 'accessToken'
     > | null = null
     private nextTimeoutId: NodeJS.Timeout | null = null
@@ -46,7 +46,10 @@ class UpstreamHealthProvider implements vscode.Disposable {
     }
 
     public onConfigurationChange(
-        newConfig: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'customHeaders' | 'accessToken'>
+        newConfig: Pick<
+            ClientConfigurationWithAccessToken,
+            'serverEndpoint' | 'customHeaders' | 'accessToken'
+        >
     ) {
         this.config = newConfig
         this.lastUpstreamLatency = undefined

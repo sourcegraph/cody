@@ -9,6 +9,7 @@ import {
     ContextItemSource,
     DOTCOM_URL,
     ModelUsage,
+    type SerializedChatTranscript,
     isWindows,
 } from '@sourcegraph/cody-shared'
 
@@ -22,6 +23,7 @@ import { TestClient, asTranscriptMessage } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 import { decodeURIs } from './decodeURIs'
 import { explainPollyError } from './explainPollyError'
+import type { ChatExportResult } from './protocol-alias'
 import { trimEndOfLine } from './trimEndOfLine'
 const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
 
@@ -438,6 +440,97 @@ describe('Agent', () => {
 }`)
             })
         }, 30_000)
+
+        it('chat/import allows importing a chat transcript from an external source', async () => {
+            const toChatExportResult = (transcript: SerializedChatTranscript): ChatExportResult => ({
+                chatID: transcript.id,
+                transcript: transcript,
+            })
+            const auth = await client.request('extensionConfiguration/status', null)
+
+            const transcript1: SerializedChatTranscript = {
+                id: 'transcript1',
+                interactions: [
+                    {
+                        humanMessage: {
+                            speaker: 'human',
+                            text: 'Hello, Cody!',
+                        },
+                        assistantMessage: {
+                            speaker: 'assistant',
+                            text: 'Hello! How can I assist you today?',
+                        },
+                    },
+                    {
+                        humanMessage: {
+                            speaker: 'human',
+                            text: 'Can you help me with my code?',
+                        },
+                        assistantMessage: {
+                            speaker: 'assistant',
+                            text: 'Of course! What do you need help with?',
+                        },
+                    },
+                ],
+                lastInteractionTimestamp: '2023-10-01T12:00:00Z',
+            }
+
+            const transcript2: SerializedChatTranscript = {
+                id: 'transcript2',
+                interactions: [
+                    {
+                        humanMessage: {
+                            speaker: 'human',
+                            text: 'My name is Lars Monsen.',
+                        },
+                        assistantMessage: {
+                            speaker: 'assistant',
+                            text: 'Lovely to meet you, Lars.',
+                        },
+                    },
+                ],
+                lastInteractionTimestamp: '2023-10-02T08:30:00Z',
+            }
+
+            const transcript3: SerializedChatTranscript = {
+                id: 'transcript3',
+                chatTitle: 'Debugging Session',
+                interactions: [
+                    {
+                        humanMessage: {
+                            speaker: 'human',
+                            text: 'My name is Bear Grylls.',
+                        },
+                        assistantMessage: {
+                            speaker: 'assistant',
+                            text: 'Nice to meet you, Bear.',
+                        },
+                    },
+                ],
+                lastInteractionTimestamp: '2023-10-03T14:45:00Z',
+            }
+
+            // The history we are importing contains two transcripts from the same user and one from a different user.
+            // when we do an export, we should only get the transcript from the currently logged in user
+            const history: Record<string, Record<string, SerializedChatTranscript>> = {
+                [`${auth?.endpoint}-${auth?.username}`]: {
+                    [transcript1.id]: transcript1,
+                    [transcript2.id]: transcript2,
+                },
+                someOtherUser: {
+                    [transcript3.id]: transcript3,
+                },
+            }
+
+            await client.request('chat/import', { history, merge: true })
+            const exported = await client.request('chat/export', null)
+            const expected: ChatExportResult[] = [
+                toChatExportResult(transcript1),
+                toChatExportResult(transcript2),
+            ]
+
+            expect(exported).toEqual(expected)
+        })
 
         it('chat/submitMessage (with mock context)', async () => {
             // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.

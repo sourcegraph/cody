@@ -1,9 +1,9 @@
 import {
     type AuthStatus,
+    type ClientConfiguration,
+    type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
     type CodyLLMSiteConfiguration,
-    type Configuration,
-    type ConfigurationWithAccessToken,
     type GraphQLAPIClientConfig,
     defaultAuthStatus,
     graphqlClient,
@@ -16,8 +16,8 @@ import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 import { createProviderConfig } from './create-provider'
 
 const getVSCodeConfigurationWithAccessToken = (
-    config: Partial<Configuration> = {}
-): ConfigurationWithAccessToken => ({
+    config: Partial<ClientConfiguration> = {}
+): ClientConfigurationWithAccessToken => ({
     ...DEFAULT_VSCODE_SETTINGS,
     ...config,
     serverEndpoint: 'https://example.com',
@@ -41,7 +41,7 @@ describe('createProviderConfig', () => {
     beforeAll(async () => {
         localStorage.setStorage({
             get: () => null,
-            update: () => {},
+            update: () => Promise.resolve(undefined),
         } as any as vscode.Memento)
     })
 
@@ -50,7 +50,7 @@ describe('createProviderConfig', () => {
             const provider = await createProviderConfig(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider:
-                        'nasa-ai' as Configuration['autocompleteAdvancedProvider'],
+                        'nasa-ai' as ClientConfiguration['autocompleteAdvancedProvider'],
                 }),
                 dummyCodeCompletionsClient,
                 dummyAuthStatus
@@ -63,7 +63,8 @@ describe('createProviderConfig', () => {
         it('returns `null` if completions provider is not configured', async () => {
             const provider = await createProviderConfig(
                 getVSCodeConfigurationWithAccessToken({
-                    autocompleteAdvancedProvider: null as Configuration['autocompleteAdvancedProvider'],
+                    autocompleteAdvancedProvider:
+                        null as ClientConfiguration['autocompleteAdvancedProvider'],
                 }),
                 dummyCodeCompletionsClient,
                 dummyAuthStatus

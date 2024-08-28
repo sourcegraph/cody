@@ -69,6 +69,11 @@ export interface ChatError {
     isChatErrorGuard: 'isChatErrorGuard'
 }
 
+export type ChatHistoryKey = `${string}-${string}`
+export type AccountKeyedChatHistory = {
+    [key: ChatHistoryKey]: UserLocalHistory
+}
+
 export interface UserLocalHistory {
     chat: ChatHistory
 }

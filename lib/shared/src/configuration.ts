@@ -1,3 +1,4 @@
+import type { Observable } from 'observable-fns'
 import type { EmbeddingsProvider } from './codebase-context/context-status'
 import type { FileURI } from './common/uri'
 
@@ -16,12 +17,19 @@ export const CONTEXT_SELECTION_ID: Record<ConfigurationUseContext, number> = {
     unified: 11,
 }
 
-export interface ConfigGetter<T> {
-    get<T>(section: string, defaultValue?: T): T
+/**
+ * A wrapper around a configuration source that lets the client retrieve the current config and
+ * watch for changes.
+ */
+export interface ConfigWatcher<C> {
+    changes: Observable<C>
+    get(): C
 }
 
-// Should we share VS Code specific config via cody-shared?
-export interface Configuration {
+/**
+ * Client configuration, such as VS Code settings.
+ */
+export interface ClientConfiguration {
     proxy?: string | null
     codebase?: string
     debugFilter: RegExp | null
@@ -29,7 +37,7 @@ export interface Configuration {
     telemetryLevel: 'all' | 'off' | 'agent'
     telemetryClientName?: string
     useContext: ConfigurationUseContext
-    customHeaders: Record<string, string>
+    customHeaders?: Record<string, string>
     chatPreInstruction: PromptString
     editPreInstruction: PromptString
     codeActions: boolean
@@ -77,17 +85,16 @@ export interface Configuration {
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: ExperimentalFireworksConfig
     autocompleteExperimentalMultiModelCompletions?: MultimodelSingleModelConfig[]
-    autocompleteExperimentalHotStreakAndSmartThrottle?: boolean
     autocompleteExperimentalPreloadDebounceInterval?: number
 
     /**
      * Hidden settings
      */
+    hasNativeWebview: boolean
     isRunningInsideAgent?: boolean
     agentIDE?: CodyIDE
     agentIDEVersion?: string
     agentExtensionVersion?: string
-    autocompleteTimeouts: AutocompleteTimeouts
     autocompleteFirstCompletionTimeout: number
 
     testingModelConfig: EmbeddingsModelConfig | undefined
@@ -103,14 +110,9 @@ export enum CodyIDE {
     Eclipse = 'Eclipse',
 }
 
-export interface AutocompleteTimeouts {
-    multiline?: number
-    singleline?: number
-}
+export type ClientConfigurationWithEndpoint = Omit<ClientConfigurationWithAccessToken, 'accessToken'>
 
-export type ConfigurationWithEndpoint = Omit<ConfigurationWithAccessToken, 'accessToken'>
-
-export interface ConfigurationWithAccessToken extends Configuration {
+export interface ClientConfigurationWithAccessToken extends ClientConfiguration {
     serverEndpoint: string
     /** The access token, which is stored in the secret storage (not configuration). */
     accessToken: string | null

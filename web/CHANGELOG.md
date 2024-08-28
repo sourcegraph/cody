@@ -1,3 +1,10 @@
+## 0.7.1
+- Add support for built-in confirmation UI for actions like Clear Chat History
+
+## 0.7.0
+- Simplifies Cody Web Chat component (it requires now using only one root CodyWebChat component)
+- Adds skeleton loading state to Cody Web Chat UI 
+
 ## 0.6.1
 - Adds support for directory initial context (mention) 
 - Changes target build to es modules 

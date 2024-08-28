@@ -10,7 +10,7 @@ import type {
 } from 'vscode'
 
 import {
-    type Configuration,
+    type ClientConfiguration,
     type FeatureFlag,
     FeatureFlagProvider,
     OLLAMA_DEFAULT_URL,
@@ -911,6 +911,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     commandHints: false,
     isRunningInsideAgent: false,
     agentIDE: undefined,
+    hasNativeWebview: true,
     debugVerbose: false,
     debugFilter: null,
     telemetryLevel: 'all',
@@ -926,13 +927,8 @@ export const DEFAULT_VSCODE_SETTINGS = {
         model: 'codellama:7b-code',
         url: OLLAMA_DEFAULT_URL,
     },
-    autocompleteTimeouts: {
-        multiline: undefined,
-        singleline: undefined,
-    },
     autocompleteFirstCompletionTimeout: 3500,
     autocompleteExperimentalPreloadDebounceInterval: 0,
-    autocompleteExperimentalHotStreakAndSmartThrottle: false,
     testingModelConfig: undefined,
     experimentalGuardrailsTimeoutSeconds: undefined,
-} satisfies Configuration
+} satisfies ClientConfiguration

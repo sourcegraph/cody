@@ -36,8 +36,7 @@ describe('LspLightRetriever', () => {
     let retriever: LspLightRetriever
     let onDidChangeTextEditorSelection: any
     let getSymbolContextSnippets: MockInstance<
-        [params: GetSymbolContextSnippetsParams],
-        Promise<AutocompleteContextSnippet[]>
+        (params: GetSymbolContextSnippetsParams) => Promise<AutocompleteContextSnippet[]>
     >
 
     beforeEach(() => {

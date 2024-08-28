@@ -192,6 +192,15 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             assistantMessage?.text === undefined
     )
 
+    const humanMessageInfo = useMemo(() => {
+        // See SRCH-942: it's critical to memoize this value to avoid repeated
+        // requests to our guardrails server.
+        if (assistantMessage && !isContextLoading) {
+            return makeHumanMessageInfo({ humanMessage, assistantMessage }, humanEditorRef)
+        }
+        return null
+    }, [humanMessage, assistantMessage, isContextLoading])
+
     return (
         <>
             <HumanMessageCell
@@ -230,10 +239,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     insertButtonOnSubmit={insertButtonOnSubmit}
                     postMessage={postMessage}
                     guardrails={guardrails}
-                    humanMessage={makeHumanMessageInfo(
-                        { humanMessage, assistantMessage },
-                        humanEditorRef
-                    )}
+                    humanMessage={humanMessageInfo}
                     isLoading={assistantMessage.isLoading}
                     showFeedbackButtons={
                         !assistantMessage.isLoading &&

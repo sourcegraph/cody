@@ -13,6 +13,7 @@ import type { ExtensionApi } from './extension-api'
 import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-client'
 import { activate as activateCommon } from './extension.common'
 import { initializeNetworkAgent, setCustomAgent } from './fetch.node'
+import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
 import {
     type LocalEmbeddingsConfig,
     type LocalEmbeddingsController,
@@ -39,16 +40,14 @@ export function activate(
     // Create the default client for VSCode.
     extensionClient ||= defaultVSCodeExtensionClient()
 
-    // Local embeddings are disabled by default since we are now moving towards
-    // server-side embeddings. One important side-effect of disabling local
-    // embeddings is that we no longer download the cody-engine binary from
-    // github.com, which has been problematic for some enterprise customers.
-    // We still keep the functionality in the codebase for now in case
-    // we want to revert the decision (for example, only do local embeddings
-    // for Cody Pro users until we have Multitenancy).
-    const isLocalEmbeddingsEnabled = vscode.workspace
+    // NOTE: local embeddings are only going to be supported in VSC for now.
+    // Until we revisit this decision, we disable local embeddings in the agent.
+    let isLocalEmbeddingsEnabled = !isRunningInsideAgent()
+
+    // Optional override for local testing.
+    isLocalEmbeddingsEnabled = vscode.workspace
         .getConfiguration()
-        .get<boolean>('cody.experimental.localEmbeddings.enabled', false)
+        .get<boolean>('cody.experimental.localEmbeddings.enabled', isLocalEmbeddingsEnabled)
 
     const isSymfEnabled = vscode.workspace
         .getConfiguration()
