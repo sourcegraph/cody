@@ -6,6 +6,7 @@ import com.google.gson.JsonParser
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
@@ -298,14 +299,12 @@ class WebUIHostImpl(
         // Invoke the Cody "edit" action in JetBrains directly.
         val actionManager = ActionManager.getInstance()
         val action = actionManager.getAction("cody.editCodeAction")
-        action?.actionPerformed(
-            AnActionEvent.createFromAnAction(action, null, "") { dataId ->
-              when (dataId) {
-                CommonDataKeys.EDITOR.name ->
-                    FileEditorManager.getInstance(project).selectedTextEditor
-                else -> null
-              }
-            })
+        val dataContext =
+            FileEditorManager.getInstance(project).selectedTextEditor?.let { editor ->
+              SimpleDataContext.getSimpleContext(CommonDataKeys.EDITOR, editor)
+            } ?: SimpleDataContext.EMPTY_CONTEXT
+
+        action?.actionPerformed(AnActionEvent.createFromAnAction(action, null, "", dataContext))
       }
     } else if (isCommand && id == "cody.status-bar.interacted") {
       runInEdt {
