@@ -21,7 +21,7 @@ export const SubmitButton: FunctionComponent<{
                         type="submit"
                         variant="ghostRoundedIcon"
                         className={clsx(
-                            'tw-relative tw-w-[20px] tw-h-[20px] tw-bg-transparent tw-group',
+                            'tw-relative tw-overflow-hidden tw-w-[20px] tw-h-[20px] tw-bg-transparent tw-group',
                             className
                         )}
                         title="Stop"

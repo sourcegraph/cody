@@ -90,7 +90,7 @@ export const Toolbar: FunctionComponent<{
                     className="tw-mr-1"
                 />
             </div>
-            <div className="tw-flex-1 tw-text-right">
+            <div className="tw-flex tw-justify-end tw-flex-1 tw-text-right">
                 <SubmitButton
                     onClick={onSubmitClick}
                     isEditorFocused={isEditorFocused}
