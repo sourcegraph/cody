@@ -39,7 +39,6 @@ describe('[getInlineCompletions] hot streak', () => {
                 }`,
                 {
                     configuration: {
-                        autocompleteExperimentalHotStreakAndSmartThrottle: true,
                         autocompleteAdvancedProvider: 'fireworks',
                     },
                     delayBetweenChunks: 50,
@@ -72,8 +71,7 @@ describe('[getInlineCompletions] hot streak', () => {
                     console.log(3)
                     console.log(4)
                     █
-                }`,
-                { configuration: { autocompleteExperimentalHotStreakAndSmartThrottle: true } }
+                }`
             )
 
             expect(request.items[0].insertText).toEqual('console.log(2)')
@@ -97,8 +95,7 @@ describe('[getInlineCompletions] hot streak', () => {
                     }█
                     console.log(4)
                     return foo█
-                }`,
-                { configuration: { autocompleteExperimentalHotStreakAndSmartThrottle: true } }
+                }`
             )
 
             await request.completionResponseGeneratorPromise
@@ -132,12 +129,7 @@ describe('[getInlineCompletions] hot streak', () => {
                     if(i > 3) {
                         console.log(4)
                     }█
-                }`,
-                {
-                    configuration: {
-                        autocompleteExperimentalHotStreakAndSmartThrottle: true,
-                    },
-                }
+                }`
             )
 
             expect(request.items[0].insertText).toEqual('if(i > 1) {\n        console.log(2)\n    }')
@@ -165,9 +157,6 @@ describe('[getInlineCompletions] hot streak', () => {
                 █
                 const`,
                 {
-                    configuration: {
-                        autocompleteExperimentalHotStreakAndSmartThrottle: true,
-                    },
                     delayBetweenChunks: 20,
                     providerOptions: {
                         firstCompletionTimeout: 10,

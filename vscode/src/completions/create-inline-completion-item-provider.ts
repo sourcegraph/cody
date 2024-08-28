@@ -1,6 +1,6 @@
 import {
+    type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
-    type ConfigurationWithAccessToken,
     featureFlagProvider,
     isDotCom,
 } from '@sourcegraph/cody-shared'
@@ -17,7 +17,7 @@ import { createProviderConfig } from './providers/create-provider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
 
 export interface InlineCompletionItemProviderArgs {
-    config: ConfigurationWithAccessToken
+    config: ClientConfigurationWithAccessToken
     client: CodeCompletionsClient
     statusBar: CodyStatusBar
     authProvider: AuthProvider

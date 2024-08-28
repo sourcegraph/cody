@@ -2,6 +2,13 @@
 
 This is a log of all notable changes to Cody for VS Code. [Unreleased] changes are included in the nightly pre-release builds.
 
+## 1.32.4
+
+### Added
+- Refactoring: refactoring configurations to make more reactive. [pull/5330](https://github.com/sourcegraph/cody/pull/5330)
+- Autocomplete: Enable smart throttle and hot streak. [pull/5339](https://github.com/sourcegraph/cody/pull/5339)
+- Autocomplete: Fix model mapping for deepseek-coder-v2. [pull/5272](https://github.com/sourcegraph/cody/pull/5272)
+- Autocomplete: Prompt caching and direct routing experiment. [pull/5246](https://github.com/sourcegraph/cody/pull/5246)
 
 ## 1.32.3
 
@@ -17,11 +24,17 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Fixed
 - Fixed an issue where chats could hang if there have been no changes since the last local indexing. [pull/5319](https://github.com/sourcegraph/cody/pull/5319)
 
+- Autocomplete: Enable deepseek-coder-v2-lite-base model for enterprise users. [pull/5272](https://github.com/sourcegraph/cody/pull/5272)
+
+### Changed
+
+- Autocomplete: Enabled hot-streak and smart-throttle for enterprise users. [pull/5339](https://github.com/sourcegraph/cody/pull/5339)
+
 ## 1.32.1
 
 ### Fixed 
 - Revert: A recent version bump of a dependency was potentially causing some Out-of-Memory issues resultling in a grey screen. The `rehype-highlight` version has been reverted. [pull/5315](https://github.com/sourcegraph/cody/pull/5315)
-- Chat: General improvements to how Cody responds to messages that include code blocks. [pull/5290](https://github.com/sourcegraph/cody/pull/5290) 
+- Chat: General improvements to how Cody responds to messages that include code blocks. [pull/5290](https://github.com/sourcegraph/cody/pull/5290)
 
 ## 1.32.0
 
