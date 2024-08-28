@@ -7,8 +7,8 @@ import { completionParams, contextSnippets } from './test-data'
 import { CodeLlama } from '../codellama'
 
 describe('CodeLlama', () => {
-    describe('getPrompt', () => {
-        it.skipIf(isWindows())('returns the prompt with the correct intro snippets', () => {
+    describe.skipIf(isWindows())('getPrompt', () => {
+        it('returns the prompt with the correct intro snippets', () => {
             const model = new CodeLlama()
             const { docContext, document, providerConfig } = completionParams
 

@@ -7,8 +7,8 @@ import { completionParams, contextSnippets } from './test-data'
 import { StarCoder } from '../starcoder'
 
 describe('StarCoder', () => {
-    describe('getPrompt', () => {
-        it.skipIf(isWindows())('returns the prompt with the correct intro snippets', () => {
+    describe.skipIf(isWindows())('getPrompt', () => {
+        it('returns the prompt with the correct intro snippets', () => {
             const model = new StarCoder()
             const { docContext, document, providerConfig } = completionParams
 
