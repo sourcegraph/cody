@@ -21,7 +21,7 @@ import {
     DEFAULT_EVENT_SOURCE,
     EventSourceTelemetryMetadataMapping,
 } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { workspace } from 'vscode'
+import { type Uri, workspace } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
 import { CodyTaskState } from '../non-stop/state'
 import { splitSafeMetadata } from '../services/telemetry-v2'
@@ -42,7 +42,10 @@ interface EditProviderOptions extends EditManagerOptions {
 // "tools" like directing the response into a specific file. Code is forwarded
 // to the FixupTask.
 export class EditProvider {
-    private insertionQueue: { response: string; isMessageInProgress: boolean }[] = []
+    private insertionQueue: {
+        response: string
+        isMessageInProgress: boolean
+    }[] = []
     private insertionInProgress = false
     private abortController: AbortController | null = null
 
@@ -299,22 +302,11 @@ export class EditProvider {
             return
         }
 
-        const opentag = `<${PROMPT_TOPICS.FILENAME}>`
-        const closetag = `</${PROMPT_TOPICS.FILENAME}>`
-
-        const currentFileUri = task.fixupFile.uri
-        const currentFileName = uriBasename(currentFileUri)
-        // remove open and close tags from text
-        const newFilePath = text.trim().replaceAll(new RegExp(`${opentag}(.*)${closetag}`, 'g'), '$1')
+        let newFileUri = deriveNewFileUri(task.fixupFile.uri, text)
+        const currentFileName = uriBasename(task.fixupFile.uri)
         const haveSameExtensions =
-            posixFilePaths.extname(currentFileName) === posixFilePaths.extname(newFilePath)
+            posixFilePaths.extname(currentFileName) === posixFilePaths.extname(newFileUri.path)
 
-        // Get workspace uri using the current file uri
-        const workspaceUri = workspace.getWorkspaceFolder(currentFileUri)?.uri
-        const currentDirUri = Utils.joinPath(currentFileUri, '..')
-
-        // Create a new file uri by replacing the file name of the currentFileUri with fileName
-        let newFileUri = Utils.joinPath(workspaceUri ?? currentDirUri, newFilePath)
         if (haveSameExtensions && !task.destinationFile) {
             const fileIsFound = await doesFileExist(newFileUri)
             if (!fileIsFound) {
@@ -323,8 +315,28 @@ export class EditProvider {
             try {
                 await this.config.controller.didReceiveNewFileRequest(task.id, newFileUri)
             } catch (error) {
-                this.handleError(new Error('Cody failed to generate unit tests', { cause: error }))
+                this.handleError(
+                    new Error('Cody failed to generate unit tests', {
+                        cause: error,
+                    })
+                )
             }
         }
     }
+}
+
+// Visible for testing.
+export function deriveNewFileUri(currentFileUri: Uri, text: string) {
+    const opentag = `<${PROMPT_TOPICS.FILENAME}>`
+    const closetag = `</${PROMPT_TOPICS.FILENAME}>`
+
+    // remove open and close tags from text
+    const newFilePath = text.trim().replaceAll(new RegExp(`${opentag}(.*)${closetag}`, 'g'), '$1')
+
+    // Get workspace uri using the current file uri
+    const workspaceUri = workspace.getWorkspaceFolder(currentFileUri)?.uri
+    const currentDirUri = Utils.joinPath(currentFileUri, '..')
+
+    // Create a new file uri by replacing the file name of the currentFileUri with fileName
+    return Utils.joinPath(workspaceUri ?? currentDirUri, newFilePath)
 }
