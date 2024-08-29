@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { Uri, workspace } from 'vscode'
+import { PROMPT_TOPICS } from './prompt/constants'
 import { deriveNewFileUri } from './provider'
 
 // Mock the necessary vscode and utility functions
@@ -23,7 +24,7 @@ vi.mock('vscode-uri', () => ({
 describe('deriveNewFileUri', () => {
     it('should derive new file URI with workspace URI', () => {
         const currentFileUri = Uri.parse('/workspace/project/file.txt')
-        const text = '<filename>newfile.txt</filename>'
+        const text = `<${PROMPT_TOPICS.FILENAME}>newfile.txt</${PROMPT_TOPICS.FILENAME}>`
         const workspaceUri = Uri.parse('/workspace')
 
         vi.mocked(workspace.getWorkspaceFolder).mockReturnValue({
@@ -38,7 +39,7 @@ describe('deriveNewFileUri', () => {
 
     it('should derive new file URI with current directory URI', () => {
         const currentFileUri = Uri.parse('/workspace/project/file.txt')
-        const text = '<filename>newfile.txt</filename>'
+        const text = `<${PROMPT_TOPICS.FILENAME}>newfile.txt</${PROMPT_TOPICS.FILENAME}>`
 
         vi.mocked(workspace.getWorkspaceFolder).mockReturnValue(undefined)
 
@@ -60,7 +61,7 @@ describe('deriveNewFileUri', () => {
 
     it('should derive new file URI with specific workspace path', () => {
         const currentFileUri = Uri.parse('c:/Users/mikko/IdeaProjects/cody/vscode/src/edit/provider.ts')
-        const text = '<filename>provider.test.ts</filename>'
+        const text = `<${PROMPT_TOPICS.FILENAME}>provider.test.ts</${PROMPT_TOPICS.FILENAME}>`
         const workspaceUri = Uri.parse('/Users/mikko/IdeaProjects/cody/')
 
         vi.mocked(workspace.getWorkspaceFolder).mockReturnValue({
