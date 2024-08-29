@@ -14,7 +14,6 @@ import {
     isError,
     logError,
     networkErrorAuthStatus,
-    offlineModeAuthStatus,
     singletonNotYetSet,
     telemetryRecorder,
     unauthenticatedStatus,
@@ -204,18 +203,12 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         config: Pick<
             ClientConfigurationWithAccessToken,
             'serverEndpoint' | 'accessToken' | 'customHeaders'
-        >,
-        isOfflineMode?: boolean
+        >
     ): Promise<AuthStatus> {
         const endpoint = config.serverEndpoint
         const token = config.accessToken
         const isCodyWeb =
             vscode.workspace.getConfiguration().get<string>('cody.advanced.agent.ide') === CodyIDE.Web
-
-        if (isOfflineMode) {
-            const lastUser = localStorage.getLastStoredUser()
-            return { ...offlineModeAuthStatus, ...lastUser }
-        }
 
         // Cody Web can work without access token since authorization flow
         // relies on cookie authentication
@@ -301,13 +294,11 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         token,
         customHeaders,
         isExtensionStartup = false,
-        isOfflineMode = false,
     }: {
         endpoint: string
         token: string | null
         customHeaders?: Record<string, string> | null
         isExtensionStartup?: boolean
-        isOfflineMode?: boolean
     }): Promise<AuthStatus> {
         const config = {
             serverEndpoint: formatURL(endpoint) ?? '',
@@ -316,11 +307,9 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         }
 
         try {
-            const authStatus = await this.makeAuthStatus(config, isOfflineMode)
+            const authStatus = await this.makeAuthStatus(config)
 
-            if (!isOfflineMode) {
-                await this.storeAuthInfo(config.serverEndpoint, config.accessToken)
-            }
+            await this.storeAuthInfo(config.serverEndpoint, config.accessToken)
 
             await vscode.commands.executeCommand(
                 'setContext',

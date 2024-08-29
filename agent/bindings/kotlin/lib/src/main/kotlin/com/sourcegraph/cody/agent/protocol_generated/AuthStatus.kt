@@ -19,6 +19,5 @@ data class AuthStatus(
   val displayName: String? = null,
   val avatarURL: String? = null,
   val userCanUpgrade: Boolean,
-  val isOfflineMode: Boolean? = null,
 )
 

@@ -431,10 +431,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     authProvider.instance!.redirectToEndpointLogin(message.endpoint)
                     break
                 }
-                if (message.authKind === 'offline') {
-                    authProvider.instance!.auth({ endpoint: '', token: '', isOfflineMode: true })
-                    break
-                }
                 if (message.authKind === 'simplified-onboarding') {
                     const endpoint = DOTCOM_URL.href
 
@@ -511,16 +507,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         })
                     break
                 }
-                break
-            }
-            case 'troubleshoot/reloadAuth': {
-                await authProvider.instance!.reloadAuthStatus()
-                const nextAuth = authProvider.instance!.getAuthStatus()
-                telemetryRecorder.recordEvent('cody.troubleshoot', 'reloadAuth', {
-                    metadata: {
-                        success: nextAuth.authenticated ? 1 : 0,
-                    },
-                })
                 break
             }
         }
