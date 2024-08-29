@@ -25,6 +25,7 @@ import { useConfig } from '../utils/useConfig'
 
 import { Button } from '../components/shadcn/ui/button'
 import styles from './TabsBar.module.css'
+import { getCreateNewChatCommand } from './utils'
 
 interface TabsBarProps {
     IDE: CodyIDE
@@ -299,12 +300,11 @@ function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabC
                                     </>
                                 ),
                                 Icon: MessageSquarePlusIcon,
-                                command:
-                                    IDE === CodyIDE.Web
-                                        ? 'cody.chat.new'
-                                        : webviewType === 'sidebar' || !multipleWebviewsEnabled
-                                          ? 'cody.chat.newPanel'
-                                          : 'cody.chat.newEditorPanel',
+                                command: getCreateNewChatCommand({
+                                    IDE,
+                                    webviewType,
+                                    multipleWebviewsEnabled,
+                                }),
                             },
                             multipleWebviewsEnabled
                                 ? {

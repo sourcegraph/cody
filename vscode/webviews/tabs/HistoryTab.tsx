@@ -1,16 +1,30 @@
-import type { SerializedChatTranscript } from '@sourcegraph/cody-shared'
-import { MessageSquareTextIcon, TrashIcon } from 'lucide-react'
+import type { CodyIDE, SerializedChatTranscript } from '@sourcegraph/cody-shared'
+import { HistoryIcon, MessageSquarePlusIcon, MessageSquareTextIcon, TrashIcon } from 'lucide-react'
+import type React from 'react'
 import { useCallback, useMemo } from 'react'
+import type { WebviewType } from '../../src/chat/protocol'
 import { getRelativeChatPeriod } from '../../src/common/time-date'
 import { CollapsiblePanel } from '../components/CollapsiblePanel'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
+import { View } from './types'
+import { getCreateNewChatCommand } from './utils'
 
 interface HistoryTabProps {
+    IDE: CodyIDE
+    setView: (view: View) => void
     userHistory: SerializedChatTranscript[]
+    webviewType?: WebviewType | undefined | null
+    multipleWebviewsEnabled?: boolean | undefined | null
 }
 
-export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
+export const HistoryTab: React.FC<HistoryTabProps> = ({
+    userHistory,
+    IDE,
+    webviewType,
+    multipleWebviewsEnabled,
+    setView,
+}) => {
     const chatByPeriod = useMemo(
         () =>
             userHistory
@@ -37,9 +51,19 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
         [userHistory]
     )
 
+    const handleStartNewChat = () => {
+        getVSCodeAPI().postMessage({
+            command: 'command',
+            id: getCreateNewChatCommand({ IDE, webviewType, multipleWebviewsEnabled }),
+        })
+        setView(View.Chat)
+    }
+
+    const chats = Array.from(chatByPeriod)
+
     return (
         <div className="tw-px-8 tw-pt-6 tw-pb-12 tw-flex tw-flex-col tw-gap-10">
-            {Array.from(chatByPeriod, ([period, chats]) => (
+            {chats.map(([period, chats]) => (
                 <CollapsiblePanel
                     key={period}
                     storageKey={`history.${period}`}
@@ -87,6 +111,36 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ userHistory }) => {
                     })}
                 </CollapsiblePanel>
             ))}
+
+            {chats.length === 0 && (
+                <div className="tw-flex tw-flex-col tw-items-center tw-mt-6">
+                    <HistoryIcon
+                        size={20}
+                        strokeWidth={1.25}
+                        className="tw-mb-5 tw-text-muted-foreground"
+                    />
+
+                    <span className="tw-text-lg tw-mb-4 tw-text-muted-foreground">
+                        You have no chat history
+                    </span>
+
+                    <span className="tw-text-sm tw-text-muted-foreground tw-mb-8">
+                        Explore all your previous chats here. Track and <br /> search through what you’ve
+                        been working on.
+                    </span>
+
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        aria-label="Start a new chat"
+                        className="tw-px-4 tw-py-2"
+                        onClick={handleStartNewChat}
+                    >
+                        <MessageSquarePlusIcon size={16} className="tw-w-8 tw-h-8" strokeWidth={1.25} />
+                        Start a new chat
+                    </Button>
+                </div>
+            )}
         </div>
     )
 }
