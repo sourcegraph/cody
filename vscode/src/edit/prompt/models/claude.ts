@@ -4,7 +4,7 @@ import type { EditLLMInteraction } from '../type'
 import { buildGenericPrompt } from './generic'
 
 const RESPONSE_PREFIX = ps`<${PROMPT_TOPICS.OUTPUT}>`
-const TEST_FILE_PREFIX = ps`<${PROMPT_TOPICS.FILENAME}>`
+const TEST_FILE_PREFIX = ps`<${PROMPT_TOPICS.WORKSPACE_RELATIVE_FILEPATH}>`
 const SHARED_PARAMETERS = {
     responseTopic: PROMPT_TOPICS.OUTPUT,
     stopSequences: [`</${PROMPT_TOPICS.OUTPUT}>`],

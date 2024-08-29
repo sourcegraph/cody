@@ -109,7 +109,7 @@ export class EditProvider {
                 // This allows Cody to let us know which test file we should add the new content to.
                 // NOTE: Keep this multiplexer even if a destination file is set to catch the PROMPT_TOPICS.
                 let filepath = ''
-                multiplexer.sub(PROMPT_TOPICS.FILENAME.toString(), {
+                multiplexer.sub(PROMPT_TOPICS.WORKSPACE_RELATIVE_FILEPATH.toString(), {
                     onResponse: async (content: string) => {
                         filepath += content
                         // handleFileCreationResponse will verify if task.destinationFile is set before creating a new file.
@@ -327,8 +327,8 @@ export class EditProvider {
 
 // Visible for testing.
 export function deriveNewFileUri(currentFileUri: Uri, text: string) {
-    const opentag = `<${PROMPT_TOPICS.FILENAME}>`
-    const closetag = `</${PROMPT_TOPICS.FILENAME}>`
+    const opentag = `<${PROMPT_TOPICS.WORKSPACE_RELATIVE_FILEPATH}>`
+    const closetag = `</${PROMPT_TOPICS.WORKSPACE_RELATIVE_FILEPATH}>`
 
     // remove open and close tags from text
     const newFilePath = text.trim().replaceAll(new RegExp(`${opentag}(.*)${closetag}`, 'g'), '$1')
