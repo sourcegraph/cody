@@ -2,10 +2,11 @@ import { hydrateAfterPostMessage, isErrorLike } from '@sourcegraph/cody-shared'
 import type { ExtensionMessage } from 'cody-ai/src/chat/protocol'
 import { type VSCodeWrapper, setVSCodeWrapper } from 'cody-ai/webviews/utils/VSCodeApi'
 import {
+    type DependencyList,
+    type EffectCallback,
     type MutableRefObject,
     useCallback,
     useEffect,
-    useLayoutEffect,
     useMemo,
     useRef,
     useState,
@@ -63,7 +64,7 @@ export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentRes
     const activeWebviewPanelIDRef = useRef<string>('')
     const [client, setClient] = useState<AgentClient | Error | null>(null)
 
-    useEffect(() => {
+    useEffectOnce(() => {
         createAgentClient({
             customHeaders,
             telemetryClientName,
@@ -114,20 +115,21 @@ export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentRes
         [initialContext]
     )
 
+    const isInitRef = useRef(false)
     const vscodeAPI = useVSCodeAPI({ activeWebviewPanelIDRef, createNewChat, client })
 
     // Always create new chat when Cody Web is opened for the first time
     useEffect(() => {
-        void createNewChat(client)
-    }, [client, createNewChat])
-
-    // Notify the extension host that we are ready to receive events
-    useLayoutEffect(() => {
-        if (client && !isErrorLike(client) && vscodeAPI) {
-            vscodeAPI.postMessage({ command: 'ready' })
-            vscodeAPI.postMessage({ command: 'initialized' })
+        // Skip panel creation if it already happened before
+        // React in dev mode run all effect twice so it's important here to
+        // run it only one first time to avoid panel ID mismatch in cody agent
+        if (isInitRef.current || !client || isErrorLike(client)) {
+            return
         }
-    }, [vscodeAPI, client])
+
+        void createNewChat(client)
+        isInitRef.current = true
+    }, [client, createNewChat])
 
     return { client, vscodeAPI }
 }
@@ -203,4 +205,20 @@ function useVSCodeAPI(input: useVSCodeAPIInput): VSCodeWrapper | null {
         setVSCodeWrapper(vscodeAPI)
         return vscodeAPI
     }, [client, createNewChat, activeWebviewPanelIDRef])
+}
+
+function useEffectOnce(effect: EffectCallback, deps?: DependencyList) {
+    const isInitRef = useRef(false)
+
+    // biome-ignore lint/correctness/useExhaustiveDependencies: effect will never be changed without deps change
+    useEffect(() => {
+        if (isInitRef.current) {
+            return
+        }
+
+        const result = effect()
+
+        isInitRef.current = true
+        return result
+    }, deps)
 }
