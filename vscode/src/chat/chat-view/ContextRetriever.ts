@@ -120,12 +120,13 @@ async function codebaseRootsFromMentions(
     )
     const localRepoNames = treesToRepoNames.flatMap(t => t.names)
 
-    const localRepoIDs =
+    let localRepoIDs =
         localRepoNames.length === 0
             ? []
             : await graphqlClient.getRepoIds(localRepoNames, localRepoNames.length, signal)
     if (isError(localRepoIDs)) {
-        throw localRepoIDs
+        logError('codebaseRootFromMentions', 'Failed to get repo IDs from Sourcegraph', localRepoIDs)
+        localRepoIDs = []
     }
     const uriToId: { [uri: string]: string } = {}
     for (const r of localRepoIDs) {
