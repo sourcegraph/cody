@@ -14,7 +14,6 @@ import {
 import type { AuthMethod } from '../src/chat/protocol'
 import { LoadingPage } from './LoadingPage'
 import { LoginSimplified } from './OnboardingExperiment'
-import { ConnectionIssuesPage } from './Troubleshooting'
 import { useClientActionDispatcher } from './client/clientState'
 
 import {
@@ -191,14 +190,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     return (
         <ComposedWrappers wrappers={wrappers}>
-            {!config.authStatus.authenticated && config.authStatus.showNetworkError ? (
-                <div className={styles.outerContainer}>
-                    <ConnectionIssuesPage
-                        configuredEndpoint={config.authStatus.endpoint}
-                        vscodeAPI={vscodeAPI}
-                    />
-                </div>
-            ) : view === View.Login || !config.authStatus.authenticated ? (
+            {view === View.Login || !config.authStatus.authenticated ? (
                 <div className={styles.outerContainer}>
                     <LoginSimplified
                         simplifiedLoginRedirect={loginRedirect}
@@ -211,7 +203,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 <CodyPanel
                     view={view}
                     setView={setView}
-                    config={config.config}
+                    configuration={config}
                     errorMessages={errorMessages}
                     setErrorMessages={setErrorMessages}
                     attributionEnabled={config.configFeatures.attribution}

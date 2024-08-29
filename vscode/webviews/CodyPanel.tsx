@@ -1,9 +1,10 @@
-import { CodyIDE } from '@sourcegraph/cody-shared'
+import { type AuthStatus, CodyIDE } from '@sourcegraph/cody-shared'
 import type React from 'react'
 import { type ComponentProps, type FunctionComponent, useCallback, useRef } from 'react'
 import type { ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 import styles from './App.module.css'
 import { Chat } from './Chat'
+import { ConnectivityStatusBanner } from './components/ConnectivityStatusBanner'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
 import { AccountTab, HistoryTab, PromptsTab, SettingsTab, TabsBar, View } from './tabs'
 
@@ -14,7 +15,7 @@ export const CodyPanel: FunctionComponent<
     {
         view: View
         setView: (view: View) => void
-        config: LocalEnv & ConfigurationSubsetForWebview
+        configuration: { config: LocalEnv & ConfigurationSubsetForWebview; authStatus: AuthStatus }
         errorMessages: string[]
         setErrorMessages: (errors: string[]) => void
         attributionEnabled: boolean
@@ -35,7 +36,7 @@ export const CodyPanel: FunctionComponent<
 > = ({
     view,
     setView,
-    config,
+    configuration: { config, authStatus },
     errorMessages,
     setErrorMessages,
     attributionEnabled,
@@ -73,6 +74,8 @@ export const CodyPanel: FunctionComponent<
             orientation="vertical"
             className={styles.outerContainer}
         >
+            {!authStatus.authenticated && authStatus.showNetworkError && <ConnectivityStatusBanner />}
+
             {/* Hide tab bar in editor chat panels. */}
             {(config.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
                 <TabsBar

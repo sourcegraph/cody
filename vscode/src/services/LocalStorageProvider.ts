@@ -14,7 +14,6 @@ import {
     fromVSCodeEvent,
     startWith,
 } from '@sourcegraph/cody-shared'
-
 import { type Observable, map } from 'observable-fns'
 import { isSourcegraphToken } from '../chat/protocol'
 import { EventEmitter } from '../testutils/mocks'
@@ -128,12 +127,6 @@ class LocalStorage {
         await this.set(this.CODY_ENDPOINT_HISTORY, [...historySet])
     }
 
-    public getLastStoredUser(): { endpoint: string; username: string } | null {
-        const username = this.storage.get<string | null>(this.LAST_USED_USERNAME, null)
-        const endpoint = this.getEndpoint()
-        return username && endpoint ? { endpoint, username } : null
-    }
-
     public getChatHistory(authStatus: AuthenticatedAuthStatus): UserLocalHistory {
         const history = this.storage.get<AccountKeyedChatHistory | null>(this.KEY_LOCAL_HISTORY, null)
         const accountKey = getKeyForAuthStatus(authStatus)
@@ -159,10 +152,6 @@ class LocalStorage {
                 }
             }
 
-            // Store the current username as the last used username
-            if (authStatus.username) {
-                this.storage.update(this.LAST_USED_USERNAME, authStatus.username)
-            }
             await this.set(this.KEY_LOCAL_HISTORY, fullHistory)
         } catch (error) {
             console.error(error)
