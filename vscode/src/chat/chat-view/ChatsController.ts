@@ -5,7 +5,6 @@ import {
     type AuthStatus,
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
     type ChatClient,
-    CodyIDE,
     DEFAULT_EVENT_SOURCE,
     type Guardrails,
     editorStateFromPromptString,
@@ -32,6 +31,7 @@ import {
 import type { ContextAPIClient } from '../context/contextAPIClient'
 import type { SmartApplyResult } from '../protocol'
 import {
+    AuthDependentRetrievers,
     ChatController,
     type ChatSession,
     disposeWebviewViewOrPanel,
@@ -273,9 +273,10 @@ export class ChatsController implements vscode.Disposable {
      */
     private async getActiveChatController(): Promise<ChatController> {
         // Check if any existing panel is available
-        // NOTE: Never reuse webviews when running inside the agent.
         if (this.activeEditor) {
-            if (getConfiguration().isRunningInsideAgent) {
+            // NOTE: Never reuse webviews when running inside the agent without native webviews
+            // TODO: Find out, document why we don't reuse webviews when running inside agent without native webviews
+            if (!getConfiguration().hasNativeWebview) {
                 return await this.getOrCreateEditorChatController()
             }
             return this.activeEditor
@@ -474,23 +475,15 @@ export class ChatsController implements vscode.Disposable {
      * Creates a provider for a chat view.
      */
     private createChatController(): ChatController {
-        const authStatus = this.options.authProvider.getAuthStatus()
-        const isConsumer = authStatus.isDotCom
-
-        // Enterprise context is used for remote repositories context fetching
-        // in vs cody extension it should be always off if extension is connected
-        // to dot com instance, but in Cody Web it should be on by default for
-        // all instances (including dot com)
-        const isCodyWeb =
-            vscode.workspace.getConfiguration().get<string>('cody.advanced.agent.ide') === CodyIDE.Web
-        const allowRemoteContext = isCodyWeb || !isConsumer
-
         return new ChatController({
             ...this.options,
             chatClient: this.chatClient,
-            localEmbeddings: isConsumer ? this.localEmbeddings : null,
-            symf: isConsumer ? this.symf : null,
-            enterpriseContext: allowRemoteContext ? this.enterpriseContext : null,
+            retrievers: new AuthDependentRetrievers(
+                this.authProvider,
+                this.localEmbeddings,
+                this.symf,
+                this.enterpriseContext
+            ),
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,
             contextAPIClient: this.contextAPIClient,

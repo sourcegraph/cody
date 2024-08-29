@@ -90,10 +90,12 @@ export interface ClientConfiguration {
     /**
      * Hidden settings
      */
+    hasNativeWebview: boolean
     isRunningInsideAgent?: boolean
     agentIDE?: CodyIDE
     agentIDEVersion?: string
     agentExtensionVersion?: string
+    agentHasPersistentStorage?: boolean
     autocompleteFirstCompletionTimeout: number
 
     testingModelConfig: EmbeddingsModelConfig | undefined

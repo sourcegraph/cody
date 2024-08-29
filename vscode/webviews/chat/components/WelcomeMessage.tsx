@@ -53,11 +53,11 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE; setView: (view: V
     const dispatchClientAction = useClientActionDispatcher()
 
     return (
-        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-pt-4 tw-px-6 tw-gap-10 tw-transition-all">
+        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-6 tw-gap-6 tw-transition-all">
             <CollapsiblePanel
                 storageKey="prompts"
                 title="Prompts & Commands"
-                className="tw-mb-6 tw-mt-2"
+                className="tw-mb-6"
                 contentClassName="!tw-p-0 tw-overflow-clip"
                 initialOpen={true}
             >

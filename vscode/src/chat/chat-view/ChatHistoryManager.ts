@@ -34,9 +34,12 @@ export class ChatHistoryManager implements vscode.Disposable {
 
     public async saveChat(
         authStatus: AuthStatus,
-        chat: SerializedChatTranscript
+        chat: SerializedChatTranscript | undefined
     ): Promise<UserLocalHistory> {
         const history = localStorage.getChatHistory(authStatus)
+        if (chat === undefined) {
+            return history
+        }
         history.chat[chat.id] = chat
         await localStorage.setChatHistory(authStatus, history)
         this.notifyChatHistoryChanged(authStatus)

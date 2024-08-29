@@ -595,6 +595,12 @@ export interface ClientInfo {
      * by the agent.
      */
     marketingTracking?: TelemetryEventMarketingTrackingInput | undefined | null
+
+    /**
+     * Used to identify the client with legacy servers as a different IDE (typically JetBrains).
+     * Pre 5.6, servers would reject any client it did not recognize.
+     */
+    legacyNameForServerIdentification?: string | undefined | null
 }
 
 // The capability should match the name of the JSON-RPC methods.

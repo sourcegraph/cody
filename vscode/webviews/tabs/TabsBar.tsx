@@ -37,28 +37,180 @@ type IconComponent = React.ForwardRefExoticComponent<
     Omit<LucideProps, 'ref'> & React.RefAttributes<SVGSVGElement>
 >
 
+interface TabSubAction {
+    /** Extra content to display in the tooltip (in addition to the title). */
+    tooltipExtra?: React.ReactNode
+
+    title: string
+    alwaysShowTitle?: boolean
+    Icon: IconComponent
+    command: string
+    arg?: string | undefined | null
+    callback?: () => void
+    confirmation?: {
+        title: string
+        description: string
+        confirmationAction: string
+    }
+}
+
 interface TabConfig {
     Icon: IconComponent
     view: View
     title: string
     command?: string
     changesView?: boolean
-    subActions?: {
-        /** Extra content to display in the tooltip (in addition to the title). */
-        tooltipExtra?: React.ReactNode
+    subActions?: TabSubAction[]
+}
 
-        title: string
-        alwaysShowTitle?: boolean
-        Icon: IconComponent
-        command: string
-        arg?: string | undefined | null
-        callback?: () => void
-        confirmation?: {
-            title: string
-            description: string
-            confirmationAction: string
+export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onDownloadChatClick }) => {
+    const tabItems = useTabs({ IDE, onDownloadChatClick })
+    const currentViewSubActions = tabItems.find(tab => tab.view === currentView)?.subActions ?? []
+
+    const handleClick = useCallback(
+        (view: View, command?: string, changesView?: boolean) => {
+            if (command) {
+                getVSCodeAPI().postMessage({ command: 'command', id: command })
+            }
+            if (changesView) {
+                setView(view)
+            }
+        },
+        [setView]
+    )
+
+    const handleSubActionClick = useCallback((action: TabSubAction) => {
+        if (action.callback) {
+            action.callback()
+        } else {
+            getVSCodeAPI().postMessage({
+                command: 'command',
+                id: action.command,
+                arg: action.arg,
+            })
         }
-    }[]
+    }, [])
+
+    return (
+        <div className={styles.tabsRoot}>
+            <Tabs.List aria-label="cody-webview" className={styles.tabsContainer}>
+                <div className={styles.tabs}>
+                    {tabItems.map(({ Icon, view, command, title, changesView }) => (
+                        <Tabs.Trigger key={view} value={view} asChild={true}>
+                            <TabButton
+                                Icon={Icon}
+                                view={view}
+                                title={title}
+                                isActive={currentView === view}
+                                onClick={() => handleClick(view, command, changesView)}
+                                data-testid={`tab-${view}`}
+                            />
+                        </Tabs.Trigger>
+                    ))}
+                </div>
+                <div className={styles.subTabs}>
+                    {currentViewSubActions.map(subAction => (
+                        <Fragment key={subAction.command}>
+                            {subAction.confirmation ? (
+                                <ActionButtonWithConfirmation
+                                    title={subAction.title}
+                                    Icon={subAction.Icon}
+                                    alwaysShowTitle={subAction.alwaysShowTitle}
+                                    tooltipExtra={subAction.tooltipExtra}
+                                    dialogTitle={subAction.confirmation.title}
+                                    dialogDescription={subAction.confirmation.description}
+                                    dialogConfirmAction={subAction.confirmation.confirmationAction}
+                                    onConfirm={() => handleSubActionClick(subAction)}
+                                />
+                            ) : (
+                                <TabButton
+                                    Icon={subAction.Icon}
+                                    title={subAction.title}
+                                    alwaysShowTitle={subAction.alwaysShowTitle}
+                                    tooltipExtra={subAction.tooltipExtra}
+                                    onClick={() => handleSubActionClick(subAction)}
+                                    prominent
+                                />
+                            )}
+                        </Fragment>
+                    ))}
+                </div>
+            </Tabs.List>
+        </div>
+    )
+}
+
+interface ActionButtonWithConfirmationProps {
+    title: string
+    Icon: IconComponent
+    prominent?: boolean
+    alwaysShowTitle?: boolean
+    /** Extra content to display in the tooltip (in addition to the title). */
+    tooltipExtra?: React.ReactNode
+    onConfirm: () => void
+    dialogTitle: string
+    dialogDescription: string
+    dialogConfirmAction: string
+}
+
+/**
+ * Renders common sub tab action but with additional confirmation dialog UI
+ * It's used for heavy undoable actions like clear history item in history tab
+ */
+const ActionButtonWithConfirmation: FC<ActionButtonWithConfirmationProps> = props => {
+    const {
+        title,
+        Icon,
+        prominent,
+        alwaysShowTitle,
+        tooltipExtra,
+        onConfirm,
+        dialogTitle,
+        dialogConfirmAction,
+        dialogDescription,
+    } = props
+
+    const [state, setState] = useState<boolean>(false)
+
+    return (
+        <Dialog.Root open={state} onOpenChange={setState}>
+            <TabButton
+                Icon={Icon}
+                title={title}
+                alwaysShowTitle={alwaysShowTitle}
+                tooltipExtra={tooltipExtra}
+                prominent={prominent}
+                onClick={() => setState(true)}
+            />
+
+            <Dialog.Portal>
+                <Dialog.Overlay className={styles.dialogOverlay} />
+                <Dialog.Content className={styles.dialogContent} data-cody-ui-dialog>
+                    <Dialog.Title className={styles.dialogTitle}>{dialogTitle}</Dialog.Title>
+
+                    <Dialog.Description className={styles.dialogDescription}>
+                        {dialogDescription}
+                    </Dialog.Description>
+
+                    <footer className={styles.dialogFooter}>
+                        <Button variant="secondary" onClick={() => setState(false)}>
+                            Cancel
+                        </Button>
+
+                        <Button
+                            variant="default"
+                            onClick={() => {
+                                onConfirm()
+                                setState(false)
+                            }}
+                        >
+                            {dialogConfirmAction}
+                        </Button>
+                    </footer>
+                </Dialog.Content>
+            </Dialog.Portal>
+        </Dialog.Root>
+    )
 }
 
 interface TabButtonProps {
@@ -72,7 +224,6 @@ interface TabButtonProps {
 
     /** Extra content to display in the tooltip (in addition to the title). */
     tooltipExtra?: React.ReactNode
-
     'data-testid'?: string
 }
 
@@ -106,7 +257,7 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
                     data-testid={dataTestId}
                 >
                     <Icon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
-                    <span className={alwaysShowTitle ? '' : 'tw-hidden md:tw-inline'}>{title}</span>
+                    <span className={alwaysShowTitle ? '' : styles.tabActionLabel}>{title}</span>
                 </button>
             </TooltipTrigger>
             <TooltipContent className="md:tw-hidden">
@@ -115,14 +266,20 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
         </Tooltip>
     )
 )
+
 TabButton.displayName = 'TabButton'
 
-export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onDownloadChatClick }) => {
+/**
+ * Returns list of tabs and its sub-action buttons, used later as configuration for
+ * tabs rendering in chat header.
+ */
+function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabConfig[] {
+    const { IDE, onDownloadChatClick } = input
     const {
         config: { webviewType, multipleWebviewsEnabled },
     } = useConfig()
 
-    const tabItems = useMemo<TabConfig[]>(
+    return useMemo<TabConfig[]>(
         () =>
             (
                 [
@@ -222,166 +379,5 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
         [IDE, webviewType, onDownloadChatClick, multipleWebviewsEnabled]
-    )
-    const currentViewSubActions = tabItems.find(tab => tab.view === currentView)?.subActions ?? []
-
-    const handleClick = useCallback(
-        (view: View, command?: string, changesView?: boolean) => {
-            if (command) {
-                getVSCodeAPI().postMessage({ command: 'command', id: command })
-            }
-            if (changesView) {
-                setView(view)
-            }
-        },
-        [setView]
-    )
-
-    return (
-        <Tabs.List
-            aria-label="cody-webview"
-            className={clsx(
-                'tw-flex tw-justify-between tw-sticky tw-top-0 tw-z-50 tw-w-full tw-border-b tw-border-border tw-pl-[15px] tw-pr-4',
-                styles.tabsContainer
-            )}
-        >
-            <div className="tw-flex tw-gap-1 [&_>_*]:tw-flex-shrink-0">
-                {tabItems.map(({ Icon, view, command, title, changesView }) => (
-                    <Tabs.Trigger key={view} value={view} asChild={true}>
-                        <TabButton
-                            Icon={Icon}
-                            view={view}
-                            title={title}
-                            isActive={currentView === view}
-                            onClick={() => handleClick(view, command, changesView)}
-                            data-testid={`tab-${view}`}
-                        />
-                    </Tabs.Trigger>
-                ))}
-            </div>
-            <div className="tw-flex tw-gap-4 [&_>_*]:tw-flex-shrink-0">
-                {currentViewSubActions.map(
-                    ({
-                        Icon,
-                        command,
-                        title,
-                        alwaysShowTitle,
-                        tooltipExtra,
-                        arg,
-                        callback,
-                        confirmation,
-                    }) => (
-                        <Fragment key={command}>
-                            {confirmation ? (
-                                <ActionButtonWithConfirmation
-                                    title={title}
-                                    Icon={Icon}
-                                    alwaysShowTitle={alwaysShowTitle}
-                                    tooltipExtra={tooltipExtra}
-                                    dialogTitle={confirmation.title}
-                                    dialogDescription={confirmation.description}
-                                    dialogConfirmAction={confirmation.confirmationAction}
-                                    onConfirm={() =>
-                                        callback
-                                            ? callback()
-                                            : getVSCodeAPI().postMessage({
-                                                  command: 'command',
-                                                  id: command,
-                                                  arg,
-                                              })
-                                    }
-                                />
-                            ) : (
-                                <TabButton
-                                    Icon={Icon}
-                                    title={title}
-                                    alwaysShowTitle={alwaysShowTitle}
-                                    tooltipExtra={tooltipExtra}
-                                    onClick={() =>
-                                        callback
-                                            ? callback()
-                                            : getVSCodeAPI().postMessage({
-                                                  command: 'command',
-                                                  id: command,
-                                                  arg,
-                                              })
-                                    }
-                                    prominent
-                                />
-                            )}
-                        </Fragment>
-                    )
-                )}
-            </div>
-        </Tabs.List>
-    )
-}
-
-interface ActionButtonWithConfirmationProps {
-    title: string
-    Icon: IconComponent
-    prominent?: boolean
-    alwaysShowTitle?: boolean
-    /** Extra content to display in the tooltip (in addition to the title). */
-    tooltipExtra?: React.ReactNode
-    onConfirm: () => void
-    dialogTitle: string
-    dialogDescription: string
-    dialogConfirmAction: string
-}
-
-const ActionButtonWithConfirmation: FC<ActionButtonWithConfirmationProps> = props => {
-    const {
-        title,
-        Icon,
-        prominent,
-        alwaysShowTitle,
-        tooltipExtra,
-        onConfirm,
-        dialogTitle,
-        dialogConfirmAction,
-        dialogDescription,
-    } = props
-
-    const [state, setState] = useState<boolean>(false)
-
-    return (
-        <Dialog.Root open={state} onOpenChange={setState}>
-            <TabButton
-                Icon={Icon}
-                title={title}
-                alwaysShowTitle={alwaysShowTitle}
-                tooltipExtra={tooltipExtra}
-                prominent={prominent}
-                onClick={() => setState(true)}
-            />
-
-            <Dialog.Portal>
-                <Dialog.Overlay className={styles.dialogOverlay} />
-                <Dialog.Content className={styles.dialogContent} data-cody-ui-dialog>
-                    <Dialog.Title className={styles.dialogTitle}>{dialogTitle}</Dialog.Title>
-
-                    <Dialog.Description className={styles.dialogDescription}>
-                        {dialogDescription}
-                    </Dialog.Description>
-
-                    <footer className={styles.dialogFooter}>
-                        <Button variant="secondary" onClick={() => setState(false)}>
-                            Cancel
-                        </Button>
-
-                        <Button
-                            variant="default"
-                            onClick={() => {
-                                onConfirm()
-                                setState(false)
-                            }}
-                        >
-                            {dialogConfirmAction}
-                        </Button>
-                    </footer>
-                </Dialog.Content>
-            </Dialog.Portal>
-        </Dialog.Root>
     )
 }

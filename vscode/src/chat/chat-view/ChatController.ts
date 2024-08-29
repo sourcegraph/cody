@@ -25,7 +25,6 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     type SerializedPromptEditorState,
-    TokenCounterUtils,
     Typewriter,
     addMessageListenersForExtensionAPI,
     createMessageAPIForExtension,
@@ -37,11 +36,9 @@ import {
     isContextWindowLimitError,
     isDefined,
     isError,
-    isFileURI,
     isRateLimitError,
     modelsService,
     parseMentionQuery,
-    promiseFactoryToObservable,
     recordErrorToSpan,
     reformatBotMessageForChat,
     serializeChatMessage,
@@ -52,6 +49,8 @@ import {
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
+import { promiseFactoryToObservable } from '@sourcegraph/cody-shared/src/misc/observable'
+import { TokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { URI } from 'vscode-uri'
 import { version as VSCEVersion } from '../../../package.json'
@@ -72,13 +71,12 @@ import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
 import type { ClientCapabilities } from '../../jsonrpc/agent-protocol'
-import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
-import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
+import { workspaceReposMonitor } from '../../repository/repo-metadata-from-git-api'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
@@ -109,21 +107,18 @@ import { countGeneratedCode } from '../utils'
 import { chatHistory } from './ChatHistoryManager'
 import { ChatModel, prepareChatMessage } from './ChatModel'
 import { CodyChatEditorViewType } from './ChatsController'
-import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { type ContextRetriever, toStructuredMentions } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, openFile } from './chat-helpers'
 import { type HumanInput, getPriorityContext, resolveContext } from './context'
-import { DefaultPrompter } from './prompt'
+import { DefaultPrompter, type PromptInfo } from './prompt'
 
 interface ChatControllerOptions {
     extensionUri: vscode.Uri
     authProvider: AuthProvider
     chatClient: ChatClient
 
-    localEmbeddings: LocalEmbeddingsController | null
-    symf: SymfRunner | null
-    enterpriseContext: EnterpriseContextFactory | null
+    retrievers: AuthDependentRetrievers
 
     contextRetriever: ContextRetriever
     contextAPIClient: ContextAPIClient | null
@@ -138,6 +133,39 @@ interface ChatControllerOptions {
 export interface ChatSession {
     webviewPanelOrView: vscode.WebviewView | vscode.WebviewPanel | undefined
     sessionID: string
+}
+
+export class AuthDependentRetrievers {
+    constructor(
+        private authProvider: AuthProvider,
+        private _localEmbeddings: LocalEmbeddingsController | null,
+        private _symf: SymfRunner | null,
+        private _enterpriseContext: EnterpriseContextFactory | null
+    ) {}
+
+    private isCodyWeb(): boolean {
+        return vscode.workspace.getConfiguration().get<string>('cody.advanced.agent.ide') === CodyIDE.Web
+    }
+
+    private isConsumer(): boolean {
+        return this.authProvider.getAuthStatus().isDotCom
+    }
+
+    private allowRemoteContext(): boolean {
+        return this.isCodyWeb() || !this.isConsumer()
+    }
+
+    get localEmbeddings(): LocalEmbeddingsController | null {
+        return this.isConsumer() ? this._localEmbeddings : null
+    }
+
+    get symf(): SymfRunner | null {
+        return this.isConsumer() ? this._symf : null
+    }
+
+    get enterpriseContext(): EnterpriseContextFactory | null {
+        return this.allowRemoteContext() ? this._enterpriseContext : null
+    }
 }
 
 /**
@@ -172,19 +200,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private readonly authProvider: AuthProvider
     private readonly chatClient: ChatClient
-    private readonly codebaseStatusProvider: CodebaseStatusProvider
 
-    private readonly localEmbeddings: LocalEmbeddingsController | null
-    private readonly symf: SymfRunner | null
-    private readonly remoteSearch: RemoteSearch | null
+    private readonly retrievers: AuthDependentRetrievers
+    private remoteSearch: RemoteSearch | null
+    private repoPicker: RemoteRepoPicker | null
 
     private readonly contextRetriever: ContextRetriever
 
-    private readonly contextStatusAggregator = new ContextStatusAggregator()
     private readonly editor: VSCodeEditor
     private readonly extensionClient: ExtensionClient
     private readonly guardrails: Guardrails
-    private readonly repoPicker: RemoteRepoPicker | null
+
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
     private readonly contextAPIClient: ContextAPIClient | null
 
@@ -199,11 +225,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         extensionUri,
         authProvider,
         chatClient,
-        localEmbeddings,
-        symf,
+        retrievers,
         editor,
         guardrails,
-        enterpriseContext,
         startTokenReceiver,
         contextAPIClient,
         contextRetriever,
@@ -212,14 +236,18 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.extensionUri = extensionUri
         this.authProvider = authProvider
         this.chatClient = chatClient
-        this.localEmbeddings = localEmbeddings
-        this.symf = symf
-        this.repoPicker = enterpriseContext?.repoPicker || null
-        this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
+        this.retrievers = retrievers
         this.editor = editor
         this.extensionClient = extensionClient
-
         this.contextRetriever = contextRetriever
+
+        this.repoPicker = this.retrievers.enterpriseContext?.repoPicker ?? null
+        this.remoteSearch = this.retrievers.enterpriseContext?.createRemoteSearch() ?? null
+        const authSubscription = this.authProvider.changes.subscribe(() => {
+            this.repoPicker = this.retrievers.enterpriseContext?.repoPicker ?? null
+            this.remoteSearch = this.retrievers.enterpriseContext?.createRemoteSearch() ?? null
+        })
+        this.disposables.push({ dispose: () => authSubscription.unsubscribe() })
 
         this.chatModel = new ChatModel(getDefaultModelID())
 
@@ -231,20 +259,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             TestSupport.instance.chatPanelProvider.set(this)
         }
 
-        // Push context status to the webview when it changes.
-        this.disposables.push(
-            this.contextStatusAggregator.onDidChangeStatus(() => this.postContextStatus())
-        )
-        this.disposables.push(this.contextStatusAggregator)
-        if (this.localEmbeddings) {
-            this.disposables.push(this.contextStatusAggregator.addProvider(this.localEmbeddings))
-        }
-        this.codebaseStatusProvider = new CodebaseStatusProvider(
-            this.editor,
-            this.symf,
-            enterpriseContext ? enterpriseContext.getCodebaseRepoIdMapper() : null
-        )
-        this.disposables.push(this.contextStatusAggregator.addProvider(this.codebaseStatusProvider))
+        // Advise local embeddings to start up if necessary.
+        void this.retrievers.localEmbeddings?.start()
 
         // Keep feature flags updated.
         this.disposables.push({
@@ -253,32 +269,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             }),
         })
 
-        if (this.remoteSearch) {
-            this.disposables.push(
-                // Display enhanced context status from the remote search provider
-                this.contextStatusAggregator.addProvider(this.remoteSearch),
-
-                // When the codebase has a remote ID, include it automatically
-                this.codebaseStatusProvider.onDidChangeStatus(async () => {
-                    const codebase = await this.codebaseStatusProvider.currentCodebase()
-                    if (codebase?.remote && codebase.remoteRepoId) {
-                        this.remoteSearch?.setRepos(
-                            [
-                                {
-                                    name: codebase.remote,
-                                    id: codebase.remoteRepoId,
-                                },
-                            ],
-                            RepoInclusion.Automatic
-                        )
-                    }
-                })
-            )
-        }
-
         this.disposables.push(
             startClientStateBroadcaster({
-                remoteSearch: this.remoteSearch,
+                authProvider,
+                getRemoteSearch: () => this.remoteSearch,
                 postMessage: (message: ExtensionMessage) => this.postMessage(message),
                 chatModel: this.chatModel,
             })
@@ -418,12 +412,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 void this.handleRemoveRemoteSearchRepo(message.repoId)
                 break
             case 'embeddings/index':
-                void this.localEmbeddings?.index()
+                void this.retrievers.localEmbeddings?.index()
                 break
-            case 'symf/index': {
-                void this.handleSymfIndex()
-                break
-            }
             case 'show-page':
                 await vscode.commands.executeCommand('cody.show-page', message.page)
                 break
@@ -652,18 +642,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         await this.sendConfig()
     }
 
-    private async getRepoMetadataIfPublic(): Promise<string> {
-        const currentCodebase = await this.codebaseStatusProvider.currentCodebase()
-        if (currentCodebase?.isPublic) {
-            const gitMetadata = {
-                githubUrl: currentCodebase?.remote,
-                commit: gitCommitIdFromGitExtension(currentCodebase?.localFolder),
-            }
-            return JSON.stringify(gitMetadata)
-        }
-        return ''
-    }
-
     /**
      * Handles user input text for both new and edit submissions
      */
@@ -725,7 +703,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // If the legacyAddEnhancedContext param is true, then pretend there is a `@repo` or `@tree`
                 // mention and a mention of the current selection to match the old behavior.
                 if (legacyAddEnhancedContext) {
-                    const corpusMentions = getCorpusContextItemsForEditorState({
+                    const corpusMentions = await getCorpusContextItemsForEditorState({
                         remoteSearch: this.remoteSearch,
                     })
                     mentions = mentions.concat(corpusMentions)
@@ -753,42 +731,23 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     implicitMentions,
                     command !== undefined
                 )
-                const sendTelemetry = (contextSummary: any, privateContextSummary?: any): void => {
-                    const properties = {
-                        ...sharedProperties,
-                        traceId: span.spanContext().traceId,
-                    }
-                    span.setAttributes(properties)
-                    firstTokenSpan.setAttributes(properties)
-
-                    telemetryRecorder.recordEvent('cody.chat-question', 'executed', {
-                        metadata: {
-                            ...contextSummary,
-                            // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
-                            // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                            recordsPrivateMetadataTranscript: authStatus.isDotCom ? 1 : 0,
-                        },
-                        privateMetadata: {
-                            properties,
-                            privateContextSummary: privateContextSummary,
-                            // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
-                            // V2 telemetry exports privateMetadata only for DotCom users
-                            // the condition below is an additional safeguard measure
-                            promptText:
-                                authStatus.isDotCom &&
-                                truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
-                        },
-                    })
-                }
 
                 try {
-                    const prompt = await this.buildPrompt(
+                    const { prompt, context } = await this.buildPrompt(
                         prompter,
                         signal,
                         requestID,
-                        sendTelemetry,
                         contextAlternatives
                     )
+
+                    void this.sendChatExecutedTelemetry(
+                        span,
+                        firstTokenSpan,
+                        inputText,
+                        sharedProperties,
+                        context
+                    )
+
                     signal.throwIfAborted()
                     this.streamAssistantResponse(requestID, prompt, span, firstTokenSpan, signal)
                 } catch (error) {
@@ -807,6 +766,56 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     recordErrorToSpan(span, error as Error)
                 }
             })
+        })
+    }
+
+    private async sendChatExecutedTelemetry(
+        span: Span,
+        firstTokenSpan: Span,
+        inputText: PromptString,
+        sharedProperties: any,
+        context: PromptInfo['context']
+    ): Promise<void> {
+        const authStatus = this.authProvider.getAuthStatus()
+
+        // Create a summary of how many code snippets of each context source are being
+        // included in the prompt
+        const contextSummary: { [key: string]: number } = {}
+        for (const { source } of context.used) {
+            if (!source) {
+                continue
+            }
+            if (contextSummary[source]) {
+                contextSummary[source] += 1
+            } else {
+                contextSummary[source] = 1
+            }
+        }
+        const privateContextSummary = await this.buildPrivateContextSummary(context)
+
+        const properties = {
+            ...sharedProperties,
+            traceId: span.spanContext().traceId,
+        }
+        span.setAttributes(properties)
+        firstTokenSpan.setAttributes(properties)
+
+        telemetryRecorder.recordEvent('cody.chat-question', 'executed', {
+            metadata: {
+                ...contextSummary,
+                // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
+                // See https://github.com/sourcegraph/sourcegraph/pull/59524
+                recordsPrivateMetadataTranscript: authStatus.isDotCom ? 1 : 0,
+            },
+            privateMetadata: {
+                properties,
+                privateContextSummary: privateContextSummary,
+                // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                // V2 telemetry exports privateMetadata only for DotCom users
+                // the condition below is an additional safeguard measure
+                promptText:
+                    authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
+            },
         })
     }
 
@@ -950,8 +959,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     editor: this.editor,
                     input: { text: inputTextWithoutContextChips, mentions },
                     providers: {
-                        localEmbeddings: this.localEmbeddings,
-                        symf: this.symf,
+                        localEmbeddings: this.retrievers.localEmbeddings,
+                        symf: this.retrievers.symf,
                         remoteSearch: this.remoteSearch,
                     },
                     signal,
@@ -1084,16 +1093,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
     }
 
-    private async handleSymfIndex(): Promise<void> {
-        const codebase = await this.codebaseStatusProvider.currentCodebase()
-        if (codebase && isFileURI(codebase.localFolder)) {
-            await this.symf?.ensureIndex(codebase.localFolder, {
-                retryIfLastAttemptFailed: true,
-                ignoreExisting: false,
-            })
-        }
-    }
-
     private async handleAttributionSearch(snippet: string): Promise<void> {
         try {
             const attribution = await this.guardrails.searchAttribution(snippet)
@@ -1207,18 +1206,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
     }
 
-    private postContextStatus(): void {
-        const { status } = this.contextStatusAggregator
-        void this.postMessage({
-            type: 'enhanced-context',
-            enhancedContextStatus: { groups: status },
-        })
-        // Only log non-empty status to reduce noises.
-        if (status.length > 0) {
-            logDebug('ChatController', 'postContextStatus', JSON.stringify(status))
-        }
-    }
-
     /**
      * Low-level utility to post a message to the webview, pending initialization.
      *
@@ -1241,9 +1228,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         prompter: DefaultPrompter,
         abortSignal: AbortSignal,
         requestID: string,
-        sendTelemetry?: (contextSummary: any, privateContextSummary?: any) => void,
         contextAlternatives?: RankedContext[]
-    ): Promise<Message[]> {
+    ): Promise<PromptInfo> {
         const { prompt, context } = await prompter.makePrompt(
             this.chatModel,
             this.authProvider.getAuthStatus().codyApiVersion
@@ -1256,26 +1242,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // This is not awaited, so we kick the call off but don't block on it returning
         this.contextAPIClient?.recordContext(requestID, context.used, context.ignored)
 
-        if (sendTelemetry) {
-            // Create a summary of how many code snippets of each context source are being
-            // included in the prompt
-            const contextSummary: { [key: string]: number } = {}
-            for (const { source } of context.used) {
-                if (!source) {
-                    continue
-                }
-                if (contextSummary[source]) {
-                    contextSummary[source] += 1
-                } else {
-                    contextSummary[source] = 1
-                }
-            }
-
-            const privateContextSummary = await this.buildPrivateContextSummary(context)
-            sendTelemetry(contextSummary, privateContextSummary)
-        }
-
-        return prompt
+        return { prompt, context }
     }
 
     private async buildPrivateContextSummary(context: {
@@ -1284,9 +1251,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }): Promise<object> {
         // 🚨 SECURITY: included only for dotcom users & public repos
         const isDotCom = this.authProvider.getAuthStatus().isDotCom
-        const isPublic = (await this.codebaseStatusProvider.currentCodebase())?.isPublic
+        if (!isDotCom) {
+            return {}
+        }
+        if (!workspaceReposMonitor) {
+            return {}
+        }
 
-        if (!(isDotCom && isPublic)) {
+        const { isPublic, repoMetadata: gitMetadata } =
+            await workspaceReposMonitor.getRepoMetadataIfPublic()
+        if (!isPublic) {
             return {}
         }
 
@@ -1304,7 +1278,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return {
             included: await getContextSummary(context.used),
             excluded: await getContextSummary(context.ignored),
-            gitMetadata: await this.getRepoMetadataIfPublic(),
+            gitMetadata,
         }
     }
 
@@ -1619,7 +1593,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         await addWebviewViewHTML(this.extensionClient, this.extensionUri, viewOrPanel)
-        this.postContextStatus()
 
         // Dispose panel when the panel is closed
         viewOrPanel.onDidDispose(() => {
@@ -1712,6 +1685,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     ): Promise<void> {
         const mentionsInInitialContext = mentions.filter(item => item.source !== ContextItemSource.User)
         const mentionsByUser = mentions.filter(item => item.source === ContextItemSource.User)
+
+        let gitMetadata = ''
+        if (workspaceReposMonitor) {
+            const { isPublic: isWorkspacePublic, repoMetadata } =
+                await workspaceReposMonitor.getRepoMetadataIfPublic()
+            if (authStatus.isDotCom && legacyAddEnhancedContext && isWorkspacePublic) {
+                gitMetadata = JSON.stringify(repoMetadata)
+            }
+        }
         telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
             metadata: {
                 // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
@@ -1760,10 +1742,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // the condition below is an additional safeguard measure
                 promptText:
                     authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
-                gitMetadata:
-                    authStatus.isDotCom && legacyAddEnhancedContext
-                        ? await this.getRepoMetadataIfPublic()
-                        : '',
+                gitMetadata,
             },
         })
     }

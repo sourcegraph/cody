@@ -911,6 +911,8 @@ export const DEFAULT_VSCODE_SETTINGS = {
     commandHints: false,
     isRunningInsideAgent: false,
     agentIDE: undefined,
+    agentHasPersistentStorage: false,
+    hasNativeWebview: true,
     debugVerbose: false,
     debugFilter: null,
     telemetryLevel: 'all',

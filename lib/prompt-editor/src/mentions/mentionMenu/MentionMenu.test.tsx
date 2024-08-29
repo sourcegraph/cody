@@ -291,7 +291,7 @@ describe('MentionMenu', () => {
             expect(updateMentionMenuParams).toBeCalledTimes(0)
             expect(setEditorQuery).toBeCalledTimes(0)
             expect(selectOptionAndCleanUp).toBeCalledTimes(1)
-            expect(selectOptionAndCleanUp.mock.lastCall[0].item).toEqual(ITEM_FILE1)
+            expect(selectOptionAndCleanUp.mock.lastCall?.[0].item).toEqual(ITEM_FILE1)
         }
         test('click', () => doTest(() => fireEvent.click(screen.getByText('item file file1.go'))))
         test('keyboard', () =>

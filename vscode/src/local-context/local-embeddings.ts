@@ -4,8 +4,6 @@ import { URI } from 'vscode-uri'
 
 import {
     type ClientConfigurationWithAccessToken,
-    type ContextGroup,
-    type ContextStatusProvider,
     type EmbeddingsModelConfig,
     type EmbeddingsSearchResult,
     FeatureFlag,
@@ -19,7 +17,6 @@ import {
     isFileURI,
     recordErrorToSpan,
     telemetryRecorder,
-    uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -96,9 +93,7 @@ const sourcegraphMetadataModelConfig: EmbeddingsModelConfig = {
     indexPath: getIndexLibraryPath('st-metadata'),
 }
 
-export class LocalEmbeddingsController
-    implements LocalEmbeddingsFetcher, ContextStatusProvider, vscode.Disposable
-{
+export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode.Disposable {
     private disposables: vscode.Disposable[] = []
 
     // The cody-engine child process, if starting or started.
@@ -137,7 +132,7 @@ export class LocalEmbeddingsController
         private readonly modelConfig: EmbeddingsModelConfig
     ) {
         logDebug('LocalEmbeddingsController', 'constructor')
-        this.disposables.push(this.changeEmitter, this.statusEmitter)
+        this.disposables.push(this.changeEmitter)
         this.disposables.push(
             vscode.commands.registerCommand('cody.embeddings.resolveIssue', () =>
                 this.resolveIssueCommand()
@@ -193,7 +188,6 @@ export class LocalEmbeddingsController
         if (endpointIsDotcom !== this.endpointIsDotcom) {
             // We will show, or hide, status depending on whether we are using
             // dotcom. We do not offer local embeddings to Enterprise.
-            this.statusEmitter.fire(this)
             if (this.serviceStarted) {
                 this.changeEmitter.fire(this)
             }
@@ -293,97 +287,6 @@ export class LocalEmbeddingsController
         }
 
         this.dirBeingIndexed = undefined
-        this.statusEmitter.fire(this)
-    }
-
-    // ContextStatusProvider implementation
-
-    private statusEmitter: vscode.EventEmitter<ContextStatusProvider> = new vscode.EventEmitter()
-
-    public onDidChangeStatus(callback: (provider: ContextStatusProvider) => void): vscode.Disposable {
-        return this.statusEmitter.event(callback)
-    }
-
-    public get status(): ContextGroup[] {
-        logDebug('LocalEmbeddingsController', 'get status')
-        if (!this.endpointIsDotcom) {
-            // There are no local embeddings for Enterprise.
-            return []
-        }
-        // TODO: Summarize the path with ~, etc.
-        const dir = this.lastRepo?.dir ?? vscode.workspace.workspaceFolders?.[0]?.uri
-        if (!dir || !this.lastRepo) {
-            return [
-                {
-                    dir,
-                    displayName: dir ? uriBasename(dir) : '(No workspace loaded)',
-                    providers: [
-                        {
-                            kind: 'embeddings',
-                            state: 'indeterminate',
-                            embeddingsAPIProvider: this.modelConfig.provider,
-                        },
-                    ],
-                },
-            ]
-        }
-        if (this.dirBeingIndexed?.toString() === dir.toString()) {
-            return [
-                {
-                    dir,
-                    displayName: uriBasename(dir),
-                    providers: [
-                        {
-                            kind: 'embeddings',
-                            state: 'indexing',
-                            embeddingsAPIProvider: this.modelConfig.provider,
-                        },
-                    ],
-                },
-            ]
-        }
-        if (this.lastRepo.repoName) {
-            return [
-                {
-                    dir,
-                    displayName: uriBasename(dir),
-                    providers: [
-                        {
-                            kind: 'embeddings',
-                            state: 'ready',
-                            embeddingsAPIProvider: this.modelConfig.provider,
-                        },
-                    ],
-                },
-            ]
-        }
-        const repoState = this.repoState.get(dir.toString())
-        let stateAndErrors: {
-            state: 'unconsented' | 'no-match'
-            errorReason?: 'not-a-git-repo' | 'git-repo-has-no-remote'
-        }
-        if (repoState?.indexable) {
-            stateAndErrors = { state: 'unconsented' }
-        } else if (repoState?.errorReason) {
-            stateAndErrors = { state: 'no-match', errorReason: repoState.errorReason }
-        } else {
-            logDebug('LocalEmbeddings', 'state', '"no-match" state should provide a reason')
-            stateAndErrors = { state: 'no-match' }
-        }
-
-        return [
-            {
-                dir,
-                displayName: uriBasename(dir),
-                providers: [
-                    {
-                        kind: 'embeddings',
-                        ...stateAndErrors,
-                        embeddingsAPIProvider: this.modelConfig.provider,
-                    },
-                ],
-            },
-        ]
     }
 
     // Interactions with cody-engine
@@ -422,7 +325,6 @@ export class LocalEmbeddingsController
                 vscode.StatusBarAlignment.Right,
                 0
             )
-            this.statusEmitter.fire(this)
         } catch (error: any) {
             logDebug('LocalEmbeddingsController', captureException(error), error)
         }
@@ -499,7 +401,6 @@ export class LocalEmbeddingsController
                 this.lastRepo = { dir: repoDir, repoName: false }
             }
         })
-        this.statusEmitter.fire(this)
         return !!this.lastRepo?.repoName
     }
 

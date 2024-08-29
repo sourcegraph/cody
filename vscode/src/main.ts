@@ -68,6 +68,7 @@ import { registerModelsFromVSCodeConfiguration } from './models/sync'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { initVSCodeGitApi } from './repository/git-extension-api'
+import { initWorkspaceReposMonitor } from './repository/repo-metadata-from-git-api'
 import { repoNameResolver } from './repository/repo-name-resolver'
 import { AuthProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
@@ -99,17 +100,6 @@ export async function start(
     context: vscode.ExtensionContext,
     platform: PlatformContext
 ): Promise<vscode.Disposable> {
-    // NOTE: Hack to ensure the window is reloaded when extension is restarted after upgrade
-    //  to get the updated sidebar chat UI. Can be removed after the next release (1.28).
-    if (
-        !context.globalState.get('newSidebarChatUI_isReloaded', false) &&
-        process.env.CODY_TESTING !== 'true'
-    ) {
-        // First activation, set the flag and then reload the window
-        await context.globalState.update('newSidebarChatUI_isReloaded', true)
-        await vscode.commands.executeCommand('workbench.action.reloadWindow')
-    }
-
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
@@ -188,6 +178,7 @@ const register = async (
 
     // Ensure Git API is available
     disposables.push(await initVSCodeGitApi())
+    initWorkspaceReposMonitor(authProvider, disposables)
 
     registerParserListeners(disposables)
     registerChatListeners(disposables)

@@ -44,24 +44,24 @@ testWithGitRemote('initial context - file', async ({ page, sidebar, server }) =>
 
     const [, lastChatInput] = await createEmptyChatPanel(page)
 
-    await expect(chatInputMentions(lastChatInput)).toHaveText(['host.example/user/myrepo', 'main.c'])
+    await expect(chatInputMentions(lastChatInput)).toHaveText(['main.c', 'host.example/user/myrepo'])
 
     await selectLineRangeInEditorTab(page, 2, 4)
-    await expect(chatInputMentions(lastChatInput)).toHaveText(['host.example/user/myrepo', 'main.c:2-4'])
+    await expect(chatInputMentions(lastChatInput)).toHaveText(['main.c:2-4', 'host.example/user/myrepo'])
 
     await selectLineRangeInEditorTab(page, 1, 3)
-    await expect(chatInputMentions(lastChatInput)).toHaveText(['host.example/user/myrepo', 'main.c:1-3'])
+    await expect(chatInputMentions(lastChatInput)).toHaveText(['main.c:1-3', 'host.example/user/myrepo'])
 
     await openFileInEditorTab(page, 'README.md')
-    await expect(chatInputMentions(lastChatInput)).toHaveText(['host.example/user/myrepo', 'README.md'])
+    await expect(chatInputMentions(lastChatInput)).toHaveText(['README.md', 'host.example/user/myrepo'])
 
     await clickEditorTab(page, 'main.c')
-    await expect(chatInputMentions(lastChatInput)).toHaveText(['host.example/user/myrepo', 'main.c:1-3'])
+    await expect(chatInputMentions(lastChatInput)).toHaveText(['main.c:1-3', 'host.example/user/myrepo'])
 
     // After typing into the input, it no longer updates the initial context.
     await lastChatInput.press('x')
     await clickEditorTab(page, 'README.md')
-    await expect(chatInputMentions(lastChatInput)).toHaveText(['host.example/user/myrepo', 'main.c:1-3'])
+    await expect(chatInputMentions(lastChatInput)).toHaveText(['main.c:1-3', 'host.example/user/myrepo'])
 })
 
 testWithGitRemote.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
@@ -72,7 +72,7 @@ testWithGitRemote.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }
 
         const chatPanel = getChatSidebarPanel(page)
         const firstChatInput = getChatInputs(chatPanel).first()
-        await expect(chatInputMentions(firstChatInput)).toHaveText(['myrepo', 'main.c'])
+        await expect(chatInputMentions(firstChatInput)).toHaveText(['main.c', 'myrepo'])
         await firstChatInput.pressSequentially('xyz')
         await firstChatInput.press('Enter')
 
