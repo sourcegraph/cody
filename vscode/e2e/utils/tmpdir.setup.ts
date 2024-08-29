@@ -7,7 +7,6 @@ export interface TmpDirOptions {
     clearGlobalTmpDirParent: boolean
 }
 
-// biome-ignore lint/complexity/noBannedTypes: <explanation>
 setup.extend<{}, TmpDirOptions & WorkerOptions>({
     globalTmpDir: ['', { scope: 'worker', option: true }],
     clearGlobalTmpDirParent: [false, { scope: 'worker', option: true }],

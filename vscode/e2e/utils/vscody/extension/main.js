@@ -1,4 +1,3 @@
-// Inspired by but heavily modified from https://github.com/jeff-hykin/macro-commander
 const vscode = require('vscode')
 const { window } = require('vscode')
 const { execSync } = require('node:child_process')
@@ -31,14 +30,13 @@ function activate(context) {
 
 function deactivate() {}
 
-// create a command for running macros by name. Normally you would just call the macro directly, but this is useful for testing
-
 function flushEventStack() {
-    // this is a sleep timer for 0 seconds, which sounds dumb
-    // the reason it's useful is because it puts a function on the BOTTOM of the javascript event stack
-    // and then we wait for it to occur
-    // this means runs all of the already-scheduled things to occur
-    // which is ideal because it makes pop ups and other events happen in a more sequential/timely order
+    // this is a sleep timer for 0 seconds, which sounds dumb The reason it's
+    // useful is because it puts a function on the BOTTOM of the javascript
+    // **Event Loop**. This makes VSCode events like pop-ups and other events
+    // happen in a more sequential/timely order. That's also why we can't use
+    // Promise.resolve(undefined) as it would only be at the bottom of the
+    // microtask queue.
     return new Promise(r => setTimeout(r, 0))
 }
 
