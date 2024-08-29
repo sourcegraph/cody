@@ -19,12 +19,18 @@ import { isError } from 'lodash'
 import * as vscode from 'vscode'
 import { getConfiguration } from '../../configuration'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
+import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { rewriteKeywordQuery } from '../../local-context/rewrite-keyword-query'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { gitLocallyModifiedFiles } from '../../repository/git-extension-api'
 import { repoNameResolver } from '../../repository/repo-name-resolver'
-import { retrieveContextGracefully, searchSymf, truncateSymfResult } from './context'
+import {
+    retrieveContextGracefully,
+    searchEmbeddingsLocal,
+    searchSymf,
+    truncateSymfResult,
+} from './context'
 
 export interface StructuredMentions {
     repos: ContextItemRepository[]
@@ -154,6 +160,7 @@ export class ContextRetriever implements vscode.Disposable {
     constructor(
         private editor: VSCodeEditor,
         private symf: SymfRunner | undefined,
+        private localEmbeddings: LocalEmbeddingsController | undefined,
         private llms: SourcegraphCompletionsClient
     ) {}
 
@@ -365,10 +372,10 @@ export class ContextRetriever implements vscode.Disposable {
         const contextStrategy = config.useContext
         span.setAttribute('strategy', contextStrategy)
 
-        // symf retrieval
         const symf = this.symf
+        let localSymfResults: Promise<ContextItem[]> = Promise.resolve([])
         if (symf && contextStrategy !== 'embeddings' && localRootURIs.length > 0) {
-            const localRootResults = await Promise.all(
+            localSymfResults = Promise.all(
                 localRootURIs.map(rootURI =>
                     // TODO(beyang): retire searchSymf and retrieveContextGracefully
                     // (see invocation of symf in retrieveLiveContext)
@@ -377,11 +384,20 @@ export class ContextRetriever implements vscode.Disposable {
                         `symf ${rootURI.path}`
                     )
                 )
-            )
-            return localRootResults.flat()
+            ).then(r => r.flat())
         }
 
-        return []
+        const localEmbeddings = this.localEmbeddings
+        let localEmbeddingsResults: Promise<ContextItem[]> = Promise.resolve([])
+        if (localEmbeddings && contextStrategy !== 'keyword' && localRootURIs.length > 0) {
+            // TODO(beyang): retire this
+            localEmbeddingsResults = retrieveContextGracefully(
+                searchEmbeddingsLocal(localEmbeddings, originalQuery),
+                'local-embeddings'
+            )
+        }
+
+        return (await Promise.all([localSymfResults, localEmbeddingsResults])).flat()
     }
 }
 
