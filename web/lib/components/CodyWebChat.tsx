@@ -260,7 +260,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                                 errorMessages={errorMessages}
                                 setErrorMessages={setErrorMessages}
                                 attributionEnabled={false}
-                                config={config.config}
+                                configuration={config}
                                 userHistory={userHistory}
                                 chatEnabled={true}
                                 showWelcomeMessage={true}

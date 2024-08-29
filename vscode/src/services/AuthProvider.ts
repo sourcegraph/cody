@@ -55,25 +55,12 @@ class AuthProvider implements vscode.Disposable {
 
     // Create Auth Status
     private async makeAuthStatus(
-        config: PickResolvedConfiguration<{ configuration: 'customHeaders'; auth: true }>,
-        isOfflineMode?: boolean
+        config: PickResolvedConfiguration<{ configuration: 'customHeaders'; auth: true }>
     ): Promise<AuthStatus> {
         const endpoint = config.auth.serverEndpoint
         const token = config.auth.accessToken
         const isCodyWeb =
             vscode.workspace.getConfiguration().get<string>('cody.advanced.agent.ide') === CodyIDE.Web
-
-        if (isOfflineMode) {
-            const lastUser = localStorage.getLastStoredUser()
-            return {
-                endpoint: lastUser?.endpoint ?? 'https://offline.sourcegraph.com',
-                username: lastUser?.username ?? 'offline-user',
-                authenticated: true,
-                isOfflineMode: true,
-                codyApiVersion: 0,
-                siteVersion: '',
-            }
-        }
 
         // Cody Web can work without access token since authorization flow
         // relies on cookie authentication
@@ -161,13 +148,11 @@ class AuthProvider implements vscode.Disposable {
             token,
             customHeaders,
             isExtensionStartup = false,
-            isOfflineMode = false,
         }: {
             endpoint: string
             token: string | null
             customHeaders?: Record<string, string> | null
             isExtensionStartup?: boolean
-            isOfflineMode?: boolean
         },
         signal?: AbortSignal
     ): Promise<AuthStatus> {
@@ -183,11 +168,9 @@ class AuthProvider implements vscode.Disposable {
         }
 
         try {
-            const authStatus = await this.makeAuthStatus(config, isOfflineMode)
+            const authStatus = await this.makeAuthStatus(config)
 
-            if (!isOfflineMode) {
-                await this.storeAuthInfo(config.auth.serverEndpoint, config.auth.accessToken)
-            }
+            await this.storeAuthInfo(config.auth.serverEndpoint, config.auth.accessToken)
 
             await vscode.commands.executeCommand(
                 'setContext',
