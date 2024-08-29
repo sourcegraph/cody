@@ -7,23 +7,23 @@ import { ModelTag } from './tags'
 import { type ChatModel, type EditModel, type ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
-export type ModelId = string
-export type ApiVersionId = string
-export type ProviderId = string
+type ModelId = string
+type ApiVersionId = string
+type ProviderId = string
 
-export type ModelRefStr = `${ProviderId}::${ApiVersionId}::${ModelId}`
-export interface ModelRef {
+type ModelRefStr = `${ProviderId}::${ApiVersionId}::${ModelId}`
+interface ModelRef {
     providerId: ProviderId
     apiVersionId: ApiVersionId
     modelId: ModelId
 }
 
 export type ModelCategory = ModelTag.Power | ModelTag.Balanced | ModelTag.Speed
-export type ModelStatus = ModelTag.Experimental | ModelTag.Experimental | 'stable' | ModelTag.Deprecated
+type ModelStatus = ModelTag.Experimental | ModelTag.Experimental | 'stable' | ModelTag.Deprecated
 export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise
-export type ModelCapability = 'chat' | 'autocomplete'
+type ModelCapability = 'chat' | 'autocomplete'
 
-export interface ContextWindow {
+interface ContextWindow {
     maxInputTokens: number
     maxOutputTokens: number
 }
@@ -575,7 +575,7 @@ interface Storage {
     delete(key: string): Promise<void>
 }
 
-export function capabilityToUsage(capability: ModelCapability): ModelUsage[] {
+function capabilityToUsage(capability: ModelCapability): ModelUsage[] {
     switch (capability) {
         case 'autocomplete':
             return [ModelUsage.Autocomplete]

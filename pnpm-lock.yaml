@@ -362,9 +362,6 @@ importers:
       diff:
         specifier: ^5.2.0
         version: 5.2.0
-      fast-xml-parser:
-        specifier: ^4.3.2
-        version: 4.3.2
       isomorphic-fetch:
         specifier: ^3.0.0
         version: 3.0.0
@@ -380,9 +377,6 @@ importers:
       lru-cache:
         specifier: ^10.0.0
         version: 10.0.0
-      mac-ca:
-        specifier: ^2.0.3
-        version: 2.0.3
       ollama:
         specifier: ^0.5.1
         version: 0.5.1
@@ -395,9 +389,6 @@ importers:
       vscode-uri:
         specifier: ^3.0.8
         version: 3.0.8
-      win-ca:
-        specifier: ^3.5.1
-        version: 3.5.1
     devDependencies:
       '@sourcegraph/cody-context-filters-test-dataset':
         specifier: ^1.0.0

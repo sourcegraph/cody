@@ -240,6 +240,8 @@ export {
     type RepoListResponse,
     type SuggestionsRepo,
     type RepoSuggestionsSearchResponse,
+    type InputContextItem,
+    type ChatIntentResult,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
