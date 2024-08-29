@@ -27,7 +27,16 @@
             "ignore": ["src/vscode-shim.ts"]
         },
         "web": {
-            "entry": ["src/index.tsx", "src/agent/worker.ts"]
+            "entry": ["demo/index.tsx", "lib/agent/agent.worker.ts"],
+            "ignore": ["lib/agent/shims/**"],
+            "ignoreDependencies": [
+                "buffer",
+                "util",
+                "events",
+                "stream-browserify",
+                "path-browserify",
+                "@vscode/codicons"
+            ]
         }
     },
     "ignore": ["**/__mocks__/**", "**/mocks.*", "**/__tests__/**", "lints/**"],
