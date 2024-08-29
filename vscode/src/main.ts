@@ -222,7 +222,7 @@ const register = async (
     )
 
     const editor = new VSCodeEditor()
-    const contextRetriever = new ContextRetriever(editor, symfRunner, completionsClient)
+    const contextRetriever = new ContextRetriever(editor, symfRunner, localEmbeddings, completionsClient)
 
     const { chatsController } = registerChat(
         {

@@ -126,8 +126,6 @@ export type WebviewMessage =
       }
     | ({ command: 'edit' } & WebviewEditMessage)
     | { command: 'context/get-remote-search-repos' }
-    | { command: 'context/choose-remote-search-repo'; explicitRepos?: Repo[] | undefined | null }
-    | { command: 'context/remove-remote-search-repo'; repoId: string }
     | { command: 'embeddings/index' }
     | { command: 'insert'; text: string }
     | { command: 'newFile'; text: string }

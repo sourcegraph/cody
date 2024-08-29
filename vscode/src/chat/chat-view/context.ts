@@ -234,7 +234,7 @@ export async function searchSymf(
     })
 }
 
-async function searchEmbeddingsLocal(
+export async function searchEmbeddingsLocal(
     localEmbeddings: LocalEmbeddingsController,
     text: PromptString,
     numResults: number = NUM_CODE_RESULTS + NUM_TEXT_RESULTS

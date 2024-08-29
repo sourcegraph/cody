@@ -236,14 +236,6 @@ export async function chatAction(options: ChatOptions): Promise<number> {
             )
             return 1
         }
-
-        await client.request('webview/receiveMessage', {
-            id,
-            message: {
-                command: 'context/choose-remote-search-repo',
-                explicitRepos: repos,
-            },
-        })
     }
 
     const contextFiles: ContextItem[] = []

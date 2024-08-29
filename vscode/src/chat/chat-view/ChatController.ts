@@ -62,11 +62,8 @@ import {
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
-import { getConfigWithEndpoint, getConfiguration } from '../../configuration'
+import { getConfigWithEndpoint } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
-import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
-import type { Repo } from '../../context/repo-fetcher'
-import type { RemoteRepoPicker } from '../../context/repo-picker'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
@@ -109,7 +106,7 @@ import { CodyChatEditorViewType } from './ChatsController'
 import { type ContextRetriever, toStructuredMentions } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, openFile } from './chat-helpers'
-import { type HumanInput, getPriorityContext, resolveContext } from './context'
+import { type HumanInput, getPriorityContext } from './context'
 import { DefaultPrompter, type PromptInfo } from './prompt'
 
 interface ChatControllerOptions {
@@ -201,8 +198,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly chatClient: ChatClient
 
     private readonly retrievers: AuthDependentRetrievers
-    private remoteSearch: RemoteSearch | null
-    private repoPicker: RemoteRepoPicker | null
 
     private readonly contextRetriever: ContextRetriever
 
@@ -240,14 +235,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.extensionClient = extensionClient
         this.contextRetriever = contextRetriever
 
-        this.repoPicker = this.retrievers.enterpriseContext?.repoPicker ?? null
-        this.remoteSearch = this.retrievers.enterpriseContext?.createRemoteSearch() ?? null
-        const authSubscription = this.authProvider.changes.subscribe(() => {
-            this.repoPicker = this.retrievers.enterpriseContext?.repoPicker ?? null
-            this.remoteSearch = this.retrievers.enterpriseContext?.createRemoteSearch() ?? null
-        })
-        this.disposables.push({ dispose: () => authSubscription.unsubscribe() })
-
         this.chatModel = new ChatModel(getDefaultModelID())
 
         this.guardrails = guardrails
@@ -271,7 +258,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.disposables.push(
             startClientStateBroadcaster({
                 authProvider,
-                getRemoteSearch: () => this.remoteSearch,
+                useRemoteSearch: this.retrievers.enterpriseContext !== null,
                 postMessage: (message: ExtensionMessage) => this.postMessage(message),
                 chatModel: this.chatModel,
             })
@@ -403,13 +390,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 })
                 break
             }
-            case 'context/choose-remote-search-repo': {
-                await this.handleChooseRemoteSearchRepo(message.explicitRepos ?? undefined)
-                break
-            }
-            case 'context/remove-remote-search-repo':
-                void this.handleRemoveRemoteSearchRepo(message.repoId)
-                break
             case 'embeddings/index':
                 void this.retrievers.localEmbeddings?.index()
                 break
@@ -702,9 +682,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // If the legacyAddEnhancedContext param is true, then pretend there is a `@repo` or `@tree`
                 // mention and a mention of the current selection to match the old behavior.
                 if (legacyAddEnhancedContext) {
-                    const corpusMentions = await getCorpusContextItemsForEditorState({
-                        remoteSearch: this.remoteSearch,
-                    })
+                    const corpusMentions = await getCorpusContextItemsForEditorState(
+                        this.retrievers.enterpriseContext !== null
+                    )
                     mentions = mentions.concat(corpusMentions)
 
                     const selectionContext = source === 'chat' ? await getContextFileFromSelection() : []
@@ -825,34 +805,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         span: Span,
         signal?: AbortSignal
     ): Promise<RankedContext[]> {
-        const legacyContextPromise = this.legacyComputeContext(
-            { text, mentions },
-            requestID,
-            editorState,
-            span,
-            signal
-        )
-        if (!vscode.workspace.getConfiguration().get<boolean>('cody.internal.serverSideContext')) {
-            return legacyContextPromise
-        }
-
-        const contextPromise = this._computeContext(
-            { text, mentions },
-            requestID,
-            editorState,
-            span,
-            signal
-        )
-        return (await Promise.all([contextPromise, legacyContextPromise])).flat()
-    }
-
-    private async _computeContext(
-        { text, mentions }: HumanInput,
-        requestID: string,
-        editorState: SerializedPromptEditorState | null,
-        span: Span,
-        signal?: AbortSignal
-    ): Promise<RankedContext[]> {
         // Remove context chips (repo, @-mentions) from the input text for context retrieval.
         const inputTextWithoutContextChips = editorState
             ? PromptString.unsafe_fromUserQuery(
@@ -884,7 +836,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         )
 
         const rankedContext: RankedContext[] = []
-        if (this.contextAPIClient && retrievedContext.length > 1) {
+        const useReranker =
+            vscode.workspace.getConfiguration().get<boolean>('cody.internal.useReranker') ?? false
+        if (useReranker && this.contextAPIClient && retrievedContext.length > 1) {
             const response = await this.contextAPIClient.rankContext(
                 requestID,
                 inputTextWithoutContextChips.toString(),
@@ -930,59 +884,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             ),
         })
         return rankedContext
-    }
-
-    private async legacyComputeContext(
-        { text, mentions }: HumanInput,
-        requestID: string,
-        editorState: SerializedPromptEditorState | null,
-        span: Span,
-        signal?: AbortSignal
-    ): Promise<RankedContext[]> {
-        // Fetch using legacy context retrieval
-        const config = getConfiguration()
-        const contextStrategy = config.useContext
-        span.setAttribute('strategy', contextStrategy)
-
-        // Remove context chips (repo, @-mentions) from the input text for context retrieval.
-        const inputTextWithoutContextChips = editorState
-            ? PromptString.unsafe_fromUserQuery(
-                  inputTextWithoutContextChipsFromPromptEditorState(editorState)
-              )
-            : text
-
-        const context = (
-            await Promise.all([
-                resolveContext({
-                    strategy: contextStrategy,
-                    editor: this.editor,
-                    input: { text: inputTextWithoutContextChips, mentions },
-                    providers: {
-                        localEmbeddings: this.retrievers.localEmbeddings,
-                        symf: this.retrievers.symf,
-                        remoteSearch: this.remoteSearch,
-                    },
-                    signal,
-                }),
-                getContextForChatMessage(text.toString(), signal),
-            ])
-        ).flat()
-
-        if (context.length > 0) {
-            // Run in background.
-            void this.contextAPIClient?.rankContext(
-                requestID,
-                inputTextWithoutContextChips.toString(),
-                context
-            )
-        }
-
-        return [
-            {
-                strategy: `(legacy)${contextStrategy}`,
-                items: context.flat(),
-            },
-        ]
     }
 
     private submitOrEditOperation: AbortController | undefined
@@ -1118,24 +1019,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 error: `${error}`,
             })
         }
-    }
-
-    private async handleChooseRemoteSearchRepo(explicitRepos?: Repo[]): Promise<void> {
-        if (!this.remoteSearch) {
-            return
-        }
-        const repos =
-            explicitRepos ??
-            (await this.repoPicker?.show(this.remoteSearch.getRepos(RepoInclusion.Manual)))
-
-        if (repos) {
-            this.chatModel.setSelectedRepos(repos)
-            this.remoteSearch.setRepos(repos, RepoInclusion.Manual)
-        }
-    }
-
-    private handleRemoveRemoteSearchRepo(repoId: string): void {
-        this.remoteSearch?.removeRepo(repoId)
     }
 
     // #endregion
@@ -1448,17 +1331,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return this.chatModel.sessionID
     }
 
-    // Sets the provider up for a new chat that is not being restored from a
-    // saved session.
-    public async newSession(): Promise<void> {
-        // Set the remote search's selected repos to the workspace repo list
-        // by default.
-        this.remoteSearch?.setRepos(
-            (await this.repoPicker?.getDefaultRepos()) || [],
-            RepoInclusion.Manual
-        )
-    }
-
     // Attempts to restore the chat to the given sessionID, if it exists in
     // history. If it does, then saves the current session and cancels the
     // current in-progress completion. If the chat does not exist, then this
@@ -1466,18 +1338,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     public async restoreSession(sessionID: string): Promise<void> {
         const oldTranscript = chatHistory.getChat(this.authProvider.getAuthStatus(), sessionID)
         if (!oldTranscript) {
-            return this.newSession()
+            return
         }
         this.cancelSubmitOrEditOperation()
         const newModel = newChatModelFromSerializedChatTranscript(oldTranscript, this.chatModel.modelID)
         this.chatModel = newModel
-
-        // Restore per-chat enhanced context settings
-        if (this.remoteSearch) {
-            const repos =
-                this.chatModel.getSelectedRepos() || (await this.repoPicker?.getDefaultRepos()) || []
-            this.remoteSearch.setRepos(repos, RepoInclusion.Manual)
-        }
 
         this.postViewTranscript()
     }
@@ -1622,8 +1487,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     },
                 }),
                 {
-                    mentionMenuData: query =>
-                        getMentionMenuData(query, this.remoteSearch, this.chatModel),
+                    mentionMenuData: query => getMentionMenuData(query, this.chatModel),
                     evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
                     prompts: query =>
                         promiseFactoryToObservable(signal =>
