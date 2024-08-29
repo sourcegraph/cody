@@ -12,6 +12,7 @@ import {
     allMentionProvidersMetadata,
     combineLatest,
     isAbortError,
+    jetbrainsMentionProvidersMetadata,
     openCtx,
     promiseFactoryToObservable,
     telemetryRecorder,
@@ -75,6 +76,8 @@ export function getMentionMenuData(
     }
 
     const isCodyWeb = getConfiguration().agentIDE === CodyIDE.Web
+    const isJetBrains = getConfiguration().agentIDE === CodyIDE.JetBrains
+
     const { input, context } = chatModel.contextWindow
 
     try {
@@ -95,11 +98,14 @@ export function getMentionMenuData(
         )
 
         const queryLower = query.text.toLowerCase()
+
         const providers = (
             query.provider === null
                 ? isCodyWeb
                     ? webMentionProvidersMetadata()
-                    : allMentionProvidersMetadata()
+                    : isJetBrains
+                      ? jetbrainsMentionProvidersMetadata()
+                      : allMentionProvidersMetadata()
                 : Observable.of([])
         ).pipe(map(providers => providers.filter(p => p.title.toLowerCase().includes(queryLower))))
 
