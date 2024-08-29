@@ -20,6 +20,9 @@ importers:
       '@openctx/client':
         specifier: ^0.0.25
         version: 0.0.25
+      '@openctx/provider':
+        specifier: ^0.0.15
+        version: 0.0.15
       '@sourcegraph/telemetry':
         specifier: ^0.18.0
         version: 0.18.0
@@ -16645,7 +16648,7 @@ packages:
       tinypool: 0.8.4
       vite: 5.4.2(@types/node@20.12.7)
       vite-node: 1.6.0(@types/node@20.12.7)
-      why-is-node-running: 2.2.2
+      why-is-node-running: 2.3.0
     transitivePeerDependencies:
       - less
       - lightningcss
@@ -16886,15 +16889,6 @@ packages:
     hasBin: true
     dependencies:
       isexe: 3.1.1
-    dev: true
-
-  /why-is-node-running@2.2.2:
-    resolution: {integrity: sha512-6tSwToZxTOcotxHeA+qGCq1mVzKR3CwcJGmVcY+QE8SHy6TnpFnh8PAvPNHYr7EcuVeG0QSMxtYCuO1ta/G/oA==}
-    engines: {node: '>=8'}
-    hasBin: true
-    dependencies:
-      siginfo: 2.0.0
-      stackback: 0.0.2
     dev: true
 
   /why-is-node-running@2.3.0:

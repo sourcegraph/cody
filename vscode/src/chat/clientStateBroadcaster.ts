@@ -7,6 +7,7 @@ import {
     displayLineRange,
     displayPathBasename,
     expandToLineRange,
+    openCtx,
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -156,6 +157,20 @@ export async function getCorpusContextItemsForEditorState({
                 source: ContextItemSource.Initial,
                 icon: 'folder',
             } satisfies ContextItemTree)
+        }
+    }
+
+    const mentions = await openCtx.controller?.mentions({
+        query: vscode.window.activeTextEditor?.document.uri.toString(),
+    })
+    if (mentions) {
+        for (const mention of mentions) {
+            if (mention.providerUri?.includes('includeReadme')) {
+                items.push({
+                    type: 'file',
+                    uri: vscode.Uri.parse(mention.uri),
+                })
+            }
         }
     }
 

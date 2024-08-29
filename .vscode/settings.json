@@ -37,5 +37,8 @@
   },
   "[css]": {
     "editor.defaultFormatter": "stylelint.vscode-stylelint"
+  },
+  "openctx.providers": {
+    "../.openctx/includeReadme.js": true
   }
 }
