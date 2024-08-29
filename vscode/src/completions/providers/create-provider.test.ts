@@ -33,7 +33,13 @@ const dummyCodeCompletionsClient: CodeCompletionsClient = {
     onConfigurationChange: () => undefined,
 }
 
-const dummyAuthStatus: AuthStatus = defaultAuthStatus
+const dummyAuthStatus: AuthStatus = {
+    ...defaultAuthStatus,
+    configOverwrites: {
+        provider: 'sourcegraph',
+        completionModel: 'fireworks/starcoder-hybrid',
+    },
+}
 
 graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
 
@@ -53,7 +59,7 @@ describe('createProviderConfig', () => {
                         'nasa-ai' as ClientConfiguration['autocompleteAdvancedProvider'],
                 }),
                 dummyCodeCompletionsClient,
-                dummyAuthStatus
+                defaultAuthStatus
             )
             expect(provider).toBeNull()
         })
@@ -67,7 +73,7 @@ describe('createProviderConfig', () => {
                         null as ClientConfiguration['autocompleteAdvancedProvider'],
                 }),
                 dummyCodeCompletionsClient,
-                dummyAuthStatus
+                defaultAuthStatus
             )
             expect(provider).toBeNull()
         })
