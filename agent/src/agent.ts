@@ -374,7 +374,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.globalState?.update(key, value)
                 }
             }
-            this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
+
+            this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
+                ? vscode.Uri.parse(clientInfo.workspaceRootUri).with({ scheme: 'file' })
+                : vscode.Uri.from({
+                      scheme: 'file',
+                      path: clientInfo.workspaceRootPath ?? undefined,
+                  })
+
             vscode_shim.setWorkspaceDocuments(this.workspace)
             if (clientInfo.capabilities?.codeActions === 'enabled') {
                 vscode_shim.onDidRegisterNewCodeActionProvider(codeActionProvider => {
@@ -411,13 +418,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             vscode_shim.setClientInfo(clientInfo)
             this.clientInfo = clientInfo
             setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
-
-            this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
-                ? vscode.Uri.parse(clientInfo.workspaceRootUri)
-                : vscode.Uri.from({
-                      scheme: 'file',
-                      path: clientInfo.workspaceRootPath ?? undefined,
-                  })
 
             try {
                 const secrets =
