@@ -15,13 +15,19 @@ vi.mock('vscode', () => ({
             update: vi.fn(),
         })),
     },
+    window: {
+        createOutputChannel: vi.fn(),
+    },
+    extensions: {
+        getExtension: vi.fn(),
+    },
 }))
 
 vi.mock('vscode-uri', () => ({
     Utils: {
-        joinPath: vi
-            .fn()
-            .mockImplementation((base: Uri, path: string) => ({ path: `${base.path}/${path}` })),
+        joinPath: vi.fn().mockImplementation((base: Uri, ...pathSegments: string[]) => {
+            return { path: `${base.path}/${pathSegments.join('/')}` }
+        }),
     },
 }))
 
@@ -45,11 +51,9 @@ describe('deriveNewFileUri', () => {
         const currentFileUri = Uri.parse('/workspace/project/file.txt')
         const text = `<${PROMPT_TOPICS.FILENAME}>newfile.txt</${PROMPT_TOPICS.FILENAME}>`
 
-        vi.mocked(workspace.getWorkspaceFolder).mockReturnValue(undefined)
-
         const result = deriveNewFileUri(currentFileUri, text)
 
-        expect(result.path).toBe('/workspace/project/newfile.txt')
+        expect(result.path).toBe('/workspace/newfile.txt')
     })
 
     it('should handle text without tags correctly', () => {
@@ -60,7 +64,7 @@ describe('deriveNewFileUri', () => {
 
         const result = deriveNewFileUri(currentFileUri, text)
 
-        expect(result.path).toBe('/workspace/project/newfile.txt')
+        expect(result.path).toBe('/workspace/newfile.txt')
     })
 
     it('should derive new file URI with specific workspace path', () => {
