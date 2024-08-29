@@ -41,7 +41,7 @@ const FeatureRow: FunctionComponent<{
     </div>
 )
 
-export const localStorageKey = 'chat.welcome-message-dismissed'
+const localStorageKey = 'chat.welcome-message-dismissed'
 
 export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE; setView: (view: View) => void }> = ({
     IDE,

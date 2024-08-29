@@ -27,7 +27,7 @@ const SNIPPET_WINDOW_SIZE = 50
  */
 const MAX_MATCHES_PER_FILE = 20
 
-export interface JaccardSimilarityOptions extends CachedRerieverOptions {
+interface JaccardSimilarityOptions extends CachedRerieverOptions {
     snippetWindowSize?: number
     maxMatchesPerFile?: number
 }

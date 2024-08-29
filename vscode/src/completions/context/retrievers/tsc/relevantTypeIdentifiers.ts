@@ -24,7 +24,7 @@ export function relevantTypeIdentifiers(
     return { kind, nodes }
 }
 
-export function pushTypeIdentifiers(
+function pushTypeIdentifiers(
     result: ts.Node[],
     checker: ts.TypeChecker,
     node: ts.Node

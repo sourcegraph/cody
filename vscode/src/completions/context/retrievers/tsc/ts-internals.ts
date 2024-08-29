@@ -104,7 +104,7 @@ export function formatSymbol(
     return displayText ?? ''
 }
 
-export interface SymbolWalker {
+interface SymbolWalker {
     walkType: (tpe: ts.Type) => void
     walkSymbol: (tpe: ts.Symbol) => void
 }

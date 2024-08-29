@@ -8,7 +8,7 @@ export function mustExtractXML(text: string, tag: string): string {
     return r
 }
 
-export function extractXML(text: string, tag: string): string | null {
+function extractXML(text: string, tag: string): string | null {
     const startTag = `<${tag}>`
     const endTag = `</${tag}>`
     const startIndex = text.indexOf(startTag)
@@ -52,8 +52,4 @@ export function extractXMLArray(text: string, tag: string): string[] {
         start = endIndex + endTag.length
     }
     return extracted
-}
-
-export function extractXMLArrayFromAnthropicResponse(message: Message, tag: string): string[] {
-    return extractXMLArray(anthropicMessageToText(message), tag)
 }

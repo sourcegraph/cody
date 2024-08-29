@@ -23,22 +23,10 @@ import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
-import { repoNameResolver } from '../../repository/repo-name-resolver'
 
 export interface HumanInput {
     text: PromptString
     mentions: ContextItem[]
-}
-
-export async function remoteRepositoryURIsForLocalTrees(input: HumanInput): Promise<string[]> {
-    const trees: ContextItemTree[] = input.mentions.filter(
-        (item): item is ContextItemTree => item.type === 'tree'
-    )
-
-    const groups = await Promise.all(
-        trees.map(tree => repoNameResolver.getRepoNamesFromWorkspaceUri(tree.uri))
-    )
-    return Array.from(new Set(groups.flat()))
 }
 
 /**

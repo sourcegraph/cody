@@ -7,16 +7,33 @@
                 "scripts/*.ts",
                 "test/integration/*.ts",
                 "webviews/index.tsx",
-                "webviews/minion/index.tsx"
+                "webviews/minion/index.tsx",
+                "playwright.v2.config.ts",
+                "typehacks/vscode.ts",
+                "webviews/postcss.config.js",
+                "webviews/vite.config.mts",
+                "../agent/src/index.ts",
+                "../agent/src/TestClient.ts"
             ],
-            "ignore": ["src/tree-sitter/query-tests/test-data/**", "src/jsonrpc/agent-protocol.ts"],
+            "ignore": [
+                "src/tree-sitter/query-tests/test-data/**",
+                "src/jsonrpc/agent-protocol.ts",
+                "test/fixtures/**",
+                "test/integration/single-root/**",
+                "test/integration/multi-root/**",
+                "webviews/utils/useFeatureFlags.tsx",
+                "webviews/components/shadcn/**"
+            ],
             "ignoreBinaries": ["code", "code-insiders"],
             "ignoreDependencies": [
                 "@vscode/vsce",
                 "ovsx",
                 "path-browserify",
                 "os-browserify",
-                "@vscode/codicons"
+                "@vscode/codicons",
+                "buildkite-test-collector",
+                "postcss",
+                "postcss-nested"
             ]
         },
         "agent": {
@@ -40,6 +57,6 @@
         },
         "lib/prompt-editor": {}
     },
-    "ignore": ["**/__mocks__/**", "**/mocks.*", "**/__tests__/**", "lints/**"],
+    "ignore": ["**/__mocks__/**", "**/mocks.*", "**/__tests__/**", "lints/**", "**/test-data/**"],
     "exclude": []
 }

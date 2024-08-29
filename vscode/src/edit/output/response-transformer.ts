@@ -76,7 +76,7 @@ export function responseTransformer(
     return decodedText
 }
 
-export function formatToMatchOriginal(incoming: string, original: string, uri: vscode.Uri): string {
+function formatToMatchOriginal(incoming: string, original: string, uri: vscode.Uri): string {
     const formattedToMatchLanguage = matchLanguage(incoming, original, uri)
 
     // LLMs have a tendency to complete the response with a final new line, but we don't want to

@@ -19,7 +19,7 @@ interface QueryParams {
     numResults: number
 }
 
-export interface QueryResultSet {
+interface QueryResultSet {
     results: QueryResult[]
 }
 

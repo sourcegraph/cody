@@ -63,14 +63,6 @@ export function getLinesFromLocation(location: vscode.Location, lineCount: numbe
     )
 }
 
-// TODO: experiment with workspace symbols to get symbol kind to help determine how to extract context snippet text
-export async function getWorkspaceSymbols(query: string): Promise<vscode.SymbolInformation[]> {
-    return executeTracedCommand<vscode.SymbolInformation[]>(
-        'vscode.executeWorkspaceSymbolProvider',
-        query
-    )
-}
-
 function executeTracedCommand<T>(command: string, ...rest: unknown[]): Promise<T> {
     return wrapInActiveSpan(command, async () => {
         return vscode.commands.executeCommand<T>(command, ...rest)
@@ -86,9 +78,7 @@ export const locationLinkToLocation = (
     return isLocationLink(value) ? new vscode.Location(value.targetUri, value.targetRange) : value
 }
 
-export const isLocationLink = (
-    value: vscode.Location | vscode.LocationLink
-): value is vscode.LocationLink => {
+const isLocationLink = (value: vscode.Location | vscode.LocationLink): value is vscode.LocationLink => {
     return 'targetUri' in value
 }
 

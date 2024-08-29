@@ -6,8 +6,6 @@ import { getCurrentDocContext } from '../../get-current-doc-context'
 import { InlineCompletionItemProviderConfigSingleton } from '../../inline-completion-item-provider-config-singleton'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../types'
 
-export interface CacheableRetriever extends ContextRetriever {}
-
 export interface CachedRerieverOptions {
     cacheOptions?: LRUCache.Options<string, AutocompleteContextSnippet[], unknown>
     dependencyCacheOptions?: LRUCache.Options<string, Set<string>, unknown>

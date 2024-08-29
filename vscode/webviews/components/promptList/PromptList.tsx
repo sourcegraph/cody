@@ -295,8 +295,6 @@ function hasCustomCommands(commands: CodyCommand[]): boolean {
     )
 }
 
-export const PROMPT_LIST_COMMANDS_HEADING = 'Commands'
-
 function commandRowValue(row: PromptOrDeprecatedCommand): string {
     return row.type === 'prompt' ? `prompt-${row.value.id}` : `command-${row.value.key}`
 }

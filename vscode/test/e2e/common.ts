@@ -120,10 +120,6 @@ export function getContextCell(chatPanel: FrameLocator): Locator {
     return chatPanel.locator('[data-testid="context"]', { hasText: 'Context' })
 }
 
-export function contextCellItems(contextCell: Locator): Locator {
-    return contextCell.locator('[data-testid="context-item"]')
-}
-
 export async function openContextCell(contextCell: Locator) {
     contextCell.locator('button', { hasText: 'Context' }).click()
 }

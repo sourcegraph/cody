@@ -45,7 +45,7 @@ import {
     MITM_PROXY_SERVICE_ENDPOINT_HEADER,
     MITM_PROXY_SERVICE_NAME_HEADER,
 } from './constants'
-export type Directory = string
+type Directory = string
 
 const DOWNLOAD_GRACE_TIME = 5 * 60 * 1000 //5 minutes
 
@@ -89,7 +89,7 @@ const testOptionsSchema = zod.object({
 export type TestOptions = zod.infer<typeof testOptionsSchema>
 export type WorkerOptions = zod.infer<typeof workerOptionsSchema>
 
-export interface MitMProxyConfig {
+interface MitMProxyConfig {
     sourcegraph: {
         dotcom: {
             readonly endpoint: string

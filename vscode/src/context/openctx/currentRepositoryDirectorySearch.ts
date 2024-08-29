@@ -14,7 +14,7 @@ import { WorkspaceRepoMapper } from '../workspace-repo-mapper'
 import type { OpenCtxProvider } from './types'
 
 const CurrentRepositoryDirectoryProvider = createCurrentRepositoryDirectoryProvider()
-export function createCurrentRepositoryDirectoryProvider(customTitle?: string): OpenCtxProvider {
+function createCurrentRepositoryDirectoryProvider(customTitle?: string): OpenCtxProvider {
     return {
         providerUri: CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
 

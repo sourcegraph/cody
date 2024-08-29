@@ -65,7 +65,6 @@
     "@openctx/client": "^0.0.25",
     "@sourcegraph/telemetry": "^0.18.0",
     "ignore": "^5.3.1",
-    "mac-ca": "^2.0.3",
     "observable-fns": "^0.6.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",

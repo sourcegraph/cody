@@ -52,7 +52,7 @@ export const testGitWorkspace = baseTest
     })
 
 /** Run 'git' and wait for the process to exit. */
-export async function runGit(args: string[], options?: any) {
+async function runGit(args: string[], options?: any) {
     const proc = spawn('git', args, options)
     return new Promise(resolve => proc.on('close', resolve))
 }

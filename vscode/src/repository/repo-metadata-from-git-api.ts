@@ -11,7 +11,7 @@ export interface RepoRevMetaData extends GitHubDotComRepoMetaData {
     remoteID?: string
 }
 
-export class WorkspaceReposMonitor implements vscode.Disposable {
+class WorkspaceReposMonitor implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
 
     private repoMetadata = new Map<string, Promise<RepoRevMetaData[]>>()

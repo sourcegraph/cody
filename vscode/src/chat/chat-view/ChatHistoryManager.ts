@@ -9,7 +9,7 @@ import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 import { localStorage } from '../../services/LocalStorageProvider'
 
-export class ChatHistoryManager implements vscode.Disposable {
+class ChatHistoryManager implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private historyChanged = new vscode.EventEmitter<UserLocalHistory | null>()
 

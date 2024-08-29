@@ -29,7 +29,7 @@ import {
 } from '../../editor/utils/editor-context'
 import type { ChatModel } from '../chat-view/ChatModel'
 
-export interface GetContextItemsTelemetry {
+interface GetContextItemsTelemetry {
     empty: () => void
     withProvider: (type: MentionQuery['provider'], metadata?: { id: string }) => void
 }

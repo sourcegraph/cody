@@ -1,6 +1,5 @@
 import { getEditorTabSize } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import type { FixupTask } from '../FixupTask'
 
 /**
  * Returns the last full line in a string.
@@ -17,10 +16,6 @@ export function getLastFullLine(str: string): string {
     }
 
     return ''
-}
-
-export function getVisibleDocument(task: FixupTask): vscode.TextDocument | undefined {
-    return vscode.window.visibleTextEditors.find(e => e.document.uri === task.fixupFile.uri)?.document
 }
 
 const UNICODE_SPACE = '\u00a0'

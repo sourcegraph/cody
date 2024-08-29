@@ -63,21 +63,21 @@ declare const CompletionLogID: unique symbol
 export type CompletionItemID = string & { _opaque: typeof CompletionItemID }
 declare const CompletionItemID: unique symbol
 
-export interface InlineCompletionItemRetrievedContext {
+interface InlineCompletionItemRetrievedContext {
     content: string
     filePath: string
     startLine: number
     endLine: number
 }
 
-export interface InlineContextItemsParams {
+interface InlineContextItemsParams {
     context: AutocompleteContextSnippet[]
     filePath: string | undefined
     gitUrl: string | undefined
     commit: string | undefined
 }
 
-export interface InlineCompletionItemContext {
+interface InlineCompletionItemContext {
     gitUrl: string
     commit?: string
     filePath?: string
