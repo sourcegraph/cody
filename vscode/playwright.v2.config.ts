@@ -93,9 +93,6 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
             testMatch: ['**/*.test.ts'],
             testIgnore: ['issues/**/*', 'utils/**/*'],
             dependencies: ['tmpdir', ...(isCI ? [] : ['credentials'])],
-            use: {
-                // recordIfMissing: true, //uncomment for quick manual override
-            },
         },
         {
             name: 'issues',
@@ -103,9 +100,6 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
             retries: 0,
             testMatch: ['**/*.test.ts'],
             dependencies: ['tmpdir', ...(isCI ? [] : ['credentials'])],
-            use: {
-                // recordIfMissing: true, //uncomment for quick manual override
-            },
         },
     ],
     reporter: [

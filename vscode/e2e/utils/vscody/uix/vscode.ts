@@ -60,6 +60,9 @@ export async function startSession({
 
     const interceptRouteURL = `${URL.resolve(vscodeUI.url, '/**')}`
     return t.step('Start VSCode Session', async () => {
+        //Load some initial helpers. This will get expanded later with VSCode specific ones
+        await page.addInitScript(testUtilsInitScript)
+
         if (page.url() !== vscodeUI.url) {
             await page.route(interceptRouteURL, route => {
                 route.fulfill({
@@ -70,75 +73,53 @@ export async function startSession({
             await page.goto(vscodeUI.url)
         }
 
-        // User settings are stored in IndexDB though so we need to get a bit
-        // clever. Normal "user settings" are better stored in Machine settings
-        // so that they can be easily edited as a normal file. Machine settings
-        // don't cover security sensitive settings though.
-        const userSettingsOk = await page.evaluate(async () => {
-            const openDatabase = () => {
-                return new Promise((resolve, reject) => {
-                    const request = indexedDB.open('vscode-web-db')
+        // Normal "user settings" are better stored in Machine settings so that
+        // they can be easily edited as a normal file. Machine settings don't
+        // cover security sensitive settings though which is why we directly
+        // modify the state in IndexDB.
+        const defaultsOk = await page.evaluate(async () => {
+            const userSettings = JSON.stringify(
+                {
+                    'security.workspace.trust.enabled': false,
+                    'extensions.autoCheckUpdates': false,
+                    'extensions.autoUpdate': false,
+                    'update.mode': 'none',
+                    'update.showReleaseNotes': false,
+                    'code-runner.enableAppInsights': false,
+                    'telemetry.enableCrashReporter': false,
+                    'telemetry.enableTelemetry': false,
+                    'telemetry.telemetryLevel': 'off',
+                },
+                null,
+                2
+            )
+            //settings data is stored as Uint8Array
+            const encodedUserSettings = new TextEncoder().encode(userSettings)
+            //@ts-ignore
+            await window.__testUtils.vscode.indexDB.put(
+                'vscode-web-db',
+                'vscode-userdata-store',
+                '/User/settings.json',
+                encodedUserSettings
+            )
 
-                    request.onupgradeneeded = (event: any) => {
-                        const db = event.target.result
-                        if (!db.objectStoreNames.contains('vscode-userdata-store')) {
-                            db.createObjectStore('vscode-userdata-store')
-                        }
-                    }
-
-                    request.onsuccess = (event: any) => {
-                        resolve(event.target.result)
-                    }
-
-                    request.onerror = (event: any) => {
-                        reject(event.target.errorCode)
-                    }
-                })
-            }
-            const putData = (db: any) => {
-                return new Promise((resolve, reject) => {
-                    const transaction = db.transaction(['vscode-userdata-store'], 'readwrite')
-                    const store = transaction.objectStore('vscode-userdata-store')
-                    //TODO: Configurable overwrites
-                    const settingsJSON = JSON.stringify(
-                        {
-                            'security.workspace.trust.enabled': false,
-                            'extensions.autoCheckUpdates': false,
-                            'extensions.autoUpdate': false,
-                            'update.mode': 'none',
-                            'update.showReleaseNotes': false,
-                            'code-runner.enableAppInsights': false,
-                            'telemetry.enableCrashReporter': false,
-                            'telemetry.enableTelemetry': false,
-                            'telemetry.telemetryLevel': 'off',
-                        },
-                        null,
-                        2
-                    )
-                    const settingsData = new TextEncoder().encode(settingsJSON)
-                    const putRequest = store.put(settingsData, '/User/settings.json') // this path is not OS specific
-                    putRequest.onsuccess = () => {
-                        resolve(void 0)
-                    }
-                    putRequest.onerror = (event: any) => {
-                        console.error(event)
-                        reject(event.target.errorCode)
-                    }
-                })
-            }
-
-            try {
-                const db = await openDatabase()
-                await putData(db)
-                return true
-            } catch (error) {
-                console.error('Error accessing IndexedDB:', error)
-                return false
-            }
+            // we disable some notifications that are just noise
+            //@ts-ignore
+            await window.__testUtils.vscode.indexDB.put(
+                'vscode-web-state-db-global',
+                'ItemTable',
+                'notifications.perSourceDoNotDisturbMode',
+                JSON.stringify([
+                    {
+                        id: 'vscode.git',
+                        filter: 1,
+                    },
+                ])
+            )
+            return true
         })
-
-        if (!userSettingsOk) {
-            throw new Error('Failed to initialize VSCode User Settings')
+        if (!defaultsOk) {
+            throw new Error('Failed to initialize VSCode default settings')
         }
 
         // we remove any mock handlers so that we can load the real deal
@@ -155,9 +136,10 @@ export async function startSession({
                     try {
                         const code = window.require('vs/workbench/workbench.web.main')
                         //@ts-ignore
-                        window._vscode = code
-                        //@ts-ignore
-                        window._executeCommand = code.commands.executeCommand
+                        Object.assign(window.__testUtils.vscode, {
+                            browserAPI: code,
+                            executeCommand: code.commands.executeCommand,
+                        })
                         // insert the meta tag if it doesn't already exist
                         // await page.waitForSelector('meta[name="__exposed-vscode-api__"]', { timeout: 1000 })
                         const meta = document.createElement('meta')
@@ -314,4 +296,99 @@ export async function select(args: SelectArgs, ctx: Pick<UIXContextFnContext, 'e
         [args],
         ctx
     )
+}
+
+async function testUtilsInitScript() {
+    //only run in the main frame
+    if (window && window.self === window.top) {
+        //@ts-ignore
+        window.__testUtils = {
+            cody: {
+                getGlobalState: async () => {
+                    return JSON.parse(
+                        //@ts-ignore
+                        await window.__testUtils.vscode.indexDB.get(
+                            'vscode-web-state-db-global',
+                            'ItemTable',
+                            'sourcegraph.cody-ai'
+                        )
+                    )
+                },
+            },
+            vscode: {
+                indexDB: {
+                    get: (dbName: string, objectStore: string, key: string) => {
+                        return new Promise((resolve, reject) => {
+                            const request = indexedDB.open(dbName)
+                            request.onsuccess = event => {
+                                //@ts-ignore
+                                const db: IDBDatabase = event.target?.result
+                                const tx = db.transaction(objectStore, 'readonly')
+                                const store = tx.objectStore(objectStore)
+                                const request = store.get(key)
+                                request.onsuccess = event => {
+                                    //@ts-ignore
+                                    resolve(event.target?.result)
+                                }
+                                request.onerror = event => {
+                                    //@ts-ignore
+                                    reject(event.target?.error)
+                                }
+                            }
+                            request.onerror = event => {
+                                //@ts-ignore
+                                reject(event.target?.error)
+                            }
+                        })
+                    },
+                    put: async (dbName: string, objectStore: string, key: string, value: any) => {
+                        const ensureDB = (
+                            version: number | undefined = undefined
+                        ): Promise<IDBDatabase> => {
+                            return new Promise((resolve, reject) => {
+                                const request = indexedDB.open(dbName, version)
+
+                                request.onupgradeneeded = event => {
+                                    //@ts-ignore
+                                    const db: IDBDatabase = event.target.result
+                                    db.createObjectStore(objectStore)
+                                }
+
+                                request.onsuccess = event => {
+                                    //@ts-ignore
+                                    const db: IDBDatabase = event.target.result
+                                    if (!db.objectStoreNames.contains(objectStore)) {
+                                        // bump the version
+                                        ensureDB(db.version + 1)
+                                            .then(resolve)
+                                            .catch(reject)
+                                    } else {
+                                        resolve(db)
+                                    }
+                                }
+
+                                request.onerror = (event: any) => {
+                                    reject(event.target.errorCode)
+                                }
+                            })
+                        }
+                        const db = await ensureDB()
+                        await new Promise((resolve, reject) => {
+                            const transaction = db.transaction([objectStore], 'readwrite')
+                            const store = transaction.objectStore(objectStore)
+                            //TODO: Configurable overwrites
+
+                            const putRequest = store.put(value, key) // this path is not OS specific
+                            putRequest.onsuccess = () => {
+                                resolve(void 0)
+                            }
+                            putRequest.onerror = (event: any) => {
+                                reject(event.target.errorCode)
+                            }
+                        })
+                    },
+                },
+            },
+        }
+    }
 }

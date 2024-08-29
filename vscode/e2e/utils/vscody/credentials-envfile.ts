@@ -7,6 +7,10 @@ import { CODY_VSCODE_ROOT_DIR } from '../helpers'
 const existingRegex = /^([^=]+)=(.*)$/m
 export const CREDENTIALS_ENVFILE_PATH = path.join(CODY_VSCODE_ROOT_DIR, '.credentials.env')
 
+// This generates .credentials.env file and automatically updates the keys if the user has access to the required gcloud secrets.
+// These keys are needed to update recordings and it's a bit tedious for a user to have to remember to update/fetch them.
+// These keys are later used in the MitM proxy to substitue a PLACEHOLDER_TOKEN that is sent with every request coming from Cody.
+
 const tokens: [string, string][] = [
     // [EXPORTED_NAME, SECRET_NAME]
     ['SRC_DOTCOM_PRO_ACCESS_TOKEN', 'CODY_PRO_ACCESS_TOKEN'],
@@ -56,7 +60,6 @@ function withMissingValues(values: Map<string, string>) {
     return withMissing
 }
 /**
- * Updates env file
  * @returns true if env file was updated
  */
 export function updateEnvFile(): boolean {

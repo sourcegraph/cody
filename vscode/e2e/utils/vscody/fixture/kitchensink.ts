@@ -9,7 +9,6 @@ import { CODY_VSCODE_ROOT_DIR, retry } from '../../helpers'
 
 export const kitchensinkFixture = _test.extend<TestContext, WorkerContext>({
     debugMode: [
-        // biome-ignore lint/correctness/noEmptyPattern: <explanation>
         async ({}, use) => {
             use(!!process.env.PWDEBUG)
         },

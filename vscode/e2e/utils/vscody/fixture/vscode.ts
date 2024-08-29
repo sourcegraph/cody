@@ -157,19 +157,22 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
                 CODY_TESTING_BFG_DIR: path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.binaryTmpDir),
                 CODY_TESTING_SYMF_DIR: path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.binaryTmpDir),
             }
+            // payload is injected into the extension host when it's started
+            const payload = []
+            if (extensionHostDebugPort) {
+                payload.push([
+                    validOptions.waitForExtensionHostDebugger
+                        ? 'inspect-brk-extensions'
+                        : 'inspect-extension',
+                    `${extensionHostDebugPort}`,
+                ])
+            }
+            // TODO: allow for faster dev flow
+            // payload.push(['extensionDevelopmentPath', CODY_VSCODE_ROOT_DIR])
             const config = {
                 url: `http://127.0.0.1:${serverPort}/`,
                 token: connectionToken,
-                payload: extensionHostDebugPort
-                    ? [
-                          [
-                              `inspect-${
-                                  validOptions.waitForExtensionHostDebugger ? 'brk-' : ''
-                              }extensions`,
-                              `${extensionHostDebugPort}`,
-                          ],
-                      ]
-                    : [],
+                payload: payload,
                 extensionHostDebugPort,
             }
             //@ts-ignore
@@ -209,6 +212,7 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
     // This exposes some bare-bones VSCode APIs in the browser context. You can
     // now simply execute a command from the chrome debugger which is a lot less
     // flaky then relying on Button Clicks etc.
+    //TODO(rnauta): move this to use window.testUtils and expose all the other helpers
     executeCommand: [
         async ({ page }, use) => {
             const commandFn = async (command: string, ...args: any[]): Promise<any> => {
@@ -221,7 +225,7 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
                         const res = await page.evaluate(
                             async ({ command, args }) => {
                                 //@ts-ignore
-                                return await window._executeCommand(command, ...args)
+                                return await window.__testUtils.vscode.executeCommand(command, ...args)
                             },
                             {
                                 command,
@@ -379,8 +383,8 @@ async function installExtensions({
     // We start by installing all extensions to a shared cache dir. This speeds up tests without any risk of flake.
     const nodeExecutable = isWindows() ? 'node.exe' : 'node'
     const sharedExtensionsDir = path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.vscodeExtensionCacheDir)
+    await fs.mkdir(sharedExtensionsDir, { recursive: true })
     if (validOptions.vscodeExtensions.length) {
-        await fs.mkdir(sharedExtensionsDir, { recursive: true })
         const releaseLock = await waitForLock(sharedExtensionsDir, {
             lockfilePath: path.join(sharedExtensionsDir, '.lock'),
             delay: 1000,
