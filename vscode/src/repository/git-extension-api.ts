@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { logDebug } from '../log'
 import type { API, GitExtension } from './builtinGitExtension'
 
 /**
@@ -75,15 +76,19 @@ export function gitRemoteUrlsFromGitExtension(uri: vscode.Uri): string[] | undef
  * This is defined as the list of files modified since the merge base of the current
  * branch with its upstream. If the upstream doesn't exist, then we use the list of
  * files modified since the last commit.
+ *
+ * If the uri is not part of a Git repository, this method returns an empty array.
  */
 export async function gitLocallyModifiedFiles(uri: vscode.Uri, signal?: AbortSignal): Promise<string[]> {
     const repo = vscodeGitAPI?.getRepository(uri)
     if (!repo) {
-        throw new Error(`repository does not exist at ${uri.toString}`)
+        logDebug('gitLocallyModifiedFiles', 'no git repository found at', uri.toString())
+        return []
     }
 
     if (!repo.state.HEAD?.commit) {
-        throw new Error('could not get locally modified files, HEAD commit was undefined')
+        logDebug('gitLocallyModifiedFiles', 'HEAD commit was undefined for git repo at', uri.toString())
+        return []
     }
     let diffBase = repo.state.HEAD.commit
     if (repo.state.HEAD?.upstream) {

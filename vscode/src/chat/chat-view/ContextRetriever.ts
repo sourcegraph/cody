@@ -175,8 +175,13 @@ export class ContextRetriever implements vscode.Disposable {
         span: Span,
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
-        const roots = await codebaseRootsFromMentions(mentions, signal)
-        return this._retrieveContext(roots, inputTextWithoutContextChips, span, signal)
+        try {
+            const roots = await codebaseRootsFromMentions(mentions, signal)
+            return await this._retrieveContext(roots, inputTextWithoutContextChips, span, signal)
+        } catch (error) {
+            logError('ContextRetriever', 'Unhandled error retrieving context', error)
+            return []
+        }
     }
 
     private async _retrieveContext(
@@ -203,11 +208,20 @@ export class ContextRetriever implements vscode.Disposable {
             localRoots.push(root.local)
         }
 
-        const changedFilesByRoot = await Promise.all(
-            localRoots.map(root => gitLocallyModifiedFiles(root, signal))
-        )
-        const changedFiles = changedFilesByRoot.flat()
-
+        let changedFilesByRoot: string[][] = []
+        let changedFiles: string[] = []
+        try {
+            changedFilesByRoot = await Promise.all(
+                localRoots.map(root => gitLocallyModifiedFiles(root, signal))
+            )
+            changedFiles = changedFilesByRoot.flat()
+        } catch (error) {
+            logDebug(
+                'ContextRetriever',
+                'Failed to get locally modified files, falling back to indexed context only',
+                error
+            )
+        }
         const [liveContext, indexedContext] = await Promise.all([
             this.retrieveLiveContext(query, rewrittenQuery.rewritten, changedFiles, signal),
             this.retrieveIndexedContext(roots, query, rewrittenQuery.rewritten, span, signal),
