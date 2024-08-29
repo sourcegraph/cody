@@ -37,7 +37,8 @@
                 "path-browserify",
                 "@vscode/codicons"
             ]
-        }
+        },
+        "lib/prompt-editor": {}
     },
     "ignore": ["**/__mocks__/**", "**/mocks.*", "**/__tests__/**", "lints/**"],
     "exclude": []
