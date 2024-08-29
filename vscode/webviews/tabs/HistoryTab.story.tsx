@@ -1,3 +1,4 @@
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
 import { HistoryTab } from './HistoryTab'
@@ -19,6 +20,8 @@ type Story = StoryObj<typeof HistoryTab>
 
 export const Empty: Story = {
     args: {
+        IDE: CodyIDE.VSCode,
+        setView: () => {},
         userHistory: [],
     },
 }

@@ -95,7 +95,15 @@ export const CodyPanel: FunctionComponent<
                         setView={setView}
                     />
                 )}
-                {view === View.History && <HistoryTab userHistory={userHistory} />}
+                {view === View.History && (
+                    <HistoryTab
+                        IDE={config.agentIDE || CodyIDE.VSCode}
+                        setView={setView}
+                        webviewType={config.webviewType}
+                        multipleWebviewsEnabled={config.multipleWebviewsEnabled}
+                        userHistory={userHistory}
+                    />
+                )}
                 {view === View.Prompts && <PromptsTab setView={setView} />}
                 {view === View.Account && <AccountTab />}
                 {view === View.Settings && <SettingsTab />}
