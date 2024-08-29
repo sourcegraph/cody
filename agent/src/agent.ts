@@ -374,7 +374,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.globalState?.update(key, value)
                 }
             }
-            this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
+            this.workspace.workspaceRootUri = vscode.Uri.file(clientInfo.workspaceRootUri)
             vscode_shim.setWorkspaceDocuments(this.workspace)
             if (clientInfo.capabilities?.codeActions === 'enabled') {
                 vscode_shim.onDidRegisterNewCodeActionProvider(codeActionProvider => {
