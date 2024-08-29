@@ -141,15 +141,23 @@ export async function createProviderConfigHelper(
         }
         case 'aws-bedrock':
         case 'anthropic': {
+            function getAnthropicModel() {
+                // Always use the default PLG model on DotCom
+                if (authStatus.isDotCom) {
+                    return DEFAULT_PLG_ANTHROPIC_MODEL
+                }
+
+                // Only pass through the upstream-defined model if we're using Cody Gateway
+                if (authStatus.configOverwrites?.provider === 'sourcegraph') {
+                    return authStatus.configOverwrites.completionModel
+                }
+
+                return undefined
+            }
+
             return createAnthropicProviderConfig({
                 client,
-                // Only pass through the upstream-defined model if we're using Cody Gateway
-                model:
-                    authStatus.configOverwrites?.provider === 'sourcegraph'
-                        ? authStatus.configOverwrites.completionModel
-                        : authStatus.isDotCom
-                          ? DEFAULT_PLG_ANTHROPIC_MODEL
-                          : undefined,
+                model: getAnthropicModel(),
             })
         }
         case 'google': {
