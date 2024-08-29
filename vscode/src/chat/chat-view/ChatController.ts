@@ -1331,19 +1331,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return this.chatModel.sessionID
     }
 
-    // TODO(beyang) kill
-    //
-    // Sets the provider up for a new chat that is not being restored from a
-    // saved session.
-    public async newSession(): Promise<void> {
-        // Set the remote search's selected repos to the workspace repo list
-        // by default.
-        // this.remoteSearch?.setRepos(
-        //     (await this.repoPicker?.getDefaultRepos()) || [],
-        //     RepoInclusion.Manual
-        // )
-    }
-
     // Attempts to restore the chat to the given sessionID, if it exists in
     // history. If it does, then saves the current session and cancels the
     // current in-progress completion. If the chat does not exist, then this
@@ -1351,18 +1338,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     public async restoreSession(sessionID: string): Promise<void> {
         const oldTranscript = chatHistory.getChat(this.authProvider.getAuthStatus(), sessionID)
         if (!oldTranscript) {
-            return this.newSession()
+            return
         }
         this.cancelSubmitOrEditOperation()
         const newModel = newChatModelFromSerializedChatTranscript(oldTranscript, this.chatModel.modelID)
         this.chatModel = newModel
-
-        // // Restore per-chat enhanced context settings
-        // if (this.remoteSearch) {
-        //     const repos =
-        //         this.chatModel.getSelectedRepos() || (await this.repoPicker?.getDefaultRepos()) || []
-        //     this.remoteSearch.setRepos(repos, RepoInclusion.Manual)
-        // }
 
         this.postViewTranscript()
     }
