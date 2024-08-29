@@ -307,6 +307,7 @@ function paramsWithInlinedCompletion(
 
 interface GetInlineCompletionResult extends Omit<ParamsResult & InlineCompletionsResult, 'logId'> {
     acceptFirstCompletionAndPressEnter(): Promise<GetInlineCompletionResult>
+    pressEnter(): Promise<GetInlineCompletionResult>
 }
 
 /**
@@ -329,9 +330,7 @@ export async function getInlineCompletionsWithInlinedChunks(
         throw new Error('This test helpers should always return a result')
     }
 
-    const acceptFirstCompletionAndPressEnter = () => {
-        const [{ insertText }] = result.items
-
+    const pressEnter = (insertText = '') => {
         const newLineString = pressEnterAndGetIndentString(
             insertText,
             params.docContext.currentLinePrefix,
@@ -353,7 +352,11 @@ export async function getInlineCompletionsWithInlinedChunks(
         })
     }
 
-    return { ...params, ...result, acceptFirstCompletionAndPressEnter }
+    const acceptFirstCompletionAndPressEnter = () => {
+        return pressEnter(result.items[0].insertText)
+    }
+
+    return { ...params, ...result, acceptFirstCompletionAndPressEnter, pressEnter }
 }
 
 /**
