@@ -60,6 +60,11 @@ export function allMentionProvidersMetadata(): Observable<ContextMentionProvider
     ])
 }
 
+// TODO: CODY-3047 - Implement symbol context (@#) in JetBrains
+export function jetbrainsMentionProvidersMetadata(): Observable<ContextMentionProviderMetadata[]> {
+    return openCtxMentionProviders().map(providers => [FILE_CONTEXT_MENTION_PROVIDER, ...providers])
+}
+
 // Cody Web providers don't include standard file provider since
 // it uses openctx remote file provider instead
 export function webMentionProvidersMetadata(): Observable<ContextMentionProviderMetadata[]> {

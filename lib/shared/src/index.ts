@@ -282,6 +282,7 @@ export {
     type ContextItemProps,
     allMentionProvidersMetadata,
     webMentionProvidersMetadata,
+    jetbrainsMentionProvidersMetadata,
     openCtxProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
