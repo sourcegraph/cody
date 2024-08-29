@@ -266,6 +266,7 @@ export function focusLastHumanMessageEditor(): void {
     const elements = document.querySelectorAll<HTMLElement>('[data-lexical-editor]')
     const lastEditor = elements.item(elements.length - 1)
     lastEditor?.focus()
+    lastEditor?.scrollIntoView()
 }
 
 export function editHumanMessage(
