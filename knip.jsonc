@@ -20,7 +20,7 @@
             ]
         },
         "agent": {
-            "entry": ["src/cli/root.ts", "src/index.ts"],
+            "entry": ["src/cli/root.ts", "src/index.ts", "src/cli/scip-codegen/command.ts"],
             "vitest": {
                 "entry": ["**/__tests__/**/*.ts"]
             },
@@ -30,6 +30,6 @@
             "entry": ["src/index.tsx", "src/agent/worker.ts"]
         }
     },
-    "ignore": ["**/__mocks__/**", "**/mocks.*", "lints/**"],
+    "ignore": ["**/__mocks__/**", "**/mocks.*", "**/__tests__/**", "lints/**"],
     "exclude": []
 }

@@ -1432,7 +1432,6 @@
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.8",
-    "web-tree-sitter": "^0.21.0",
     "wink-nlp-utils": "^2.1.0"
   },
   "devDependencies": {

@@ -41,6 +41,9 @@ importers:
       vscode-jsonrpc:
         specifier: ^8.2.0
         version: 8.2.0
+      web-tree-sitter:
+        specifier: ^0.21.0
+        version: 0.21.0
       win-ca:
         specifier: ^3.5.1
         version: 3.5.1
@@ -669,9 +672,6 @@ importers:
       vscode-uri:
         specifier: ^3.0.8
         version: 3.0.8
-      web-tree-sitter:
-        specifier: ^0.21.0
-        version: 0.21.0
       wink-nlp-utils:
         specifier: ^2.1.0
         version: 2.1.0

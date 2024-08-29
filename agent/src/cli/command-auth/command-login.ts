@@ -88,7 +88,7 @@ export const loginCommand = new Command('login')
 // environment variable
 type LoginMethod = 'web-login' | 'cli-login'
 
-export async function loginAction(
+async function loginAction(
     options: LoginOptions,
     spinner: Ora
 ): Promise<AuthenticatedAccount | undefined> {

@@ -1,5 +1,5 @@
 import { type PromptString, ps } from '@sourcegraph/cody-shared'
-export interface LlmJudgeChatParams {
+interface LlmJudgeChatParams {
     response: PromptString
 }
 

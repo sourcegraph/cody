@@ -34,7 +34,7 @@ Then, score the fix as "bad", "acceptable", or "amazing" in a <score> section. U
 
 Remember, provide your <reasoning> first, then your <score>.`
 
-export interface LlmJudgeFixParams {
+interface LlmJudgeFixParams {
     codeBeforeFix: PromptString
     diagnosticBeforeFix: PromptString
     codeAfterFix: PromptString

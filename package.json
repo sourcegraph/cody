@@ -70,6 +70,7 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "vscode-jsonrpc": "^8.2.0",
+    "web-tree-sitter": "^0.21.0",
     "win-ca": "^3.5.1"
   },
   "packageManager": "pnpm@8.6.7",
@@ -88,9 +89,6 @@
         }
       }
     },
-    "neverBuiltDependencies": [
-      "deasync",
-      "playwright"
-    ]
+    "neverBuiltDependencies": ["deasync", "playwright"]
   }
 }
