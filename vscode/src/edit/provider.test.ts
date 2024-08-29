@@ -10,6 +10,10 @@ vi.mock('vscode', () => ({
     },
     workspace: {
         getWorkspaceFolder: vi.fn(),
+        getConfiguration: vi.fn().mockImplementation(() => ({
+            get: vi.fn().mockImplementation((_: string) => null),
+            update: vi.fn(),
+        })),
     },
 }))
 
