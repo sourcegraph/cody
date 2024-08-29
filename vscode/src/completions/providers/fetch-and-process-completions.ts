@@ -75,12 +75,16 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
             },
         }
 
-        hotStreakExtractor = createHotStreakExtractor({
-            completedCompletion,
-            ...params,
-        })
+        if (completedCompletion.insertText.length > 0) {
+            hotStreakExtractor = createHotStreakExtractor({
+                completedCompletion,
+                ...params,
+            })
 
-        yield* hotStreakExtractor.extract(rawCompletion, isFullResponse)
+            yield* hotStreakExtractor.extract(rawCompletion, isFullResponse)
+        } else {
+            abortController.abort()
+        }
     }
 
     const generatorStartTime = performance.now()

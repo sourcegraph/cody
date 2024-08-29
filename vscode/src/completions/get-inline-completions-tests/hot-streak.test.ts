@@ -23,31 +23,34 @@ describe('[getInlineCompletions] hot streak', () => {
         vi.restoreAllMocks()
     })
 
-    describe('hot-streak issues', () => {
-        it('repro hotstreak issue when the generation is same as suffix', async () => {
-            let request = await getInlineCompletionsWithInlinedChunks(
-                `from experimental table
+    it('does not attempt to extract hot streak completions if the resolves completion duplicates suffix', async () => {
+        let request = await getInlineCompletionsWithInlinedChunks(
+            `from experimental table
                 █where other_completion_provider_enabled = false
+                █and read = true
+                █and whatever = false
                 █
                 where other_completion_provider_enabled = false
                 and read = true
                 `,
-                {
-                    configuration: {
-                        autocompleteAdvancedProvider: 'fireworks',
-                    },
-                    delayBetweenChunks: 50,
-                }
-            )
+            {
+                configuration: {
+                    autocompleteAdvancedProvider: 'fireworks',
+                },
+                delayBetweenChunks: 50,
+            }
+        )
 
-            await vi.runAllTimersAsync()
+        await vi.runAllTimersAsync()
 
-            expect(request.items).toEqual([])
+        // No completion is resolved here because the suggested text is the suffix duplicate.
+        expect(request.items).toEqual([])
 
-            request = await request.acceptFirstCompletionAndPressEnter()
-            expect(request.items[0].insertText).toEqual('here other_completion_provider_enabled = false')
-            expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
-        })
+        // Go to the next line and wait for the new completion from the cache.
+        request = await request.pressEnter()
+
+        // No hot-streak completions are expected because the previous line didn't get a completion.
+        expect(request.items).toEqual([])
     })
 
     describe('static multiline', () => {
