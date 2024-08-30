@@ -78,7 +78,7 @@ export function getOpenCtxProviders(
     return combineLatest([
         configChanges,
         authStatusChanges,
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider),
+        featureFlagProvider.instance!.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider),
     ]).map(
         ([config, authStatus, gitMentionProvider]: [
             ClientConfiguration,

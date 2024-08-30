@@ -1,7 +1,6 @@
 import {
     type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
-    featureFlagProvider,
     isDotCom,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -70,7 +69,7 @@ export async function createInlineCompletionItemProvider({
 
     const [providerConfig] = await Promise.all([
         createProviderConfig(config, client, authStatus),
-        completionProviderConfig.init(config, featureFlagProvider),
+        completionProviderConfig.init(config),
     ])
 
     if (providerConfig) {

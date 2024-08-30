@@ -26,7 +26,9 @@ describe('getOpenCtxProviders', () => {
     }
 
     test('dotcom user', async () => {
-        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
+        vi.spyOn(featureFlagProvider.instance!, 'evaluatedFeatureFlag').mockReturnValue(
+            Observable.of(false)
+        )
 
         const providers = await firstValueFrom(
             getOpenCtxProviders(mockConfig(false), mockAuthStatusIsDotCom(true), true)
@@ -36,7 +38,9 @@ describe('getOpenCtxProviders', () => {
     })
 
     test('enterprise user', async () => {
-        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
+        vi.spyOn(featureFlagProvider.instance!, 'evaluatedFeatureFlag').mockReturnValue(
+            Observable.of(false)
+        )
 
         const providers = await firstValueFrom(
             getOpenCtxProviders(mockConfig(false), mockAuthStatusIsDotCom(false), true)
@@ -52,7 +56,9 @@ describe('getOpenCtxProviders', () => {
     })
 
     test('should include gitMentionsProvider when feature flag is true', async () => {
-        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
+        vi.spyOn(featureFlagProvider.instance!, 'evaluatedFeatureFlag').mockReturnValue(
+            Observable.of(true)
+        )
 
         const providers = await firstValueFrom(
             getOpenCtxProviders(mockConfig(false), mockAuthStatusIsDotCom(false), true)

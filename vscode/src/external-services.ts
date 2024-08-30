@@ -9,7 +9,6 @@ import {
     type GuardrailsClientConfig,
     type SourcegraphCompletionsClient,
     SourcegraphGuardrailsClient,
-    featureFlagProvider,
     graphqlClient,
     isError,
 } from '@sourcegraph/cody-shared'
@@ -86,7 +85,7 @@ export async function configureExternalServices(
 
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient, initialConfig)
 
-    const contextAPIClient = new ContextAPIClient(graphqlClient, featureFlagProvider)
+    const contextAPIClient = new ContextAPIClient(graphqlClient)
 
     return {
         chatClient,

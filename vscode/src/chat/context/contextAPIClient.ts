@@ -2,9 +2,9 @@ import {
     type ChatIntentResult,
     type ContextItem,
     FeatureFlag,
-    type FeatureFlagProvider,
     type InputContextItem,
     type SourcegraphGraphQLAPIClient,
+    featureFlagProvider,
     isError,
     logError,
 } from '@sourcegraph/cody-shared'
@@ -28,10 +28,7 @@ function notNull<T>(value: T | null | undefined): value is T {
 }
 
 export class ContextAPIClient {
-    constructor(
-        private readonly apiClient: SourcegraphGraphQLAPIClient,
-        private readonly featureFlagProvider: FeatureFlagProvider
-    ) {}
+    constructor(private readonly apiClient: SourcegraphGraphQLAPIClient) {}
 
     public async detectChatIntent(
         interactionID: string,
@@ -66,6 +63,8 @@ export class ContextAPIClient {
         if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.serverSideContext')) {
             return true
         }
-        return await this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyServerSideContextAPI)
+        return await featureFlagProvider.instance!.evaluateFeatureFlag(
+            FeatureFlag.CodyServerSideContextAPI
+        )
     }
 }

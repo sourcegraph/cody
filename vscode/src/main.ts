@@ -323,7 +323,7 @@ async function initializeSingletons(
                 next: config => {
                     void localStorage.setConfig(config)
                     graphqlClient.setConfig(config)
-                    void featureFlagProvider.refresh()
+                    void featureFlagProvider.instance!.refresh()
                     contextFiltersProvider.instance!.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
                     void modelsService.instance!.onConfigChange(config)
                     upstreamHealthProvider.onConfigurationChange(config)
@@ -559,7 +559,6 @@ function registerUpgradeHandlers(
         new CodyProExpirationNotifications(
             graphqlClient,
             authProvider,
-            featureFlagProvider,
             vscode.window.showInformationMessage,
             vscode.env.openExternal
         )
@@ -676,10 +675,11 @@ function registerAutocomplete(
                 // completion provider.
                 disposeAutocomplete()
 
-                const autocompleteFeatureFlagChangeSubscriber = featureFlagProvider.onFeatureFlagChanged(
-                    'cody-autocomplete',
-                    setupAutocomplete
-                )
+                const autocompleteFeatureFlagChangeSubscriber =
+                    featureFlagProvider.instance!.onFeatureFlagChanged(
+                        'cody-autocomplete',
+                        setupAutocomplete
+                    )
                 autocompleteDisposables.push({
                     dispose: autocompleteFeatureFlagChangeSubscriber,
                 })

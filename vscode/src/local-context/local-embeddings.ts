@@ -33,7 +33,9 @@ export async function createLocalEmbeddingsController(
 ): Promise<LocalEmbeddingsController> {
     const modelConfig =
         config.testingModelConfig ||
-        (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEmbeddingsGenerateMetadata))
+        (await featureFlagProvider.instance!.evaluateFeatureFlag(
+            FeatureFlag.CodyEmbeddingsGenerateMetadata
+        ))
             ? sourcegraphMetadataModelConfig
             : sourcegraphModelConfig
 

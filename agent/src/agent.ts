@@ -1369,7 +1369,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
-            return featureFlagProvider.evaluateFeatureFlag(
+            return featureFlagProvider.instance!.evaluateFeatureFlag(
                 FeatureFlag[flagName as keyof typeof FeatureFlag]
             )
         })

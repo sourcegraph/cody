@@ -1,8 +1,8 @@
 import {
     FeatureFlag,
-    type FeatureFlagProvider,
     type SourcegraphGraphQLAPIClient,
     type Unsubscribable,
+    featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
@@ -51,9 +51,8 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
      * about their Cody Pro subscription having expired (or expiring soon).
      */
     constructor(
-        private readonly apiClient: SourcegraphGraphQLAPIClient,
+        private readonly apiClient: Pick<SourcegraphGraphQLAPIClient, 'getCurrentUserCodySubscription'>,
         private readonly authProvider: AuthProvider,
-        private readonly featureFlagProvider: FeatureFlagProvider,
         private readonly showInformationMessage: (
             message: string,
             ...items: string[]
@@ -93,7 +92,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
         const authStatus = this.authProvider.getAuthStatus()
         if (!authStatus.isLoggedIn || !authStatus.isDotCom) return
 
-        const useSscForCodySubscription = await this.featureFlagProvider.evaluateFeatureFlag(
+        const useSscForCodySubscription = await featureFlagProvider.instance!.evaluateFeatureFlag(
             FeatureFlag.UseSscForCodySubscription
         )
         if (this.shouldSuppressNotifications()) return // Status may have changed during await
@@ -122,7 +121,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
     }
 
     private async showNotification(): Promise<void> {
-        const codyProTrialEnded = await this.featureFlagProvider.evaluateFeatureFlag(
+        const codyProTrialEnded = await featureFlagProvider.instance!.evaluateFeatureFlag(
             FeatureFlag.CodyProTrialEnded
         )
         if (this.shouldSuppressNotifications()) return // Status may have changed during await

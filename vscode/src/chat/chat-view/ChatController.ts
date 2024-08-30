@@ -250,7 +250,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         // Keep feature flags updated.
         this.disposables.push({
-            dispose: featureFlagProvider.onFeatureFlagChanged('', () => {
+            dispose: featureFlagProvider.instance!.onFeatureFlagChanged('', () => {
                 void this.sendConfig()
             }),
         })
@@ -1488,7 +1488,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }),
                 {
                     mentionMenuData: query => getMentionMenuData(query, this.chatModel),
-                    evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
+                    evaluatedFeatureFlag: flag =>
+                        featureFlagProvider.instance!.evaluatedFeatureFlag(flag),
                     prompts: query =>
                         promiseFactoryToObservable(signal =>
                             mergedPromptsAndLegacyCommands(query, signal)
