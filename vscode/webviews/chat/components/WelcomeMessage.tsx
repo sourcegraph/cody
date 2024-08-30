@@ -8,11 +8,8 @@ import {
 } from 'lucide-react'
 import type { FunctionComponent } from 'react'
 import type React from 'react'
-import { useClientActionDispatcher } from '../../client/clientState'
 import { CollapsiblePanel } from '../../components/CollapsiblePanel'
 import { Kbd } from '../../components/Kbd'
-import { PromptListSuitedForNonPopover } from '../../components/promptList/PromptList'
-import { onPromptSelectInPanel, onPromptSelectInPanelActionLabels } from '../../prompts/PromptsTab'
 import type { View } from '../../tabs'
 
 const MenuExample: FunctionComponent<{ children: React.ReactNode }> = ({ children }) => (
@@ -45,32 +42,12 @@ const localStorageKey = 'chat.welcome-message-dismissed'
 
 export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE; setView: (view: View) => void }> = ({
     IDE,
-    setView,
 }) => {
     // Remove the old welcome message dismissal key that is no longer used.
     localStorage.removeItem(localStorageKey)
 
-    const dispatchClientAction = useClientActionDispatcher()
-
     return (
-        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-6 tw-gap-6 tw-transition-all">
-            <CollapsiblePanel
-                storageKey="prompts"
-                title="Prompts & Commands"
-                className="tw-mb-6"
-                contentClassName="!tw-p-0 tw-overflow-clip"
-                initialOpen={true}
-            >
-                <PromptListSuitedForNonPopover
-                    onSelect={item => onPromptSelectInPanel(item, setView, dispatchClientAction)}
-                    onSelectActionLabels={onPromptSelectInPanelActionLabels}
-                    telemetryLocation="PromptsTab"
-                    showCommandOrigins={true}
-                    showPromptLibraryUnsupportedMessage={false}
-                    showOnlyPromptInsertableCommands={false}
-                    className="tw-rounded-none"
-                />
-            </CollapsiblePanel>
+        <div className="tw-flex-1 tw-w-full tw-px-6 tw-transition-all">
             <CollapsiblePanel
                 storageKey="chat-help"
                 title="Chat Help"

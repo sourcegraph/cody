@@ -15,7 +15,10 @@ import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncatio
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
+import { useClientActionDispatcher } from './client/clientState'
 import { ScrollDown } from './components/ScrollDown'
+import { PromptList } from './components/promptList/PromptList'
+import { onPromptSelectInPanel, onPromptSelectInPanelActionLabels } from './prompts/PromptsTab'
 import type { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
@@ -196,6 +199,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
     }, [])
 
+    const dispatchClientAction = useClientActionDispatcher()
+
     return (
         <>
             {!chatEnabled && (
@@ -217,6 +222,18 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 guardrails={guardrails}
                 smartApplyEnabled={smartApplyEnabled}
             />
+            {transcript.length === 0 && (
+                <PromptList
+                    onSelect={item => onPromptSelectInPanel(item, setView, dispatchClientAction)}
+                    onSelectActionLabels={onPromptSelectInPanelActionLabels}
+                    telemetryLocation="ChatTab"
+                    showSearch={false}
+                    showInitialSelectedItem={false}
+                    showCommandOrigins={true}
+                    showPromptLibraryUnsupportedMessage={false}
+                    className="tw-rounded-none tw-px-4"
+                />
+            )}
             {transcript.length === 0 && showWelcomeMessage && (
                 <WelcomeMessage IDE={userInfo.ide} setView={setView} />
             )}
