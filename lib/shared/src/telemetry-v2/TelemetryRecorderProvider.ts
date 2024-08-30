@@ -198,7 +198,7 @@ class ConfigurationMetadataProcessor implements TelemetryProcessor {
             },
             {
                 key: 'tier',
-                value: getTier(this.authStatusProvider.getAuthStatus()),
+                value: getTier(this.authStatusProvider.status),
             }
         )
     }

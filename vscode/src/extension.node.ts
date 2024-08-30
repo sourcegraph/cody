@@ -81,7 +81,7 @@ export function activate(
 // The vscode API is not available in the post-uninstall script.
 export async function deactivate(): Promise<void> {
     const config = localStorage.getConfig() ?? (await getFullConfig())
-    const authStatus = authProvider.instance?.getAuthStatus() ?? defaultAuthStatus
+    const authStatus = authProvider.instance?.status ?? defaultAuthStatus
     const { anonymousUserID } = await localStorage.anonymousUserID()
     serializeConfigSnapshot({
         config,

@@ -44,7 +44,7 @@ export async function createInlineCompletionItemProvider({
     statusBar,
     createBfgRetriever,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
-    const authStatus = authProvider.instance!.getAuthStatus()
+    const authStatus = authProvider.instance!.status
     if (!authStatus.authenticated) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
 
@@ -71,7 +71,7 @@ export async function createInlineCompletionItemProvider({
     ])
 
     if (providerConfig) {
-        const authStatus = authProvider.instance!.getAuthStatus()
+        const authStatus = authProvider.instance!.status
         const completionsProvider = new InlineCompletionItemProvider({
             authStatus,
             providerConfig,

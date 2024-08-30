@@ -42,13 +42,12 @@ type AuthConfig = Pick<
 export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
     private endpointHistory: string[] = []
     private client: SourcegraphGraphQLAPIClient | null = null
-    private status: AuthStatus = defaultAuthStatus
+    private _status: AuthStatus | null = null
     private readonly didChangeEvent: vscode.EventEmitter<AuthStatus> =
         new vscode.EventEmitter<AuthStatus>()
     private disposables: vscode.Disposable[] = [this.didChangeEvent]
 
     constructor(private config: AuthConfig) {
-        this.status.endpoint = 'init'
         this.loadEndpointHistory()
     }
 
@@ -78,7 +77,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
     public changes: Observable<AuthStatus> = fromVSCodeEvent(
         this.didChangeEvent.event,
-        this.getAuthStatus.bind(this)
+        () => this.status
     )
 
     // Display quickpick to select endpoint to sign in to
@@ -158,7 +157,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
     public async signoutMenu(): Promise<void> {
         telemetryRecorder.recordEvent('cody.auth.logout', 'clicked')
-        const { endpoint } = this.getAuthStatus()
+        const { endpoint } = this.status
 
         if (endpoint) {
             await this.signout(endpoint)
@@ -284,8 +283,11 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         })
     }
 
-    public getAuthStatus(): AuthStatus {
-        return this.status
+    public get status(): AuthStatus {
+        if (!this._status) {
+            throw new Error('AuthStatus is not initialized')
+        }
+        return this._status
     }
 
     // It processes the authentication steps and stores the login info before sharing the auth status with chatview
@@ -351,14 +353,11 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
     // Set auth status and share it with chatview
     private async setAuthStatus(authStatus: AuthStatus): Promise<void> {
-        if (this.status === authStatus) {
+        if (this._status === authStatus) {
             return
         }
-        this.status = authStatus
+        this._status = authStatus
 
-        if (authStatus.endpoint === 'init') {
-            return
-        }
         await this.updateAuthStatus(authStatus)
     }
 
@@ -372,7 +371,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         } catch (error) {
             logDebug('AuthProvider', 'updateAuthStatus error', error)
         } finally {
-            this.didChangeEvent.fire(this.getAuthStatus())
+            this.didChangeEvent.fire(this.status)
             let eventValue: 'disconnected' | 'connected' | 'failed'
             if (authStatus.showNetworkError || authStatus.showInvalidAccessTokenError) {
                 eventValue = 'failed'

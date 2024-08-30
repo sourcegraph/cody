@@ -60,7 +60,7 @@ export class EditProvider {
                 responsePrefix = '',
             } = await buildInteraction({
                 model,
-                codyApiVersion: authProvider.instance!.getAuthStatus().codyApiVersion,
+                codyApiVersion: authProvider.instance!.status.codyApiVersion,
                 contextWindow: contextWindow.input,
                 task: this.config.task,
                 editor: this.config.editor,
@@ -215,7 +215,7 @@ export class EditProvider {
                 ...countCode(response),
             }
             const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
-            const endpoint = authProvider.instance!.getAuthStatus()?.endpoint
+            const endpoint = authProvider.instance!.status.endpoint
             telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
                 metadata,
                 privateMetadata: {

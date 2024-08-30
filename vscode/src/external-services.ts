@@ -76,12 +76,11 @@ export async function configureExternalServices(
 
     // Disable local embeddings for enterprise users.
     const localEmbeddings =
-        authProvider.instance!.getAuthStatus().authenticated &&
-        authProvider.instance!.getAuthStatus().isDotCom
+        authProvider.instance!.status.authenticated && authProvider.instance!.status.isDotCom
             ? await platform.createLocalEmbeddingsController?.(initialConfig)
             : undefined
 
-    const chatClient = new ChatClient(completionsClient, () => authProvider.instance!.getAuthStatus())
+    const chatClient = new ChatClient(completionsClient, () => authProvider.instance!.status)
 
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient, initialConfig)
 
