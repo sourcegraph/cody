@@ -5,6 +5,7 @@ import type { AnthropicOptions } from './anthropic'
 import {
     DEEPSEEK_CODER_V2_LITE_BASE,
     DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE,
+    DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096,
     FIREWORKS_DEEPSEEK_7B_LANG_ALL,
     FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0,
     FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1,
@@ -88,7 +89,7 @@ async function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<typeof ge
         return { provider: 'fireworks', model: FIREWORKS_DEEPSEEK_7B_LANG_ALL }
     }
     if (fimModelCurrentBest) {
-        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096 }
     }
     if (fimModelControl) {
         // Current production model
