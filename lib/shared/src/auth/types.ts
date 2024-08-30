@@ -39,7 +39,7 @@ export interface AuthStatus {
 }
 
 export interface AuthStatusProvider {
-    getAuthStatus(): AuthStatus
+    status: AuthStatus
 }
 
 export const defaultAuthStatus: AuthStatus = {

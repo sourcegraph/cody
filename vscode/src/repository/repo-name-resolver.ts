@@ -99,7 +99,7 @@ export class RepoNameResolver {
         const uniqueRemoteUrls = Array.from(new Set(remoteUrls))
 
         // Use local conversion function for non-enterprise accounts.
-        if (authProvider.instance.getAuthStatus().isDotCom) {
+        if (authProvider.instance.status.isDotCom) {
             return uniqueRemoteUrls.map(convertGitCloneURLToCodebaseName).filter(isDefined)
         }
 

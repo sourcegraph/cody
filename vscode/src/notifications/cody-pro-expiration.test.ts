@@ -67,7 +67,9 @@ describe('Cody Pro expiration notifications', () => {
                     }
                 },
             },
-            getAuthStatus: () => authStatus,
+            get status() {
+                return authStatus
+            },
         } as AuthProvider
         authStatus = { ...defaultAuthStatus, isLoggedIn: true, isDotCom: true }
         localStorageData = {}

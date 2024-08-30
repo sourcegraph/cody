@@ -349,7 +349,7 @@ export class ChatsController implements vscode.Disposable {
      */
     private async exportHistory(): Promise<void> {
         telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
-        const authStatus = authProvider.instance!.getAuthStatus()
+        const authStatus = authProvider.instance!.status
         if (authStatus.isLoggedIn) {
             try {
                 const historyJson = chatHistory.getLocalHistory(authStatus)
@@ -379,7 +379,7 @@ export class ChatsController implements vscode.Disposable {
         // The chat ID for client to pass in to clear all chats without showing window pop-up for confirmation.
         const ClearWithoutConfirmID = 'clear-all-no-confirm'
         const isClearAll = !chatID || chatID === ClearWithoutConfirmID
-        const authStatus = authProvider.instance!.getAuthStatus()
+        const authStatus = authProvider.instance!.status
 
         if (isClearAll) {
             if (chatID !== ClearWithoutConfirmID) {
