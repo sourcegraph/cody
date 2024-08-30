@@ -192,7 +192,7 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
 
         beforeAll(async () => {
             await initCompletionProviderConfig({})
-            localStorage.setStorage({
+            await localStorage.setStorage({
                 get: () => null,
                 update: () => {},
             } as any as vscode.Memento)
@@ -422,7 +422,7 @@ describe('InlineCompletionItemProvider preloading', () => {
 
         await initCompletionProviderConfig(autocompleteConfig)
 
-        localStorage.setStorage({
+        await localStorage.setStorage({
             get: () => null,
             update: () => {},
         } as any as vscode.Memento)

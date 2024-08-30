@@ -14,7 +14,7 @@ import {
 import { type AuthProvider, authProvider } from '../services/AuthProvider'
 import { CodyProExpirationNotifications } from './cody-pro-expiration'
 
-describe('Cody Pro expiration notifications', () => {
+describe('Cody Pro expiration notifications', async () => {
     let notifier: CodyProExpirationNotifications
     let apiClient: SourcegraphGraphQLAPIClient
     let authStatus: AuthStatus
@@ -29,7 +29,7 @@ describe('Cody Pro expiration notifications', () => {
 
     // Set up local storage backed by an object.
     let localStorageData: { [key: string]: unknown } = {}
-    localStorage.setStorage({
+    await localStorage.setStorage({
         get: (key: string) => localStorageData[key],
         update: (key: string, value: unknown) => {
             localStorageData[key] = value

@@ -5,10 +5,10 @@ import type { AuthStatus, UserLocalHistory } from '@sourcegraph/cody-shared'
 
 import { localStorage } from './LocalStorageProvider'
 
-describe('LocalStorageProvider', () => {
+describe('LocalStorageProvider', async () => {
     // Set up local storage backed by an object.
     let localStorageData: { [key: string]: unknown } = {}
-    localStorage.setStorage({
+    await localStorage.setStorage({
         get: (key: string) => localStorageData[key],
         update: (key: string, value: unknown) => {
             localStorageData[key] = value

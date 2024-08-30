@@ -81,7 +81,7 @@ describe('InlineCompletionItemProvider', () => {
         await initCompletionProviderConfig({})
 
         // Dummy noop implementation of localStorage.
-        localStorage.setStorage({
+        await localStorage.setStorage({
             get: () => null,
             update: () => {},
         } as any as vscode.Memento)
