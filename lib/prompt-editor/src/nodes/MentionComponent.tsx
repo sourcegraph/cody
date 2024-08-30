@@ -1,6 +1,7 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { useLexicalNodeSelection } from '@lexical/react/useLexicalNodeSelection'
 import { mergeRegister } from '@lexical/utils'
+import { clsx } from 'clsx'
 import {
     $getNodeByKey,
     $getSelection,
@@ -196,7 +197,7 @@ export const MentionComponent: FunctionComponent<{
 
     const content = (
         <span ref={ref} className={composedClassNames} title={tooltipComponents ? undefined : tooltip}>
-            {Icon && <Icon size={14} strokeWidth={2} className={iconClassName} />}
+            {Icon && <Icon size={14} strokeWidth={2} className={clsx(iconClassName, 'tw-shrink-0')} />}
             <span>{text}</span>
         </span>
     )
