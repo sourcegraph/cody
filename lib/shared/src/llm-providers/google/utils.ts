@@ -19,7 +19,9 @@ export async function constructGeminiChatMessages(messages: Message[]): Promise<
         await Promise.all(
             messages.map(async msg => ({
                 role: msg.speaker === 'human' ? 'user' : 'model',
-                parts: [{ text: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '' }],
+                parts: [
+                    { text: (await msg.text?.toFilteredString(contextFiltersProvider.instance!)) ?? '' },
+                ],
             }))
         )
     ).filter((_, i, arr) => i !== arr.length - 1 || arr[i].role !== 'model')

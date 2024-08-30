@@ -4,6 +4,7 @@ import { RE2JS as RE2 } from 're2js'
 import type * as vscode from 'vscode'
 import { isFileURI } from '../common/uri'
 import { logDebug, logError } from '../logger'
+import { setSingleton, singletonNotYetSet } from '../singletons'
 import { graphqlClient } from '../sourcegraph-api/graphql'
 import {
     type CodyContextFilterItem,
@@ -279,6 +280,7 @@ function parseContextFilterItem(item: CodyContextFilterItem): ParsedContextFilte
 
 /**
  * A singleton instance of the `ContextFiltersProvider` class.
- * `contextFiltersProvider.init` should be called and awaited on extension activation.
+ * `contextFiltersProvider.instance!.init` should be called and awaited on extension activation.
  */
-export const contextFiltersProvider = new ContextFiltersProvider()
+export const contextFiltersProvider = singletonNotYetSet<ContextFiltersProvider>()
+setSingleton(contextFiltersProvider, new ContextFiltersProvider())

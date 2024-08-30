@@ -404,7 +404,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 )
             }
             if (clientInfo.capabilities?.ignore === 'enabled') {
-                contextFiltersProvider.onContextFiltersChanged(() => {
+                contextFiltersProvider.instance!.onContextFiltersChanged(() => {
                     // Forward policy change notifications to the client.
                     this.notify('ignore/didChange', null)
                 })
@@ -1413,14 +1413,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('ignore/test', async ({ uri: uriString }) => {
             const uri = vscode.Uri.parse(uriString)
-            const isIgnored = await contextFiltersProvider.isUriIgnored(uri)
+            const isIgnored = await contextFiltersProvider.instance!.isUriIgnored(uri)
             return {
                 policy: isIgnored ? 'ignore' : 'use',
             } as const
         })
 
         this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async contextFilters => {
-            contextFiltersProvider.setTestingContextFilters(contextFilters)
+            contextFiltersProvider.instance!.setTestingContextFilters(contextFilters)
             return null
         })
     }

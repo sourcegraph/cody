@@ -59,7 +59,7 @@ const defaultOptions = {
 
 describe('ContextMixer', () => {
     beforeEach(() => {
-        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+        vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValue(false)
     })
 
     describe('with no retriever', () => {
@@ -305,7 +305,7 @@ describe('ContextMixer', () => {
 
         describe('retrieved context is filtered by context filters', () => {
             beforeAll(() => {
-                vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockImplementation(
+                vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockImplementation(
                     async (uri: vscode.Uri) => {
                         if (uri.path.includes('foo.ts')) {
                             return 'repo:foo'

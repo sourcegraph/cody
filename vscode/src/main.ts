@@ -314,7 +314,7 @@ async function initializeSingletons(
     // Allow the VS Code app's instance of ModelsService to use local storage to persist
     // user's model choices
     modelsService.instance!.setStorage(localStorage)
-    disposables.push(upstreamHealthProvider, contextFiltersProvider)
+    disposables.push(upstreamHealthProvider, contextFiltersProvider.instance!)
     commandControllerInit(platform.createCommandsProvider?.(), platform.extensionClient.capabilities)
     repoNameResolver.init(authProvider)
     disposables.push(
@@ -324,7 +324,7 @@ async function initializeSingletons(
                     void localStorage.setConfig(config)
                     graphqlClient.setConfig(config)
                     void featureFlagProvider.refresh()
-                    contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
+                    contextFiltersProvider.instance!.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
                     void modelsService.instance!.onConfigChange(config)
                     upstreamHealthProvider.onConfigurationChange(config)
                 },
@@ -584,7 +584,7 @@ async function registerTestCommands(
             }
             try {
                 const policy = JSON.parse(raw)
-                contextFiltersProvider.setTestingContextFilters(policy)
+                contextFiltersProvider.instance!.setTestingContextFilters(policy)
             } catch (error) {
                 vscode.window.showErrorMessage(
                     'Failed to parse context filters policy. Please check your JSON syntax.'

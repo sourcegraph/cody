@@ -19,7 +19,7 @@ export async function getContextFileFromUri(
 ): Promise<ContextItem | null> {
     return wrapInActiveSpan('commands.context.filePath', async span => {
         try {
-            if (await contextFiltersProvider.isUriIgnored(file)) {
+            if (await contextFiltersProvider.instance!.isUriIgnored(file)) {
                 return null
             }
 

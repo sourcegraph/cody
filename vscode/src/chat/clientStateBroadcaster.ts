@@ -114,7 +114,7 @@ export async function getCorpusContextItemsForEditorState(useRemote: boolean): P
     if (useRemote && workspaceReposMonitor) {
         const repoMetadata = await workspaceReposMonitor.getRepoMetadata()
         for (const repo of repoMetadata) {
-            if (contextFiltersProvider.isRepoNameIgnored(repo.repoName)) {
+            if (contextFiltersProvider.instance!.isRepoNameIgnored(repo.repoName)) {
                 continue
             }
             if (repo.remoteID === undefined) {

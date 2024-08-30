@@ -358,7 +358,7 @@ export class GhostHintDecorator implements vscode.Disposable {
         variant: GhostVariant,
         textPadding = 0
     ): Promise<void> {
-        if (await contextFiltersProvider.isUriIgnored(editor.document.uri)) {
+        if (await contextFiltersProvider.instance!.isUriIgnored(editor.document.uri)) {
             // The current file is ignored, so do nothing
             return
         }

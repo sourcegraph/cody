@@ -100,7 +100,7 @@ export function createClient(
                     messages: await Promise.all(
                         params.messages.map(async m => ({
                             ...m,
-                            text: await m.text?.toFilteredString(contextFiltersProvider),
+                            text: await m.text?.toFilteredString(contextFiltersProvider.instance!),
                         }))
                     ),
                 }
