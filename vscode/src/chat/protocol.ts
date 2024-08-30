@@ -61,7 +61,7 @@ interface TelemetryEventProperties {
 /**
  * The location of where the webview is displayed.
  */
-type WebviewType = 'sidebar' | 'editor'
+export type WebviewType = 'sidebar' | 'editor'
 
 /**
  * A message sent from the webview to the extension host.
