@@ -316,7 +316,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'chatModel':
                 // Because this was a user action to change the model we will set that
                 // as a global default for chat
-                await modelsService.setSelectedModel(ModelUsage.Chat, message.model)
+                await modelsService.instance!.setSelectedModel(ModelUsage.Chat, message.model)
                 this.handleSetChatModel(message.model)
                 break
             case 'get-chat-models':
@@ -1080,7 +1080,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (!authStatus?.isLoggedIn) {
             return
         }
-        const models = modelsService.getModels(ModelUsage.Chat)
+        const models = modelsService.instance!.getModels(ModelUsage.Chat)
 
         void this.postMessage({
             type: 'chatModels',
@@ -1670,7 +1670,7 @@ export function revealWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscod
 function getDefaultModelID(): string {
     const pending = ''
     try {
-        return modelsService.getDefaultChatModel() || pending
+        return modelsService.instance!.getDefaultChatModel() || pending
     } catch {
         return pending
     }

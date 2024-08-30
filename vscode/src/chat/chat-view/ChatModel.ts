@@ -27,12 +27,12 @@ export class ChatModel {
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
     ) {
-        this.contextWindow = modelsService.getContextWindowByID(this.modelID)
+        this.contextWindow = modelsService.instance!.getContextWindowByID(this.modelID)
     }
 
     public updateModel(newModelID: string) {
         this.modelID = newModelID
-        this.contextWindow = modelsService.getContextWindowByID(this.modelID)
+        this.contextWindow = modelsService.instance!.getContextWindowByID(this.modelID)
     }
 
     public isEmpty(): boolean {

@@ -104,7 +104,7 @@ export const buildInteraction = async ({
             instruction: task.instruction,
             document,
         })
-    const promptBuilder = await PromptBuilder.create(modelsService.getContextWindowByID(model))
+    const promptBuilder = await PromptBuilder.create(modelsService.instance!.getContextWindowByID(model))
 
     const preamble = getSimplePreamble(model, codyApiVersion, 'Default', prompt.system)
     promptBuilder.tryAddToPrefix(preamble)

@@ -7,7 +7,7 @@ interface ModelInfo {
 }
 
 export function getModelInfo(authStatus: AuthStatus): ModelInfo | Error {
-    const model = modelsService.getDefaultModel(ModelUsage.Autocomplete)
+    const model = modelsService.instance!.getDefaultModel(ModelUsage.Autocomplete)
 
     if (model) {
         let provider = model.provider

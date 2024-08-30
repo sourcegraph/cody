@@ -52,7 +52,7 @@ export class EditProvider {
         return wrapInActiveSpan('command.edit.start', async span => {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
-            const contextWindow = modelsService.getContextWindowByID(model)
+            const contextWindow = modelsService.instance!.getContextWindowByID(model)
             const {
                 messages,
                 stopSequences,
