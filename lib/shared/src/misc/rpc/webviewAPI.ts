@@ -75,7 +75,7 @@ export interface PromptsResult {
      * `undefined` means that commands should not be shown at all (not even as an empty
      * list). Builtin and custom commands are deprecated in favor of the Prompt Library.
      */
-    commands: CodyCommand[]
+    commands: CodyCommand[] | undefined
 
     /** The original query used to fetch this result. */
     query: string

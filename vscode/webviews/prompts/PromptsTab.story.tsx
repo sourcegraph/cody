@@ -51,3 +51,19 @@ export const WithOnlyCommands: Story = {
         </ExtensionAPIProviderForTestsOnly>
     ),
 }
+
+export const WithOnlyPrompts: Story = {
+    render: args => (
+        <ExtensionAPIProviderForTestsOnly
+            value={{
+                ...MOCK_API,
+                prompts: makePromptsAPIWithData({
+                    prompts: { type: 'results', results: FIXTURE_PROMPTS },
+                    commands: undefined,
+                }),
+            }}
+        >
+            <PromptsTab {...args} />
+        </ExtensionAPIProviderForTestsOnly>
+    ),
+}

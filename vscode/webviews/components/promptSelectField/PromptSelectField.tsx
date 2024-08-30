@@ -48,7 +48,6 @@ export const PromptSelectField: React.FunctionComponent<{
                     }}
                     onSelectActionLabels={{ prompt: 'insert', command: 'insert' }}
                     showSearch={true}
-                    showOnlyPromptInsertableCommands={true}
                     showPromptLibraryUnsupportedMessage={true}
                     telemetryLocation="PromptSelectField"
                 />
