@@ -1063,8 +1063,8 @@ function getSharedParams(event: CompletionBookkeepingEvent): SharedEventPayload 
         items: event.items.map(i => ({ ...i })),
         otherCompletionProviderEnabled: otherCompletionProviders.length > 0,
         otherCompletionProviders,
-        upstreamLatency: upstreamHealthProvider.getUpstreamLatency(),
-        gatewayLatency: upstreamHealthProvider.getGatewayLatency(),
+        upstreamLatency: upstreamHealthProvider.instance!.getUpstreamLatency(),
+        gatewayLatency: upstreamHealthProvider.instance!.getGatewayLatency(),
 
         // 🚨 SECURITY: Do not include any context by default
         inlineCompletionItemContext: undefined,

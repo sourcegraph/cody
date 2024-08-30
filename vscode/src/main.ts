@@ -298,7 +298,7 @@ async function initializeSingletons(
     // Allow the VS Code app's instance of ModelsService to use local storage to persist
     // user's model choices
     modelsService.instance!.setStorage(localStorage)
-    disposables.push(upstreamHealthProvider, contextFiltersProvider.instance!)
+    disposables.push(upstreamHealthProvider.instance!, contextFiltersProvider.instance!)
     commandControllerInit(platform.createCommandsProvider?.(), platform.extensionClient.capabilities)
     repoNameResolver.init()
     disposables.push(
@@ -310,7 +310,7 @@ async function initializeSingletons(
                     void featureFlagProvider.instance!.refresh()
                     contextFiltersProvider.instance!.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
                     void modelsService.instance!.onConfigChange(config)
-                    upstreamHealthProvider.onConfigurationChange(config)
+                    upstreamHealthProvider.instance!.onConfigurationChange(config)
                 },
             })
         )
