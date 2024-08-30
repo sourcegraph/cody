@@ -82,12 +82,12 @@ const MAX_HOT_STREAK_LINES = vscode.workspace
     .get<number>('cody.experimental.maxHotStreakLines', 5)
 
 export function createHotStreakExtractor(params: HotStreakExtractorParams): HotStreakExtractor {
-    const { completedCompletion, providerOptions, abortController } = params
+    const { completedCompletion, generateOptions, abortController } = params
     const {
         docContext,
         document,
         document: { languageId },
-    } = providerOptions
+    } = generateOptions
 
     let updatedDocContext = insertCompletionAndPressEnter(docContext, completedCompletion, document)
 

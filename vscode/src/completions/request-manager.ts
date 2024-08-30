@@ -18,9 +18,12 @@ import {
     type LastInlineCompletionCandidate,
 } from './get-inline-completions'
 import { type CompletionLogID, logCompletionBookkeepingEvent } from './logger'
-import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import { STOP_REASON_HOT_STREAK } from './providers/hot-streak'
-import type { CompletionProviderTracer, Provider } from './providers/provider'
+import type {
+    CompletionProviderTracer,
+    GenerateCompletionsOptions,
+    Provider,
+} from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import { getPrevNonEmptyLineIndex, lines, removeIndentation } from './text-processing'
 import {
@@ -54,6 +57,7 @@ export interface RequestManagerResult {
 }
 
 interface RequestsManagerParams {
+    providerOptions: GenerateCompletionsOptions
     requestParams: RequestParams
     provider: Provider
     context: AutocompleteContextSnippet[]
@@ -120,7 +124,7 @@ export class RequestManager {
             this.latestRequestParams = params
         }
 
-        const { requestParams, provider, context, tracer, logId } = params
+        const { requestParams, provider, providerOptions, context, tracer, logId } = params
 
         addAutocompleteDebugEvent('RequestManager.request')
 
@@ -137,6 +141,7 @@ export class RequestManager {
         const generateCompletions = async (): Promise<void> => {
             try {
                 for await (const fetchCompletionResults of provider.generateCompletions(
+                    providerOptions,
                     request.abortController.signal,
                     context,
                     tracer
@@ -280,7 +285,7 @@ export class RequestManager {
             return
         }
 
-        const isLocalProvider = isLocalCompletionsProvider(this.latestRequestParams.provider.options.id)
+        const isLocalProvider = this.latestRequestParams.provider.mayUseOnDeviceInference
 
         for (const request of this.inflightRequests) {
             let shouldAbort = !computeIfRequestStillRelevant(

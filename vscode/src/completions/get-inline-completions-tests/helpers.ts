@@ -40,11 +40,10 @@ import { AutocompleteStageRecorder } from '../logger'
 import {
     MULTI_LINE_STOP_SEQUENCES,
     SINGLE_LINE_STOP_SEQUENCES,
-    createProviderConfig as createAnthropicProviderConfig,
+    createProvider as createAnthropicProvider,
 } from '../providers/anthropic'
-import { createProviderConfig as createFireworksProviderConfig } from '../providers/fireworks'
+import { createProvider as createFireworksProvider } from '../providers/fireworks'
 import { pressEnterAndGetIndentString } from '../providers/hot-streak'
-import type { ProviderOptions } from '../providers/provider'
 import { RequestManager } from '../request-manager'
 import { documentAndPosition } from '../test-helpers'
 import { sleep } from '../utils'
@@ -70,7 +69,6 @@ type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'd
     completionResponseGenerator?: (
         params: CompletionParameters
     ) => Generator<CompletionResponse> | AsyncGenerator<CompletionResponse>
-    providerOptions?: Partial<ProviderOptions>
     configuration?: Partial<ClientConfiguration>
     documentUri?: URI
 }
@@ -103,7 +101,6 @@ export function params(
         selectedCompletionInfo,
         takeSuggestWidgetSelectionIntoAccount,
         isDotComUser = false,
-        providerOptions,
         configuration,
         documentUri = testFileUri('test.ts'),
         ...restParams
@@ -154,21 +151,23 @@ export function params(
         logger: undefined,
     }
 
-    // TODO: add support for `createProviderConfig` from `vscode/src/completions/providers/create-provider.ts`
-    const createProviderConfig =
+    // TODO: add support for `createProvider` from `vscode/src/completions/providers/create-provider.ts`
+    const createProvider =
         configuration?.autocompleteAdvancedProvider === 'fireworks' &&
         configuration.autocompleteAdvancedModel
-            ? createFireworksProviderConfig
-            : createAnthropicProviderConfig
+            ? createFireworksProvider
+            : createAnthropicProvider
 
     const configWithAccessToken = getVSCodeConfigurationWithAccessToken(configuration)
-    const providerConfig = createProviderConfig({
-        client,
-        providerOptions,
+    const provider = createProvider({
         authStatus: AUTH_STATUS_FIXTURE_AUTHED,
-        model: configuration?.autocompleteAdvancedModel!,
+        legacyModel: configuration?.autocompleteAdvancedModel!,
         config: configWithAccessToken,
+        anonymousUserID: 'anonymousUserID',
+        provider: configuration?.autocompleteAdvancedModel || 'anthropic',
     })
+
+    provider.client = client
 
     const { document, position } = documentAndPosition(code, languageId, documentUri.toString())
 
@@ -180,8 +179,8 @@ export function params(
     const docContext = getCurrentDocContext({
         document,
         position,
-        maxPrefixLength: providerConfig.contextSizeHints.prefixChars,
-        maxSuffixLength: providerConfig.contextSizeHints.suffixChars,
+        maxPrefixLength: provider.contextSizeHints.prefixChars,
+        maxSuffixLength: provider.contextSizeHints.suffixChars,
         context: takeSuggestWidgetSelectionIntoAccount
             ? {
                   triggerKind: 0,
@@ -195,12 +194,14 @@ export function params(
     }
 
     return {
+        authStatus: dummyAuthStatus,
+        config: configuration as any,
         document,
         position,
         docContext,
         triggerKind,
         selectedCompletionInfo,
-        providerConfig,
+        provider,
         firstCompletionTimeout:
             configuration?.autocompleteFirstCompletionTimeout ??
             DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,

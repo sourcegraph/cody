@@ -24,14 +24,13 @@ import { SpanStatusCode } from '@opentelemetry/api'
 import type { CompletionResponseWithMetaData } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
 import { logDebug } from '../log'
 import { createRateLimitErrorFromResponse } from './default-client'
-import type { FireworksOptions } from './providers/fireworks'
-import type { ProviderOptions } from './providers/provider'
+import type { GenerateCompletionsOptions } from './providers/provider'
 
-interface FastPathParams extends Pick<FireworksOptions, 'authStatus'> {
+interface FastPathParams extends Pick<GenerateCompletionsOptions, 'authStatus'> {
     isLocalInstance: boolean
     fireworksConfig: ExperimentalFireworksConfig | undefined
     logger: CompletionLogger | undefined
-    providerOptions: ProviderOptions
+    providerOptions: GenerateCompletionsOptions
     fastPathAccessToken: string | undefined
     customHeaders: Record<string, string>
     anonymousUserID: string | undefined

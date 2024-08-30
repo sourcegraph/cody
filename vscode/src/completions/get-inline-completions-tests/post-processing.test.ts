@@ -84,7 +84,7 @@ for (const isTreeSitterEnabled of cases) {
                     `,
                     ],
                     {
-                        providerOptions: { n: 3 },
+                        n: 3,
                     }
                 )
             )
@@ -180,7 +180,7 @@ for (const isTreeSitterEnabled of cases) {
                             stopReason: 'unknown',
                         })),
                         {
-                            providerOptions: { n: 3 },
+                            n: 3,
                         }
                     )
                 )

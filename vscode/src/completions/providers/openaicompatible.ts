@@ -1,18 +1,14 @@
 import {
-    type AuthenticatedAuthStatus,
     type AutocompleteContextSnippet,
-    type ClientConfigurationWithAccessToken,
-    type CodeCompletionsClient,
     type CodeCompletionsParams,
-    type Model,
     charsToTokens,
+    logError,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import { logDebug } from '../../log'
-import { type DefaultModel, getModelHelpers } from '../model-helpers'
 import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
@@ -24,61 +20,37 @@ import {
 } from './get-completion-params'
 import {
     type CompletionProviderTracer,
+    type GenerateCompletionsOptions,
     Provider,
-    type ProviderConfig,
-    type ProviderOptions,
-    standardContextSizeHints,
+    type ProviderFactoryParams,
 } from './provider'
-
-interface OpenAICompatibleOptions {
-    model: Model
-    maxContextTokens?: number
-    client: CodeCompletionsClient
-    config: Pick<ClientConfigurationWithAccessToken, 'accessToken'>
-    authStatus: Pick<AuthenticatedAuthStatus, 'userCanUpgrade' | 'endpoint'>
-}
 
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
     singlelineStopSequences: ['\n\n', '\n\r\n'],
     multilineStopSequences: ['\n\n', '\n\r\n'],
 })
 
-const PROVIDER_IDENTIFIER = 'openaicompatible'
-
 class OpenAICompatibleProvider extends Provider {
-    private model: Model
-    private promptChars: number
-    private client: CodeCompletionsClient
-    private modelHelper: DefaultModel
-
-    constructor(
-        options: ProviderOptions,
-        { model, maxContextTokens, client }: Required<OpenAICompatibleOptions>
-    ) {
-        super(options)
-        this.model = model
-        this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
-        this.client = client
-        this.modelHelper = getModelHelpers(model.id)
-    }
-
     public generateCompletions(
+        options: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
         const partialRequestParams = getCompletionParams({
-            providerOptions: this.options,
+            providerOptions: options,
             lineNumberDependentCompletionParams,
         })
 
+        const { docContext, document } = options
+
         const prompt = this.modelHelper.getPrompt({
             snippets,
-            docContext: this.options.docContext,
-            document: this.options.document,
-            promptChars: this.promptChars,
+            docContext,
+            document,
+            promptChars: tokensToChars(this.maxContextTokens - MAX_RESPONSE_TOKENS),
             // StarChat: only use infill if the suffix is not empty
-            isInfill: this.options.docContext.suffix.trim().length > 0,
+            isInfill: docContext.suffix.trim().length > 0,
         })
 
         const requestParams: CodeCompletionsParams = {
@@ -86,12 +58,12 @@ class OpenAICompatibleProvider extends Provider {
             messages: [{ speaker: 'human', text: prompt }],
             temperature: 0.2,
             topK: 0,
-            model: this.model.id,
+            model: this.legacyModel,
         }
 
         tracer?.params(requestParams)
 
-        const completionsGenerators = Array.from({ length: this.options.n }).map(() => {
+        const completionsGenerators = Array.from({ length: options.n }).map(() => {
             const abortController = forkSignal(abortSignal)
 
             const completionResponseGenerator = generatorWithTimeout(
@@ -104,7 +76,7 @@ class OpenAICompatibleProvider extends Provider {
                 completionResponseGenerator,
                 abortController,
                 providerSpecificPostProcess: this.modelHelper.postProcess,
-                providerOptions: this.options,
+                generateOptions: options,
             })
         })
 
@@ -127,36 +99,28 @@ class OpenAICompatibleProvider extends Provider {
     }
 }
 
-export function createProviderConfig({
-    model,
-    ...otherOptions
-}: Omit<OpenAICompatibleOptions, 'maxContextTokens'>): ProviderConfig {
-    logDebug('OpenAICompatible', 'autocomplete provider using model', JSON.stringify(model))
+export function createProvider(params: ProviderFactoryParams): Provider {
+    const { model, anonymousUserID } = params
 
-    // TODO(slimsag): self-hosted-models: properly respect ClientSideConfig options in the future
-    logDebug('OpenAICompatible', 'note: not all clientSideConfig options are respected yet.')
+    if (model) {
+        logDebug('OpenAICompatible', 'autocomplete provider using model', JSON.stringify(model))
 
-    // TODO(slimsag): self-hosted-models: lift ClientSideConfig defaults to a standard centralized location
-    const maxContextTokens = charsToTokens(
-        model.clientSideConfig?.openAICompatible?.contextSizeHintTotalCharacters || 4096
-    )
+        // TODO(slimsag): self-hosted-models: properly respect ClientSideConfig options in the future
+        logDebug('OpenAICompatible', 'note: not all clientSideConfig options are respected yet.')
 
-    return {
-        create(options: ProviderOptions) {
-            return new OpenAICompatibleProvider(
-                {
-                    ...options,
-                    id: PROVIDER_IDENTIFIER,
-                },
-                {
-                    model,
-                    maxContextTokens,
-                    ...otherOptions,
-                }
-            )
-        },
-        contextSizeHints: standardContextSizeHints(maxContextTokens),
-        identifier: PROVIDER_IDENTIFIER,
-        model: model.id,
+        // TODO(slimsag): self-hosted-models: lift ClientSideConfig defaults to a standard centralized location
+        const maxContextTokens = charsToTokens(
+            model.clientSideConfig?.openAICompatible?.contextSizeHintTotalCharacters || 4096
+        )
+
+        return new OpenAICompatibleProvider({
+            id: 'openaicompatible',
+            model,
+            maxContextTokens,
+            anonymousUserID,
+        })
     }
+
+    logError('createProvider', 'Model definition is missing for `openaicompatible` provider.')
+    throw new Error('Model definition is missing for `openaicompatible` provider.')
 }

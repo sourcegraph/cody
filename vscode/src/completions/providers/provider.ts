@@ -1,10 +1,15 @@
 import type { Position, TextDocument } from 'vscode'
 
 import {
+    type AuthStatus,
+    type AuthenticatedAuthStatus,
     type AutocompleteContextSnippet,
+    type ClientConfigurationWithAccessToken,
+    type CodeCompletionsClient,
     type CompletionParameters,
     type DocumentContext,
     type GitContext,
+    type Model,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
@@ -12,35 +17,12 @@ import type { TriggerKind } from '../get-inline-completions'
 import type * as CompletionLogger from '../logger'
 import type { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 
+import { defaultCodeCompletionsClient } from '../default-client'
+import { type DefaultModel, getModelHelpers } from '../model-helpers'
 import type { FetchCompletionResult } from './fetch-and-process-completions'
+import { MAX_RESPONSE_TOKENS } from './get-completion-params'
 
-export interface ProviderConfig {
-    /**
-     * A factory to create instances of the provider. This pattern allows us to
-     * inject provider specific parameters outside of the callers of the
-     * factory.
-     */
-    create(options: Omit<ProviderOptions, 'id'>): Provider
-
-    /**
-     * Hints about the optimal context size (and length of the document prefix and suffix). It is
-     * intended to (or possible to) be precise here because the truncation of the document
-     * prefix/suffix uses characters, not the LLM's tokenizer.
-     */
-    contextSizeHints: ProviderContextSizeHints
-
-    /**
-     * A string identifier for the provider config used in event logs.
-     */
-    identifier: string
-
-    /**
-     * Defines which model is used with the respective provider.
-     */
-    model: string
-}
-
-interface ProviderContextSizeHints {
+export interface ProviderContextSizeHints {
     /** Total max length of all context (prefix + suffix + snippets). */
     totalChars: number
 
@@ -51,20 +33,7 @@ interface ProviderContextSizeHints {
     suffixChars: number
 }
 
-export function standardContextSizeHints(maxContextTokens: number): ProviderContextSizeHints {
-    return {
-        totalChars: Math.floor(tokensToChars(0.9 * maxContextTokens)), // keep 10% margin for preamble, etc.
-        prefixChars: Math.floor(tokensToChars(0.6 * maxContextTokens)),
-        suffixChars: Math.floor(tokensToChars(0.1 * maxContextTokens)),
-    }
-}
-
-export interface ProviderOptions {
-    /**
-     * A unique and descriptive identifier for the provider.
-     */
-    id: string
-
+export interface GenerateCompletionsOptions {
     position: Position
     document: TextDocument
     docContext: DocumentContext
@@ -84,12 +53,101 @@ export interface ProviderOptions {
      * Git related context information. Currently only supports a repo name, which is used by various FIM models in prompt.
      */
     gitContext?: GitContext
+    maxContextTokens?: number
+
+    authStatus: Pick<
+        AuthenticatedAuthStatus,
+        'userCanUpgrade' | 'endpoint' | 'isFireworksTracingEnabled'
+    >
+
+    // TODO: eliminate by using config watcher
+    config: ClientConfigurationWithAccessToken
 }
 
+const DEFAULT_MAX_CONTEXT_TOKENS = 2048
+
+type ProviderModelOptions = {
+    model: Model
+}
+
+// TODO: drop this in favor of `ProviderModelOptions` once we migrate to
+// the new model ref syntax everywhere.
+type ProviderLegacyModelOptions = {
+    legacyModel: string
+}
+
+export type ProviderOptions = (ProviderModelOptions | ProviderLegacyModelOptions) & {
+    id: string
+    anonymousUserID: string
+    /**
+     * Defaults to `DEFAULT_MAX_CONTEXT_TOKENS`
+     */
+    maxContextTokens?: number
+    mayUseOnDeviceInference?: boolean
+}
+
+export type ProviderFactoryParams = {
+    model?: Model
+    legacyModel?: string
+    config: ClientConfigurationWithAccessToken
+    // TODO: eliminate by using a singleton instead.
+    authStatus: AuthenticatedAuthStatus
+    anonymousUserID: string
+    mayUseOnDeviceInference?: boolean
+    provider: string
+}
+
+export type ProviderFactory = (params: ProviderFactoryParams) => Provider
+
 export abstract class Provider {
-    constructor(public readonly options: Readonly<ProviderOptions>) {}
+    /**
+     * A unique and descriptive identifier for the provider.
+     */
+    public id: string
+    public model?: Model
+    public legacyModel: string
+    public client: CodeCompletionsClient = defaultCodeCompletionsClient
+    public contextSizeHints: ProviderContextSizeHints
+
+    protected maxContextTokens: number
+    protected anonymousUserID: string
+
+    protected promptChars: number
+    protected modelHelper: DefaultModel
+
+    public mayUseOnDeviceInference: boolean
+
+    constructor(public readonly options: Readonly<ProviderOptions>) {
+        const {
+            id,
+            maxContextTokens = DEFAULT_MAX_CONTEXT_TOKENS,
+            anonymousUserID,
+            mayUseOnDeviceInference = false,
+        } = options
+
+        if ('model' in options) {
+            this.model = options.model
+            this.legacyModel = options.model.id
+        } else {
+            this.legacyModel = options.legacyModel
+        }
+
+        this.id = id
+        this.maxContextTokens = maxContextTokens
+        this.anonymousUserID = anonymousUserID
+        this.mayUseOnDeviceInference = mayUseOnDeviceInference
+
+        this.modelHelper = getModelHelpers(this.legacyModel)
+        this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
+        this.contextSizeHints = {
+            totalChars: Math.floor(tokensToChars(0.9 * this.maxContextTokens)), // keep 10% margin for preamble, etc.
+            prefixChars: Math.floor(tokensToChars(0.6 * this.maxContextTokens)),
+            suffixChars: Math.floor(tokensToChars(0.1 * this.maxContextTokens)),
+        }
+    }
 
     public abstract generateCompletions(
+        options: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer

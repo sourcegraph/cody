@@ -43,7 +43,6 @@ import {
 import { isCompletionVisible } from './is-completion-visible'
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './logger'
 import * as CompletionLogger from './logger'
-import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import { RequestManager, type RequestParams } from './request-manager'
 import {
     canReuseLastCandidateInDocumentContext,
@@ -141,7 +140,7 @@ export class InlineCompletionItemProvider
             noInlineAccept: config.noInlineAccept ?? false,
         })
 
-        autocompleteStageCounterLogger.setProviderModel(config.providerConfig.model)
+        autocompleteStageCounterLogger.setProviderModel(config.provider.legacyModel)
 
         if (this.config.completeSuggestWidgetSelection) {
             // This must be set to true, or else the suggest widget showing will suppress inline
@@ -178,7 +177,7 @@ export class InlineCompletionItemProvider
 
         logDebug(
             'CodyCompletionProvider:initialized',
-            [this.config.providerConfig.identifier, this.config.providerConfig.model].join('/')
+            [this.config.provider.id, this.config.provider.legacyModel].join('/')
         )
 
         this.disposables.push(this.contextMixer)
@@ -424,8 +423,7 @@ export class InlineCompletionItemProvider
                 completionIntent
             )
 
-            const isLocalProvider = isLocalCompletionsProvider(this.config.providerConfig.identifier)
-            const debounceInterval = isLocalProvider ? 125 : 75
+            const debounceInterval = this.config.provider.mayUseOnDeviceInference ? 125 : 75
             stageRecorder.record('preGetInlineCompletions')
 
             try {
@@ -440,7 +438,9 @@ export class InlineCompletionItemProvider
                     triggerKind,
                     selectedCompletionInfo: context.selectedCompletionInfo,
                     docContext,
-                    providerConfig: this.config.providerConfig,
+                    config: this.config.config,
+                    provider: this.config.provider,
+                    authStatus: this.config.authStatus,
                     contextMixer: this.contextMixer,
                     smartThrottleService: this.smartThrottleService,
                     requestManager: this.requestManager,
@@ -996,8 +996,8 @@ export class InlineCompletionItemProvider
         return getCurrentDocContext({
             document,
             position,
-            maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
-            maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
+            maxPrefixLength: this.config.provider.contextSizeHints.prefixChars,
+            maxSuffixLength: this.config.provider.contextSizeHints.suffixChars,
             // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
             context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
         })

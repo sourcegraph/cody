@@ -6,7 +6,6 @@ import {
     type ClientConfiguration,
     type ClientConfigurationWithAccessToken,
     type ClientConfigurationWithEndpoint,
-    type CodeCompletionsClient,
     type ConfigWatcher,
     type DefaultCodyCommands,
     type Guardrails,
@@ -53,6 +52,7 @@ import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { createInlineCompletionItemFromMultipleProviders } from './completions/create-multi-model-inline-completion-provider'
+import { defaultCodeCompletionsClient } from './completions/default-client'
 import { getFullConfig } from './configuration'
 import { BaseConfigWatcher } from './configwatcher'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
@@ -185,7 +185,6 @@ const register = async (
     const {
         chatClient,
         completionsClient,
-        codeCompletionsClient,
         guardrails,
         localEmbeddings,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
@@ -255,13 +254,7 @@ const register = async (
         )
     )
 
-    const autocompleteSetup = registerAutocomplete(
-        configWatcher,
-        platform,
-        statusBar,
-        codeCompletionsClient,
-        disposables
-    )
+    const autocompleteSetup = registerAutocomplete(configWatcher, platform, statusBar, disposables)
     const tutorialSetup = tryRegisterTutorial(context, disposables)
     const openCtxSetup = exposeOpenCtxClient(context, configWatcher, platform.createOpenCtxController)
 
@@ -321,6 +314,7 @@ async function initializeSingletons(
                     )
                     void modelsService.instance!.onConfigChange(config)
                     upstreamHealthProvider.instance!.onConfigurationChange(config)
+                    defaultCodeCompletionsClient.onConfigurationChange(config)
                 },
             })
         )
@@ -628,7 +622,6 @@ function registerAutocomplete(
     configWatcher: ConfigWatcher<ClientConfigurationWithEndpoint>,
     platform: PlatformContext,
     statusBar: CodyStatusBar,
-    codeCompletionsClient: CodeCompletionsClient,
     disposables: vscode.Disposable[]
 ): Promise<void> {
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
@@ -679,7 +672,6 @@ function registerAutocomplete(
                 autocompleteDisposables.push(
                     await createInlineCompletionItemProvider({
                         config,
-                        client: codeCompletionsClient,
                         statusBar,
                         createBfgRetriever: platform.createBfgRetriever,
                     })
@@ -687,7 +679,6 @@ function registerAutocomplete(
                 autocompleteDisposables.push(
                     await createInlineCompletionItemFromMultipleProviders({
                         config,
-                        client: codeCompletionsClient,
                         statusBar,
                         createBfgRetriever: platform.createBfgRetriever,
                     }),

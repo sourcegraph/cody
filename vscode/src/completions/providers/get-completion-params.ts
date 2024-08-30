@@ -1,6 +1,6 @@
 import type { CodeCompletionsParams } from '@sourcegraph/cody-shared'
 
-import type { ProviderOptions } from './provider'
+import type { GenerateCompletionsOptions } from './provider'
 
 export const MAX_RESPONSE_TOKENS = 256
 
@@ -38,7 +38,7 @@ export function getLineNumberDependentCompletionParams(
 }
 
 interface GetCompletionParamsAndFetchImplParams {
-    providerOptions: Readonly<ProviderOptions>
+    providerOptions: Readonly<GenerateCompletionsOptions>
     lineNumberDependentCompletionParams: LineNumberDependentCompletionParamsByType
 }
 

@@ -303,7 +303,7 @@ for (const isTreeSitterEnabled of cases) {
                     ┴┴┴┴`,
                         ],
                         {
-                            providerOptions: { n: 2 },
+                            n: 2,
                         }
                     )
                 )

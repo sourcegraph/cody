@@ -3,7 +3,6 @@ import type * as vscode from 'vscode'
 import {
     ChatClient,
     type ClientConfigurationWithAccessToken,
-    type CodeCompletionsClient,
     type ConfigWatcher,
     type Guardrails,
     type GuardrailsClientConfig,
@@ -15,7 +14,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { ContextAPIClient } from './chat/context/contextAPIClient'
-import { createClient as createCodeCompletionsClient } from './completions/default-client'
 import type { PlatformContext } from './extension.common'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
@@ -25,7 +23,6 @@ import { authProvider } from './services/AuthProvider'
 interface ExternalServices {
     chatClient: ChatClient
     completionsClient: SourcegraphCompletionsClient
-    codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
     localEmbeddings: LocalEmbeddingsController | undefined
     symfRunner: SymfRunner | undefined
@@ -64,7 +61,6 @@ export async function configureExternalServices(
     const sentryService = platform.createSentryService?.(initialConfig)
     const openTelemetryService = platform.createOpenTelemetryService?.(initialConfig)
     const completionsClient = platform.createCompletionsClient(initialConfig, logger)
-    const codeCompletionsClient = createCodeCompletionsClient(initialConfig, logger)
 
     const symfRunner = platform.createSymfRunner?.(context, completionsClient)
 
@@ -90,7 +86,6 @@ export async function configureExternalServices(
     return {
         chatClient,
         completionsClient,
-        codeCompletionsClient,
         guardrails,
         localEmbeddings,
         symfRunner,
@@ -99,7 +94,6 @@ export async function configureExternalServices(
             sentryService?.onConfigurationChange(newConfig)
             openTelemetryService?.onConfigurationChange(newConfig)
             completionsClient.onConfigurationChange(newConfig)
-            codeCompletionsClient.onConfigurationChange(newConfig)
             guardrails.onConfigurationChange(newConfig)
             void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },
