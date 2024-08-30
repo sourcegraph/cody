@@ -10,6 +10,9 @@
 .tabs-root {
     container-type: inline-size;
     container-name: tabs-container;
+
+    isolation: isolate;
+    z-index: 1;
 }
 
 .tabs-container {
@@ -43,6 +46,14 @@
 
 .tab-action-label {
     display: inline;
+}
+
+.tooltip {
+    /*
+        Hide tooltips by default, show them only for state when labels are hidden.
+        Important is needed to override standard tailwind styles in tooltip internals
+    */
+    display: none !important;
 }
 
 /*
@@ -88,6 +99,10 @@
 
     .sub-tabs {
         padding: 0;
+    }
+
+    .tooltip {
+        display: block !important;
     }
 }
 
