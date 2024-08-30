@@ -670,13 +670,13 @@ html[data-ide='JetBrains'] [cmdk-group-heading] {
     background: var(--jetbrains-EditorPane-inactiveBackground);
 }
 
-html[data-ide='JetBrains'] body div[role="tabpanel"]::-webkit-scrollbar {
+html[data-ide='JetBrains'] body *::-webkit-scrollbar {
     width: 14px;
     height: 8px;
     background-color: transparent;
 }
 
-html[data-ide='JetBrains'] body div[role="tabpanel"]::-webkit-scrollbar-thumb {
+html[data-ide='JetBrains'] body *::-webkit-scrollbar-thumb {
     background: var(--scrollbar-slider-active-background);
     border-radius: 100px;
     border: 3px solid var(--jetbrains-Desktop-background);
