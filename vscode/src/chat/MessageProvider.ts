@@ -1,7 +1,6 @@
 import type { ChatClient, Guardrails } from '@sourcegraph/cody-shared'
 
 import type { VSCodeEditor } from '../editor/vscode-editor'
-import type { AuthProvider } from '../services/AuthProvider'
 
 /**
  * The types of errors that should be handled from MessageProvider.
@@ -14,5 +13,4 @@ export interface MessageProviderOptions {
     chat: ChatClient
     guardrails: Guardrails
     editor: VSCodeEditor
-    authProvider: AuthProvider
 }

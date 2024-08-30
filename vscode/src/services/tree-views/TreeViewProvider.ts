@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type AuthStatus, type FeatureFlagProvider, isDotCom } from '@sourcegraph/cody-shared'
+import { type AuthStatus, featureFlagProvider, isDotCom } from '@sourcegraph/cody-shared'
 
 import type { CodyTreeItem } from './TreeItemProvider'
 import { initializeGroupedChats } from './chat-history'
@@ -13,10 +13,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
     public readonly onDidChangeTreeData = this._onDidChangeTreeData.event
     private authStatus: AuthStatus | undefined
     private treeItems: CodySidebarTreeItem[]
-    constructor(
-        private type: CodyTreeItemType,
-        private readonly featureFlagProvider: FeatureFlagProvider
-    ) {
+    constructor(private type: CodyTreeItemType) {
         this.treeItems = getCodyTreeItems(type)
     }
 
@@ -70,7 +67,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<vscode.TreeItem
 
             if (
                 item.requireFeature &&
-                !(await this.featureFlagProvider.evaluateFeatureFlag(item.requireFeature))
+                !(await featureFlagProvider.instance!.evaluateFeatureFlag(item.requireFeature))
             ) {
                 continue
             }

@@ -199,7 +199,7 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
         })
 
         beforeEach(() => {
-            vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+            vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValue(false)
             getCompletionProviderSpy = vi.spyOn(CompletionProvider, 'getCompletionProvider')
         })
 

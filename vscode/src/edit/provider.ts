@@ -15,7 +15,7 @@ import {
 import { logError } from '../log'
 import type { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
-import { isNetworkError } from '../services/AuthProvider'
+import { authProvider, isNetworkError } from '../services/AuthProvider'
 
 import {
     DEFAULT_EVENT_SOURCE,
@@ -52,7 +52,7 @@ export class EditProvider {
         return wrapInActiveSpan('command.edit.start', async span => {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
-            const contextWindow = modelsService.getContextWindowByID(model)
+            const contextWindow = modelsService.instance!.getContextWindowByID(model)
             const {
                 messages,
                 stopSequences,
@@ -60,7 +60,7 @@ export class EditProvider {
                 responsePrefix = '',
             } = await buildInteraction({
                 model,
-                codyApiVersion: this.config.authProvider.getAuthStatus().codyApiVersion,
+                codyApiVersion: authProvider.instance!.getAuthStatus().codyApiVersion,
                 contextWindow: contextWindow.input,
                 task: this.config.task,
                 editor: this.config.editor,
@@ -215,7 +215,7 @@ export class EditProvider {
                 ...countCode(response),
             }
             const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
-            const endpoint = this.config.authProvider?.getAuthStatus()?.endpoint
+            const endpoint = authProvider.instance!.getAuthStatus()?.endpoint
             telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
                 metadata,
                 privateMetadata: {

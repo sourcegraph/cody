@@ -5,6 +5,8 @@ import {
     addTraceparent,
     isDotCom,
     logDebug,
+    setSingleton,
+    singletonNotYetSet,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import { fetch } from '@sourcegraph/cody-shared'
@@ -152,7 +154,8 @@ class UpstreamHealthProvider implements vscode.Disposable {
     }
 }
 
-export const upstreamHealthProvider = new UpstreamHealthProvider()
+export const upstreamHealthProvider = singletonNotYetSet<UpstreamHealthProvider>()
+setSingleton(upstreamHealthProvider, new UpstreamHealthProvider())
 
 function headersToObject(headers: BrowserOrNodeResponse['headers']) {
     const result: Record<string, string> = {}

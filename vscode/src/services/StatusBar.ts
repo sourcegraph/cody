@@ -72,7 +72,7 @@ export function createStatusBar(): CodyStatusBar {
         if (uri.scheme === 'file' && isCodyIgnoredFile(uri)) {
             return 'cody-ignore'
         }
-        if (await contextFiltersProvider.isUriIgnored(uri)) {
+        if (await contextFiltersProvider.instance!.isUriIgnored(uri)) {
             return 'context-filter'
         }
         return null

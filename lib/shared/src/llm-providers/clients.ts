@@ -11,7 +11,7 @@ export async function useCustomChatClient({
     logger,
     signal,
 }: ChatNetworkClientParams): Promise<boolean> {
-    const model = modelsService.getModelByID(params.model ?? '')
+    const model = modelsService.instance!.getModelByID(params.model ?? '')
     if (!model || !isCustomModel(model)) {
         return false
     }

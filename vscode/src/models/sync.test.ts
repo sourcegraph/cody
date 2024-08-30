@@ -15,7 +15,7 @@ import { syncModels } from './sync'
 import { getEnterpriseContextWindow } from './utils'
 
 describe('syncModels', () => {
-    const setModelsSpy = vi.spyOn(modelsService, 'setModels')
+    const setModelsSpy = vi.spyOn(modelsService.instance!, 'setModels')
 
     beforeEach(() => {
         setModelsSpy.mockClear()
@@ -93,10 +93,10 @@ describe('syncModels from the server', () => {
     // Unlike the other mocks, we define setModelsSpy here so that it can
     // be referenced by individual tests. (But like the other spys, it needs
     // to be reset/restored after each test.)
-    let setModelsSpy = vi.spyOn(modelsService, 'setModels')
+    let setModelsSpy = vi.spyOn(modelsService.instance!, 'setModels')
 
     beforeEach(() => {
-        setModelsSpy = vi.spyOn(modelsService, 'setModels')
+        setModelsSpy = vi.spyOn(modelsService.instance!, 'setModels')
 
         // Mock the /.api/client-config for these tests so that modelsAPIEnabled == true
         const mockClientConfig = {

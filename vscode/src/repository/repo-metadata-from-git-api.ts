@@ -2,7 +2,7 @@ import { subscriptionDisposable } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { WorkspaceRepoMapper } from '../context/workspace-repo-mapper'
 import { logDebug } from '../log'
-import type { AuthProvider } from '../services/AuthProvider'
+import { authProvider } from '../services/AuthProvider'
 import { gitCommitIdFromGitExtension, vscodeGitAPI } from './git-extension-api'
 import { repoNameResolver } from './repo-name-resolver'
 
@@ -18,7 +18,7 @@ class WorkspaceReposMonitor implements vscode.Disposable {
 
     private workspaceRepoMapper = new WorkspaceRepoMapper()
 
-    constructor(authProvider: AuthProvider) {
+    constructor() {
         for (const folderURI of this.getFolderURIs()) {
             this.addWorkspaceFolder(folderURI)
         }
@@ -28,7 +28,7 @@ class WorkspaceReposMonitor implements vscode.Disposable {
 
         this.disposables.push(
             subscriptionDisposable(
-                authProvider.changes.subscribe(() => {
+                authProvider.instance!.changes.subscribe(() => {
                     for (const folderURI of this.getFolderURIs()) {
                         this.addWorkspaceFolder(folderURI)
                     }
@@ -114,7 +114,6 @@ class WorkspaceReposMonitor implements vscode.Disposable {
 
 export let workspaceReposMonitor: WorkspaceReposMonitor | undefined = undefined
 export function initWorkspaceReposMonitor(
-    authProvider: AuthProvider,
     disposables: vscode.Disposable[]
 ): WorkspaceReposMonitor | undefined {
     if (!vscodeGitAPI) {
@@ -124,7 +123,7 @@ export function initWorkspaceReposMonitor(
         )
         return undefined
     }
-    workspaceReposMonitor = new WorkspaceReposMonitor(authProvider)
+    workspaceReposMonitor = new WorkspaceReposMonitor()
     disposables.push(workspaceReposMonitor)
     return workspaceReposMonitor
 }

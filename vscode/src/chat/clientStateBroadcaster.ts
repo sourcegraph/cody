@@ -13,7 +13,7 @@ import * as vscode from 'vscode'
 import { getSelectionOrFileContext } from '../commands/context/selection'
 import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
 import { workspaceReposMonitor } from '../repository/repo-metadata-from-git-api'
-import type { AuthProvider } from '../services/AuthProvider'
+import { authProvider } from '../services/AuthProvider'
 import type { ChatModel } from './chat-view/ChatModel'
 import { contextItemMentionFromOpenCtxItem } from './context/chatContext'
 import type { ExtensionMessage } from './protocol'
@@ -24,12 +24,10 @@ type PostMessage = (message: Extract<ExtensionMessage, { type: 'clientState' }>)
  * Listen for changes to the client (such as VS Code) state to send to the webview.
  */
 export function startClientStateBroadcaster({
-    authProvider,
     useRemoteSearch,
     postMessage: rawPostMessage,
     chatModel,
 }: {
-    authProvider: AuthProvider
     useRemoteSearch: boolean
     postMessage: PostMessage
     chatModel: ChatModel
@@ -92,7 +90,7 @@ export function startClientStateBroadcaster({
     )
     disposables.push(
         subscriptionDisposable(
-            authProvider.changes.subscribe(async () => {
+            authProvider.instance!.changes.subscribe(async () => {
                 // Infrequent action, so don't debounce and show immediately in the UI.
                 void sendClientState('immediate')
             })
@@ -114,7 +112,7 @@ export async function getCorpusContextItemsForEditorState(useRemote: boolean): P
     if (useRemote && workspaceReposMonitor) {
         const repoMetadata = await workspaceReposMonitor.getRepoMetadata()
         for (const repo of repoMetadata) {
-            if (contextFiltersProvider.isRepoNameIgnored(repo.repoName)) {
+            if (contextFiltersProvider.instance!.isRepoNameIgnored(repo.repoName)) {
                 continue
             }
             if (repo.remoteID === undefined) {

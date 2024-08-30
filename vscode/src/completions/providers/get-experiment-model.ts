@@ -21,12 +21,14 @@ export async function getExperimentModel(
     isDotCom: boolean
 ): Promise<ProviderConfigFromFeatureFlags | null> {
     const [starCoderHybrid, claude3, fimModelExperimentFlag, deepseekV2LiteBase] = await Promise.all([
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
-        featureFlagProvider.evaluateFeatureFlag(
+        featureFlagProvider.instance!.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+        featureFlagProvider.instance!.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
+        featureFlagProvider.instance!.evaluateFeatureFlag(
             FeatureFlag.CodyAutocompleteFIMModelExperimentBaseFeatureFlag
         ),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase),
+        featureFlagProvider.instance!.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteDeepseekV2LiteBase
+        ),
     ])
 
     // We run fine tuning experiment for VSC client only.
@@ -67,12 +69,22 @@ async function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<typeof ge
         fimModelVariant4,
         fimModelCurrentBest,
     ] = await Promise.all([
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentControl),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant1),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant2),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant3),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant4),
-        featureFlagProvider.evaluateFeatureFlag(
+        featureFlagProvider.instance!.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteFIMModelExperimentControl
+        ),
+        featureFlagProvider.instance!.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteFIMModelExperimentVariant1
+        ),
+        featureFlagProvider.instance!.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteFIMModelExperimentVariant2
+        ),
+        featureFlagProvider.instance!.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteFIMModelExperimentVariant3
+        ),
+        featureFlagProvider.instance!.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteFIMModelExperimentVariant4
+        ),
+        featureFlagProvider.instance!.evaluateFeatureFlag(
             FeatureFlag.CodyAutocompleteFIMModelExperimentCurrentBest
         ),
     ])

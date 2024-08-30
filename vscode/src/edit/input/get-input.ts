@@ -21,7 +21,7 @@ import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { executeDocCommand, executeTestEditCommand } from '../../commands/execute'
 import { getEditor } from '../../editor/active-editor'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
-import type { AuthProvider } from '../../services/AuthProvider'
+import { authProvider } from '../../services/AuthProvider'
 import type { EditIntent, EditMode } from '../types'
 import { isGenerateIntent } from '../utils/edit-intent'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
@@ -71,7 +71,6 @@ const PREVIEW_RANGE_DECORATION = vscode.window.createTextEditorDecorationType({
 
 export const getInput = async (
     document: vscode.TextDocument,
-    authProvider: AuthProvider,
     initialValues: EditInputInitialValues,
     source: EventSource
 ): Promise<QuickPickInput | null> => {
@@ -96,9 +95,9 @@ export const getInput = async (
               ? EXPANDED_RANGE_ITEM
               : SELECTION_RANGE_ITEM
 
-    const authStatus = authProvider.getAuthStatus()
+    const authStatus = authProvider.instance!.getAuthStatus()
     const isCodyPro = !authStatus.userCanUpgrade
-    const modelOptions = modelsService.getModels(ModelUsage.Edit)
+    const modelOptions = modelsService.instance!.getModels(ModelUsage.Edit)
     const modelItems = getModelOptionItems(modelOptions, isCodyPro)
     const showModelSelector = modelOptions.length > 1
 
@@ -106,7 +105,7 @@ export const getInput = async (
     let activeModelItem = modelItems.find(item => item.model === initialValues.initialModel)
 
     const getContextWindowOnModelChange = (model: EditModel) => {
-        const latestContextWindow = modelsService.getContextWindowByID(model)
+        const latestContextWindow = modelsService.instance!.getContextWindowByID(model)
         return latestContextWindow.input + (latestContextWindow.context?.user ?? 0)
     }
     let activeModelContextWindow = getContextWindowOnModelChange(activeModel)
@@ -210,7 +209,7 @@ export const getInput = async (
                     return
                 }
 
-                modelsService.setSelectedModel(ModelUsage.Edit, acceptedItem.model)
+                modelsService.instance!.setSelectedModel(ModelUsage.Edit, acceptedItem.model)
                 activeModelItem = acceptedItem
                 activeModel = acceptedItem.model
                 activeModelContextWindow = getContextWindowOnModelChange(acceptedItem.model)

@@ -13,7 +13,7 @@ import { PromptBuilder } from './index'
 
 describe('PromptBuilder', () => {
     beforeEach(() => {
-        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+        vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValue(false)
     })
 
     const preamble: Message[] = [{ speaker: 'system', text: ps`preamble` }]

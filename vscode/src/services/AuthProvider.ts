@@ -15,6 +15,7 @@ import {
     logError,
     networkErrorAuthStatus,
     offlineModeAuthStatus,
+    singletonNotYetSet,
     telemetryRecorder,
     unauthenticatedStatus,
 } from '@sourcegraph/cody-shared'
@@ -47,19 +48,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         new vscode.EventEmitter<AuthStatus>()
     private disposables: vscode.Disposable[] = [this.didChangeEvent]
 
-    private static _instance: AuthProvider | null = null
-    public static get instance(): AuthProvider | null {
-        return AuthProvider._instance
-    }
-
-    public static create(config: AuthConfig): AuthProvider {
-        if (!AuthProvider._instance) {
-            AuthProvider._instance = new AuthProvider(config)
-        }
-        return AuthProvider._instance
-    }
-
-    private constructor(private config: AuthConfig) {
+    constructor(private config: AuthConfig) {
         this.status.endpoint = 'init'
         this.loadEndpointHistory()
     }
@@ -500,6 +489,8 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         return localStorage.set(HAS_AUTHENTICATED_BEFORE_KEY, 'true')
     }
 }
+
+export const authProvider = singletonNotYetSet<AuthProvider>()
 
 export function isNetworkError(error: Error): boolean {
     const message = error.message

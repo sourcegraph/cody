@@ -2,6 +2,7 @@ import { type MultimodelSingleModelConfig, isDotCom } from '@sourcegraph/cody-sh
 import _ from 'lodash'
 import * as vscode from 'vscode'
 import { logDebug } from '../log'
+import { authProvider } from '../services/AuthProvider'
 import type { InlineCompletionItemProviderArgs } from './create-inline-completion-item-provider'
 import type { MultiModelCompletionsResults } from './inline-completion-item-provider'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
@@ -66,13 +67,12 @@ export async function createInlineCompletionItemFromMultipleProviders({
     config,
     client,
     statusBar,
-    authProvider,
     createBfgRetriever,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
     // Creates multiple providers to get completions from.
     // The primary purpose of this method is to get the completions generated from multiple providers,
     // which helps judge the quality of code completions
-    const authStatus = authProvider.getAuthStatus()
+    const authStatus = authProvider.instance!.getAuthStatus()
     if (!authStatus.isLoggedIn || config.autocompleteExperimentalMultiModelCompletions === undefined) {
         return {
             dispose: () => {},
@@ -119,7 +119,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
             config: newConfig,
         })
         if (providerConfig) {
-            const authStatus = authProvider.getAuthStatus()
+            const authStatus = authProvider.instance!.getAuthStatus()
             const completionsProvider = new InlineCompletionItemProvider({
                 authStatus,
                 providerConfig,

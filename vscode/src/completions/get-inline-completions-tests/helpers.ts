@@ -1,6 +1,6 @@
 import dedent from 'dedent'
 import { isEqual } from 'lodash'
-import { expect } from 'vitest'
+import { expect, vi } from 'vitest'
 import type { URI } from 'vscode-uri'
 
 import {
@@ -11,7 +11,10 @@ import {
     type CompletionParameters,
     type CompletionResponse,
     CompletionStopReason,
+    type GraphQLAPIClientConfig,
     defaultAuthStatus,
+    featureFlagProvider,
+    graphqlClient,
     testFileUri,
 } from '@sourcegraph/cody-shared'
 
@@ -19,7 +22,7 @@ import type {
     CodeCompletionsParams,
     CompletionResponseWithMetaData,
 } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
-import { DEFAULT_VSCODE_SETTINGS, emptyMockFeatureFlagProvider } from '../../testutils/mocks'
+import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
 import { getParser } from '../../tree-sitter/parser'
@@ -407,7 +410,9 @@ export async function getInlineCompletionsInsertText(params: ParamsResult): Prom
 export type V = Awaited<ReturnType<typeof getInlineCompletions>>
 
 export function initCompletionProviderConfig(config: Partial<ClientConfiguration>) {
-    return completionProviderConfig.init(config as ClientConfiguration, emptyMockFeatureFlagProvider)
+    graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
+    vi.spyOn(featureFlagProvider.instance!, 'getFromCache').mockReturnValue(false)
+    return completionProviderConfig.init(config as ClientConfiguration)
 }
 
 expect.extend({

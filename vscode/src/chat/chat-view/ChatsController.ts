@@ -22,7 +22,7 @@ import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import { getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ExtensionClient } from '../../extension-client'
-import type { AuthProvider } from '../../services/AuthProvider'
+import { authProvider } from '../../services/AuthProvider'
 import { type ChatLocation, localStorage } from '../../services/LocalStorageProvider'
 import {
     handleCodeFromInsertAtCursor,
@@ -65,7 +65,6 @@ export class ChatsController implements vscode.Disposable {
     constructor(
         private options: Options,
         private chatClient: ChatClient,
-        private authProvider: AuthProvider,
 
         private readonly enterpriseContext: EnterpriseContextFactory,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
@@ -82,7 +81,7 @@ export class ChatsController implements vscode.Disposable {
 
         this.disposables.push(
             subscriptionDisposable(
-                this.authProvider.changes.subscribe(authStatus => this.setAuthStatus(authStatus))
+                authProvider.instance!.changes.subscribe(authStatus => this.setAuthStatus(authStatus))
             )
         )
     }
@@ -347,7 +346,7 @@ export class ChatsController implements vscode.Disposable {
      */
     private async exportHistory(): Promise<void> {
         telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
-        const authStatus = this.options.authProvider.getAuthStatus()
+        const authStatus = authProvider.instance!.getAuthStatus()
         if (authStatus.isLoggedIn) {
             try {
                 const historyJson = chatHistory.getLocalHistory(authStatus)
@@ -377,7 +376,7 @@ export class ChatsController implements vscode.Disposable {
         // The chat ID for client to pass in to clear all chats without showing window pop-up for confirmation.
         const ClearWithoutConfirmID = 'clear-all-no-confirm'
         const isClearAll = !chatID || chatID === ClearWithoutConfirmID
-        const authStatus = this.options.authProvider.getAuthStatus()
+        const authStatus = authProvider.instance!.getAuthStatus()
 
         if (isClearAll) {
             if (chatID !== ClearWithoutConfirmID) {
@@ -477,7 +476,6 @@ export class ChatsController implements vscode.Disposable {
             ...this.options,
             chatClient: this.chatClient,
             retrievers: new AuthDependentRetrievers(
-                this.authProvider,
                 this.localEmbeddings,
                 this.symf,
                 this.enterpriseContext

@@ -2,6 +2,7 @@ import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
 import { type ClientConfiguration, CodyIDE } from '../configuration'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { logDebug, logError } from '../logger'
+import { setSingleton, singletonNotYetSet } from '../singletons'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import { ModelTag } from './tags'
 import { type ChatModel, type EditModel, type ModelContextWindow, ModelUsage } from './types'
@@ -567,7 +568,8 @@ export class ModelsService {
     }
 }
 
-export const modelsService = new ModelsService()
+export const modelsService = singletonNotYetSet<ModelsService>()
+setSingleton(modelsService, new ModelsService())
 
 interface Storage {
     get(key: string): string | null

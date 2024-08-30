@@ -26,15 +26,15 @@ import { getEnterpriseContextWindow } from './utils'
  */
 export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // Offline mode only support Ollama models, which would be synced seperately.
-    modelsService.setAuthStatus(authStatus)
+    modelsService.instance!.setAuthStatus(authStatus)
     if (authStatus.isOfflineMode) {
-        modelsService.setModels([])
+        modelsService.instance!.setModels([])
         return
     }
 
     // If you are not authenticated, you cannot use Cody. Sorry.
     if (!authStatus.authenticated) {
-        modelsService.setModels([])
+        modelsService.instance!.setModels([])
         return
     }
 
@@ -47,7 +47,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
         const serverSideModels = await fetchServerSideModels(authStatus.endpoint || '')
         // If the request failed, fall back to using the default models
         if (serverSideModels) {
-            modelsService.setServerSentModels(serverSideModels)
+            modelsService.instance!.setServerSentModels(serverSideModels)
             // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't entirely make sense in
             // a world where LLM models are managed server-side. However, this is how Cody can be extended
             // to use locally running LLMs such as Ollama. (Though some more testing is needed.)
@@ -60,7 +60,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // If you are connecting to Sourcegraph.com, we use the Cody Pro set of models.
     // (Only some of them may not be available if you are on the Cody Free plan.)
     if (authStatus.isDotCom) {
-        modelsService.setModels(getDotComDefaultModels())
+        modelsService.instance!.setModels(getDotComDefaultModels())
         registerModelsFromVSCodeConfiguration()
         return
     }
@@ -75,7 +75,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // NOTE: If authStatus?.configOverwrites?.chatModel is empty,
     // automatically fallback to use the default model configured on the instance.
     if (authStatus?.configOverwrites?.chatModel) {
-        modelsService.setModels([
+        modelsService.instance!.setModels([
             new Model({
                 id: authStatus.configOverwrites.chatModel,
                 // TODO (umpox) Add configOverwrites.editModel for separate edit support
@@ -91,7 +91,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
         // If the enterprise instance didn't have any configuration data for Cody,
         // clear the models available in the modelsService. Otherwise there will be
         // stale, defunct models available.
-        modelsService.setModels([])
+        modelsService.instance!.setModels([])
     }
 }
 
@@ -120,7 +120,7 @@ export function registerModelsFromVSCodeConfiguration() {
         return
     }
 
-    modelsService.addModels(
+    modelsService.instance!.addModels(
         modelsConfig.map(
             m =>
                 new Model({
