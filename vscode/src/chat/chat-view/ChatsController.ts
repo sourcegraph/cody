@@ -352,6 +352,7 @@ export class ChatsController implements vscode.Disposable {
             try {
                 const historyJson = chatHistory.getLocalHistory(authStatus)
                 const exportPath = await vscode.window.showSaveDialog({
+                    title: 'Cody: Export Chat History',
                     filters: { 'Chat History': ['json'] },
                 })
                 if (!exportPath || !historyJson) {
