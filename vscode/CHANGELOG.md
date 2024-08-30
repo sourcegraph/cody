@@ -1,7 +1,13 @@
 # Changelog
 
+
 This is a log of all notable changes to Cody for VS Code. [Unreleased] changes are included in the nightly pre-release builds.
 
+## 1.32.6
+
+### Added
+- Autocomplete: Add direct routing for experimental models. [pull/5356](https://github.com/sourcegraph/cody/pull/5356)
+- Autocomplete: Split create provider into seperate files. [pull/5394](https://github.com/sourcegraph/cody/pull/5394)
 
 ## 1.32.5
 
