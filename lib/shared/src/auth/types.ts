@@ -40,18 +40,18 @@ export interface AuthStatusProvider {
 }
 
 export const defaultAuthStatus: AuthStatus = {
-    endpoint: '',
+    endpoint: 'https://example.com',
     isDotCom: true,
     isFireworksTracingEnabled: false,
+    username: 'alice',
+    authenticated: true,
+    siteHasCodyEnabled: true,
+    siteVersion: '',
+    codyApiVersion: 0,
     showInvalidAccessTokenError: false,
-    authenticated: false,
     hasVerifiedEmail: false,
     requiresVerifiedEmail: false,
-    siteHasCodyEnabled: false,
-    siteVersion: '',
     userCanUpgrade: false,
-    username: '',
-    codyApiVersion: 0,
 }
 
 export const unauthenticatedStatus: AuthStatus = {
@@ -85,11 +85,11 @@ export const networkErrorAuthStatus: Omit<AuthStatus, 'endpoint'> = {
 }
 
 export function isCodyProUser(authStatus: AuthStatus): boolean {
-    return authStatus.isDotCom && !authStatus.userCanUpgrade
+    return Boolean(authStatus.isDotCom && authStatus.user && !authStatus.user.userCanUpgrade)
 }
 
 export function isFreeUser(authStatus: AuthStatus): boolean {
-    return authStatus.isDotCom && authStatus.userCanUpgrade
+    return Boolean(authStatus.isDotCom && authStatus.user && authStatus.user.userCanUpgrade)
 }
 
 export function isEnterpriseUser(authStatus: AuthStatus): boolean {

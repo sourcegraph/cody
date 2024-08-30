@@ -16,10 +16,8 @@ describe('getRepoNamesFromWorkspaceUri', () => {
         const repoNameResolver = new RepoNameResolver()
         authProvider.instance = {
             changes: EMPTY,
-            getAuthStatus: () =>
-                ({ ...defaultAuthStatus, authenticated: true, isDotCom: false }) satisfies AuthStatus,
+            getAuthStatus: () => ({ ...defaultAuthStatus, isDotCom: false }) satisfies AuthStatus,
         } as unknown as AuthProvider
-        repoNameResolver.init()
 
         vi.spyOn(gitExtensionAPI, 'gitRemoteUrlsFromGitExtension').mockReturnValue([
             'git@github.com:sourcegraph/cody.git',
@@ -52,10 +50,8 @@ describe('getRepoNamesFromWorkspaceUri', () => {
         const repoNameResolver = new RepoNameResolver()
         authProvider.instance = {
             changes: EMPTY,
-            getAuthStatus: () =>
-                ({ ...defaultAuthStatus, authenticated: true, isDotCom: true }) satisfies AuthStatus,
+            getAuthStatus: () => ({ ...defaultAuthStatus, isDotCom: true }) satisfies AuthStatus,
         } as unknown as AuthProvider
-        repoNameResolver.init()
 
         vi.spyOn(gitExtensionAPI, 'gitRemoteUrlsFromGitExtension').mockReturnValue([
             'git@github.com:sourcegraph/cody.git',

@@ -2,21 +2,20 @@ import type * as vscode from 'vscode'
 
 import {
     ChatClient,
-    type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
-    type ConfigWatcher,
     type Guardrails,
-    type GuardrailsClientConfig,
+    type ResolvedConfiguration,
     type SourcegraphCompletionsClient,
     SourcegraphGuardrailsClient,
+    firstValueFrom,
     graphqlClient,
     isError,
 } from '@sourcegraph/cody-shared'
-
+import type { Observable } from 'observable-fns'
 import { ContextAPIClient } from './chat/context/contextAPIClient'
 import { createClient as createCodeCompletionsClient } from './completions/default-client'
 import type { PlatformContext } from './extension.common'
-import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
+import type { LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logger } from './log'
 import { authProvider } from './services/AuthProvider'
@@ -29,27 +28,12 @@ interface ExternalServices {
     localEmbeddings: LocalEmbeddingsController | undefined
     symfRunner: SymfRunner | undefined
     contextAPIClient: ContextAPIClient | undefined
-
-    /** Update configuration for all of the services in this interface. */
-    onConfigurationChange: (newConfig: ExternalServicesConfiguration) => void
+    dispose(): void
 }
-
-type ExternalServicesConfiguration = Pick<
-    ClientConfigurationWithAccessToken,
-    | 'serverEndpoint'
-    | 'codebase'
-    | 'useContext'
-    | 'customHeaders'
-    | 'accessToken'
-    | 'debugVerbose'
-    | 'experimentalTracing'
-> &
-    LocalEmbeddingsConfig &
-    GuardrailsClientConfig
 
 export async function configureExternalServices(
     context: vscode.ExtensionContext,
-    config: ConfigWatcher<ExternalServicesConfiguration>,
+    config: Observable<ResolvedConfiguration>,
     platform: Pick<
         PlatformContext,
         | 'createLocalEmbeddingsController'
@@ -59,31 +43,40 @@ export async function configureExternalServices(
         | 'createSymfRunner'
     >
 ): Promise<ExternalServices> {
-    const initialConfig = config.get()
-    const sentryService = platform.createSentryService?.(initialConfig)
-    const openTelemetryService = platform.createOpenTelemetryService?.(initialConfig)
-    const completionsClient = platform.createCompletionsClient(initialConfig, logger)
-    const codeCompletionsClient = createCodeCompletionsClient(initialConfig, logger)
+    const disposables: vscode.Disposable[] = []
+
+    const sentryService = platform.createSentryService?.(config)
+    if (sentryService) disposables.push(sentryService)
+
+    const openTelemetryService = platform.createOpenTelemetryService?.(config)
+    if (openTelemetryService) disposables.push(openTelemetryService)
+
+    const completionsClient = platform.createCompletionsClient(config, logger)
+    const codeCompletionsClient = createCodeCompletionsClient(config, logger)
 
     const symfRunner = platform.createSymfRunner?.(context, completionsClient)
+    if (symfRunner) disposables.push(symfRunner)
 
-    if (initialConfig.codebase && isError(await graphqlClient.getRepoId(initialConfig.codebase))) {
+    const { configuration: initialConfiguration } = await firstValueFrom(config)
+    if (
+        initialConfiguration.codebase &&
+        isError(await graphqlClient.getRepoId(initialConfiguration.codebase))
+    ) {
         logDebug(
             'external-services:configureExternalServices',
-            `Cody could not find the '${initialConfig.codebase}' repository on your Sourcegraph instance.\nPlease check that the repository exists. You can override the repository with the "cody.codebase" setting.`
+            `Cody could not find the '${initialConfiguration.codebase}' repository on your Sourcegraph instance.\nPlease check that the repository exists. You can override the repository with the "cody.codebase" setting.`
         )
     }
 
     // Disable local embeddings for enterprise users.
     const localEmbeddings =
         authProvider.instance!.status.authenticated && authProvider.instance!.status.isDotCom
-            ? await platform.createLocalEmbeddingsController?.(initialConfig)
+            ? await platform.createLocalEmbeddingsController?.(config)
             : undefined
+    if (localEmbeddings) disposables.push(localEmbeddings)
 
     const chatClient = new ChatClient(completionsClient, () => authProvider.instance!.status)
-
-    const guardrails = new SourcegraphGuardrailsClient(graphqlClient, initialConfig)
-
+    const guardrails = new SourcegraphGuardrailsClient(graphqlClient, config)
     const contextAPIClient = new ContextAPIClient(graphqlClient)
 
     return {
@@ -94,13 +87,10 @@ export async function configureExternalServices(
         localEmbeddings,
         symfRunner,
         contextAPIClient,
-        onConfigurationChange: newConfig => {
-            sentryService?.onConfigurationChange(newConfig)
-            openTelemetryService?.onConfigurationChange(newConfig)
-            completionsClient.onConfigurationChange(newConfig)
-            codeCompletionsClient.onConfigurationChange(newConfig)
-            guardrails.onConfigurationChange(newConfig)
-            void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
+        dispose(): void {
+            for (const d of disposables) {
+                d.dispose()
+            }
         },
     }
 }

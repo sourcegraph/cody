@@ -1,7 +1,10 @@
 import type { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
+import type { Observable } from 'observable-fns'
 import type { Attribution, Guardrails } from '.'
+import type { ResolvedConfiguration } from '../configuration/resolver'
+import { firstValueFrom } from '../misc/observable'
 import { ClientConfigSingleton } from '../sourcegraph-api/graphql/client'
 
 // 10s timeout is enough to serve most attribution requests.
@@ -20,12 +23,8 @@ export interface GuardrailsClientConfig {
 export class SourcegraphGuardrailsClient implements Guardrails {
     constructor(
         private client: SourcegraphGraphQLAPIClient,
-        private config: GuardrailsClientConfig
+        private config: Observable<ResolvedConfiguration>
     ) {}
-
-    public onConfigurationChange(newConfig: GuardrailsClientConfig): void {
-        this.config = newConfig
-    }
 
     public async searchAttribution(snippet: string): Promise<Attribution | Error> {
         // Short-circuit attribution search if turned off in site config.
@@ -35,7 +34,8 @@ export class SourcegraphGuardrailsClient implements Guardrails {
         }
 
         const timeout =
-            (this.config.experimentalGuardrailsTimeoutSeconds ?? defaultTimeoutSeconds) * 1000
+            ((await firstValueFrom(this.config)).configuration.experimentalGuardrailsTimeoutSeconds ??
+                defaultTimeoutSeconds) * 1000
 
         const result = await this.client.searchAttribution(snippet, AbortSignal.timeout(timeout))
 

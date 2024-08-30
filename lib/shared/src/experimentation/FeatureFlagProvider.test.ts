@@ -2,9 +2,15 @@ import { describe, expect, it, vitest } from 'vitest'
 
 import type { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
+import { Observable } from 'observable-fns'
+import type { ResolvedConfiguration } from '../configuration/resolver'
 import { readValuesFrom } from '../misc/observable'
 import { nextTick } from '../utils'
 import { FeatureFlag, FeatureFlagProvider } from './FeatureFlagProvider'
+
+const CONFIG = Observable.of<Pick<ResolvedConfiguration, 'auth'>>({
+    auth: { accessToken: null, serverEndpoint: 'https://example.com' },
+})
 
 describe('FeatureFlagProvider', () => {
     it('evaluates the feature flag on dotcom', async () => {
@@ -13,7 +19,7 @@ describe('FeatureFlagProvider', () => {
             evaluateFeatureFlag: vitest.fn().mockResolvedValue(true),
         } as unknown as SourcegraphGraphQLAPIClient
 
-        const provider = new FeatureFlagProvider(apiClient)
+        const provider = new FeatureFlagProvider(apiClient, CONFIG)
 
         expect(await provider.evaluateFeatureFlag(FeatureFlag.TestFlagDoNotUse)).toBe(true)
     })
@@ -26,7 +32,10 @@ describe('FeatureFlagProvider', () => {
             evaluateFeatureFlag: vitest.fn(),
         }
 
-        const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
+        const provider = new FeatureFlagProvider(
+            apiClient as unknown as SourcegraphGraphQLAPIClient,
+            CONFIG
+        )
         await provider.refresh()
 
         // Wait for the async initialization
@@ -43,7 +52,10 @@ describe('FeatureFlagProvider', () => {
             evaluateFeatureFlag: vitest.fn().mockResolvedValue(new Error('API error')),
         }
 
-        const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
+        const provider = new FeatureFlagProvider(
+            apiClient as unknown as SourcegraphGraphQLAPIClient,
+            CONFIG
+        )
 
         expect(await provider.evaluateFeatureFlag(FeatureFlag.TestFlagDoNotUse)).toBe(false)
     })
@@ -56,7 +68,10 @@ describe('FeatureFlagProvider', () => {
             evaluateFeatureFlag: vitest.fn(),
         }
 
-        const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
+        const provider = new FeatureFlagProvider(
+            apiClient as unknown as SourcegraphGraphQLAPIClient,
+            CONFIG
+        )
 
         // Wait for the async initialization
         await nextTick()
@@ -84,7 +99,10 @@ describe('FeatureFlagProvider', () => {
                 evaluateFeatureFlag: vitest.fn(),
             }
 
-            const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
+            const provider = new FeatureFlagProvider(
+                apiClient as unknown as SourcegraphGraphQLAPIClient,
+                CONFIG
+            )
             await provider.refresh()
 
             // Wait for the async initialization
@@ -140,7 +158,8 @@ describe('FeatureFlagProvider', () => {
                 }
 
                 const provider = new FeatureFlagProvider(
-                    apiClient as unknown as SourcegraphGraphQLAPIClient
+                    apiClient as unknown as SourcegraphGraphQLAPIClient,
+                    CONFIG
                 )
 
                 const generator = provider.evaluatedFeatureFlag(FeatureFlag.TestFlagDoNotUse)
@@ -178,7 +197,10 @@ describe('FeatureFlagProvider', () => {
                 }),
                 evaluateFeatureFlag: vitest.fn().mockResolvedValue(true),
             }
-            const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
+            const provider = new FeatureFlagProvider(
+                apiClient as unknown as SourcegraphGraphQLAPIClient,
+                CONFIG
+            )
 
             // Evaluate a flag so we know that this one is being tracked
             await provider.evaluateFeatureFlag(FeatureFlag.TestFlagDoNotUse)
@@ -206,7 +228,10 @@ describe('FeatureFlagProvider', () => {
                 }),
                 evaluateFeatureFlag: vitest.fn().mockResolvedValue(false),
             }
-            const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
+            const provider = new FeatureFlagProvider(
+                apiClient as unknown as SourcegraphGraphQLAPIClient,
+                CONFIG
+            )
 
             // Evaluate a flag so we know that this one is being tracked
             await provider.evaluateFeatureFlag(FeatureFlag.TestFlagDoNotUse)
@@ -232,7 +257,10 @@ describe('FeatureFlagProvider', () => {
                 getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({}),
                 evaluateFeatureFlag: vitest.fn().mockResolvedValue(true),
             }
-            const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
+            const provider = new FeatureFlagProvider(
+                apiClient as unknown as SourcegraphGraphQLAPIClient,
+                CONFIG
+            )
 
             const callback = vitest.fn()
             provider.onFeatureFlagChanged('test', callback)
@@ -257,7 +285,10 @@ describe('FeatureFlagProvider', () => {
                 }),
                 evaluateFeatureFlag: vitest.fn().mockResolvedValue(true),
             }
-            const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
+            const provider = new FeatureFlagProvider(
+                apiClient as unknown as SourcegraphGraphQLAPIClient,
+                CONFIG
+            )
 
             // Evaluate a flag so we know that this one is being tracked
             await provider.evaluateFeatureFlag(FeatureFlag.TestFlagDoNotUse)
@@ -284,7 +315,10 @@ describe('FeatureFlagProvider', () => {
                 getEvaluatedFeatureFlags: () => Promise.resolve({}),
                 evaluateFeatureFlag: vitest.fn().mockResolvedValue(null),
             }
-            const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
+            const provider = new FeatureFlagProvider(
+                apiClient as unknown as SourcegraphGraphQLAPIClient,
+                CONFIG
+            )
 
             // Evaluate a flag so we know that this one is being tracked
             await provider.evaluateFeatureFlag(FeatureFlag.TestFlagDoNotUse)

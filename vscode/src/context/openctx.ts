@@ -3,15 +3,18 @@ import {
     CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
     type ClientConfiguration,
     CodyIDE,
-    type ConfigWatcher,
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
+    type ResolvedConfiguration,
     WEB_PROVIDER_URI,
     combineLatest,
+    distinctUntilChanged,
     featureFlagProvider,
+    firstValueFrom,
     graphqlClient,
     isError,
     logError,
+    pluck,
     setOpenCtx,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -34,17 +37,18 @@ import { createWebProvider } from './openctx/web'
 
 export async function exposeOpenCtxClient(
     context: Pick<vscode.ExtensionContext, 'extension' | 'secrets'>,
-    config: ConfigWatcher<ClientConfiguration>,
+    config: Observable<ResolvedConfiguration>,
     createOpenCtxController: typeof createController | undefined
 ): Promise<void> {
     await warnIfOpenCtxExtensionConflict()
     try {
-        const isCodyWeb = config.get().agentIDE === CodyIDE.Web
+        const { configuration } = await firstValueFrom(config)
+        const isCodyWeb = configuration.agentIDE === CodyIDE.Web
         const createController =
             createOpenCtxController ?? (await import('@openctx/vscode-lib')).createController
 
         // Enable fetching of openctx configuration from Sourcegraph instance
-        const mergeConfiguration = config.get().experimentalNoodle
+        const mergeConfiguration = configuration.experimentalNoodle
             ? getMergeConfigurationFunction()
             : undefined
 
@@ -58,7 +62,7 @@ export async function exposeOpenCtxClient(
             providers: isCodyWeb
                 ? Observable.of(getCodyWebOpenCtxProviders())
                 : getOpenCtxProviders(
-                      config.changes,
+                      config.pipe(pluck('configuration'), distinctUntilChanged()),
                       authProvider.instance!.changes,
                       isValidSiteVersion
                   ),

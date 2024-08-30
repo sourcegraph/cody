@@ -94,10 +94,12 @@ export class LocalSGInstance {
 
         // We'll need our own client to request the site-config (as a site-admin)
         // for checking the LLM configuration section.
-        this.gqlclient = new SourcegraphGraphQLAPIClient({
-            accessToken: this.params.accessToken,
-            serverEndpoint: this.params.serverEndpoint,
-            customHeaders: headers,
+        this.gqlclient = SourcegraphGraphQLAPIClient.withStaticConfig({
+            auth: {
+                accessToken: this.params.accessToken,
+                serverEndpoint: this.params.serverEndpoint,
+            },
+            configuration: { customHeaders: headers },
         })
     }
 

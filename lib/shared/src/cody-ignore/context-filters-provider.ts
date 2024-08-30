@@ -1,10 +1,14 @@
 import { isEqual } from 'lodash'
 import { LRUCache } from 'lru-cache'
+import type { Observable } from 'observable-fns'
 import { RE2JS as RE2 } from 're2js'
 import type * as vscode from 'vscode'
 import { isFileURI } from '../common/uri'
+import type { ResolvedConfiguration } from '../configuration/resolver'
 import { logDebug, logError } from '../logger'
-import { setSingleton, singletonNotYetSet } from '../singletons'
+import { type Unsubscribable, distinctUntilChanged, pluck } from '../misc/observable'
+import { singletonNotYetSet } from '../singletons'
+import { isDotCom } from '../sourcegraph-api/environments'
 import { graphqlClient } from '../sourcegraph-api/graphql'
 import {
     type CodyContextFilterItem,
@@ -88,6 +92,8 @@ export class ContextFiltersProvider implements vscode.Disposable {
     private lastResultLifetime: ResultLifetime | undefined = undefined
     private fetchIntervalId: NodeJS.Timeout | undefined | number
 
+    private isDotCom = false
+
     // Visible for testing.
     public get timerStateForTest() {
         return { delay: this.lastFetchDelay, lifetime: this.lastResultLifetime }
@@ -96,10 +102,21 @@ export class ContextFiltersProvider implements vscode.Disposable {
     private readonly contextFiltersSubscriber = createSubscriber<ContextFilters>()
     public readonly onContextFiltersChanged = this.contextFiltersSubscriber.subscribe
 
-    async init(getRepoNamesFromWorkspaceUri: GetRepoNamesFromWorkspaceUri) {
+    private configSubscription: Unsubscribable
+
+    constructor(
+        config: Observable<Pick<ResolvedConfiguration, 'auth'>>,
+        getRepoNamesFromWorkspaceUri: GetRepoNamesFromWorkspaceUri
+    ) {
         this.getRepoNamesFromWorkspaceUri = getRepoNamesFromWorkspaceUri
-        this.reset()
-        this.startRefetchTimer(await this.fetchContextFilters())
+
+        this.configSubscription = config
+            .pipe(pluck('auth'), distinctUntilChanged())
+            .subscribe(async auth => {
+                this.isDotCom = isDotCom(auth.serverEndpoint)
+                this.reset()
+                this.startRefetchTimer(await this.fetchContextFilters())
+            })
     }
 
     // Fetches context filters and updates the cached filter results. Returns
@@ -148,7 +165,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
     public setTestingContextFilters(contextFilters: ContextFilters | null): void {
         if (contextFilters === null) {
             // Reset context filters to the value from the Sourcegraph API.
-            this.init(this.getRepoNamesFromWorkspaceUri!)
+            this.fetchContextFilters()
         } else {
             this.setContextFilters(contextFilters)
         }
@@ -242,13 +259,11 @@ export class ContextFiltersProvider implements vscode.Disposable {
 
     public dispose(): void {
         this.reset()
+        this.configSubscription.unsubscribe()
     }
 
     private hasAllowEverythingFilters(): boolean {
-        return (
-            graphqlClient.isDotCom() ||
-            this.lastContextFiltersResponse === INCLUDE_EVERYTHING_CONTEXT_FILTERS
-        )
+        return this.isDotCom || this.lastContextFiltersResponse === INCLUDE_EVERYTHING_CONTEXT_FILTERS
     }
 
     private hasIgnoreEverythingFilters() {
@@ -280,7 +295,5 @@ function parseContextFilterItem(item: CodyContextFilterItem): ParsedContextFilte
 
 /**
  * A singleton instance of the `ContextFiltersProvider` class.
- * `contextFiltersProvider.instance!.init` should be called and awaited on extension activation.
  */
 export const contextFiltersProvider = singletonNotYetSet<ContextFiltersProvider>()
-setSingleton(contextFiltersProvider, new ContextFiltersProvider())

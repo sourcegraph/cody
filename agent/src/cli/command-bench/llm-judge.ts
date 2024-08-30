@@ -1,4 +1,5 @@
 import type { PromptString } from '@sourcegraph/cody-shared'
+import { Observable } from 'observable-fns'
 import { SourcegraphNodeCompletionsClient } from '../../../../vscode/src/completions/nodeClient'
 import type { CodyBenchOptions } from './command-bench'
 
@@ -11,11 +12,14 @@ export interface LlmJudgeScore {
 export class LlmJudge {
     client: SourcegraphNodeCompletionsClient
     constructor(options: Pick<CodyBenchOptions, 'srcAccessToken' | 'srcEndpoint'>) {
-        this.client = new SourcegraphNodeCompletionsClient({
-            serverEndpoint: options.srcEndpoint,
-            accessToken: options.srcAccessToken,
-            customHeaders: {},
-        })
+        this.client = new SourcegraphNodeCompletionsClient(
+            Observable.of({
+                auth: {
+                    serverEndpoint: options.srcEndpoint,
+                    accessToken: options.srcAccessToken,
+                },
+            })
+        )
     }
 
     public async judge(prompt: PromptString): Promise<LlmJudgeScore> {

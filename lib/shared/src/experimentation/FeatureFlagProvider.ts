@@ -1,9 +1,16 @@
 import { Observable } from 'observable-fns'
 import type { Event } from 'vscode'
+import type { ResolvedConfiguration } from '../configuration/resolver'
 import { logDebug } from '../logger'
-import { fromVSCodeEvent } from '../misc/observable'
-import { setSingleton, singletonNotYetSet } from '../singletons'
-import { type SourcegraphGraphQLAPIClient, graphqlClient } from '../sourcegraph-api/graphql'
+import {
+    type Unsubscribable,
+    distinctUntilChanged,
+    firstValueFrom,
+    fromVSCodeEvent,
+    pluck,
+} from '../misc/observable'
+import { singletonNotYetSet } from '../singletons'
+import type { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { wrapInActiveSpan } from '../tracing'
 import { isError } from '../utils'
 
@@ -89,19 +96,36 @@ export class FeatureFlagProvider {
     // When we have at least one subscription, ensure that we also periodically refresh the flags
     private nextRefreshTimeout: NodeJS.Timeout | number | undefined = undefined
 
-    constructor(private apiClient: SourcegraphGraphQLAPIClient) {}
+    private cachedServerEndpoint: string | null = null
+
+    private configSubscription: Unsubscribable
+
+    constructor(
+        private apiClient: SourcegraphGraphQLAPIClient,
+        private config: Observable<Pick<ResolvedConfiguration, 'auth'>>
+    ) {
+        // Refresh when auth (endpoint or token) changes.
+        this.configSubscription = this.config
+            .pipe(pluck('auth'), distinctUntilChanged())
+            .subscribe(config => {
+                this.cachedServerEndpoint = config.serverEndpoint
+                this.refresh()
+            })
+    }
 
     public getFromCache(flagName: FeatureFlag): boolean | undefined {
         void this.refreshIfStale()
 
-        const endpoint = this.apiClient.endpoint
+        if (!this.cachedServerEndpoint) {
+            return undefined
+        }
 
-        const exposedValue = this.exposedFeatureFlags[endpoint]?.[flagName]
+        const exposedValue = this.exposedFeatureFlags[this.cachedServerEndpoint]?.[flagName]
         if (exposedValue !== undefined) {
             return exposedValue
         }
 
-        if (this.unexposedFeatureFlags[endpoint]?.has(flagName)) {
+        if (this.unexposedFeatureFlags[this.cachedServerEndpoint]?.has(flagName)) {
             return false
         }
 
@@ -109,16 +133,21 @@ export class FeatureFlagProvider {
     }
 
     public getExposedExperiments(): Record<string, boolean> {
-        const endpoint = this.apiClient.endpoint
-        return this.exposedFeatureFlags[endpoint] || {}
+        if (!this.cachedServerEndpoint) {
+            return {}
+        }
+        return this.exposedFeatureFlags[this.cachedServerEndpoint] || {}
     }
 
     public async evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
-        const endpoint = this.apiClient.endpoint
         return wrapInActiveSpan(`FeatureFlagProvider.evaluateFeatureFlag.${flagName}`, async () => {
             if (process.env.DISABLE_FEATURE_FLAGS) {
                 return false
             }
+
+            const {
+                auth: { serverEndpoint: endpoint },
+            } = await firstValueFrom(this.config)
 
             const cachedValue = this.getFromCache(flagName)
             if (cachedValue !== undefined) {
@@ -178,7 +207,9 @@ export class FeatureFlagProvider {
 
     private async refreshFeatureFlags(): Promise<void> {
         return wrapInActiveSpan('FeatureFlagProvider.refreshFeatureFlags', async () => {
-            const endpoint = this.apiClient.endpoint
+            const {
+                auth: { serverEndpoint: endpoint },
+            } = await firstValueFrom(this.config)
             const data = process.env.DISABLE_FEATURE_FLAGS
                 ? {}
                 : await this.apiClient.getEvaluatedFeatureFlags()
@@ -206,15 +237,20 @@ export class FeatureFlagProvider {
     // flags not defined upstream, the changes will require a new call to `evaluateFeatureFlag` to
     // be picked up.
     public onFeatureFlagChanged(prefixFilter: string, callback: () => void): () => void {
-        const endpoint = this.apiClient.endpoint
-        const key = endpoint + '#' + prefixFilter
+        if (!this.cachedServerEndpoint) {
+            throw new Error(
+                'FeatureFlagProvider.onFeatureFlagChanged called before server endpoint is set'
+            )
+        }
+
+        const key = this.cachedServerEndpoint + '#' + prefixFilter
         const subscription = this.subscriptions.get(key)
         if (subscription) {
             subscription.callbacks.add(callback)
             return () => subscription.callbacks.delete(callback)
         }
         this.subscriptions.set(key, {
-            lastSnapshot: this.computeFeatureFlagSnapshot(endpoint, prefixFilter),
+            lastSnapshot: this.computeFeatureFlagSnapshot(this.cachedServerEndpoint, prefixFilter),
             callbacks: new Set([callback]),
         })
 
@@ -283,12 +319,19 @@ export class FeatureFlagProvider {
         }, {})
         return filteredFeatureFlags
     }
+
+    public dispose(): void {
+        if (this.nextRefreshTimeout) {
+            clearTimeout(this.nextRefreshTimeout)
+            this.nextRefreshTimeout = undefined
+        }
+        this.configSubscription.unsubscribe()
+    }
 }
 
 const NO_FLAGS: Record<string, never> = {}
 
 export const featureFlagProvider = singletonNotYetSet<FeatureFlagProvider>()
-setSingleton(featureFlagProvider, new FeatureFlagProvider(graphqlClient))
 
 function computeIfExistingFlagChanged(
     oldFlags: Record<string, boolean>,

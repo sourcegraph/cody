@@ -1,7 +1,9 @@
 import type { Span } from '@opentelemetry/api'
-import type { ClientConfigurationWithAccessToken } from '../../configuration'
 
+import type { Observable } from 'observable-fns'
+import type { ResolvedConfiguration } from '../../configuration/resolver'
 import { useCustomChatClient } from '../../llm-providers'
+import { firstValueFrom } from '../../misc/observable'
 import { recordErrorToSpan } from '../../tracing'
 import type {
     CompletionCallbacks,
@@ -31,11 +33,6 @@ export interface CompletionRequestParameters {
     customHeaders?: Record<string, string>
 }
 
-export type CompletionsClientConfig = Pick<
-    ClientConfigurationWithAccessToken,
-    'serverEndpoint' | 'accessToken' | 'customHeaders'
->
-
 /**
  * Access the chat based LLM APIs via a Sourcegraph server instance.
  *
@@ -46,16 +43,19 @@ export abstract class SourcegraphCompletionsClient {
     private errorEncountered = false
 
     constructor(
-        protected config: CompletionsClientConfig,
+        protected config: Observable<
+            Pick<ResolvedConfiguration, 'auth'> & {
+                configuration?: Pick<ResolvedConfiguration['configuration'], 'customHeaders'>
+            }
+        >,
         protected logger?: CompletionLogger
     ) {}
 
-    public onConfigurationChange(newConfig: CompletionsClientConfig): void {
-        this.config = newConfig
-    }
-
-    protected get completionsEndpoint(): string {
-        return new URL('/.api/completions/stream', this.config.serverEndpoint).href
+    protected async completionsEndpoint(): Promise<string> {
+        return new URL(
+            '/.api/completions/stream',
+            (await firstValueFrom(this.config)).auth.serverEndpoint
+        ).href
     }
 
     protected sendEvents(events: Event[], cb: CompletionCallbacks, span?: Span): void {
@@ -136,7 +136,7 @@ export abstract class SourcegraphCompletionsClient {
 
         // Custom chat clients for Non-Sourcegraph-supported providers.
         const isNonSourcegraphProvider = await useCustomChatClient({
-            completionsEndpoint: this.completionsEndpoint,
+            completionsEndpoint: await this.completionsEndpoint(),
             params,
             cb: callbacks,
             logger: this.logger,

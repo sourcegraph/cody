@@ -1,12 +1,13 @@
 import {
     type ClientConfiguration,
-    type ClientConfigurationWithAccessToken,
     CodyIDE,
     type ExtensionDetails,
     type LogEventMode,
     MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
+    type ResolvedConfiguration,
     TelemetryRecorderProvider,
+    subscriptionDisposable,
     telemetryRecorder,
     telemetryRecorderProvider,
     updateGlobalTelemetryInstances,
@@ -17,6 +18,8 @@ import { logDebug } from '../log'
 import { getOSArch } from '../os'
 import { version } from '../version'
 
+import type { Observable } from 'observable-fns'
+import type { Disposable } from 'vscode'
 import { authProvider } from './AuthProvider'
 import { localStorage } from './LocalStorageProvider'
 
@@ -55,74 +58,81 @@ const debugLogLabel = 'telemetry-v2'
  * new telemetry framework:
  * https://sourcegraph.com/docs/dev/background-information/telemetry
  */
-export async function createOrUpdateTelemetryRecorderProvider(
-    config: ClientConfigurationWithAccessToken,
+export function createOrUpdateTelemetryRecorderProvider(
+    config: Observable<ResolvedConfiguration>,
     /**
      * Hardcode isExtensionModeDevOrTest to false to test real exports - when
      * true, exports are logged to extension output instead.
      */
     isExtensionModeDevOrTest: boolean
-): Promise<void> {
-    const extensionDetails = getExtensionDetails(config)
+): Disposable {
+    return subscriptionDisposable(
+        config.subscribe(({ configuration, auth }) => {
+            const extensionDetails = getExtensionDetails(configuration)
 
-    // Add timestamp processor for realistic data in output for dev or no-op scenarios
-    const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([new TimestampTelemetryProcessor()])
+            // Add timestamp processor for realistic data in output for dev or no-op scenarios
+            const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([
+                new TimestampTelemetryProcessor(),
+            ])
 
-    if (config.telemetryLevel === 'off' || !extensionDetails.ide) {
-        updateGlobalTelemetryInstances(defaultNoOpProvider)
-        return
-    }
+            if (configuration.telemetryLevel === 'off' || !extensionDetails.ide) {
+                updateGlobalTelemetryInstances(defaultNoOpProvider)
+                return
+            }
 
-    const { anonymousUserID, created: newAnonymousUser } = localStorage.anonymousUserID()
-    const initialize = telemetryRecorderProvider === undefined
+            // TODO!(sqs): does this detect whether it was created correctly?
+            const { anonymousUserID, created: newAnonymousUser } = localStorage.anonymousUserID()
+            const initialize = telemetryRecorderProvider === undefined
 
-    /**
-     * In testing, send events to the mock server.
-     */
-    if (process.env.CODY_TESTING === 'true') {
-        logDebug(debugLogLabel, 'using mock exporter')
-        updateGlobalTelemetryInstances(
-            new MockServerTelemetryRecorderProvider(
-                extensionDetails,
-                config,
-                authProvider.instance!,
-                anonymousUserID
-            )
-        )
-    } else if (isExtensionModeDevOrTest) {
-        logDebug(debugLogLabel, 'using no-op exports')
-        updateGlobalTelemetryInstances(defaultNoOpProvider)
-    } else {
-        updateGlobalTelemetryInstances(
-            new TelemetryRecorderProvider(
-                extensionDetails,
-                config,
-                authProvider.instance!,
-                anonymousUserID,
-                legacyBackcompatLogEventMode
-            )
-        )
-    }
-
-    const isCodyWeb = config.agentIDE === CodyIDE.Web
-
-    /**
-     * On first initialization, also record some initial events.
-     * Skip any init events for Cody Web use case.
-     */
-    if (initialize && !isCodyWeb) {
-        if (newAnonymousUser) {
             /**
-             * New user
+             * In testing, send events to the mock server.
              */
-            telemetryRecorder.recordEvent('cody.extension', 'installed')
-        } else if (!config.isRunningInsideAgent || config.agentHasPersistentStorage) {
+            if (process.env.CODY_TESTING === 'true') {
+                logDebug(debugLogLabel, 'using mock exporter')
+                updateGlobalTelemetryInstances(
+                    new MockServerTelemetryRecorderProvider(
+                        extensionDetails,
+                        configuration,
+                        authProvider.instance!,
+                        anonymousUserID
+                    )
+                )
+            } else if (isExtensionModeDevOrTest) {
+                logDebug(debugLogLabel, 'using no-op exports')
+                updateGlobalTelemetryInstances(defaultNoOpProvider)
+            } else {
+                updateGlobalTelemetryInstances(
+                    new TelemetryRecorderProvider(
+                        extensionDetails,
+                        { configuration, auth },
+                        authProvider.instance!,
+                        anonymousUserID,
+                        legacyBackcompatLogEventMode
+                    )
+                )
+            }
+
+            const isCodyWeb = configuration.agentIDE === CodyIDE.Web
+
             /**
-             * Repeat user
+             * On first initialization, also record some initial events.
+             * Skip any init events for Cody Web use case.
              */
-            telemetryRecorder.recordEvent('cody.extension', 'savedLogin')
-        }
-    }
+            if (initialize && !isCodyWeb) {
+                if (newAnonymousUser) {
+                    /**
+                     * New user
+                     */
+                    telemetryRecorder.recordEvent('cody.extension', 'installed')
+                } else if (!configuration.isRunningInsideAgent || config.agentHasPersistentStorage) {
+                    /**
+                     * Repeat user
+                     */
+                    telemetryRecorder.recordEvent('cody.extension', 'savedLogin')
+                }
+            }
+        })
+    )
 }
 
 /**

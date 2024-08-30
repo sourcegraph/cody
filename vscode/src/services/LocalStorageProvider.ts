@@ -1,15 +1,17 @@
 import _ from 'lodash'
 import * as uuid from 'uuid'
-import type { Memento } from 'vscode'
+import { EventEmitter, type Memento } from 'vscode'
 
-import type {
-    AccountKeyedChatHistory,
-    AuthStatus,
-    ChatHistoryKey,
-    ClientConfigurationWithAccessToken,
-    UserLocalHistory,
+import {
+    type AccountKeyedChatHistory,
+    type AuthStatus,
+    type ClientConfigurationWithAccessToken,
+    type ClientState,
+    type UserLocalHistory,
+    distinctUntilChanged,
+    fromVSCodeEvent,
 } from '@sourcegraph/cody-shared'
-
+import type { Observable } from 'observable-fns'
 import { isSourcegraphToken } from '../chat/protocol'
 
 export type ChatLocation = 'editor' | 'sidebar'
@@ -42,6 +44,21 @@ class LocalStorage {
 
     public setStorage(storage: Memento): void {
         this._storage = storage
+    }
+
+    public getClientState(): ClientState {
+        return {
+            lastUsedEndpoint: this.getEndpoint(),
+            anonymousUserID: this.anonymousUserID().anonymousUserID,
+            lastUsedChatModality: this.getLastUsedChatModality(),
+        }
+    }
+
+    private onChange = new EventEmitter<void>()
+    public get clientStateChanges(): Observable<ClientState> {
+        return fromVSCodeEvent(this.onChange.event)
+            .map(() => this.getClientState())
+            .pipe(distinctUntilChanged())
     }
 
     public getEndpoint(): string | null {
@@ -199,6 +216,7 @@ class LocalStorage {
         return { anonymousUserID: id, created }
     }
 
+    // TODO!(sqs)
     public async setConfig(config: ClientConfigurationWithAccessToken): Promise<void> {
         return this.set(this.KEY_CONFIG, config)
     }
@@ -222,6 +240,7 @@ class LocalStorage {
     public async set<T>(key: string, value: T): Promise<void> {
         try {
             await this.storage.update(key, value)
+            this.onChange.fire()
         } catch (error) {
             console.error(error)
         }
@@ -229,6 +248,7 @@ class LocalStorage {
 
     public async delete(key: string): Promise<void> {
         await this.storage.update(key, undefined)
+        this.onChange.fire()
     }
 }
 
@@ -239,5 +259,5 @@ class LocalStorage {
 export const localStorage = new LocalStorage()
 
 function getKeyForAuthStatus(authStatus: AuthStatus): ChatHistoryKey {
-    return `${authStatus.endpoint}-${authStatus.username}`
+    return `${authStatus.endpoint}-${authStatus.user?.username ?? ''}`
 }

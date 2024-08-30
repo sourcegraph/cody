@@ -4,6 +4,7 @@ import * as commander from 'commander'
 import { parse } from 'csv-parse/sync'
 import { createObjectCsvWriter } from 'csv-writer'
 import { isError } from 'lodash'
+import { Observable } from 'observable-fns'
 import { dotcomCredentials } from '../../../../vscode/src/testutils/testing-credentials'
 
 interface CodyContextOptions {
@@ -58,11 +59,15 @@ export const contextCommand = new commander.Command('context')
             process.exit(1)
         }
 
-        graphqlClient.setConfig({
-            accessToken: options.srcAccessToken,
-            serverEndpoint: options.srcEndpoint,
-            customHeaders: {},
-        })
+        graphqlClient.setResolvedConfigurationObservable(
+            Observable.of({
+                auth: {
+                    accessToken: options.srcAccessToken,
+                    serverEndpoint: options.srcEndpoint,
+                    customHeaders: {},
+                },
+            })
+        )
 
         const examples = await readExamplesFromCSV(options.inputFile)
         const exampleOutputs: ExampleOutput[] = []

@@ -48,7 +48,7 @@ const DUMMY_AUTH_STATUS: AuthStatus = {
     codyApiVersion: 0,
 }
 
-graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
+graphqlClient.setResolvedConfigurationObservable({} as unknown as GraphQLAPIClientConfig)
 
 class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider {
     constructor(

@@ -5,7 +5,6 @@ import {
     Subject,
     type Subscription,
     map,
-    multicast,
     unsubscribe,
 } from 'observable-fns'
 import { AsyncSerialScheduler } from 'observable-fns/dist/_scheduler'
@@ -353,107 +352,6 @@ export function fromVSCodeEvent<T>(
     })
 }
 
-/**
- * An {@link Observable} whose latest value is available synchronously (and is guaranteed to exist).
- */
-export interface SyncObservable<T> extends Observable<T> {
-    /**
-     * The latest value emitted by this Observable.
-     */
-    value: T
-}
-
-export function syncObservableOf<T>(value: T): SyncObservable<T> {
-    return createSyncObservable(value, Observable.of(value))
-}
-
-/**
- * Create a {@link SyncObservable} with an initial value.
- */
-export function createSyncObservable<T>(
-    initialValue: T,
-    observable: Observable<T>,
-    emitInitialValue = true
-): SyncObservable<T> {
-    let latestValue = initialValue
-    const syncObservable = new Observable<T>(observer => {
-        const scheduler = new AsyncSerialScheduler(observer)
-        if (emitInitialValue) {
-            scheduler.schedule(async next => next(initialValue))
-        }
-
-        const subscription = observable.subscribe({
-            next: value => {
-                latestValue = value
-                scheduler.schedule(async next => next(value))
-            },
-            error: error => {
-                scheduler.error(error)
-            },
-            complete: () => {
-                scheduler.complete()
-            },
-        })
-        return () => subscription.unsubscribe()
-    })
-    return Object.defineProperty(syncObservable, 'value', {
-        get: () => latestValue,
-    }) as typeof syncObservable & { value: T }
-}
-
-export function mapSyncObservable<T, U>(
-    observable: SyncObservable<T>,
-    mapFn: (value: T) => Promise<U>
-): Promise<SyncObservable<U>>
-export function mapSyncObservable<T, U>(
-    observable: SyncObservable<T>,
-    mapFn: (value: T) => U
-): SyncObservable<U>
-export function mapSyncObservable<T, U>(
-    observable: SyncObservable<T>,
-    mapFn: (value: T) => U | Promise<U>
-): SyncObservable<U> | Promise<SyncObservable<U>> {
-    const initialValue = mapFn(observable.value)
-    if (initialValue instanceof Promise) {
-        return initialValue.then(value =>
-            createSyncObservable(
-                value,
-                observable.pipe(map(value => (mapFn as (value: T) => Promise<U>)(value))),
-                false
-            )
-        )
-    }
-    return createSyncObservable(initialValue, observable.map(mapFn as (value: T) => U), false)
-}
-
-export function pipeSyncObservable<T>(
-    observable: SyncObservable<T>,
-    ...pipeFns: ((observable: Observable<T>) => Observable<T>)[]
-): SyncObservable<T> {
-    const piped = pipeFns.length > 0 ? observable.pipe(...pipeFns) : observable
-    const desc = Object.getOwnPropertyDescriptor(observable, 'value')!
-    Object.defineProperty(piped, 'value', desc)
-    return piped as typeof piped & { value: T }
-}
-
-export function combineLatestSyncObservable<T1, T2>(
-    observables: [SyncObservable<T1>, SyncObservable<T2>]
-): SyncObservable<[T1, T2]>
-export function combineLatestSyncObservable<T1, T2, T3>(
-    observables: [SyncObservable<T1>, SyncObservable<T2>, SyncObservable<T3>]
-): SyncObservable<[T1, T2, T3]>
-export function combineLatestSyncObservable<T1, T2, T3, T4>(
-    observables: [SyncObservable<T1>, SyncObservable<T2>, SyncObservable<T3>, SyncObservable<T4>]
-): SyncObservable<[T1, T2, T3, T4]>
-export function combineLatestSyncObservable<T>(observables: SyncObservable<T>[]): SyncObservable<T[]>
-export function combineLatestSyncObservable<T>(observables: SyncObservable<T>[]): SyncObservable<T[]> {
-    return createSyncObservable(
-        observables.map(o => o.value),
-        combineLatest(observables),
-        false
-    )
-}
-
 export function pluck<T, K extends keyof T>(key: K): (input: ObservableLike<T>) => Observable<T[K]>
 export function pluck<T, K1 extends keyof T, K2 extends keyof T[K1]>(
     key1: K1,
@@ -582,9 +480,31 @@ function isEqualJSON(a: unknown, b: unknown): boolean {
     return JSON.stringify(a) === JSON.stringify(b)
 }
 
-export function multicastSync<T>(coldObservable: SyncObservable<T>): SyncObservable<T> {
-    const hot = multicast(coldObservable)
-    const desc = Object.getOwnPropertyDescriptor(coldObservable, 'value')!
-    Object.defineProperty(hot, 'value', desc)
-    return hot as typeof hot & { value: T }
+export function take<T>(count: number): (source: ObservableLike<T>) => Observable<T> {
+    return (source: ObservableLike<T>) =>
+        new Observable<T>(observer => {
+            let taken = 0
+            const sourceSubscription = source.subscribe({
+                next(value) {
+                    if (taken < count) {
+                        observer.next(value)
+                        taken++
+                        if (taken === count) {
+                            observer.complete()
+                            unsubscribe(sourceSubscription)
+                        }
+                    }
+                },
+                error(err) {
+                    observer.error(err)
+                },
+                complete() {
+                    observer.complete()
+                },
+            })
+
+            return () => {
+                unsubscribe(sourceSubscription)
+            }
+        })
 }

@@ -8,10 +8,6 @@ export enum AccountMenuOptions {
 }
 
 export async function openAccountMenu(authStatus: AuthStatus): Promise<AccountMenuOptions | undefined> {
-    if (!authStatus.authenticated || !authStatus.endpoint) {
-        return
-    }
-
     const isDotComInstance = isDotCom(authStatus.endpoint)
 
     const displayName = authStatus.displayName || authStatus.username

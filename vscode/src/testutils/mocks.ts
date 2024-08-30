@@ -12,7 +12,7 @@ import type {
 import {
     type ClientConfiguration,
     type FeatureFlag,
-    FeatureFlagProvider,
+    type FeatureFlagProvider,
     OLLAMA_DEFAULT_URL,
     ps,
 } from '@sourcegraph/cody-shared'
@@ -870,10 +870,10 @@ export const vsCodeMocks = {
     ProgressLocation,
 } as const
 
-export class MockFeatureFlagProvider extends FeatureFlagProvider {
-    constructor(private readonly enabledFlags: Set<FeatureFlag>) {
-        super(null as any)
-    }
+export class MockFeatureFlagProvider
+    implements Pick<FeatureFlagProvider, 'evaluateFeatureFlag' | 'getFromCache' | 'refresh'>
+{
+    constructor(private readonly enabledFlags: Set<FeatureFlag>) {}
 
     public evaluateFeatureFlag(flag: FeatureFlag): Promise<boolean> {
         return Promise.resolve(this.enabledFlags.has(flag))

@@ -9,18 +9,14 @@ import {
 } from '@sourcegraph/telemetry'
 import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry/dist/processors/timestamp'
 
-import {
-    CONTEXT_SELECTION_ID,
-    type ClientConfiguration,
-    type ClientConfigurationWithAccessToken,
-    type CodyIDE,
-} from '../configuration'
-import { type LogEventMode, graphqlClient } from '../sourcegraph-api/graphql/client'
+import { CONTEXT_SELECTION_ID, type ClientConfiguration, type CodyIDE } from '../configuration'
+import type { LogEventMode } from '../sourcegraph-api/graphql/client'
 import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/GraphQLTelemetryExporter'
 import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockServerTelemetryExporter'
 
 import type { BillingCategory, BillingProduct } from '.'
 import type { AuthStatusProvider } from '../auth/types'
+import type { ResolvedConfiguration } from '../configuration/resolver'
 import { getTier } from './cody-tier'
 
 export interface ExtensionDetails {
@@ -63,12 +59,11 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
 > {
     constructor(
         extensionDetails: ExtensionDetails,
-        config: ClientConfigurationWithAccessToken,
+        config: Pick<ResolvedConfiguration, 'configuration' | 'auth'>,
         authStatusProvider: AuthStatusProvider,
         anonymousUserID: string,
         legacyBackcompatLogEventMode: LogEventMode
     ) {
-        graphqlClient.setConfig(config)
         const clientName = extensionDetails.telemetryClientName
             ? extensionDetails.telemetryClientName
             : `${extensionDetails.ide || 'unknown'}.Cody`
@@ -82,7 +77,7 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
                 ? TESTING_TELEMETRY_EXPORTER.withAnonymousUserID(anonymousUserID)
                 : new GraphQLTelemetryExporter(anonymousUserID, legacyBackcompatLogEventMode),
             [
-                new ConfigurationMetadataProcessor(config, authStatusProvider),
+                new ConfigurationMetadataProcessor(config.configuration, authStatusProvider),
                 // Generate timestamps when recording events, instead of serverside
                 new TimestampTelemetryProcessor(),
             ],

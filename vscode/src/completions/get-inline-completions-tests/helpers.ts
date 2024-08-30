@@ -6,7 +6,6 @@ import type { URI } from 'vscode-uri'
 import {
     type AuthStatus,
     type ClientConfiguration,
-    type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
     type CompletionParameters,
     type CompletionResponse,
@@ -56,14 +55,6 @@ import { sleep } from '../utils'
 export const T = '\t'
 
 const dummyAuthStatus: AuthStatus = defaultAuthStatus
-const getVSCodeConfigurationWithAccessToken = (
-    config: Partial<ClientConfiguration> = {}
-): ClientConfigurationWithAccessToken => ({
-    ...DEFAULT_VSCODE_SETTINGS,
-    ...config,
-    serverEndpoint: 'https://example.com',
-    accessToken: 'foobar',
-})
 
 type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext'>> & {
     languageId?: string
@@ -152,7 +143,6 @@ export function params(
                 },
             }
         },
-        onConfigurationChange() {},
         logger: undefined,
     }
 
@@ -163,13 +153,12 @@ export function params(
             ? createFireworksProviderConfig
             : createAnthropicProviderConfig
 
-    const configWithAccessToken = getVSCodeConfigurationWithAccessToken(configuration)
     const providerConfig = createProviderConfig({
         client,
         providerOptions,
         authStatus: dummyAuthStatus,
         model: configuration?.autocompleteAdvancedModel!,
-        config: configWithAccessToken,
+        config: configuration,
     })
 
     const { document, position } = documentAndPosition(code, languageId, documentUri.toString())

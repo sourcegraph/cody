@@ -17,10 +17,15 @@ export class AuthenticatedAccount {
         public readonly account: Account,
         public readonly accessToken: string
     ) {
-        this.graphqlClient = new SourcegraphGraphQLAPIClient({
-            accessToken: this.accessToken,
-            customHeaders: this.account.customHeaders,
-            serverEndpoint: this.account.serverEndpoint,
+        this.graphqlClient = SourcegraphGraphQLAPIClient.withStaticConfig({
+            auth: {
+                accessToken: this.accessToken,
+
+                serverEndpoint: this.account.serverEndpoint,
+            },
+            configuration: {
+                customHeaders: this.account.customHeaders,
+            },
         })
     }
 

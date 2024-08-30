@@ -1,5 +1,8 @@
+import { Observable } from 'observable-fns'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { type AuthStatus, defaultAuthStatus } from '../auth/types'
+import { CodyIDE } from '../configuration'
+import type { ResolvedConfiguration } from '../configuration/resolver'
 import {
     Model,
     type ModelCategory,
@@ -17,99 +20,109 @@ import { ModelUsage } from './types'
 describe('Model Provider', () => {
     const freeUserAuthStatus: AuthStatus = {
         ...defaultAuthStatus,
-        endpoint: 'https://sourcegraph.example.com',
-        authenticated: true,
         isDotCom: true,
         userCanUpgrade: true,
     }
 
     const codyProAuthStatus: AuthStatus = {
-        ...freeUserAuthStatus,
+        ...defaultAuthStatus,
+        isDotCom: true,
         userCanUpgrade: false,
     }
 
     const enterpriseAuthStatus: AuthStatus = {
         ...defaultAuthStatus,
         endpoint: 'https://sourcegraph.example.com',
-        authenticated: true,
         isDotCom: false,
     }
 
+    const MOCK_STORAGE: ConstructorParameters<typeof ModelsService>[0] = {
+        get: () => null,
+        set: () => Promise.resolve(undefined),
+        delete: () => Promise.resolve(undefined),
+    }
+
+    const CONFIG = Observable.of<{
+        configuration: Pick<ResolvedConfiguration['configuration'], 'agentIDE'>
+    }>({
+        configuration: { agentIDE: CodyIDE.VSCode },
+    })
+
     // Reset service
-    let modelsService = new ModelsService()
+    let modelsService = new ModelsService(MOCK_STORAGE, CONFIG)
     beforeEach(() => {
-        modelsService = new ModelsService()
+        modelsService = new ModelsService(MOCK_STORAGE, CONFIG)
     })
 
     describe('getContextWindowByID', () => {
         it('returns default token limit for unknown model', () => {
-            const max = modelsService.getContextWindowByID('unknown-model')
+            const max = modelsService.instance!.getContextWindowByID('unknown-model')
             expect(max).toEqual({ input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET })
         })
 
         it('returns max token limit for known DotCom chat model ', () => {
             const models = getDotComDefaultModels()
-            modelsService.setModels(models)
+            modelsService.instance!.setModels(models)
             expect(models[0].id).toBeDefined()
-            const cw = modelsService.getContextWindowByID(models[0].id)
+            const cw = modelsService.instance!.getContextWindowByID(models[0].id)
             expect(cw).toStrictEqual(models[0].contextWindow)
         })
 
         it('returns max token limit for known DotCom chat model with higher context window (claude 3)', () => {
             const models = getDotComDefaultModels()
-            modelsService.setModels(models)
+            modelsService.instance!.setModels(models)
             const claude3SonnetModelID = 'anthropic/claude-3-5-sonnet-20240620'
-            const claude3SonnetModel = modelsService.getModelByID(claude3SonnetModelID)
+            const claude3SonnetModel = modelsService.instance!.getModelByID(claude3SonnetModelID)
             expect(claude3SonnetModel?.contextWindow?.context?.user).greaterThan(0)
             expect(claude3SonnetModel).toBeDefined()
-            const cw = modelsService.getContextWindowByID(claude3SonnetModelID)
+            const cw = modelsService.instance!.getContextWindowByID(claude3SonnetModelID)
             expect(cw).toEqual(claude3SonnetModel?.contextWindow)
         })
 
         it('returns default token limit for unknown model - Enterprise user', () => {
-            const cw = modelsService.getContextWindowByID('unknown-model')
+            const cw = modelsService.instance!.getContextWindowByID('unknown-model')
             expect(cw).toEqual({ input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET })
         })
 
         it('returns max token limit for known model - Enterprise user', () => {
-            modelsService.setModels([
+            modelsService.instance!.setModels([
                 new Model({
                     id: 'enterprise-model',
                     usage: [ModelUsage.Chat],
                     contextWindow: { input: 200, output: 100 },
                 }),
             ])
-            const cw = modelsService.getContextWindowByID('enterprise-model')
+            const cw = modelsService.instance!.getContextWindowByID('enterprise-model')
             expect(cw.input).toEqual(200)
         })
     })
 
     describe('getMaxOutputCharsByModel', () => {
         it('returns default token limit for unknown model', () => {
-            const { output } = modelsService.getContextWindowByID('unknown-model')
+            const { output } = modelsService.instance!.getContextWindowByID('unknown-model')
             expect(output).toEqual(CHAT_OUTPUT_TOKEN_BUDGET)
         })
 
         it('returns max token limit for known chat model', () => {
             const knownModel = getDotComDefaultModels()[0]
-            const { output } = modelsService.getContextWindowByID(knownModel.id)
+            const { output } = modelsService.instance!.getContextWindowByID(knownModel.id)
             expect(output).toEqual(knownModel.contextWindow.output)
         })
 
         it('returns default token limit for unknown model - Enterprise user', () => {
-            const { output } = modelsService.getContextWindowByID('unknown-model')
+            const { output } = modelsService.instance!.getContextWindowByID('unknown-model')
             expect(output).toEqual(CHAT_OUTPUT_TOKEN_BUDGET)
         })
 
         it('returns max token limit for known model - Enterprise user', () => {
-            modelsService.setModels([
+            modelsService.instance!.setModels([
                 new Model({
                     id: 'model-with-limit',
                     usage: [ModelUsage.Chat],
                     contextWindow: { input: 8000, output: 2000 },
                 }),
             ])
-            const { output } = modelsService.getContextWindowByID('model-with-limit')
+            const { output } = modelsService.instance!.getContextWindowByID('model-with-limit')
             expect(output).toEqual(2000)
         })
     })
@@ -136,32 +149,32 @@ describe('Model Provider', () => {
         })
 
         beforeEach(() => {
-            modelsService.setAuthStatus(codyProAuthStatus)
-            modelsService.setModels([model1chat, model2chat, model3all, model4edit])
+            modelsService.instance!.setAuthStatus(codyProAuthStatus)
+            modelsService.instance!.setModels([model1chat, model2chat, model3all, model4edit])
         })
 
         it('allows setting default models per type', () => {
-            modelsService.setSelectedModel(ModelUsage.Chat, model2chat)
-            modelsService.setSelectedModel(ModelUsage.Edit, model4edit)
-            expect(modelsService.getDefaultEditModel()).toBe(model4edit.id)
-            expect(modelsService.getDefaultChatModel()).toBe(model2chat.id)
+            modelsService.instance!.setSelectedModel(ModelUsage.Chat, model2chat)
+            modelsService.instance!.setSelectedModel(ModelUsage.Edit, model4edit)
+            expect(modelsService.instance!.getDefaultEditModel()).toBe(model4edit.id)
+            expect(modelsService.instance!.getDefaultChatModel()).toBe(model2chat.id)
         })
 
         it('only allows setting known models as default', async () => {
             // Set default before settings models is a no-op
-            modelsService.setModels([])
-            await modelsService.setSelectedModel(ModelUsage.Chat, model2chat.id)
-            modelsService.setModels([model1chat, model2chat])
-            expect(modelsService.getDefaultChatModel()).toBe(model1chat.id)
+            modelsService.instance!.setModels([])
+            await modelsService.instance!.setSelectedModel(ModelUsage.Chat, model2chat.id)
+            modelsService.instance!.setModels([model1chat, model2chat])
+            expect(modelsService.instance!.getDefaultChatModel()).toBe(model1chat.id)
         })
 
         it('only allows setting appropriate model types', () => {
-            modelsService.setModels([model1chat, model2chat, model3all, model4edit])
+            modelsService.instance!.setModels([model1chat, model2chat, model3all, model4edit])
             expect(async () =>
-                modelsService.setSelectedModel(ModelUsage.Chat, model4edit)
+                modelsService.instance!.setSelectedModel(ModelUsage.Chat, model4edit)
             ).rejects.toThrow('Model "model-4" is not compatible with usage type "chat".')
             expect(async () =>
-                modelsService.setSelectedModel(ModelUsage.Edit, model1chat)
+                modelsService.instance!.setSelectedModel(ModelUsage.Edit, model1chat)
             ).rejects.toThrow('Model "model-1" is not compatible with usage type "edit"')
         })
     })
@@ -254,9 +267,9 @@ describe('Model Provider', () => {
 
         beforeEach(async () => {
             storage = new TestStorage()
-            modelsService.setStorage(storage)
-            modelsService.setAuthStatus(enterpriseAuthStatus)
-            await modelsService.setServerSentModels(SERVER_MODELS)
+            modelsService = new ModelsService(storage, CONFIG)
+            modelsService.instance!.setAuthStatus(enterpriseAuthStatus)
+            await modelsService.instance!.setServerSentModels(SERVER_MODELS)
         })
 
         it('constructs from server models', () => {
@@ -269,9 +282,9 @@ describe('Model Provider', () => {
 
         it("sets server models and default models if they're not already set", () => {
             // expect all defaults to be set
-            expect(modelsService.getDefaultChatModel()).toBe(opus.id)
-            expect(modelsService.getDefaultEditModel()).toBe(opus.id)
-            expect(modelsService.getDefaultModel(ModelUsage.Autocomplete)).toStrictEqual(claude)
+            expect(modelsService.instance!.getDefaultChatModel()).toBe(opus.id)
+            expect(modelsService.instance!.getDefaultEditModel()).toBe(opus.id)
+            expect(modelsService.instance!.getDefaultModel(ModelUsage.Autocomplete)).toStrictEqual(claude)
 
             // expect storage to be updated
 
@@ -282,19 +295,19 @@ describe('Model Provider', () => {
         })
 
         it('allows updating the selected model', async () => {
-            await modelsService.setSelectedModel(ModelUsage.Chat, titan)
-            expect(modelsService.getDefaultChatModel()).toBe(titan.id)
+            await modelsService.instance!.setSelectedModel(ModelUsage.Chat, titan)
+            expect(modelsService.instance!.getDefaultChatModel()).toBe(titan.id)
 
             //  however, the defaults are still as the server set
             expect(storage.parse()?.[enterpriseAuthStatus.endpoint].defaults.chat).toBe(opus.id)
         })
 
         it('uses new server defaults when provided', async () => {
-            await modelsService.setSelectedModel(ModelUsage.Chat, titan)
-            expect(modelsService.getDefaultChatModel()).toBe(titan.id)
+            await modelsService.instance!.setSelectedModel(ModelUsage.Chat, titan)
+            expect(modelsService.instance!.getDefaultChatModel()).toBe(titan.id)
 
             // New server config updates the defaults for everything to titan
-            await modelsService.setServerSentModels({
+            await modelsService.instance!.setServerSentModels({
                 ...SERVER_MODELS,
                 defaultModels: {
                     // Chat is not updated, while other models are
@@ -305,15 +318,15 @@ describe('Model Provider', () => {
             })
 
             // User selection is preserved
-            expect(modelsService.getDefaultChatModel()).toBe(titan.id)
+            expect(modelsService.instance!.getDefaultChatModel()).toBe(titan.id)
         })
 
         it("doesn't drop the selected model if it's updated", async () => {
-            await modelsService.setSelectedModel(ModelUsage.Chat, titan)
-            expect(modelsService.getDefaultChatModel()).toBe(titan.id)
+            await modelsService.instance!.setSelectedModel(ModelUsage.Chat, titan)
+            expect(modelsService.instance!.getDefaultChatModel()).toBe(titan.id)
 
             // New server config updates the defaults for everything to titan
-            await modelsService.setServerSentModels({
+            await modelsService.instance!.setServerSentModels({
                 ...SERVER_MODELS,
                 defaultModels: {
                     chat: serverTitan.modelRef,
@@ -322,7 +335,7 @@ describe('Model Provider', () => {
                 },
             })
 
-            expect(modelsService.getDefaultChatModel()).toBe(titan.id)
+            expect(modelsService.instance!.getDefaultChatModel()).toBe(titan.id)
         })
     })
 
@@ -345,41 +358,41 @@ describe('Model Provider', () => {
         })
 
         beforeEach(() => {
-            modelsService.setModels([enterpriseModel, proModel, freeModel])
+            modelsService.instance!.setModels([enterpriseModel, proModel, freeModel])
         })
 
         it('returns false for unknown model', () => {
-            modelsService.setAuthStatus(codyProAuthStatus)
+            modelsService.instance!.setAuthStatus(codyProAuthStatus)
             expect(modelsService.isModelAvailable('unknown-model')).toBe(false)
         })
 
         it('allows enterprise user to use any model', () => {
-            modelsService.setAuthStatus(enterpriseAuthStatus)
+            modelsService.instance!.setAuthStatus(enterpriseAuthStatus)
             expect(modelsService.isModelAvailable(enterpriseModel)).toBe(true)
             expect(modelsService.isModelAvailable(proModel)).toBe(true)
             expect(modelsService.isModelAvailable(freeModel)).toBe(true)
         })
 
         it('allows Cody Pro user to use Pro and Free models', () => {
-            modelsService.setAuthStatus(codyProAuthStatus)
+            modelsService.instance!.setAuthStatus(codyProAuthStatus)
             expect(modelsService.isModelAvailable(enterpriseModel)).toBe(false)
             expect(modelsService.isModelAvailable(proModel)).toBe(true)
             expect(modelsService.isModelAvailable(freeModel)).toBe(true)
         })
 
         it('allows free user to use only Free models', () => {
-            modelsService.setAuthStatus(freeUserAuthStatus)
+            modelsService.instance!.setAuthStatus(freeUserAuthStatus)
             expect(modelsService.isModelAvailable(enterpriseModel)).toBe(false)
             expect(modelsService.isModelAvailable(proModel)).toBe(false)
             expect(modelsService.isModelAvailable(freeModel)).toBe(true)
         })
 
         it('handles model passed as string', () => {
-            modelsService.setAuthStatus(freeUserAuthStatus)
+            modelsService.instance!.setAuthStatus(freeUserAuthStatus)
             expect(modelsService.isModelAvailable(freeModel.id)).toBe(true)
             expect(modelsService.isModelAvailable(proModel.id)).toBe(false)
 
-            modelsService.setAuthStatus(codyProAuthStatus)
+            modelsService.instance!.setAuthStatus(codyProAuthStatus)
             expect(modelsService.isModelAvailable(proModel.id)).toBe(true)
         })
     })

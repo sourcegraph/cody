@@ -6,15 +6,16 @@ import {
     type CompletionResponse,
     type CompletionResponseGenerator,
     CompletionStopReason,
-    type CompletionsClientConfig,
     FeatureFlag,
     NetworkError,
     RateLimitError,
+    type ResolvedConfiguration,
     type SerializedCodeCompletionsParams,
     TracedError,
     addTraceparent,
     createSSEIterator,
     featureFlagProvider,
+    firstValueFrom,
     getActiveTraceAndSpanId,
     getClientInfoParams,
     isAbortError,
@@ -31,21 +32,27 @@ import type {
     CodeCompletionProviderOptions,
     CompletionResponseWithMetaData,
 } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
+import type { Observable } from 'observable-fns'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
  */
 export function createClient(
-    config: CompletionsClientConfig,
+    config: Observable<
+        Pick<ResolvedConfiguration, 'auth'> & {
+            configuration: Pick<ResolvedConfiguration['configuration'], 'customHeaders'>
+        }
+    >,
     logger?: CompletionLogger
 ): CodeCompletionsClient {
-    function complete(
+    async function complete(
         { timeoutMs, ...params }: CodeCompletionsParams,
         abortController: AbortController,
         providerOptions: CodeCompletionProviderOptions
-    ): CompletionResponseGenerator {
+    ): Promise<CompletionResponseGenerator> {
+        const { auth, configuration } = await firstValueFrom(config)
         const query = new URLSearchParams(getClientInfoParams())
-        const url = new URL(`/.api/completions/code?${query.toString()}`, config.serverEndpoint).href
+        const url = new URL(`/.api/completions/code?${query.toString()}`, auth.serverEndpoint).href
         const log = logger?.startCompletion(params, url)
         const { signal } = abortController
 
@@ -57,7 +64,7 @@ export function createClient(
                 )
 
                 const headers = new Headers({
-                    ...config.customHeaders,
+                    ...configuration.customHeaders,
                     ...providerOptions?.customHeaders,
                 })
 
@@ -65,8 +72,8 @@ export function createClient(
                 // c.f. https://github.com/microsoft/vscode/issues/173861
                 headers.set('Connection', 'keep-alive')
                 headers.set('Content-Type', 'application/json; charset=utf-8')
-                if (config.accessToken) {
-                    headers.set('Authorization', `token ${config.accessToken}`)
+                if (auth.accessToken) {
+                    headers.set('Authorization', `token ${auth.accessToken}`)
                 }
 
                 if (tracingFlagEnabled) {
@@ -254,9 +261,6 @@ export function createClient(
     return {
         complete,
         logger,
-        onConfigurationChange(newConfig) {
-            config = newConfig
-        },
     }
 }
 

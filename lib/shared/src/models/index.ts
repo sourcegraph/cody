@@ -1,8 +1,11 @@
+import type { Observable } from 'observable-fns'
 import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
-import { type ClientConfiguration, CodyIDE } from '../configuration'
+import { CodyIDE } from '../configuration'
+import type { ResolvedConfiguration } from '../configuration/resolver'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { logDebug, logError } from '../logger'
-import { setSingleton, singletonNotYetSet } from '../singletons'
+import { type Unsubscribable, distinctUntilChanged, pluck } from '../misc/observable'
+import { singletonNotYetSet } from '../singletons'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import { ModelTag } from './tags'
 import { type ChatModel, type EditModel, type ModelContextWindow, ModelUsage } from './types'
@@ -326,9 +329,6 @@ export class ModelsService {
     /** Models available from user's local instances, e.g. Ollama. */
     private localModels: Model[] = []
 
-    /** persistent storage to save user preferences and server defaults */
-    private storage: Storage | undefined
-
     /** current system auth status */
     private authStatus: AuthStatus | undefined
 
@@ -336,6 +336,27 @@ export class ModelsService {
     private _preferences: PerSitePreferences | undefined
 
     private static STORAGE_KEY = 'model-preferences'
+
+    private configSubscription: Unsubscribable
+
+    constructor(
+        /** persistent storage to save user preferences and server defaults */
+        private readonly storage: Storage,
+        config: Observable<{ configuration: Pick<ResolvedConfiguration['configuration'], 'agentIDE'> }>
+    ) {
+        this.configSubscription = config
+            .pipe(pluck('configuration'), distinctUntilChanged())
+            .subscribe(async configuration => {
+                try {
+                    const isCodyWeb = configuration.agentIDE === CodyIDE.Web
+
+                    // Disable Ollama local models for cody web
+                    this.localModels = !isCodyWeb ? await fetchLocalOllamaModels() : []
+                } catch {
+                    this.localModels = []
+                }
+            })
+    }
 
     // Get all the providers currently available to the user
     private get models(): Model[] {
@@ -373,23 +394,8 @@ export class ModelsService {
         return empty
     }
 
-    public async onConfigChange(config: ClientConfiguration): Promise<void> {
-        try {
-            const isCodyWeb = config.agentIDE === CodyIDE.Web
-
-            // Disable Ollama local models for cody web
-            this.localModels = !isCodyWeb ? await fetchLocalOllamaModels() : []
-        } catch {
-            this.localModels = []
-        }
-    }
-
     public async setAuthStatus(authStatus: AuthStatus) {
         this.authStatus = authStatus
-    }
-
-    public setStorage(storage: Storage): void {
-        this.storage = storage
     }
 
     /**
@@ -566,10 +572,13 @@ export class ModelsService {
         const modelsList = this.models.map(m => m.id).join(', ')
         throw new Error(`${errorMessage} Available models: ${modelsList}`)
     }
+
+    public dispose(): void {
+        this.configSubscription.unsubscribe()
+    }
 }
 
 export const modelsService = singletonNotYetSet<ModelsService>()
-setSingleton(modelsService, new ModelsService())
 
 interface Storage {
     get(key: string): string | null

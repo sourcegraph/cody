@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import {
+    type AuthCredentials,
     type ClientConfigurationWithAccessToken,
     type EmbeddingsModelConfig,
     type EmbeddingsSearchResult,
@@ -11,15 +12,20 @@ import {
     type LocalEmbeddingsFetcher,
     type LocalEmbeddingsProvider,
     type PromptString,
+    type ResolvedConfiguration,
+    type Unsubscribable,
+    distinctUntilChanged,
     featureFlagProvider,
-    isDefined,
+    firstValueFrom,
     isDotCom,
     isFileURI,
+    pluck,
     recordErrorToSpan,
     telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
+import type { Observable } from 'observable-fns'
 import type { IndexHealthResultFound, IndexRequest } from '../jsonrpc/embeddings-protocol'
 import type { MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'
@@ -29,10 +35,11 @@ import { CodyEngineService } from './cody-engine'
 
 export async function createLocalEmbeddingsController(
     context: vscode.ExtensionContext,
-    config: LocalEmbeddingsConfig
+    config: Observable<ResolvedConfiguration>
 ): Promise<LocalEmbeddingsController> {
+    const { configuration } = await firstValueFrom(config)
     const modelConfig =
-        config.testingModelConfig ||
+        configuration.testingModelConfig ||
         (await featureFlagProvider.instance!.evaluateFeatureFlag(
             FeatureFlag.CodyEmbeddingsGenerateMetadata
         ))
@@ -102,10 +109,6 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
     private service: Promise<MessageHandler> | undefined
     // True if the service has finished starting and been initialized.
     private serviceStarted = false
-    // The access token for Cody Gateway.
-    private accessToken: string | undefined
-    // Whether the account is a consumer account.
-    private endpointIsDotcom = false
     // The last index we loaded, or attempted to load, if any.
     private lastRepo: { dir: FileURI; repoName: string | false } | undefined
     // The last health report, if any.
@@ -128,9 +131,11 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
     // or the first index for a repository comes online.
     private readonly changeEmitter = new vscode.EventEmitter<LocalEmbeddingsController>()
 
+    private configSubscription: Unsubscribable
+
     constructor(
         private readonly context: vscode.ExtensionContext,
-        config: LocalEmbeddingsConfig,
+        private config: Observable<ResolvedConfiguration>,
         private readonly modelConfig: EmbeddingsModelConfig
     ) {
         logDebug('LocalEmbeddingsController', 'constructor')
@@ -141,9 +146,9 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
             )
         )
 
-        // Pick up the initial access token, and whether the account is dotcom.
-        this.accessToken = config.accessToken || undefined
-        this.endpointIsDotcom = isDotCom(config.serverEndpoint)
+        this.configSubscription = config
+            .pipe(pluck('auth'), distinctUntilChanged())
+            .subscribe(auth => this.setAuth(auth))
     }
 
     public dispose(): void {
@@ -151,6 +156,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
             disposable.dispose()
         }
         this.statusBar?.dispose()
+        this.configSubscription.unsubscribe()
     }
 
     public get onChange(): vscode.Event<LocalEmbeddingsController> {
@@ -180,25 +186,22 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
         })
     }
 
-    public async setAccessToken(serverEndpoint: string, token: string | null): Promise<void> {
-        const endpointIsDotcom = isDotCom(serverEndpoint)
+    private _auth: AuthCredentials | null = null
+    private async setAuth(auth: AuthCredentials): Promise<void> {
+        this._auth = auth
+
+        const endpointIsDotcom = isDotCom(auth.serverEndpoint)
         logDebug(
             'LocalEmbeddingsController',
             'setAccessToken',
             endpointIsDotcom ? 'is dotcom' : 'not dotcom'
         )
-        if (endpointIsDotcom !== this.endpointIsDotcom) {
-            // We will show, or hide, status depending on whether we are using
-            // dotcom. We do not offer local embeddings to Enterprise.
-            if (this.serviceStarted) {
-                this.changeEmitter.fire(this)
-            }
+
+        // We will show, or hide, status depending on whether we are using
+        // dotcom. We do not offer local embeddings to Enterprise.
+        if (this.serviceStarted) {
+            this.changeEmitter.fire(this)
         }
-        this.endpointIsDotcom = endpointIsDotcom
-        if (token === this.accessToken) {
-            return Promise.resolve()
-        }
-        this.accessToken = token || undefined
         // TODO: Add a "drop token" for sign out
         if (token && this.serviceStarted) {
             await (await this.getService()).request('embeddings/set-token', token)
@@ -253,13 +256,13 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
         logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'initialized', {
             verbose: {
                 initResult,
-                tokenAvailable: !!this.accessToken,
+                tokenAvailable: !!this._auth?.accessToken,
             },
         })
 
-        if (this.accessToken) {
+        if (this._auth?.accessToken) {
             // Set the initial access token
-            await service.request('embeddings/set-token', this.accessToken)
+            await service.request('embeddings/set-token', this._auth?.accessToken)
         }
         this.serviceStarted = true
         this.changeEmitter.fire(this)
@@ -294,7 +297,9 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
     // Interactions with cody-engine
 
     public async index(): Promise<void> {
-        if (!(this.endpointIsDotcom && this.lastRepo?.dir && !this.lastRepo?.repoName)) {
+        const { auth } = await firstValueFrom(this.config)
+        const endpointIsDotCom = isDotCom(auth.serverEndpoint)
+        if (!(endpointIsDotCom && this.lastRepo?.dir && !this.lastRepo?.repoName)) {
             // TODO: Support index updates.
             logDebug('LocalEmbeddingsController', 'index', 'no repository to index/already indexed')
             return
@@ -308,7 +313,9 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
     }
 
     public async indexRetry(): Promise<void> {
-        if (!(this.endpointIsDotcom && this.lastRepo?.dir)) {
+        const { auth } = await firstValueFrom(this.config)
+        const endpointIsDotCom = isDotCom(auth.serverEndpoint)
+        if (!(endpointIsDotCom && this.lastRepo?.dir)) {
             logDebug('LocalEmbeddingsController', 'indexRetry', 'no repository to retry')
             return
         }
@@ -608,7 +615,9 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
 
     /** {@link LocalEmbeddingsFetcher.getContext} */
     public async getContext(query: PromptString, numResults: number): Promise<EmbeddingsSearchResult[]> {
-        if (!this.endpointIsDotcom) {
+        const { auth } = await firstValueFrom(this.config)
+        const endpointIsDotCom = isDotCom(auth.serverEndpoint)
+        if (!endpointIsDotCom) {
             return []
         }
         return wrapInActiveSpan('LocalEmbeddingsController.query', async span => {

@@ -54,7 +54,7 @@ const DUMMY_AUTH_STATUS: AuthStatus = {
     codyApiVersion: 0,
 }
 
-graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
+graphqlClient.setResolvedConfigurationObservable({} as unknown as GraphQLAPIClientConfig)
 
 const getAnalyticEventCalls = (mockInstance: MockInstance) => {
     return mockInstance.mock.calls.map(args => {

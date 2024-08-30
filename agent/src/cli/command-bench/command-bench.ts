@@ -16,6 +16,7 @@ import {
     isDefined,
     modelsService,
 } from '@sourcegraph/cody-shared'
+import { Observable } from 'observable-fns'
 import { sleep } from '../../../../vscode/src/completions/utils'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { dotcomCredentials } from '../../../../vscode/src/testutils/testing-credentials'
@@ -325,11 +326,15 @@ export const benchCommand = new commander.Command('bench')
         )
 
         // Required to use `PromptString`.
-        graphqlClient.setConfig({
-            accessToken: options.srcAccessToken,
-            serverEndpoint: options.srcEndpoint,
-            customHeaders: {},
-        })
+        graphqlClient.setResolvedConfigurationObservable(
+            Observable.of({
+                auth: {
+                    accessToken: options.srcAccessToken,
+                    serverEndpoint: options.srcEndpoint,
+                    customHeaders: {},
+                },
+            })
+        )
 
         const recordingDirectory = path.join(path.dirname(options.evaluationConfig), 'recordings')
         const polly = startPollyRecording({

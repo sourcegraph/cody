@@ -74,7 +74,7 @@ export const countGeneratedCode = (text: string): { lineCount: number; charCount
     return count
 }
 
-function inferCodyApiVersion(version: string, isDotCom: boolean): 0 | 1 {
+export function inferCodyApiVersion(version: string, isDotCom: boolean): 0 | 1 {
     const parsedVersion = semver.valid(version)
     // DotCom is always recent
     if (isDotCom) {

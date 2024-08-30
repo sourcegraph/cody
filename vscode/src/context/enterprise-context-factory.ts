@@ -1,4 +1,9 @@
-import type { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared'
+import type {
+    ResolvedConfiguration,
+    SourcegraphCompletionsClient,
+    Unsubscribable,
+} from '@sourcegraph/cody-shared'
+import type { Observable } from 'observable-fns'
 import type * as vscode from 'vscode'
 import { RemoteRepoSearcher } from './remote-repo-searcher'
 import { RemoteSearch } from './remote-search'
@@ -14,11 +19,21 @@ export class EnterpriseContextFactory implements vscode.Disposable {
     private readonly fetcher: RepoFetcher
     private readonly workspaceRepoMapper: WorkspaceRepoMapper
 
-    constructor(private completions: SourcegraphCompletionsClient) {
+    private configSubscription: Unsubscribable
+
+    constructor(
+        private completions: SourcegraphCompletionsClient,
+        config: Observable<ResolvedConfiguration>
+    ) {
         this.fetcher = new RepoFetcher()
         this.workspaceRepoMapper = new WorkspaceRepoMapper()
         this.repoPicker = new RemoteRepoPicker(this.fetcher, this.workspaceRepoMapper)
         this.repoSearcher = new RemoteRepoSearcher(this.fetcher)
+
+        this.configSubscription = config.subscribe(config => {
+            this.fetcher.clientConfigurationDidChange()
+            this.workspaceRepoMapper.clientConfigurationDidChange()
+        })
     }
 
     public dispose(): void {
@@ -26,11 +41,7 @@ export class EnterpriseContextFactory implements vscode.Disposable {
         this.repoPicker.dispose()
         this.repoSearcher.dispose()
         this.workspaceRepoMapper.dispose()
-    }
-
-    public clientConfigurationDidChange(): void {
-        this.fetcher.clientConfigurationDidChange()
-        this.workspaceRepoMapper.clientConfigurationDidChange()
+        this.configSubscription.unsubscribe()
     }
 
     // Creates a new RemoteSearch proxy. The RemoteSearch is stateful because

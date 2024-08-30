@@ -4,7 +4,6 @@ import {
     type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
     type CodyLLMSiteConfiguration,
-    type GraphQLAPIClientConfig,
     defaultAuthStatus,
     graphqlClient,
 } from '@sourcegraph/cody-shared'
@@ -13,6 +12,7 @@ import type * as vscode from 'vscode'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 
+import { Observable } from 'observable-fns'
 import { createProviderConfig } from './create-provider'
 
 const getVSCodeConfigurationWithAccessToken = (
@@ -30,7 +30,6 @@ const dummyCodeCompletionsClient: CodeCompletionsClient = {
         return { completionResponse: { completion: '', stopReason: '' } }
     },
     logger: undefined,
-    onConfigurationChange: () => undefined,
 }
 
 const dummyAuthStatus: AuthStatus = {
@@ -41,7 +40,9 @@ const dummyAuthStatus: AuthStatus = {
     },
 }
 
-graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
+graphqlClient.setResolvedConfigurationObservable(
+    Observable.of({ auth: { accessToken: null, serverEndpoint: '' } })
+)
 
 describe('createProviderConfig', () => {
     beforeAll(async () => {

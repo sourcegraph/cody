@@ -4,10 +4,15 @@ import {
     CODY_IGNORE_POSIX_GLOB,
     type ClientConfiguration,
     type IgnoreFileContent,
+    type ResolvedConfiguration,
+    distinctUntilChanged,
     ignores,
+    pluck,
+    subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import type { Observable } from 'observable-fns'
 import { logDebug } from '../log'
 import { TestSupport } from '../test-support'
 
@@ -19,20 +24,28 @@ const utf8 = new TextDecoder('utf-8')
  *
  * NOTE: Execute ONCE at extension activation time.
  */
-export function setUpCodyIgnore(config: ClientConfiguration): vscode.Disposable[] {
+export function setUpCodyIgnore(config: Observable<ResolvedConfiguration>): vscode.Disposable {
+    let disposable: vscode.Disposable | null = null
+    return subscriptionDisposable(
+        config.pipe(pluck('configuration'), distinctUntilChanged()).subscribe(config => {
+            disposable?.dispose()
+            disposable = doSetupCodyIgnore(config)
+        })
+    )
+}
+
+function doSetupCodyIgnore(config: ClientConfiguration): vscode.Disposable | null {
     if (TestSupport.instance) {
         TestSupport.instance.ignoreHelper.set(ignores)
     }
 
     ignores.setActiveState(config.internalUnstable)
     if (!config.internalUnstable) {
-        return []
+        return null
     }
 
     // Enable ignore and then handle existing workspace folders.
     vscode.workspace.workspaceFolders?.map(async wf => await refresh(wf.uri))
-
-    const disposables: vscode.Disposable[] = []
 
     // Refresh ignore rules when any ignore file in the workspace changes.
     const watcher = vscode.workspace.createFileSystemWatcher(CODY_IGNORE_POSIX_GLOB)
@@ -62,8 +75,7 @@ export function setUpCodyIgnore(config: ClientConfiguration): vscode.Disposable[
         }
     })
 
-    disposables.push(...[watcher, didChangeSubscription, onDidChangeConfig])
-    return disposables
+    return vscode.Disposable.from(watcher, didChangeSubscription, onDidChangeConfig)
 }
 
 /**
