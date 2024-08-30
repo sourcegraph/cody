@@ -87,7 +87,7 @@ const command = new Command('scip-codegen')
 
 async function initializeCodegen(options: CodegenOptions): Promise<BaseCodegen> {
     const bytes = await fspromises.readFile(options.input)
-    const index = scip.Index.deserialize(bytes)
+    const index = scip.Index.deserialize(new Uint8Array(bytes))
     const symtab = new SymbolTable(index)
     const reporter = new ConsoleReporter(index, { severity: options.severity as any })
     switch (options.language) {
@@ -101,7 +101,6 @@ async function initializeCodegen(options: CodegenOptions): Promise<BaseCodegen> 
             throw new Error(`unknown language: ${options.language}`)
     }
 }
-
 const args = process.argv.slice(2)
 
 command.parseAsync(args, { from: 'user' }).catch(error => {

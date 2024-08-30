@@ -109,7 +109,7 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                         return false
                 }
             case 'cody.advanced.hasNativeWebview':
-                return this.clientInfo()?.capabilities?.webview === 'native' ?? false
+                return this.clientInfo()?.capabilities?.webview === 'native'
             case 'editor.insertSpaces':
                 return true // TODO: override from IDE clients
             case 'cody.accessToken':

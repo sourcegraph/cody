@@ -57,7 +57,7 @@
     "stylelint": "^15.11.0",
     "stylelint-config-standard": "^34.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.4",
+    "typescript": "5.6.1-rc",
     "vite": "^5.4.2",
     "vitest": "^2.0.5"
   },

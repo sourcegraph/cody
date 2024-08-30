@@ -165,7 +165,9 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                             }
                             // Messages are expected to be UTF-8, but a chunk can terminate
                             // in the middle of a character
-                            const { str, buf } = toPartialUtf8String(Buffer.concat([bufferBin, chunk]))
+                            const { str, buf } = toPartialUtf8String(
+                                Buffer.concat([new Uint8Array(bufferBin), new Uint8Array(chunk)])
+                            )
                             errorMessage += str
                             bufferBin = buf
                         })
@@ -196,7 +198,9 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         }
                         // text/event-stream messages are always UTF-8, but a chunk
                         // may terminate in the middle of a character
-                        const { str, buf } = toPartialUtf8String(Buffer.concat([bufferBin, chunk]))
+                        const { str, buf } = toPartialUtf8String(
+                            Buffer.concat([new Uint8Array(bufferBin), new Uint8Array(chunk)])
+                        )
                         bufferText += str
                         bufferBin = buf
 

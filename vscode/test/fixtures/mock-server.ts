@@ -614,7 +614,7 @@ export async function logTestingData(data: string, type?: string, testName?: str
     // Publishes the message as a string
     const dataBuffer = Buffer.from(JSON.stringify(message));
 
-    await topicPublisher.publishMessage({ data: dataBuffer }).catch((error) => {
+    await topicPublisher.publishMessage({ data: new Uint8Array(dataBuffer) }).catch((error) => {
         console.error("Error publishing message:", error);
     });
     if (!loggedTestRun[currentTestRunID]) {

@@ -56,10 +56,10 @@ importers:
         version: 8.0.5(@types/react@18.2.79)(react-dom@18.2.0)(react@18.2.0)
       '@storybook/react':
         specifier: ^8.0.5
-        version: 8.0.5(react-dom@18.2.0)(react@18.2.0)(typescript@5.5.4)
+        version: 8.0.5(react-dom@18.2.0)(react@18.2.0)(typescript@5.6.1-rc)
       '@storybook/react-vite':
         specifier: ^8.0.5
-        version: 8.0.5(react-dom@18.2.0)(react@18.2.0)(typescript@5.5.4)(vite@5.4.2)
+        version: 8.0.5(react-dom@18.2.0)(react@18.2.0)(typescript@5.6.1-rc)(vite@5.4.2)
       '@testing-library/jest-dom':
         specifier: ^6.4.2
         version: 6.4.2(vitest@2.0.5)
@@ -95,22 +95,22 @@ importers:
         version: 22.1.0
       knip:
         specifier: ^5.27.4
-        version: 5.27.4(@types/node@20.12.7)(typescript@5.5.4)
+        version: 5.27.4(@types/node@20.12.7)(typescript@5.6.1-rc)
       storybook:
         specifier: ^8.0.5
         version: 8.0.5(react-dom@18.2.0)(react@18.2.0)
       stylelint:
         specifier: ^15.11.0
-        version: 15.11.0(typescript@5.5.4)
+        version: 15.11.0(typescript@5.6.1-rc)
       stylelint-config-standard:
         specifier: ^34.0.0
         version: 34.0.0(stylelint@15.11.0)
       ts-node:
         specifier: ^10.9.2
-        version: 10.9.2(@types/node@20.12.7)(typescript@5.5.4)
+        version: 10.9.2(@types/node@20.12.7)(typescript@5.6.1-rc)
       typescript:
-        specifier: ^5.5.4
-        version: 5.5.4
+        specifier: 5.6.1-rc
+        version: 5.6.1-rc
       vite:
         specifier: ^5.4.2
         version: 5.4.2(@types/node@20.12.7)
@@ -804,7 +804,7 @@ importers:
         version: 2.3.0
       vite-plugin-svgr:
         specifier: ^4.2.0
-        version: 4.2.0(typescript@5.5.4)(vite@5.4.2)
+        version: 4.2.0(typescript@5.6.1-rc)(vite@5.4.2)
       vscode-jsonrpc:
         specifier: ^8.2.0
         version: 8.2.0
@@ -888,7 +888,7 @@ importers:
         version: 0.10.5
       vite-plugin-svgr:
         specifier: ^4.2.0
-        version: 4.2.0(typescript@5.5.4)(vite@5.4.2)
+        version: 4.2.0(typescript@5.6.1-rc)(vite@5.4.2)
       vscode-uri:
         specifier: ^3.0.8
         version: 3.0.8
@@ -3019,7 +3019,7 @@ packages:
       wrap-ansi: 8.1.0
       wrap-ansi-cjs: /wrap-ansi@7.0.0
 
-  /@joshwooding/vite-plugin-react-docgen-typescript@0.3.0(typescript@5.5.4)(vite@5.4.2):
+  /@joshwooding/vite-plugin-react-docgen-typescript@0.3.0(typescript@5.6.1-rc)(vite@5.4.2):
     resolution: {integrity: sha512-2D6y7fNvFmsLmRt6UCOFJPvFoPMJGT0Uh1Wg0RaigUp7kdQPs6yYn8Dmx6GZkOH/NW0yMTwRz/p0SRMMRo50vA==}
     peerDependencies:
       typescript: '>= 4.3.x'
@@ -3031,8 +3031,8 @@ packages:
       glob: 7.2.3
       glob-promise: 4.2.2(glob@7.2.3)
       magic-string: 0.27.0
-      react-docgen-typescript: 2.2.2(typescript@5.5.4)
-      typescript: 5.5.4
+      react-docgen-typescript: 2.2.2(typescript@5.6.1-rc)
+      typescript: 5.6.1-rc
       vite: 5.4.2(@types/node@20.12.7)
     dev: true
 
@@ -5313,7 +5313,7 @@ packages:
       - supports-color
     dev: true
 
-  /@storybook/builder-vite@8.0.5(typescript@5.5.4)(vite@5.4.2):
+  /@storybook/builder-vite@8.0.5(typescript@5.6.1-rc)(vite@5.4.2):
     resolution: {integrity: sha512-tKNxobC9tlYyUAayxoiOOnoMbg4RxoAwPOpPLnQYUfHLw1ecp/g8sGD6tisyFONyOIv7uF9gbzWLUfMjn9F2sw==}
     peerDependencies:
       '@preact/preset-vite': '*'
@@ -5345,7 +5345,7 @@ packages:
       fs-extra: 11.2.0
       magic-string: 0.30.10
       ts-dedent: 2.2.0
-      typescript: 5.5.4
+      typescript: 5.6.1-rc
       vite: 5.4.2(@types/node@20.12.7)
     transitivePeerDependencies:
       - encoding
@@ -5752,7 +5752,7 @@ packages:
       react-dom: 18.2.0(react@18.3.1)
     dev: true
 
-  /@storybook/react-vite@8.0.5(react-dom@18.2.0)(react@18.2.0)(typescript@5.5.4)(vite@5.4.2):
+  /@storybook/react-vite@8.0.5(react-dom@18.2.0)(react@18.2.0)(typescript@5.6.1-rc)(vite@5.4.2):
     resolution: {integrity: sha512-VXxoyb3Zw5ReQwWoP64qMIy/iIS6B9PuLIEPDt7wM/5IMFljQozvNaarPQf0mNJxPkGT6zmiBn9WS06wPLPF0w==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
@@ -5760,11 +5760,11 @@ packages:
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
       vite: ^4.0.0 || ^5.0.0
     dependencies:
-      '@joshwooding/vite-plugin-react-docgen-typescript': 0.3.0(typescript@5.5.4)(vite@5.4.2)
+      '@joshwooding/vite-plugin-react-docgen-typescript': 0.3.0(typescript@5.6.1-rc)(vite@5.4.2)
       '@rollup/pluginutils': 5.1.0
-      '@storybook/builder-vite': 8.0.5(typescript@5.5.4)(vite@5.4.2)
+      '@storybook/builder-vite': 8.0.5(typescript@5.6.1-rc)(vite@5.4.2)
       '@storybook/node-logger': 8.0.5
-      '@storybook/react': 8.0.5(react-dom@18.2.0)(react@18.2.0)(typescript@5.5.4)
+      '@storybook/react': 8.0.5(react-dom@18.2.0)(react@18.2.0)(typescript@5.6.1-rc)
       find-up: 5.0.0
       magic-string: 0.30.10
       react: 18.2.0
@@ -5782,7 +5782,7 @@ packages:
       - vite-plugin-glimmerx
     dev: true
 
-  /@storybook/react@8.0.5(react-dom@18.2.0)(react@18.2.0)(typescript@5.5.4):
+  /@storybook/react@8.0.5(react-dom@18.2.0)(react@18.2.0)(typescript@5.6.1-rc):
     resolution: {integrity: sha512-Vwq4xt8eSKE/PLPvunOFDlzBki6L3mP7LNVWCLkQba7vzuCOPjSZ0+95v/K8XQn3jVRXAMUnlPW1SKg21aKJdw==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
@@ -5815,7 +5815,7 @@ packages:
       semver: 7.6.0
       ts-dedent: 2.2.0
       type-fest: 2.19.0
-      typescript: 5.5.4
+      typescript: 5.6.1-rc
       util-deprecate: 1.0.2
     transitivePeerDependencies:
       - encoding
@@ -5981,14 +5981,14 @@ packages:
       '@svgr/babel-plugin-transform-svg-component': 8.0.0(@babel/core@7.24.5)
     dev: true
 
-  /@svgr/core@8.1.0(typescript@5.5.4):
+  /@svgr/core@8.1.0(typescript@5.6.1-rc):
     resolution: {integrity: sha512-8QqtOQT5ACVlmsvKOJNEaWmRPmcojMOzCz4Hs2BGG/toAp/K38LcsMRyLp349glq5AzJbCEeimEoxaX6v/fLrA==}
     engines: {node: '>=14'}
     dependencies:
       '@babel/core': 7.24.5
       '@svgr/babel-preset': 8.1.0(@babel/core@7.24.5)
       camelcase: 6.3.0
-      cosmiconfig: 8.3.6(typescript@5.5.4)
+      cosmiconfig: 8.3.6(typescript@5.6.1-rc)
       snake-case: 3.0.4
     transitivePeerDependencies:
       - supports-color
@@ -6011,7 +6011,7 @@ packages:
     dependencies:
       '@babel/core': 7.24.5
       '@svgr/babel-preset': 8.1.0(@babel/core@7.24.5)
-      '@svgr/core': 8.1.0(typescript@5.5.4)
+      '@svgr/core': 8.1.0(typescript@5.6.1-rc)
       '@svgr/hast-util-to-babel-ast': 8.0.0
       svg-parser: 2.0.4
     transitivePeerDependencies:
@@ -8234,7 +8234,7 @@ packages:
       object-assign: 4.1.1
       vary: 1.1.2
 
-  /cosmiconfig@8.3.6(typescript@5.5.4):
+  /cosmiconfig@8.3.6(typescript@5.6.1-rc):
     resolution: {integrity: sha512-kcZ6+W5QzcJ3P1Mt+83OUv/oHFqZHIx8DuxG6eZ5RGMERoLqp4BuGjhHLYGK+Kf5XVkQvqBSmAy/nGWN3qDgEA==}
     engines: {node: '>=14'}
     peerDependencies:
@@ -8247,7 +8247,7 @@ packages:
       js-yaml: 4.1.0
       parse-json: 5.2.0
       path-type: 4.0.0
-      typescript: 5.5.4
+      typescript: 5.6.1-rc
     dev: true
 
   /create-require@1.1.1:
@@ -11104,7 +11104,7 @@ packages:
     engines: {node: '>=6'}
     dev: true
 
-  /knip@5.27.4(@types/node@20.12.7)(typescript@5.5.4):
+  /knip@5.27.4(@types/node@20.12.7)(typescript@5.6.1-rc):
     resolution: {integrity: sha512-7t1yqIKxaVGYD1cLI4raVLWi9cNqv+JNbngc8mgvTVJbomnxOg1pjxgCGEztB7eVgD+6VEwf7Jg5WHXzk+Kbpw==}
     engines: {node: '>=18.6.0'}
     hasBin: true
@@ -11127,7 +11127,7 @@ packages:
       smol-toml: 1.2.1
       strip-json-comments: 5.0.1
       summary: 2.1.0
-      typescript: 5.5.4
+      typescript: 5.6.1-rc
       zod: 3.23.8
       zod-validation-error: 3.3.0(zod@3.23.8)
     dev: true
@@ -13111,7 +13111,7 @@ packages:
     dependencies:
       lilconfig: 3.1.1
       postcss: 8.4.38
-      ts-node: 10.9.2(@types/node@20.12.7)(typescript@5.5.4)
+      ts-node: 10.9.2(@types/node@20.12.7)(typescript@5.6.1-rc)
       yaml: 2.4.2
 
   /postcss-mixins@10.0.1(postcss@8.4.38):
@@ -13489,12 +13489,12 @@ packages:
       react-dom: 18.2.0(react@18.3.1)
     dev: true
 
-  /react-docgen-typescript@2.2.2(typescript@5.5.4):
+  /react-docgen-typescript@2.2.2(typescript@5.6.1-rc):
     resolution: {integrity: sha512-tvg2ZtOpOi6QDwsb3GZhOjDkkX0h8Z2gipvTg6OVMUyoYoURhEiRNePT8NZItTVCDh39JJHnLdfCOkzoLbFnTg==}
     peerDependencies:
       typescript: '>= 4.3.x'
     dependencies:
-      typescript: 5.5.4
+      typescript: 5.6.1-rc
     dev: true
 
   /react-docgen@7.0.3:
@@ -14777,7 +14777,7 @@ packages:
     peerDependencies:
       stylelint: ^15.10.0
     dependencies:
-      stylelint: 15.11.0(typescript@5.5.4)
+      stylelint: 15.11.0(typescript@5.6.1-rc)
     dev: true
 
   /stylelint-config-standard@34.0.0(stylelint@15.11.0):
@@ -14786,11 +14786,11 @@ packages:
     peerDependencies:
       stylelint: ^15.10.0
     dependencies:
-      stylelint: 15.11.0(typescript@5.5.4)
+      stylelint: 15.11.0(typescript@5.6.1-rc)
       stylelint-config-recommended: 13.0.0(stylelint@15.11.0)
     dev: true
 
-  /stylelint@15.11.0(typescript@5.5.4):
+  /stylelint@15.11.0(typescript@5.6.1-rc):
     resolution: {integrity: sha512-78O4c6IswZ9TzpcIiQJIN49K3qNoXTM8zEJzhaTE/xRTCZswaovSEVIa/uwbOltZrk16X4jAxjaOhzz/hTm1Kw==}
     engines: {node: ^14.13.1 || >=16.0.0}
     hasBin: true
@@ -14801,7 +14801,7 @@ packages:
       '@csstools/selector-specificity': 3.0.3(postcss-selector-parser@6.0.16)
       balanced-match: 2.0.0
       colord: 2.9.3
-      cosmiconfig: 8.3.6(typescript@5.5.4)
+      cosmiconfig: 8.3.6(typescript@5.6.1-rc)
       css-functions-list: 3.2.2
       css-tree: 2.3.1
       debug: 4.3.4(supports-color@8.1.1)
@@ -15291,7 +15291,7 @@ packages:
   /ts-interface-checker@0.1.13:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
 
-  /ts-node@10.9.2(@types/node@20.12.7)(typescript@5.5.4):
+  /ts-node@10.9.2(@types/node@20.12.7)(typescript@5.6.1-rc):
     resolution: {integrity: sha512-f0FFpIdcHgn8zcPSbf1dRevwt047YMnaiJM3u2w2RewrB+fob/zePZcrOyQoLMMO7aBIddLcQIEK5dYjkLnGrQ==}
     hasBin: true
     peerDependencies:
@@ -15317,7 +15317,7 @@ packages:
       create-require: 1.1.1
       diff: 4.0.2
       make-error: 1.3.6
-      typescript: 5.5.4
+      typescript: 5.6.1-rc
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
 
@@ -15451,6 +15451,12 @@ packages:
 
   /typescript@5.5.4:
     resolution: {integrity: sha512-Mtq29sKDAEYP7aljRgtPOpTvOfbwRWlS6dPRzwjdE+C0R4brX/GUyhHSecbHMFLNBLcJIPt9nl9yG5TZ1weH+Q==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+    dev: true
+
+  /typescript@5.6.1-rc:
+    resolution: {integrity: sha512-E3b2+1zEFu84jB0YQi9BORDjz9+jGbwwy1Zi3G0LUNw7a7cePUrHMRNy8aPh53nXpkFGVHSxIZo5vKTfYaFiBQ==}
     engines: {node: '>=14.17'}
     hasBin: true
 
@@ -15895,13 +15901,13 @@ packages:
       - terser
     dev: true
 
-  /vite-plugin-svgr@4.2.0(typescript@5.5.4)(vite@5.4.2):
+  /vite-plugin-svgr@4.2.0(typescript@5.6.1-rc)(vite@5.4.2):
     resolution: {integrity: sha512-SC7+FfVtNQk7So0XMjrrtLAbEC8qjFPifyD7+fs/E6aaNdVde6umlVVh0QuwDLdOMu7vp5RiGFsB70nj5yo0XA==}
     peerDependencies:
       vite: ^2.6.0 || 3 || 4 || 5
     dependencies:
       '@rollup/pluginutils': 5.1.0
-      '@svgr/core': 8.1.0(typescript@5.5.4)
+      '@svgr/core': 8.1.0(typescript@5.6.1-rc)
       '@svgr/plugin-jsx': 8.1.0(@svgr/core@8.1.0)
       vite: 5.4.2(@types/node@20.12.7)
     transitivePeerDependencies:

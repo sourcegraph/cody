@@ -164,7 +164,7 @@ export const getNextStep = (step: TutorialStepKey): TutorialStepKey | null => {
 
 export const initTutorialDocument = async (uri: vscode.Uri): Promise<vscode.TextDocument> => {
     const firstStep = getStepContent('autocomplete')
-    await vscode.workspace.fs.writeFile(uri, Buffer.from(firstStep))
+    await vscode.workspace.fs.writeFile(uri, new Uint8Array(Buffer.from(firstStep)))
     return vscode.workspace.openTextDocument(uri)
 }
 
