@@ -376,7 +376,7 @@ html[data-ide='JetBrains'] {
     --vscode-profileBadge-background: var(--jetbrains-ProgressBar-background);
     --vscode-profileBadge-foreground: var(--jetbrains-ProgressBar-foreground);
     --vscode-progressBar-background: var(--jetbrains-ProgressBar-background);
-    --vscode-quickInput-background: var(--jetbrains-MainToolbar-Icon-pressedBackground);
+    --vscode-quickInput-background: var(--jetbrains-CheckBox-background);
     --vscode-quickInput-foreground: var(--jetbrains-ToolBar-foreground);
     --vscode-quickInputTitle-background: var(--jetbrains-ToolBar-background);
     --vscode-remoteHub-decorations-addedForegroundColor: var(--jetbrains-ActionButton-hoverBackground);
@@ -659,4 +659,12 @@ html[data-ide='JetBrains'] .container {
 
 html[data-ide='JetBrains'] .tw-bg-muted-transparent:hover {
     background-color: var(--jetbrains-ActionButton-hoverBackground);
+}
+
+/* Custom rule for cmdk heading:
+ * VSCode uses input background for headings.
+ * JetBrains needs different styling to distinguish headings because input background are the same as pane background. */
+
+html[data-ide='JetBrains'] [cmdk-group-heading] {
+    background: var(--jetbrains-EditorPane-inactiveBackground);
 }
