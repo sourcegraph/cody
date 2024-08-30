@@ -168,7 +168,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                                 title: 'Export History',
                                 Icon: DownloadIcon,
                                 command: 'cody.chat.history.export',
-                                callback: IDE === CodyIDE.VSCode ? onDownloadChatClick : undefined,
+                                callback: IDE === CodyIDE.JetBrains ? undefined : onDownloadChatClick,
                             },
                             {
                                 title: 'Clear Chat History',
