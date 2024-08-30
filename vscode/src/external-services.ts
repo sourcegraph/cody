@@ -19,7 +19,7 @@ import type { PlatformContext } from './extension.common'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logger } from './log'
-import type { AuthProvider } from './services/AuthProvider'
+import { authProvider } from './services/AuthProvider'
 
 interface ExternalServices {
     chatClient: ChatClient
@@ -57,8 +57,7 @@ export async function configureExternalServices(
         | 'createSentryService'
         | 'createOpenTelemetryService'
         | 'createSymfRunner'
-    >,
-    authProvider: AuthProvider
+    >
 ): Promise<ExternalServices> {
     const initialConfig = config.get()
     const sentryService = platform.createSentryService?.(initialConfig)
@@ -66,7 +65,7 @@ export async function configureExternalServices(
     const completionsClient = platform.createCompletionsClient(initialConfig, logger)
     const codeCompletionsClient = createCodeCompletionsClient(initialConfig, logger)
 
-    const symfRunner = platform.createSymfRunner?.(context, completionsClient, authProvider)
+    const symfRunner = platform.createSymfRunner?.(context, completionsClient)
 
     if (initialConfig.codebase && isError(await graphqlClient.getRepoId(initialConfig.codebase))) {
         logDebug(
@@ -77,11 +76,12 @@ export async function configureExternalServices(
 
     // Disable local embeddings for enterprise users.
     const localEmbeddings =
-        authProvider.getAuthStatus().isLoggedIn && authProvider.getAuthStatus().isDotCom
+        authProvider.instance!.getAuthStatus().isLoggedIn &&
+        authProvider.instance!.getAuthStatus().isDotCom
             ? await platform.createLocalEmbeddingsController?.(initialConfig)
             : undefined
 
-    const chatClient = new ChatClient(completionsClient, () => authProvider.getAuthStatus())
+    const chatClient = new ChatClient(completionsClient, () => authProvider.instance!.getAuthStatus())
 
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient, initialConfig)
 

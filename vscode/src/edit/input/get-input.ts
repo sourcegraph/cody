@@ -21,7 +21,7 @@ import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { executeDocCommand, executeTestEditCommand } from '../../commands/execute'
 import { getEditor } from '../../editor/active-editor'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
-import type { AuthProvider } from '../../services/AuthProvider'
+import { authProvider } from '../../services/AuthProvider'
 import type { EditIntent, EditMode } from '../types'
 import { isGenerateIntent } from '../utils/edit-intent'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
@@ -71,7 +71,6 @@ const PREVIEW_RANGE_DECORATION = vscode.window.createTextEditorDecorationType({
 
 export const getInput = async (
     document: vscode.TextDocument,
-    authProvider: AuthProvider,
     initialValues: EditInputInitialValues,
     source: EventSource
 ): Promise<QuickPickInput | null> => {
@@ -96,7 +95,7 @@ export const getInput = async (
               ? EXPANDED_RANGE_ITEM
               : SELECTION_RANGE_ITEM
 
-    const authStatus = authProvider.getAuthStatus()
+    const authStatus = authProvider.instance!.getAuthStatus()
     const isCodyPro = !authStatus.userCanUpgrade
     const modelOptions = modelsService.instance!.getModels(ModelUsage.Edit)
     const modelItems = getModelOptionItems(modelOptions, isCodyPro)

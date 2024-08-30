@@ -21,7 +21,7 @@ import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/cont
 import { showCodyIgnoreNotification } from '../cody-ignore/notification'
 import type { ExtensionClient } from '../extension-client'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
-import type { AuthProvider } from '../services/AuthProvider'
+import { authProvider } from '../services/AuthProvider'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import type { ExecuteEditArguments } from './execute'
 import { SMART_APPLY_FILE_DECORATION, getSmartApplySelection } from './prompt/smart-apply'
@@ -35,7 +35,6 @@ export interface EditManagerOptions {
     editor: VSCodeEditor
     chat: ChatClient
     ghostHintDecorator: GhostHintDecorator
-    authProvider: AuthProvider
     extensionClient: ExtensionClient
 }
 
@@ -48,7 +47,7 @@ export class EditManager implements vscode.Disposable {
     private editProviders = new WeakMap<FixupTask, EditProvider>()
 
     constructor(public options: EditManagerOptions) {
-        this.controller = new FixupController(options.authProvider, options.extensionClient)
+        this.controller = new FixupController(options.extensionClient)
         /**
          * Entry point to triggering a new Edit.
          * Given a set or arguments, this will create a new LLM interaction
@@ -302,7 +301,7 @@ export class EditManager implements vscode.Disposable {
             configuration.document,
             model,
             this.options.chat,
-            this.options.authProvider.getAuthStatus().codyApiVersion
+            authProvider.instance!.getAuthStatus().codyApiVersion
         )
 
         // We finished prompting the LLM for the selection, we can now remove the "progress" decoration

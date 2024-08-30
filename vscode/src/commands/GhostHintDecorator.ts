@@ -10,7 +10,7 @@ import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { type DebouncedFunc, throttle } from 'lodash'
 import * as vscode from 'vscode'
 import type { SyntaxNode } from 'web-tree-sitter'
-import type { AuthProvider } from '../services/AuthProvider'
+import { authProvider } from '../services/AuthProvider'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
 
 const EDIT_SHORTCUT_LABEL = isMacOS() ? 'Opt+K' : 'Alt+K'
@@ -175,7 +175,7 @@ export class GhostHintDecorator implements vscode.Disposable {
     /** Store the last line that the user typed on, we want to avoid showing the text here */
     private lastLineTyped: number | null = null
 
-    constructor(authProvider: AuthProvider) {
+    constructor() {
         this.setThrottledGhostText = throttle(this.setGhostText.bind(this), GHOST_TEXT_THROTTLE, {
             leading: false,
             trailing: true,
@@ -198,13 +198,13 @@ export class GhostHintDecorator implements vscode.Disposable {
         )
 
         // Set initial state, based on the configuration and authentication status
-        const initialAuth = authProvider.getAuthStatus()
+        const initialAuth = authProvider.instance!.getAuthStatus()
         this.updateEnablement(initialAuth)
 
         // Listen to authentication changes
         this.permanentDisposables.push(
             subscriptionDisposable(
-                authProvider.changes.subscribe(authStatus => this.updateEnablement(authStatus))
+                authProvider.instance!.changes.subscribe(authStatus => this.updateEnablement(authStatus))
             )
         )
 
@@ -212,7 +212,7 @@ export class GhostHintDecorator implements vscode.Disposable {
         this.permanentDisposables.push(
             vscode.workspace.onDidChangeConfiguration(e => {
                 if (e.affectsConfiguration('cody')) {
-                    this.updateEnablement(authProvider.getAuthStatus())
+                    this.updateEnablement(authProvider.instance!.getAuthStatus())
                 }
             }),
             vscode.workspace.onDidChangeTextDocument(event => {

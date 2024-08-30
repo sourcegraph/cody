@@ -7,7 +7,7 @@ import {
 import type { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 import { getFullConfig } from './configuration'
-import type { AuthProvider } from './services/AuthProvider'
+import { authProvider } from './services/AuthProvider'
 
 export class BaseConfigWatcher implements ConfigWatcher<ClientConfigurationWithAccessToken> {
     private currentConfig: ClientConfigurationWithAccessToken
@@ -15,7 +15,6 @@ export class BaseConfigWatcher implements ConfigWatcher<ClientConfigurationWithA
     private configChangeEvent = new vscode.EventEmitter<ClientConfigurationWithAccessToken>()
 
     public static async create(
-        authProvider: AuthProvider,
         disposables: vscode.Disposable[]
     ): Promise<ConfigWatcher<ClientConfigurationWithAccessToken>> {
         const w = new BaseConfigWatcher(await getFullConfig())
@@ -30,7 +29,7 @@ export class BaseConfigWatcher implements ConfigWatcher<ClientConfigurationWithA
         )
         disposables.push(
             subscriptionDisposable(
-                authProvider.changes.subscribe(async () => {
+                authProvider.instance!.changes.subscribe(async () => {
                     w.set(await getFullConfig())
                 })
             )

@@ -4,19 +4,19 @@ import { localStorage } from '../services/LocalStorageProvider'
 import {
     type AuthStatus,
     FeatureFlag,
+    type FeatureFlagProvider,
     type GraphQLAPIClientConfig,
     type SourcegraphGraphQLAPIClient,
     defaultAuthStatus,
     featureFlagProvider,
     graphqlClient,
 } from '@sourcegraph/cody-shared'
-import type { AuthProvider } from '../services/AuthProvider'
+import { type AuthProvider, authProvider } from '../services/AuthProvider'
 import { CodyProExpirationNotifications } from './cody-pro-expiration'
 
 describe('Cody Pro expiration notifications', () => {
     let notifier: CodyProExpirationNotifications
     let apiClient: SourcegraphGraphQLAPIClient
-    let authProvider: AuthProvider
     let authStatus: AuthStatus
     let authChangeListener = () => {}
     let codyPlan: string
@@ -44,9 +44,10 @@ describe('Cody Pro expiration notifications', () => {
         enabledFeatureFlags.clear()
         enabledFeatureFlags.add(FeatureFlag.UseSscForCodySubscription)
         enabledFeatureFlags.add(FeatureFlag.CodyProTrialEnded)
-        vi.spyOn(featureFlagProvider.instance!, 'evaluateFeatureFlag').mockImplementation(
-            (flag: FeatureFlag) => Promise.resolve(enabledFeatureFlags.has(flag))
-        )
+        featureFlagProvider.instance = {
+            evaluateFeatureFlag: (flag: FeatureFlag) => Promise.resolve(enabledFeatureFlags.has(flag)),
+            refresh: () => {},
+        } as FeatureFlagProvider
         graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
         apiClient = {
             getCurrentUserCodySubscription: () => ({
@@ -54,7 +55,7 @@ describe('Cody Pro expiration notifications', () => {
                 plan: codyPlan,
             }),
         } as unknown as SourcegraphGraphQLAPIClient
-        authProvider = {
+        authProvider.instance = {
             changes: {
                 subscribe: (f: () => void) => {
                     authChangeListener = f
@@ -67,20 +68,21 @@ describe('Cody Pro expiration notifications', () => {
                 },
             },
             getAuthStatus: () => authStatus,
-        } as unknown as AuthProvider
+        } as AuthProvider
         authStatus = { ...defaultAuthStatus, isLoggedIn: true, isDotCom: true }
         localStorageData = {}
     })
 
     afterEach(() => {
         vi.restoreAllMocks()
+        authProvider.instance = null
+        featureFlagProvider.instance = null
         notifier?.dispose()
     })
 
     function createNotifier() {
         return new CodyProExpirationNotifications(
             apiClient,
-            authProvider,
             showInformationMessage,
             openExternal,
             10,
