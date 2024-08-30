@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.jetbrains.rd.util.firstOrNull
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol.WebviewCreateWebviewPanelParams
 import com.sourcegraph.cody.agent.protocol_generated.DebugMessage
@@ -197,7 +198,9 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
 
   @JsonRequest("window/showSaveDialog")
   fun window_showSaveDialog(params: SaveDialogOptionsParams): CompletableFuture<String> {
-    var fileName = "Untitled"
+    // Let's use the first possible extension as default.
+    val ext = params.filters?.firstOrNull()?.value?.firstOrNull() ?: ""
+    var fileName = "Untitled.$ext".removeSuffix(".")
     var outputDir: VirtualFile? =
         if (params.defaultUri != null) {
           val defaultUriPath = Paths.get(params.defaultUri)
@@ -211,7 +214,7 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
       outputDir = VfsUtil.getUserHomeDir()
     }
 
-    val title = if (params.title != null) "Cody: ${params.title}" else "Cody: Save as New File"
+    val title = params.title ?: "Cody: Save as New File"
     val descriptor = FileSaverDescriptor(title, "Save file")
 
     val saveFileFuture = CompletableFuture<String>()
