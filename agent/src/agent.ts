@@ -230,7 +230,7 @@ export async function newAgentClient(
         )
     })
 }
-export interface InitializedClient {
+interface InitializedClient {
     serverInfo: agent_protocol.ServerInfo
     client: RpcMessageHandler
 }

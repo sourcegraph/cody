@@ -25,12 +25,6 @@ interface RetrieveParams extends Pick<ContextRetrieverOptions, 'document' | 'pos
 const RECURSION_LIMIT = 3
 const IDENTIFIERS_TO_RESOLVE = 1
 
-export interface GetGraphContextForPositionParams {
-    document: vscode.TextDocument
-    position: vscode.Position
-    abortSignal: AbortSignal
-}
-
 export class LspLightRetriever implements ContextRetriever {
     public identifier = 'lsp-light'
     private disposables: vscode.Disposable[] = []

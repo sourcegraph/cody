@@ -44,7 +44,7 @@ import type { ContextRetriever } from './ContextRetriever'
 
 export const CodyChatEditorViewType = 'cody.editorPanel'
 
-export interface Options extends MessageProviderOptions {
+interface Options extends MessageProviderOptions {
     extensionUri: vscode.Uri
     startTokenReceiver?: typeof startTokenReceiver
 }

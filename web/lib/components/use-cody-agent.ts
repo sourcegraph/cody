@@ -27,7 +27,7 @@ import type { InitialContext } from '../types'
  */
 const GLOBAL_MESSAGE_TYPES: Array<ExtensionMessage['type']> = ['rpc/response']
 
-export interface AgentClient {
+interface AgentClient {
     rpc: MessageConnection
     dispose(): void
 }

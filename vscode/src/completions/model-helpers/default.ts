@@ -31,7 +31,7 @@ export interface FormatIntroSnippetsParams {
     languageConfig: LanguageConfig | null
 }
 
-export interface GetPromptParams {
+interface GetPromptParams {
     snippets: AutocompleteContextSnippet[]
     docContext: DocumentContext
     document: vscode.TextDocument

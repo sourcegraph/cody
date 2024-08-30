@@ -71,7 +71,7 @@ interface SiteVersionResponse {
     site: { productVersion: string } | null
 }
 
-export type FuzzyFindFilesResponse = {
+type FuzzyFindFilesResponse = {
     __typename?: 'Query'
     search: {
         results: {
@@ -80,7 +80,7 @@ export type FuzzyFindFilesResponse = {
     } | null
 }
 
-export type FuzzyFindSymbolsResponse = {
+type FuzzyFindSymbolsResponse = {
     __typename?: 'Query'
     search: {
         results: {

@@ -1,12 +1,13 @@
 import {
+    type ChatIntentResult,
     type ContextItem,
     FeatureFlag,
     type FeatureFlagProvider,
+    type InputContextItem,
     type SourcegraphGraphQLAPIClient,
     isError,
     logError,
 } from '@sourcegraph/cody-shared'
-import type { InputContextItem } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import * as vscode from 'vscode'
 
 function toInput(input: ContextItem[]): InputContextItem[] {
@@ -32,7 +33,10 @@ export class ContextAPIClient {
         private readonly featureFlagProvider: FeatureFlagProvider
     ) {}
 
-    public async detectChatIntent(interactionID: string, query: string) {
+    public async detectChatIntent(
+        interactionID: string,
+        query: string
+    ): Promise<ChatIntentResult | Error | undefined> {
         if (!(await this.isServerSideContextAPIEnabled())) {
             return
         }

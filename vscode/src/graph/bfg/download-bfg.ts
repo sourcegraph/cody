@@ -10,7 +10,7 @@ import { Arch, Platform, getOSArch } from '../../os'
 import { captureException } from '../../services/sentry/sentry'
 
 // Available releases: https://github.com/sourcegraph/bfg/releases
-export type BfgVersionString = SemverString<''>
+type BfgVersionString = SemverString<''>
 export const defaultBfgVersion: BfgVersionString = '5.6.2618'
 
 export const _config = {

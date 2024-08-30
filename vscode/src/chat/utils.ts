@@ -3,7 +3,7 @@ import semver from 'semver'
 import { type AuthStatus, offlineModeAuthStatus, unauthenticatedStatus } from '@sourcegraph/cody-shared'
 import type { CurrentUserInfo } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
-export type NewAuthStatusOptions = Omit<
+type NewAuthStatusOptions = Omit<
     AuthStatus,
     | 'isLoggedIn'
     | 'isFireworksTracingEnabled'

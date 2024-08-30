@@ -7,20 +7,12 @@ export interface TestingCredentials {
     readonly serverEndpoint: string
 }
 
-export function loadSecret(name: string): string {
+function loadSecret(name: string): string {
     return execSync(
         `gcloud secrets versions access latest --secret ${name} --project cody-agent-tokens --quiet`
     )
         .toString()
         .trim()
-}
-
-export function s2Credentials(): TestingCredentials {
-    return {
-        redactedToken: 'REDACTED_964f5256e709a8c5c151a63d8696d5c7ac81604d179405864d88ff48a9232364',
-        serverEndpoint: 'https://sourcegraph.sourcegraph.com/',
-        token: loadSecret('CODY_S2_ACCESS_TOKEN'),
-    }
 }
 
 export function dotcomCredentials(): TestingCredentials {

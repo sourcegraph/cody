@@ -37,7 +37,7 @@ export async function runStep(
     }
 }
 
-export async function runUpdateChangelog(memory: Memory, anthropic: Anthropic): Promise<BlockResult> {
+async function runUpdateChangelog(memory: Memory, anthropic: Anthropic): Promise<BlockResult> {
     // reverse search through the transcript
     let description: string | undefined = undefined
     for (const evt of memory.getEvents().toReversed()) {

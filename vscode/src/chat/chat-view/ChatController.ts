@@ -1679,7 +1679,7 @@ function getDefaultModelID(): string {
 /**
  * Set HTML for webview (panel) & webview view (sidebar)
  */
-export async function addWebviewViewHTML(
+async function addWebviewViewHTML(
     extensionClient: ExtensionClient,
     extensionUri: vscode.Uri,
     view: vscode.WebviewView | vscode.WebviewPanel

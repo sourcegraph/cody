@@ -79,7 +79,7 @@ interface CompletionRequest {
     context: vscode.InlineCompletionContext
 }
 
-export interface PreloadCompletionContext extends vscode.InlineCompletionContext {
+interface PreloadCompletionContext extends vscode.InlineCompletionContext {
     isPreload: true
 
     // The following fields are required only for compatibility with the `provideInlineCompletionItems` API.

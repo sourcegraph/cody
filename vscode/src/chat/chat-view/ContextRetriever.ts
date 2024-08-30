@@ -32,7 +32,7 @@ import {
     truncateSymfResult,
 } from './context'
 
-export interface StructuredMentions {
+interface StructuredMentions {
     repos: ContextItemRepository[]
     trees: ContextItemTree[]
     files: ContextItemFile[]

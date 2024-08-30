@@ -21,8 +21,6 @@ export const IS_IOS: boolean =
     // @ts-ignore
     !window.MSStream
 
-export const IS_MOBILE = CAN_USE_DOM && window.matchMedia('(pointer: coarse)').matches
-
 const useLayoutEffectImpl: typeof useLayoutEffect = CAN_USE_DOM ? useLayoutEffect : useEffect
 
 export const useIsFocused = () => {

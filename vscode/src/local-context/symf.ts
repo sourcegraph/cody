@@ -539,7 +539,7 @@ export class SymfRunner implements vscode.Disposable {
     }
 }
 
-export interface IndexStartEvent {
+interface IndexStartEvent {
     scopeDir: FileURI
     cancel: () => void
     done: Promise<void>

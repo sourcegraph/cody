@@ -25,7 +25,7 @@ export interface Step {
     description: string
 }
 
-export type EventL1 = { level: 1 } & (
+type EventL1 = { level: 1 } & (
     | {
           type: 'search'
           query: string
@@ -58,7 +58,7 @@ export type EventL1 = { level: 1 } & (
       }
 )
 
-export type EventL0 = { level: 0 } & (
+type EventL0 = { level: 0 } & (
     | {
           type: 'restate'
           output: string
@@ -82,11 +82,7 @@ export type EventL0 = { level: 0 } & (
       }
 )
 
-export type EventL0Type = EventL0['type']
-
 export type Event = EventL0 | EventL1
-
-export type EventStatus = 'pending' | 'in-progress' | 'stopped' | 'completed' | 'failed'
 
 export interface MinionSession {
     id: string
@@ -103,7 +99,7 @@ export type MinionTranscriptBlock = {
     status: BlockStatus
 }
 
-export type MinionTranscriptEvent = {
+type MinionTranscriptEvent = {
     type: 'event'
     event: Event
 }

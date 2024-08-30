@@ -99,7 +99,7 @@ type TestTelemetryEventInput = TelemetryEventInput & { testOnlyAnonymousUserID: 
 
 // creating a delegate to the TESTING_TELEMETRY_EXPORTER to allow for easy access to exported events.
 // This instance must be shared for a consistent view of what has been exported.
-export class DelegateTelemetryExporter implements TelemetryExporter {
+class DelegateTelemetryExporter implements TelemetryExporter {
     private exportedEvents: TestTelemetryEventInput[] = []
     // default to unset to make it clear when it's not set
     private anonymousUserID = 'unset'
