@@ -190,7 +190,14 @@ class FireworksProvider extends Provider {
     }
 
     private checkIfDirectRouteShouldBeEnabled(): boolean {
-        return this.model === DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE
+        const directRouteModels = [
+            DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE,
+            DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096,
+            FIREWORKS_DEEPSEEK_7B_LANG_ALL,
+            FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0,
+            FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1,
+        ]
+        return directRouteModels.includes(this.model)
     }
 
     public generateCompletions(
