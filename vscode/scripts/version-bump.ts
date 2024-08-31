@@ -1,5 +1,6 @@
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
+import path from 'node:path'
 import semver from 'semver'
 import { version } from '../package.json'
 
@@ -10,7 +11,6 @@ import { version } from '../package.json'
  *  pnpm run version-bump:minor for a minor version bump
  *  pnpm run version-bump:dry-run for testing the script without committing the changes
  */
-
 // Execute a command to create a new branch off origin/main
 execSync('git checkout main && git pull origin main', { stdio: 'inherit' })
 
@@ -37,6 +37,8 @@ if (!nextVersion || !semver.valid(nextVersion)) {
     )
     process.exit(1)
 }
+
+generateChangelog()
 
 execSync(`git checkout -b release-${releaseType}-v${nextVersion}`, { stdio: 'inherit' })
 
@@ -74,4 +76,81 @@ function updateFile(fileName: string, keyword: string, replacer: string) {
     const updatedFile = fileContent.replace(keyword, replacer)
 
     fs.writeFileSync(fileName, updatedFile)
+}
+
+function run(command: string, env: NodeJS.ProcessEnv = {}): string {
+    console.log(`+ ${command}`)
+    try {
+        return String(execSync(command, { env: { ...process.env, ...env } })).trim()
+    } catch (error) {
+        if (error instanceof Error && 'stderr' in error) {
+            console.error(`Error executing command: ${command}`)
+            console.error(`stderr: ${error.stderr}`)
+        } else {
+            console.error(`Error executing command: ${command}`)
+            console.error(error)
+        }
+        process.exit(1)
+    }
+}
+
+function generateChangelog() {
+    const devxServiceDir = process.env.DEVX_SERVICE_DIR ?? '../../devx-service'
+    const changelogTag = 'jsm/cody-changelog'
+
+    // clone the devx-service repo into devxServiceDir if it doesn't already exist
+    const hasBazel = run('which bazel')
+    if (!hasBazel) {
+        console.error(
+            'bazel is not installed. Please install it with `brew install bazelisk` to get changelog generation'
+        )
+        return
+    }
+    if (!process.env.GH_TOKEN) {
+        console.error(
+            'GH_TOKEN is not set. Please set it to a GitHub token with read access to the repo in order to generate the changelog.'
+        )
+        return
+    }
+    if (!fs.existsSync(devxServiceDir)) {
+        console.log(`Cloning devx-service repository into ${devxServiceDir}...`)
+        execSync(`git clone https://github.com/sourcegraph/devx-service.git ${devxServiceDir}`, {
+            stdio: 'inherit',
+        })
+    }
+    // Change directory to devxServiceDir
+    const cwd = process.cwd()
+    process.chdir(devxServiceDir)
+    // Checkout the working changelog tag
+    if (!process.env.SKIP_CHANGELOG_CHECKOUT) {
+        run(`git checkout ${changelogTag}`)
+    }
+    execSync('bazel build //cmd/changelog:changelog')
+
+    // Get the location of the changelog binary using bazel
+    const CHANGELOG_BIN = path.join(devxServiceDir, run('bazel cquery //cmd/changelog --output=files'))
+    process.chdir(cwd)
+
+    const lastRelease = `vscode-v${version}`
+
+    // Get the git commit associated with the lastRelease tag
+    const lastReleaseCommit = run(`git rev-parse ${lastRelease}`)
+    const headCommit = run('git rev-parse HEAD')
+
+    if (!lastReleaseCommit) {
+        console.error(`Failed to find commit for tag: ${lastRelease}`)
+        return
+    }
+    const env = {
+        RELEASE_LATEST_COMMIT: headCommit,
+        RELEASE_LATEST_RELEASE: lastReleaseCommit,
+        GH_REPO: 'sourcegraph/cody',
+        CHANGELOG_CATEGORY_ACCEPTLIST: 'added,changed,fixed',
+        CHANGELOG_SKIP_NO_CHANGELOG: 'true',
+        CHANGELOG_COMPACT: 'true',
+        OUTPUT_FILE: 'changelog_experimental.md',
+        RELEASE_REGISTRY_VERSION: '1.0.0',
+    }
+
+    run(`${CHANGELOG_BIN} write`, env)
 }
