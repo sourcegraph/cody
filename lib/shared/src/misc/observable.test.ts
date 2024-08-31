@@ -1,6 +1,7 @@
 import { Observable } from 'observable-fns'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import {
+    NO_INITIAL_VALUE,
     type ObservableValue,
     allValuesFrom,
     combineLatest,
@@ -222,6 +223,22 @@ describe('fromVSCodeEvent', { timeout: 500 }, () => {
         eventEmitter.fire('first')
         unsubscribe()
         eventEmitter.fire('second')
+        await done
+
+        expect(values).toEqual(['first'])
+    })
+
+    test('does not emit initial value if NO_INITIAL_VALUE is returned', async () => {
+        const eventEmitter = new SimpleEventEmitter<string>()
+        const observable = fromVSCodeEvent(eventEmitter.event, () => NO_INITIAL_VALUE)
+
+        const { values, done, unsubscribe } = readValuesFrom(observable)
+
+        vi.useFakeTimers()
+        eventEmitter.fire('first')
+        await vi.runAllTimersAsync()
+        eventEmitter.dispose()
+        unsubscribe()
         await done
 
         expect(values).toEqual(['first'])

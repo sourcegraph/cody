@@ -228,6 +228,7 @@ const register = async (
             symfRunner,
             contextAPIClient,
             contextRetriever,
+            configWatcher,
         },
         disposables
     )
@@ -726,6 +727,7 @@ interface RegisterChatOptions {
     symfRunner?: SymfRunner
     contextAPIClient?: ContextAPIClient
     contextRetriever: ContextRetriever
+    configWatcher: ConfigWatcher<ClientConfigurationWithAccessToken>
 }
 
 function registerChat(
@@ -740,6 +742,7 @@ function registerChat(
         symfRunner,
         contextAPIClient,
         contextRetriever,
+        configWatcher,
     }: RegisterChatOptions,
     disposables: vscode.Disposable[]
 ): {
@@ -764,7 +767,8 @@ function registerChat(
         contextRetriever,
         guardrails,
         contextAPIClient || null,
-        platform.extensionClient
+        platform.extensionClient,
+        configWatcher
     )
     chatsController.registerViewsAndCommands()
 

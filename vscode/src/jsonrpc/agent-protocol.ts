@@ -97,6 +97,8 @@ export type ClientRequests = {
     'chat/submitMessage': [{ id: string; message: WebviewMessage }, ExtensionMessage]
     'chat/editMessage': [{ id: string; message: WebviewMessage }, ExtensionMessage]
 
+    'chat/setModel': [{ id: string; model: Model['id'] }, null]
+
     // Trigger chat-based commands (explain, test, smell), which are effectively
     // shortcuts to start a new chat with a templated question. The return value
     // of these commands is the same as `chat/new`, an ID to reference to the

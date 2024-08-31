@@ -124,6 +124,11 @@ export class MessageHandler {
         this.conn.sendNotification(method, params)
     }
 
+    /*<M extends keyof WebviewToExtensionAPI>(
+        method: M,
+        ...args: Parameters<WebviewToExtensionAPI[M]>
+    ): ReturnType<WebviewToExtensionAPI[M]> {}*/
+
     private alive = true
     public isAlive(): boolean {
         return this.alive

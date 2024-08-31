@@ -38,10 +38,7 @@ export async function evaluateChatStrategy(
         const document = EvaluationDocument.from(params, options)
         const task: ChatTask = YAML.parse(params.content)
         const id = await client.request('chat/new', null)
-        client.request('webview/receiveMessage', {
-            id,
-            message: { command: 'chatModel', model: chatModel },
-        })
+        client.request('chat/setModel', { id, model: chatModel })
         const contextFiles: ContextItem[] = []
         for (const relativePath of task.files ?? []) {
             const uri = vscode.Uri.file(path.join(path.dirname(params.uri.fsPath), relativePath))

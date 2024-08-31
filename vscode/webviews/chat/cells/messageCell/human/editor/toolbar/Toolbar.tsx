@@ -1,11 +1,12 @@
 import type { Model } from '@sourcegraph/cody-shared'
+import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
-import { type FunctionComponent, useCallback } from 'react'
+import { type FunctionComponent, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import type { PromptOrDeprecatedCommand } from '../../../../../../components/promptList/PromptList'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
-import { useChatModelContext } from '../../../../../models/chatModelContext'
+import { useConfig } from '../../../../../../utils/useConfig'
 import { AddContextButton } from './AddContextButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
 
@@ -122,24 +123,29 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     focusEditor?: () => void
     className?: string
 }> = ({ userInfo, focusEditor, className }) => {
-    const { chatModels, onCurrentChatModelChange, serverSentModelsEnabled } = useChatModelContext()
+    const config = useConfig()
+
+    const api = useExtensionAPI()
 
     const onModelSelect = useCallback(
         (model: Model) => {
-            onCurrentChatModelChange?.(model)
+            api.setChatModel(model.id).subscribe({
+                error: error => console.error('setChatModel:', error),
+            })
             focusEditor?.()
         },
-        [onCurrentChatModelChange, focusEditor]
+        [api.setChatModel, focusEditor]
     )
+
+    const { value: chatModels } = useObservable(useMemo(() => api.models(), [api.models]))
 
     return (
         !!chatModels?.length &&
-        (userInfo.isDotComUser || serverSentModelsEnabled) &&
-        onCurrentChatModelChange && (
+        (userInfo.isDotComUser || config.configFeatures.serverSentModels) && (
             <ModelSelectField
                 models={chatModels}
                 onModelSelect={onModelSelect}
-                serverSentModelsEnabled={!!serverSentModelsEnabled}
+                serverSentModelsEnabled={config.configFeatures.serverSentModels}
                 userInfo={userInfo}
                 onCloseByEscape={focusEditor}
                 className={className}

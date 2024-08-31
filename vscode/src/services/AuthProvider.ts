@@ -7,8 +7,10 @@ import {
     type ClientConfigurationWithAccessToken,
     CodyIDE,
     DOTCOM_URL,
+    NO_INITIAL_VALUE,
     SourcegraphGraphQLAPIClient,
     defaultAuthStatus,
+    distinctUntilChanged,
     fromVSCodeEvent,
     graphqlClient,
     isError,
@@ -77,10 +79,13 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         }).catch(error => logError('AuthProvider:init:failed', lastEndpoint, { verbose: error }))
     }
 
-    public changes: Observable<AuthStatus> = fromVSCodeEvent(
-        this.didChangeEvent.event,
-        this.getAuthStatus.bind(this)
-    )
+    public changes: Observable<AuthStatus> = fromVSCodeEvent(this.didChangeEvent.event, () => {
+        const status = this.getAuthStatus()
+        if (status.endpoint === 'init') {
+            return NO_INITIAL_VALUE
+        }
+        return status
+    }).pipe(distinctUntilChanged())
 
     // Display quickpick to select endpoint to sign in to
     public async signinMenu(type?: 'enterprise' | 'dotcom' | 'token', uri?: string): Promise<void> {

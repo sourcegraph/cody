@@ -5,6 +5,8 @@ import {
     type AuthStatus,
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
     type ChatClient,
+    type ClientConfigurationWithAccessToken,
+    type ConfigWatcher,
     DEFAULT_EVENT_SOURCE,
     type Guardrails,
     editorStateFromPromptString,
@@ -74,7 +76,8 @@ export class ChatsController implements vscode.Disposable {
 
         private readonly guardrails: Guardrails,
         private readonly contextAPIClient: ContextAPIClient | null,
-        private readonly extensionClient: ExtensionClient
+        private readonly extensionClient: ExtensionClient,
+        private readonly configWatcher: ConfigWatcher<ClientConfigurationWithAccessToken>
     ) {
         logDebug('ChatsController:constructor', 'init')
         this.panel = this.createChatController()
@@ -485,6 +488,7 @@ export class ChatsController implements vscode.Disposable {
             contextAPIClient: this.contextAPIClient,
             contextRetriever: this.contextRetriever,
             extensionClient: this.extensionClient,
+            configWatcher: this.configWatcher,
         })
     }
 

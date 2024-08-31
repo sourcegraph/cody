@@ -728,13 +728,6 @@ export class TestClient extends MessageHandler {
         }
     }
 
-    public async setChatModel(id: string, model: string): Promise<void> {
-        await this.request('webview/receiveMessage', {
-            id,
-            message: { command: 'chatModel', model },
-        })
-    }
-
     public async reset(id: string): Promise<void> {
         await this.request('webview/receiveMessage', {
             id,

@@ -81,6 +81,15 @@ export async function firstValueFrom<T>(observable: Observable<T>): Promise<T> {
     })
 }
 
+export async function waitUntilComplete(observable: Observable<unknown>): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+        observable.subscribe({
+            error: reject,
+            complete: () => resolve(),
+        })
+    })
+}
+
 /**
  * Return all values emitted by an {@link Observable}.
  */
@@ -318,22 +327,29 @@ type VSCodeEvent<T> = (
     disposables?: VSCodeDisposable[]
 ) => VSCodeDisposable
 
+export const NO_INITIAL_VALUE = Symbol('noInitialValue')
+
 /**
- * Create an Observable from a VS Code event.
+ * Create an Observable from a VS Code event. If {@link getInitial} is provided, the Observable will
+ * emit the initial value upon subscription (unless it's {@link NO_INITIAL_VALUE}).
  */
 export function fromVSCodeEvent<T>(
     event: VSCodeEvent<T>,
-    getInitialValue?: () => T | Promise<T>
+    getInitialValue?: () => T | typeof NO_INITIAL_VALUE | Promise<T | typeof NO_INITIAL_VALUE>
 ): Observable<T> {
     return new Observable(observer => {
         if (getInitialValue) {
             const initialValue = getInitialValue()
             if (initialValue instanceof Promise) {
                 initialValue.then(value => {
-                    observer.next(value)
+                    if (value !== NO_INITIAL_VALUE) {
+                        observer.next(value)
+                    }
                 })
             } else {
-                observer.next(initialValue)
+                if (initialValue !== NO_INITIAL_VALUE) {
+                    observer.next(initialValue)
+                }
             }
         }
 
@@ -378,11 +394,13 @@ export function pick<T, K extends keyof T>(
     )
 }
 
+// biome-ignore lint/suspicious/noConfusingVoidType:
+export type UnsubscribableLike = Unsubscribable | (() => void) | void | null
+
 export function shareReplay<T>(): (observable: ObservableLike<T>) => Observable<T> {
     return (observable: ObservableLike<T>): Observable<T> => {
         const subject = new Subject<T>()
-        // biome-ignore lint/suspicious/noConfusingVoidType:
-        let subscription: Unsubscribable | (() => void) | void | null = null
+        let subscription: UnsubscribableLike = null
         let hasValue = false
         let latestValue: T
         let refCount = 0
@@ -478,4 +496,35 @@ const NO_VALUES_YET: Record<string, never> = {}
 
 function isEqualJSON(a: unknown, b: unknown): boolean {
     return JSON.stringify(a) === JSON.stringify(b)
+}
+
+export function startWith<T, R>(value: R): (source: ObservableLike<T>) => Observable<R | T> {
+    return (source: ObservableLike<T>) =>
+        new Observable<R | T>(observer => {
+            let sourceSubscription: UnsubscribableLike | undefined
+
+            try {
+                observer.next(value)
+
+                sourceSubscription = source.subscribe({
+                    next(val) {
+                        observer.next(val)
+                    },
+                    error(err) {
+                        observer.error(err)
+                    },
+                    complete() {
+                        observer.complete()
+                    },
+                })
+            } catch (err) {
+                observer.error(err)
+            }
+
+            return () => {
+                if (sourceSubscription) {
+                    unsubscribe(sourceSubscription)
+                }
+            }
+        })
 }
