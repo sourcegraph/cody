@@ -59,6 +59,8 @@ class CompletionProviderConfig {
                 return 'jaccard-similarity'
             case 'new-jaccard-similarity':
                 return 'new-jaccard-similarity'
+            case 'recent-edits':
+                return 'recent-edits'
             default:
                 return this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextBfgMixed)
                     ? 'bfg-mixed'

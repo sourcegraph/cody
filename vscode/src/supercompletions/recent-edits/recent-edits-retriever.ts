@@ -3,7 +3,16 @@ import * as vscode from 'vscode'
 
 interface TrackedDocument {
     content: string
+    languageId: string
+    uri: vscode.Uri
     changes: { timestamp: number; change: vscode.TextDocumentContentChangeEvent }[]
+}
+
+export interface DiffAcrossDocuments {
+    diff: PromptString
+    uri: vscode.Uri
+    languageId: string
+    latestChangeTimestamp: number
 }
 
 export class RecentEditsRetriever implements vscode.Disposable {
@@ -22,6 +31,25 @@ export class RecentEditsRetriever implements vscode.Disposable {
         this.disposables.push(workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this)))
         this.disposables.push(workspace.onDidRenameFiles(this.onDidRenameFiles.bind(this)))
         this.disposables.push(workspace.onDidDeleteFiles(this.onDidDeleteFiles.bind(this)))
+    }
+
+    public async getDiffAcrossDocuments(): Promise<DiffAcrossDocuments[]> {
+        const diffs: DiffAcrossDocuments[] = []
+        const diffPromises = Array.from(this.trackedDocuments.entries()).map(async ([uri, trackedDocument]) => {
+            const diff = await this.getDiff(vscode.Uri.parse(uri))
+            if (diff) {
+                return {
+                    diff,
+                    uri: trackedDocument.uri,
+                    languageId: trackedDocument.languageId,
+                    latestChangeTimestamp: Math.max(...trackedDocument.changes.map(c => c.timestamp))
+                }
+            }
+            return null
+        })
+        const results = await Promise.all(diffPromises)
+        diffs.push(...results.filter((result): result is DiffAcrossDocuments => result !== null))
+        return diffs
     }
 
     public async getDiff(uri: vscode.Uri): Promise<PromptString | null> {
@@ -86,6 +114,8 @@ export class RecentEditsRetriever implements vscode.Disposable {
     private trackDocument(document: vscode.TextDocument): TrackedDocument {
         const trackedDocument: TrackedDocument = {
             content: document.getText(),
+            languageId: document.languageId,
+            uri: document.uri,
             changes: [],
         }
         this.trackedDocuments.set(document.uri.toString(), trackedDocument)
