@@ -122,19 +122,12 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
     // The status bar item local embeddings is displaying, if any.
     private statusBar: vscode.StatusBarItem | undefined
 
-    // Fires when available local embeddings (may) have changed. This updates
-    // the codebase context, which touches the network and file system, so only
-    // use it for major changes like local embeddings being available at all,
-    // or the first index for a repository comes online.
-    private readonly changeEmitter = new vscode.EventEmitter<LocalEmbeddingsController>()
-
     constructor(
         private readonly context: vscode.ExtensionContext,
         config: LocalEmbeddingsConfig,
         private readonly modelConfig: EmbeddingsModelConfig
     ) {
         logDebug('LocalEmbeddingsController', 'constructor')
-        this.disposables.push(this.changeEmitter)
         this.disposables.push(
             vscode.commands.registerCommand('cody.embeddings.resolveIssue', () =>
                 this.resolveIssueCommand()
@@ -151,10 +144,6 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
             disposable.dispose()
         }
         this.statusBar?.dispose()
-    }
-
-    public get onChange(): vscode.Event<LocalEmbeddingsController> {
-        return this.changeEmitter.event
     }
 
     // Hint that local embeddings should start cody-engine, if necessary.
@@ -187,13 +176,6 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
             'setAccessToken',
             endpointIsDotcom ? 'is dotcom' : 'not dotcom'
         )
-        if (endpointIsDotcom !== this.endpointIsDotcom) {
-            // We will show, or hide, status depending on whether we are using
-            // dotcom. We do not offer local embeddings to Enterprise.
-            if (this.serviceStarted) {
-                this.changeEmitter.fire(this)
-            }
-        }
         this.endpointIsDotcom = endpointIsDotcom
         if (token === this.accessToken) {
             return Promise.resolve()
@@ -262,7 +244,6 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
             await service.request('embeddings/set-token', this.accessToken)
         }
         this.serviceStarted = true
-        this.changeEmitter.fire(this)
     }
 
     // After indexing succeeds or fails, try to load the index. Update state
@@ -276,7 +257,6 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
             void (async () => {
                 const loadedOk = await this.eagerlyLoad(path)
                 logDebug('LocalEmbeddingsController', 'load after indexing "done"', path, loadedOk)
-                this.changeEmitter.fire(this)
                 if (loadedOk && !this.lastError) {
                     await vscode.window.showInformationMessage('✨ Cody Embeddings Index Complete')
                 }
