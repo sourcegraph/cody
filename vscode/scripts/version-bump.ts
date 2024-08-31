@@ -100,7 +100,6 @@ function generateChangelog() {
     const devxServiceDir = process.env.DEVX_SERVICE_DIR ?? '../../devx-service'
     const changelogTag = 'jsm/cody-changelog'
 
-    // clone the devx-service repo into devxServiceDir if it doesn't already exist
     const hasBazel = run('which bazel')
     if (!hasBazel) {
         console.error(
@@ -114,6 +113,8 @@ function generateChangelog() {
         )
         return
     }
+
+    // clone the devx-service repo into devxServiceDir if it doesn't already exist
     if (!fs.existsSync(devxServiceDir)) {
         console.log(`Cloning devx-service repository into ${devxServiceDir}...`)
         execSync(`git clone https://github.com/sourcegraph/devx-service.git ${devxServiceDir}`, {
