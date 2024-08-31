@@ -38,7 +38,9 @@ if (!nextVersion || !semver.valid(nextVersion)) {
     process.exit(1)
 }
 
-generateChangelog()
+if (!isPatchRelease) {
+    generateChangelog()
+}
 
 execSync(`git checkout -b release-${releaseType}-v${nextVersion}`, { stdio: 'inherit' })
 
