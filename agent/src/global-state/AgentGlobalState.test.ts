@@ -5,8 +5,8 @@ import { AgentGlobalState } from './AgentGlobalState'
 describe('AgentGlobalState', () => {
     let globalState: AgentGlobalState
 
-    beforeEach(() => {
-        globalState = new AgentGlobalState(CodyIDE.VSCode)
+    beforeEach(async () => {
+        globalState = await AgentGlobalState.initialize(CodyIDE.VSCode)
     })
 
     it('should store and retrieve values', () => {

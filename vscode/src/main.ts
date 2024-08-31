@@ -106,7 +106,7 @@ export async function start(
         context.extensionMode === vscode.ExtensionMode.Test
 
     // Set internal storage fields for storage provider singletons
-    await localStorage.setStorage(
+    localStorage.setStorage(
         platform.createStorage ? await platform.createStorage() : context.globalState
     )
 

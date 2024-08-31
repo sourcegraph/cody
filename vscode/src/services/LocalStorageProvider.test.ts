@@ -8,7 +8,7 @@ import { localStorage } from './LocalStorageProvider'
 describe('LocalStorageProvider', async () => {
     // Set up local storage backed by an object.
     let localStorageData: { [key: string]: unknown } = {}
-    await localStorage.setStorage({
+    localStorage.setStorage({
         get: (key: string) => localStorageData[key],
         update: (key: string, value: unknown) => {
             localStorageData[key] = value

@@ -11,7 +11,6 @@ import type {
 } from '@sourcegraph/cody-shared'
 
 import { isSourcegraphToken } from '../chat/protocol'
-import migrate from './migrations/migrate'
 
 export type ChatLocation = 'editor' | 'sidebar'
 
@@ -42,9 +41,8 @@ class LocalStorage {
         return this._storage
     }
 
-    public async setStorage(storage: Memento): Promise<void> {
+    public setStorage(storage: Memento) {
         this._storage = storage
-        await migrate(storage)
     }
 
     public getEndpoint(): string | null {

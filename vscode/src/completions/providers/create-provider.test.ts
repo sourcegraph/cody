@@ -45,7 +45,7 @@ graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
 
 describe('createProviderConfig', () => {
     beforeAll(async () => {
-        await localStorage.setStorage({
+        localStorage.setStorage({
             get: () => null,
             update: () => Promise.resolve(undefined),
         } as any as vscode.Memento)

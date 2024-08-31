@@ -5,11 +5,20 @@ import * as vscode_shim from '../vscode-shim'
 
 import path from 'node:path'
 import { localStorage } from '../../../vscode/src/services/LocalStorageProvider'
+import migrate from './migrations/migrate'
 
 export class AgentGlobalState implements vscode.Memento {
     private db: DB
 
-    constructor(ide: string, dir?: string) {
+    static async initialize(ide: string, dir?: string): Promise<AgentGlobalState> {
+        const globalState = new AgentGlobalState(ide, dir)
+        if (globalState.db instanceof LocalStorageDB) {
+            await migrate(globalState)
+        }
+        return globalState
+    }
+
+    private constructor(ide: string, dir?: string) {
         // If not provided, will default to an in-memory database
         if (dir) {
             this.db = new LocalStorageDB(ide, dir)
