@@ -8,6 +8,7 @@ import {
     type CodyCommand,
     ModelUsage,
     telemetryRecorder,
+    waitUntilComplete,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
@@ -1295,6 +1296,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { remoteRepos: panel.remoteRepos }
         })
 
+        this.registerAuthenticatedRequest('chat/setModel', async ({ id, model }) => {
+            const panel = this.webPanels.getPanelOrError(id)
+            await waitUntilComplete(panel.extensionAPI.setChatModel(model))
+            return null
+        })
+
         const submitOrEditHandler = async (
             { id, message }: { id: string; message: WebviewMessage },
             token: vscode.CancellationToken
@@ -1700,8 +1707,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         panel.isMessageInProgress = message.isMessageInProgress
                         panel.messageInProgressChange.fire(message)
                     }
-                } else if (message.type === 'chatModels') {
-                    panel.models = message.models
                 } else if (message.type === 'context/remote-repos') {
                     panel.remoteRepos = message.repos
                 } else if (message.type === 'errors') {

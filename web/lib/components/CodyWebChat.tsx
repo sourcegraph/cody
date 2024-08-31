@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import { type FC, type FunctionComponent, useCallback, useLayoutEffect, useMemo, useState } from 'react'
+import { type FC, type FunctionComponent, useLayoutEffect, useMemo, useState } from 'react'
 import { URI } from 'vscode-uri'
 
 import {
@@ -10,7 +10,6 @@ import {
     type ContextItemOpenCtx,
     type ContextItemRepository,
     ContextItemSource,
-    type Model,
     PromptString,
     REMOTE_DIRECTORY_PROVIDER_URI,
     type SerializedChatTranscript,
@@ -24,7 +23,6 @@ import { ChatMentionContext, type ChatMentionsSettings } from '@sourcegraph/prom
 import { getAppWrappers } from 'cody-ai/webviews/App'
 import { CodyPanel } from 'cody-ai/webviews/CodyPanel'
 import { ChatEnvironmentContext } from 'cody-ai/webviews/chat/ChatEnvironmentContext'
-import type { ChatModelContext } from 'cody-ai/webviews/chat/models/chatModelContext'
 import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
 import type { View } from 'cody-ai/webviews/tabs'
 import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
@@ -120,7 +118,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
-    const [chatModels, setChatModels] = useState<Model[]>()
     const [config, setConfig] = useState<Config | null>(null)
     const [view, setView] = useState<View | undefined>()
     const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
@@ -152,10 +149,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 case 'transcript-errors':
                     setIsTranscriptError(message.isTranscriptError)
                     break
-                case 'chatModels':
-                    // The default model will always be the first one on the list.
-                    setChatModels(message.models)
-                    break
                 case 'config':
                     message.config.webviewType = 'sidebar'
                     message.config.multipleWebviewsEnabled = false
@@ -173,29 +166,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
 
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
-
-    const onCurrentChatModelChange = useCallback(
-        (selected: Model): void => {
-            if (!chatModels || !setChatModels) {
-                return
-            }
-            // Notify the host about the manual change,
-            // and the host will return the updated change models via onMessage
-            vscodeAPI.postMessage({
-                command: 'chatModel',
-                model: selected.id,
-            })
-        },
-        [chatModels, vscodeAPI]
-    )
-    const chatModelContext = useMemo<ChatModelContext>(
-        () => ({
-            chatModels,
-            onCurrentChatModelChange,
-            serverSentModelsEnabled: config?.configFeatures.serverSentModels,
-        }),
-        [chatModels, onCurrentChatModelChange, config]
-    )
 
     const clientState: ClientStateForWebview = useMemo<ClientStateForWebview>(() => {
         const { repository, fileURL, isDirectory } = initialContext ?? {}
@@ -267,12 +237,11 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const envVars = useMemo(() => ({ clientType: CodyIDE.Web }), [])
 
     const wrappers = useMemo<Wrapper[]>(
-        () =>
-            getAppWrappers(vscodeAPI, telemetryRecorder, chatModelContext, clientState, config, envVars),
-        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, config, envVars]
+        () => getAppWrappers(vscodeAPI, telemetryRecorder, clientState, config, envVars),
+        [vscodeAPI, telemetryRecorder, clientState, config, envVars]
     )
 
-    const isLoading = !chatModels || !config || !view || !userHistory
+    const isLoading = !config || !view || !userHistory
 
     return (
         <div className={className} data-cody-web-chat={true}>

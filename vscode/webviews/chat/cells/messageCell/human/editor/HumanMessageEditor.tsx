@@ -1,10 +1,17 @@
 import {
     FAST_CHAT_INPUT_TOKEN_BUDGET,
+    type Model,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     textContentFromSerializedLexicalNode,
 } from '@sourcegraph/cody-shared'
-import { PromptEditor, type PromptEditorRefAPI, useClientState } from '@sourcegraph/prompt-editor'
+import {
+    PromptEditor,
+    type PromptEditorRefAPI,
+    useClientState,
+    useExtensionAPI,
+    useObservable,
+} from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import {
     type FocusEventHandler,
@@ -12,13 +19,13 @@ import {
     useCallback,
     useEffect,
     useImperativeHandle,
+    useMemo,
     useRef,
     useState,
 } from 'react'
 import type { UserAccountInfo } from '../../../../../Chat'
 import { type ClientActionListener, useClientActionListener } from '../../../../../client/clientState'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
-import { useCurrentChatModel } from '../../../../models/chatModelContext'
 import styles from './HumanMessageEditor.module.css'
 import type { SubmitButtonState } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
@@ -329,4 +336,9 @@ export const HumanMessageEditor: FunctionComponent<{
             )}
         </div>
     )
+}
+
+function useCurrentChatModel(): Model | undefined {
+    const models = useExtensionAPI().models
+    return useObservable(useMemo(() => models(), [models])).value?.at(0)
 }

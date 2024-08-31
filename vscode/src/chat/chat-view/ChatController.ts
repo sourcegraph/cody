@@ -10,7 +10,9 @@ import {
     type ChatClient,
     type ChatMessage,
     ClientConfigSingleton,
+    type ClientConfigurationWithAccessToken,
     CodyIDE,
+    type ConfigWatcher,
     type ContextItem,
     type ContextItemOpenCtx,
     ContextItemSource,
@@ -42,6 +44,7 @@ import {
     recordErrorToSpan,
     reformatBotMessageForChat,
     serializeChatMessage,
+    startWith,
     telemetryRecorder,
     tracer,
     truncatePromptString,
@@ -49,9 +52,14 @@ import {
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import { promiseFactoryToObservable } from '@sourcegraph/cody-shared/src/misc/observable'
+import {
+    combineLatest,
+    promiseFactoryToObservable,
+    promiseToObservable,
+} from '@sourcegraph/cody-shared/src/misc/observable'
 import { TokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
+import { map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { version as VSCEVersion } from '../../../package.json'
 import { View } from '../../../webviews/tabs/types'
@@ -123,6 +131,8 @@ interface ChatControllerOptions {
     editor: VSCodeEditor
     guardrails: Guardrails
     startTokenReceiver?: typeof startTokenReceiver
+
+    configWatcher: ConfigWatcher<ClientConfigurationWithAccessToken>
 }
 
 export interface ChatSession {
@@ -204,6 +214,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
     private readonly contextAPIClient: ContextAPIClient | null
+    private configWatcher: ConfigWatcher<ClientConfigurationWithAccessToken>
 
     private disposables: vscode.Disposable[] = []
 
@@ -222,6 +233,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         contextAPIClient,
         contextRetriever,
         extensionClient,
+        configWatcher,
     }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.chatClient = chatClient
@@ -229,6 +241,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.editor = editor
         this.extensionClient = extensionClient
         this.contextRetriever = contextRetriever
+        this.configWatcher = configWatcher
 
         this.chatModel = new ChatModel(getDefaultModelID())
 
@@ -306,15 +319,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             }
             case 'abort':
                 this.handleAbort()
-                break
-            case 'chatModel':
-                // Because this was a user action to change the model we will set that
-                // as a global default for chat
-                await modelsService.instance!.setSelectedModel(ModelUsage.Chat, message.model)
-                this.handleSetChatModel(message.model)
-                break
-            case 'get-chat-models':
-                this.postChatModels()
                 break
             case 'getUserContext': {
                 const result = await getChatContextItemsForMention({
@@ -561,7 +565,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         // Get the latest model list available to the current user to update the ChatModel.
         if (status.isLoggedIn) {
-            this.handleSetChatModel(getDefaultModelID())
+            this.chatModel.updateModel(getDefaultModelID())
         }
     }
 
@@ -610,7 +614,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
 
         // Update the chat model providers to ensure the correct token limit is set
-        this.handleSetChatModel(this.chatModel.modelID)
+        this.chatModel.updateModel(this.chatModel.modelID)
 
         await this.saveSession()
         this.initDoer.signalInitialized()
@@ -942,11 +946,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
     }
 
-    private handleSetChatModel(modelID: string) {
-        this.chatModel.updateModel(modelID)
-        this.postChatModels()
-    }
-
     public async handleGetUserEditorContext(uri?: URI): Promise<void> {
         // Get selection from the active editor
         const selection = vscode.window.activeTextEditor?.selection
@@ -1069,19 +1068,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         void this.postMessage({ type: 'errors', errors: error.message })
         captureException(error)
-    }
-
-    private postChatModels(): void {
-        const authStatus = authProvider.instance!.getAuthStatus()
-        if (!authStatus?.isLoggedIn) {
-            return
-        }
-        const models = modelsService.instance!.getModels(ModelUsage.Chat)
-
-        void this.postMessage({
-            type: 'chatModels',
-            models,
-        })
     }
 
     /**
@@ -1490,6 +1476,22 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         promiseFactoryToObservable(signal =>
                             mergedPromptsAndLegacyCommands(query, signal)
                         ),
+                    models: () =>
+                        combineLatest([
+                            this.configWatcher.changes,
+                            modelsService.instance!.selectedOrDefaultModelChanges.pipe(
+                                startWith(undefined)
+                            ),
+                        ]).pipe(map(() => modelsService.instance!.getModels(ModelUsage.Chat))),
+                    setChatModel: model => {
+                        this.chatModel.updateModel(model)
+
+                        // Because this was a user action to change the model we will set that
+                        // as a global default for chat
+                        return promiseToObservable(
+                            modelsService.instance!.setSelectedModel(ModelUsage.Chat, model)
+                        )
+                    },
                 }
             )
         )

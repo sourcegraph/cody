@@ -1,8 +1,8 @@
 import {
     type GenericVSCodeWrapper,
     type WebviewToExtensionAPI,
+    createExtensionAPI,
     createMessageAPIForWebview,
-    proxyExtensionAPI,
 } from '@sourcegraph/cody-shared'
 import { type FunctionComponent, type ReactNode, createContext, useContext, useMemo } from 'react'
 
@@ -12,14 +12,10 @@ export const ExtensionAPIProviderFromVSCodeAPI: FunctionComponent<{
     vscodeAPI: GenericVSCodeWrapper<any, any>
     children: ReactNode
 }> = ({ vscodeAPI, children }) => {
-    const extensionAPI = useMemo<WebviewToExtensionAPI>(() => {
-        const messageAPI = createMessageAPIForWebview(vscodeAPI)
-        return {
-            mentionMenuData: proxyExtensionAPI(messageAPI, 'mentionMenuData'),
-            evaluatedFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluatedFeatureFlag'),
-            prompts: proxyExtensionAPI(messageAPI, 'prompts'),
-        }
-    }, [vscodeAPI])
+    const extensionAPI = useMemo<WebviewToExtensionAPI>(
+        () => createExtensionAPI(createMessageAPIForWebview(vscodeAPI)),
+        [vscodeAPI]
+    )
     return <context.Provider value={extensionAPI}>{children}</context.Provider>
 }
 

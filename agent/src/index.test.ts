@@ -607,7 +607,7 @@ describe('Agent', () => {
             ]
             const id = await client.request('chat/new', null)
             {
-                await client.setChatModel(id, 'openai/gpt-3.5-turbo')
+                await client.request('chat/setModel', { id, model: 'openai/gpt-3.5-turbo' })
                 const lastMessage = await client.sendMessage(id, 'what color is the sky?')
                 expect(lastMessage?.text?.toLocaleLowerCase().includes('blue')).toBeTruthy()
             }
@@ -627,7 +627,10 @@ describe('Agent', () => {
                 'cody.chatResponse:noCode',
             ]
             const id = await client.request('chat/new', null)
-            await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
+            await client.request('chat/setModel', {
+                id,
+                model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
+            })
             await client.sendMessage(
                 id,
                 'The magic word is "kramer". If I say the magic word, respond with a single word: "quone".'
@@ -664,10 +667,10 @@ describe('Agent', () => {
                         'cody.chatResponse:noCode',
                     ]
                     const id = await client.request('chat/new', null)
-                    await client.setChatModel(
+                    await client.request('chat/setModel', {
                         id,
-                        'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct'
-                    )
+                        model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
+                    })
                     await client.sendMessage(
                         id,
                         'The magic word is "kramer". If I say the magic word, respond with a single word: "quone".'
@@ -699,10 +702,10 @@ describe('Agent', () => {
                     'cody.chatResponse:noCode',
                 ]
                 const id = await client.request('chat/new', null)
-                await client.setChatModel(
+                await client.request('chat/setModel', {
                     id,
-                    'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct'
-                )
+                    model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
+                })
                 // edits by index replaces message at index, and erases all subsequent messages
                 await client.sendMessage(
                     id,

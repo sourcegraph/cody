@@ -8,7 +8,6 @@ import type {
     ContextItem,
     ContextItemSource,
     MentionQuery,
-    Model,
     Prompt,
     RangeData,
     RequestMessage,
@@ -109,9 +108,7 @@ export type WebviewMessage =
           command: 'show-page'
           page: string
       }
-    | { command: 'chatModel'; model: string }
     | { command: 'command'; id: string; arg?: string | undefined | null }
-    | { command: 'get-chat-models' }
     | {
           command: 'openFile'
           uri: URI
@@ -226,10 +223,6 @@ export type ExtensionMessage =
           appendTextToLastPromptEditor?: string | null | undefined
           smartApplyResult?: SmartApplyResult | undefined | null
       }
-    /**
-     * The current default model will always be the first one on the list.
-     */
-    | { type: 'chatModels'; models: Model[] }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'context/remote-repos'; repos: Repo[] }
     | {

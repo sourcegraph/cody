@@ -2,9 +2,11 @@ import {
     type AuthStatus,
     type ContextItem,
     type ContextItemSymbol,
+    EMPTY,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SymbolKind,
+    getDotComDefaultModels,
     promiseFactoryToObservable,
 } from '@sourcegraph/cody-shared'
 import { ClientStateContextProvider, ExtensionAPIProviderForTestsOnly } from '@sourcegraph/prompt-editor'
@@ -74,6 +76,8 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         prompts: { type: 'results', results: FIXTURE_PROMPTS },
                         commands: FIXTURE_COMMANDS,
                     }),
+                    models: () => Observable.of(getDotComDefaultModels()),
+                    setChatModel: () => EMPTY,
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
             {

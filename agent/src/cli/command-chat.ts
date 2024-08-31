@@ -194,13 +194,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     const id = await client.request('chat/new', null)
 
     if (options.model) {
-        void client.request('webview/receiveMessage', {
-            id,
-            message: {
-                command: 'chatModel',
-                model: options.model,
-            },
-        })
+        client.request('chat/setModel', { id, model: options.model })
     }
 
     if (options.contextRepo && options.contextRepo.length > 0) {

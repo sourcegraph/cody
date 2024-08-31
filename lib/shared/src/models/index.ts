@@ -1,3 +1,4 @@
+import { type Observable, Subject } from 'observable-fns'
 import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
 import { type ClientConfiguration, CodyIDE } from '../configuration'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
@@ -428,8 +429,14 @@ export class ModelsService {
         await this.flush()
     }
 
+    private readonly _selectedOrDefaultModelChanges = new Subject<void>()
+    public get selectedOrDefaultModelChanges(): Observable<void> {
+        return this._selectedOrDefaultModelChanges
+    }
+
     private async flush(): Promise<void> {
         await this.storage?.set(ModelsService.STORAGE_KEY, JSON.stringify(this._preferences))
+        this._selectedOrDefaultModelChanges.next()
     }
 
     /**

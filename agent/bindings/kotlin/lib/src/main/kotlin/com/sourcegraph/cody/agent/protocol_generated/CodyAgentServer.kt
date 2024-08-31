@@ -32,6 +32,8 @@ interface CodyAgentServer {
   fun chat_import(params: Chat_ImportParams): CompletableFuture<Null?>
   @JsonRequest("chat/remoteRepos")
   fun chat_remoteRepos(params: Chat_RemoteReposParams): CompletableFuture<Chat_RemoteReposResult>
+  @JsonRequest("chat/setModel")
+  fun chat_setModel(params: Chat_SetModelParams): CompletableFuture<Null?>
   @JsonRequest("commands/explain")
   fun commands_explain(params: Null?): CompletableFuture<String>
   @JsonRequest("commands/test")

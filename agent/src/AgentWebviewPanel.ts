@@ -1,10 +1,13 @@
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
-import type { Model } from '@sourcegraph/cody-shared'
-
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 
+import {
+    type WebviewToExtensionAPI,
+    createExtensionAPI,
+    createMessageAPIForWebview,
+} from '@sourcegraph/cody-shared'
 import type { Repo } from '../../vscode/src/context/repo-fetcher'
 import { EventEmitter, defaultWebviewPanel } from './vscode-shim'
 
@@ -44,7 +47,6 @@ interface AttributionResult {
 export class AgentWebviewPanel implements vscode.WebviewPanel {
     public panelID = uuid.v4()
     public chatID: string | undefined // also known as `sessionID` in some parts of the Cody codebase
-    public models: Model[] | undefined
     public remoteRepos: Repo[] | undefined
     public isInitialized = false
     public isMessageInProgress: undefined | boolean
@@ -139,6 +141,25 @@ export class AgentWebviewPanel implements vscode.WebviewPanel {
     public get onDidChangeViewState(): vscode.Event<vscode.WebviewPanelOnDidChangeViewStateEvent> {
         return this.panel.onDidChangeViewState
     }
+
+    /**
+     * Call an extension host API exposed to the "webview". See {@link WebviewToExtensionAPI}.
+     */
+    public get extensionAPI(): WebviewToExtensionAPI {
+        if (!this._extensionAPI) {
+            this._extensionAPI = createExtensionAPI(
+                createMessageAPIForWebview({
+                    postMessage: message => this.receiveMessage.fire(message),
+                    onMessage: callback => {
+                        const disposable = this.onDidPostMessage(callback)
+                        return () => disposable.dispose()
+                    },
+                })
+            )
+        }
+        return this._extensionAPI
+    }
+    private _extensionAPI: WebviewToExtensionAPI | undefined
 
     public reveal(): void {
         this.panel.reveal()

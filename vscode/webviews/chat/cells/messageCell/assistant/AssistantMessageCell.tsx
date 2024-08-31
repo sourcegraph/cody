@@ -2,6 +2,7 @@ import {
     type ChatMessage,
     ContextItemSource,
     type Guardrails,
+    type Model,
     type PromptString,
     contextItemsFromPromptEditorValue,
     filterContextItemsFromPromptEditorValue,
@@ -10,7 +11,7 @@ import {
     reformatBotMessageForChat,
     serializedPromptEditorStateFromChatMessage,
 } from '@sourcegraph/cody-shared'
-import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
+import { type PromptEditorRefAPI, useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
@@ -23,7 +24,6 @@ import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
 import { type Interaction, editHumanMessage } from '../../../Transcript'
 import { FeedbackButtons } from '../../../components/FeedbackButtons'
 import { LoadingDots } from '../../../components/LoadingDots'
-import { useChatModelByID } from '../../../models/chatModelContext'
 import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
 import { ContextFocusActions } from './ContextFocusActions'
 
@@ -214,4 +214,21 @@ export function makeHumanMessageInfo(
             }
         },
     }
+}
+
+function useChatModelByID(
+    model: string | undefined
+): Pick<Model, 'id' | 'title' | 'provider'> | undefined {
+    const models = useExtensionAPI().models
+    const chatModels = useObservable(useMemo(() => models(), [models])).value
+    return (
+        chatModels?.find(m => m.id === model) ??
+        (model
+            ? {
+                  id: model,
+                  title: model,
+                  provider: 'unknown',
+              }
+            : undefined)
+    )
 }
