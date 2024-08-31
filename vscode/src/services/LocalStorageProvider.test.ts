@@ -5,7 +5,7 @@ import type { AuthStatus, UserLocalHistory } from '@sourcegraph/cody-shared'
 
 import { localStorage } from './LocalStorageProvider'
 
-describe('LocalStorageProvider', async () => {
+describe('LocalStorageProvider', () => {
     // Set up local storage backed by an object.
     let localStorageData: { [key: string]: unknown } = {}
     localStorage.setStorage({

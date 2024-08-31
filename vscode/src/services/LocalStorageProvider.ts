@@ -41,7 +41,7 @@ class LocalStorage {
         return this._storage
     }
 
-    public setStorage(storage: Memento) {
+    public setStorage(storage: Memento): void {
         this._storage = storage
     }
 

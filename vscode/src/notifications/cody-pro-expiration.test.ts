@@ -14,7 +14,7 @@ import {
 import { type AuthProvider, authProvider } from '../services/AuthProvider'
 import { CodyProExpirationNotifications } from './cody-pro-expiration'
 
-describe('Cody Pro expiration notifications', async () => {
+describe('Cody Pro expiration notifications', () => {
     let notifier: CodyProExpirationNotifications
     let apiClient: SourcegraphGraphQLAPIClient
     let authStatus: AuthStatus
