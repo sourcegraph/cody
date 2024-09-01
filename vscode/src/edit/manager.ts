@@ -221,12 +221,15 @@ export class EditManager implements vscode.Disposable {
         /**
          * Updates the editor's selection and view for 'doc' or 'test' intents, causing the cursor to
          * move to the beginning of the selection range considered for the edit.
-         * 
+         *
          */
         if (editor.active && (intent === 'doc' || intent === 'test')) {
             const newPosition = proposedRange.start
             editor.active.selection = new vscode.Selection(newPosition, newPosition)
-            editor.active.revealRange(new vscode.Range(newPosition, newPosition), vscode.TextEditorRevealType.InCenter)
+            editor.active.revealRange(
+                new vscode.Range(newPosition, newPosition),
+                vscode.TextEditorRevealType.InCenter
+            )
         }
         const provider = this.getProviderForTask(task)
         await provider.startEdit()
