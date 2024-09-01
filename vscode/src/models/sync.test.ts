@@ -1,5 +1,6 @@
 import {
     ClientConfigSingleton,
+    DOTCOM_URL,
     Model,
     ModelTag,
     ModelUsage,
@@ -46,14 +47,14 @@ describe('syncModels', () => {
     })
 
     it('sets dotcom default models if on dotcom', async () => {
-        const authStatus = { ...defaultAuthStatus, isDotCom: true, authenticated: true }
+        const authStatus = { ...defaultAuthStatus, endpoint: DOTCOM_URL.toString(), authenticated: true }
 
         await syncModels(authStatus)
         expect(setModelsSpy).toHaveBeenCalledWith(getDotComDefaultModels())
     })
 
     it('sets no models if the enterprise instance does not have Cody enabled', async () => {
-        const authStatus = { ...defaultAuthStatus, isDotCom: false, authenticated: true }
+        const authStatus = { ...defaultAuthStatus, endpoint: 'https://example.com', authenticated: true }
 
         await syncModels(authStatus)
         expect(setModelsSpy).toHaveBeenCalledWith([])
@@ -64,7 +65,7 @@ describe('syncModels', () => {
         const authStatus = {
             ...defaultAuthStatus,
             authenticated: true,
-            isDotCom: false,
+            endpoint: 'https://example.com',
             configOverwrites: { chatModel },
         }
 

@@ -3,7 +3,7 @@ import ora, { type Ora, spinners } from 'ora'
 import path from 'node:path'
 
 import type { Polly } from '@pollyjs/core'
-import { type ContextItem, ModelUsage, TokenCounterUtils } from '@sourcegraph/cody-shared'
+import { type ContextItem, ModelUsage, TokenCounterUtils, isDotCom } from '@sourcegraph/cody-shared'
 import { Command } from 'commander'
 
 import Table from 'easy-table'
@@ -198,7 +198,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     }
 
     if (options.contextRepo && options.contextRepo.length > 0) {
-        if (serverInfo.authStatus?.isDotCom) {
+        if (isDotCom(serverInfo.authStatus)) {
             spinner.fail(
                 'The --context-repo option is only available for Sourcegraph Enterprise users. ' +
                     'Please sign into an Enterprise instance with the command: cody auth logout && cody auth login --web'

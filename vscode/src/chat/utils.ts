@@ -1,6 +1,11 @@
 import semver from 'semver'
 
-import { type AuthStatus, offlineModeAuthStatus, unauthenticatedStatus } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    isDotCom,
+    offlineModeAuthStatus,
+    unauthenticatedStatus,
+} from '@sourcegraph/cody-shared'
 import type { CurrentUserInfo } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 type NewAuthStatusOptions = Omit<
@@ -29,7 +34,6 @@ export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
         siteHasCodyEnabled,
         username,
         authenticated,
-        isDotCom,
         siteVersion,
         userOrganizations,
     } = options
@@ -40,11 +44,12 @@ export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
     if (!authenticated) {
         return { ...unauthenticatedStatus, endpoint }
     }
+    const isDotCom_ = isDotCom(endpoint)
     const primaryEmail =
         typeof options.primaryEmail === 'string'
             ? options.primaryEmail
             : options.primaryEmail?.email || ''
-    const requiresVerifiedEmail = isDotCom
+    const requiresVerifiedEmail = isDotCom_
     const hasVerifiedEmail = requiresVerifiedEmail && options.hasVerifiedEmail
     const isAllowed = !requiresVerifiedEmail || hasVerifiedEmail
     return {
@@ -55,9 +60,9 @@ export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
         requiresVerifiedEmail,
         hasVerifiedEmail,
         isLoggedIn: siteHasCodyEnabled && authenticated && isAllowed,
-        codyApiVersion: inferCodyApiVersion(siteVersion, isDotCom),
+        codyApiVersion: inferCodyApiVersion(siteVersion, isDotCom_),
         isFireworksTracingEnabled:
-            isDotCom && !!userOrganizations?.nodes.find(org => org.name === 'sourcegraph'),
+            isDotCom_ && !!userOrganizations?.nodes.find(org => org.name === 'sourcegraph'),
     }
 }
 

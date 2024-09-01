@@ -97,6 +97,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                             serverSentModels: true,
                             attribution: true,
                         },
+                        isDotComUser: true,
                     },
                 },
             } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,

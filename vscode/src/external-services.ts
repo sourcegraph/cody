@@ -10,6 +10,7 @@ import {
     type SourcegraphCompletionsClient,
     SourcegraphGuardrailsClient,
     graphqlClient,
+    isDotCom,
     isError,
 } from '@sourcegraph/cody-shared'
 
@@ -76,7 +77,7 @@ export async function configureExternalServices(
 
     // Disable local embeddings for enterprise users.
     const localEmbeddings =
-        authProvider.instance!.status.isLoggedIn && authProvider.instance!.status.isDotCom
+        authProvider.instance!.status.isLoggedIn && isDotCom(authProvider.instance!.status)
             ? await platform.createLocalEmbeddingsController?.(initialConfig)
             : undefined
 

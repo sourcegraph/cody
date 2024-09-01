@@ -14,6 +14,7 @@ import {
     contextFiltersProvider,
     featureFlagProvider,
     graphqlClient,
+    isDotCom,
     modelsService,
     setClientNameVersion,
     setLogger,
@@ -311,7 +312,10 @@ async function initializeSingletons(
                     void localStorage.setConfig(config)
                     graphqlClient.setConfig(config)
                     void featureFlagProvider.instance!.refresh()
-                    contextFiltersProvider.instance!.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
+                    contextFiltersProvider.instance!.init(
+                        repoNameResolver.getRepoNamesFromWorkspaceUri,
+                        authProvider.instance!
+                    )
                     void modelsService.instance!.onConfigChange(config)
                     upstreamHealthProvider.instance!.onConfigurationChange(config)
                 },
@@ -529,7 +533,7 @@ function registerUpgradeHandlers(
         // Check if user has just moved back from a browser window to upgrade cody pro
         vscode.window.onDidChangeWindowState(async ws => {
             const authStatus = authProvider.instance!.status
-            if (ws.focused && authStatus.isDotCom && authStatus.isLoggedIn) {
+            if (ws.focused && isDotCom(authStatus) && authStatus.isLoggedIn) {
                 const res = await graphqlClient.getCurrentUserCodyProEnabled()
                 if (res instanceof Error) {
                     logError('onDidChangeWindowState', 'getCurrentUserCodyProEnabled', res)

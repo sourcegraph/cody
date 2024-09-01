@@ -37,6 +37,7 @@ import {
     isAbortErrorOrSocketHangUp,
     isContextWindowLimitError,
     isDefined,
+    isDotCom,
     isError,
     isRateLimitError,
     modelsService,
@@ -153,7 +154,7 @@ export class AuthDependentRetrievers {
     }
 
     private isConsumer(): boolean {
-        return authProvider.instance!.status.isDotCom
+        return isDotCom(authProvider.instance!.status)
     }
 
     private allowRemoteContext(): boolean {
@@ -595,6 +596,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 attribution: clientConfig?.attributionEnabled ?? false,
                 serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
             },
+            isDotComUser: isDotCom(authStatus),
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
@@ -785,7 +787,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 ...contextSummary,
                 // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
                 // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                recordsPrivateMetadataTranscript: authStatus.isDotCom ? 1 : 0,
+                recordsPrivateMetadataTranscript: isDotCom(authStatus) ? 1 : 0,
             },
             privateMetadata: {
                 properties,
@@ -794,7 +796,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // V2 telemetry exports privateMetadata only for DotCom users
                 // the condition below is an additional safeguard measure
                 promptText:
-                    authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
+                    isDotCom(authStatus) && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
             },
         })
     }
@@ -1115,8 +1117,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         ignored: ContextItem[]
     }): Promise<object> {
         // 🚨 SECURITY: included only for dotcom users & public repos
-        const isDotCom = authProvider.instance!.status.isDotCom
-        if (!isDotCom) {
+        if (!isDotCom(authProvider.instance!.status)) {
             return {}
         }
         if (!workspaceReposMonitor) {
@@ -1290,14 +1291,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 ...generatedCode,
                 // Flag indicating this is a transcript event to go through ML data pipeline. Only for dotcom users
                 // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                recordsPrivateMetadataTranscript: authStatus.isDotCom ? 1 : 0,
+                recordsPrivateMetadataTranscript: isDotCom(authStatus) ? 1 : 0,
             },
             privateMetadata: {
                 // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                 // V2 telemetry exports privateMetadata only for DotCom users
                 // the condition below is an aditional safegaurd measure
                 responseText:
-                    authStatus.isDotCom && truncatePromptString(messageText, CHAT_OUTPUT_TOKEN_BUDGET),
+                    isDotCom(authStatus) && truncatePromptString(messageText, CHAT_OUTPUT_TOKEN_BUDGET),
                 chatModel: this.chatModel.modelID,
             },
         })
@@ -1553,7 +1554,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (workspaceReposMonitor) {
             const { isPublic: isWorkspacePublic, repoMetadata } =
                 await workspaceReposMonitor.getRepoMetadataIfPublic()
-            if (authStatus.isDotCom && legacyAddEnhancedContext && isWorkspacePublic) {
+            if (isDotCom(authStatus) && legacyAddEnhancedContext && isWorkspacePublic) {
                 gitMetadata = JSON.stringify(repoMetadata)
             }
         }
@@ -1561,7 +1562,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             metadata: {
                 // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
                 // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                recordsPrivateMetadataTranscript: authStatus.endpoint && authStatus.isDotCom ? 1 : 0,
+                recordsPrivateMetadataTranscript: authStatus.endpoint && isDotCom(authStatus) ? 1 : 0,
                 addEnhancedContext: legacyAddEnhancedContext ? 1 : 0,
 
                 // All mentions
@@ -1604,7 +1605,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // V2 telemetry exports privateMetadata only for DotCom users
                 // the condition below is an additional safeguard measure
                 promptText:
-                    authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
+                    isDotCom(authStatus) && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
                 gitMetadata,
             },
         })

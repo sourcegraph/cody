@@ -13,6 +13,7 @@ import {
     distinctUntilChanged,
     fromVSCodeEvent,
     graphqlClient,
+    isDotCom,
     isError,
     isNetworkLikeError,
     logError,
@@ -92,7 +93,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
         if (isOfflineMode) {
             const lastUser = localStorage.getLastStoredUser()
-            return { ...offlineModeAuthStatus, ...lastUser }
+            return { ...offlineModeAuthStatus, endpoint, ...lastUser }
         }
 
         // Cody Web can work without access token since authorization flow
@@ -130,13 +131,10 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
         const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
-        const isDotCom = this.client.isDotCom()
-
-        if (!isDotCom) {
+        if (!isDotCom(endpoint)) {
             return newAuthStatus({
                 ...userInfo,
                 endpoint,
-                isDotCom,
                 siteVersion,
                 configOverwrites,
                 authenticated: true,
@@ -159,7 +157,6 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         return newAuthStatus({
             ...userInfo,
             endpoint,
-            isDotCom,
             siteHasCodyEnabled,
             siteVersion,
             configOverwrites,

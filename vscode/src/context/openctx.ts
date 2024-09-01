@@ -10,6 +10,7 @@ import {
     combineLatest,
     featureFlagProvider,
     graphqlClient,
+    isDotCom,
     isError,
     logError,
     setOpenCtx,
@@ -75,7 +76,7 @@ export async function exposeOpenCtxClient(
 
 export function getOpenCtxProviders(
     configChanges: Observable<ClientConfiguration>,
-    authStatusChanges: Observable<AuthStatus>,
+    authStatusChanges: Observable<Pick<AuthStatus, 'endpoint'>>,
     isValidSiteVersion: boolean
 ): Observable<ImportedProviderConfiguration[]> {
     return combineLatest([
@@ -85,7 +86,7 @@ export function getOpenCtxProviders(
     ]).map(
         ([config, authStatus, gitMentionProvider]: [
             ClientConfiguration,
-            AuthStatus,
+            Pick<AuthStatus, 'endpoint'>,
             boolean | undefined,
         ]) => {
             const providers: ImportedProviderConfiguration[] = [
@@ -98,7 +99,7 @@ export function getOpenCtxProviders(
 
             // Remote repository and remote files should be available only for
             // non-dotcom users
-            if (!authStatus.isDotCom) {
+            if (!isDotCom(authStatus)) {
                 providers.push({
                     settings: true,
                     provider: RemoteRepositorySearch,

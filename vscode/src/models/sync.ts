@@ -7,6 +7,7 @@ import {
     ModelUsage,
     RestClient,
     getDotComDefaultModels,
+    isDotCom,
     modelsService,
 } from '@sourcegraph/cody-shared'
 import type { ServerModelConfiguration } from '@sourcegraph/cody-shared/src/models'
@@ -59,7 +60,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
 
     // If you are connecting to Sourcegraph.com, we use the Cody Pro set of models.
     // (Only some of them may not be available if you are on the Cody Free plan.)
-    if (authStatus.isDotCom) {
+    if (isDotCom(authStatus)) {
         modelsService.instance!.setModels(getDotComDefaultModels())
         registerModelsFromVSCodeConfiguration()
         return

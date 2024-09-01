@@ -2,9 +2,11 @@ import { isEqual } from 'lodash'
 import { LRUCache } from 'lru-cache'
 import { RE2JS as RE2 } from 're2js'
 import type * as vscode from 'vscode'
+import type { AuthStatusProvider } from '../auth/types'
 import { isFileURI } from '../common/uri'
 import { logDebug, logError } from '../logger'
 import { setSingleton, singletonNotYetSet } from '../singletons'
+import { isDotCom } from '../sourcegraph-api/environments'
 import { graphqlClient } from '../sourcegraph-api/graphql'
 import {
     type CodyContextFilterItem,
@@ -88,6 +90,8 @@ export class ContextFiltersProvider implements vscode.Disposable {
     private lastResultLifetime: ResultLifetime | undefined = undefined
     private fetchIntervalId: NodeJS.Timeout | undefined | number
 
+    private authStatusProvider: AuthStatusProvider | null = null
+
     // Visible for testing.
     public get timerStateForTest() {
         return { delay: this.lastFetchDelay, lifetime: this.lastResultLifetime }
@@ -96,8 +100,12 @@ export class ContextFiltersProvider implements vscode.Disposable {
     private readonly contextFiltersSubscriber = createSubscriber<ContextFilters>()
     public readonly onContextFiltersChanged = this.contextFiltersSubscriber.subscribe
 
-    async init(getRepoNamesFromWorkspaceUri: GetRepoNamesFromWorkspaceUri) {
+    async init(
+        getRepoNamesFromWorkspaceUri: GetRepoNamesFromWorkspaceUri,
+        authStatusProvider: AuthStatusProvider
+    ) {
         this.getRepoNamesFromWorkspaceUri = getRepoNamesFromWorkspaceUri
+        this.authStatusProvider = authStatusProvider
         this.reset()
         this.startRefetchTimer(await this.fetchContextFilters())
     }
@@ -148,7 +156,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
     public setTestingContextFilters(contextFilters: ContextFilters | null): void {
         if (contextFilters === null) {
             // Reset context filters to the value from the Sourcegraph API.
-            this.init(this.getRepoNamesFromWorkspaceUri!)
+            this.init(this.getRepoNamesFromWorkspaceUri!, this.authStatusProvider!)
         } else {
             this.setContextFilters(contextFilters)
         }
@@ -245,10 +253,14 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     private hasAllowEverythingFilters(): boolean {
-        return (
-            graphqlClient.isDotCom() ||
-            this.lastContextFiltersResponse === INCLUDE_EVERYTHING_CONTEXT_FILTERS
-        )
+        return this.isDotCom() || this.lastContextFiltersResponse === INCLUDE_EVERYTHING_CONTEXT_FILTERS
+    }
+
+    private isDotCom(): boolean {
+        if (!this.authStatusProvider) {
+            throw new Error('authStatusProvider is not set, ContextFiltersProvider.init must be called')
+        }
+        return isDotCom(this.authStatusProvider.status)
     }
 
     private hasIgnoreEverythingFilters() {

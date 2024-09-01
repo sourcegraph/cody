@@ -1,3 +1,4 @@
+import { isDotCom } from '../sourcegraph-api/environments'
 import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
 
 /**
@@ -7,7 +8,6 @@ import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client
 export interface AuthStatus {
     username: string
     endpoint: string
-    isDotCom: boolean
     isLoggedIn: boolean
     /**
      * Used to enable Fireworks tracing for Sourcegraph teammates on DotCom.
@@ -44,7 +44,6 @@ export interface AuthStatusProvider {
 
 export const defaultAuthStatus: AuthStatus = {
     endpoint: '',
-    isDotCom: true,
     isLoggedIn: false,
     isFireworksTracingEnabled: false,
     showInvalidAccessTokenError: false,
@@ -60,7 +59,6 @@ export const defaultAuthStatus: AuthStatus = {
 
 export const unauthenticatedStatus: AuthStatus = {
     endpoint: '',
-    isDotCom: true,
     isLoggedIn: false,
     isFireworksTracingEnabled: false,
     showInvalidAccessTokenError: true,
@@ -75,7 +73,6 @@ export const unauthenticatedStatus: AuthStatus = {
 }
 
 export const networkErrorAuthStatus: Omit<AuthStatus, 'endpoint'> = {
-    isDotCom: false,
     showInvalidAccessTokenError: false,
     authenticated: false,
     isLoggedIn: false,
@@ -90,9 +87,7 @@ export const networkErrorAuthStatus: Omit<AuthStatus, 'endpoint'> = {
     codyApiVersion: 0,
 }
 
-export const offlineModeAuthStatus: AuthStatus = {
-    endpoint: '',
-    isDotCom: true,
+export const offlineModeAuthStatus: Omit<AuthStatus, 'endpoint'> = {
     isLoggedIn: true,
     isOfflineMode: true,
     isFireworksTracingEnabled: false,
@@ -108,13 +103,13 @@ export const offlineModeAuthStatus: AuthStatus = {
 }
 
 export function isCodyProUser(authStatus: AuthStatus): boolean {
-    return authStatus.isDotCom && !authStatus.userCanUpgrade
+    return isDotCom(authStatus) && !authStatus.userCanUpgrade
 }
 
 export function isFreeUser(authStatus: AuthStatus): boolean {
-    return authStatus.isDotCom && authStatus.userCanUpgrade
+    return isDotCom(authStatus) && authStatus.userCanUpgrade
 }
 
 export function isEnterpriseUser(authStatus: AuthStatus): boolean {
-    return !authStatus.isDotCom
+    return !isDotCom(authStatus)
 }
