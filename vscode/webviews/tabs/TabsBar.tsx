@@ -261,7 +261,7 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
                     <span className={alwaysShowTitle ? '' : styles.tabActionLabel}>{title}</span>
                 </button>
             </TooltipTrigger>
-            <TooltipContent className="md:tw-hidden">
+            <TooltipContent className={styles.tooltip}>
                 {title} {tooltipExtra}
             </TooltipContent>
         </Tooltip>

@@ -1,3 +1,6 @@
+## 0.7.4 
+- Fix tabs UI tooltips for small screens 
+
 ## 0.7.3 
 - Increase toolbar text to 12px 
 - Improve textbox layout (make it partially sticky)
