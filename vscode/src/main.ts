@@ -22,6 +22,8 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { CommandResult } from './CommandResult'
+import { showAccountMenu } from './auth/account-menu'
+import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
@@ -484,9 +486,9 @@ function registerChatCommands(disposables: vscode.Disposable[]): void {
 
 function registerAuthCommands(disposables: vscode.Disposable[]): void {
     disposables.push(
-        vscode.commands.registerCommand('cody.auth.signin', () => authProvider.instance!.signinMenu()),
-        vscode.commands.registerCommand('cody.auth.signout', () => authProvider.instance!.signoutMenu()),
-        vscode.commands.registerCommand('cody.auth.account', () => authProvider.instance!.accountMenu()),
+        vscode.commands.registerCommand('cody.auth.signin', () => showSignInMenu()),
+        vscode.commands.registerCommand('cody.auth.signout', () => showSignOutMenu()),
+        vscode.commands.registerCommand('cody.auth.account', () => showAccountMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         vscode.commands.registerCommand('cody.auth.status', () => authProvider.instance!.status), // Used by the agent
         vscode.commands.registerCommand(
@@ -519,7 +521,7 @@ function registerUpgradeHandlers(
                 if (uri.path === '/app-done') {
                     // This is an old re-entrypoint from App that is a no-op now.
                 } else {
-                    authProvider.instance!.tokenCallbackHandler(uri, configWatcher.get().customHeaders)
+                    tokenCallbackHandler(uri, configWatcher.get().customHeaders)
                 }
             },
         }),

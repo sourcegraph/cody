@@ -121,3 +121,14 @@ export function isAbortErrorOrSocketHangUp(error: unknown): error is Error {
 }
 
 export class TimeoutError extends Error {}
+
+export function isNetworkLikeError(error: Error): boolean {
+    const message = error.message
+    return (
+        message.includes('ENOTFOUND') ||
+        message.includes('ECONNREFUSED') ||
+        message.includes('ECONNRESET') ||
+        message.includes('EHOSTUNREACH') ||
+        message.includes('ETIMEDOUT')
+    )
+}

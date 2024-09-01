@@ -63,6 +63,7 @@ import { map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { version as VSCEVersion } from '../../../package.json'
 import { View } from '../../../webviews/tabs/types'
+import { redirectToEndpointLogin, showSignOutMenu } from '../../auth/auth'
 import {
     closeAuthProgressIndicator,
     startAuthProgressIndicator,
@@ -432,7 +433,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             case 'auth': {
                 if (message.authKind === 'callback' && message.endpoint) {
-                    authProvider.instance!.redirectToEndpointLogin(message.endpoint)
+                    redirectToEndpointLogin(message.endpoint)
                     break
                 }
                 if (message.authKind === 'offline') {
@@ -486,7 +487,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     break
                 }
                 if (message.authKind === 'signout') {
-                    await authProvider.instance!.signoutMenu()
+                    await showSignOutMenu()
                     this.setWebviewView(View.Login)
                     break
                 }

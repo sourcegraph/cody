@@ -218,6 +218,7 @@ export {
     isContextWindowLimitError,
     isAuthError,
     isNetworkError,
+    isNetworkLikeError,
     isRateLimitError,
 } from './sourcegraph-api/errors'
 export {

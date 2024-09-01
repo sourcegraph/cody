@@ -5,6 +5,7 @@ import {
     Typewriter,
     isAbortError,
     isDotCom,
+    isNetworkLikeError,
     modelsService,
     posixFilePaths,
     telemetryRecorder,
@@ -15,7 +16,7 @@ import {
 import { logError } from '../log'
 import type { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
-import { authProvider, isNetworkError } from '../services/AuthProvider'
+import { authProvider } from '../services/AuthProvider'
 
 import {
     DEFAULT_EVENT_SOURCE,
@@ -155,7 +156,7 @@ export class EditProvider {
                             return
                         }
 
-                        if (isNetworkError(err)) {
+                        if (isNetworkLikeError(err)) {
                             err = new Error('Cody could not respond due to network error.')
                         }
 
