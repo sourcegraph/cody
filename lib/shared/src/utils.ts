@@ -129,3 +129,12 @@ type TupleFromUnion<T, U = T> = [T] extends [never]
 
 // Helper type to ensure an array contains all members of T
 export type ArrayContainsAll<T extends string> = TupleFromUnion<T>
+
+/** Make T readonly (recursively). */
+export type ReadonlyDeep<T> = {
+    readonly [P in keyof T]: T[P] extends (infer U)[]
+        ? ReadonlyArray<ReadonlyDeep<U>>
+        : T[P] extends object
+          ? ReadonlyDeep<T[P]>
+          : T[P]
+}
