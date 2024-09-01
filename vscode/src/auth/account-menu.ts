@@ -1,11 +1,11 @@
-import { type AuthStatus, isDotCom } from '@sourcegraph/cody-shared'
+import { type AuthenticatedAuthStatus, isDotCom } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { ACCOUNT_USAGE_URL } from '../chat/protocol'
 import { authProvider } from '../services/AuthProvider'
 import { showSignInMenu, showSignOutMenu } from './auth'
 
 export async function showAccountMenu(): Promise<void> {
-    const authStatus = authProvider.instance!.status
+    const authStatus = authProvider.instance!.statusAuthed
     const selected = await openAccountMenuFirstStep(authStatus)
     if (selected === undefined) {
         return
@@ -36,13 +36,9 @@ enum AccountMenuOptions {
 }
 
 async function openAccountMenuFirstStep(
-    authStatus: AuthStatus
+    authStatus: AuthenticatedAuthStatus
 ): Promise<AccountMenuOptions | undefined> {
-    if (!authStatus.authenticated || !authStatus.endpoint) {
-        return
-    }
-
-    const isOffline = authStatus.isOfflineMode
+    const isOffline = !!authStatus.isOfflineMode
     const isDotComInstance = isDotCom(authStatus.endpoint) && !isOffline
 
     const displayName = authStatus.displayName || authStatus.username

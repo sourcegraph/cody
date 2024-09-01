@@ -1,4 +1,4 @@
-import type { AuthStatus } from '@sourcegraph/cody-shared'
+import type { AuthenticatedAuthStatus } from '@sourcegraph/cody-shared'
 import type { CodyStatusBar } from '../services/StatusBar'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import type { ProviderConfig } from './providers/provider'
@@ -11,7 +11,7 @@ export interface CodyCompletionItemProviderConfig {
     tracer?: ProvideInlineCompletionItemsTracer | null
     isRunningInsideAgent?: boolean
 
-    authStatus: AuthStatus
+    authStatus: AuthenticatedAuthStatus
     isDotComUser?: boolean
 
     createBfgRetriever?: () => BfgRetriever

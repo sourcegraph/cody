@@ -39,6 +39,11 @@ export function useConfig(): Config {
 
 export function useUserAccountInfo(): UserAccountInfo {
     const value = useConfig()
+    if (!value.authStatus.authenticated) {
+        throw new Error(
+            'useUserAccountInfo must be used within a ConfigProvider with authenticated user'
+        )
+    }
     return {
         isCodyProUser: isCodyProUser(value.authStatus),
         // Receive this value from the extension backend to make it work

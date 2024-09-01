@@ -2,7 +2,6 @@ import {
     type AuthStatus,
     type AuthStatusProvider,
     TelemetryRecorderProvider,
-    defaultAuthStatus,
 } from '@sourcegraph/cody-shared'
 import { deleteUninstallerDirectory, readConfig } from './serializeConfig'
 
@@ -22,11 +21,11 @@ async function main() {
     const uninstaller = readConfig()
     if (uninstaller) {
         const { config, extensionDetails, authStatus, anonymousUserID } = uninstaller
-        if (config) {
+        if (config && authStatus) {
             const provider = new TelemetryRecorderProvider(
                 extensionDetails,
                 config,
-                new StaticAuthStatusProvider(authStatus ?? defaultAuthStatus),
+                new StaticAuthStatusProvider(authStatus),
                 anonymousUserID,
                 'connected-instance-only'
             )

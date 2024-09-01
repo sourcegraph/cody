@@ -71,7 +71,7 @@ export const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, a
             <FormField
                 name="accessToken"
                 className={styles.section}
-                serverInvalid={authStatus?.showNetworkError}
+                serverInvalid={authStatus && !authStatus.authenticated && authStatus.showNetworkError}
             >
                 <FormLabel title="Access Token" />
                 <FormControl

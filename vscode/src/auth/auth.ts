@@ -331,6 +331,6 @@ export async function showSignOutMenu(): Promise<void> {
 async function signOut(endpoint: string): Promise<void> {
     await secretStorage.deleteToken(endpoint)
     await localStorage.deleteEndpoint()
-    await authProvider.instance!.auth({ endpoint: '', token: null })
+    await authProvider.instance!.auth({ endpoint, token: null })
     await vscode.commands.executeCommand('setContext', 'cody.activated', false)
 }

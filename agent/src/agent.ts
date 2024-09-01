@@ -463,7 +463,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 return {
                     name: 'cody-agent',
                     authenticated: authStatus?.authenticated,
-                    codyVersion: authStatus?.siteVersion,
+                    codyVersion: authStatus?.authenticated ? authStatus.siteVersion : undefined,
                     authStatus,
                 }
             } catch (error) {
@@ -1218,6 +1218,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
         // TODO: JetBrains no longer uses this, consider deleting it.
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            if (!authStatus.authenticated) {
+                throw new Error('Not authenticated')
+            }
             modelID ??= modelsService.instance!.getDefaultChatModel() ?? ''
             const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
             const chatModel = new ChatModel(modelID, chatID, chatMessages)
@@ -1238,6 +1241,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('chat/export', async input => {
             const { fullHistory = false } = input ?? {}
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            if (!authStatus.authenticated) {
+                throw new Error('Not authenticated')
+            }
             const localHistory = chatHistory.getLocalHistory(authStatus)
 
             if (localHistory != null) {
@@ -1275,6 +1281,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
             })
 
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            if (!authStatus.authenticated) {
+                throw new Error('Not authenticated')
+            }
             const localHistory = await chatHistory.getLocalHistory(authStatus)
 
             if (localHistory != null) {

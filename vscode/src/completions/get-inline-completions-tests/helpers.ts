@@ -4,7 +4,7 @@ import { expect, vi } from 'vitest'
 import type { URI } from 'vscode-uri'
 
 import {
-    type AuthStatus,
+    AUTH_STATUS_FIXTURE_AUTHED,
     type ClientConfiguration,
     type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
@@ -12,7 +12,6 @@ import {
     type CompletionResponse,
     CompletionStopReason,
     type GraphQLAPIClientConfig,
-    defaultAuthStatus,
     featureFlagProvider,
     graphqlClient,
     testFileUri,
@@ -55,7 +54,6 @@ import { sleep } from '../utils'
 // mimicking the default indentation of four spaces
 export const T = '\t'
 
-const dummyAuthStatus: AuthStatus = defaultAuthStatus
 const getVSCodeConfigurationWithAccessToken = (
     config: Partial<ClientConfiguration> = {}
 ): ClientConfigurationWithAccessToken => ({
@@ -167,7 +165,7 @@ export function params(
     const providerConfig = createProviderConfig({
         client,
         providerOptions,
-        authStatus: dummyAuthStatus,
+        authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         model: configuration?.autocompleteAdvancedModel!,
         config: configWithAccessToken,
     })

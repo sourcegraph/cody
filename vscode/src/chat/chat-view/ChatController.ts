@@ -640,7 +640,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     ): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             span.setAttribute('sampled', true)
-            const authStatus = authProvider.instance!.status
+            const authStatus = authProvider.instance!.statusAuthed
             const sharedProperties = {
                 requestID,
                 chatModel: this.chatModel.modelID,
@@ -719,6 +719,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         prompter,
                         signal,
                         requestID,
+                        authStatus.codyApiVersion,
                         contextAlternatives
                     )
 
@@ -1095,12 +1096,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         prompter: DefaultPrompter,
         abortSignal: AbortSignal,
         requestID: string,
+        codyApiVersion: number,
         contextAlternatives?: RankedContext[]
     ): Promise<PromptInfo> {
-        const { prompt, context } = await prompter.makePrompt(
-            this.chatModel,
-            authProvider.instance!.status.codyApiVersion
-        )
+        const { prompt, context } = await prompter.makePrompt(this.chatModel, codyApiVersion)
         abortSignal.throwIfAborted()
 
         // Update UI based on prompt construction. Includes the excluded context items to display in the UI
@@ -1320,7 +1319,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // current in-progress completion. If the chat does not exist, then this
     // is a no-op.
     public async restoreSession(sessionID: string): Promise<void> {
-        const oldTranscript = chatHistory.getChat(authProvider.instance!.status, sessionID)
+        const oldTranscript = chatHistory.getChat(authProvider.instance!.statusAuthed, sessionID)
         if (!oldTranscript) {
             return
         }
@@ -1332,15 +1331,19 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async saveSession(): Promise<void> {
-        const allHistory = await chatHistory.saveChat(
-            authProvider.instance!.status,
-            this.chatModel.toSerializedChatTranscript()
-        )
-        if (allHistory) {
-            void this.postMessage({
-                type: 'history',
-                localHistory: allHistory,
-            })
+        const authStatus = authProvider.instance!.status
+        if (authStatus.authenticated) {
+            // Only try to save if authenticated because otherwise we wouldn't be showing a chat.
+            const allHistory = await chatHistory.saveChat(
+                authStatus,
+                this.chatModel.toSerializedChatTranscript()
+            )
+            if (allHistory) {
+                void this.postMessage({
+                    type: 'history',
+                    localHistory: allHistory,
+                })
+            }
         }
     }
 
@@ -1378,8 +1381,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         const viewType = CodyChatEditorViewType
         const panelTitle =
-            chatHistory.getChat(authProvider.instance!.status, this.chatModel.sessionID)?.chatTitle ||
-            getChatPanelTitle(lastQuestion)
+            chatHistory.getChat(authProvider.instance!.statusAuthed, this.chatModel.sessionID)
+                ?.chatTitle || getChatPanelTitle(lastQuestion)
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         const panel = vscode.window.createWebviewPanel(

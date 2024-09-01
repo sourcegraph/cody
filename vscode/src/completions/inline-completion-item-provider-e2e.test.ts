@@ -1,5 +1,5 @@
 import {
-    type AuthStatus,
+    type AuthenticatedAuthStatus,
     type ClientConfiguration,
     DOTCOM_URL,
     type GraphQLAPIClientConfig,
@@ -40,10 +40,9 @@ const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
 }
 
-const DUMMY_AUTH_STATUS: AuthStatus = {
+const DUMMY_AUTH_STATUS: AuthenticatedAuthStatus = {
     endpoint: DOTCOM_URL.toString(),
     isFireworksTracingEnabled: false,
-    showInvalidAccessTokenError: false,
     authenticated: true,
     hasVerifiedEmail: true,
     requiresVerifiedEmail: true,

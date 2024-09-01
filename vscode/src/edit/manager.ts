@@ -294,6 +294,7 @@ export class EditManager implements vscode.Disposable {
         // queries to ask the LLM to generate a selection, and then ultimately apply the edit.
         const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
 
+        const authStatus = authProvider.instance!.statusAuthed
         const selection = await getSmartApplySelection(
             configuration.id,
             configuration.instruction,
@@ -301,7 +302,7 @@ export class EditManager implements vscode.Disposable {
             configuration.document,
             model,
             this.options.chat,
-            authProvider.instance!.status.codyApiVersion
+            authStatus.codyApiVersion
         )
 
         // We finished prompting the LLM for the selection, we can now remove the "progress" decoration

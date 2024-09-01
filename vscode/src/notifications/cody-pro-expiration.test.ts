@@ -2,13 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi, vitest } from 'vitest'
 import { localStorage } from '../services/LocalStorageProvider'
 
 import {
+    AUTH_STATUS_FIXTURE_AUTHED,
     type AuthStatus,
     DOTCOM_URL,
     FeatureFlag,
     type FeatureFlagProvider,
     type GraphQLAPIClientConfig,
     type SourcegraphGraphQLAPIClient,
-    defaultAuthStatus,
     featureFlagProvider,
     graphqlClient,
 } from '@sourcegraph/cody-shared'
@@ -72,7 +72,7 @@ describe('Cody Pro expiration notifications', () => {
                 return authStatus
             },
         } as AuthProvider
-        authStatus = { ...defaultAuthStatus, authenticated: true, endpoint: DOTCOM_URL.toString() }
+        authStatus = { ...AUTH_STATUS_FIXTURE_AUTHED, endpoint: DOTCOM_URL.toString() }
         localStorageData = {}
     })
 

@@ -1,5 +1,5 @@
 import {
-    type AuthStatus,
+    type AuthenticatedAuthStatus,
     type AutocompleteContextSnippet,
     type ClientConfiguration,
     type ClientConfigurationWithAccessToken,
@@ -41,7 +41,10 @@ export interface FireworksOptions {
         ClientConfigurationWithAccessToken,
         'accessToken' | 'autocompleteExperimentalFireworksOptions'
     >
-    authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'endpoint' | 'isFireworksTracingEnabled'>
+    authStatus: Pick<
+        AuthenticatedAuthStatus,
+        'userCanUpgrade' | 'endpoint' | 'isFireworksTracingEnabled'
+    >
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
@@ -133,7 +136,10 @@ class FireworksProvider extends Provider {
     private promptChars: number
     private client: CodeCompletionsClient
     private fastPathAccessToken?: string
-    private authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'endpoint' | 'isFireworksTracingEnabled'>
+    private authStatus: Pick<
+        AuthenticatedAuthStatus,
+        'userCanUpgrade' | 'endpoint' | 'isFireworksTracingEnabled'
+    >
     private isLocalInstance: boolean
     private fireworksConfig?: ClientConfiguration['autocompleteExperimentalFireworksOptions']
     private modelHelper: DefaultModel

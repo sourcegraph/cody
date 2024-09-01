@@ -1,26 +1,35 @@
 import { isDotCom } from '../sourcegraph-api/environments'
 import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
+import type { ReadonlyDeep } from '../utils'
 
 /**
- * The status of a users authentication, whether they're authenticated and have
- * a verified email.
+ * The authentication status, which includes representing the state when authentication failed or
+ * has not yet been attempted.
  */
-export interface AuthStatus {
-    username: string
+export type AuthStatus = UnauthenticatedAuthStatus | AuthenticatedAuthStatus
+
+/**
+ * The authentication status for a user who has successfully authenticated.
+ */
+export interface AuthenticatedAuthStatus {
     endpoint: string
+
+    authenticated: true
+
+    username: string
+
     /**
      * Used to enable Fireworks tracing for Sourcegraph teammates on DotCom.
      * https://readme.fireworks.ai/docs/enabling-tracing
      */
-    isFireworksTracingEnabled: boolean
-    showInvalidAccessTokenError: boolean
-    authenticated: boolean
-    hasVerifiedEmail: boolean
-    requiresVerifiedEmail: boolean
+    isFireworksTracingEnabled?: boolean
+
+    hasVerifiedEmail?: boolean
+    requiresVerifiedEmail?: boolean
     siteVersion: string
     codyApiVersion: number
     configOverwrites?: CodyLLMSiteConfiguration
-    showNetworkError?: boolean
+
     primaryEmail?: string
     displayName?: string
     avatarURL?: string
@@ -31,73 +40,52 @@ export interface AuthStatus {
      * is used to customize rate limit messages and show additional upgrade
      * buttons in the UI.
      */
-    userCanUpgrade: boolean
+    userCanUpgrade?: boolean
 
     isOfflineMode?: boolean
 }
 
+/**
+ * The authentication status for a user who has not yet authenticated or for whom authentication
+ * failed.
+ */
+export interface UnauthenticatedAuthStatus {
+    endpoint: string
+    authenticated: false
+    showNetworkError?: boolean
+    showInvalidAccessTokenError?: boolean
+}
+
 export interface AuthStatusProvider {
-    status: AuthStatus
+    status: ReadonlyDeep<AuthStatus>
 }
 
-export const defaultAuthStatus: AuthStatus = {
-    endpoint: '',
-    isFireworksTracingEnabled: false,
-    showInvalidAccessTokenError: false,
-    authenticated: false,
-    hasVerifiedEmail: false,
-    requiresVerifiedEmail: false,
-    siteVersion: '',
-    userCanUpgrade: false,
-    username: '',
-    codyApiVersion: 0,
-}
-
-export const unauthenticatedStatus: AuthStatus = {
-    endpoint: '',
-    isFireworksTracingEnabled: false,
-    showInvalidAccessTokenError: true,
-    authenticated: false,
-    hasVerifiedEmail: false,
-    requiresVerifiedEmail: false,
-    siteVersion: '',
-    userCanUpgrade: false,
-    username: '',
-    codyApiVersion: 0,
-}
-
-export const networkErrorAuthStatus: Omit<AuthStatus, 'endpoint'> = {
-    showInvalidAccessTokenError: false,
-    authenticated: false,
-    isFireworksTracingEnabled: false,
-    hasVerifiedEmail: false,
-    showNetworkError: true,
-    requiresVerifiedEmail: false,
-    siteVersion: '',
-    userCanUpgrade: false,
-    username: '',
-    codyApiVersion: 0,
-}
-
-export const offlineModeAuthStatus: Omit<AuthStatus, 'endpoint'> = {
-    isOfflineMode: true,
-    isFireworksTracingEnabled: false,
-    showInvalidAccessTokenError: false,
+export const AUTH_STATUS_FIXTURE_AUTHED: AuthenticatedAuthStatus = {
+    endpoint: 'https://example.com',
     authenticated: true,
-    hasVerifiedEmail: true,
-    requiresVerifiedEmail: true,
-    siteVersion: '',
-    userCanUpgrade: false,
-    username: 'offline',
-    codyApiVersion: 0,
+    username: 'alice',
+    codyApiVersion: 1,
+    siteVersion: '9999',
+}
+
+export const AUTH_STATUS_FIXTURE_UNAUTHED: AuthStatus & { authenticated: false } = {
+    endpoint: 'https://example.com',
+    authenticated: false,
+}
+
+export const AUTH_STATUS_FIXTURE_OFFLINE: Omit<AuthenticatedAuthStatus, 'isOfflineMode'> & {
+    isOfflineMode: true
+} = {
+    ...AUTH_STATUS_FIXTURE_AUTHED,
+    isOfflineMode: true,
 }
 
 export function isCodyProUser(authStatus: AuthStatus): boolean {
-    return isDotCom(authStatus) && !authStatus.userCanUpgrade
+    return isDotCom(authStatus) && authStatus.authenticated && !authStatus.userCanUpgrade
 }
 
 export function isFreeUser(authStatus: AuthStatus): boolean {
-    return isDotCom(authStatus) && authStatus.userCanUpgrade
+    return isDotCom(authStatus) && authStatus.authenticated && !!authStatus.userCanUpgrade
 }
 
 export function isEnterpriseUser(authStatus: AuthStatus): boolean {
