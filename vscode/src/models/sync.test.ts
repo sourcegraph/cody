@@ -1,10 +1,13 @@
 import {
+    type AuthStatus,
     ClientConfigSingleton,
     DOTCOM_URL,
     Model,
     ModelTag,
     ModelUsage,
     RestClient,
+    type ServerModel,
+    type ServerModelConfiguration,
     defaultAuthStatus,
     getDotComDefaultModels,
     modelsService,
@@ -89,7 +92,15 @@ describe('syncModels', () => {
 describe('syncModels from the server', () => {
     const testEndpoint = 'https://sourcegraph.acme-corp.com'
     const testUserCreds = 'hunter2'
-    const testServerSideModels: Model[] = getDotComDefaultModels()
+    const testServerSideModels: ServerModel[] = [
+        {
+            modelName: 'test-model',
+            displayName: 'test model',
+            modelRef: 'a::a::a',
+            contextWindow: { maxInputTokens: 1024, maxOutputTokens: 1024 },
+            capabilities: [],
+        } as Partial<ServerModel> as ServerModel,
+    ]
 
     // Unlike the other mocks, we define setModelsSpy here so that it can
     // be referenced by individual tests. (But like the other spys, it needs
@@ -122,8 +133,16 @@ describe('syncModels from the server', () => {
 
         // Attach our mock to the RestClient's prototype. So the class will get instantiated
         // like normal, but any instance will use our mock implementation.
-        const getAvaialbleModelsSpy = vi.spyOn(RestClient.prototype, 'getAvailableModels')
-        getAvaialbleModelsSpy.mockImplementation(() => Promise.resolve(undefined))
+        const getAvailableModelsSpy = vi.spyOn(RestClient.prototype, 'getAvailableModels')
+        getAvailableModelsSpy.mockImplementation(() =>
+            Promise.resolve({
+                models: testServerSideModels,
+                defaultModels: { chat: 'a::a::a', fastChat: 'a::a::a', codeCompletion: 'a::a::a' },
+                providers: [],
+                revision: '1',
+                schemaVersion: '1',
+            } satisfies ServerModelConfiguration)
+        )
     })
     afterEach(() => {
         // SUPER IMPORTANT: We need to call restoreAllMocks (instead of resetAllMocks)
@@ -137,7 +156,7 @@ describe('syncModels from the server', () => {
     // skip this tests since these checks have been removed to make Cody Web working
     it.skip('throws if no creds are available', async () => {
         await expect(async () => {
-            const authStatus = {
+            const authStatus: AuthStatus = {
                 ...defaultAuthStatus,
                 authenticated: true,
                 // Our mock for secretStorage will only return a user access token if
@@ -149,12 +168,12 @@ describe('syncModels from the server', () => {
     })
 
     it('works', async () => {
-        const authStatus = {
+        const authStatus: AuthStatus = {
             ...defaultAuthStatus,
             authenticated: true,
             endpoint: testEndpoint,
         }
         await syncModels(authStatus)
-        expect(setModelsSpy).toHaveBeenCalledWith(testServerSideModels)
+        expect(setModelsSpy).toHaveBeenCalledWith(testServerSideModels.map(Model.fromApi))
     })
 })
