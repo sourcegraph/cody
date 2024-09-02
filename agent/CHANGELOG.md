@@ -10,7 +10,8 @@ This is a log of all notable changes to the Cody command-line tool. [Unreleased]
 
 ### Changed
 
-## 5.5.13
+## 5.5.14
+
 ### Fixed
 
 - `cody chat` and `cody auth login` now report a helpful error message when trying to authenticate with an invalid access token.
