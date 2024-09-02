@@ -20,6 +20,20 @@ run `sdk use java 17-zulu`. Confirm that you have Java 17 installed with `java -
 >
 > ```
 > winget install -e --id GnuWin32.Zip
+> ```
+>
+> ⚠️ If that fails with the following error message, you should install https://winget.azureedge.net/cache/source.msix
+>
+> ```
+> Failed in attempting to update the source: winget
+> Failed when searching source: winget
+> An unexpected error occurred while executing the command:
+> 0x8a15000f : Data required by the source is missing
+> ```
+>
+> Once you Gnu zip installs:
+>
+> ```
 > mkdir ~/bin
 > cp /usr/bin/unzip ~/bin/zip  # Yes, unzip and zip are the same binary
 > curl -s "https://beta.sdkman.io" | bash
