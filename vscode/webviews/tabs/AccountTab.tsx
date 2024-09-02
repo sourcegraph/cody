@@ -1,7 +1,7 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import { useCallback } from 'react'
 import { URI } from 'vscode-uri'
-import { ACCOUNT_USAGE_URL } from '../../src/chat/protocol'
+import { ACCOUNT_UPGRADE_URL, ACCOUNT_USAGE_URL } from '../../src/chat/protocol'
 import { MESSAGE_CELL_AVATAR_SIZE } from '../chat/cells/messageCell/BaseMessageCell'
 import { UserAvatar } from '../components/UserAvatar'
 import { Button } from '../components/shadcn/ui/button'
@@ -21,6 +21,13 @@ export const AccountTab: React.FC = () => {
 
     const actions: any[] = []
 
+    if (isDotComUser && !isCodyProUser) {
+        actions.push({
+            text: 'Upgrade',
+            onClick: () =>
+                getVSCodeAPI().postMessage({ command: 'links', value: ACCOUNT_UPGRADE_URL.toString() }),
+        })
+    }
     actions.push({
         text: 'Switch Account...',
         onClick: () => getVSCodeAPI().postMessage({ command: 'command', id: 'cody.auth.switchAccount' }),
