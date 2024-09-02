@@ -494,7 +494,6 @@ export class ChatsController implements vscode.Disposable {
             extensionClient: this.extensionClient,
         })
     }
-    play
 
     private disposeChat(chatID: string, includePanel: boolean): void {
         if (chatID === this.activeEditor?.sessionID) {

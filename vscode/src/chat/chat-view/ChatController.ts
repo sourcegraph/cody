@@ -1511,7 +1511,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private async saveSession(authStatus?: AuthStatus): Promise<void> {
         const allHistory = await chatHistory.saveChat(
-            authStatus ? authStatus : this.authProvider.getAuthStatus(),
+            authStatus || this.authProvider.getAuthStatus(),
             this.chatModel.toSerializedChatTranscript()
         )
         if (allHistory) {
