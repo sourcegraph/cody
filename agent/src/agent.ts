@@ -361,7 +361,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 '*',
                 new IndentationBasedFoldingRangeProvider()
             )
-            this.globalState = this.newGlobalState(clientInfo)
+            this.globalState = await this.newGlobalState(clientInfo)
 
             if (clientInfo.capabilities && clientInfo.capabilities?.webview === undefined) {
                 // Make it possible to do `capabilities.webview === 'agentic'`
@@ -1432,17 +1432,17 @@ export class Agent extends MessageHandler implements ExtensionClient {
         }
     }
 
-    private newGlobalState(clientInfo: ClientInfo): AgentGlobalState {
+    private async newGlobalState(clientInfo: ClientInfo): Promise<AgentGlobalState> {
         switch (clientInfo.capabilities?.globalState) {
             case 'server-managed':
-                return new AgentGlobalState(
+                return AgentGlobalState.initialize(
                     clientInfo.name,
                     clientInfo.globalStateDir ?? codyPaths().data
                 )
             case 'client-managed':
                 throw new Error('client-managed global state is not supported')
             default:
-                return new AgentGlobalState(clientInfo.name)
+                return AgentGlobalState.initialize(clientInfo.name)
         }
     }
 
