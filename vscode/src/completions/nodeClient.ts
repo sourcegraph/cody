@@ -239,17 +239,30 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             //
             // We still want to close the request.
             request.on('close', () => {
+                const traceSpan = getActiveTraceAndSpanId()
+                const traceInfo = traceSpan
+                    ? { traceId: traceSpan.traceId, spanId: traceSpan.spanId }
+                    : undefined
                 if (!didReceiveAnyEvent) {
                     logError(
                         'SourcegraphNodeCompletionsClient',
                         "request.on('close')",
-                        'Connection closed without receiving any events',
+                        'Connection closed without receiving any events (this may be due to an outage with the upstream LLM provider)',
+                        `trace-and-span: ${JSON.stringify(traceInfo)}`,
                         { verbose: { bufferText } }
                     )
-                    onErrorOnce(new Error('Connection closed without receiving any events'))
+                    onErrorOnce(
+                        new Error(
+                            `Connection closed without receiving any events (this may be due to an outage with the upstream LLM provider) ${JSON.stringify(
+                                traceInfo
+                            )}`
+                        )
+                    )
                 }
                 if (!didSendMessage) {
-                    onErrorOnce(new Error('Connection unexpectedly closed'))
+                    onErrorOnce(
+                        new Error(`Connection unexpectedly closed: ${JSON.stringify(traceInfo)}`)
+                    )
                 }
             })
 
