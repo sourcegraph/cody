@@ -247,9 +247,14 @@ export const HumanMessageEditor: FunctionComponent<{
                     if (isSent) {
                         return
                     }
-                    if (editorRef.current) {
-                        editorRef.current.appendText(appendTextToLastPromptEditor)
-                    }
+
+                    // Schedule append text task to the next tick to avoid collisions with
+                    // initial text set (add initial mentions first then append text from prompt)
+                    requestAnimationFrame(() => {
+                        if (editorRef.current) {
+                            editorRef.current.appendText(appendTextToLastPromptEditor)
+                        }
+                    })
                 }
             },
             [isSent]
