@@ -33,7 +33,7 @@ function render(element: JSX.Element): ReturnType<typeof render_> {
     return render_(element, { wrapper: AppWrapperForTest })
 }
 
-describe.only('Transcript', () => {
+describe('Transcript', () => {
     test('empty', () => {
         render(<Transcript {...PROPS} transcript={[]} />)
         expectCells([{ message: '' }])
