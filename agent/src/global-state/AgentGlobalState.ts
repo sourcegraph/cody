@@ -7,18 +7,24 @@ import path from 'node:path'
 import { localStorage } from '../../../vscode/src/services/LocalStorageProvider'
 import migrate from './migrations/migrate'
 
+export type GlobalStateManager = 'client' | 'server'
+
 export class AgentGlobalState implements vscode.Memento {
     private db: DB
 
     static async initialize(ide: string, dir?: string): Promise<AgentGlobalState> {
-        const globalState = new AgentGlobalState(ide, dir)
+        const globalState = new AgentGlobalState(ide, dir ? 'server' : 'client', dir)
         if (globalState.db instanceof LocalStorageDB) {
             await migrate(globalState)
         }
         return globalState
     }
 
-    private constructor(ide: string, dir?: string) {
+    private constructor(
+        ide: string,
+        private manager: GlobalStateManager,
+        dir?: string
+    ) {
         // If not provided, will default to an in-memory database
         if (dir) {
             this.db = new LocalStorageDB(ide, dir)
@@ -26,10 +32,12 @@ export class AgentGlobalState implements vscode.Memento {
             this.db = new InMemoryDB()
         }
 
-        // Set default values
-        this.set('notification.setupDismissed', 'true')
-        this.set('completion.inline.hasAcceptedFirstCompletion', true)
-        this.set('extension.hasActivatedPreviously', 'true')
+        if (manager === 'client') {
+            // Set default values
+            this.set('notification.setupDismissed', 'true')
+            this.set('completion.inline.hasAcceptedFirstCompletion', true)
+            this.set('extension.hasActivatedPreviously', 'true')
+        }
     }
 
     private set(key: string, value: any): void {
@@ -43,10 +51,16 @@ export class AgentGlobalState implements vscode.Memento {
     }
 
     public keys(): readonly string[] {
+        if (this.manager === 'server') {
+            return this.db.keys()
+        }
         return [localStorage.LAST_USED_ENDPOINT, localStorage.ANONYMOUS_USER_ID_KEY, ...this.db.keys()]
     }
 
     public get<T>(key: string, defaultValue?: unknown): any {
+        if (this.manager === 'server') {
+            return this.db.get(key) ?? defaultValue
+        }
         switch (key) {
             case localStorage.LAST_USED_ENDPOINT:
                 return vscode_shim.extensionConfiguration?.serverEndpoint
