@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import { AppWrapperForTest } from '../../AppWrapperForTest'
 import { usePromptsQuery } from '../../components/promptList/usePromptsQuery'
-import { FIXTURE_PROMPTS } from '../../components/promptSelectField/fixtures'
+import { FIXTURE_PROMPTS } from '../../components/promptList/fixtures'
 import { WelcomeMessage } from './WelcomeMessage'
 
 vi.mock('../../components/promptList/usePromptsQuery')

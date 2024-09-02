@@ -31,6 +31,7 @@ import {
     CommandSeparator,
 } from '../shadcn/ui/command'
 import { usePromptsQuery } from './usePromptsQuery'
+import { CodyIDE } from '@sourcegraph/cody-shared';
 
 export type PromptOrDeprecatedCommand =
     | { type: 'prompt'; value: Prompt }
@@ -41,11 +42,9 @@ type SelectActionLabel = 'insert' | 'run'
 /**
  * A list of prompts from the Prompt Library. For backcompat, it also displays built-in commands and
  * custom commands (which are both deprecated in favor of the Prompt Library).
- *
- * It is used in the {@link PromptSelectField} in a popover and in {@link PromptsTab} as a list (not
- * in a popover).
  */
 export const PromptList: React.FunctionComponent<{
+    IDE: CodyIDE
     onSelect: (item: PromptOrDeprecatedCommand) => void
     onSelectActionLabels?: { prompt: SelectActionLabel; command: SelectActionLabel }
     showSearch?: boolean
@@ -56,6 +55,7 @@ export const PromptList: React.FunctionComponent<{
     commandListClassName?: string
     telemetryLocation: 'ChatTab' | 'PromptsTab'
 }> = ({
+    IDE,
     onSelect: parentOnSelect,
     onSelectActionLabels,
     showSearch = true,
@@ -257,7 +257,7 @@ export const PromptList: React.FunctionComponent<{
                             className="!tw-text-muted-foreground"
                         >
                             Open Prompt Library
-                            <Kbd macOS="Opt+Q" linuxAndWindows="Alt+Q" className="tw-ml-2" />
+                            {IDE == CodyIDE.VSCode &&  <Kbd macOS="Opt+Q" linuxAndWindows="Alt+Q" className="tw-ml-2" /> }
                         </a>
                     </Button>
                 </CommandRow>

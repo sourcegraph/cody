@@ -24,6 +24,7 @@ import { useTelemetryRecorder } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
 
 interface ChatboxProps {
+    IDE: CodyIDE
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
@@ -38,6 +39,7 @@ interface ChatboxProps {
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
+    IDE,
     messageInProgress,
     transcript,
     vscodeAPI,
@@ -224,6 +226,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             />
             {transcript.length === 0 && (
                 <PromptList
+                    IDE={IDE}
                     onSelect={item => onPromptSelectInPanel(item, setView, dispatchClientAction)}
                     onSelectActionLabels={onPromptSelectInPanelActionLabels}
                     telemetryLocation="ChatTab"

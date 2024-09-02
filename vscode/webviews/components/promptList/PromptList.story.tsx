@@ -1,7 +1,7 @@
 import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeStandaloneComponent } from '../../storybook/VSCodeStoryDecorator'
-import { FIXTURE_PROMPTS } from '../promptSelectField/fixtures'
+import { FIXTURE_PROMPTS } from '../promptList/fixtures'
 import { PromptList } from './PromptList'
 import { FIXTURE_COMMANDS } from './fixtures'
 import { makePromptsAPIWithData } from './fixtures'

@@ -3,14 +3,17 @@ import { useClientActionDispatcher } from '../client/clientState'
 import { PromptList, type PromptOrDeprecatedCommand } from '../components/promptList/PromptList'
 import { View } from '../tabs/types'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
+import { CodyIDE } from '@sourcegraph/cody-shared';
 
 export const PromptsTab: React.FC<{
+    IDE: CodyIDE
     setView: (view: View) => void
-}> = ({ setView }) => {
+}> = ({ IDE, setView }) => {
     const dispatchClientAction = useClientActionDispatcher()
     return (
         <div className="tw-overflow-auto tw-p-8">
             <PromptList
+                IDE={IDE}
                 onSelect={item => onPromptSelectInPanel(item, setView, dispatchClientAction)}
                 onSelectActionLabels={onPromptSelectInPanelActionLabels}
                 showCommandOrigins={true}

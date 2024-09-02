@@ -82,6 +82,7 @@ export const CodyPanel: FunctionComponent<
             <TabContainer value={view} ref={tabContainerRef}>
                 {view === View.Chat && (
                     <Chat
+                        IDE={config.agentIDE || CodyIDE.VSCode}
                         chatEnabled={chatEnabled}
                         messageInProgress={messageInProgress}
                         transcript={transcript}
@@ -104,7 +105,7 @@ export const CodyPanel: FunctionComponent<
                         userHistory={userHistory}
                     />
                 )}
-                {view === View.Prompts && <PromptsTab setView={setView} />}
+                {view === View.Prompts && <PromptsTab setView={setView} IDE={config.agentIDE || CodyIDE.VSCode} />}
                 {view === View.Account && <AccountTab />}
                 {view === View.Settings && <SettingsTab />}
             </TabContainer>
