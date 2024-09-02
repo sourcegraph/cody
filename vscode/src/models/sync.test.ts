@@ -13,7 +13,6 @@ import {
     modelsService,
     unauthenticatedStatus,
 } from '@sourcegraph/cody-shared'
-import { result } from 'lodash'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { secretStorage } from '../services/SecretStorageProvider'
 import { maybeAdjustContextWindows, syncModels } from './sync'
