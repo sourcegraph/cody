@@ -1,9 +1,9 @@
+import type { CodyIDE } from '@sourcegraph/cody-shared'
 import type { ComponentProps } from 'react'
 import { useClientActionDispatcher } from '../client/clientState'
 import { PromptList, type PromptOrDeprecatedCommand } from '../components/promptList/PromptList'
 import { View } from '../tabs/types'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-import { CodyIDE } from '@sourcegraph/cody-shared';
 
 export const PromptsTab: React.FC<{
     IDE: CodyIDE

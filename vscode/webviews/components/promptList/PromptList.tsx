@@ -1,4 +1,5 @@
 import type { CodyCommand, Prompt } from '@sourcegraph/cody-shared'
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import {
     BookOpenIcon,
@@ -31,7 +32,6 @@ import {
     CommandSeparator,
 } from '../shadcn/ui/command'
 import { usePromptsQuery } from './usePromptsQuery'
-import { CodyIDE } from '@sourcegraph/cody-shared';
 
 export type PromptOrDeprecatedCommand =
     | { type: 'prompt'; value: Prompt }
@@ -153,7 +153,7 @@ export const PromptList: React.FunctionComponent<{
             loop={true}
             tabIndex={0}
             className={clsx(
-                'focus:tw-outline-none tw-border-0 !tw-max-w-[unset] tw-w-full !tw-bg-[unset]',
+                'focus:tw-outline-none tw-border-0 !tw-max-w-[unset] tw-w-full !tw-h-[unset] !tw-bg-[unset]',
                 className
             )}
             shouldFilter={false}
@@ -257,7 +257,9 @@ export const PromptList: React.FunctionComponent<{
                             className="!tw-text-muted-foreground"
                         >
                             Open Prompt Library
-                            {IDE == CodyIDE.VSCode &&  <Kbd macOS="Opt+Q" linuxAndWindows="Alt+Q" className="tw-ml-2" /> }
+                            {IDE === CodyIDE.VSCode && (
+                                <Kbd macOS="Opt+Q" linuxAndWindows="Alt+Q" className="tw-ml-2" />
+                            )}
                         </a>
                     </Button>
                 </CommandRow>
@@ -287,7 +289,7 @@ const PromptCommandItem: FunctionComponent<{
                 displayName: prompt.owner.displayName ?? undefined,
             }}
             size={22}
-            className="tw-flex-shrink-0 tw-text-xxs !tw-text-muted-foreground"
+            className="tw-flex-shrink-0 tw-text-xxs"
         />
         <div className="tw-text-nowrap tw-text-ellipsis tw-overflow-hidden">
             <div className="tw-flex tw-text-nowrap tw-gap-3 tw-w-full tw-items-start tw-overflow-hidden">

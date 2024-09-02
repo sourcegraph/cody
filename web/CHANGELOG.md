@@ -1,3 +1,7 @@
+# 0.7.6
+- Simplify prompt list UI (no prompt toolbar anymore)
+- Fix setting prompt from prompts tab
+
 ## 0.7.5 
 - Improve tabs UI layout for Cody Web tabs configuration 
 - Fix Safari not working cursor click on mention panel problem  

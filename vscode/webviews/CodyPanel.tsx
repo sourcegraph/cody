@@ -105,7 +105,9 @@ export const CodyPanel: FunctionComponent<
                         userHistory={userHistory}
                     />
                 )}
-                {view === View.Prompts && <PromptsTab setView={setView} IDE={config.agentIDE || CodyIDE.VSCode} />}
+                {view === View.Prompts && (
+                    <PromptsTab setView={setView} IDE={config.agentIDE || CodyIDE.VSCode} />
+                )}
                 {view === View.Account && <AccountTab />}
                 {view === View.Settings && <SettingsTab />}
             </TabContainer>

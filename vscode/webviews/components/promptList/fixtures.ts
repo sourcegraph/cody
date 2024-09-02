@@ -1,10 +1,10 @@
 import {
     type CodyCommand,
     CustomCommandType,
+    type Prompt,
     type PromptsResult,
     type WebviewToExtensionAPI,
     promiseFactoryToObservable,
-    type Prompt
 } from '@sourcegraph/cody-shared'
 
 export const FIXTURE_PROMPTS: Prompt[] = [
