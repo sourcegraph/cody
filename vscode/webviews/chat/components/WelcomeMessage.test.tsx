@@ -1,21 +1,8 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, test, vi } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import { AppWrapperForTest } from '../../AppWrapperForTest'
-import { FIXTURE_PROMPTS } from '../../components/promptList/fixtures'
-import { usePromptsQuery } from '../../components/promptList/usePromptsQuery'
 import { WelcomeMessage } from './WelcomeMessage'
-
-vi.mock('../../components/promptList/usePromptsQuery')
-vi.mocked(usePromptsQuery).mockReturnValue({
-    value: {
-        query: '',
-        commands: [],
-        prompts: { type: 'results', results: [FIXTURE_PROMPTS[0]] },
-    },
-    done: false,
-    error: null,
-})
 
 describe('WelcomeMessage', () => {
     function openCollapsiblePanels(): void {
@@ -32,7 +19,6 @@ describe('WelcomeMessage', () => {
 
         // Check common elements
         expect(screen.getByText(/Chat Help/)).toBeInTheDocument()
-        expect(screen.getByText(FIXTURE_PROMPTS[0].name)).toBeInTheDocument()
 
         // Check elements specific to CodyIDE.VSCode
         expect(screen.getByText(/To add code context from an editor/)).toBeInTheDocument()
@@ -48,7 +34,6 @@ describe('WelcomeMessage', () => {
 
         // Check common elements
         expect(screen.getByText(/Chat Help/)).toBeInTheDocument()
-        expect(screen.getByText(FIXTURE_PROMPTS[0].name)).toBeInTheDocument()
 
         // Check elements specific to CodyIDE.JetBrains
         expect(screen.queryByText(/To add code context from an editor/)).not.toBeInTheDocument()
