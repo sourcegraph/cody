@@ -41,7 +41,6 @@ const DUMMY_AUTH_STATUS: AuthStatus = {
     authenticated: true,
     hasVerifiedEmail: true,
     requiresVerifiedEmail: true,
-    siteHasCodyEnabled: true,
     siteVersion: '1234',
     username: 'uwu',
     userCanUpgrade: false,

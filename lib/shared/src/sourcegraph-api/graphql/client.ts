@@ -178,9 +178,6 @@ interface CurrentUserInfoResponse {
 //
 // For the canonical type definition, see https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/clientconfig/types.go
 interface CodyClientConfig {
-    // Whether the site admin allows this user to make use of Cody at all.
-    codyEnabled: boolean
-
     // Whether the site admin allows this user to make use of the Cody chat feature.
     chatEnabled: boolean
 
@@ -1663,7 +1660,6 @@ export class ClientConfigSingleton {
         const features = await this.fetchConfigFeaturesLegacy(this.featuresLegacy)
 
         return graphqlClient.isCodyEnabled().then(isCodyEnabled => ({
-            codyEnabled: isCodyEnabled.enabled,
             chatEnabled: features.chat,
             autoCompleteEnabled: features.autoComplete,
             customCommandsEnabled: features.commands,

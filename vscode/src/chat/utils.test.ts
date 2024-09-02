@@ -13,7 +13,6 @@ describe('validateAuthStatus', () => {
         ...defaultAuthStatus,
         siteVersion: '',
         hasVerifiedEmail: true,
-        siteHasCodyEnabled: true,
         authenticated: true,
         endpoint: DOTCOM_URL.toString(),
         userCanUpgrade: false,
@@ -41,7 +40,6 @@ describe('validateAuthStatus', () => {
             hasVerifiedEmail: true,
             showInvalidAccessTokenError: false,
             requiresVerifiedEmail: true,
-            siteHasCodyEnabled: true,
             codyApiVersion: 1,
         }
         expect(newAuthStatus(options)).toEqual(expected)
@@ -53,7 +51,6 @@ describe('validateAuthStatus', () => {
             authenticated: true,
             hasVerifiedEmail: false,
             requiresVerifiedEmail: true,
-            siteHasCodyEnabled: true,
             codyApiVersion: 1,
         }
         expect(
@@ -68,7 +65,6 @@ describe('validateAuthStatus', () => {
         const expected: AuthStatus = {
             ...options,
             authenticated: true,
-            siteHasCodyEnabled: true,
             hasVerifiedEmail: false,
             endpoint: 'https://example.com',
             codyApiVersion: 1,
@@ -90,7 +86,6 @@ describe('validateAuthStatus', () => {
                 endpoint: 'https://example.com',
                 authenticated: false,
                 hasVerifiedEmail: false,
-                siteHasCodyEnabled: false,
             })
         ).toEqual(expected)
     })
@@ -99,7 +94,6 @@ describe('validateAuthStatus', () => {
         const expected: AuthStatus = {
             ...options,
             authenticated: true,
-            siteHasCodyEnabled: false,
             hasVerifiedEmail: false,
             endpoint: 'https://example.com',
             codyApiVersion: 1,
@@ -108,7 +102,6 @@ describe('validateAuthStatus', () => {
             newAuthStatus({
                 ...options,
                 endpoint: 'https://example.com',
-                siteHasCodyEnabled: false,
                 hasVerifiedEmail: false,
             })
         ).toEqual(expected)
@@ -122,7 +115,6 @@ describe('validateAuthStatus', () => {
                 endpoint: 'https://example.com',
                 authenticated: false,
                 hasVerifiedEmail: false,
-                siteHasCodyEnabled: false,
             })
         ).toEqual(expected)
     })
@@ -131,7 +123,6 @@ describe('validateAuthStatus', () => {
         const expected: AuthStatus = {
             ...options,
             authenticated: true,
-            siteHasCodyEnabled: true,
             endpoint: 'https://example.com',
             hasVerifiedEmail: false,
             codyApiVersion: 1,
@@ -148,7 +139,6 @@ describe('validateAuthStatus', () => {
         const expected: AuthStatus = {
             ...options,
             authenticated: true,
-            siteHasCodyEnabled: true,
             hasVerifiedEmail: false,
             codyApiVersion: 0,
             siteVersion: '5.2.0',

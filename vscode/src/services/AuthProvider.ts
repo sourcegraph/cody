@@ -128,6 +128,12 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         if (!userInfo || isError(userInfo)) {
             return { ...unauthenticatedStatus, endpoint }
         }
+        if (!siteHasCodyEnabled) {
+            vscode.window.showErrorMessage(
+                `Cody is not enabled on this Sourcegraph instance (${endpoint}). Ask a site administrator to enable it.`
+            )
+            return { ...unauthenticatedStatus, endpoint }
+        }
 
         const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
@@ -139,7 +145,6 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
                 configOverwrites,
                 authenticated: true,
                 hasVerifiedEmail: false,
-                siteHasCodyEnabled,
                 userCanUpgrade: false,
             })
         }
@@ -157,7 +162,6 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         return newAuthStatus({
             ...userInfo,
             endpoint,
-            siteHasCodyEnabled,
             siteVersion,
             configOverwrites,
             authenticated: !!userInfo.id,

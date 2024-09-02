@@ -17,7 +17,6 @@ export interface AuthStatus {
     authenticated: boolean
     hasVerifiedEmail: boolean
     requiresVerifiedEmail: boolean
-    siteHasCodyEnabled: boolean
     siteVersion: string
     codyApiVersion: number
     configOverwrites?: CodyLLMSiteConfiguration
@@ -48,7 +47,6 @@ export const defaultAuthStatus: AuthStatus = {
     authenticated: false,
     hasVerifiedEmail: false,
     requiresVerifiedEmail: false,
-    siteHasCodyEnabled: false,
     siteVersion: '',
     userCanUpgrade: false,
     username: '',
@@ -62,7 +60,6 @@ export const unauthenticatedStatus: AuthStatus = {
     authenticated: false,
     hasVerifiedEmail: false,
     requiresVerifiedEmail: false,
-    siteHasCodyEnabled: false,
     siteVersion: '',
     userCanUpgrade: false,
     username: '',
@@ -76,7 +73,6 @@ export const networkErrorAuthStatus: Omit<AuthStatus, 'endpoint'> = {
     hasVerifiedEmail: false,
     showNetworkError: true,
     requiresVerifiedEmail: false,
-    siteHasCodyEnabled: false,
     siteVersion: '',
     userCanUpgrade: false,
     username: '',
@@ -90,7 +86,6 @@ export const offlineModeAuthStatus: Omit<AuthStatus, 'endpoint'> = {
     authenticated: true,
     hasVerifiedEmail: true,
     requiresVerifiedEmail: true,
-    siteHasCodyEnabled: true,
     siteVersion: '',
     userCanUpgrade: false,
     username: 'offline',
