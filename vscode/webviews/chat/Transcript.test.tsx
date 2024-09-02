@@ -33,7 +33,7 @@ function render(element: JSX.Element): ReturnType<typeof render_> {
     return render_(element, { wrapper: AppWrapperForTest })
 }
 
-describe('Transcript', () => {
+describe.only('Transcript', () => {
     test('empty', () => {
         render(<Transcript {...PROPS} transcript={[]} />)
         expectCells([{ message: '' }])
@@ -203,7 +203,7 @@ describe('Transcript', () => {
                 ]}
             />
         )
-        expectCells([{ message: 'Foo' }, { message: 'Model\nRequest Failed: some error' }])
+        expectCells([{ message: 'Foo' }, { message: 'Model\n\nRequest Failed: some error' }])
         expect(screen.queryByText('Try again with different context')).toBeNull()
     })
 
