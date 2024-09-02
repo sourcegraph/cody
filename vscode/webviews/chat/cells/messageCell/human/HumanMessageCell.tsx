@@ -5,11 +5,16 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
+import { ColumnsIcon } from 'lucide-react'
 import { type FunctionComponent, memo, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../Chat'
 import { UserAvatar } from '../../../../components/UserAvatar'
 import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
 import { HumanMessageEditor } from './editor/HumanMessageEditor'
+
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
+import { getVSCodeAPI } from '../../../../utils/VSCodeApi'
+import { useConfig } from '../../../../utils/useConfig'
 
 /**
  * A component that displays a chat message from the human.
@@ -75,6 +80,7 @@ export const HumanMessageCell: FunctionComponent<{
                     />
                 }
                 speakerTitle={userInfo.user.displayName ?? userInfo.user.username}
+                cellAction={isFirstMessage && <OpenInNewEditorAction />}
                 content={
                     <HumanMessageEditor
                         userInfo={userInfo}
@@ -100,3 +106,33 @@ export const HumanMessageCell: FunctionComponent<{
     },
     isEqual
 )
+
+const OpenInNewEditorAction = () => {
+    const {
+        config: { multipleWebviewsEnabled },
+    } = useConfig()
+
+    if (!multipleWebviewsEnabled) {
+        return null
+    }
+
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <button
+                    type="button"
+                    onClick={() => {
+                        getVSCodeAPI().postMessage({
+                            command: 'command',
+                            id: 'cody.chat.moveToEditor',
+                        })
+                    }}
+                    className="tw-flex tw-gap-3 tw-items-center tw-leading-none tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]"
+                >
+                    <ColumnsIcon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
+                </button>
+            </TooltipTrigger>
+            <TooltipContent>Open in Editor</TooltipContent>
+        </Tooltip>
+    )
+}

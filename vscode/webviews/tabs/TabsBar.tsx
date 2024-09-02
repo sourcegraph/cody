@@ -5,7 +5,6 @@ import clsx from 'clsx'
 import {
     BookTextIcon,
     CircleUserIcon,
-    ColumnsIcon,
     DownloadIcon,
     HistoryIcon,
     type LucideProps,
@@ -43,7 +42,6 @@ interface TabSubAction {
     tooltipExtra?: React.ReactNode
 
     title: string
-    alwaysShowTitle?: boolean
     Icon: IconComponent
     command: string
     arg?: string | undefined | null
@@ -66,6 +64,9 @@ interface TabConfig {
 
 export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onDownloadChatClick }) => {
     const tabItems = useTabs({ IDE, onDownloadChatClick })
+    const {
+        config: { webviewType, multipleWebviewsEnabled },
+    } = useConfig()
     const currentViewSubActions = tabItems.find(tab => tab.view === currentView)?.subActions ?? []
 
     const handleClick = useCallback(
@@ -80,20 +81,23 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
         [setView]
     )
 
-    const handleSubActionClick = useCallback((action: TabSubAction) => {
-        if (action.callback) {
-            action.callback()
-        } else {
-            getVSCodeAPI().postMessage({
-                command: 'command',
-                id: action.command,
-                arg: action.arg,
-            })
-        }
-    }, [])
+    const handleSubActionClick = useCallback(
+        (action: Pick<TabSubAction, 'callback' | 'command' | 'arg'>) => {
+            if (action.callback) {
+                action.callback()
+            } else {
+                getVSCodeAPI().postMessage({
+                    command: 'command',
+                    id: action.command,
+                    arg: action.arg,
+                })
+            }
+        },
+        []
+    )
 
     return (
-        <div className={styles.tabsRoot}>
+        <div className={clsx(styles.tabsRoot, { [styles.tabsRootCodyWeb]: IDE === CodyIDE.Web })}>
             <Tabs.List aria-label="cody-webview" className={styles.tabsContainer}>
                 <div className={styles.tabs}>
                     {tabItems.map(({ Icon, view, command, title, changesView }) => (
@@ -102,12 +106,39 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                                 Icon={Icon}
                                 view={view}
                                 title={title}
+                                IDE={IDE}
                                 isActive={currentView === view}
                                 onClick={() => handleClick(view, command, changesView)}
                                 data-testid={`tab-${view}`}
                             />
                         </Tabs.Trigger>
                     ))}
+
+                    <div className="tw-ml-auto">
+                        <TabButton
+                            prominent
+                            Icon={MessageSquarePlusIcon}
+                            title="New Chat"
+                            IDE={IDE}
+                            alwaysShowTitle={true}
+                            tooltipExtra={
+                                <>
+                                    {IDE === CodyIDE.VSCode && (
+                                        <Kbd macOS="shift+opt+l" linuxAndWindows="shift+alt+l" />
+                                    )}
+                                </>
+                            }
+                            onClick={() =>
+                                handleSubActionClick({
+                                    command: getCreateNewChatCommand({
+                                        IDE,
+                                        webviewType,
+                                        multipleWebviewsEnabled,
+                                    }),
+                                })
+                            }
+                        />
+                    </div>
                 </div>
                 <div className={styles.subTabs}>
                     {currentViewSubActions.map(subAction => (
@@ -116,7 +147,8 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                                 <ActionButtonWithConfirmation
                                     title={subAction.title}
                                     Icon={subAction.Icon}
-                                    alwaysShowTitle={subAction.alwaysShowTitle}
+                                    IDE={IDE}
+                                    alwaysShowTitle={true}
                                     tooltipExtra={subAction.tooltipExtra}
                                     dialogTitle={subAction.confirmation.title}
                                     dialogDescription={subAction.confirmation.description}
@@ -127,10 +159,10 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                                 <TabButton
                                     Icon={subAction.Icon}
                                     title={subAction.title}
-                                    alwaysShowTitle={subAction.alwaysShowTitle}
+                                    IDE={IDE}
+                                    alwaysShowTitle={true}
                                     tooltipExtra={subAction.tooltipExtra}
                                     onClick={() => handleSubActionClick(subAction)}
-                                    prominent
                                 />
                             )}
                         </Fragment>
@@ -144,6 +176,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
 interface ActionButtonWithConfirmationProps {
     title: string
     Icon: IconComponent
+    IDE: CodyIDE
     prominent?: boolean
     alwaysShowTitle?: boolean
     /** Extra content to display in the tooltip (in addition to the title). */
@@ -162,6 +195,7 @@ const ActionButtonWithConfirmation: FC<ActionButtonWithConfirmationProps> = prop
     const {
         title,
         Icon,
+        IDE,
         prominent,
         alwaysShowTitle,
         tooltipExtra,
@@ -181,6 +215,7 @@ const ActionButtonWithConfirmation: FC<ActionButtonWithConfirmationProps> = prop
                 alwaysShowTitle={alwaysShowTitle}
                 tooltipExtra={tooltipExtra}
                 prominent={prominent}
+                IDE={IDE}
                 onClick={() => setState(true)}
             />
 
@@ -217,6 +252,7 @@ const ActionButtonWithConfirmation: FC<ActionButtonWithConfirmationProps> = prop
 interface TabButtonProps {
     title: string
     Icon: IconComponent
+    IDE: CodyIDE
     view?: View
     isActive?: boolean
     onClick?: () => void
@@ -228,20 +264,20 @@ interface TabButtonProps {
     'data-testid'?: string
 }
 
-const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
-    (
-        {
-            Icon,
-            isActive,
-            onClick,
-            title,
-            alwaysShowTitle,
-            tooltipExtra,
-            prominent,
-            'data-testid': dataTestId,
-        },
-        ref
-    ) => (
+export const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => {
+    const {
+        IDE,
+        Icon,
+        isActive,
+        onClick,
+        title,
+        alwaysShowTitle,
+        tooltipExtra,
+        prominent,
+        'data-testid': dataTestId,
+    } = props
+
+    return (
         <Tooltip>
             <TooltipTrigger asChild>
                 <button
@@ -261,12 +297,12 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>(
                     <span className={alwaysShowTitle ? '' : styles.tabActionLabel}>{title}</span>
                 </button>
             </TooltipTrigger>
-            <TooltipContent className={styles.tooltip}>
+            <TooltipContent portal={IDE === CodyIDE.Web}>
                 {title} {tooltipExtra}
             </TooltipContent>
         </Tooltip>
     )
-)
+})
 
 TabButton.displayName = 'TabButton'
 
@@ -277,7 +313,7 @@ TabButton.displayName = 'TabButton'
 function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabConfig[] {
     const { IDE, onDownloadChatClick } = input
     const {
-        config: { webviewType, multipleWebviewsEnabled },
+        config: { multipleWebviewsEnabled },
     } = useConfig()
 
     return useMemo<TabConfig[]>(
@@ -288,32 +324,6 @@ function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabC
                         view: View.Chat,
                         title: 'Chat',
                         Icon: MessagesSquareIcon,
-                        subActions: [
-                            {
-                                title: 'New Chat',
-                                alwaysShowTitle: true,
-                                tooltipExtra: (
-                                    <>
-                                        {IDE === CodyIDE.VSCode && (
-                                            <Kbd macOS="shift+opt+l" linuxAndWindows="shift+alt+l" />
-                                        )}
-                                    </>
-                                ),
-                                Icon: MessageSquarePlusIcon,
-                                command: getCreateNewChatCommand({
-                                    IDE,
-                                    webviewType,
-                                    multipleWebviewsEnabled,
-                                }),
-                            },
-                            multipleWebviewsEnabled
-                                ? {
-                                      title: 'Open in Editor',
-                                      Icon: ColumnsIcon,
-                                      command: 'cody.chat.moveToEditor',
-                                  }
-                                : null,
-                        ].filter(isDefined),
                         changesView: true,
                     },
                     {
@@ -322,13 +332,13 @@ function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabC
                         Icon: HistoryIcon,
                         subActions: [
                             {
-                                title: 'Export History',
+                                title: 'Export',
                                 Icon: DownloadIcon,
                                 command: 'cody.chat.history.export',
                                 callback: onDownloadChatClick,
                             },
                             {
-                                title: 'Clear Chat History',
+                                title: 'Delete all',
                                 Icon: Trash2Icon,
                                 command: 'cody.chat.history.clear',
 
@@ -378,6 +388,6 @@ function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabC
                         : null,
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, webviewType, onDownloadChatClick, multipleWebviewsEnabled]
+        [IDE, onDownloadChatClick, multipleWebviewsEnabled]
     )
 }

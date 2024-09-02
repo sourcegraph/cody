@@ -1,3 +1,7 @@
+## 0.7.5 
+- Improve tabs UI layout for Cody Web tabs configuration 
+- Fix Safari not working cursor click on mention panel problem  
+
 ## 0.7.4 
 - Fix tabs UI tooltips for small screens 
 
