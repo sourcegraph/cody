@@ -20,7 +20,6 @@ export const CodyPanel: FunctionComponent<
         attributionEnabled: boolean
     } & Pick<
         ComponentProps<typeof Chat>,
-        | 'chatEnabled'
         | 'messageInProgress'
         | 'transcript'
         | 'vscodeAPI'
@@ -38,7 +37,6 @@ export const CodyPanel: FunctionComponent<
     errorMessages,
     setErrorMessages,
     attributionEnabled,
-    chatEnabled,
     messageInProgress,
     transcript,
     vscodeAPI,
@@ -82,7 +80,6 @@ export const CodyPanel: FunctionComponent<
             <TabContainer value={view} ref={tabContainerRef}>
                 {view === View.Chat && (
                     <Chat
-                        chatEnabled={chatEnabled}
                         messageInProgress={messageInProgress}
                         transcript={transcript}
                         vscodeAPI={vscodeAPI}

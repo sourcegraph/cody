@@ -13,7 +13,6 @@ const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     copyButtonOnSubmit: () => {},
     insertButtonOnSubmit: () => {},
     userInfo: FIXTURE_USER_ACCOUNT_INFO,
-    chatEnabled: true,
     postMessage: () => {},
 }
 

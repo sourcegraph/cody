@@ -48,13 +48,10 @@ export const HumanMessageEditor: FunctionComponent<{
     /** Whether this editor is for a followup message to a still-in-progress assistant response. */
     isPendingPriorResponse: boolean
 
-    disabled?: boolean
-
     onChange?: (editorState: SerializedPromptEditorValue) => void
     onSubmit: (editorValue: SerializedPromptEditorValue) => void
     onStop: () => void
 
-    isFirstInteraction?: boolean
     isLastInteraction?: boolean
     isEditorInitiallyFocused?: boolean
     className?: string
@@ -70,11 +67,9 @@ export const HumanMessageEditor: FunctionComponent<{
     isFirstMessage,
     isSent,
     isPendingPriorResponse,
-    disabled = false,
     onChange,
     onSubmit: parentOnSubmit,
     onStop,
-    isFirstInteraction,
     isLastInteraction,
     isEditorInitiallyFocused,
     className,
@@ -315,25 +310,22 @@ export const HumanMessageEditor: FunctionComponent<{
                 onFocusChange={onEditorFocusChange}
                 onEnterKey={onEditorEnterKey}
                 editorRef={editorRef}
-                disabled={disabled}
                 contextWindowSizeInTokens={contextWindowSizeInTokens}
                 editorClassName={styles.editor}
                 contentEditableClassName={styles.editorContentEditable}
             />
-            {!disabled && (
-                <Toolbar
-                    userInfo={userInfo}
-                    isEditorFocused={focused}
-                    onMentionClick={onMentionClick}
-                    onSubmitClick={onSubmitClick}
-                    submitState={submitState}
-                    onGapClick={onGapClick}
-                    focusEditor={focusEditor}
-                    appendTextToEditor={appendTextToEditor}
-                    hidden={!focused && isSent}
-                    className={styles.toolbar}
-                />
-            )}
+            <Toolbar
+                userInfo={userInfo}
+                isEditorFocused={focused}
+                onMentionClick={onMentionClick}
+                onSubmitClick={onSubmitClick}
+                submitState={submitState}
+                onGapClick={onGapClick}
+                focusEditor={focusEditor}
+                appendTextToEditor={appendTextToEditor}
+                hidden={!focused && isSent}
+                className={styles.toolbar}
+            />
         </div>
     )
 }

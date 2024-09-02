@@ -93,7 +93,6 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         } satisfies Partial<AuthStatus> as any,
                         config: {} as any,
                         configFeatures: {
-                            chat: true,
                             serverSentModels: true,
                             attribution: true,
                         },

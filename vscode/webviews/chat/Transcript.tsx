@@ -21,7 +21,6 @@ import {
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 interface TranscriptProps {
-    chatEnabled: boolean
     transcript: ChatMessage[]
     userInfo: UserAccountInfo
     messageInProgress: ChatMessage | null
@@ -39,7 +38,6 @@ interface TranscriptProps {
 
 export const Transcript: FC<TranscriptProps> = props => {
     const {
-        chatEnabled,
         transcript,
         userInfo,
         messageInProgress,
@@ -68,7 +66,6 @@ export const Transcript: FC<TranscriptProps> = props => {
                 <TranscriptInteraction
                     // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                     key={i}
-                    chatEnabled={chatEnabled}
                     userInfo={userInfo}
                     interaction={interaction}
                     guardrails={guardrails}
@@ -166,7 +163,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         priorAssistantMessageIsLoading,
         isTranscriptError,
         userInfo,
-        chatEnabled,
         feedbackButtonsOnSubmit,
         postMessage,
         guardrails,
@@ -211,14 +207,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             <HumanMessageCell
                 key={humanMessage.index}
                 userInfo={userInfo}
-                chatEnabled={chatEnabled}
                 message={humanMessage}
                 isFirstMessage={humanMessage.index === 0}
                 isSent={!humanMessage.isUnsentFollowup}
                 isPendingPriorResponse={priorAssistantMessageIsLoading}
                 onSubmit={humanMessage.isUnsentFollowup ? onFollowupSubmit : onEditSubmit}
                 onStop={onStop}
-                isFirstInteraction={isFirstInteraction}
                 isLastInteraction={isLastInteraction}
                 isEditorInitiallyFocused={isLastInteraction}
                 editorRef={humanEditorRef}
@@ -238,7 +232,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 <AssistantMessageCell
                     key={assistantMessage.index}
                     userInfo={userInfo}
-                    chatEnabled={chatEnabled}
                     message={assistantMessage}
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                     copyButtonOnSubmit={copyButtonOnSubmit}

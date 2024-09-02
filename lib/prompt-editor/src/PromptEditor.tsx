@@ -36,8 +36,6 @@ interface Props extends KeyboardEventPluginProps {
 
     contextWindowSizeInTokens?: number
 
-    disabled?: boolean
-
     editorRef?: React.RefObject<PromptEditorRefAPI>
 }
 
@@ -62,7 +60,6 @@ export const PromptEditor: FunctionComponent<Props> = ({
     onChange,
     onFocusChange,
     contextWindowSizeInTokens,
-    disabled,
     editorRef: ref,
     onEnterKey,
 }) => {
@@ -201,7 +198,6 @@ export const PromptEditor: FunctionComponent<Props> = ({
     return (
         <BaseEditor
             className={clsx(styles.editor, editorClassName, {
-                [styles.disabled]: disabled,
                 [styles.seamless]: seamless,
             })}
             contentEditableClassName={contentEditableClassName}
@@ -211,7 +207,6 @@ export const PromptEditor: FunctionComponent<Props> = ({
             contextWindowSizeInTokens={contextWindowSizeInTokens}
             editorRef={editorRef}
             placeholder={placeholder}
-            disabled={disabled}
             aria-label="Chat message"
             onEnterKey={onEnterKey}
         />

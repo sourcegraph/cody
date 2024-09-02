@@ -22,7 +22,6 @@ import { useConfig } from '../../../../utils/useConfig'
 export const HumanMessageCell: FunctionComponent<{
     message: ChatMessage
     userInfo: UserAccountInfo
-    chatEnabled: boolean
 
     /** Whether this editor is for the first message (not a followup). */
     isFirstMessage: boolean
@@ -37,7 +36,6 @@ export const HumanMessageCell: FunctionComponent<{
     onSubmit: (editorValue: SerializedPromptEditorValue) => void
     onStop: () => void
 
-    isFirstInteraction?: boolean
     isLastInteraction?: boolean
     isEditorInitiallyFocused?: boolean
 
@@ -50,14 +48,12 @@ export const HumanMessageCell: FunctionComponent<{
     ({
         message,
         userInfo,
-        chatEnabled = true,
         isFirstMessage,
         isSent,
         isPendingPriorResponse,
         onChange,
         onSubmit,
         onStop,
-        isFirstInteraction,
         isLastInteraction,
         isEditorInitiallyFocused,
         className,
@@ -92,8 +88,6 @@ export const HumanMessageCell: FunctionComponent<{
                         onChange={onChange}
                         onSubmit={onSubmit}
                         onStop={onStop}
-                        disabled={!chatEnabled}
-                        isFirstInteraction={isFirstInteraction}
                         isLastInteraction={isLastInteraction}
                         isEditorInitiallyFocused={isEditorInitiallyFocused}
                         editorRef={editorRef}

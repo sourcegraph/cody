@@ -27,7 +27,6 @@ describe('syncModels', () => {
         // Mock the /.api/client-config for these tests so that modelsAPIEnabled == false
         const mockClientConfig = {
             codyEnabled: true,
-            chatEnabled: true,
             autoCompleteEnabled: true,
             customCommandsEnabled: true,
             attributionEnabled: true,
@@ -113,7 +112,6 @@ describe('syncModels from the server', () => {
         // Mock the /.api/client-config for these tests so that modelsAPIEnabled == true
         const mockClientConfig = {
             codyEnabled: true,
-            chatEnabled: true,
             autoCompleteEnabled: true,
             customCommandsEnabled: true,
             attributionEnabled: true,

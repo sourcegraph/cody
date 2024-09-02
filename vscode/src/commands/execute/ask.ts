@@ -24,10 +24,7 @@ export interface ExecuteChatArguments extends Omit<WebviewSubmitMessage, 'text' 
 export const executeChat = async (args: ExecuteChatArguments): Promise<ChatSession | undefined> => {
     const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
     const isCommand = Boolean(args.command)
-    if (
-        (!isCommand && !clientConfig?.chatEnabled) ||
-        (isCommand && !clientConfig?.customCommandsEnabled)
-    ) {
+    if (isCommand && !clientConfig?.customCommandsEnabled) {
         void vscode.window.showErrorMessage(
             'This feature has been disabled by your Sourcegraph site admin.'
         )

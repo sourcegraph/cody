@@ -32,8 +32,3 @@
 .editor:not(.seamless) {
     border-color: var(--vscode-input-border, transparent);
 }
-
-.disabled {
-    color: var(--vscode-input-foreground);
-    opacity: 0.5;
-}

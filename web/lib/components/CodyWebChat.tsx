@@ -257,7 +257,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                                 attributionEnabled={false}
                                 config={config.config}
                                 userHistory={userHistory}
-                                chatEnabled={true}
                                 showWelcomeMessage={true}
                                 showIDESnippetActions={false}
                                 messageInProgress={messageInProgress}

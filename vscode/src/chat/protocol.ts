@@ -197,7 +197,6 @@ export type ExtensionMessage =
           config: ConfigurationSubsetForWebview & LocalEnv
           authStatus: AuthStatus
           configFeatures: {
-              chat: boolean
               attribution: boolean
               serverSentModels: boolean
           }

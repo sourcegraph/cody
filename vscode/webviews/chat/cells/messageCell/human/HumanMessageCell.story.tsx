@@ -13,7 +13,6 @@ const meta: Meta<typeof HumanMessageCell> = {
 
     args: {
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
-        chatEnabled: true,
         onSubmit: () => {},
     },
 

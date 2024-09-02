@@ -181,9 +181,6 @@ interface CodyClientConfig {
     // Whether the site admin allows this user to make use of Cody at all.
     codyEnabled: boolean
 
-    // Whether the site admin allows this user to make use of the Cody chat feature.
-    chatEnabled: boolean
-
     // Whether the site admin allows this user to make use of the Cody autocomplete feature.
     autoCompleteEnabled: boolean
 
@@ -1664,7 +1661,6 @@ export class ClientConfigSingleton {
 
         return graphqlClient.isCodyEnabled().then(isCodyEnabled => ({
             codyEnabled: isCodyEnabled.enabled,
-            chatEnabled: features.chat,
             autoCompleteEnabled: features.autoComplete,
             customCommandsEnabled: features.commands,
             attributionEnabled: features.attribution,

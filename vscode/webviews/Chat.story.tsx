@@ -21,7 +21,6 @@ const meta: Meta<typeof Chat> = {
     args: {
         transcript: FIXTURE_TRANSCRIPT.simple2,
         messageInProgress: null,
-        chatEnabled: true,
         vscodeAPI: {
             postMessage: () => {},
             onMessage: () => () => {},
@@ -74,5 +73,3 @@ export const EmptyWithNoPrompts: StoryObj<typeof meta> = {
         </ExtensionAPIProviderForTestsOnly>
     ),
 }
-
-export const Disabled: StoryObj<typeof meta> = { args: { chatEnabled: false } }

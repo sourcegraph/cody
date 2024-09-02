@@ -212,7 +212,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     errorMessages={errorMessages}
                     setErrorMessages={setErrorMessages}
                     attributionEnabled={config.configFeatures.attribution}
-                    chatEnabled={config.configFeatures.chat}
                     messageInProgress={messageInProgress}
                     transcript={transcript}
                     vscodeAPI={vscodeAPI}

@@ -361,7 +361,6 @@ export class MockServer {
             }
             res.send(
                 JSON.stringify({
-                    chatEnabled: true,
                     autoCompleteEnabled: true,
                     customCommandsEnabled: true,
                     attributionEnabled: attribution,

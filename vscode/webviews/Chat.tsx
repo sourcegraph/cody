@@ -13,7 +13,6 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
-import styles from './Chat.module.css'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
@@ -21,7 +20,6 @@ import { useTelemetryRecorder } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
 
 interface ChatboxProps {
-    chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
@@ -39,7 +37,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     transcript,
     vscodeAPI,
     isTranscriptError,
-    chatEnabled = true,
     guardrails,
     scrollableParent,
     showWelcomeMessage = true,
@@ -198,11 +195,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     return (
         <>
-            {!chatEnabled && (
-                <div className={styles.chatDisabled}>
-                    Cody chat is disabled by your Sourcegraph site administrator
-                </div>
-            )}
             <Transcript
                 transcript={transcript}
                 messageInProgress={messageInProgress}
@@ -212,7 +204,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 smartApply={smartApply}
                 isTranscriptError={isTranscriptError}
                 userInfo={userInfo}
-                chatEnabled={chatEnabled}
                 postMessage={postMessage}
                 guardrails={guardrails}
                 smartApplyEnabled={smartApplyEnabled}

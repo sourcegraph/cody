@@ -35,7 +35,6 @@ const meta: Meta<typeof Transcript> = {
         insertButtonOnSubmit: () => {},
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
         postMessage: () => {},
-        chatEnabled: true,
     } satisfies ComponentProps<typeof Transcript>,
 
     decorators: [

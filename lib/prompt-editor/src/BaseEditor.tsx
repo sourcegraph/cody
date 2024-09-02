@@ -23,7 +23,6 @@ interface Props extends KeyboardEventPluginProps {
     contextWindowSizeInTokens?: number
     editorRef?: RefObject<LexicalEditor>
     placeholder?: string
-    disabled?: boolean
     className?: string
     contentEditableClassName?: string
     'aria-label'?: string
@@ -39,7 +38,6 @@ export const BaseEditor: FunctionComponent<Props> = ({
     contextWindowSizeInTokens,
     editorRef,
     placeholder,
-    disabled,
     className,
     contentEditableClassName,
     'aria-label': ariaLabel,
@@ -52,7 +50,6 @@ export const BaseEditor: FunctionComponent<Props> = ({
             theme: { paragraph: styles.themeParagraph },
             onError: (error: any) => console.error(error),
             editorState: initialEditorState !== null ? JSON.stringify(initialEditorState) : undefined,
-            editable: !disabled,
             nodes: RICH_EDITOR_NODES,
         }),
         []
