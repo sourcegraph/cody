@@ -105,17 +105,23 @@ class WebviewViewService(val project: Project) {
   )
 
   fun registerProvider(id: String, retainContextWhenHidden: Boolean) {
-    var provider = Provider(id, ProviderOptions(retainContextWhenHidden))
-    providers[id] = provider
-    val viewHost = views[id] ?: return
+    val viewHost: WebviewHost
+    val provider = Provider(id, ProviderOptions(retainContextWhenHidden))
+    synchronized(providers) {
+      providers[id] = provider
+      viewHost = views[id] ?: return
+    }
     runInEdt { provideView(viewHost, provider) }
   }
 
   // TODO: Implement 'dispose' for registerWebviewViewProvider.
 
   private fun provideHost(viewHost: WebviewHost) {
-    views[viewHost.id] = viewHost
-    val provider = providers[viewHost.id] ?: return
+    val provider: Provider
+    synchronized(providers) {
+      views[viewHost.id] = viewHost
+      provider = providers[viewHost.id] ?: return
+    }
     runInEdt { provideView(viewHost, provider) }
   }
 
@@ -149,12 +155,11 @@ class WebviewViewService(val project: Project) {
     }
   }
 
-  // TODO: Consider moving this to a separate class.
+  // TODO: Move this to a separate class or rename this class. WebviewPanels are not WebviewViews.
   fun createPanel(
       proxy: WebUIProxy,
       params: WebviewCreateWebviewPanelParams
   ): WebviewViewDelegate? {
-    // TODO: Give these files unique names.
     val file = LightVirtualFile("Cody")
     file.fileType = WebPanelFileType.INSTANCE
     file.putUserData(WebPanelTabTitleProvider.WEB_PANEL_TITLE_KEY, params.title)
