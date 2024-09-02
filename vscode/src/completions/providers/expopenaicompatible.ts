@@ -45,7 +45,7 @@ interface OpenAICompatibleOptions {
     maxContextTokens?: number
     client: CodeCompletionsClient
     config: Pick<ClientConfigurationWithAccessToken, 'accessToken'>
-    authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
+    authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'endpoint'>
 }
 
 const PROVIDER_IDENTIFIER = 'experimental-openaicompatible'

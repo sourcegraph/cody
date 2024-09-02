@@ -5,6 +5,7 @@ import {
     convertGitCloneURLToCodebaseName,
     graphqlClient,
     isDefined,
+    isDotCom,
     isFileURI,
 } from '@sourcegraph/cody-shared'
 
@@ -99,7 +100,7 @@ export class RepoNameResolver {
         const uniqueRemoteUrls = Array.from(new Set(remoteUrls))
 
         // Use local conversion function for non-enterprise accounts.
-        if (authProvider.instance.getAuthStatus().isDotCom) {
+        if (isDotCom(authProvider.instance.status)) {
             return uniqueRemoteUrls.map(convertGitCloneURLToCodebaseName).filter(isDefined)
         }
 

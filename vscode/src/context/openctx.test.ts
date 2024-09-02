@@ -2,6 +2,7 @@ import {
     type AuthStatus,
     CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
     type ClientConfiguration,
+    DOTCOM_URL,
     GIT_OPENCTX_PROVIDER_URI,
     WEB_PROVIDER_URI,
     featureFlagProvider,
@@ -21,8 +22,8 @@ describe('getOpenCtxProviders', () => {
         return Observable.of({ experimentalNoodle } as ClientConfiguration)
     }
 
-    const mockAuthStatusIsDotCom = (isDotCom: boolean): Observable<AuthStatus> => {
-        return Observable.of({ isDotCom } as AuthStatus)
+    const mockAuthStatus = (isDotCom: boolean): Observable<Pick<AuthStatus, 'endpoint'>> => {
+        return Observable.of({ endpoint: isDotCom ? DOTCOM_URL.toString() : 'https://example.com' })
     }
 
     test('dotcom user', async () => {
@@ -31,7 +32,7 @@ describe('getOpenCtxProviders', () => {
         )
 
         const providers = await firstValueFrom(
-            getOpenCtxProviders(mockConfig(false), mockAuthStatusIsDotCom(true), true)
+            getOpenCtxProviders(mockConfig(false), mockAuthStatus(true), true)
         )
 
         expect(providers.map(p => p.providerUri)).toEqual([WEB_PROVIDER_URI])
@@ -43,7 +44,7 @@ describe('getOpenCtxProviders', () => {
         )
 
         const providers = await firstValueFrom(
-            getOpenCtxProviders(mockConfig(false), mockAuthStatusIsDotCom(false), true)
+            getOpenCtxProviders(mockConfig(false), mockAuthStatus(false), true)
         )
 
         expect(providers.map(p => p.providerUri)).toEqual([
@@ -61,7 +62,7 @@ describe('getOpenCtxProviders', () => {
         )
 
         const providers = await firstValueFrom(
-            getOpenCtxProviders(mockConfig(false), mockAuthStatusIsDotCom(false), true)
+            getOpenCtxProviders(mockConfig(false), mockAuthStatus(false), true)
         )
 
         expect(providers.map(p => p.providerUri)).toContain(GIT_OPENCTX_PROVIDER_URI)

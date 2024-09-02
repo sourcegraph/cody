@@ -7,6 +7,7 @@ import {
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
     dotcomTokenToGatewayToken,
+    isDotCom,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
@@ -40,10 +41,7 @@ export interface FireworksOptions {
         ClientConfigurationWithAccessToken,
         'accessToken' | 'autocompleteExperimentalFireworksOptions'
     >
-    authStatus: Pick<
-        AuthStatus,
-        'userCanUpgrade' | 'isDotCom' | 'endpoint' | 'isFireworksTracingEnabled'
-    >
+    authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'endpoint' | 'isFireworksTracingEnabled'>
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
@@ -135,10 +133,7 @@ class FireworksProvider extends Provider {
     private promptChars: number
     private client: CodeCompletionsClient
     private fastPathAccessToken?: string
-    private authStatus: Pick<
-        AuthStatus,
-        'userCanUpgrade' | 'isDotCom' | 'endpoint' | 'isFireworksTracingEnabled'
-    >
+    private authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'endpoint' | 'isFireworksTracingEnabled'>
     private isLocalInstance: boolean
     private fireworksConfig?: ClientConfiguration['autocompleteExperimentalFireworksOptions']
     private modelHelper: DefaultModel
@@ -173,7 +168,7 @@ class FireworksProvider extends Provider {
         this.fastPathAccessToken =
             config.accessToken &&
             // Require the upstream to be dotcom
-            (this.authStatus.isDotCom || this.isLocalInstance) &&
+            (isDotCom(this.authStatus) || this.isLocalInstance) &&
             process.env.CODY_DISABLE_FASTPATH !== 'true' && // Used for testing
             // The fast path client only supports Node.js style response streams
             isNode
@@ -324,7 +319,7 @@ export function createProviderConfig({
 }: Omit<FireworksOptions, 'model' | 'maxContextTokens'> & {
     model: string | null
 }): ProviderConfig {
-    const clientModel = getClientModel(model, otherOptions.authStatus.isDotCom)
+    const clientModel = getClientModel(model, isDotCom(otherOptions.authStatus))
     const maxContextTokens = getMaxContextTokens(clientModel)
 
     return {

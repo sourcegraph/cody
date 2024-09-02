@@ -37,6 +37,7 @@ import {
     isAbortErrorOrSocketHangUp,
     isContextWindowLimitError,
     isDefined,
+    isDotCom,
     isError,
     isRateLimitError,
     modelsService,
@@ -63,6 +64,7 @@ import { map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { version as VSCEVersion } from '../../../package.json'
 import { View } from '../../../webviews/tabs/types'
+import { redirectToEndpointLogin, showSignOutMenu } from '../../auth/auth'
 import {
     closeAuthProgressIndicator,
     startAuthProgressIndicator,
@@ -152,7 +154,7 @@ export class AuthDependentRetrievers {
     }
 
     private isConsumer(): boolean {
-        return authProvider.instance!.getAuthStatus().isDotCom
+        return isDotCom(authProvider.instance!.status)
     }
 
     private allowRemoteContext(): boolean {
@@ -340,7 +342,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await handleSmartApply(
                     message.id,
                     message.code,
-                    authProvider.instance!.getAuthStatus(),
+                    authProvider.instance!.status,
                     message.instruction,
                     message.fileName
                 )
@@ -432,7 +434,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             case 'auth': {
                 if (message.authKind === 'callback' && message.endpoint) {
-                    authProvider.instance!.redirectToEndpointLogin(message.endpoint)
+                    redirectToEndpointLogin(message.endpoint)
                     break
                 }
                 if (message.authKind === 'offline') {
@@ -486,7 +488,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     break
                 }
                 if (message.authKind === 'signout') {
-                    await authProvider.instance!.signoutMenu()
+                    await showSignOutMenu()
                     this.setWebviewView(View.Login)
                     break
                 }
@@ -518,7 +520,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             }
             case 'troubleshoot/reloadAuth': {
                 await authProvider.instance!.reloadAuthStatus()
-                const nextAuth = authProvider.instance!.getAuthStatus()
+                const nextAuth = authProvider.instance!.status
                 telemetryRecorder.recordEvent('cody.troubleshoot', 'reloadAuth', {
                     metadata: {
                         success: nextAuth.isLoggedIn ? 1 : 0,
@@ -575,7 +577,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async sendConfig(): Promise<void> {
-        const authStatus = authProvider.instance!.getAuthStatus()
+        const authStatus = authProvider.instance!.status
         const configForWebview = await this.getConfigForWebview()
         const workspaceFolderUris =
             vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
@@ -594,6 +596,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 attribution: clientConfig?.attributionEnabled ?? false,
                 serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
             },
+            isDotComUser: isDotCom(authStatus),
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
@@ -637,7 +640,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     ): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             span.setAttribute('sampled', true)
-            const authStatus = authProvider.instance!.getAuthStatus()
+            const authStatus = authProvider.instance!.status
             const sharedProperties = {
                 requestID,
                 chatModel: this.chatModel.modelID,
@@ -755,7 +758,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         sharedProperties: any,
         context: PromptInfo['context']
     ): Promise<void> {
-        const authStatus = authProvider.instance!.getAuthStatus()
+        const authStatus = authProvider.instance!.status
 
         // Create a summary of how many code snippets of each context source are being
         // included in the prompt
@@ -784,7 +787,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 ...contextSummary,
                 // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
                 // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                recordsPrivateMetadataTranscript: authStatus.isDotCom ? 1 : 0,
+                recordsPrivateMetadataTranscript: isDotCom(authStatus) ? 1 : 0,
             },
             privateMetadata: {
                 properties,
@@ -793,7 +796,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // V2 telemetry exports privateMetadata only for DotCom users
                 // the condition below is an additional safeguard measure
                 promptText:
-                    authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
+                    isDotCom(authStatus) && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
             },
         })
     }
@@ -1096,7 +1099,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     ): Promise<PromptInfo> {
         const { prompt, context } = await prompter.makePrompt(
             this.chatModel,
-            authProvider.instance!.getAuthStatus().codyApiVersion
+            authProvider.instance!.status.codyApiVersion
         )
         abortSignal.throwIfAborted()
 
@@ -1114,8 +1117,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         ignored: ContextItem[]
     }): Promise<object> {
         // 🚨 SECURITY: included only for dotcom users & public repos
-        const isDotCom = authProvider.instance!.getAuthStatus().isDotCom
-        if (!isDotCom) {
+        if (!isDotCom(authProvider.instance!.status)) {
             return {}
         }
         if (!workspaceReposMonitor) {
@@ -1277,7 +1279,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         void this.saveSession()
         this.postViewTranscript()
 
-        const authStatus = authProvider.instance!.getAuthStatus()
+        const authStatus = authProvider.instance!.status
 
         // Count code generated from response
         const generatedCode = countGeneratedCode(messageText.toString())
@@ -1289,14 +1291,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 ...generatedCode,
                 // Flag indicating this is a transcript event to go through ML data pipeline. Only for dotcom users
                 // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                recordsPrivateMetadataTranscript: authStatus.isDotCom ? 1 : 0,
+                recordsPrivateMetadataTranscript: isDotCom(authStatus) ? 1 : 0,
             },
             privateMetadata: {
                 // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                 // V2 telemetry exports privateMetadata only for DotCom users
                 // the condition below is an aditional safegaurd measure
                 responseText:
-                    authStatus.isDotCom && truncatePromptString(messageText, CHAT_OUTPUT_TOKEN_BUDGET),
+                    isDotCom(authStatus) && truncatePromptString(messageText, CHAT_OUTPUT_TOKEN_BUDGET),
                 chatModel: this.chatModel.modelID,
             },
         })
@@ -1318,7 +1320,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // current in-progress completion. If the chat does not exist, then this
     // is a no-op.
     public async restoreSession(sessionID: string): Promise<void> {
-        const oldTranscript = chatHistory.getChat(authProvider.instance!.getAuthStatus(), sessionID)
+        const oldTranscript = chatHistory.getChat(authProvider.instance!.status, sessionID)
         if (!oldTranscript) {
             return
         }
@@ -1331,7 +1333,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private async saveSession(): Promise<void> {
         const allHistory = await chatHistory.saveChat(
-            authProvider.instance!.getAuthStatus(),
+            authProvider.instance!.status,
             this.chatModel.toSerializedChatTranscript()
         )
         if (allHistory) {
@@ -1376,8 +1378,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         const viewType = CodyChatEditorViewType
         const panelTitle =
-            chatHistory.getChat(authProvider.instance!.getAuthStatus(), this.chatModel.sessionID)
-                ?.chatTitle || getChatPanelTitle(lastQuestion)
+            chatHistory.getChat(authProvider.instance!.status, this.chatModel.sessionID)?.chatTitle ||
+            getChatPanelTitle(lastQuestion)
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         const panel = vscode.window.createWebviewPanel(
@@ -1552,7 +1554,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (workspaceReposMonitor) {
             const { isPublic: isWorkspacePublic, repoMetadata } =
                 await workspaceReposMonitor.getRepoMetadataIfPublic()
-            if (authStatus.isDotCom && legacyAddEnhancedContext && isWorkspacePublic) {
+            if (isDotCom(authStatus) && legacyAddEnhancedContext && isWorkspacePublic) {
                 gitMetadata = JSON.stringify(repoMetadata)
             }
         }
@@ -1560,7 +1562,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             metadata: {
                 // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
                 // See https://github.com/sourcegraph/sourcegraph/pull/59524
-                recordsPrivateMetadataTranscript: authStatus.endpoint && authStatus.isDotCom ? 1 : 0,
+                recordsPrivateMetadataTranscript: authStatus.endpoint && isDotCom(authStatus) ? 1 : 0,
                 addEnhancedContext: legacyAddEnhancedContext ? 1 : 0,
 
                 // All mentions
@@ -1603,7 +1605,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // V2 telemetry exports privateMetadata only for DotCom users
                 // the condition below is an additional safeguard measure
                 promptText:
-                    authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
+                    isDotCom(authStatus) && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
                 gitMetadata,
             },
         })

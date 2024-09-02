@@ -4,6 +4,7 @@ import {
     type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
     type CodyLLMSiteConfiguration,
+    DOTCOM_URL,
     type GraphQLAPIClientConfig,
     defaultAuthStatus,
     graphqlClient,
@@ -35,6 +36,7 @@ const dummyCodeCompletionsClient: CodeCompletionsClient = {
 
 const dummyAuthStatus: AuthStatus = {
     ...defaultAuthStatus,
+    endpoint: DOTCOM_URL.toString(),
     configOverwrites: {
         provider: 'sourcegraph',
         completionModel: 'fireworks/starcoder-hybrid',

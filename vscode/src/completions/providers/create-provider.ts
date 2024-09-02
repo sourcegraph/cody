@@ -1,8 +1,9 @@
-import type {
-    AuthStatus,
-    ClientConfigurationWithAccessToken,
-    CodeCompletionsClient,
-    Model,
+import {
+    type AuthStatus,
+    type ClientConfigurationWithAccessToken,
+    type CodeCompletionsClient,
+    type Model,
+    isDotCom,
 } from '@sourcegraph/cody-shared'
 
 import { logError } from '../../log'
@@ -38,7 +39,7 @@ export async function createProviderConfig(
     }
 
     // Check if a user participates in autocomplete model experiments.
-    const configFromFeatureFlags = await getExperimentModel(authStatus.isDotCom)
+    const configFromFeatureFlags = await getExperimentModel(isDotCom(authStatus))
 
     // Use the experiment model if available.
     if (configFromFeatureFlags) {
@@ -143,7 +144,7 @@ export async function createProviderConfigHelper(
         case 'anthropic': {
             function getAnthropicModel() {
                 // Always use the default PLG model on DotCom
-                if (authStatus.isDotCom) {
+                if (isDotCom(authStatus)) {
                     return DEFAULT_PLG_ANTHROPIC_MODEL
                 }
 

@@ -4,6 +4,7 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
+    DOTCOM_URL,
     type GraphQLAPIClientConfig,
     RateLimitError,
     contextFiltersProvider,
@@ -34,9 +35,8 @@ const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
 }
 
 const DUMMY_AUTH_STATUS: AuthStatus = {
-    endpoint: 'https://fastsourcegraph.com',
-    isDotCom: true,
     isLoggedIn: true,
+    endpoint: DOTCOM_URL.toString(),
     isFireworksTracingEnabled: false,
     showInvalidAccessTokenError: false,
     authenticated: true,

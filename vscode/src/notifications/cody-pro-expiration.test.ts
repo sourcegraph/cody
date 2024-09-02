@@ -3,6 +3,7 @@ import { localStorage } from '../services/LocalStorageProvider'
 
 import {
     type AuthStatus,
+    DOTCOM_URL,
     FeatureFlag,
     type FeatureFlagProvider,
     type GraphQLAPIClientConfig,
@@ -67,9 +68,11 @@ describe('Cody Pro expiration notifications', () => {
                     }
                 },
             },
-            getAuthStatus: () => authStatus,
+            get status() {
+                return authStatus
+            },
         } as AuthProvider
-        authStatus = { ...defaultAuthStatus, isLoggedIn: true, isDotCom: true }
+        authStatus = { ...defaultAuthStatus, isLoggedIn: true, endpoint: DOTCOM_URL.toString() }
         localStorageData = {}
     })
 
@@ -168,7 +171,7 @@ describe('Cody Pro expiration notifications', () => {
     })
 
     it('does not show if not DotCom', async () => {
-        authStatus.isDotCom = false
+        authStatus.endpoint = 'https://example.com' // non-dotcom
         await createNotifier().triggerExpirationCheck()
         expectNoNotification()
     })

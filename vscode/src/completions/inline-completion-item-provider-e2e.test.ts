@@ -1,6 +1,7 @@
 import {
     type AuthStatus,
     type ClientConfiguration,
+    DOTCOM_URL,
     type GraphQLAPIClientConfig,
     contextFiltersProvider,
     graphqlClient,
@@ -40,9 +41,8 @@ const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
 }
 
 const DUMMY_AUTH_STATUS: AuthStatus = {
-    endpoint: 'https://fastsourcegraph.com',
-    isDotCom: true,
     isLoggedIn: true,
+    endpoint: DOTCOM_URL.toString(),
     isFireworksTracingEnabled: false,
     showInvalidAccessTokenError: false,
     authenticated: true,

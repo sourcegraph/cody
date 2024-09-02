@@ -201,6 +201,7 @@ export type ExtensionMessage =
               attribution: boolean
               serverSentModels: boolean
           }
+          isDotComUser: boolean
           workspaceFolderUris: string[]
       }
     | { type: 'ui/theme'; agentIDE: CodyIDE; cssVariables: CodyIDECssVariables }

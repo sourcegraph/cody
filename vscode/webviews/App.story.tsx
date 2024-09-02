@@ -42,6 +42,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
             },
             configFeatures: { attribution: true, chat: true, serverSentModels: true },
             workspaceFolderUris: [],
+            isDotComUser: true,
         })
         cb({
             type: 'history',

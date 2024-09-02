@@ -391,7 +391,7 @@ export class MinionController extends ReactPanelController<
     }
 
     private async handleSetSession(id: string): Promise<void> {
-        const storedSessionState = await this.storage.load(authProvider.instance!.getAuthStatus(), id)
+        const storedSessionState = await this.storage.load(authProvider.instance!.status, id)
         if (!storedSessionState) {
             throw new Error(`session not found with id: ${id}`)
         }
@@ -409,7 +409,7 @@ export class MinionController extends ReactPanelController<
     }
 
     private async handleClearHistory(): Promise<void> {
-        await this.storage.clear(authProvider.instance!.getAuthStatus())
+        await this.storage.clear(authProvider.instance!.status)
         if (this.sessionState) {
             await this.save()
         }
@@ -498,7 +498,7 @@ export class MinionController extends ReactPanelController<
         if (!this.sessionState) {
             throw new Error('no session to save')
         }
-        await this.storage.save(authProvider.instance!.getAuthStatus(), {
+        await this.storage.save(authProvider.instance!.status, {
             session: this.sessionState.session,
         })
     }
@@ -562,7 +562,7 @@ export class MinionController extends ReactPanelController<
     private async postUpdateSessionIds(): Promise<void> {
         this.postMessage({
             type: 'update-session-ids',
-            sessionIds: await this.storage.listIds(authProvider.instance!.getAuthStatus()),
+            sessionIds: await this.storage.listIds(authProvider.instance!.status),
             currentSessionId: this.sessionState?.session.id,
         })
     }

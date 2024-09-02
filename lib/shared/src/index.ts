@@ -1,6 +1,6 @@
 // Add anything else here that needs to be used outside of this library.
 
-export { Model, modelsService } from './models'
+export { Model, modelsService, type ServerModel, type ServerModelConfiguration } from './models'
 export {
     type EditModel,
     type EditProvider,
@@ -218,6 +218,7 @@ export {
     isContextWindowLimitError,
     isAuthError,
     isNetworkError,
+    isNetworkLikeError,
     isRateLimitError,
 } from './sourcegraph-api/errors'
 export {

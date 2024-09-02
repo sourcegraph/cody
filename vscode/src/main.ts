@@ -14,6 +14,7 @@ import {
     contextFiltersProvider,
     featureFlagProvider,
     graphqlClient,
+    isDotCom,
     modelsService,
     setClientNameVersion,
     setLogger,
@@ -22,6 +23,8 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { CommandResult } from './CommandResult'
+import { showAccountMenu } from './auth/account-menu'
+import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
@@ -309,7 +312,10 @@ async function initializeSingletons(
                     void localStorage.setConfig(config)
                     graphqlClient.setConfig(config)
                     void featureFlagProvider.instance!.refresh()
-                    contextFiltersProvider.instance!.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
+                    contextFiltersProvider.instance!.init(
+                        repoNameResolver.getRepoNamesFromWorkspaceUri,
+                        authProvider.instance!
+                    )
                     void modelsService.instance!.onConfigChange(config)
                     upstreamHealthProvider.instance!.onConfigurationChange(config)
                 },
@@ -469,7 +475,7 @@ function registerChatCommands(disposables: vscode.Disposable[]): void {
             vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow')
         }),
         vscode.commands.registerCommand('cody.chat.history.panel', async () => {
-            await displayHistoryQuickPick(authProvider.instance!.getAuthStatus())
+            await displayHistoryQuickPick(authProvider.instance!.status)
         }),
         vscode.commands.registerCommand('cody.settings.extension.chat', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', {
@@ -484,13 +490,11 @@ function registerChatCommands(disposables: vscode.Disposable[]): void {
 
 function registerAuthCommands(disposables: vscode.Disposable[]): void {
     disposables.push(
-        vscode.commands.registerCommand('cody.auth.signin', () => authProvider.instance!.signinMenu()),
-        vscode.commands.registerCommand('cody.auth.signout', () => authProvider.instance!.signoutMenu()),
-        vscode.commands.registerCommand('cody.auth.account', () => authProvider.instance!.accountMenu()),
+        vscode.commands.registerCommand('cody.auth.signin', () => showSignInMenu()),
+        vscode.commands.registerCommand('cody.auth.signout', () => showSignOutMenu()),
+        vscode.commands.registerCommand('cody.auth.account', () => showAccountMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
-        vscode.commands.registerCommand('cody.auth.status', () =>
-            authProvider.instance!.getAuthStatus()
-        ), // Used by the agent
+        vscode.commands.registerCommand('cody.auth.status', () => authProvider.instance!.status), // Used by the agent
         vscode.commands.registerCommand(
             'cody.agent.auth.authenticate',
             async ({ serverEndpoint, accessToken, customHeaders }) => {
@@ -521,15 +525,15 @@ function registerUpgradeHandlers(
                 if (uri.path === '/app-done') {
                     // This is an old re-entrypoint from App that is a no-op now.
                 } else {
-                    authProvider.instance!.tokenCallbackHandler(uri, configWatcher.get().customHeaders)
+                    tokenCallbackHandler(uri, configWatcher.get().customHeaders)
                 }
             },
         }),
 
         // Check if user has just moved back from a browser window to upgrade cody pro
         vscode.window.onDidChangeWindowState(async ws => {
-            const authStatus = authProvider.instance!.getAuthStatus()
-            if (ws.focused && authStatus.isDotCom && authStatus.isLoggedIn) {
+            const authStatus = authProvider.instance!.status
+            if (ws.focused && isDotCom(authStatus) && authStatus.isLoggedIn) {
                 const res = await graphqlClient.getCurrentUserCodyProEnabled()
                 if (res instanceof Error) {
                     logError('onDidChangeWindowState', 'getCurrentUserCodyProEnabled', res)

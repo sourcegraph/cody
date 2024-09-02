@@ -602,10 +602,6 @@ export class SourcegraphGraphQLAPIClient {
         this.anonymousUserID = anonymousUID
     }
 
-    public isDotCom(): boolean {
-        return isDotCom(this.config.serverEndpoint)
-    }
-
     // Gets the server endpoint for this client.
     public get endpoint(): string {
         return this.config.serverEndpoint
@@ -1194,7 +1190,7 @@ export class SourcegraphGraphQLAPIClient {
          * If connected to dotcom, just log events to the instance, as it means
          * the same thing.
          */
-        if (this.isDotCom()) {
+        if (isDotCom(this.config.serverEndpoint)) {
             return this.sendEventLogRequestToAPI(event)
         }
 

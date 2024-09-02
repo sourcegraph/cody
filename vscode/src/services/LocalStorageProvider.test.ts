@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import type { AuthStatus, UserLocalHistory } from '@sourcegraph/cody-shared'
+import { type AuthStatus, DOTCOM_URL, type UserLocalHistory } from '@sourcegraph/cody-shared'
 
 import { localStorage } from './LocalStorageProvider'
 
@@ -33,9 +33,8 @@ describe('LocalStorageProvider', () => {
 })
 
 const DUMMY_AUTH_STATUS: AuthStatus = {
-    endpoint: '',
-    isDotCom: true,
     isLoggedIn: true,
+    endpoint: DOTCOM_URL.toString(),
     isFireworksTracingEnabled: false,
     showInvalidAccessTokenError: false,
     authenticated: true,

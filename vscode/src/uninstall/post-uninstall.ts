@@ -8,7 +8,7 @@ import { deleteUninstallerDirectory, readConfig } from './serializeConfig'
 
 class StaticAuthStatusProvider implements AuthStatusProvider {
     constructor(private readonly authStatus: AuthStatus) {}
-    getAuthStatus() {
+    get status(): AuthStatus {
         return this.authStatus
     }
 }

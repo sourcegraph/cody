@@ -9,7 +9,15 @@ import {
     graphqlClient,
 } from '../sourcegraph-api/graphql/client'
 
+import type { AuthStatus, AuthStatusProvider } from '../auth/types'
 import { ContextFiltersProvider, type GetRepoNamesFromWorkspaceUri } from './context-filters-provider'
+
+const isDotComAuthStatusProvider: AuthStatusProvider = {
+    status: { endpoint: 'https://sourcegraph.com' } as AuthStatus,
+}
+const isNotDotComAuthStatusProvider: AuthStatusProvider = {
+    status: { endpoint: 'https://example.com' } as AuthStatus,
+}
 
 describe('ContextFiltersProvider', () => {
     let provider: ContextFiltersProvider
@@ -39,8 +47,7 @@ describe('ContextFiltersProvider', () => {
         vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
             apiResponseForFilters(contextFilters)
         )
-        vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
-        await provider.init(getRepoNamesFromWorkspaceUri)
+        await provider.init(getRepoNamesFromWorkspaceUri, isNotDotComAuthStatusProvider)
     }
 
     interface AssertFilters {
@@ -233,7 +240,7 @@ describe('ContextFiltersProvider', () => {
                 .spyOn(graphqlClient, 'fetchSourcegraphAPI')
                 .mockResolvedValue(apiResponseForFilters(contextFilters))
 
-            await provider.init(getRepoNamesFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri, isNotDotComAuthStatusProvider)
 
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(false)
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(false)
@@ -253,7 +260,7 @@ describe('ContextFiltersProvider', () => {
                 .spyOn(graphqlClient, 'fetchSourcegraphAPI')
                 .mockResolvedValueOnce(apiResponseForFilters(mockContextFilters1))
                 .mockResolvedValueOnce(apiResponseForFilters(mockContextFilters2))
-            await provider.init(getRepoNamesFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri, isNotDotComAuthStatusProvider)
 
             expect(mockedApiRequest).toBeCalledTimes(1)
             expect(provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(false)
@@ -354,8 +361,7 @@ describe('ContextFiltersProvider', () => {
 
         it('excludes everything on network errors', async () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockRejectedValue(new Error('network error'))
-            vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
-            await provider.init(getRepoNamesFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri, isNotDotComAuthStatusProvider)
 
             const uri = getTestURI({ repoName: 'whatever', filePath: 'foo/bar.ts' })
             expect(await provider.isUriIgnored(uri)).toBe('repo:github.com/sourcegraph/whatever')
@@ -364,8 +370,7 @@ describe('ContextFiltersProvider', () => {
         it('includes everything on dotcom when initial fetch is not complete', async () => {
             const foreverPromise = new Promise(() => {}) // We will never resolve this
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockReturnValue(foreverPromise)
-            vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(true)
-            provider.init(getRepoNamesFromWorkspaceUri) // We do not wait for this to finish
+            provider.init(getRepoNamesFromWorkspaceUri, isDotComAuthStatusProvider) // We do not wait for this to finish
 
             const uri = getTestURI({ repoName: 'whatever', filePath: 'foo/bar.ts' })
             expect(await provider.isUriIgnored(uri)).toBe(false)
@@ -375,8 +380,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
                 new Error('API error message')
             )
-            vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
-            await provider.init(getRepoNamesFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri, isNotDotComAuthStatusProvider)
 
             const uri = getTestURI({ repoName: 'whatever', filePath: 'foo/bar.ts' })
             expect(await provider.isUriIgnored(uri)).toBe('has-ignore-everything-filters')
@@ -389,8 +393,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
                 new Error('API error message')
             )
-            vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
-            await provider.init(getRepoNamesFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri, isNotDotComAuthStatusProvider)
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             expect(await provider.isUriIgnored(uri)).toBe('has-ignore-everything-filters')
@@ -400,8 +403,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue({
                 data: { site: { codyContextFilters: { raw: null } } },
             })
-            vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
-            await provider.init(getRepoNamesFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri, isNotDotComAuthStatusProvider)
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             expect(await provider.isUriIgnored(uri)).toBe(false)
@@ -411,8 +413,7 @@ describe('ContextFiltersProvider', () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
                 new Error('Error: Cannot query field `codyContextFilters`')
             )
-            vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
-            await provider.init(getRepoNamesFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri, isNotDotComAuthStatusProvider)
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             expect(await provider.isUriIgnored(uri)).toBe(false)
@@ -422,10 +423,9 @@ describe('ContextFiltersProvider', () => {
             const longDelay = 60 * 60 * 1000
             const shortDelay = 7 * 1000
 
-            vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
             const apiSpy = vi.spyOn(graphqlClient, 'fetchSourcegraphAPI')
             apiSpy.mockResolvedValueOnce(apiResponseForFilters(null))
-            await provider.init(getRepoNamesFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri, isNotDotComAuthStatusProvider)
             expect(provider.timerStateForTest).toEqual({
                 delay: longDelay,
                 lifetime: 'durable',
@@ -500,7 +500,7 @@ describe('ContextFiltersProvider', () => {
             const onChangeCallback = vi.fn()
 
             const dispose = provider.onContextFiltersChanged(onChangeCallback)
-            await provider.init(getRepoNamesFromWorkspaceUri)
+            await provider.init(getRepoNamesFromWorkspaceUri, isNotDotComAuthStatusProvider)
 
             // Got the initial value, the callback is called once.
             expect(onChangeCallback).toBeCalledTimes(1)
