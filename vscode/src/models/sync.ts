@@ -177,7 +177,6 @@ async function fetchServerSideModels(endpoint: string): Promise<ServerModelConfi
  * @returns {ServerModel[]} - The array of models with adjusted context windows where applicable.
  */
 export function maybeAdjustContextWindows(models: ServerModel[]): ServerModel[] {
-    console.log(JSON.stringify(models, null, 2))
     return models.map(m => {
         if (/^mi(x|s)tral/.test(m.modelName)) {
             // Adjust the context window size for Mistral models because the OpenAI tokenizer undercounts tokens in English
