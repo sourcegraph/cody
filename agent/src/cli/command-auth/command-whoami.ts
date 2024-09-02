@@ -3,7 +3,7 @@ import { isError } from 'lodash'
 import ora from 'ora'
 import { AuthenticatedAccount } from './AuthenticatedAccount'
 import { type AuthenticationOptions, accessTokenOption, endpointOption } from './command-login'
-import { errorSpinner, notLoggedIn, unknownErrorSpinner } from './messages'
+import { errorSpinner, notAuthenticated, unknownErrorSpinner } from './messages'
 
 export const whoamiCommand = new Command('whoami')
     .description('Print the active authenticated account')
@@ -18,7 +18,7 @@ export const whoamiCommand = new Command('whoami')
                 process.exit(1)
             }
             if (!account?.username) {
-                notLoggedIn(spinner)
+                notAuthenticated(spinner)
                 process.exit(1)
             }
 

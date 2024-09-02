@@ -671,7 +671,6 @@ export interface ClientCapabilities {
 export interface ServerInfo {
     name: string
     authenticated?: boolean | undefined | null
-    codyEnabled?: boolean | undefined | null
     codyVersion?: string | undefined | null
     authStatus?: AuthStatus | undefined | null
 }

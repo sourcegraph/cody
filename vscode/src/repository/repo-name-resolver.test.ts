@@ -18,7 +18,7 @@ describe('getRepoNamesFromWorkspaceUri', () => {
             changes: EMPTY,
             status: {
                 ...defaultAuthStatus,
-                isLoggedIn: true,
+                authenticated: true,
                 endpoint: 'https://example.com',
             },
         } as Pick<AuthProvider, 'changes' | 'status'> as unknown as AuthProvider
@@ -57,7 +57,7 @@ describe('getRepoNamesFromWorkspaceUri', () => {
             changes: EMPTY,
             status: {
                 ...defaultAuthStatus,
-                isLoggedIn: true,
+                authenticated: true,
                 endpoint: DOTCOM_URL.toString(),
             },
         } as Pick<AuthProvider, 'changes' | 'status'> as unknown as AuthProvider

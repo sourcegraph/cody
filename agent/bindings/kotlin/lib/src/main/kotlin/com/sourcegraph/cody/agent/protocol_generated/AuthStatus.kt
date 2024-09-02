@@ -6,13 +6,11 @@ import com.google.gson.annotations.SerializedName;
 data class AuthStatus(
   val username: String,
   val endpoint: EndpointEnum, // Oneof: 
-  val isLoggedIn: Boolean,
   val isFireworksTracingEnabled: Boolean,
   val showInvalidAccessTokenError: Boolean,
   val authenticated: Boolean,
   val hasVerifiedEmail: Boolean,
   val requiresVerifiedEmail: Boolean,
-  val siteHasCodyEnabled: Boolean,
   val siteVersion: String,
   val codyApiVersion: Long,
   val configOverwrites: CodyLLMSiteConfiguration? = null,

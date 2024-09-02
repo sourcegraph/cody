@@ -35,14 +35,12 @@ const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
 }
 
 const DUMMY_AUTH_STATUS: AuthStatus = {
-    isLoggedIn: true,
     endpoint: DOTCOM_URL.toString(),
     isFireworksTracingEnabled: false,
     showInvalidAccessTokenError: false,
     authenticated: true,
     hasVerifiedEmail: true,
     requiresVerifiedEmail: true,
-    siteHasCodyEnabled: true,
     siteVersion: '1234',
     username: 'uwu',
     userCanUpgrade: false,

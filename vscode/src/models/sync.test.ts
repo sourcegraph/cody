@@ -25,16 +25,14 @@ describe('syncModels', () => {
         setModelsSpy.mockClear()
 
         // Mock the /.api/client-config for these tests so that modelsAPIEnabled == false
-        const mockClientConfig = {
-            codyEnabled: true,
+        vi.spyOn(ClientConfigSingleton.prototype, 'getConfig').mockResolvedValue({
             chatEnabled: true,
             autoCompleteEnabled: true,
             customCommandsEnabled: true,
             attributionEnabled: true,
             smartContextWindowEnabled: true,
             modelsAPIEnabled: false,
-        }
-        vi.spyOn(ClientConfigSingleton.prototype, 'getConfig').mockResolvedValue(mockClientConfig)
+        })
     })
     afterEach(() => {
         // SUPER IMPORTANT: We need to call restoreAllMocks (instead of resetAllMocks)
@@ -112,7 +110,6 @@ describe('syncModels from the server', () => {
 
         // Mock the /.api/client-config for these tests so that modelsAPIEnabled == true
         const mockClientConfig = {
-            codyEnabled: true,
             chatEnabled: true,
             autoCompleteEnabled: true,
             customCommandsEnabled: true,

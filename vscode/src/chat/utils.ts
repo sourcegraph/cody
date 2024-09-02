@@ -10,7 +10,6 @@ import type { CurrentUserInfo } from '@sourcegraph/cody-shared/src/sourcegraph-a
 
 type NewAuthStatusOptions = Omit<
     AuthStatus,
-    | 'isLoggedIn'
     | 'isFireworksTracingEnabled'
     | 'codyApiVersion'
     | 'showInvalidAccessToken'
@@ -28,15 +27,7 @@ type NewAuthStatusOptions = Omit<
 }
 
 export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
-    const {
-        isOfflineMode,
-        endpoint,
-        siteHasCodyEnabled,
-        username,
-        authenticated,
-        siteVersion,
-        userOrganizations,
-    } = options
+    const { isOfflineMode, endpoint, username, authenticated, siteVersion, userOrganizations } = options
 
     if (isOfflineMode) {
         return { ...offlineModeAuthStatus, endpoint, username }
@@ -51,7 +42,6 @@ export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
             : options.primaryEmail?.email || ''
     const requiresVerifiedEmail = isDotCom_
     const hasVerifiedEmail = requiresVerifiedEmail && options.hasVerifiedEmail
-    const isAllowed = !requiresVerifiedEmail || hasVerifiedEmail
     return {
         ...options,
         showInvalidAccessTokenError: false,
@@ -59,7 +49,6 @@ export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
         primaryEmail,
         requiresVerifiedEmail,
         hasVerifiedEmail,
-        isLoggedIn: siteHasCodyEnabled && authenticated && isAllowed,
         codyApiVersion: inferCodyApiVersion(siteVersion, isDotCom_),
         isFireworksTracingEnabled:
             isDotCom_ && !!userOrganizations?.nodes.find(org => org.name === 'sourcegraph'),

@@ -128,6 +128,12 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         if (!userInfo || isError(userInfo)) {
             return { ...unauthenticatedStatus, endpoint }
         }
+        if (!siteHasCodyEnabled) {
+            vscode.window.showErrorMessage(
+                `Cody is not enabled on this Sourcegraph instance (${endpoint}). Ask a site administrator to enable it.`
+            )
+            return { ...unauthenticatedStatus, endpoint }
+        }
 
         const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
@@ -139,7 +145,6 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
                 configOverwrites,
                 authenticated: true,
                 hasVerifiedEmail: false,
-                siteHasCodyEnabled,
                 userCanUpgrade: false,
             })
         }
@@ -157,7 +162,6 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         return newAuthStatus({
             ...userInfo,
             endpoint,
-            siteHasCodyEnabled,
             siteVersion,
             configOverwrites,
             authenticated: !!userInfo.id,
@@ -200,16 +204,20 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
                 await this.storeAuthInfo(config.serverEndpoint, config.accessToken)
             }
 
-            await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
+            await vscode.commands.executeCommand(
+                'setContext',
+                'cody.activated',
+                authStatus.authenticated
+            )
 
             await this.setAuthStatus(authStatus)
 
             // If the extension is authenticated on startup, it can't be a user's first
             // ever authentication. We store this to prevent logging first-ever events
             // for already existing users.
-            if (isExtensionStartup && authStatus.isLoggedIn) {
+            if (isExtensionStartup && authStatus.authenticated) {
                 await this.setHasAuthenticatedBefore()
-            } else if (authStatus.isLoggedIn) {
+            } else if (authStatus.authenticated) {
                 this.handleFirstEverAuthentication()
             }
 
@@ -258,7 +266,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
             let eventValue: 'disconnected' | 'connected' | 'failed'
             if (authStatus.showNetworkError || authStatus.showInvalidAccessTokenError) {
                 eventValue = 'failed'
-            } else if (authStatus.isLoggedIn) {
+            } else if (authStatus.authenticated) {
                 eventValue = 'connected'
             } else {
                 eventValue = 'disconnected'

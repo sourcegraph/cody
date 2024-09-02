@@ -34,7 +34,7 @@ describe('Enterprise - S2 (close main branch)', () => {
             autocompleteAdvancedProvider: 'fireworks',
         })
 
-        expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
+        expect(serverInfo.authStatus?.authenticated).toBeTruthy()
         expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
     }, 10_000)
 
