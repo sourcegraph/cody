@@ -588,7 +588,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // #region top-level view action handlers
     // =======================================================================
 
-    public setAuthStatus(status: AuthStatus): void {
+    public async setAuthStatus(status: AuthStatus): Promise<void> {
         // Run this async because this method may be called during initialization
         // and awaiting on this.postMessage may result in a deadlock
         void this.sendConfig()
@@ -596,6 +596,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // Get the latest model list available to the current user to update the ChatModel.
         if (status.isLoggedIn) {
             this.handleSetChatModel(getDefaultModelID())
+            return await this.saveSession()
         }
     }
 
@@ -1508,9 +1509,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.postViewTranscript()
     }
 
-    private async saveSession(): Promise<void> {
+    private async saveSession(authStatus?: AuthStatus): Promise<void> {
         const allHistory = await chatHistory.saveChat(
-            this.authProvider.getAuthStatus(),
+            authStatus || this.authProvider.getAuthStatus(),
             this.chatModel.toSerializedChatTranscript()
         )
         if (allHistory) {
@@ -1521,9 +1522,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
     }
 
-    public async clearAndRestartSession(): Promise<void> {
+    public async clearAndRestartSession(authStatus?: AuthStatus): Promise<void> {
         this.cancelSubmitOrEditOperation()
-        await this.saveSession()
+        await this.saveSession(authStatus)
 
         this.chatModel = new ChatModel(this.chatModel.modelID)
         this.postViewTranscript()

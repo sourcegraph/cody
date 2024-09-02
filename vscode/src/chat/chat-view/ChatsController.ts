@@ -58,7 +58,7 @@ export class ChatsController implements vscode.Disposable {
     private activeEditor: ChatController | undefined = undefined
 
     // We keep track of the currently authenticated account and dispose open chats when it changes
-    private currentAuthAccount: undefined | { endpoint: string; primaryEmail?: string; username: string }
+    private currentAuthStatus: undefined | AuthStatus
 
     protected disposables: vscode.Disposable[] = []
 
@@ -90,19 +90,13 @@ export class ChatsController implements vscode.Disposable {
     private async setAuthStatus(authStatus: AuthStatus): Promise<void> {
         const hasLoggedOut = !authStatus.isLoggedIn
         const hasSwitchedAccount =
-            this.currentAuthAccount && this.currentAuthAccount.endpoint !== authStatus.endpoint
+            this.currentAuthStatus && this.currentAuthStatus.endpoint !== authStatus.endpoint
         if (hasLoggedOut || hasSwitchedAccount) {
-            this.disposeAllChats()
+            await this.disposeAllChats()
         }
 
-        const endpoint = authStatus.endpoint ?? ''
-        this.currentAuthAccount = {
-            endpoint,
-            primaryEmail: authStatus.primaryEmail,
-            username: authStatus.username,
-        }
-
-        this.panel.setAuthStatus(authStatus)
+        this.currentAuthStatus = authStatus
+        await this.panel.setAuthStatus(authStatus)
     }
 
     public async restoreToPanel(panel: vscode.WebviewPanel, chatID: string): Promise<void> {
@@ -521,7 +515,7 @@ export class ChatsController implements vscode.Disposable {
     }
 
     // Dispose all open chat panels
-    private disposeAllChats(): void {
+    private async disposeAllChats(): Promise<void> {
         this.activeEditor = undefined
 
         // loop through the panel provider map
@@ -534,11 +528,11 @@ export class ChatsController implements vscode.Disposable {
             editor.dispose()
         }
 
-        this.panel.clearAndRestartSession()
+        await this.panel.clearAndRestartSession(this.currentAuthStatus)
     }
 
     public dispose(): void {
-        this.disposeAllChats()
+        void this.disposeAllChats()
         vscode.Disposable.from(...this.disposables).dispose()
     }
 }
