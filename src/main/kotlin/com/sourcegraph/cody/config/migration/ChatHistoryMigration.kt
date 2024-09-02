@@ -33,16 +33,16 @@ object ChatHistoryMigration {
     return chats
         .map { (account, chats) ->
           val serializedChats = chats.mapNotNull(::toSerializedChatTranscript)
-          val byId = serializedChats.associateBy { it.id }
+          val byTimestamp = serializedChats.associateBy { it.lastInteractionTimestamp }
 
-          "${account.server.url}-${account.name}" to byId
+          "${account.server.url}-${account.name}" to byTimestamp
         }
         .toMap()
   }
 
   private fun toSerializedChatTranscript(chat: ChatState): SerializedChatTranscript? {
     return SerializedChatTranscript(
-        id = chat.internalId ?: return null,
+        id = chat.updatedAt ?: return null,
         lastInteractionTimestamp = chat.updatedAt ?: return null,
         interactions = toSerializedInteractions(chat.messages, chat.llm?.model),
     )

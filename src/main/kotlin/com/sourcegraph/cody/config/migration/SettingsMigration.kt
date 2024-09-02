@@ -64,7 +64,7 @@ class SettingsMigration : Activity {
 
     DeprecatedChatLlmMigration.migrate(project)
     ChatTagsLlmMigration.migrate(project)
-    RunOnceUtil.runOnceForProject(project, "CodyMigrateChatHistory") {
+    RunOnceUtil.runOnceForProject(project, "CodyMigrateChatHistory-v2") {
       ChatHistoryMigration.migrate(project)
     }
   }

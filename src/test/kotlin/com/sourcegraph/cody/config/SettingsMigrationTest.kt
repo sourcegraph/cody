@@ -436,9 +436,9 @@ class SettingsMigrationTest : BasePlatformTestCase() {
         mapOf(
             "https://sourcegraph.com-account1" to
                 mapOf(
-                    chat1.internalId to
+                    chat1.updatedAt!! to
                         SerializedChatTranscript(
-                            id = chat1.internalId!!,
+                            id = chat1.updatedAt!!,
                             lastInteractionTimestamp = chat1.updatedAt!!,
                             interactions =
                                 listOf(
@@ -457,9 +457,9 @@ class SettingsMigrationTest : BasePlatformTestCase() {
                                                         .Assistant))))),
             "https://sourcegraph.com-account2" to
                 mapOf(
-                    chat2.internalId to
+                    chat2.updatedAt to
                         SerializedChatTranscript(
-                            id = chat2.internalId!!,
+                            id = chat2.updatedAt!!,
                             lastInteractionTimestamp = chat2.updatedAt!!,
                             interactions =
                                 listOf(
