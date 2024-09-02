@@ -1,5 +1,6 @@
 import {
     type ContextItem,
+    type ContextItemOpenCtx,
     ContextItemSource,
     type ContextItemTree,
     REMOTE_REPOSITORY_PROVIDER_URI,
@@ -7,15 +8,20 @@ import {
     displayLineRange,
     displayPathBasename,
     expandToLineRange,
+    openCtx,
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 import { getSelectionOrFileContext } from '../commands/context/selection'
 import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
 import { workspaceReposMonitor } from '../repository/repo-metadata-from-git-api'
 import { authProvider } from '../services/AuthProvider'
 import type { ChatModel } from './chat-view/ChatModel'
-import { contextItemMentionFromOpenCtxItem } from './context/chatContext'
+import {
+    contextItemMentionFromOpenCtxItem,
+    getActiveEditorContextForOpenCtxMentions,
+} from './context/chatContext'
 import type { ExtensionMessage } from './protocol'
 
 type PostMessage = (message: Extract<ExtensionMessage, { type: 'clientState' }>) => void
@@ -153,7 +159,30 @@ export async function getCorpusContextItemsForEditorState(useRemote: boolean): P
         }
     }
 
-    return items
+    const providers = (await openCtx.controller?.meta({}))?.filter(meta => meta.mentions?.autoInclude)
+    if (!providers) {
+        return items
+    }
+
+    const activeEditorContext = await getActiveEditorContextForOpenCtxMentions()
+
+    const openctxMentions = (
+        await Promise.all(
+            providers.map(async (provider): Promise<ContextItemOpenCtx[]> => {
+                const mentions =
+                    (await openCtx?.controller?.mentions(activeEditorContext, provider)) || []
+
+                return mentions.map(mention => ({
+                    ...mention,
+                    provider: 'openctx',
+                    type: 'openctx',
+                    uri: URI.parse(mention.uri),
+                }))
+            })
+        )
+    ).flat()
+
+    return [...items, ...openctxMentions]
 }
 
 function idempotentPostMessage(rawPostMessage: PostMessage): PostMessage {

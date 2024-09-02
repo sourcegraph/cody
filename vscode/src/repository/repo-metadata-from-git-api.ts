@@ -64,7 +64,7 @@ class WorkspaceReposMonitor implements vscode.Disposable {
         return repoMetadata.flat()
     }
 
-    private getFolderURIs(): vscode.Uri[] {
+    public getFolderURIs(): vscode.Uri[] {
         return vscode.workspace.workspaceFolders?.map(f => f.uri) ?? []
     }
 
@@ -128,7 +128,9 @@ export function initWorkspaceReposMonitor(
     return workspaceReposMonitor
 }
 
-async function fetchRepoMetadataForFolder(folderURI: vscode.Uri): Promise<GitHubDotComRepoMetaData[]> {
+export async function fetchRepoMetadataForFolder(
+    folderURI: vscode.Uri
+): Promise<GitHubDotComRepoMetaData[]> {
     const repoNames = await repoNameResolver.getRepoNamesFromWorkspaceUri(folderURI)
     if (repoNames.length === 0) {
         return []
