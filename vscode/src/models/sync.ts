@@ -10,7 +10,7 @@ import {
     isDotCom,
     modelsService,
 } from '@sourcegraph/cody-shared'
-import type { ServerModelConfiguration } from '@sourcegraph/cody-shared/src/models'
+import type { ServerModel, ServerModelConfiguration } from '@sourcegraph/cody-shared/src/models'
 import { ModelTag } from '@sourcegraph/cody-shared/src/models/tags'
 import * as vscode from 'vscode'
 import { getConfiguration } from '../configuration'
@@ -48,7 +48,10 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
         const serverSideModels = await fetchServerSideModels(authStatus.endpoint || '')
         // If the request failed, fall back to using the default models
         if (serverSideModels) {
-            modelsService.instance!.setServerSentModels(serverSideModels)
+            modelsService.instance!.setServerSentModels({
+                ...serverSideModels,
+                models: maybeAdjustContextWindows(serverSideModels.models),
+            })
             // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't entirely make sense in
             // a world where LLM models are managed server-side. However, this is how Cody can be extended
             // to use locally running LLMs such as Ollama. (Though some more testing is needed.)
@@ -156,4 +159,35 @@ async function fetchServerSideModels(endpoint: string): Promise<ServerModelConfi
     // NOTE: We may end up exposing this data via GraphQL, it's still TBD.
     const client = new RestClient(endpoint, userAccessToken, customHeaders)
     return await client.getAvailableModels()
+}
+
+/**
+ * maybeAdjustContextWindows adjusts the context window input tokens for specific models to prevent
+ * context window overflow caused by token count discrepancies.
+ *
+ * Currently, the OpenAI tokenizer is used by default for all models. However, it often
+ * counts tokens incorrectly for non-OpenAI models (e.g., Mistral), leading to over-counting
+ * and potentially causing completion requests to fail due to exceeding the context window.
+ *
+ * The proper fix would be to use model-specific tokenizers, but this would require significant
+ * refactoring. As a temporary workaround, this function reduces the `maxInputTokens` for specific
+ * models to mitigate the risk of context window overflow.
+ *
+ * @param {ServerModel[]} models - An array of models from the site config.
+ * @returns {ServerModel[]} - The array of models with adjusted context windows where applicable.
+ */
+export function maybeAdjustContextWindows(models: ServerModel[]): ServerModel[] {
+    console.log(JSON.stringify(models, null, 2))
+    return models.map(m => {
+        if (/^mi(x|s)tral/.test(m.modelName)) {
+            // Adjust the context window size for Mistral models because the OpenAI tokenizer undercounts tokens in English
+            // compared to the Mistral tokenizer. Based on our observations, the OpenAI tokenizer usually undercounts by about 13%.
+            // We reduce the context window by 15% (0.85 multiplier) to provide a safety buffer and prevent potential overflow.
+            // Note: In other languages, the OpenAI tokenizer might actually overcount tokens. As a result, we accept the risk
+            // of using a slightly smaller context window than what's available for those languages.
+            m.contextWindow.maxInputTokens = Math.round(m.contextWindow.maxInputTokens * 0.85)
+            console.log('ADJUST', m.modelName, m.contextWindow.maxInputTokens)
+        }
+        return m
+    })
 }
