@@ -292,10 +292,26 @@ class EditCommandPrompt(
     if (editor.scrollingModel.visibleArea.contains(pointInEditor)) { // caret is visible
       val locationOnScreen = editor.contentComponent.locationOnScreen
 
-      // Calculate the absolute screen position for the dialog, just below current line.
+      // Calculate the absolute screen position for the dialog, just below the current line.
       val dialogX = locationOnScreen.x + 100 // Position it consistently for now.
       val dialogY = locationOnScreen.y + pointInEditor.y + editor.lineHeight
-      location = Point(dialogX, dialogY)
+
+      // Get the visible area of the editor
+      val visibleArea = editor.scrollingModel.visibleArea
+
+      // Check if the dialog would be out of the visible area
+      val isOutOfVisibleAreaY =
+          dialogY + height > locationOnScreen.y + visibleArea.y + visibleArea.height
+      val isOutOfVisibleAreaX =
+          dialogX + width > locationOnScreen.x + visibleArea.x + visibleArea.width
+
+      if (isOutOfVisibleAreaY || isOutOfVisibleAreaX) {
+        // Move the dialog to the middle of the screen
+        setLocationRelativeTo(null)
+      } else {
+        // Set the calculated position
+        location = Point(dialogX, dialogY)
+      }
     } else {
       setLocationRelativeTo(getFrameForEditor(editor) ?: editor.component.rootPane)
     }
