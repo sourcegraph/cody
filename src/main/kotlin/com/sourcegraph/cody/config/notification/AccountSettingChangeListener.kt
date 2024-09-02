@@ -18,7 +18,7 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
 
           override fun afterAction(context: AccountSettingChangeContext) {
             // Notify JCEF about the config changes
-            javaToJSBridge?.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project))
+            javaToJSBridge?.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson())
 
             UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
             UpgradeToCodyProNotification.chatRateLimitError.set(null)

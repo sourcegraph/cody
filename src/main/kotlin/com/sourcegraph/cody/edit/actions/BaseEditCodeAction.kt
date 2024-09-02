@@ -35,7 +35,7 @@ open class BaseEditCodeAction(runAction: (Editor) -> Unit) :
           CodyBundle.getString("action.cody.not-working")
         } else if (isBlockedByPolicy(project, event)) {
           CodyBundle.getString("filter.action-in-ignored-file.detail")
-        } else if (CodyAuthenticationManager.getInstance(project).hasNoActiveAccount()) {
+        } else if (CodyAuthenticationManager.getInstance().hasNoActiveAccount()) {
           CodyBundle.getString("action.sourcegraph.disabled.description")
         } else {
           ""

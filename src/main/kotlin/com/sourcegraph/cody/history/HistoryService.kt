@@ -19,7 +19,7 @@ class HistoryService(private val project: Project) :
 
   @Synchronized
   fun getDefaultLlm(): LLMState? {
-    val account = CodyAuthenticationManager.getInstance(project).account
+    val account = CodyAuthenticationManager.getInstance().account
     val llm = account?.let { findEntry(it.id) }?.defaultLlm
     if (llm == null) return null
     return LLMState().also { it.copyFrom(llm) }
@@ -49,11 +49,11 @@ class HistoryService(private val project: Project) :
 
   @Synchronized
   fun getActiveAccountHistory(): AccountData? =
-      CodyAuthenticationManager.getInstance(project).account?.let { findEntry(it.id) }
+      CodyAuthenticationManager.getInstance().account?.let { findEntry(it.id) }
 
   private fun getOrCreateActiveAccountEntry(): AccountData {
     val activeAccount =
-        CodyAuthenticationManager.getInstance(project).account
+        CodyAuthenticationManager.getInstance().account
             ?: throw IllegalStateException("No active account")
 
     val existingEntry = findEntry(activeAccount.id)

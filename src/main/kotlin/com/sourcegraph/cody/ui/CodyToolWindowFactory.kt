@@ -301,7 +301,7 @@ class WebUIHostImpl(
 
     if ((command == "auth" && decodedJson.get("authKind")?.asString == "signout") ||
         (isCommand && id == "cody.auth.signout")) {
-      CodyAuthenticationManager.getInstance(project).setActiveAccount(null)
+      CodyAuthenticationManager.getInstance().setActiveAccount(null)
     } else if (isCommand && id == "cody.auth.switchAccount") {
       runInEdt {
         ShowSettingsUtil.getInstance().showSettingsDialog(project, AccountConfigurable::class.java)

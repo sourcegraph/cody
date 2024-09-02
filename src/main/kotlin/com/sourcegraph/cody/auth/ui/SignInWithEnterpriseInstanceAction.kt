@@ -16,7 +16,7 @@ class SignInWithEnterpriseInstanceAction(
   override fun actionPerformed(e: AnActionEvent) {
     val project = e.project ?: return
     val accountsHost = CodyPersistentAccountsHost(project)
-    val authManager = CodyAuthenticationManager.getInstance(project)
+    val authManager = CodyAuthenticationManager.getInstance()
     val serverUrl = authManager.account?.server?.url ?: defaultServer
     val dialog =
         SourcegraphInstanceLoginDialog(

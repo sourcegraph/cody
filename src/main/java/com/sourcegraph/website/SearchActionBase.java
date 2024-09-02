@@ -41,7 +41,7 @@ public abstract class SearchActionBase extends DumbAwareEDTAction {
       String url;
       SourcegraphVirtualFile sourcegraphFile = (SourcegraphVirtualFile) currentFile;
       String repoUrl = (scope == Scope.REPOSITORY) ? sourcegraphFile.getRepoUrl() : null;
-      url = URLBuilder.buildEditorSearchUrl(project, selectedText, repoUrl, null);
+      url = URLBuilder.buildEditorSearchUrl(selectedText, repoUrl, null);
       BrowserOpener.INSTANCE.openInBrowser(project, url);
     } else {
       // This cannot run on EDT (Event Dispatch Thread) because it may block for a long time.
@@ -62,9 +62,7 @@ public abstract class SearchActionBase extends DumbAwareEDTAction {
                   url =
                       URLBuilder.buildDirectSearchUrl(project, selectedText, codeHostUrl, repoName);
                 } else {
-                  url =
-                      URLBuilder.buildEditorSearchUrl(
-                          project, selectedText, remoteUrl, remoteBranchName);
+                  url = URLBuilder.buildEditorSearchUrl(selectedText, remoteUrl, remoteBranchName);
                 }
                 BrowserOpener.INSTANCE.openInBrowser(project, url);
               });

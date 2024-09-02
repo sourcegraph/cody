@@ -31,7 +31,7 @@ class ActionInIgnoredFileNotification :
 
     fun maybeNotify(project: Project) {
       val status = CodyStatusService.getCurrentStatus(project)
-      val account = CodyAuthenticationManager.getInstance(project).account
+      val account = CodyAuthenticationManager.getInstance().account
       when {
         status == CodyStatus.CodyUninit ||
             status == CodyStatus.CodyDisabled ||

@@ -45,7 +45,6 @@ public abstract class FileActionBase extends DumbAwareEDTAction {
       handleFileUri(
           project,
           URLBuilder.buildSourcegraphBlobUrl(
-              project,
               sourcegraphFile.getRepoUrl(),
               sourcegraphFile.getCommit(),
               sourcegraphFile.getRelativePath(),
@@ -70,7 +69,6 @@ public abstract class FileActionBase extends DumbAwareEDTAction {
                   // need, so we'll go to the final URL directly.
                   url =
                       URLBuilder.buildSourcegraphBlobUrl(
-                          project,
                           repoInfo.getCodeHostUrl() + "/" + repoInfo.getRepoName(),
                           null,
                           repoInfo.relativePath,
@@ -106,7 +104,6 @@ public abstract class FileActionBase extends DumbAwareEDTAction {
     handleFileUri(
         project,
         URLBuilder.buildSourcegraphBlobUrl(
-            project,
             previewContent.getRepoUrl(),
             previewContent.getCommit(),
             previewContent.getPath(),

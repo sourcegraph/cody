@@ -13,6 +13,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.util.AuthData
@@ -52,13 +53,35 @@ data class AuthenticationState(
     val isTokenInvalid: CompletableFuture<Boolean>
 )
 
-/** Entry point for interactions with Sourcegraph authentication subsystem */
+// That class is keep only for a compatibility purposes, so we can load old per-project account
+// settings, and use them as the new default when `CodyAccountsSettings` state is loaded for a very
+// first time in the `noStateLoaded` method
+@Deprecated("Use only for backward compatibility purposes")
 @State(
     name = "CodyActiveAccount",
     storages = [Storage(StoragePathMacros.WORKSPACE_FILE)],
     reportStatistic = false)
 @Service(Service.Level.PROJECT)
-class CodyAuthenticationManager(val project: Project) :
+class DeprecatedCodyActiveAccount(val project: Project) :
+    PersistentStateComponent<CodyAuthenticationManager.AccountState> {
+  private var accountState: CodyAuthenticationManager.AccountState? = null
+
+  override fun getState(): CodyAuthenticationManager.AccountState? {
+    return accountState
+  }
+
+  override fun loadState(state: CodyAuthenticationManager.AccountState) {
+    accountState = state
+  }
+}
+
+/** Entry point for interactions with Sourcegraph authentication subsystem */
+@State(
+    name = "CodyAccountsSettings",
+    storages = [Storage("cody_accounts_settings.xml")],
+    reportStatistic = false)
+@Service(Service.Level.APP)
+class CodyAuthenticationManager :
     PersistentStateComponent<CodyAuthenticationManager.AccountState>, Disposable {
 
   var account: CodyAccount? = null
@@ -66,7 +89,8 @@ class CodyAuthenticationManager(val project: Project) :
 
   private val scheduler = Executors.newScheduledThreadPool(1)
 
-  private val publisher = project.messageBus.syncPublisher(AccountSettingChangeActionNotifier.TOPIC)
+  private fun publisher(project: Project) =
+      project.messageBus.syncPublisher(AccountSettingChangeActionNotifier.TOPIC)
 
   @Volatile private var tier: CompletableFuture<AccountTier>? = null
 
@@ -78,7 +102,12 @@ class CodyAuthenticationManager(val project: Project) :
         /* initialDelay = */ 2,
         /* period = */ 2,
         /* unit = */ TimeUnit.HOURS)
+  }
 
+  private val accountManager: CodyAccountManager
+    get() = service()
+
+  fun addAuthChangeListener(project: Project) {
     val frame = WindowManager.getInstance().getFrame(project)
     val listener =
         object : WindowAdapter() {
@@ -90,9 +119,6 @@ class CodyAuthenticationManager(val project: Project) :
     frame?.addWindowListener(listener)
     Disposer.register(this) { frame?.removeWindowListener(listener) }
   }
-
-  private val accountManager: CodyAccountManager
-    get() = service()
 
   @CalledInAny fun getAccounts(): Set<CodyAccount> = accountManager.accounts
 
@@ -111,18 +137,18 @@ class CodyAuthenticationManager(val project: Project) :
 
     tierFuture.thenApply { currentAccountTier ->
       if (previousTier != currentAccountTier) {
-        if (!project.isDisposed) {
-          tier = tierFuture
-          publisher.afterAction(AccountSettingChangeContext(accountTierChanged = true))
+        tier = tierFuture
+        ProjectManager.getInstance().openProjects.forEach { project ->
+          publisher(project).afterAction(AccountSettingChangeContext(accountTierChanged = true))
         }
       }
     }
 
     isTokenInvalidFuture.thenApply { isInvalid ->
       if (previousIsTokenInvalid != isInvalid) {
-        if (!project.isDisposed) {
-          isTokenInvalid = isTokenInvalidFuture
-          publisher.afterAction(AccountSettingChangeContext(isTokenInvalidChanged = true))
+        isTokenInvalid = isTokenInvalidFuture
+        ProjectManager.getInstance().openProjects.forEach { project ->
+          publisher(project).afterAction(AccountSettingChangeContext(isTokenInvalidChanged = true))
         }
       }
     }
@@ -188,46 +214,53 @@ class CodyAuthenticationManager(val project: Project) :
       accountManager.accounts.none { it.name == name && it.server.url == server.url }
 
   @RequiresEdt
-  internal fun login(parentComponent: Component?, request: CodyLoginRequest): CodyAuthData? =
-      request.loginWithToken(project, parentComponent)
+  internal fun login(
+      project: Project,
+      parentComponent: Component?,
+      request: CodyLoginRequest
+  ): CodyAuthData? = request.loginWithToken(project, parentComponent)
 
   @RequiresEdt
   internal fun updateAccountToken(newAccount: CodyAccount, newToken: String) {
     val oldToken = getTokenForAccount(newAccount)
     accountManager.updateAccount(newAccount, newToken)
     if (oldToken != newToken && newAccount == account) {
-      CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
-        if (!project.isDisposed) {
-          agent.server.extensionConfiguration_didChange(ConfigUtil.getAgentConfiguration(project))
-          publisher.afterAction(AccountSettingChangeContext(accessTokenChanged = true))
+
+      ProjectManager.getInstance().openProjects.forEach { project ->
+        CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
+          if (!project.isDisposed) {
+            agent.server.extensionConfiguration_didChange(ConfigUtil.getAgentConfiguration(project))
+            publisher(project).afterAction(AccountSettingChangeContext(accessTokenChanged = true))
+          }
         }
       }
     }
   }
 
   fun setActiveAccount(newAccount: CodyAccount?) {
-    if (!project.isDisposed) {
-      val previousAccount = account
-      val previousUrl = previousAccount?.server?.url
-      val previousTier = previousAccount?.isDotcomAccount()
+    val previousAccount = account
+    val previousUrl = previousAccount?.server?.url
+    val previousTier = previousAccount?.isDotcomAccount()
 
-      account = newAccount
-      tier = null
-      isTokenInvalid = null
+    account = newAccount
+    tier = null
+    isTokenInvalid = null
 
-      val serverUrlChanged = previousUrl != newAccount?.server?.url
-      val tierChanged = previousTier != newAccount?.isDotcomAccount()
-      val accountChanged = previousAccount != newAccount
+    val serverUrlChanged = previousUrl != newAccount?.server?.url
+    val tierChanged = previousTier != newAccount?.isDotcomAccount()
+    val accountChanged = previousAccount != newAccount
 
+    ProjectManager.getInstance().openProjects.forEach { project ->
       CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
         if (!project.isDisposed) {
           agent.server.extensionConfiguration_didChange(ConfigUtil.getAgentConfiguration(project))
           if (serverUrlChanged || tierChanged || accountChanged) {
-            publisher.afterAction(
-                AccountSettingChangeContext(
-                    serverUrlChanged = serverUrlChanged,
-                    accountTierChanged = tierChanged,
-                    accessTokenChanged = accountChanged))
+            publisher(project)
+                .afterAction(
+                    AccountSettingChangeContext(
+                        serverUrlChanged = serverUrlChanged,
+                        accountTierChanged = tierChanged,
+                        accessTokenChanged = accountChanged))
           }
         }
       }
@@ -251,6 +284,7 @@ class CodyAuthenticationManager(val project: Project) :
   override fun loadState(state: AccountState) {
     val initialAccount =
         state.activeAccountId?.let { id -> accountManager.accounts.find { it.id == id } }
+
     if (initialAccount != null) {
       setActiveAccount(initialAccount)
     }
@@ -258,14 +292,19 @@ class CodyAuthenticationManager(val project: Project) :
 
   override fun noStateLoaded() {
     super.noStateLoaded()
-    loadState(AccountState())
+    val initialAccountId =
+        ProjectManager.getInstance().openProjects.firstNotNullOfOrNull {
+          it.service<DeprecatedCodyActiveAccount>().state?.activeAccountId
+        } ?: getAccounts().firstOrNull()?.id
+
+    loadState(AccountState().apply { activeAccountId = initialAccountId })
   }
 
   companion object {
 
     @JvmStatic
-    fun getInstance(project: Project): CodyAuthenticationManager {
-      return project.service<CodyAuthenticationManager>()
+    fun getInstance(): CodyAuthenticationManager {
+      return ApplicationManager.getApplication().getService(CodyAuthenticationManager::class.java)
     }
   }
 

@@ -31,8 +31,9 @@ class CodyAccountListModel(private val project: Project) :
   override fun editAccount(parentComponent: JComponent, account: CodyAccount) {
     val token = newCredentials[account] ?: getOldToken(account)
     val authData =
-        CodyAuthenticationManager.getInstance(project)
+        CodyAuthenticationManager.getInstance()
             .login(
+                project,
                 parentComponent,
                 CodyLoginRequest(
                     title = "Edit Sourcegraph Account",
@@ -53,7 +54,7 @@ class CodyAccountListModel(private val project: Project) :
   }
 
   private fun getOldToken(account: CodyAccount) =
-      CodyAuthenticationManager.getInstance(project).getTokenForAccount(account)
+      CodyAuthenticationManager.getInstance().getTokenForAccount(account)
 
   override fun addAccount(
       server: SourcegraphServerPath,

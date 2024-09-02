@@ -19,7 +19,7 @@ public class URLBuilder {
       @NotNull String relativePath,
       @Nullable LogicalPosition start,
       @Nullable LogicalPosition end) {
-    return ConfigUtil.getServerPath(project).getUrl()
+    return ConfigUtil.getServerPath().getUrl()
         + "-/editor"
         + "?remote_url="
         + URLEncoder.encode(remoteUrl, StandardCharsets.UTF_8)
@@ -45,12 +45,9 @@ public class URLBuilder {
 
   @NotNull
   public static String buildEditorSearchUrl(
-      @NotNull Project project,
-      @NotNull String search,
-      @Nullable String remoteUrl,
-      @Nullable String remoteBranchName) {
+      @NotNull String search, @Nullable String remoteUrl, @Nullable String remoteBranchName) {
     String url =
-        ConfigUtil.getServerPath(project).getUrl()
+        ConfigUtil.getServerPath().getUrl()
             + "-/editor"
             + "?"
             + buildVersionParams()
@@ -77,7 +74,7 @@ public class URLBuilder {
         (codeHost != null && repoName != null)
             ? "repo:^" + RegexEscaper.INSTANCE.escapeRegexChars(codeHost + "/" + repoName) + "$"
             : null;
-    return ConfigUtil.getServerPath(project).getUrl()
+    return ConfigUtil.getServerPath().getUrl()
         + "/search"
         + "?patternType=literal"
         + "&q="
@@ -124,13 +121,12 @@ public class URLBuilder {
   @NotNull
   // repoUrl should be like "github.com/sourcegraph/sourcegraph"
   public static String buildSourcegraphBlobUrl(
-      @NotNull Project project,
       @NotNull String repoUrl,
       @Nullable String commit,
       @NotNull String path,
       @Nullable LogicalPosition start,
       @Nullable LogicalPosition end) {
-    return ConfigUtil.getServerPath(project).getUrl()
+    return ConfigUtil.getServerPath().getUrl()
         + repoUrl
         + (commit != null ? "@" + commit : "")
         + "/-/blob/"

@@ -37,7 +37,7 @@ class AccountConfigurable(val project: Project) :
   private val codyApplicationSettings = service<CodyApplicationSettings>()
   private val settingsModel =
       SettingsModel(shouldCheckForUpdates = codyApplicationSettings.shouldCheckForUpdates)
-  private val authManager = CodyAuthenticationManager.getInstance(project)
+  private val authManager = CodyAuthenticationManager.getInstance()
 
   private val initialActiveAccount: Account?
   private val initialToken: String?
@@ -107,7 +107,7 @@ class AccountConfigurable(val project: Project) :
       activeAccount = accountsModel.accounts.getFirstAccountOrNull()
     }
 
-    CodyAuthenticationManager.getInstance(project).setActiveAccount(activeAccount)
+    CodyAuthenticationManager.getInstance().setActiveAccount(activeAccount)
     accountsModel.activeAccount = activeAccount
 
     codyApplicationSettings.shouldCheckForUpdates = settingsModel.shouldCheckForUpdates

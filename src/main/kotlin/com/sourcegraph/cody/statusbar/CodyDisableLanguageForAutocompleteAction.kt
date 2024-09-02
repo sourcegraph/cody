@@ -25,8 +25,7 @@ class CodyDisableLanguageForAutocompleteAction : DumbAwareEDTAction() {
     val isLanguageBlacklisted =
         languageForFocusedEditor?.let { CodyLanguageUtil.isLanguageBlacklisted(it) } ?: false
     val languageName = languageForFocusedEditor?.displayName ?: ""
-    val hasActiveAccount =
-        e.project?.let { CodyAuthenticationManager.getInstance(it).hasActiveAccount() } ?: false
+    val hasActiveAccount = CodyAuthenticationManager.getInstance().hasActiveAccount()
     e.presentation.isEnabledAndVisible =
         languageForFocusedEditor != null &&
             ConfigUtil.isCodyEnabled() &&

@@ -46,11 +46,10 @@ class CodyStatusService(val project: Project) : Disposable {
     synchronized(this) {
       val oldStatus = status
       val service = ApplicationManager.getApplication().getService(CodyAccountManager::class.java)
-      val authManager = CodyAuthenticationManager.getInstance(project)
+      val authManager = CodyAuthenticationManager.getInstance()
       val isTokenInvalid = authManager.getIsTokenInvalid().getNow(null) == true
 
-      val token =
-          CodyAuthenticationManager.getInstance(project).account?.let(service::findCredentials)
+      val token = CodyAuthenticationManager.getInstance().account?.let(service::findCredentials)
       // Note, the order of these clauses is important because earlier clauses take precedence over
       // later ones.
       // Fundamental issues are tested first.

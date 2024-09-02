@@ -20,7 +20,7 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
         object : CodySettingChangeActionNotifier {
           override fun afterAction(context: CodySettingChangeContext) {
             // Notify JCEF about the config changes
-            javaToJSBridge?.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project))
+            javaToJSBridge?.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson())
 
             if (context.oldCodyEnabled != context.newCodyEnabled) {
               if (context.newCodyEnabled) {

@@ -14,7 +14,7 @@ class CodyPersistentAccountsHost(private val project: Project) : CodyAccountsHos
     TelemetryV2.sendTelemetryEvent(project, "auth.signin.token", "clicked")
 
     val codyAccount = CodyAccount(login, displayName, server, id)
-    val authManager = CodyAuthenticationManager.getInstance(project)
+    val authManager = CodyAuthenticationManager.getInstance()
     authManager.updateAccountToken(codyAccount, token)
     authManager.setActiveAccount(codyAccount)
   }

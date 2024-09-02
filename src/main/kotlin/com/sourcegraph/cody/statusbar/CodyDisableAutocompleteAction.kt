@@ -15,8 +15,7 @@ class CodyDisableAutocompleteAction : DumbAwareEDTAction("Disable Cody Autocompl
 
   override fun update(e: AnActionEvent) {
     super.update(e)
-    val hasActiveAccount =
-        e.project?.let { CodyAuthenticationManager.getInstance(it).hasActiveAccount() } ?: false
+    val hasActiveAccount = CodyAuthenticationManager.getInstance().hasActiveAccount()
     e.presentation.isEnabledAndVisible =
         ConfigUtil.isCodyEnabled() && ConfigUtil.isCodyAutocompleteEnabled() && hasActiveAccount
   }

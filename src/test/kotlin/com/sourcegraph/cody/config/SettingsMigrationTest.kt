@@ -181,7 +181,7 @@ class SettingsMigrationTest : BasePlatformTestCase() {
         }
     val project = myFixture.project
     project.registerServiceInstance(
-        CodyAuthenticationManager::class.java, CodyAuthenticationManager(project))
+        CodyAuthenticationManager::class.java, CodyAuthenticationManager())
     project.registerServiceInstance(HistoryService::class.java, HistoryService(project))
     HistoryService.getInstance(project)
         .loadState(HistoryState().also { it.copyFrom(originalHistory) })

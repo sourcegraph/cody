@@ -37,7 +37,7 @@ class CodyToolWindowContent(private val project: Project) {
 
   @RequiresEdt
   fun refreshPanelsVisibility() {
-    val codyAuthenticationManager = CodyAuthenticationManager.getInstance(project)
+    val codyAuthenticationManager = CodyAuthenticationManager.getInstance()
     if (codyAuthenticationManager.hasNoActiveAccount() ||
         codyAuthenticationManager.showInvalidAccessTokenError()) {
       allContentLayout.show(allContentPanel, SIGN_IN_PANEL)

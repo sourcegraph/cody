@@ -69,7 +69,7 @@ object ConfigUtil {
       project: Project,
       customConfigContent: String? = null
   ): ExtensionConfiguration {
-    val serverAuth = ServerAuthLoader.loadServerAuth(project)
+    val serverAuth = ServerAuthLoader.loadServerAuth()
 
     return ExtensionConfiguration(
         anonymousUserID = CodyApplicationSettings.instance.anonymousUserId,
@@ -87,8 +87,8 @@ object ConfigUtil {
   }
 
   @JvmStatic
-  fun getConfigAsJson(project: Project): JsonObject {
-    val (instanceUrl, accessToken, customRequestHeaders) = ServerAuthLoader.loadServerAuth(project)
+  fun getConfigAsJson(): JsonObject {
+    val (instanceUrl, accessToken, customRequestHeaders) = ServerAuthLoader.loadServerAuth()
     return JsonObject().apply {
       addProperty("instanceURL", instanceUrl)
       addProperty("accessToken", accessToken)
@@ -99,8 +99,8 @@ object ConfigUtil {
   }
 
   @JvmStatic
-  fun getServerPath(project: Project): SourcegraphServerPath {
-    val activeAccount = CodyAuthenticationManager.getInstance(project).account
+  fun getServerPath(): SourcegraphServerPath {
+    val activeAccount = CodyAuthenticationManager.getInstance().account
     return activeAccount?.server ?: from(DOTCOM_URL, "")
   }
 

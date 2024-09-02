@@ -16,8 +16,7 @@ public class GraphQlLogger {
     CodyApplicationSettings codyApplicationSettings = CodyApplicationSettings.getInstance();
     if (codyApplicationSettings.getAnonymousUserId() != null && !project.isDisposed()) {
       var event =
-          createEvent(
-              project, ConfigUtil.getServerPath(project), "CodyInstalled", new JsonObject());
+          createEvent(project, ConfigUtil.getServerPath(), "CodyInstalled", new JsonObject());
       return logEvent(project, event);
     }
     return CompletableFuture.completedFuture(false);
@@ -27,8 +26,7 @@ public class GraphQlLogger {
     CodyApplicationSettings codyApplicationSettings = CodyApplicationSettings.getInstance();
     if (codyApplicationSettings.getAnonymousUserId() != null) {
       Event event =
-          createEvent(
-              project, ConfigUtil.getServerPath(project), "CodyUninstalled", new JsonObject());
+          createEvent(project, ConfigUtil.getServerPath(), "CodyUninstalled", new JsonObject());
       logEvent(project, event);
     }
   }
@@ -37,8 +35,7 @@ public class GraphQlLogger {
       @NotNull Project project, @NotNull String componentName, @NotNull String action) {
     var eventName = "CodyJetBrainsPlugin:" + componentName + ":" + action;
     logEvent(
-        project,
-        createEvent(project, ConfigUtil.getServerPath(project), eventName, new JsonObject()));
+        project, createEvent(project, ConfigUtil.getServerPath(), eventName, new JsonObject()));
   }
 
   public static void logCodeGenerationEvent(
@@ -54,9 +51,7 @@ public class GraphQlLogger {
     eventParameters.addProperty("source", "chat");
 
     var eventName = "CodyJetBrainsPlugin:" + componentName + ":" + action;
-    logEvent(
-        project,
-        createEvent(project, ConfigUtil.getServerPath(project), eventName, eventParameters));
+    logEvent(project, createEvent(project, ConfigUtil.getServerPath(), eventName, eventParameters));
   }
 
   @NotNull
@@ -65,8 +60,7 @@ public class GraphQlLogger {
       @NotNull SourcegraphServerPath sourcegraphServerPath,
       @NotNull String eventName,
       @NotNull JsonObject eventParameters) {
-    var updatedEventParameters =
-        addGlobalEventParameters(project, eventParameters, sourcegraphServerPath);
+    var updatedEventParameters = addGlobalEventParameters(eventParameters, sourcegraphServerPath);
     CodyApplicationSettings codyApplicationSettings = CodyApplicationSettings.getInstance();
     String anonymousUserId = codyApplicationSettings.getAnonymousUserId();
     return new Event(
@@ -75,13 +69,11 @@ public class GraphQlLogger {
 
   @NotNull
   private static JsonObject addGlobalEventParameters(
-      @NotNull Project project,
-      @NotNull JsonObject eventParameters,
-      @NotNull SourcegraphServerPath sourcegraphServerPath) {
+      @NotNull JsonObject eventParameters, @NotNull SourcegraphServerPath sourcegraphServerPath) {
     // project specific properties
     var updatedEventParameters = eventParameters.deepCopy();
     var activeAccountTier =
-        CodyAuthenticationManager.getInstance(project).getActiveAccountTier().getNow(null);
+        CodyAuthenticationManager.getInstance().getActiveAccountTier().getNow(null);
     if (activeAccountTier != null) {
       updatedEventParameters.addProperty("tier", activeAccountTier.getValue());
     }

@@ -22,8 +22,7 @@ abstract class LensEditAction(val editAction: (Project, AnActionEvent, Editor, S
   }
 
   override fun update(event: AnActionEvent) {
-    val project = event.project ?: return
-    val hasActiveAccount = CodyAuthenticationManager.getInstance(project).hasActiveAccount()
+    val hasActiveAccount = CodyAuthenticationManager.getInstance().hasActiveAccount()
     event.presentation.isEnabled = hasActiveAccount
     if (!event.presentation.isEnabled) {
       event.presentation.description =

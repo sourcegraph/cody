@@ -18,7 +18,7 @@ object ChatHistoryMigration {
   fun migrate(project: Project) {
     CodyAgentService.withAgent(project) { agent ->
       val chats =
-          CodyAuthenticationManager.getInstance(project).getAccounts().associateWith { account ->
+          CodyAuthenticationManager.getInstance().getAccounts().associateWith { account ->
             (HistoryService.getInstance(project).getChatHistoryFor(account.id) ?: listOf())
           }
       val history = toChatInput(chats)

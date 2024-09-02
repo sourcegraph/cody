@@ -85,7 +85,7 @@ class LlmDropdown(
         } ?: models.firstOrNull()
 
     val isEnterpriseAccount =
-        CodyAuthenticationManager.getInstance(project).account?.isEnterpriseAccount() ?: false
+        CodyAuthenticationManager.getInstance().account?.isEnterpriseAccount() ?: false
 
     // If the dropdown is already disabled, don't change it. It can happen
     // in the case of the legacy commands (updateAfterFirstMessage happens before this call).
@@ -119,7 +119,7 @@ class LlmDropdown(
   }
 
   fun isCurrentUserFree(): Boolean =
-      CodyAuthenticationManager.getInstance(project)
+      CodyAuthenticationManager.getInstance()
           .getActiveAccountTier()
           .getNow(AccountTier.DOTCOM_FREE) == AccountTier.DOTCOM_FREE
 }

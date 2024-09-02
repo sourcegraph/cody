@@ -37,7 +37,7 @@ class CodySelectionInlayManager(val project: Project) {
         !CodyAgentService.isConnected(project) ||
         !ConfigUtil.isCodyUIHintsEnabled() ||
         !CodyEditorUtil.isEditorValidForAutocomplete(editor) ||
-        CodyAuthenticationManager.getInstance(project).hasNoActiveAccount() ||
+        CodyAuthenticationManager.getInstance().hasNoActiveAccount() ||
         IgnoreOracle.getInstance(project).policyForEditor(editor) != IgnorePolicy.USE) {
       return
     }
