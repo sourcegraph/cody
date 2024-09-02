@@ -176,17 +176,16 @@ async function fetchServerSideModels(endpoint: string): Promise<ServerModelConfi
  * @param {ServerModel[]} models - An array of models from the site config.
  * @returns {ServerModel[]} - The array of models with adjusted context windows where applicable.
  */
-export function maybeAdjustContextWindows(models: ServerModel[]): ServerModel[] {
-    return models.map(m => {
-        if (/^mi(x|s)tral/.test(m.modelName)) {
+export const maybeAdjustContextWindows = (models: ServerModel[]): ServerModel[] =>
+    models.map(model => {
+        let maxInputTokens = model.contextWindow.maxInputTokens
+        if (/^mi(x|s)tral/.test(model.modelName)) {
             // Adjust the context window size for Mistral models because the OpenAI tokenizer undercounts tokens in English
             // compared to the Mistral tokenizer. Based on our observations, the OpenAI tokenizer usually undercounts by about 13%.
             // We reduce the context window by 15% (0.85 multiplier) to provide a safety buffer and prevent potential overflow.
             // Note: In other languages, the OpenAI tokenizer might actually overcount tokens. As a result, we accept the risk
             // of using a slightly smaller context window than what's available for those languages.
-            m.contextWindow.maxInputTokens = Math.round(m.contextWindow.maxInputTokens * 0.85)
-            console.log('ADJUST', m.modelName, m.contextWindow.maxInputTokens)
+            maxInputTokens = Math.round(model.contextWindow.maxInputTokens * 0.85)
         }
-        return m
+        return { ...model, contextWindow: { ...model.contextWindow, maxInputTokens } }
     })
-}
