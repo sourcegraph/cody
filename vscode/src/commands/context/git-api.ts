@@ -76,12 +76,14 @@ async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<ContextI
             // we do this by checking the reverse path because of how nested workspaces might add unknown prefixes
             const uri = diffFiles.find(p => {
                 //todo: maybe better with a proper diff parser
-                const diffPath = diff.split('\n')[0]
+                const diffPath = diff.split('\n')?.[0]
                 return diffPath
-                    .split('')
-                    .reverse()
-                    .join('')
-                    .startsWith(displayPath(p.uri).split('').reverse().join(''))
+                    ? diffPath
+                          .split('')
+                          .reverse()
+                          .join('')
+                          .startsWith(displayPath(p.uri).split('').reverse().join(''))
+                    : p.uri
             })?.uri
             if (!uri || !(await doesFileExist(uri))) {
                 continue
