@@ -27,6 +27,10 @@ import {
     getOpenTabsContextFile,
     getSymbolContextFiles,
 } from '../../editor/utils/editor-context'
+import {
+    fetchRepoMetadataForFolder,
+    workspaceReposMonitor,
+} from '../../repository/repo-metadata-from-git-api'
 import type { ChatModel } from '../chat-view/ChatModel'
 
 interface GetContextItemsTelemetry {
@@ -162,7 +166,7 @@ export async function getChatContextItemsForMention(
             }
 
             const items = await openCtx.controller.mentions(
-                { query: mentionQuery.text },
+                { query: mentionQuery.text, ...(await getActiveEditorContextForOpenCtxMentions()) },
                 // get mention items for the selected provider only.
                 { providerUri: mentionQuery.provider }
             )
@@ -172,6 +176,21 @@ export async function getChatContextItemsForMention(
             )
         }
     }
+}
+
+export async function getActiveEditorContextForOpenCtxMentions(): Promise<{
+    uri: string | undefined
+    codebase: string | undefined
+}> {
+    const uri = vscode.window.activeTextEditor?.document.uri?.toString()
+    const activeWorkspaceURI =
+        uri &&
+        workspaceReposMonitor?.getFolderURIs().find(folderURI => uri?.startsWith(folderURI.toString()))
+
+    const codebase =
+        activeWorkspaceURI && (await fetchRepoMetadataForFolder(activeWorkspaceURI))[0]?.repoName
+
+    return { uri, codebase }
 }
 
 export function contextItemMentionFromOpenCtxItem(
