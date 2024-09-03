@@ -37,9 +37,9 @@ describe('AgentAuthHandler', () => {
                 'https://sourcegraph.test/user/settings/tokens/new/callback?requestFrom=CODY_JETBRAINS-123',
             ],
             [
-                'valid endpointUri for VisualStudio',
-                'https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=VISUAL_STUDIO',
-                'https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=VISUAL_STUDIO-123',
+                'valid endpointUri with tokenReceiverUrl param appended',
+                'https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=VISUAL_STUDIO&tokenReceiverUrl=https%3A%2F%2Fexample.com',
+                'https://sourcegraph.com/user/settings/tokens/new/callback?tokenReceiverUrl=https%3A%2F%2Fexample.com&requestFrom=VISUAL_STUDIO-123',
             ],
             ['invalid IDE', 'https://sourcegraph.com', 'https://sourcegraph.com/'],
             ['invalid endpointUri', 'invalid-url', undefined],

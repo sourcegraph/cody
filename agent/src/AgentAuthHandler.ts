@@ -29,15 +29,15 @@ export class AgentAuthHandler {
             if (!callbackUri) {
                 throw new Error(url.toString() + ' is not a valid URL')
             }
-            this.startServer(callbackUri.toString())
+            this.startServer()
             // Redirect the user to the login page
-            this.redirectToEndpointLoginPage(callbackUri.toString())
+            this.redirectToEndpointLoginPage(url)
         } catch (error) {
             logDebug('AgentAuthHandler', `Invalid callback URL: ${error}`)
         }
     }
 
-    private startServer(callbackUri: string): void {
+    private startServer(): void {
         if (!this.tokenCallbackHandlers?.length) {
             logDebug('AgentAuthHandler', 'Token callback handler is not set.')
             return
@@ -45,7 +45,6 @@ export class AgentAuthHandler {
 
         if (this.server) {
             logDebug('AgentAuthHandler', 'Server already running')
-            this.redirectToEndpointLoginPage(callbackUri)
             return
         }
 
@@ -60,7 +59,16 @@ export class AgentAuthHandler {
                         handler(URI.parse(req.url), token)
                     }
                     res.writeHead(200, { 'Content-Type': 'text/plain' })
-                    res.end('Token received. You can now close this window.')
+                    res.end(`
+                        <html>
+                            <body>
+                                Token received. This window will close automatically.
+                                <script>
+                                    setTimeout(() => window.close(), 3000);
+                                </script>
+                            </body>
+                        </html>
+                    `)
                     this.closeServer()
                 } else {
                     res.writeHead(400, { 'Content-Type': 'text/plain' })
@@ -107,22 +115,17 @@ export class AgentAuthHandler {
      *
      * @param callbackUri - The original callback URI to be updated.
      */
-    private redirectToEndpointLoginPage(callbackUri: string): void {
-        const updatedCallbackUri = new URL(callbackUri)
-        const searchParams = updatedCallbackUri.searchParams
+    private redirectToEndpointLoginPage(callbackUri: URI): void {
+        const updatedCallbackUri = new URL(callbackUri.toString())
+        const searchParams = new URLSearchParams(decodeURIComponent(updatedCallbackUri.search))
 
-        // Find the key that starts with 'requestFrom'
-        const requestFromKey = Array.from(searchParams.keys()).find(key => key.startsWith('requestFrom'))
-
-        if (requestFromKey) {
-            const [, currentRequestFrom] = requestFromKey.split('=')
-            if (currentRequestFrom) {
-                // Remove the old parameter.
-                searchParams.delete(requestFromKey)
-                // Add the new parameter with the correct port number appended.
-                searchParams.set('requestFrom', `${currentRequestFrom}-${this.port}`)
-                updatedCallbackUri.search = searchParams.toString()
-            }
+        const currentRequestFrom = searchParams.get('requestFrom')
+        if (currentRequestFrom) {
+            // Remove the old parameter.
+            searchParams.delete('requestFrom')
+            // Add the new parameter with the correct port number appended.
+            searchParams.set('requestFrom', `${currentRequestFrom}-${this.port}`)
+            updatedCallbackUri.search = searchParams.toString()
         }
 
         open(updatedCallbackUri.toString())
