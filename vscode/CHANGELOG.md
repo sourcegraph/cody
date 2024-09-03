@@ -2,9 +2,14 @@
 
 This is a log of all notable changes to Cody for VS Code. [Unreleased] changes are included in the nightly pre-release builds.
 
+## 1.32.8
+
+### Fixed
+- Chat: Fixed issue where server-provided context results with an empty line range would prevent any context items from being used. [pull/5452](https://github.com/sourcegraph/cody/pull/5452)
 
 ## 1.32.7
 
+### Fixed
 - Chat: Fixed issue where chat context was broken and couldn't be fetched from the server. [pull/5291](https://github.com/sourcegraph/cody/pull/5291)
 
 ## 1.32.6
