@@ -44,6 +44,10 @@ export enum FeatureFlag {
     CodyAutocompletePreloadingExperimentVariant2 = 'cody-autocomplete-preloading-experiment-variant-2',
     CodyAutocompletePreloadingExperimentVariant3 = 'cody-autocomplete-preloading-experiment-variant-3',
 
+    CodyAutocompleteContextExperimentBaseFeatureFlag = 'cody-autocomplete-context-experiment-flag',
+    CodyAutocompleteContextExperimentVariant1 = 'cody-autocomplete-preloading-experiment-variant-1',
+    CodyAutocompleteContextExperimentControl = 'cody-autocomplete-preloading-experiment-control',
+
     // When enabled, it will extend the number of languages considered for context (e.g. React files
     // will be able to use CSS files as context).
     CodyAutocompleteContextExtendLanguagePool = 'cody-autocomplete-context-extend-language-pool',

@@ -1,4 +1,5 @@
 import { type ClientConfiguration, FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
+import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { ContextStrategy } from './context/context-strategy'
 
 class CompletionProviderConfig {
@@ -13,6 +14,9 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompletePreloadingExperimentVariant1,
         FeatureFlag.CodyAutocompletePreloadingExperimentVariant2,
         FeatureFlag.CodyAutocompletePreloadingExperimentVariant3,
+        FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag,
+        FeatureFlag.CodyAutocompleteContextExperimentVariant1,
+        FeatureFlag.CodyAutocompleteContextExperimentControl,
     ] as const
 
     private get config() {
@@ -62,10 +66,35 @@ class CompletionProviderConfig {
             case 'recent-edits':
                 return 'recent-edits'
             default:
-                return this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextBfgMixed)
-                    ? 'bfg-mixed'
-                    : 'jaccard-similarity'
+                return this.experimentBasedContextStrategy()
         }
+    }
+
+    public experimentBasedContextStrategy(): ContextStrategy {
+        const defaultContextStrategy = this.getPrefetchedFlag(
+            FeatureFlag.CodyAutocompleteContextBfgMixed
+        )
+            ? 'bfg-mixed'
+            : 'jaccard-similarity'
+
+        const isContextExperimentFlagEnabled = this.getPrefetchedFlag(
+            FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag
+        )
+        if (isRunningInsideAgent() || !isContextExperimentFlagEnabled) {
+            return defaultContextStrategy
+        }
+
+        const [variant1, control] = [
+            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextExperimentVariant1),
+            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextExperimentControl),
+        ]
+        if (variant1) {
+            return 'recent-edits'
+        }
+        if (control) {
+            return defaultContextStrategy
+        }
+        return defaultContextStrategy
     }
 
     private getPreloadingExperimentGroup(): 'variant1' | 'variant2' | 'variant3' | 'control' {

@@ -35,18 +35,22 @@ export class RecentEditsRetriever implements vscode.Disposable {
 
     public async getDiffAcrossDocuments(): Promise<DiffAcrossDocuments[]> {
         const diffs: DiffAcrossDocuments[] = []
-        const diffPromises = Array.from(this.trackedDocuments.entries()).map(async ([uri, trackedDocument]) => {
-            const diff = await this.getDiff(vscode.Uri.parse(uri))
-            if (diff) {
-                return {
-                    diff,
-                    uri: trackedDocument.uri,
-                    languageId: trackedDocument.languageId,
-                    latestChangeTimestamp: Math.max(...trackedDocument.changes.map(c => c.timestamp))
+        const diffPromises = Array.from(this.trackedDocuments.entries()).map(
+            async ([uri, trackedDocument]) => {
+                const diff = await this.getDiff(vscode.Uri.parse(uri))
+                if (diff) {
+                    return {
+                        diff,
+                        uri: trackedDocument.uri,
+                        languageId: trackedDocument.languageId,
+                        latestChangeTimestamp: Math.max(
+                            ...trackedDocument.changes.map(c => c.timestamp)
+                        ),
+                    }
                 }
+                return null
             }
-            return null
-        })
+        )
         const results = await Promise.all(diffPromises)
         diffs.push(...results.filter((result): result is DiffAcrossDocuments => result !== null))
         return diffs

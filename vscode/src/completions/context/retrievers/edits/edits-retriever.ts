@@ -1,19 +1,17 @@
 import { ps, psDedent } from '@sourcegraph/cody-shared'
-import * as vscode from 'vscode'
-import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
+import { type AutocompleteContextSnippet, PromptString } from '@sourcegraph/cody-shared'
+import type * as vscode from 'vscode'
 import {
-    PromptString,
-    type AutocompleteContextSnippet,
-} from '@sourcegraph/cody-shared'
-import { DiffAcrossDocuments, RecentEditsRetriever } from '../../../../supercompletions/recent-edits/recent-edits-retriever'
-import { shouldBeUsedAsContext } from '../../utils'
+    type DiffAcrossDocuments,
+    RecentEditsRetriever,
+} from '../../../../supercompletions/recent-edits/recent-edits-retriever'
 import { getLanguageConfig } from '../../../../tree-sitter/language'
-
+import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
+import { shouldBeUsedAsContext } from '../../utils'
 
 export class EditsRetriever implements ContextRetriever {
-
     private recentEditsRetriever: RecentEditsRetriever
-    public identifier = 'last-edits'
+    public identifier = 'recent-edits'
     private disposables: vscode.Disposable[] = []
 
     constructor(maxAgeMs: number = 1000 * 60) {
@@ -28,7 +26,11 @@ export class EditsRetriever implements ContextRetriever {
 
         const autocompleteContextSnippets = []
         for (const diff of diffs) {
-            const content = this.getCommentedPromptForCompletions(diff.languageId , diff.uri, diff.diff).toString()
+            const content = this.getCommentedPromptForCompletions(
+                diff.languageId,
+                diff.uri,
+                diff.diff
+            ).toString()
             const autocompleteSnippet = {
                 uri: diff.uri,
                 content,
@@ -42,7 +44,11 @@ export class EditsRetriever implements ContextRetriever {
         return autocompleteContextSnippets.slice(1)
     }
 
-    public getCommentedPromptForCompletions(languageId: string, filename: vscode.Uri, diff: PromptString): PromptString {
+    public getCommentedPromptForCompletions(
+        languageId: string,
+        filename: vscode.Uri,
+        diff: PromptString
+    ): PromptString {
         const filePath = PromptString.fromDisplayPath(filename)
         const languageConfig = getLanguageConfig(languageId)
         const commentStart = languageConfig ? languageConfig.commentStart : ps`// `
@@ -50,7 +56,10 @@ export class EditsRetriever implements ContextRetriever {
         return prompt
     }
 
-    public filterCandidateDiffs(allDiffs: DiffAcrossDocuments[], document: vscode.TextDocument): DiffAcrossDocuments[] {
+    public filterCandidateDiffs(
+        allDiffs: DiffAcrossDocuments[],
+        document: vscode.TextDocument
+    ): DiffAcrossDocuments[] {
         const filterCandidateDiffs: DiffAcrossDocuments[] = []
         for (const diff of allDiffs) {
             const currentDocumentLanguageId = document.languageId
@@ -71,4 +80,3 @@ export class EditsRetriever implements ContextRetriever {
         }
     }
 }
-

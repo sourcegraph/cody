@@ -1,8 +1,8 @@
 import * as vscode from 'vscode'
 import type { ContextRetriever } from '../types'
 import type { BfgRetriever } from './retrievers/bfg/bfg-retriever'
-import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
 import { EditsRetriever } from './retrievers/edits/edits-retriever'
+import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
 import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
 import { loadTscRetriever } from './retrievers/tsc/load-tsc-retriever'
 

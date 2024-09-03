@@ -3,6 +3,7 @@ import { cloneDeep } from 'lodash'
 import * as vscode from 'vscode'
 import { logDebug } from '../log'
 import { authProvider } from '../services/AuthProvider'
+import { completionProviderConfig } from './completion-provider-config'
 import type { InlineCompletionItemProviderArgs } from './create-inline-completion-item-provider'
 import { completionProviderConfig } from './completion-provider-config'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
@@ -112,6 +113,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
 
     const allCompletionsProviders: providerConfig[] = []
     for (const currentProviderConfig of multiModelConfigsList) {
+<<<<<<< HEAD
         const newConfig: typeof config = {
             ...cloneDeep(config),
             // Override some config to ensure we are not logging extra events.
@@ -131,6 +133,25 @@ export async function createInlineCompletionItemFromMultipleProviders({
                 | 'tsc-mixed'
                 | null
         }
+=======
+        const newConfig = _.cloneDeep(config)
+        // Override some config to ensure we are not logging extra events.
+        newConfig.telemetryLevel = 'off'
+        // We should only override the fireworks "cody.autocomplete.experimental.fireworksOptions" when added in the config.
+        newConfig.autocompleteExperimentalFireworksOptions =
+            currentProviderConfig.enableExperimentalFireworksOverrides
+                ? config.autocompleteExperimentalFireworksOptions
+                : undefined
+        // Don't use the advanced provider config to get the model
+        newConfig.autocompleteAdvancedModel = null
+        newConfig.autocompleteExperimentalGraphContext = currentProviderConfig.context as
+            | 'lsp-light'
+            | 'bfg'
+            | 'bfg-mixed'
+            | 'tsc'
+            | 'tsc-mixed'
+            | null
+>>>>>>> eb1ce6f2c (add priority based ranking for recent edits)
 
         // Use the experimental config to get the context provider
         completionProviderConfig.setConfig(newConfig)
