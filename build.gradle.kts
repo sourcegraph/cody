@@ -235,9 +235,9 @@ fun Test.sharedIntegrationTestConfig(buildCodyDir: File, mode: String) {
 val isWindows = System.getProperty("os.name").lowercase().contains("win")
 val pnpmPath =
     if (isWindows) {
-      "pnpm.cmd"
+      arrayOf("cmd", "/k", "pnpm")
     } else {
-      "pnpm"
+      arrayOf("pnpm")
     }
 
 tasks {
@@ -268,15 +268,15 @@ tasks {
     val sourcegraphDir = unzipCodeSearch()
     exec {
       workingDir(sourcegraphDir.toString())
-      commandLine(pnpmPath, "install", "--frozen-lockfile")
+      commandLine(*pnpmPath, "install", "--frozen-lockfile", "--fix-lockfile")
     }
     exec {
       workingDir(sourcegraphDir.toString())
-      commandLine(pnpmPath, "generate")
+      commandLine(*pnpmPath, "generate")
     }
     val jetbrainsDir = sourcegraphDir.resolve("client").resolve("jetbrains")
     exec {
-      commandLine(pnpmPath, "build")
+      commandLine(*pnpmPath, "build")
       workingDir(jetbrainsDir)
     }
     val buildOutput =
@@ -328,12 +328,12 @@ tasks {
     println("Using cody from codyDir=$codyDir")
     exec {
       workingDir(codyDir)
-      commandLine(pnpmPath, "install", "--frozen-lockfile")
+      commandLine(*pnpmPath, "install", "--frozen-lockfile")
     }
     val agentDir = codyDir.resolve("agent")
     exec {
       workingDir(agentDir)
-      commandLine(pnpmPath, "run", "build")
+      commandLine(*pnpmPath, "run", "build")
     }
     copy {
       from(agentDir.resolve("dist"))
