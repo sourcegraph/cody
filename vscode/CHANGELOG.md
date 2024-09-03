@@ -3,6 +3,10 @@
 This is a log of all notable changes to Cody for VS Code. [Unreleased] changes are included in the nightly pre-release builds.
 
 
+## 1.32.7
+
+- Chat: Fixed issue where chat context was broken and couldn't be fetched from the server. [pull/5291](https://github.com/sourcegraph/cody/pull/5291)
+
 ## 1.32.6
 
 ### Added
