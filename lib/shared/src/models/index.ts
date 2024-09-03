@@ -1,29 +1,31 @@
+import { type Observable, Subject } from 'observable-fns'
 import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
 import { type ClientConfiguration, CodyIDE } from '../configuration'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { logDebug, logError } from '../logger'
+import { setSingleton, singletonNotYetSet } from '../singletons'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import { ModelTag } from './tags'
 import { type ChatModel, type EditModel, type ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
-export type ModelId = string
-export type ApiVersionId = string
-export type ProviderId = string
+type ModelId = string
+type ApiVersionId = string
+type ProviderId = string
 
-export type ModelRefStr = `${ProviderId}::${ApiVersionId}::${ModelId}`
-export interface ModelRef {
+type ModelRefStr = `${ProviderId}::${ApiVersionId}::${ModelId}`
+interface ModelRef {
     providerId: ProviderId
     apiVersionId: ApiVersionId
     modelId: ModelId
 }
 
 export type ModelCategory = ModelTag.Power | ModelTag.Balanced | ModelTag.Speed
-export type ModelStatus = ModelTag.Experimental | ModelTag.Experimental | 'stable' | ModelTag.Deprecated
+type ModelStatus = ModelTag.Experimental | ModelTag.Experimental | 'stable' | ModelTag.Deprecated
 export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise
-export type ModelCapability = 'chat' | 'autocomplete'
+type ModelCapability = 'chat' | 'autocomplete'
 
-export interface ContextWindow {
+interface ContextWindow {
     maxInputTokens: number
     maxOutputTokens: number
 }
@@ -427,8 +429,14 @@ export class ModelsService {
         await this.flush()
     }
 
+    private readonly _selectedOrDefaultModelChanges = new Subject<void>()
+    public get selectedOrDefaultModelChanges(): Observable<void> {
+        return this._selectedOrDefaultModelChanges
+    }
+
     private async flush(): Promise<void> {
         await this.storage?.set(ModelsService.STORAGE_KEY, JSON.stringify(this._preferences))
+        this._selectedOrDefaultModelChanges.next()
     }
 
     /**
@@ -567,7 +575,8 @@ export class ModelsService {
     }
 }
 
-export const modelsService = new ModelsService()
+export const modelsService = singletonNotYetSet<ModelsService>()
+setSingleton(modelsService, new ModelsService())
 
 interface Storage {
     get(key: string): string | null
@@ -575,7 +584,7 @@ interface Storage {
     delete(key: string): Promise<void>
 }
 
-export function capabilityToUsage(capability: ModelCapability): ModelUsage[] {
+function capabilityToUsage(capability: ModelCapability): ModelUsage[] {
     switch (capability) {
         case 'autocomplete':
             return [ModelUsage.Autocomplete]

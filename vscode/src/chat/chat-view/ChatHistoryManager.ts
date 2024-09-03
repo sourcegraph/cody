@@ -1,6 +1,7 @@
 import type {
     AccountKeyedChatHistory,
     AuthStatus,
+    AuthenticatedAuthStatus,
     SerializedChatTranscript,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
@@ -9,7 +10,7 @@ import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 import { localStorage } from '../../services/LocalStorageProvider'
 
-export class ChatHistoryManager implements vscode.Disposable {
+class ChatHistoryManager implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private historyChanged = new vscode.EventEmitter<UserLocalHistory | null>()
 
@@ -23,17 +24,20 @@ export class ChatHistoryManager implements vscode.Disposable {
         }
     }
 
-    public getLocalHistory(authStatus: AuthStatus): UserLocalHistory | null {
+    public getLocalHistory(authStatus: AuthenticatedAuthStatus): UserLocalHistory | null {
         return localStorage.getChatHistory(authStatus)
     }
 
-    public getChat(authStatus: AuthStatus, sessionID: string): SerializedChatTranscript | null {
+    public getChat(
+        authStatus: AuthenticatedAuthStatus,
+        sessionID: string
+    ): SerializedChatTranscript | null {
         const chatHistory = this.getLocalHistory(authStatus)
         return chatHistory?.chat ? chatHistory.chat[sessionID] : null
     }
 
     public async saveChat(
-        authStatus: AuthStatus,
+        authStatus: AuthenticatedAuthStatus,
         chat: SerializedChatTranscript | undefined
     ): Promise<UserLocalHistory> {
         const history = localStorage.getChatHistory(authStatus)
@@ -55,13 +59,13 @@ export class ChatHistoryManager implements vscode.Disposable {
         this.notifyChatHistoryChanged(authStatus)
     }
 
-    public async deleteChat(authStatus: AuthStatus, chatID: string): Promise<void> {
+    public async deleteChat(authStatus: AuthenticatedAuthStatus, chatID: string): Promise<void> {
         await localStorage.deleteChatHistory(authStatus, chatID)
         this.notifyChatHistoryChanged(authStatus)
     }
 
     // Remove chat history and input history
-    public async clear(authStatus: AuthStatus): Promise<void> {
+    public async clear(authStatus: AuthenticatedAuthStatus): Promise<void> {
         await localStorage.removeChatHistory(authStatus)
         this.notifyChatHistoryChanged(authStatus)
     }

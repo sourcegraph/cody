@@ -21,7 +21,7 @@ import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/cont
 import { showCodyIgnoreNotification } from '../cody-ignore/notification'
 import type { ExtensionClient } from '../extension-client'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
-import type { AuthProvider } from '../services/AuthProvider'
+import { authProvider } from '../services/AuthProvider'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import type { ExecuteEditArguments } from './execute'
 import { SMART_APPLY_FILE_DECORATION, getSmartApplySelection } from './prompt/smart-apply'
@@ -35,7 +35,6 @@ export interface EditManagerOptions {
     editor: VSCodeEditor
     chat: ChatClient
     ghostHintDecorator: GhostHintDecorator
-    authProvider: AuthProvider
     extensionClient: ExtensionClient
 }
 
@@ -48,7 +47,7 @@ export class EditManager implements vscode.Disposable {
     private editProviders = new WeakMap<FixupTask, EditProvider>()
 
     constructor(public options: EditManagerOptions) {
-        this.controller = new FixupController(options.authProvider, options.extensionClient)
+        this.controller = new FixupController(options.extensionClient)
         /**
          * Entry point to triggering a new Edit.
          * Given a set or arguments, this will create a new LLM interaction
@@ -131,7 +130,7 @@ export class EditManager implements vscode.Disposable {
         // Set default edit configuration, if not provided
         // It is possible that these values may be overriden later, e.g. if the user changes them in the edit input.
         const range = getEditLineSelection(document, proposedRange)
-        const model = configuration.model || modelsService.getDefaultEditModel()
+        const model = configuration.model || modelsService.instance!.getDefaultEditModel()
         if (!model) {
             throw new Error('No default edit model found. Please set one.')
         }
@@ -240,7 +239,7 @@ export class EditManager implements vscode.Disposable {
             return
         }
 
-        const model = configuration.model || modelsService.getDefaultEditModel()
+        const model = configuration.model || modelsService.instance!.getDefaultEditModel()
         if (!model) {
             throw new Error('No default edit model found. Please set one.')
         }
@@ -295,6 +294,7 @@ export class EditManager implements vscode.Disposable {
         // queries to ask the LLM to generate a selection, and then ultimately apply the edit.
         const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
 
+        const authStatus = authProvider.instance!.statusAuthed
         const selection = await getSmartApplySelection(
             configuration.id,
             configuration.instruction,
@@ -302,7 +302,7 @@ export class EditManager implements vscode.Disposable {
             configuration.document,
             model,
             this.options.chat,
-            this.options.authProvider.getAuthStatus().codyApiVersion
+            authStatus.codyApiVersion
         )
 
         // We finished prompting the LLM for the selection, we can now remove the "progress" decoration

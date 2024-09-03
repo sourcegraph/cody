@@ -106,6 +106,8 @@ describe('getConfiguration', () => {
                         return 0
                     case 'cody.experimental.guardrailsTimeoutSeconds':
                         return undefined
+                    case 'cody.advanced.agent.capabilities.storage':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -141,6 +143,7 @@ describe('getConfiguration', () => {
             debugVerbose: true,
             debugFilter: /.*/,
             telemetryLevel: 'off',
+            agentHasPersistentStorage: false,
             autocompleteAdvancedProvider: 'unstable-openai',
             autocompleteAdvancedModel: 'starcoder-16b',
             autocompleteCompleteSuggestWidgetSelection: false,

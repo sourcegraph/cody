@@ -4,7 +4,7 @@ import { CodyIDE, DOTCOM_URL, getCodyAuthReferralCode } from '@sourcegraph/cody-
 
 import type { AuthMethod } from '../chat/protocol'
 
-import type { AuthProvider } from './AuthProvider'
+import { authProvider } from './AuthProvider'
 
 // An auth provider for simplified onboarding. This is a sidecar to AuthProvider
 // so we can deprecate the experiment later. AuthProviderSimplified only works
@@ -12,7 +12,6 @@ import type { AuthProvider } from './AuthProvider'
 
 export class AuthProviderSimplified {
     public async openExternalAuthUrl(
-        classicAuthProvider: AuthProvider,
         method: AuthMethod,
         tokenReceiverUrl?: string,
         agentIDE?: CodyIDE
@@ -20,7 +19,7 @@ export class AuthProviderSimplified {
         if (!(await openExternalAuthUrl(method, tokenReceiverUrl, agentIDE))) {
             return false
         }
-        classicAuthProvider.authProviderSimplifiedWillAttemptAuth()
+        authProvider.instance!.setAuthPendingToEndpoint(DOTCOM_URL.toString())
         return true
     }
 }

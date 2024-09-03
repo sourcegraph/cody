@@ -5,12 +5,6 @@ export interface Disposable {
     dispose(): void
 }
 
-// Provides a summary of context status and notifications when the status changes.
-export interface ContextStatusProvider {
-    onDidChangeStatus(callback: (provider: ContextStatusProvider) => void): Disposable
-    get status(): ContextGroup[]
-}
-
 // Plain data types for describing context status. These are shared between
 // the VScode webviews, the VScode extension, and cody-shared.
 

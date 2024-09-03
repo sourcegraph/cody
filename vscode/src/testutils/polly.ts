@@ -40,7 +40,7 @@ export function startPollyRecording(userOptions: PollyOptions): Polly {
     })
 }
 
-export const defaultMatchRequestsBy: PollyConfig['matchRequestsBy'] = {
+const defaultMatchRequestsBy: PollyConfig['matchRequestsBy'] = {
     order: false,
 
     // Canonicalize JSON bodies so that we can replay the recording even if the JSON strings

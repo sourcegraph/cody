@@ -1,8 +1,9 @@
-import type {
-    AuthStatus,
-    ClientConfigurationWithAccessToken,
-    CodeCompletionsClient,
-    Model,
+import {
+    type AuthenticatedAuthStatus,
+    type ClientConfigurationWithAccessToken,
+    type CodeCompletionsClient,
+    type Model,
+    isDotCom,
 } from '@sourcegraph/cody-shared'
 
 import { logError } from '../../log'
@@ -24,7 +25,7 @@ import { createProviderConfig as createUnstableOpenAIProviderConfig } from './un
 export async function createProviderConfig(
     config: ClientConfigurationWithAccessToken,
     client: CodeCompletionsClient,
-    authStatus: AuthStatus
+    authStatus: AuthenticatedAuthStatus
 ): Promise<ProviderConfig | null> {
     // Resolve the provider config from the VS Code config.
     if (config.autocompleteAdvancedProvider) {
@@ -38,7 +39,7 @@ export async function createProviderConfig(
     }
 
     // Check if a user participates in autocomplete model experiments.
-    const configFromFeatureFlags = await getExperimentModel(authStatus.isDotCom)
+    const configFromFeatureFlags = await getExperimentModel(isDotCom(authStatus))
 
     // Use the experiment model if available.
     if (configFromFeatureFlags) {
@@ -72,7 +73,7 @@ export async function createProviderConfig(
 
 interface CreateConfigHelperParams {
     client: CodeCompletionsClient
-    authStatus: AuthStatus
+    authStatus: AuthenticatedAuthStatus
     modelId: string | undefined
     provider: string
     config: ClientConfigurationWithAccessToken
@@ -141,15 +142,23 @@ export async function createProviderConfigHelper(
         }
         case 'aws-bedrock':
         case 'anthropic': {
+            function getAnthropicModel() {
+                // Always use the default PLG model on DotCom
+                if (isDotCom(authStatus)) {
+                    return DEFAULT_PLG_ANTHROPIC_MODEL
+                }
+
+                // Only pass through the upstream-defined model if we're using Cody Gateway
+                if (authStatus.configOverwrites?.provider === 'sourcegraph') {
+                    return authStatus.configOverwrites.completionModel
+                }
+
+                return undefined
+            }
+
             return createAnthropicProviderConfig({
                 client,
-                // Only pass through the upstream-defined model if we're using Cody Gateway
-                model:
-                    authStatus.configOverwrites?.provider === 'sourcegraph'
-                        ? authStatus.configOverwrites.completionModel
-                        : authStatus.isDotCom
-                          ? DEFAULT_PLG_ANTHROPIC_MODEL
-                          : undefined,
+                model: getAnthropicModel(),
             })
         }
         case 'google': {

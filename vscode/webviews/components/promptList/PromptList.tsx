@@ -295,8 +295,6 @@ function hasCustomCommands(commands: CodyCommand[]): boolean {
     )
 }
 
-export const PROMPT_LIST_COMMANDS_HEADING = 'Commands'
-
 function commandRowValue(row: PromptOrDeprecatedCommand): string {
     return row.type === 'prompt' ? `prompt-${row.value.id}` : `command-${row.value.key}`
 }
@@ -318,7 +316,7 @@ const PromptCommandItem: FunctionComponent<{
                     <strong>{prompt.name}</strong>
                 </span>
                 {prompt.draft && (
-                    <Badge variant="outline" className="tw-text-xxs tw-mt-0.5">
+                    <Badge variant="secondary" className="tw-text-xxs tw-mt-0.5">
                         Draft
                     </Badge>
                 )}
@@ -351,7 +349,7 @@ const CodyCommandItem: FunctionComponent<{
                     {command.type === 'default' ? command.description : command.key}
                 </strong>
                 {showCommandOrigins && command.type !== 'default' && (
-                    <Badge variant="outline" className="tw-text-xxs tw-mt-0.5 tw-whitespace-nowrap">
+                    <Badge variant="secondary" className="tw-text-xxs tw-mt-0.5 tw-whitespace-nowrap">
                         {command.type === CustomCommandType.User
                             ? 'Local User Settings'
                             : 'Workspace Settings'}

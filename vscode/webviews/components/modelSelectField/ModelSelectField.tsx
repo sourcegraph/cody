@@ -325,7 +325,7 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 }
 
 /** Common {@link ModelsService.uiGroup} values. */
-export const ModelUIGroup: Record<string, string> = {
+const ModelUIGroup: Record<string, string> = {
     Power: 'More powerful models',
     Balanced: 'Balanced for power and speed',
     Speed: 'Faster models',

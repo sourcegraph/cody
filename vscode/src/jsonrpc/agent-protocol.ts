@@ -97,6 +97,8 @@ export type ClientRequests = {
     'chat/submitMessage': [{ id: string; message: WebviewMessage }, ExtensionMessage]
     'chat/editMessage': [{ id: string; message: WebviewMessage }, ExtensionMessage]
 
+    'chat/setModel': [{ id: string; model: Model['id'] }, null]
+
     // Trigger chat-based commands (explain, test, smell), which are effectively
     // shortcuts to start a new chat with a templated question. The return value
     // of these commands is the same as `chat/new`, an ID to reference to the
@@ -593,6 +595,12 @@ export interface ClientInfo {
      * by the agent.
      */
     marketingTracking?: TelemetryEventMarketingTrackingInput | undefined | null
+
+    /**
+     * Used to identify the client with legacy servers as a different IDE (typically JetBrains).
+     * Pre 5.6, servers would reject any client it did not recognize.
+     */
+    legacyNameForServerIdentification?: string | undefined | null
 }
 
 // The capability should match the name of the JSON-RPC methods.
@@ -664,7 +672,6 @@ export interface ClientCapabilities {
 export interface ServerInfo {
     name: string
     authenticated?: boolean | undefined | null
-    codyEnabled?: boolean | undefined | null
     codyVersion?: string | undefined | null
     authStatus?: AuthStatus | undefined | null
 }

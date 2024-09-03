@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { type AuthStatus, defaultAuthStatus } from '../auth/types'
+import { AUTH_STATUS_FIXTURE_AUTHED, type AuthenticatedAuthStatus } from '../auth/types'
 import {
     Model,
     type ModelCategory,
@@ -9,30 +9,29 @@ import {
     type ServerModel,
     type ServerModelConfiguration,
 } from '../models/index'
+import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import { getDotComDefaultModels } from './dotcom'
 import { ModelTag } from './tags'
 import { ModelUsage } from './types'
 
 describe('Model Provider', () => {
-    const freeUserAuthStatus: AuthStatus = {
-        ...defaultAuthStatus,
-        endpoint: 'https://sourcegraph.example.com',
+    const freeUserAuthStatus: AuthenticatedAuthStatus = {
+        ...AUTH_STATUS_FIXTURE_AUTHED,
+        endpoint: DOTCOM_URL.toString(),
         authenticated: true,
-        isDotCom: true,
         userCanUpgrade: true,
     }
 
-    const codyProAuthStatus: AuthStatus = {
+    const codyProAuthStatus: AuthenticatedAuthStatus = {
         ...freeUserAuthStatus,
         userCanUpgrade: false,
     }
 
-    const enterpriseAuthStatus: AuthStatus = {
-        ...defaultAuthStatus,
+    const enterpriseAuthStatus: AuthenticatedAuthStatus = {
+        ...AUTH_STATUS_FIXTURE_AUTHED,
         endpoint: 'https://sourcegraph.example.com',
         authenticated: true,
-        isDotCom: false,
     }
 
     // Reset service

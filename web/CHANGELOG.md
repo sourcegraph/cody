@@ -1,3 +1,17 @@
+## 0.7.5 
+- Improve tabs UI layout for Cody Web tabs configuration 
+- Fix Safari not working cursor click on mention panel problem  
+
+## 0.7.4 
+- Fix tabs UI tooltips for small screens 
+
+## 0.7.3 
+- Increase toolbar text to 12px 
+- Improve textbox layout (make it partially sticky)
+
+## 0.7.2 
+- Improve Tabs UI layout for mid-size and small container width
+
 ## 0.7.1
 - Add support for built-in confirmation UI for actions like Clear Chat History
 

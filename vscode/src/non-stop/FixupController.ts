@@ -32,7 +32,7 @@ import { isStreamedIntent } from '../edit/utils/edit-intent'
 import { getOverridenModelForIntent } from '../edit/utils/edit-models'
 import type { ExtensionClient } from '../extension-client'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
-import type { AuthProvider } from '../services/AuthProvider'
+import { authProvider } from '../services/AuthProvider'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
@@ -72,10 +72,7 @@ export class FixupController
 
     private _disposables: vscode.Disposable[] = []
 
-    constructor(
-        private readonly authProvider: AuthProvider,
-        private readonly client: ExtensionClient
-    ) {
+    constructor(private readonly client: ExtensionClient) {
         this.controlApplicator = client.createFixupControlApplicator(this)
         // Observe file renaming and deletion
         this.files = new FixupFileObserver()
@@ -376,7 +373,6 @@ export class FixupController
             previousInput ??
             (await getInput(
                 document,
-                this.authProvider,
                 {
                     initialInputValue: task.instruction,
                     initialRange: task.selectionRange,
@@ -455,7 +451,6 @@ export class FixupController
     ): Promise<FixupTask | null> {
         const input = await getInput(
             document,
-            this.authProvider,
             {
                 initialRange: range,
                 initialExpandedRange: expandedRange,
@@ -507,7 +502,7 @@ export class FixupController
         telemetryMetadata?: FixupTelemetryMetadata,
         taskId?: FixupTaskID
     ): Promise<FixupTask> {
-        const authStatus = this.authProvider.getAuthStatus()
+        const authStatus = authProvider.instance!.status
         const overridenModel = getOverridenModelForIntent(intent, model, authStatus)
         const fixupFile = this.files.forUri(document.uri)
         const task = new FixupTask(

@@ -2,8 +2,6 @@
 import { NodeSentryService } from './services/sentry/sentry.node'
 
 import * as vscode from 'vscode'
-
-import { defaultAuthStatus } from '@sourcegraph/cody-shared'
 import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'
 import { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
@@ -20,7 +18,7 @@ import {
     createLocalEmbeddingsController,
 } from './local-context/local-embeddings'
 import { SymfRunner } from './local-context/symf'
-import { AuthProvider } from './services/AuthProvider'
+import { authProvider } from './services/AuthProvider'
 import { localStorage } from './services/LocalStorageProvider'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { getExtensionDetails } from './services/telemetry-v2'
@@ -81,7 +79,7 @@ export function activate(
 // The vscode API is not available in the post-uninstall script.
 export async function deactivate(): Promise<void> {
     const config = localStorage.getConfig() ?? (await getFullConfig())
-    const authStatus = AuthProvider.instance?.getAuthStatus() ?? defaultAuthStatus
+    const authStatus = authProvider.instance?.status
     const { anonymousUserID } = await localStorage.anonymousUserID()
     serializeConfigSnapshot({
         config,

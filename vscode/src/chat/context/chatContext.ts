@@ -22,22 +22,24 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getConfiguration } from '../../configuration'
-import type { RemoteSearch } from '../../context/remote-search'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
     getSymbolContextFiles,
 } from '../../editor/utils/editor-context'
+import {
+    fetchRepoMetadataForFolder,
+    workspaceReposMonitor,
+} from '../../repository/repo-metadata-from-git-api'
 import type { ChatModel } from '../chat-view/ChatModel'
 
-export interface GetContextItemsTelemetry {
+interface GetContextItemsTelemetry {
     empty: () => void
     withProvider: (type: MentionQuery['provider'], metadata?: { id: string }) => void
 }
 
 export function getMentionMenuData(
     query: MentionQuery,
-    remoteSearch: RemoteSearch | null,
     chatModel: ChatModel
 ): Observable<MentionMenuData> {
     const source = 'chat'
@@ -74,9 +76,6 @@ export function getMentionMenuData(
                     mentionQuery: query,
                     telemetryRecorder: scopedTelemetryRecorder,
                     rangeFilter: !isCodyWeb,
-                    remoteRepositoriesNames: query.includeRemoteRepositories
-                        ? remoteSearch?.getRepos('all')?.map(repo => repo.name)
-                        : undefined,
                 },
                 signal
             ).then(items =>
@@ -122,7 +121,7 @@ interface GetContextItemsOptions {
 
 export async function getChatContextItemsForMention(
     options: GetContextItemsOptions,
-    signal?: AbortSignal
+    _?: AbortSignal
 ): Promise<ContextItem[]> {
     const MAX_RESULTS = 20
     const { mentionQuery, telemetryRecorder, remoteRepositoriesNames, rangeFilter = true } = options
@@ -167,7 +166,7 @@ export async function getChatContextItemsForMention(
             }
 
             const items = await openCtx.controller.mentions(
-                { query: mentionQuery.text },
+                { query: mentionQuery.text, ...(await getActiveEditorContextForOpenCtxMentions()) },
                 // get mention items for the selected provider only.
                 { providerUri: mentionQuery.provider }
             )
@@ -177,6 +176,21 @@ export async function getChatContextItemsForMention(
             )
         }
     }
+}
+
+export async function getActiveEditorContextForOpenCtxMentions(): Promise<{
+    uri: string | undefined
+    codebase: string | undefined
+}> {
+    const uri = vscode.window.activeTextEditor?.document.uri?.toString()
+    const activeWorkspaceURI =
+        uri &&
+        workspaceReposMonitor?.getFolderURIs().find(folderURI => uri?.startsWith(folderURI.toString()))
+
+    const codebase =
+        activeWorkspaceURI && (await fetchRepoMetadataForFolder(activeWorkspaceURI))[0]?.repoName
+
+    return { uri, codebase }
 }
 
 export function contextItemMentionFromOpenCtxItem(

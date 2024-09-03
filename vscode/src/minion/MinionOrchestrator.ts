@@ -2,7 +2,6 @@ import Anthropic from '@anthropic-ai/sdk'
 import * as vscode from 'vscode'
 import { getConfiguration } from '../configuration'
 import type { SymfRunner } from '../local-context/symf'
-import type { AuthProvider } from '../services/AuthProvider'
 import { MinionController, ReactPanelController } from './MinionController'
 
 export class MinionOrchestrator implements vscode.Disposable {
@@ -12,7 +11,6 @@ export class MinionOrchestrator implements vscode.Disposable {
 
     constructor(
         private extensionUri: vscode.Uri,
-        private authProvider: AuthProvider,
         private symf: SymfRunner | undefined
     ) {
         this.registerHumanListeners()
@@ -69,7 +67,7 @@ export class MinionOrchestrator implements vscode.Disposable {
 
         const minion = await ReactPanelController.createAndInit<MinionController>(
             (): MinionController => {
-                return new MinionController(this.authProvider, this.symf, anthropic, assetRoot, () => {})
+                return new MinionController(this.symf, anthropic, assetRoot, () => {})
             },
             panel
         )

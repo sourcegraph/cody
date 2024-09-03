@@ -2,6 +2,7 @@ import { Observable } from 'observable-fns'
 import type { Event } from 'vscode'
 import { logDebug } from '../logger'
 import { fromVSCodeEvent } from '../misc/observable'
+import { setSingleton, singletonNotYetSet } from '../singletons'
 import { type SourcegraphGraphQLAPIClient, graphqlClient } from '../sourcegraph-api/graphql'
 import { wrapInActiveSpan } from '../tracing'
 import { isError } from '../utils'
@@ -286,7 +287,8 @@ export class FeatureFlagProvider {
 
 const NO_FLAGS: Record<string, never> = {}
 
-export const featureFlagProvider = new FeatureFlagProvider(graphqlClient)
+export const featureFlagProvider = singletonNotYetSet<FeatureFlagProvider>()
+setSingleton(featureFlagProvider, new FeatureFlagProvider(graphqlClient))
 
 function computeIfExistingFlagChanged(
     oldFlags: Record<string, boolean>,

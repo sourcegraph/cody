@@ -62,21 +62,7 @@ export class MarkdownCodegen extends BaseCodegen {
 const requestIcon = `<img class="emoji" title=":arrow_right:" alt=":arrow_right:" src="https://github.githubassets.com/images/icons/emoji/unicode/27a1.png" height="20" width="20">`
 const notificationIcon = `<img class="emoji" title=":arrow_right:" alt=":arrow_right:" src="https://github.githubassets.com/images/icons/emoji/unicode/27a1.png" height="20" width="20">`
 
-export function stripPrefix(text: string, prefix: string): string {
-    if (text.startsWith(prefix)) {
-        return text.slice(prefix.length)
-    }
-    return text
-}
-
-export function stripSuffix(text: string, suffix: string): string {
-    if (text.endsWith(suffix)) {
-        return text.slice(0, text.length - suffix.length)
-    }
-    return text
-}
-
-export function findMarkerOffset(text: string, marker: string): number {
+function findMarkerOffset(text: string, marker: string): number {
     const index = text.indexOf(marker)
     if (index < 0) {
         throw new Error('missing marker: ' + marker)

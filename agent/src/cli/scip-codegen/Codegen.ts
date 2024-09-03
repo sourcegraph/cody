@@ -6,7 +6,7 @@ import { BaseCodegen, type DiscriminatedUnion, type DiscriminatedUnionMember } f
 import { CodePrinter } from '../../../../vscode/src/completions/context/retrievers/tsc/CodePrinter'
 import type { ConsoleReporter } from './ConsoleReporter'
 import { type Diagnostic, Severity } from './Diagnostic'
-import { JvmFormatter } from './JvmFormatter'
+import { Formatter } from './Formatter'
 import type { SymbolTable } from './SymbolTable'
 import type { CodegenOptions } from './command'
 import { resetOutputPath } from './resetOutputPath'
@@ -15,30 +15,31 @@ import { stringLiteralType } from './stringLiteralType'
 import { capitalize, isTypescriptKeyword, typescriptKeyword, typescriptKeywordSyntax } from './utils'
 
 interface DocumentContext {
-    f: JvmFormatter
+    f: Formatter
     p: CodePrinter
     symtab: SymbolTable
 }
 
-export enum JvmLanguage {
+export enum TargetLanguage {
     Java = 'java',
     Kotlin = 'kotlin',
+    CSharp = 'csharp',
 }
 
-export class JvmCodegen extends BaseCodegen {
-    private f: JvmFormatter
+export class Codegen extends BaseCodegen {
+    private f: Formatter
     public queue: scip.SymbolInformation[] = []
     public generatedSymbols = new Set<string>()
     public stringLiteralConstants = new Set<string>()
 
     constructor(
-        private language: JvmLanguage,
+        private language: TargetLanguage,
         options: CodegenOptions,
         symtab: SymbolTable,
         reporter: ConsoleReporter
     ) {
         super(options, symtab, reporter)
-        this.f = new JvmFormatter(this.language, this.symtab, this)
+        this.f = new Formatter(this.language, this.symtab, this)
     }
 
     public async run(): Promise<void> {
@@ -63,7 +64,7 @@ export class JvmCodegen extends BaseCodegen {
             info = this.queue.pop()
         }
 
-        await this.writeGsonAdapters()
+        await this.writeSerializationAdapters()
         await this.writeStringLiteralConstants()
 
         await fspromises.mkdir(this.options.output, { recursive: true })
@@ -76,35 +77,59 @@ export class JvmCodegen extends BaseCodegen {
         return { ...context, c: context }
     }
 
-    private async writeGsonAdapters(): Promise<void> {
+    private async writeSerializationAdapters(): Promise<void> {
         if (this.discriminatedUnions.size === 0) {
             return
         }
         const { p } = this.startDocument()
-        if (this.language === JvmLanguage.Kotlin) {
-            p.line('@file:Suppress("unused", "ConstPropertyName")')
-        }
-        p.line(`package ${this.options.kotlinPackage};`)
-        p.line()
-        if (this.language === JvmLanguage.Kotlin) {
-            p.line('object ProtocolTypeAdapters {')
-        } else {
-            p.line('public final class ProtocolTypeAdapters {')
+        switch (this.language) {
+            case TargetLanguage.Kotlin:
+                p.line('@file:Suppress("unused", "ConstPropertyName")')
+                p.line(`package ${this.options.kotlinPackage};`)
+                p.line()
+                p.line('object ProtocolTypeAdapters {')
+                break
+            case TargetLanguage.Java:
+                p.line(`package ${this.options.kotlinPackage};`)
+                p.line()
+                p.line('public final class ProtocolTypeAdapters {')
+                break
+            case TargetLanguage.CSharp:
+                p.line(`namespace ${this.options.kotlinPackage};`)
+                p.line('{')
+                p.block(() => {
+                    p.line('public static class ProtocolTypeAdapters')
+                    p.line('{')
+                })
+                break
         }
         p.block(() => {
-            if (this.language === JvmLanguage.Kotlin) {
-                p.line('fun register(gson: com.google.gson.GsonBuilder) {')
-            } else {
-                p.line('public static void register(com.google.gson.GsonBuilder gson) {')
+            switch (this.language) {
+                case TargetLanguage.Kotlin:
+                    p.line('fun register(gson: com.google.gson.GsonBuilder) {')
+                    break
+                case TargetLanguage.Java:
+                    p.line('public static void register(com.google.gson.GsonBuilder gson) {')
+                    break
+                case TargetLanguage.CSharp:
+                    p.line('public static void Register(JsonSerializerOptions options)')
+                    p.line('{')
+                    break
             }
             p.block(() => {
                 const discriminatedUnions = [...this.discriminatedUnions.keys()].sort()
                 for (const symbol of discriminatedUnions) {
                     const name = this.symtab.info(symbol).display_name
-                    if (this.language === JvmLanguage.Kotlin) {
-                        p.line(`gson.registerTypeAdapter(${name}::class.java, ${name}.deserializer)`)
-                    } else {
-                        p.line(`gson.registerTypeAdapter(${name}.class, ${name}.deserializer());`)
+                    switch (this.language) {
+                        case TargetLanguage.Kotlin:
+                            p.line(`gson.registerTypeAdapter(${name}::class.java, ${name}.deserializer)`)
+                            break
+                        case TargetLanguage.Java:
+                            p.line(`gson.registerTypeAdapter(${name}.class, ${name}.deserializer());`)
+                            break
+                        case TargetLanguage.CSharp:
+                            p.line(`options.Converters.Add(new ${name}Converter());`)
+                            break
                     }
                 }
             })
@@ -122,29 +147,51 @@ export class JvmCodegen extends BaseCodegen {
             return
         }
         const { p } = this.startDocument()
-        if (this.language === JvmLanguage.Kotlin) {
-            p.line('@file:Suppress("unused", "ConstPropertyName")')
-        }
-        p.line(`package ${this.options.kotlinPackage};`)
-        p.line()
-        if (this.language === JvmLanguage.Kotlin) {
-            p.line('object Constants {')
-        } else {
-            p.line('public final class Constants {')
+        switch (this.language) {
+            case TargetLanguage.CSharp:
+                p.line(`namespace ${this.options.kotlinPackage};`)
+                p.line('{')
+                p.line('public static class Constants')
+                p.line('{')
+                break
+            case TargetLanguage.Kotlin:
+                p.line('@file:Suppress("unused", "ConstPropertyName")')
+                p.line(`package ${this.options.kotlinPackage};`)
+                p.line()
+                p.line('object Constants {')
+                break
+            case TargetLanguage.Java:
+                p.line(`package ${this.options.kotlinPackage};`)
+                p.line()
+                p.line('public final class Constants {')
+                break
         }
         p.block(() => {
             const constants = [...this.stringLiteralConstants.values()].sort()
             for (const constant of constants) {
-                if (this.language === JvmLanguage.Kotlin) {
-                    p.line(`const val ${this.f.formatFieldName(constant)} = "${constant}"`)
-                } else {
-                    p.line(
-                        `public static final String ${this.f.formatFieldName(constant)} = "${constant}";`
-                    )
+                switch (this.language) {
+                    case TargetLanguage.Kotlin:
+                        p.line(`const val ${this.f.formatFieldName(constant)} = "${constant}"`)
+                        break
+                    case TargetLanguage.Java:
+                        p.line(
+                            `public static final String ${this.f.formatFieldName(
+                                constant
+                            )} = "${constant}";`
+                        )
+                        break
+                    case TargetLanguage.CSharp:
+                        p.line(
+                            `public const string ${this.f.formatFieldName(constant)} = "${constant}";`
+                        )
+                        break
                 }
             }
         })
         p.line('}')
+        if (this.language === TargetLanguage.CSharp) {
+            p.line('}')
+        }
         await fspromises.writeFile(
             path.join(this.options.output, `Constants.${this.fileExtension()}`),
             p.build()
@@ -152,17 +199,37 @@ export class JvmCodegen extends BaseCodegen {
     }
 
     private fileExtension() {
-        return this.language === JvmLanguage.Kotlin ? 'kt' : 'java'
+        switch (this.language) {
+            case TargetLanguage.CSharp:
+                return 'cs'
+            case TargetLanguage.Kotlin:
+                return 'kt'
+            default:
+                return 'java'
+        }
     }
 
     private async writeNullAlias(): Promise<void> {
         const { p } = this.startDocument()
-        p.line(`package ${this.options.kotlinPackage};`)
-        p.line()
-        if (this.language === JvmLanguage.Kotlin) {
-            p.line('typealias Null = Void?')
-        } else {
-            p.line('public final class Null {}')
+        switch (this.language) {
+            case TargetLanguage.Kotlin:
+                p.line(`package ${this.options.kotlinPackage};`)
+                p.line()
+                p.line('typealias Null = Void?')
+                break
+            case TargetLanguage.Java:
+                p.line(`package ${this.options.kotlinPackage};`)
+                p.line()
+                p.line('public final class Null {}')
+                break
+            case TargetLanguage.CSharp:
+                p.line(`namespace ${this.options.kotlinPackage};`)
+                p.line('{')
+                p.block(() => {
+                    p.line('public sealed class Null {}')
+                })
+                p.line('}')
+                break
         }
         await fspromises.writeFile(
             path.join(this.options.output, `Null.${this.fileExtension()}`),
@@ -176,41 +243,82 @@ export class JvmCodegen extends BaseCodegen {
         info: scip.SymbolInformation,
         union: DiscriminatedUnion
     ): Promise<void> {
-        p.line('import com.google.gson.Gson;')
-        p.line('import com.google.gson.JsonDeserializationContext;')
-        p.line('import com.google.gson.JsonDeserializer;')
-        p.line('import com.google.gson.JsonElement;')
-        p.line('import java.lang.reflect.Type;')
-
-        p.line()
-        if (this.language === JvmLanguage.Kotlin) {
-            p.line(`sealed class ${name} {`)
+        if (this.language === TargetLanguage.CSharp) {
+            p.addImport('using Newtonsoft.Json;')
         } else {
-            p.line(`public abstract class ${name} {`)
+            p.line('import com.google.gson.Gson;')
+            p.line('import com.google.gson.JsonDeserializationContext;')
+            p.line('import com.google.gson.JsonDeserializer;')
+            p.line('import com.google.gson.JsonElement;')
+            p.line('import java.lang.reflect.Type;')
+        }
+        p.line()
+        switch (this.language) {
+            case TargetLanguage.Kotlin:
+                p.line(`sealed class ${name} {`)
+                break
+            case TargetLanguage.Java:
+                p.line(`public abstract class ${name} {`)
+                break
+            case TargetLanguage.CSharp:
+                p.line(`[JsonConverter(typeof(${name}Converter))]`)
+                name = name
+                    .split(/[ -]/)
+                    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+                    .join('')
+                p.line(`public abstract class ${name}`)
+                p.line('{')
+                break
         }
         p.block(() => {
-            if (this.language === JvmLanguage.Kotlin) {
+            if (this.language === TargetLanguage.Kotlin) {
                 p.line('companion object {')
             }
             p.block(() => {
-                if (this.language === JvmLanguage.Kotlin) {
-                    p.line(`val deserializer: JsonDeserializer<${name}> =`)
-                } else {
-                    p.line(`public static JsonDeserializer<${name}> deserializer() {`)
+                switch (this.language) {
+                    case TargetLanguage.Kotlin:
+                        p.line(`val deserializer: JsonDeserializer<${name}> =`)
+                        break
+                    case TargetLanguage.Java:
+                        p.line(`public static JsonDeserializer<${name}> deserializer() {`)
+                        break
+                    case TargetLanguage.CSharp:
+                        p.line(`private class ${name}Converter : JsonConverter<${name}>`)
+                        p.line('{')
+                        p.block(() => {
+                            p.line(
+                                `public override ${name} Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)`
+                            )
+                            p.line('{')
+                            p.block(() => {
+                                p.line('var jsonDoc = JsonDocument.ParseValue(ref reader);')
+                                p.line(
+                                    `var discriminator = jsonDoc.RootElement.GetProperty("${union.discriminatorDisplayName}").GetString();`
+                                )
+                                p.line('switch (discriminator)')
+                                p.line('{')
+                            })
+                        })
+                        break
                 }
                 p.block(() => {
-                    if (this.language === JvmLanguage.Kotlin) {
-                        p.line(
-                            'JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->'
-                        )
-                    } else {
-                        p.line('return (element, _type, context) -> {')
+                    switch (this.language) {
+                        case TargetLanguage.Kotlin:
+                            p.line(
+                                'JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->'
+                            )
+                            break
+                        case TargetLanguage.Java:
+                            p.line('return (element, _type, context) -> {')
+                            break
                     }
                     p.block(() => {
-                        const keyword = this.language === JvmLanguage.Kotlin ? 'when' : 'switch'
-                        p.line(
-                            `${keyword} (element.getAsJsonObject().get("${union.discriminatorDisplayName}").getAsString()) {`
-                        )
+                        const keyword = this.language === TargetLanguage.Kotlin ? 'when' : 'switch'
+                        if (this.language !== TargetLanguage.CSharp) {
+                            p.line(
+                                `${keyword} (element.getAsJsonObject().get("${union.discriminatorDisplayName}").getAsString()) {`
+                            )
+                        }
                         p.block(() => {
                             const isHandledCase = new Set<string>()
                             for (const member of union.members) {
@@ -225,38 +333,74 @@ export class JvmCodegen extends BaseCodegen {
                                     continue
                                 }
                                 isHandledCase.add(member.value)
-
                                 const typeName = this.f.discriminatedUnionTypeName(union, member)
-                                if (this.language === JvmLanguage.Kotlin) {
-                                    p.line(
-                                        `"${member.value}" -> context.deserialize<${typeName}>(element, ${typeName}::class.java)`
-                                    )
-                                } else {
-                                    p.line(
-                                        `case "${member.value}": return context.deserialize(element, ${typeName}.class);`
-                                    )
+                                switch (this.language) {
+                                    case TargetLanguage.Kotlin:
+                                        p.line(
+                                            `"${member.value}" -> context.deserialize<${typeName}>(element, ${typeName}::class.java)`
+                                        )
+                                        break
+                                    case TargetLanguage.Java:
+                                        p.line(
+                                            `case "${member.value}": return context.deserialize(element, ${typeName}.class);`
+                                        )
+                                        break
+                                    case TargetLanguage.CSharp:
+                                        p.line(`case "${member.value}":`)
+                                        p.block(() => {
+                                            p.line(
+                                                `return JsonSerializer.Deserialize<${typeName}>(jsonDoc.RootElement.GetRawText(), options);`
+                                            )
+                                        })
+                                        break
                                 }
                             }
-                            if (this.language === JvmLanguage.Kotlin) {
-                                p.line('else -> throw Exception("Unknown discriminator ${element}")')
-                            } else {
-                                p.line(
-                                    'default: throw new RuntimeException("Unknown discriminator " + element);'
-                                )
+                            switch (this.language) {
+                                case TargetLanguage.Kotlin:
+                                    p.line('else -> throw Exception("Unknown discriminator ${element}")')
+                                    break
+                                case TargetLanguage.Java:
+                                    p.line(
+                                        'default: throw new RuntimeException("Unknown discriminator " + element);'
+                                    )
+                                    break
+                                case TargetLanguage.CSharp:
+                                    p.line('default:')
+                                    p.block(() => {
+                                        p.line(
+                                            'throw new JsonException($"Unknown discriminator {discriminator}");'
+                                        )
+                                    })
+                                    p.line('}')
+                                    break
                             }
                         })
-                        p.line('}')
+                        if (this.language === TargetLanguage.Java) {
+                            p.line('};')
+                        } else {
+                            p.line('}')
+                        }
                     })
-                    if (this.language === JvmLanguage.Kotlin) {
-                        p.line('}')
-                    } else {
-                        p.line('};')
+                    switch (this.language) {
+                        case TargetLanguage.CSharp:
+                            p.line(
+                                'public override void Write(Utf8JsonWriter writer, ${name} value, JsonSerializerOptions options)'
+                            )
+                            p.line('{')
+                            p.block(() => {
+                                p.line(
+                                    'JsonSerializer.Serialize(writer, value, value.GetType(), options);'
+                                )
+                            })
+                            break
+                        default:
+                            p.line('}')
                     }
                 })
             })
             p.line('}')
         })
-        if (this.language === JvmLanguage.Kotlin) {
+        if (this.language === TargetLanguage.Kotlin || this.language === TargetLanguage.CSharp) {
             p.line('}')
         }
         for (const member of union.members) {
@@ -273,10 +417,14 @@ export class JvmCodegen extends BaseCodegen {
             this.writeDataClass({ p, f, symtab }, typeName, info, {
                 innerClass: true,
                 heritageClause:
-                    this.language === JvmLanguage.Kotlin ? ` : ${name}()` : ` extends ${name}`,
+                    this.language === TargetLanguage.Kotlin
+                        ? ` : ${name}()`
+                        : this.language === TargetLanguage.Java
+                          ? ` extends ${name}`
+                          : ` : ${name}`,
             })
         }
-        if (this.language === JvmLanguage.Java) {
+        if (this.language === TargetLanguage.Java || this.language === TargetLanguage.CSharp) {
             p.line('}')
         }
     }
@@ -295,11 +443,19 @@ export class JvmCodegen extends BaseCodegen {
         }
         const generatedName = new Set<string>()
         const enums: { name: string; members: string[] }[] = []
-        if (this.language === JvmLanguage.Kotlin) {
-            p.line(`data class ${name}(`)
-        } else {
-            const staticModifier = params?.innerClass ? 'static ' : ''
-            p.line(`public ${staticModifier}final class ${name}${params?.heritageClause ?? ''} {`)
+        switch (this.language) {
+            case TargetLanguage.Kotlin:
+                p.line(`data class ${name}(`)
+                break
+            case TargetLanguage.Java: {
+                const staticModifier = params?.innerClass ? 'static ' : ''
+                p.line(`public ${staticModifier}final class ${name}${params?.heritageClause ?? ''} {`)
+                break
+            }
+            case TargetLanguage.CSharp:
+                p.line(`public class ${name}${params?.heritageClause ?? ''}`)
+                p.line('{')
+                break
         }
         p.block(() => {
             let hasMembers = false
@@ -370,39 +526,65 @@ export class JvmCodegen extends BaseCodegen {
                     fieldName === member.display_name
                         ? ''
                         : `@com.google.gson.annotations.SerializedName("${member.display_name}") `
-                if (this.language === JvmLanguage.Kotlin) {
-                    p.line(
-                        `val ${member.display_name}: ${memberTypeSyntax}${defaultValueSyntax},${oneofSyntax}`
-                    )
-                } else {
-                    p.line(
-                        `${serializedAnnotation}public ${memberTypeSyntax} ${this.f.formatFieldName(
-                            member.display_name
-                        )};${oneofSyntax}`
-                    )
+                switch (this.language) {
+                    case TargetLanguage.Kotlin:
+                        p.line(
+                            `val ${member.display_name}: ${memberTypeSyntax}${defaultValueSyntax},${oneofSyntax}`
+                        )
+                        break
+                    case TargetLanguage.Java:
+                        p.line(
+                            `${serializedAnnotation}public ${memberTypeSyntax} ${this.f.formatFieldName(
+                                member.display_name
+                            )};${oneofSyntax}`
+                        )
+                        break
+                    case TargetLanguage.CSharp:
+                        p.line(`[JsonProperty(PropertyName = "${member.display_name}")]`)
+                        if (oneofSyntax.includes('-')) {
+                            p.line(
+                                `public string ${this.f.formatFieldName(
+                                    member.display_name
+                                )} { get; set; }${oneofSyntax}`
+                            )
+                            enums.length = 0
+                        } else {
+                            p.line(
+                                `public ${memberTypeSyntax} ${this.f.formatFieldName(
+                                    member.display_name
+                                )} { get; set; }${oneofSyntax}`
+                            )
+                        }
+                        break
                 }
                 hasMembers = true
             }
-            if (!hasMembers && this.language === JvmLanguage.Kotlin) {
-                p.line('val placeholderField: String? = null // Empty data class')
+            if (!hasMembers) {
+                if (this.language === TargetLanguage.Kotlin) {
+                    p.line('val placeholderField: String? = null // Empty data class')
+                } else if (this.language === TargetLanguage.CSharp) {
+                    p.line('public string PlaceholderField { get; set; } // Empty class')
+                }
             }
         })
         if (enums.length === 0) {
-            if (this.language === JvmLanguage.Kotlin) {
+            if (this.language === TargetLanguage.Kotlin) {
                 p.line(`)${params?.heritageClause ?? ''}`)
             } else {
                 p.line('}')
             }
             return
         }
-        if (this.language === JvmLanguage.Kotlin) {
+        if (this.language === TargetLanguage.Kotlin) {
             p.line(`)${params?.heritageClause ?? ''} {`)
         }
         // Nest enum classe inside data class to avoid naming conflicts with
         // enums for other data classes in the same package.
         p.block(() => {
-            if (this.language === JvmLanguage.Kotlin) {
+            if (this.language === TargetLanguage.Kotlin) {
                 p.addImport('import com.google.gson.annotations.SerializedName;')
+            } else if (this.language === TargetLanguage.CSharp) {
+                p.addImport('using Newtonsoft.Json;')
             }
 
             for (const { name, members } of enums) {
@@ -433,19 +615,41 @@ export class JvmCodegen extends BaseCodegen {
 
     private writeEnum(p: CodePrinter, name: string, members: string[]): void {
         p.line()
-        if (this.language === JvmLanguage.Kotlin) {
-            p.line(`enum class ${name} {`)
-        } else {
-            p.line(`public enum ${name} {`)
+        switch (this.language) {
+            case TargetLanguage.Kotlin:
+                p.line(`enum class ${name} {`)
+                break
+            case TargetLanguage.Java:
+                p.line(`public enum ${name} {`)
+                break
+            case TargetLanguage.CSharp:
+                p.line(`public enum ${name}`)
+                p.line('{')
+                break
         }
         p.block(() => {
             for (const member of members) {
-                const serializedName =
-                    this.language === JvmLanguage.Kotlin
-                        ? `@SerializedName("${member}")`
-                        : `@com.google.gson.annotations.SerializedName("${member}")`
+                const serializedName = (() => {
+                    switch (this.language) {
+                        case TargetLanguage.CSharp:
+                            return ''
+                        case TargetLanguage.Kotlin:
+                            return `@SerializedName("${member}")`
+                        case TargetLanguage.Java:
+                            return `@com.google.gson.annotations.SerializedName("${member}")`
+                        default:
+                            return ''
+                    }
+                })()
                 const enumName = this.f.formatFieldName(capitalize(member))
-                p.line(`${serializedName} ${enumName},`)
+                switch (this.language) {
+                    case TargetLanguage.CSharp:
+                        p.line(`${enumName}, // ${member}`)
+                        break
+                    default:
+                        p.line(`${serializedName} ${enumName},`)
+                        break
+                }
             }
         })
         p.line('}')
@@ -454,16 +658,75 @@ export class JvmCodegen extends BaseCodegen {
     private async writeType(info: scip.SymbolInformation): Promise<void> {
         const { f, p, c } = this.startDocument()
         const name = f.typeName(info)
-        if (this.language === JvmLanguage.Kotlin) {
+        const alias = this.aliasType(info)
+
+        if (this.language === TargetLanguage.CSharp) {
+            p.addImport('using Newtonsoft.Json;')
+            p.line()
+            p.line(`namespace ${this.options.kotlinPackage}`)
+            p.line('{')
+            p.block(() => {
+                if (alias) {
+                    if (this.isStringTypeInfo(info)) {
+                        const constants = this.stringConstantsFromInfo(info)
+                        if (constants.length > 0) {
+                            this.writeEnum(p, name, constants)
+                        } else {
+                            p.line(`public class ${name}`)
+                            p.line('{')
+                            p.block(() => {
+                                p.line('public string Value { get; set; }')
+                                p.line()
+                                p.line(
+                                    `public static implicit operator string(${name} value) => value.Value;`
+                                )
+                                p.line(
+                                    `public static implicit operator ${name}(string value) => new ${name} { Value = value };`
+                                )
+                            })
+                            p.line('}')
+                        }
+                    } else {
+                        p.line(`public class ${name} : ${alias} { }`)
+                    }
+                } else if (info.signature.has_class_signature) {
+                    this.writeDataClass(c, name, info)
+                } else if (info.signature.has_type_signature) {
+                    const discriminatedUnion = this.discriminatedUnions.get(info.symbol)
+                    if (discriminatedUnion) {
+                        this.writeSealedClass(c, name, info, discriminatedUnion)
+                    } else if (this.isStringTypeInfo(info)) {
+                        const constants = this.stringConstantsFromInfo(info)
+                        if (constants.length > 0) {
+                            this.writeEnum(p, name, constants)
+                        } else {
+                            p.line(`public class ${name} : String { }`)
+                        }
+                    } else {
+                        this.writeDataClass(c, name, info)
+                    }
+                } else {
+                    throw new Error(`Unsupported signature: ${JSON.stringify(info.toObject(), null, 2)}`)
+                }
+            })
+            p.line('}')
+            const filename = `${info.display_name}.${this.fileExtension()}`
+                .split('_')
+                .map(capitalize)
+                .join('')
+            fspromises.writeFile(path.join(this.options.output, filename), p.build())
+            return
+        }
+
+        if (this.language === TargetLanguage.Kotlin) {
             p.line(
                 '@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")'
             )
         }
         p.line(`package ${this.options.kotlinPackage};`)
         p.line()
-        const alias = this.aliasType(info)
         if (alias) {
-            if (this.language === JvmLanguage.Kotlin) {
+            if (this.language === TargetLanguage.Kotlin) {
                 p.line(`typealias ${name} = ${alias}`)
             } else {
                 if (info.display_name === 'Date') {
@@ -501,21 +764,43 @@ export class JvmCodegen extends BaseCodegen {
         notifications: string
     ): Promise<void> {
         const { f, p, symtab } = this.startDocument()
-        if (this.language === JvmLanguage.Kotlin) {
-            p.line('@file:Suppress("FunctionName", "ClassName", "RedundantNullable")')
+        switch (this.language) {
+            case TargetLanguage.Kotlin:
+                p.line('@file:Suppress("FunctionName", "ClassName", "RedundantNullable")')
+                p.line(`package ${this.options.kotlinPackage};`)
+                p.line()
+                p.line('import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;')
+                p.line('import org.eclipse.lsp4j.jsonrpc.services.JsonRequest;')
+                p.line('import java.util.concurrent.CompletableFuture;')
+                break
+            case TargetLanguage.Java:
+                p.line(`package ${this.options.kotlinPackage};`)
+                p.line()
+                p.line('import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;')
+                p.line('import org.eclipse.lsp4j.jsonrpc.services.JsonRequest;')
+                p.line('import java.util.concurrent.CompletableFuture;')
+                break
+            case TargetLanguage.CSharp:
+                p.addImport('using System.Threading.Tasks;')
+                p.line()
+                p.line(`namespace ${this.options.kotlinPackage};`)
+                p.line('{')
+                break
         }
-        p.line(`package ${this.options.kotlinPackage};`)
         p.line()
-        p.line('import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;')
-        p.line('import org.eclipse.lsp4j.jsonrpc.services.JsonRequest;')
-        p.line('import java.util.concurrent.CompletableFuture;')
-        p.line()
-        if (this.language === JvmLanguage.Kotlin) {
-            p.line('@Suppress("unused")')
-            p.line(`interface ${name} {`)
-        } else {
-            p.line('@SuppressWarnings("unused")')
-            p.line(`public interface ${name} {`)
+        switch (this.language) {
+            case TargetLanguage.Kotlin:
+                p.line('@Suppress("unused")')
+                p.line(`interface ${name} {`)
+                break
+            case TargetLanguage.Java:
+                p.line('@SuppressWarnings("unused")')
+                p.line(`public interface ${name} {`)
+                break
+            case TargetLanguage.CSharp:
+                p.line('public interface ' + name)
+                p.line('{')
+                break
         }
         p.block(() => {
             p.sectionComment('Requests')
@@ -539,27 +824,36 @@ export class JvmCodegen extends BaseCodegen {
                     )
                     continue
                 }
-
                 const { parameterType, parameterSyntax } = f.jsonrpcMethodParameter(request)
                 this.queueClassLikeType(parameterType, request, 'parameter')
                 this.queueClassLikeType(resultType, request, 'result')
                 const resultTypeSyntax = f.jsonrpcTypeName(request, resultType, 'result')
-
-                p.line(`@JsonRequest("${request.display_name}")`)
-                if (this.language === JvmLanguage.Kotlin) {
-                    p.line(
-                        `fun ${f.functionName(request)}(${parameterSyntax}): ` +
-                            `CompletableFuture<${resultTypeSyntax}>`
-                    )
-                } else {
-                    p.line(
-                        `CompletableFuture<${resultTypeSyntax}> ${f.functionName(
-                            request
-                        )}(${parameterSyntax});`
-                    )
+                switch (this.language) {
+                    case TargetLanguage.Kotlin:
+                        p.line(`@JsonRequest("${request.display_name}")`)
+                        p.line(
+                            `fun ${f.functionName(request)}(${parameterSyntax}): ` +
+                                `CompletableFuture<${resultTypeSyntax}>`
+                        )
+                        break
+                    case TargetLanguage.Java:
+                        p.line(`@JsonRequest("${request.display_name}")`)
+                        p.line(
+                            `CompletableFuture<${resultTypeSyntax}> ${f.functionName(
+                                request
+                            )}(${parameterSyntax});`
+                        )
+                        break
+                    case TargetLanguage.CSharp: {
+                        p.line(`[JsonRpcMethod("${request.display_name}")]`)
+                        const _task = resultTypeSyntax === 'Void' ? 'Task' : `Task<${resultTypeSyntax}>`
+                        const _params = parameterSyntax.startsWith('Void') ? '' : parameterSyntax
+                        const _func = capitalize(f.functionName(request))
+                        p.line(`${_task} ${_func}(${_params});`)
+                        break
+                    }
                 }
             }
-
             p.line()
             p.sectionComment('Notifications')
             for (const notification of symtab.structuralType(symtab.canonicalSymbol(notifications))) {
@@ -572,16 +866,29 @@ export class JvmCodegen extends BaseCodegen {
                 // type Notifications = { 'textDocument/inlineCompletions': [NotificationParams] }
                 const { parameterType, parameterSyntax } = f.jsonrpcMethodParameter(notification)
                 this.queueClassLikeType(parameterType, notification, 'parameter')
-                p.line(`@JsonNotification("${notification.display_name}")`)
-                if (this.language === JvmLanguage.Kotlin) {
-                    p.line(`fun ${f.functionName(notification)}(${parameterSyntax})`)
-                } else {
-                    p.line(`void ${f.functionName(notification)}(${parameterSyntax});`)
+                const notificationName = f.functionName(notification)
+                switch (this.language) {
+                    case TargetLanguage.Kotlin:
+                        p.line(`@JsonNotification("${notification.display_name}")`)
+                        p.line(`fun ${notificationName}(${parameterSyntax})`)
+                        break
+                    case TargetLanguage.Java:
+                        p.line(`@JsonNotification("${notification.display_name}")`)
+                        p.line(`void ${notificationName}(${parameterSyntax});`)
+                        break
+                    case TargetLanguage.CSharp:
+                        p.line(`[JsonRpcMethod("${notification.display_name}")]`)
+                        p.line(`void ${capitalize(notificationName)}(${parameterSyntax});`)
+                        break
                 }
             }
         })
 
         p.line('}')
+
+        if (this.language === TargetLanguage.CSharp) {
+            p.line('}')
+        }
 
         await fspromises.writeFile(
             path.join(this.options.output, `${name}.${this.fileExtension()}`),

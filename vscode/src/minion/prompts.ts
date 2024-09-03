@@ -106,40 +106,6 @@ ${snippet.text}
     ]
 }
 
-export const shouldAskHumanSystem = `
-Your job is to determine whether a particular programming task should be performed by AI or human.
-
-Here are tasks that AI is generally good at:
-- Writing boilerplate code for common frameworks like React
-- Writing DevOps code/configuration for common tools like terraform and AWS CloudFormation
-- Searching for code snippets that have keyword matches for a specific query
-- Writing tests
-- Writing documentation
-- Summarizing changed code and adding it to the changelog
-- Writing functions or classes that are likely well-represented on StackOverflow. For example, functions for common use cases of popular open-source frameworks, including but not limited to creating React components, HTTP handlers, command line argument parsers, string manipulations, and serialization of common data formats like JSON and XML.
-
-Here are tasks that humans are generally good at:
-- Thinking creatively about what should be built to solve a high-level user problem
-- Writing novel data structures or algorithms
-- Writing code that must integrate with an existing package in a private codebase
-- Complex features that involve writing code that's unlikely to have an answer on StackOverflow
-
-INPUT FORMAT:
-<description>a description of the programming task</description>
-
-RESPONSE_FORMAT:
-<humanIsBetter>true or false</humanIsBetter>
-<aiIsBetter>true or false</aiIsBetter>`.trimStart()
-
-export function shouldAskHumanUser(description: string): MessageParam[] {
-    return [
-        {
-            role: 'user',
-            content: `<description>${description}</description>`,
-        },
-    ]
-}
-
 export const changelogSystem = `
 Your job is to propose an edit to a changelog file. You'll be given the following information:
 - changelog: the portion of the changelog to modify
@@ -175,32 +141,6 @@ ${changelog}
 ${description}
 </changeDescription>
 `.trim(),
-        },
-    ]
-}
-
-export const changelogSystemNonPatch = `
-Your job is to generate a changelog entry, given a description of changes that were made to a codebase.
-
-INPUT FORMAT:
-<description>a description of the changes</description>
-<changelog>existing contents of the changelog</changelog>
-
-RESPONSE_FORMAT:
-<changelogEntry>text to add to the changelog</changelogEntry>`.trimStart()
-
-export function changelogUserNonPatch(changelog: string, description: string): MessageParam[] {
-    return [
-        {
-            role: 'user',
-            content: `
-<description>
-${description}
-</description>
-<changelog>
-${changelog}
-</changelog>
-`.trimStart(),
         },
     ]
 }

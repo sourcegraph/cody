@@ -21,7 +21,7 @@ import type {
     PersistencePresentEventPayload,
     PersistenceRemovedEventPayload,
 } from '../common/persistence-tracker/types'
-import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
+import { GitHubDotComRepoMetadata } from '../repository/repo-metadata-from-git-api'
 import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
 import {
     AUTOCOMPLETE_STAGE_COUNTER_INITIAL_STATE,
@@ -63,21 +63,21 @@ declare const CompletionLogID: unique symbol
 export type CompletionItemID = string & { _opaque: typeof CompletionItemID }
 declare const CompletionItemID: unique symbol
 
-export interface InlineCompletionItemRetrievedContext {
+interface InlineCompletionItemRetrievedContext {
     content: string
     filePath: string
     startLine: number
     endLine: number
 }
 
-export interface InlineContextItemsParams {
+interface InlineContextItemsParams {
     context: AutocompleteContextSnippet[]
     filePath: string | undefined
     gitUrl: string | undefined
     commit: string | undefined
 }
 
-export interface InlineCompletionItemContext {
+interface InlineCompletionItemContext {
     gitUrl: string
     commit?: string
     filePath?: string
@@ -692,10 +692,10 @@ export function loaded(params: LoadedParams): void {
         inlineContextParams?.gitUrl &&
         event.params.inlineCompletionItemContext === undefined
     ) {
-        const instance = RepoMetadatafromGitApi.getInstance()
+        const instance = GitHubDotComRepoMetadata.getInstance()
         // Get the metadata only if already cached, We don't wait for the network call here.
         const gitRepoMetadata = instance.getRepoMetadataIfCached(inlineContextParams.gitUrl)
-        if (gitRepoMetadata === undefined || gitRepoMetadata.isPublic === false) {
+        if (gitRepoMetadata === undefined || !gitRepoMetadata.isPublic) {
             // 🚨 SECURITY: For Non-Public git Repos, We cannot log any code related information, just git url and commit.
             event.params.inlineCompletionItemContext = {
                 gitUrl: inlineContextParams.gitUrl,
@@ -1063,8 +1063,8 @@ function getSharedParams(event: CompletionBookkeepingEvent): SharedEventPayload 
         items: event.items.map(i => ({ ...i })),
         otherCompletionProviderEnabled: otherCompletionProviders.length > 0,
         otherCompletionProviders,
-        upstreamLatency: upstreamHealthProvider.getUpstreamLatency(),
-        gatewayLatency: upstreamHealthProvider.getGatewayLatency(),
+        upstreamLatency: upstreamHealthProvider.instance!.getUpstreamLatency(),
+        gatewayLatency: upstreamHealthProvider.instance!.getGatewayLatency(),
 
         // 🚨 SECURITY: Do not include any context by default
         inlineCompletionItemContext: undefined,

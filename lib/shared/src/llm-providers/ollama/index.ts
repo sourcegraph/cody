@@ -41,7 +41,3 @@ export interface OllamaGenerateResponse {
     sample_duration?: number
     message?: OpenAIMessage
 }
-
-export interface OllamaGenerateErrorResponse {
-    error?: string
-}

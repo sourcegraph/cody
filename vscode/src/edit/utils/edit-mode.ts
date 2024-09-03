@@ -1,6 +1,6 @@
 import type { EditIntent, EditMode } from '../types'
 
-export const DEFAULT_EDIT_MODE: EditMode = 'edit'
+const DEFAULT_EDIT_MODE: EditMode = 'edit'
 
 export function getEditMode(intent: EditIntent, proposedMode?: EditMode): EditMode {
     if (intent === 'add') {

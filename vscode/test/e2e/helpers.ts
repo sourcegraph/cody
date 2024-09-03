@@ -33,6 +33,7 @@ import {
 } from '../fixtures/mock-server'
 
 import type { RepoListResponse } from '@sourcegraph/cody-shared'
+import type { RepositoryIdResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { closeSidebar, expectAuthenticated, focusSidebar } from './common'
 import { installVsCode } from './install-deps'
 import { buildCustomCommandConfigFile } from './utils/buildCustomCommands'
@@ -567,6 +568,13 @@ export function mockEnterpriseRepoMapping(server: MockServer, repoName: string):
                 },
             },
         } satisfies RepoListResponse,
+    })
+    server.onGraphQl('Repository').replyJson({
+        data: {
+            repository: {
+                id: 'WOOZL',
+            },
+        } satisfies RepositoryIdResponse,
     })
     server.onGraphQl('ResolveRepoName').replyJson({ data: { repository: { name: repoName } } })
 }

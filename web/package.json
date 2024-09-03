@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/cody-web",
-  "version": "0.7.1",
+  "version": "0.7.5",
   "description": "Cody standalone web app",
   "license": "Apache-2.0",
   "repository": {
@@ -19,13 +19,13 @@
     "build-ts": "tsc --build"
   },
   "devDependencies": {
-    "@openctx/vscode-lib": "^0.0.21",
+    "@openctx/vscode-lib": "^0.0.22",
     "@sourcegraph/cody": "workspace:*",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/prompt-editor": "workspace:*",
     "@types/lodash": "4.14.195",
+    "@types/vscode": "^1.92.0",
     "@vitejs/plugin-react-swc": "^3.6.0",
-    "@vitest/web-worker": "^1.4.0",
     "@vscode/codicons": "^0.0.35",
     "buffer": "^6.0.3",
     "classnames": "^2.5.1",
@@ -38,7 +38,6 @@
     "postcss-mixins": "^10.0.1",
     "postcss-nested": "^6.0.1",
     "stream-browserify": "^3.0.0",
-    "tailwind-merge": "^2.3.0",
     "tailwindcss": "^3.4.3",
     "util": "^0.12.5",
     "vite-bundle-analyzer": "^0.10.5",

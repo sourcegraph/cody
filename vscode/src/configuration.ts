@@ -177,6 +177,7 @@ export function getConfiguration(
         agentIDE: getHiddenSetting<CodyIDE>('advanced.agent.ide'),
         agentIDEVersion: getHiddenSetting('advanced.agent.ide.version'),
         agentExtensionVersion: getHiddenSetting('advanced.agent.extension.version'),
+        agentHasPersistentStorage: getHiddenSetting('advanced.agent.capabilities.storage', false),
         autocompleteFirstCompletionTimeout: getHiddenSetting<number>(
             'autocomplete.advanced.timeout.firstCompletion',
             3_500

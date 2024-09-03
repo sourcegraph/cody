@@ -65,18 +65,14 @@ export async function dummy() {
     console.log('DUMMY')
 }
 
-export async function waitForBinaryDownloads() {}
+async function waitForBinaryDownloads() {}
 
-export async function waitForIndexing() {}
+async function waitForIndexing() {}
 
 export async function waitForStartup() {
     //TODO: Implement this
     //TODO: make sure we can shift the timeout
     await Promise.all([waitForBinaryDownloads(), waitForIndexing()])
-}
-
-export async function signIn(ctx: Pick<UIXContextFnContext, 'page'>) {
-    return
 }
 
 /**

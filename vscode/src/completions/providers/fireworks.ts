@@ -1,5 +1,5 @@
 import {
-    type AuthStatus,
+    type AuthenticatedAuthStatus,
     type AutocompleteContextSnippet,
     type ClientConfiguration,
     type ClientConfigurationWithAccessToken,
@@ -7,6 +7,7 @@ import {
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
     dotcomTokenToGatewayToken,
+    isDotCom,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
@@ -41,8 +42,8 @@ export interface FireworksOptions {
         'accessToken' | 'autocompleteExperimentalFireworksOptions'
     >
     authStatus: Pick<
-        AuthStatus,
-        'userCanUpgrade' | 'isDotCom' | 'endpoint' | 'isFireworksTracingEnabled'
+        AuthenticatedAuthStatus,
+        'userCanUpgrade' | 'endpoint' | 'isFireworksTracingEnabled'
     >
 }
 
@@ -57,9 +58,9 @@ export const DEEPSEEK_CODER_V2_LITE_BASE = 'deepseek-coder-v2-lite-base'
 
 // Context window experiments with DeepSeek Model
 export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096 = 'deepseek-coder-v2-lite-base-context-4096'
-export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192 = 'deepseek-coder-v2-lite-base-context-8192'
-export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384 = 'deepseek-coder-v2-lite-base-context-16383'
-export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768 = 'deepseek-coder-v2-lite-base-context-32768'
+const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192 = 'deepseek-coder-v2-lite-base-context-8192'
+const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384 = 'deepseek-coder-v2-lite-base-context-16383'
+const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768 = 'deepseek-coder-v2-lite-base-context-32768'
 
 // Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
 // conversations
@@ -136,8 +137,8 @@ class FireworksProvider extends Provider {
     private client: CodeCompletionsClient
     private fastPathAccessToken?: string
     private authStatus: Pick<
-        AuthStatus,
-        'userCanUpgrade' | 'isDotCom' | 'endpoint' | 'isFireworksTracingEnabled'
+        AuthenticatedAuthStatus,
+        'userCanUpgrade' | 'endpoint' | 'isFireworksTracingEnabled'
     >
     private isLocalInstance: boolean
     private fireworksConfig?: ClientConfiguration['autocompleteExperimentalFireworksOptions']
@@ -173,7 +174,7 @@ class FireworksProvider extends Provider {
         this.fastPathAccessToken =
             config.accessToken &&
             // Require the upstream to be dotcom
-            (this.authStatus.isDotCom || this.isLocalInstance) &&
+            (isDotCom(this.authStatus) || this.isLocalInstance) &&
             process.env.CODY_DISABLE_FASTPATH !== 'true' && // Used for testing
             // The fast path client only supports Node.js style response streams
             isNode
@@ -190,7 +191,14 @@ class FireworksProvider extends Provider {
     }
 
     private checkIfDirectRouteShouldBeEnabled(): boolean {
-        return this.model === DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE
+        const directRouteModels = [
+            DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE,
+            DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096,
+            FIREWORKS_DEEPSEEK_7B_LANG_ALL,
+            FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0,
+            FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1,
+        ]
+        return directRouteModels.includes(this.model)
     }
 
     public generateCompletions(
@@ -317,7 +325,7 @@ export function createProviderConfig({
 }: Omit<FireworksOptions, 'model' | 'maxContextTokens'> & {
     model: string | null
 }): ProviderConfig {
-    const clientModel = getClientModel(model, otherOptions.authStatus.isDotCom)
+    const clientModel = getClientModel(model, isDotCom(otherOptions.authStatus))
     const maxContextTokens = getMaxContextTokens(clientModel)
 
     return {

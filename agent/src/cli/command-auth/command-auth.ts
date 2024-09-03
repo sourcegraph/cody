@@ -1,5 +1,4 @@
 import { Command } from 'commander'
-import type { Ora } from 'ora'
 import { accountsCommand } from './command-accounts'
 import { loginCommand } from './command-login'
 import { logoutCommand } from './command-logout'
@@ -24,9 +23,4 @@ export const authCommand = () =>
 
 export function booleanToText(value: boolean): string {
     return value ? 'Yes' : 'No'
-}
-
-export function failSpinner(spinner: Ora, text: string, error: Error): void {
-    spinner.prefixText = error.stack ?? error.message
-    spinner.fail(text)
 }

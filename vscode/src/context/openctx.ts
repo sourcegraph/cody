@@ -10,6 +10,7 @@ import {
     combineLatest,
     featureFlagProvider,
     graphqlClient,
+    isDotCom,
     isError,
     logError,
     setOpenCtx,
@@ -23,7 +24,7 @@ import type {
 import type { createController } from '@openctx/vscode-lib'
 import { Observable } from 'observable-fns'
 import { logDebug, outputChannel } from '../log'
-import type { AuthProvider } from '../services/AuthProvider'
+import { authProvider } from '../services/AuthProvider'
 import CurrentRepositoryDirectoryProvider from './openctx/currentRepositoryDirectorySearch'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
@@ -35,7 +36,6 @@ import { createWebProvider } from './openctx/web'
 export async function exposeOpenCtxClient(
     context: Pick<vscode.ExtensionContext, 'extension' | 'secrets'>,
     config: ConfigWatcher<ClientConfiguration>,
-    authProvider: AuthProvider,
     createOpenCtxController: typeof createController | undefined
 ): Promise<void> {
     await warnIfOpenCtxExtensionConflict()
@@ -58,7 +58,11 @@ export async function exposeOpenCtxClient(
             features: isCodyWeb ? {} : { annotations: true, statusBar: true },
             providers: isCodyWeb
                 ? Observable.of(getCodyWebOpenCtxProviders())
-                : getOpenCtxProviders(config.changes, authProvider.changes, isValidSiteVersion),
+                : getOpenCtxProviders(
+                      config.changes,
+                      authProvider.instance!.changes,
+                      isValidSiteVersion
+                  ),
             mergeConfiguration,
         })
         setOpenCtx({
@@ -70,19 +74,19 @@ export async function exposeOpenCtxClient(
     }
 }
 
-function getOpenCtxProviders(
+export function getOpenCtxProviders(
     configChanges: Observable<ClientConfiguration>,
-    authStatusChanges: Observable<AuthStatus>,
+    authStatusChanges: Observable<Pick<AuthStatus, 'endpoint'>>,
     isValidSiteVersion: boolean
 ): Observable<ImportedProviderConfiguration[]> {
     return combineLatest([
         configChanges,
         authStatusChanges,
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider),
+        featureFlagProvider.instance!.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider),
     ]).map(
         ([config, authStatus, gitMentionProvider]: [
             ClientConfiguration,
-            AuthStatus,
+            Pick<AuthStatus, 'endpoint'>,
             boolean | undefined,
         ]) => {
             const providers: ImportedProviderConfiguration[] = [
@@ -95,7 +99,7 @@ function getOpenCtxProviders(
 
             // Remote repository and remote files should be available only for
             // non-dotcom users
-            if (!authStatus.isDotCom) {
+            if (!isDotCom(authStatus)) {
                 providers.push({
                     settings: true,
                     provider: RemoteRepositorySearch,

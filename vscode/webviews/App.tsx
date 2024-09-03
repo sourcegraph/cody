@@ -7,7 +7,6 @@ import {
     type ClientStateForWebview,
     CodyIDE,
     GuardrailsPost,
-    type Model,
     PromptString,
     type SerializedChatTranscript,
     type TelemetryRecorder,
@@ -16,7 +15,6 @@ import type { AuthMethod } from '../src/chat/protocol'
 import { LoadingPage } from './LoadingPage'
 import { LoginSimplified } from './OnboardingExperiment'
 import { ConnectionIssuesPage } from './Troubleshooting'
-import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
 import { useClientActionDispatcher } from './client/clientState'
 
 import {
@@ -44,8 +42,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
-
-    const [chatModels, setChatModels] = useState<Model[]>()
 
     const [clientState, setClientState] = useState<ClientStateForWebview>({
         initialContext: [],
@@ -112,9 +108,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'transcript-errors':
                         setIsTranscriptError(message.isTranscriptError)
                         break
-                    case 'chatModels':
-                        setChatModels(message.models)
-                        break
                     case 'attribution':
                         if (message.attribution) {
                             guardrails.notifyAttributionSuccess(message.snippet, {
@@ -179,55 +172,30 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
-    const onCurrentChatModelChange = useCallback(
-        (selected: Model): void => {
-            vscodeAPI.postMessage({
-                command: 'chatModel',
-                model: selected.id,
-            })
-        },
-        [vscodeAPI]
-    )
-    const chatModelContext = useMemo<ChatModelContext>(
-        () => ({
-            chatModels,
-            onCurrentChatModelChange,
-            serverSentModelsEnabled: config?.configFeatures.serverSentModels,
-        }),
-        [chatModels, onCurrentChatModelChange, config]
-    )
     const chatEnvironmentContext = useMemo<ChatEnvironmentContextData>(() => {
         return { clientType: config?.config?.agentIDE ?? CodyIDE.VSCode }
     }, [config?.config?.agentIDE])
 
     const wrappers = useMemo<Wrapper[]>(
-        () =>
-            getAppWrappers(
-                vscodeAPI,
-                telemetryRecorder,
-                chatModelContext,
-                clientState,
-                config,
-                chatEnvironmentContext
-            ),
-        [vscodeAPI, telemetryRecorder, chatModelContext, clientState, config, chatEnvironmentContext]
+        () => getAppWrappers(vscodeAPI, telemetryRecorder, clientState, config, chatEnvironmentContext),
+        [vscodeAPI, telemetryRecorder, clientState, config, chatEnvironmentContext]
     )
 
     // Wait for all the data to be loaded before rendering Chat View
-    if (!view || !config || !userHistory) {
+    if (!view || !config) {
         return <LoadingPage />
     }
 
     return (
         <ComposedWrappers wrappers={wrappers}>
-            {config.authStatus.showNetworkError ? (
+            {!config.authStatus.authenticated && config.authStatus.showNetworkError ? (
                 <div className={styles.outerContainer}>
                     <ConnectionIssuesPage
                         configuredEndpoint={config.authStatus.endpoint}
                         vscodeAPI={vscodeAPI}
                     />
                 </div>
-            ) : view === View.Login || !config.authStatus.isLoggedIn ? (
+            ) : view === View.Login || !config.authStatus.authenticated ? (
                 <div className={styles.outerContainer}>
                     <LoginSimplified
                         simplifiedLoginRedirect={loginRedirect}
@@ -250,7 +218,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     vscodeAPI={vscodeAPI}
                     isTranscriptError={isTranscriptError}
                     guardrails={guardrails}
-                    userHistory={userHistory}
+                    userHistory={userHistory ?? []}
                     smartApplyEnabled={config.config.smartApply}
                 />
             )}
@@ -261,7 +229,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 export function getAppWrappers(
     vscodeAPI: VSCodeWrapper,
     telemetryRecorder: TelemetryRecorder,
-    chatModelContext: ChatModelContext,
     clientState: ClientStateForWebview,
     config: Config | null,
     chatEnvironmentContext: ChatEnvironmentContextData
@@ -275,10 +242,6 @@ export function getAppWrappers(
             component: ExtensionAPIProviderFromVSCodeAPI,
             props: { vscodeAPI },
         } satisfies Wrapper<any, ComponentProps<typeof ExtensionAPIProviderFromVSCodeAPI>>,
-        {
-            provider: ChatModelContextProvider,
-            value: chatModelContext,
-        } satisfies Wrapper<ComponentProps<typeof ChatModelContextProvider>['value']>,
         {
             provider: ClientStateContextProvider,
             value: clientState,

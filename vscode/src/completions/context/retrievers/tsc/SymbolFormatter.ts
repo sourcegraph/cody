@@ -260,7 +260,7 @@ export function isStdLibNode(node: ts.Node): boolean {
     return basename.startsWith('lib.') && basename.endsWith('.d.ts')
 }
 
-export function isStdLibSymbol(sym: ts.Symbol): boolean {
+function isStdLibSymbol(sym: ts.Symbol): boolean {
     for (const decl of sym.declarations ?? []) {
         return isStdLibNode(decl)
     }

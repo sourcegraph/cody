@@ -4,7 +4,7 @@ import type { Agent } from './agent'
 import type { DefiniteWebviewOptions } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
 
-export type NativeWebviewConfig = { cspSource: string; webviewBundleServingPrefix: string }
+type NativeWebviewConfig = { cspSource: string; webviewBundleServingPrefix: string }
 
 type NativeWebviewHandle = string
 

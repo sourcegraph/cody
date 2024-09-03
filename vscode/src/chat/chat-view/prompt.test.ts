@@ -16,14 +16,14 @@ import { DefaultPrompter } from './prompt'
 
 describe('DefaultPrompter', () => {
     beforeEach(() => {
-        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+        vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValue(false)
     })
     afterEach(() => {
         vi.restoreAllMocks()
     })
 
     it('constructs a prompt with no context', async () => {
-        modelsService.setModels([
+        modelsService.instance!.setModels([
             new Model({
                 id: 'a-model-id',
                 usage: [ModelUsage.Chat],
@@ -98,7 +98,7 @@ describe('DefaultPrompter', () => {
             update: vi.fn(() => Promise.resolve()),
         }))
 
-        modelsService.setModels([
+        modelsService.instance!.setModels([
             new Model({
                 id: 'a-model-id',
                 usage: [ModelUsage.Chat],
@@ -134,7 +134,7 @@ describe('DefaultPrompter', () => {
     })
 
     it('prefers latest enhanced context', async () => {
-        modelsService.setModels([
+        modelsService.instance!.setModels([
             new Model({
                 id: 'a-model-id',
                 usage: [ModelUsage.Chat],

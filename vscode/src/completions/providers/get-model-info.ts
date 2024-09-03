@@ -1,4 +1,9 @@
-import { type AuthStatus, type Model, ModelUsage, modelsService } from '@sourcegraph/cody-shared'
+import {
+    type AuthenticatedAuthStatus,
+    type Model,
+    ModelUsage,
+    modelsService,
+} from '@sourcegraph/cody-shared'
 
 interface ModelInfo {
     provider: string
@@ -6,8 +11,8 @@ interface ModelInfo {
     model?: Model
 }
 
-export function getModelInfo(authStatus: AuthStatus): ModelInfo | Error {
-    const model = modelsService.getDefaultModel(ModelUsage.Autocomplete)
+export function getModelInfo(authStatus: AuthenticatedAuthStatus): ModelInfo | Error {
+    const model = modelsService.instance!.getDefaultModel(ModelUsage.Autocomplete)
 
     if (model) {
         let provider = model.provider

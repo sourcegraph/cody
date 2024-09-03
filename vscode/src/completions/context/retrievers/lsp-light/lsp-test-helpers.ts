@@ -38,7 +38,7 @@ const TEST_DATA_PATH = path.join(__dirname, 'test-data')
 const TEST_DATA_URI = Uri.file(TEST_DATA_PATH)
 const TS_CONFIG_PATH = path.join(TEST_DATA_PATH, 'tsconfig.json')
 
-export function getFilesFromTsConfig(tsConfigPath: string): string[] {
+function getFilesFromTsConfig(tsConfigPath: string): string[] {
     const configFile = ts.readConfigFile(tsConfigPath, ts.sys.readFile)
 
     if (configFile.error) {

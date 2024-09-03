@@ -1,18 +1,23 @@
 import type { DiscriminatedUnion, DiscriminatedUnionMember } from './BaseCodegen'
-import { type JvmCodegen, JvmLanguage } from './JvmCodegen'
+import { type Codegen, TargetLanguage } from './Codegen'
 import type { SymbolTable } from './SymbolTable'
 import { isNullOrUndefinedOrUnknownType } from './isNullOrUndefinedOrUnknownType'
 import type { scip } from './scip'
 import { capitalize, typescriptKeyword, typescriptKeywordSyntax } from './utils'
 
-export class JvmFormatter {
+export class Formatter {
     constructor(
-        private readonly language: JvmLanguage,
+        private readonly language: TargetLanguage,
         private readonly symtab: SymbolTable,
-        private codegen: JvmCodegen
+        private codegen: Codegen
     ) {}
     public functionName(info: scip.SymbolInformation): string {
-        return info.display_name.replaceAll('$/', '').replaceAll('/', '_')
+        switch (this.language) {
+            case TargetLanguage.CSharp:
+                return info.display_name.replaceAll('$/', '').split('/').map(capitalize).join('')
+            default:
+                return info.display_name.replaceAll('$/', '').replaceAll('/', '_')
+        }
     }
 
     public typeName(info: scip.SymbolInformation): string {
@@ -24,7 +29,7 @@ export class JvmFormatter {
             .replaceAll('$/', '')
             .split('/')
             .map(part => capitalize(part))
-            .join('_')
+            .join(this.language === TargetLanguage.CSharp ? '' : '_')
     }
 
     public jsonrpcMethodParameter(jsonrpcMethod: scip.SymbolInformation): {
@@ -33,7 +38,7 @@ export class JvmFormatter {
     } {
         const parameterType = jsonrpcMethod.signature.value_signature.tpe.type_ref.type_arguments[0]
         const parameterSyntax = this.jsonrpcTypeName(jsonrpcMethod, parameterType, 'parameter')
-        if (this.language === JvmLanguage.Kotlin) {
+        if (this.language === TargetLanguage.Kotlin) {
             return { parameterType, parameterSyntax: `params: ${parameterSyntax}` }
         }
         return { parameterType, parameterSyntax: `${parameterSyntax} params` }
@@ -47,12 +52,16 @@ export class JvmFormatter {
         return this.isNullable(info.signature.value_signature.tpe)
     }
     public nullableSyntax(tpe: scip.Type): string {
-        if (this.language === JvmLanguage.Java) {
+        if (this.language === TargetLanguage.Java) {
             // TODO: emit @Nullable
+            return ''
+        }
+        if (this.language === TargetLanguage.CSharp) {
             return ''
         }
         return this.isNullable(tpe) ? '?' : ''
     }
+
     public isNullable(tpe: scip.Type): boolean {
         if (tpe.has_type_ref) {
             return this.isNullish(tpe.type_ref.symbol)
@@ -85,8 +94,11 @@ export class JvmFormatter {
                 const [k, v] = parameterOrResultType.type_ref.type_arguments
                 const key = this.jsonrpcTypeName(jsonrpcMethod, k, kind)
                 const value = this.jsonrpcTypeName(jsonrpcMethod, v, kind)
-                if (this.language === JvmLanguage.Kotlin) {
+                if (this.language === TargetLanguage.Kotlin) {
                     return `Map<${key}, ${value}>`
+                }
+                if (this.language === TargetLanguage.CSharp) {
+                    return `Dictionary<${key}, ${value}>`
                 }
                 return `java.util.Map<${key}, ${value}>`
             }
@@ -97,13 +109,16 @@ export class JvmFormatter {
                     parameterOrResultType.type_ref.type_arguments[0],
                     kind
                 )
-                if (this.language === JvmLanguage.Kotlin) {
+                if (this.language === TargetLanguage.Kotlin) {
                     return `List<${elementType}>`
+                }
+                if (this.language === TargetLanguage.CSharp) {
+                    return `${elementType}[]`
                 }
                 return `java.util.List<${elementType}>`
             }
             if (keyword) {
-                return keyword
+                return this.languageSpecificKeyword(keyword)
             }
             return this.typeName(this.symtab.info(parameterOrResultType.type_ref.symbol))
         }
@@ -163,6 +178,25 @@ export class JvmFormatter {
                 2
             )}`
         )
+    }
+
+    private languageSpecificKeyword(keyword: string): string {
+        switch (this.language) {
+            case TargetLanguage.Kotlin:
+            case TargetLanguage.Java:
+                return keyword
+            case TargetLanguage.CSharp:
+                switch (keyword) {
+                    case 'Boolean':
+                        return 'bool'
+                    case 'String':
+                        return 'string'
+                    case 'Long':
+                        return 'int'
+                    default:
+                        return keyword
+                }
+        }
     }
 
     public readonly ignoredProperties = [
@@ -228,12 +262,18 @@ export class JvmFormatter {
 
     public formatFieldName(name: string): string {
         const escaped = name.replace(':', '_').replace('/', '_')
-        if (this.language === JvmLanguage.Kotlin) {
+        if (this.language === TargetLanguage.Kotlin) {
             const isKeyword = this.kotlinKeywords.has(escaped)
             const needsBacktick = isKeyword || !/^[a-zA-Z0-9_]+$/.test(escaped)
             return needsBacktick ? `\`${escaped}\`` : escaped
         }
-
+        if (this.language === TargetLanguage.CSharp) {
+            return escaped
+                .split('_')
+                .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+                .join('')
+                .replaceAll('_', '')
+        }
         // Java
         const isKeyword = this.javaKeywords.has(escaped)
         if (isKeyword) {

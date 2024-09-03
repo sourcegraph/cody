@@ -7,29 +7,56 @@
                 "scripts/*.ts",
                 "test/integration/*.ts",
                 "webviews/index.tsx",
-                "webviews/minion/index.tsx"
+                "webviews/minion/index.tsx",
+                "playwright.v2.config.ts",
+                "typehacks/vscode.ts",
+                "webviews/postcss.config.js",
+                "webviews/vite.config.mts",
+                "../agent/src/index.ts",
+                "../agent/src/TestClient.ts"
             ],
-            "ignore": ["src/tree-sitter/query-tests/test-data/**", "src/jsonrpc/agent-protocol.ts"],
+            "ignore": [
+                "src/tree-sitter/query-tests/test-data/**",
+                "src/jsonrpc/agent-protocol.ts",
+                "test/fixtures/**",
+                "test/integration/single-root/**",
+                "test/integration/multi-root/**",
+                "webviews/utils/useFeatureFlags.tsx",
+                "webviews/components/shadcn/**"
+            ],
             "ignoreBinaries": ["code", "code-insiders"],
             "ignoreDependencies": [
                 "@vscode/vsce",
                 "ovsx",
                 "path-browserify",
                 "os-browserify",
-                "@vscode/codicons"
+                "@vscode/codicons",
+                "buildkite-test-collector",
+                "postcss",
+                "postcss-nested"
             ]
         },
         "agent": {
-            "entry": ["src/cli/root.ts", "src/index.ts"],
+            "entry": ["src/cli/root.ts", "src/index.ts", "src/cli/scip-codegen/command.ts"],
             "vitest": {
                 "entry": ["**/__tests__/**/*.ts"]
             },
             "ignore": ["src/vscode-shim.ts"]
         },
         "web": {
-            "entry": ["src/index.tsx", "src/agent/worker.ts"]
-        }
+            "entry": ["demo/index.tsx", "lib/agent/agent.worker.ts"],
+            "ignore": ["lib/agent/shims/**"],
+            "ignoreDependencies": [
+                "buffer",
+                "util",
+                "events",
+                "stream-browserify",
+                "path-browserify",
+                "@vscode/codicons"
+            ]
+        },
+        "lib/prompt-editor": {}
     },
-    "ignore": ["**/__mocks__/**", "**/mocks.*", "lints/**"],
+    "ignore": ["**/__mocks__/**", "**/mocks.*", "**/__tests__/**", "lints/**", "**/test-data/**"],
     "exclude": []
 }

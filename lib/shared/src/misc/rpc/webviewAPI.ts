@@ -4,7 +4,9 @@ import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
 import type { ContextMentionProviderMetadata } from '../../mentions/api'
 import type { MentionQuery } from '../../mentions/query'
+import type { Model } from '../../models'
 import type { Prompt } from '../../sourcegraph-api/graphql/client'
+import { type createMessageAPIForWebview, proxyExtensionAPI } from './rpc'
 
 export interface WebviewToExtensionAPI {
     /**
@@ -24,6 +26,28 @@ export interface WebviewToExtensionAPI {
      * the Prompt Library).
      */
     prompts(query: string): Observable<PromptsResult>
+
+    /**
+     * Observe the list of available models.
+     */
+    models(): Observable<Model[]>
+
+    /**
+     * Set the chat model.
+     */
+    setChatModel(model: Model['id']): Observable<void>
+}
+
+export function createExtensionAPI(
+    messageAPI: ReturnType<typeof createMessageAPIForWebview>
+): WebviewToExtensionAPI {
+    return {
+        mentionMenuData: proxyExtensionAPI(messageAPI, 'mentionMenuData'),
+        evaluatedFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluatedFeatureFlag'),
+        prompts: proxyExtensionAPI(messageAPI, 'prompts'),
+        models: proxyExtensionAPI(messageAPI, 'models'),
+        setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
+    }
 }
 
 export interface MentionMenuData {

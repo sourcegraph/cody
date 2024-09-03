@@ -728,13 +728,6 @@ export class TestClient extends MessageHandler {
         }
     }
 
-    public async setChatModel(id: string, model: string): Promise<void> {
-        await this.request('webview/receiveMessage', {
-            id,
-            message: { command: 'chatModel', model },
-        })
-    }
-
     public async reset(id: string): Promise<void> {
         await this.request('webview/receiveMessage', {
             id,
@@ -907,7 +900,7 @@ ${patch}`
 
     public async beforeAll(additionalConfig?: Partial<ExtensionConfiguration>) {
         const info = await this.initialize(additionalConfig)
-        if (!info.authStatus?.isLoggedIn) {
+        if (!info.authStatus?.authenticated) {
             throw new Error('Could not log in')
         }
     }

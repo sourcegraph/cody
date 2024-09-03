@@ -8,6 +8,7 @@ import {
     type CodyCommand,
     ModelUsage,
     telemetryRecorder,
+    waitUntilComplete,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
@@ -231,7 +232,7 @@ export async function newAgentClient(
         )
     })
 }
-export interface InitializedClient {
+interface InitializedClient {
     serverInfo: agent_protocol.ServerInfo
     client: RpcMessageHandler
 }
@@ -363,7 +364,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 '*',
                 new IndentationBasedFoldingRangeProvider()
             )
-            this.globalState = this.newGlobalState(clientInfo)
+            this.globalState = await this.newGlobalState(clientInfo)
 
             if (clientInfo.capabilities && clientInfo.capabilities?.webview === undefined) {
                 // Make it possible to do `capabilities.webview === 'agentic'`
@@ -376,7 +377,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.globalState?.update(key, value)
                 }
             }
-            this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
+
+            this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
+                ? vscode.Uri.parse(clientInfo.workspaceRootUri).with({ scheme: 'file' })
+                : vscode.Uri.from({
+                      scheme: 'file',
+                      path: clientInfo.workspaceRootPath ?? undefined,
+                  })
+
             vscode_shim.setWorkspaceDocuments(this.workspace)
             if (clientInfo.capabilities?.codeActions === 'enabled') {
                 vscode_shim.onDidRegisterNewCodeActionProvider(codeActionProvider => {
@@ -399,7 +407,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 )
             }
             if (clientInfo.capabilities?.ignore === 'enabled') {
-                contextFiltersProvider.onContextFiltersChanged(() => {
+                contextFiltersProvider.instance!.onContextFiltersChanged(() => {
                     // Forward policy change notifications to the client.
                     this.notify('ignore/didChange', null)
                 })
@@ -416,13 +424,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             vscode_shim.setClientInfo(clientInfo)
             this.clientInfo = clientInfo
             setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
-
-            this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
-                ? vscode.Uri.parse(clientInfo.workspaceRootUri)
-                : vscode.Uri.from({
-                      scheme: 'file',
-                      path: clientInfo.workspaceRootPath ?? undefined,
-                  })
 
             try {
                 const secrets =
@@ -468,8 +469,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 return {
                     name: 'cody-agent',
                     authenticated: authStatus?.authenticated,
-                    codyEnabled: authStatus?.siteHasCodyEnabled,
-                    codyVersion: authStatus?.siteVersion,
+                    codyVersion: authStatus?.authenticated ? authStatus.siteVersion : undefined,
                     authStatus,
                 }
             } catch (error) {
@@ -1113,7 +1113,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('editTask/retry', params => {
             const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
-            const models = getModelOptionItems(modelsService.getModels(ModelUsage.Edit), true)
+            const models = getModelOptionItems(modelsService.instance!.getModels(ModelUsage.Edit), true)
             const previousInput: QuickPickInput = {
                 instruction: instruction,
                 userContextFiles: [],
@@ -1224,7 +1224,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
         // TODO: JetBrains no longer uses this, consider deleting it.
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            modelID ??= modelsService.getDefaultChatModel() ?? ''
+            if (!authStatus.authenticated) {
+                throw new Error('Not authenticated')
+            }
+            modelID ??= modelsService.instance!.getDefaultChatModel() ?? ''
             const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
             const chatModel = new ChatModel(modelID, chatID, chatMessages)
             await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
@@ -1237,13 +1240,16 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
-            const models = modelsService.getModels(modelUsage)
+            const models = modelsService.instance!.getModels(modelUsage)
             return { models }
         })
 
         this.registerAuthenticatedRequest('chat/export', async input => {
             const { fullHistory = false } = input ?? {}
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            if (!authStatus.authenticated) {
+                throw new Error('Not authenticated')
+            }
             const localHistory = chatHistory.getLocalHistory(authStatus)
 
             if (localHistory != null) {
@@ -1281,6 +1287,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
             })
 
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            if (!authStatus.authenticated) {
+                throw new Error('Not authenticated')
+            }
             const localHistory = await chatHistory.getLocalHistory(authStatus)
 
             if (localHistory != null) {
@@ -1299,6 +1308,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 command: 'context/get-remote-search-repos',
             })
             return { remoteRepos: panel.remoteRepos }
+        })
+
+        this.registerAuthenticatedRequest('chat/setModel', async ({ id, model }) => {
+            const panel = this.webPanels.getPanelOrError(id)
+            await waitUntilComplete(panel.extensionAPI.setChatModel(model))
+            return null
         })
 
         const submitOrEditHandler = async (
@@ -1375,7 +1390,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
-            return featureFlagProvider.evaluateFeatureFlag(
+            return featureFlagProvider.instance!.evaluateFeatureFlag(
                 FeatureFlag[flagName as keyof typeof FeatureFlag]
             )
         })
@@ -1419,14 +1434,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('ignore/test', async ({ uri: uriString }) => {
             const uri = vscode.Uri.parse(uriString)
-            const isIgnored = await contextFiltersProvider.isUriIgnored(uri)
+            const isIgnored = await contextFiltersProvider.instance!.isUriIgnored(uri)
             return {
                 policy: isIgnored ? 'ignore' : 'use',
             } as const
         })
 
         this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async contextFilters => {
-            contextFiltersProvider.setTestingContextFilters(contextFilters)
+            contextFiltersProvider.instance!.setTestingContextFilters(contextFilters)
             return null
         })
     }
@@ -1438,17 +1453,17 @@ export class Agent extends MessageHandler implements ExtensionClient {
         }
     }
 
-    private newGlobalState(clientInfo: ClientInfo): AgentGlobalState {
+    private async newGlobalState(clientInfo: ClientInfo): Promise<AgentGlobalState> {
         switch (clientInfo.capabilities?.globalState) {
             case 'server-managed':
-                return new AgentGlobalState(
+                return AgentGlobalState.initialize(
                     clientInfo.name,
                     clientInfo.globalStateDir ?? codyPaths().data
                 )
             case 'client-managed':
                 throw new Error('client-managed global state is not supported')
             default:
-                return new AgentGlobalState(clientInfo.name)
+                return AgentGlobalState.initialize(clientInfo.name)
         }
     }
 
@@ -1514,6 +1529,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
     get clientName(): string {
         return this.clientInfo?.name.toLowerCase() || 'uninitialized-agent'
+    }
+
+    get httpClientNameForLegacyReasons(): string | undefined {
+        return this.clientInfo?.legacyNameForServerIdentification ?? undefined
     }
 
     get clientVersion(): string {
@@ -1706,8 +1725,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         panel.isMessageInProgress = message.isMessageInProgress
                         panel.messageInProgressChange.fire(message)
                     }
-                } else if (message.type === 'chatModels') {
-                    panel.models = message.models
                 } else if (message.type === 'context/remote-repos') {
                     panel.remoteRepos = message.repos
                 } else if (message.type === 'errors') {

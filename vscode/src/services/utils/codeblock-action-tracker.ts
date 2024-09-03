@@ -4,6 +4,7 @@ import {
     type AuthStatus,
     type EditModel,
     PromptString,
+    isDotCom,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
@@ -104,13 +105,17 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
 
     const edit = new vscode.WorkspaceEdit()
     // trimEnd() to remove new line added by Cody
-    edit.insert(activeEditor.document.uri, selectionRange.start, `${text}\n`)
+    if (selectionRange.isEmpty) {
+        edit.insert(activeEditor.document.uri, selectionRange.start, text.trimEnd())
+    } else {
+        edit.replace(activeEditor.document.uri, selectionRange, text.trimEnd())
+    }
     setLastStoredCode(text, 'insertButton')
     await vscode.workspace.applyEdit(edit)
 }
 
 function getSmartApplyModel(authStatus: AuthStatus): EditModel | undefined {
-    if (!authStatus.isDotCom) {
+    if (!isDotCom(authStatus)) {
         // We cannot be sure what model we're using for enterprise, we will let this fall through
         // to the default edit/smart apply behaviour where we use the configured enterprise model.
         return

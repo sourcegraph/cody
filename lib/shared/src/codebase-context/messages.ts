@@ -108,9 +108,6 @@ export enum ContextItemSource {
     /** Output from the terminal */
     Terminal = 'terminal',
 
-    /** From URI */
-    Uri = 'uri',
-
     /** From source control history */
     History = 'history',
 }

@@ -1,11 +1,12 @@
 import {
-    type AuthStatus,
+    AUTH_STATUS_FIXTURE_AUTHED,
+    type AuthenticatedAuthStatus,
     type ClientConfiguration,
     type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
     type CodyLLMSiteConfiguration,
+    DOTCOM_URL,
     type GraphQLAPIClientConfig,
-    defaultAuthStatus,
     graphqlClient,
 } from '@sourcegraph/cody-shared'
 import { beforeAll, describe, expect, it } from 'vitest'
@@ -33,7 +34,14 @@ const dummyCodeCompletionsClient: CodeCompletionsClient = {
     onConfigurationChange: () => undefined,
 }
 
-const dummyAuthStatus: AuthStatus = defaultAuthStatus
+const dummyAuthStatus: AuthenticatedAuthStatus = {
+    ...AUTH_STATUS_FIXTURE_AUTHED,
+    endpoint: DOTCOM_URL.toString(),
+    configOverwrites: {
+        provider: 'sourcegraph',
+        completionModel: 'fireworks/starcoder-hybrid',
+    },
+}
 
 graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
 
@@ -53,7 +61,7 @@ describe('createProviderConfig', () => {
                         'nasa-ai' as ClientConfiguration['autocompleteAdvancedProvider'],
                 }),
                 dummyCodeCompletionsClient,
-                dummyAuthStatus
+                AUTH_STATUS_FIXTURE_AUTHED
             )
             expect(provider).toBeNull()
         })
@@ -67,7 +75,7 @@ describe('createProviderConfig', () => {
                         null as ClientConfiguration['autocompleteAdvancedProvider'],
                 }),
                 dummyCodeCompletionsClient,
-                dummyAuthStatus
+                AUTH_STATUS_FIXTURE_AUTHED
             )
             expect(provider).toBeNull()
         })

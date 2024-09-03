@@ -1,5 +1,6 @@
 import {
     type ContextItem,
+    type ContextItemOpenCtx,
     ContextItemSource,
     type ContextItemTree,
     REMOTE_REPOSITORY_PROVIDER_URI,
@@ -7,13 +8,20 @@ import {
     displayLineRange,
     displayPathBasename,
     expandToLineRange,
+    openCtx,
+    subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 import { getSelectionOrFileContext } from '../commands/context/selection'
 import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
-import type { RemoteSearch } from '../context/remote-search'
+import { workspaceReposMonitor } from '../repository/repo-metadata-from-git-api'
+import { authProvider } from '../services/AuthProvider'
 import type { ChatModel } from './chat-view/ChatModel'
-import { contextItemMentionFromOpenCtxItem } from './context/chatContext'
+import {
+    contextItemMentionFromOpenCtxItem,
+    getActiveEditorContextForOpenCtxMentions,
+} from './context/chatContext'
 import type { ExtensionMessage } from './protocol'
 
 type PostMessage = (message: Extract<ExtensionMessage, { type: 'clientState' }>) => void
@@ -22,11 +30,11 @@ type PostMessage = (message: Extract<ExtensionMessage, { type: 'clientState' }>)
  * Listen for changes to the client (such as VS Code) state to send to the webview.
  */
 export function startClientStateBroadcaster({
-    remoteSearch,
+    useRemoteSearch,
     postMessage: rawPostMessage,
     chatModel,
 }: {
-    remoteSearch: RemoteSearch | null
+    useRemoteSearch: boolean
     postMessage: PostMessage
     chatModel: ChatModel
 }): vscode.Disposable {
@@ -58,8 +66,8 @@ export function startClientStateBroadcaster({
             items.push(item)
         }
 
-        const corpusItems = getCorpusContextItemsForEditorState({ remoteSearch })
-        items.push(...corpusItems)
+        const corpusItems = getCorpusContextItemsForEditorState(useRemoteSearch)
+        items.push(...(await corpusItems))
 
         postMessage({ type: 'clientState', value: { initialContext: items } })
     }
@@ -86,14 +94,14 @@ export function startClientStateBroadcaster({
             void sendClientState('immediate')
         })
     )
-    if (remoteSearch) {
-        disposables.push(
-            remoteSearch.onDidChangeStatus(() => {
-                // Background action, so it's fine to debounce.
-                void sendClientState('debounce')
+    disposables.push(
+        subscriptionDisposable(
+            authProvider.instance!.changes.subscribe(async () => {
+                // Infrequent action, so don't debounce and show immediately in the UI.
+                void sendClientState('immediate')
             })
         )
-    }
+    )
 
     // Don't debounce for the first invocation so we immediately reflect the state in the UI.
     void sendClientState('immediate')
@@ -101,38 +109,34 @@ export function startClientStateBroadcaster({
     return vscode.Disposable.from(...disposables)
 }
 
-export function getCorpusContextItemsForEditorState({
-    remoteSearch,
-}: { remoteSearch: RemoteSearch | null }): ContextItem[] {
+export async function getCorpusContextItemsForEditorState(useRemote: boolean): Promise<ContextItem[]> {
     const items: ContextItem[] = []
 
     // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
     // remote search). There should be a single internal thing in Cody that lets you monitor the
     // user's current codebase.
-    if (remoteSearch) {
-        // TODO(sqs): Track the last-used repositories. Right now it just uses the current
-        // repository.
-        //
-        // Make a repository item that is the same as what the @-repository OpenCtx provider
-        // would return.
-        const repos = remoteSearch.getRepos('all')
-        for (const repo of repos) {
-            if (contextFiltersProvider.isRepoNameIgnored(repo.name)) {
+    if (useRemote && workspaceReposMonitor) {
+        const repoMetadata = await workspaceReposMonitor.getRepoMetadata()
+        for (const repo of repoMetadata) {
+            if (contextFiltersProvider.instance!.isRepoNameIgnored(repo.repoName)) {
+                continue
+            }
+            if (repo.remoteID === undefined) {
                 continue
             }
             items.push({
                 ...contextItemMentionFromOpenCtxItem(
                     createRepositoryMention(
                         {
-                            id: repo.id,
-                            name: repo.name,
-                            url: repo.name,
+                            id: repo.remoteID,
+                            name: repo.repoName,
+                            url: repo.repoName,
                         },
                         REMOTE_REPOSITORY_PROVIDER_URI
                     )
                 ),
                 title: 'Current Repository',
-                description: repo.name,
+                description: repo.repoName,
                 source: ContextItemSource.Initial,
                 icon: 'folder',
             })
@@ -155,7 +159,30 @@ export function getCorpusContextItemsForEditorState({
         }
     }
 
-    return items
+    const providers = (await openCtx.controller?.meta({}))?.filter(meta => meta.mentions?.autoInclude)
+    if (!providers) {
+        return items
+    }
+
+    const activeEditorContext = await getActiveEditorContextForOpenCtxMentions()
+
+    const openctxMentions = (
+        await Promise.all(
+            providers.map(async (provider): Promise<ContextItemOpenCtx[]> => {
+                const mentions =
+                    (await openCtx?.controller?.mentions(activeEditorContext, provider)) || []
+
+                return mentions.map(mention => ({
+                    ...mention,
+                    provider: 'openctx',
+                    type: 'openctx',
+                    uri: URI.parse(mention.uri),
+                }))
+            })
+        )
+    ).flat()
+
+    return [...items, ...openctxMentions]
 }
 
 function idempotentPostMessage(rawPostMessage: PostMessage): PostMessage {

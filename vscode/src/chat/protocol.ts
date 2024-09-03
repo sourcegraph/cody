@@ -7,9 +7,7 @@ import type {
     CodyIDE,
     ContextItem,
     ContextItemSource,
-    EnhancedContextContextT,
     MentionQuery,
-    Model,
     Prompt,
     RangeData,
     RequestMessage,
@@ -110,9 +108,7 @@ export type WebviewMessage =
           command: 'show-page'
           page: string
       }
-    | { command: 'chatModel'; model: string }
     | { command: 'command'; id: string; arg?: string | undefined | null }
-    | { command: 'get-chat-models' }
     | {
           command: 'openFile'
           uri: URI
@@ -127,10 +123,7 @@ export type WebviewMessage =
       }
     | ({ command: 'edit' } & WebviewEditMessage)
     | { command: 'context/get-remote-search-repos' }
-    | { command: 'context/choose-remote-search-repo'; explicitRepos?: Repo[] | undefined | null }
-    | { command: 'context/remove-remote-search-repo'; repoId: string }
     | { command: 'embeddings/index' }
-    | { command: 'symf/index' }
     | { command: 'insert'; text: string }
     | { command: 'newFile'; text: string }
     | {
@@ -208,6 +201,7 @@ export type ExtensionMessage =
               attribution: boolean
               serverSentModels: boolean
           }
+          isDotComUser: boolean
           workspaceFolderUris: string[]
       }
     | { type: 'ui/theme'; agentIDE: CodyIDE; cssVariables: CodyIDECssVariables }
@@ -230,11 +224,6 @@ export type ExtensionMessage =
           appendTextToLastPromptEditor?: string | null | undefined
           smartApplyResult?: SmartApplyResult | undefined | null
       }
-    /**
-     * The current default model will always be the first one on the list.
-     */
-    | { type: 'chatModels'; models: Model[] }
-    | { type: 'enhanced-context'; enhancedContextStatus: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'context/remote-repos'; repos: Repo[] }
     | {

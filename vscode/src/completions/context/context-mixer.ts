@@ -199,7 +199,7 @@ async function filter(snippets: AutocompleteContextSnippet[]): Promise<Autocompl
                 if (isCodyIgnoredFile(snippet.uri)) {
                     return null
                 }
-                if (await contextFiltersProvider.isUriIgnored(snippet.uri)) {
+                if (await contextFiltersProvider.instance!.isUriIgnored(snippet.uri)) {
                     return null
                 }
                 return snippet
