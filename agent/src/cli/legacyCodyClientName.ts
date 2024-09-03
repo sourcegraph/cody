@@ -19,4 +19,4 @@
 // back to cody-cli once all Enterprise instances have upgraded to a release
 // that includes this PR https://github.com/sourcegraph/sourcegraph/pull/63855
 
-export const codyCliClientName = 'jetbrains'
+export const legacyCodyClientName = 'jetbrains'

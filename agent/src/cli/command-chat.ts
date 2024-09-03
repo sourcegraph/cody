@@ -16,7 +16,6 @@ import packageJson from '../../package.json'
 import { newEmbeddedAgentClient } from '../agent'
 import type { ClientInfo } from '../protocol-alias'
 import { Streams } from './Streams'
-import { codyCliClientName } from './codyCliClientName'
 import { AuthenticatedAccount } from './command-auth/AuthenticatedAccount'
 import {
     type AuthenticationOptions,
@@ -124,12 +123,13 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     }
     const workspaceRootUri = vscode.Uri.file(path.resolve(options.dir))
     const clientInfo: ClientInfo = {
-        name: codyCliClientName,
+        name: 'cody-cli',
         version: options.isTesting ? '6.0.0-SNAPSHOT' : packageJson.version,
         workspaceRootUri: workspaceRootUri.toString(),
         capabilities: {
             completions: 'none',
         },
+        legacyNameForServerIdentification: 'jetbrains',
         extensionConfiguration: {
             serverEndpoint: options.endpoint,
             accessToken: options.accessToken,
