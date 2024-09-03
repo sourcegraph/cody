@@ -77,14 +77,13 @@ async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<ContextI
             const uri = diffFiles.find(p => {
                 //todo: maybe better with a proper diff parser
                 const diffPath = diff.split('\n')?.[0]
-                return (
-                    p.uri ??
-                    diffPath
-                        .split('')
-                        .reverse()
-                        .join('')
-                        .startsWith(displayPath(p.uri).split('').reverse().join(''))
-                )
+                return diffPath
+                    ? diffPath
+                          .split('')
+                          .reverse()
+                          .join('')
+                          .startsWith(displayPath(p.uri).split('').reverse().join(''))
+                    : p.uri
             })?.uri
             if (!uri || !(await doesFileExist(uri))) {
                 continue
