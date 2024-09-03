@@ -23,7 +23,8 @@ describe('WelcomeMessage', () => {
         // Check elements specific to CodyIDE.VSCode
         expect(screen.getByText(/To add code context from an editor/)).toBeInTheDocument()
         expect(screen.getByText(/Start a new chat using/)).toBeInTheDocument()
-        expect(screen.getByText(/Customize chat settings/)).toBeInTheDocument()
+        expect(screen.getByText(/Documentation/)).toBeInTheDocument()
+        expect(screen.getByText(/Help & Support/)).toBeInTheDocument()
     })
 
     test('renders for CodyIDE.JetBrains', () => {
@@ -38,6 +39,7 @@ describe('WelcomeMessage', () => {
         // Check elements specific to CodyIDE.JetBrains
         expect(screen.queryByText(/To add code context from an editor/)).not.toBeInTheDocument()
         expect(screen.queryByText(/Start a new chat using/)).not.toBeInTheDocument()
-        expect(screen.queryByText(/Customize chat settings/)).not.toBeInTheDocument()
+        expect(screen.getByText(/Documentation/)).toBeInTheDocument()
+        expect(screen.getByText(/Help & Support/)).toBeInTheDocument()
     })
 })
