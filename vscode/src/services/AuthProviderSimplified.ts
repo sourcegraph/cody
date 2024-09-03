@@ -15,7 +15,7 @@ export class AuthProviderSimplified {
         if (!(await openExternalAuthUrl(method, tokenReceiverUrl))) {
             return false
         }
-        authProvider.instance!.authProviderSimplifiedWillAttemptAuth()
+        authProvider.instance!.setAuthPendingToEndpoint(DOTCOM_URL.toString())
         return true
     }
 }

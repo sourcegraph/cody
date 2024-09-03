@@ -7,8 +7,8 @@ import {
     ClientConfigSingleton,
     type ClientConfigurationWithAccessToken,
     CodyIDE,
-    DOTCOM_URL,
     NO_INITIAL_VALUE,
+    type ReadonlyDeep,
     SourcegraphGraphQLAPIClient,
     distinctUntilChanged,
     fromVSCodeEvent,
@@ -70,7 +70,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         }).catch(error => logError('AuthProvider:init:failed', lastEndpoint, { verbose: error }))
     }
 
-    public changes: Observable<AuthStatus> = fromVSCodeEvent(
+    public changes: Observable<ReadonlyDeep<AuthStatus>> = fromVSCodeEvent(
         this.didChangeEvent.event,
         () => this._status ?? NO_INITIAL_VALUE
     ).pipe(distinctUntilChanged())
@@ -174,7 +174,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         })
     }
 
-    public get status(): AuthStatus {
+    public get status(): ReadonlyDeep<AuthStatus> {
         if (!this._status) {
             throw new Error('AuthStatus is not initialized')
         }
@@ -182,7 +182,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
     }
 
     /** Like {@link AuthProvider.status} but throws if not authed. */
-    public get statusAuthed(): AuthenticatedAuthStatus {
+    public get statusAuthed(): ReadonlyDeep<AuthenticatedAuthStatus> {
         if (!this._status) {
             throw new Error('AuthStatus is not initialized')
         }
@@ -317,16 +317,9 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         }
     }
 
-    // Notifies the AuthProvider that the simplified onboarding experiment is
-    // kicking off an authorization flow. That flow ends when (if) this
-    // AuthProvider gets a call to tokenCallbackHandler.
-    public authProviderSimplifiedWillAttemptAuth(): void {
-        // FIXME: This is equivalent to what redirectToEndpointLogin does. But
-        // the existing design is weak--it mixes other authStatus with this
-        // endpoint and races with everything else this class does.
-
-        // Simplified onboarding only supports dotcom.
-        this.status.endpoint = DOTCOM_URL.toString()
+    public setAuthPendingToEndpoint(endpoint: string): void {
+        this._status = { authenticated: false, endpoint }
+        this.didChangeEvent.fire(this._status)
     }
 
     // Logs a telemetry event if the user has never authenticated to Sourcegraph.
