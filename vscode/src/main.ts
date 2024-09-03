@@ -239,9 +239,12 @@ const register = async (
         )
     )
 
-    const autocompleteSetup = registerAutocomplete(configWatcher, platform, statusBar, disposables)
-    const tutorialSetup = tryRegisterTutorial(context, disposables)
-    const openCtxSetup = exposeOpenCtxClient(context, configWatcher, platform.createOpenCtxController)
+    await Promise.all([
+        registerAutocomplete(configWatcher, platform, statusBar, disposables),
+        tryRegisterTutorial(context, disposables),
+        exposeOpenCtxClient(context, configWatcher, platform.createOpenCtxController),
+        registerMinion(context, configWatcher, symfRunner, disposables),
+    ])
 
     registerCodyCommands(configWatcher, statusBar, sourceControl, chatClient, disposables)
     registerAuthCommands(disposables)
@@ -261,13 +264,6 @@ const register = async (
     // user has clicked on "Setup". Awaiting on this promise will make the Cody
     // extension timeout during activation.
     void showSetupNotification(configWatcher.get())
-
-    await Promise.all([
-        autocompleteSetup,
-        openCtxSetup,
-        tutorialSetup,
-        registerMinion(context, configWatcher, symfRunner, disposables),
-    ])
 
     return vscode.Disposable.from(...disposables)
 }
