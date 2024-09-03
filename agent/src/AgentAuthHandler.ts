@@ -29,36 +29,35 @@ export class AgentAuthHandler {
             if (!callbackUri) {
                 throw new Error(url.toString() + ' is not a valid URL')
             }
-            this.startServer()
-            // Redirect the user to the login page
-            this.redirectToEndpointLoginPage(url)
+            this.startServer(url.toString())
         } catch (error) {
             logDebug('AgentAuthHandler', `Invalid callback URL: ${error}`)
         }
     }
 
-    private startServer(): void {
+    private startServer(callbackUri: string): void {
         if (!this.tokenCallbackHandlers?.length) {
             logDebug('AgentAuthHandler', 'Token callback handler is not set.')
             return
         }
 
-        if (this.server) {
+        if (this.server && this.port) {
             logDebug('AgentAuthHandler', 'Server already running')
+            this.redirectToEndpointLoginPage(callbackUri)
             return
         }
 
         // Create an HTTP server to handle the token callback
         const server = http.createServer((req: IncomingMessage, res: ServerResponse) => {
             if (req.url?.startsWith('/api/sourcegraph/token')) {
-                const url = new URL(req.url)
+                const url = new URL(req.url, `http://127.0.0.1:${this.port}`)
                 const token = url.searchParams.get('token')
 
                 if (token) {
                     for (const handler of this.tokenCallbackHandlers) {
                         handler(URI.parse(req.url), token)
                     }
-                    res.writeHead(200, { 'Content-Type': 'text/plain' })
+                    res.writeHead(200, { 'Content-Type': 'text/html' })
                     res.end(`
                         <html>
                             <body>
@@ -87,6 +86,7 @@ export class AgentAuthHandler {
             this.port = (server.address() as AddressInfo).port
             this.server = server
             logDebug('AgentAuthHandler', `Server listening on port ${this.port}`)
+            this.redirectToEndpointLoginPage(callbackUri)
             // Automatically close the server after 6 minutes,
             // as the startTokenReceiver in token-receiver.ts only listens for 5 minutes.
             setTimeout(() => this.closeServer(), SIX_MINUTES)
@@ -95,7 +95,6 @@ export class AgentAuthHandler {
         // Handle server errors
         server.on('error', error => {
             logDebug('AgentAuthHandler', `Server error: ${error}`)
-            this.closeServer()
         })
     }
 
@@ -103,8 +102,9 @@ export class AgentAuthHandler {
         if (this.server) {
             logDebug('AgentAuthHandler', 'Auth server closed')
             this.server.close()
-            this.server = null
         }
+        this.server = null
+        this.port = 0
     }
 
     /**
@@ -115,16 +115,24 @@ export class AgentAuthHandler {
      *
      * @param callbackUri - The original callback URI to be updated.
      */
-    private redirectToEndpointLoginPage(callbackUri: URI): void {
-        const updatedCallbackUri = new URL(callbackUri.toString())
+    private redirectToEndpointLoginPage(callbackUri: string): void {
+        const updatedCallbackUri = new URL(callbackUri)
         const searchParams = new URLSearchParams(decodeURIComponent(updatedCallbackUri.search))
 
         const currentRequestFrom = searchParams.get('requestFrom')
+        const newRequestFromValue = `${currentRequestFrom}-${this.port}`
         if (currentRequestFrom) {
-            // Remove the old parameter.
-            searchParams.delete('requestFrom')
             // Add the new parameter with the correct port number appended.
-            searchParams.set('requestFrom', `${currentRequestFrom}-${this.port}`)
+            searchParams.set('requestFrom', newRequestFromValue)
+
+            const currentRedirectValue = searchParams.get('redirect')
+            if (currentRedirectValue) {
+                searchParams.set(
+                    'redirect',
+                    currentRedirectValue.replace(currentRequestFrom, newRequestFromValue)
+                )
+            }
+
             updatedCallbackUri.search = searchParams.toString()
         }
 
