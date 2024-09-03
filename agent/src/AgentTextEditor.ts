@@ -22,8 +22,7 @@ export class AgentTextEditor implements vscode.TextEditor {
               new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(0, 0))
         return selection
     }
-    set selection(newSelection: vscode.Selection) {
-    }
+    set selection(newSelection: vscode.Selection) {}
 
     get selections(): readonly vscode.Selection[] {
         return [this.selection]
