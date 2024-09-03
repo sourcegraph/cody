@@ -8,6 +8,9 @@ import {
     type GraphQLAPIClientConfig,
     RateLimitError,
     contextFiltersProvider,
+    FeatureFlag,
+    type FeatureFlagProvider,
+    featureFlagProvider,
     graphqlClient,
 } from '@sourcegraph/cody-shared'
 
@@ -77,6 +80,7 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
 }
 
 describe('InlineCompletionItemProvider', () => {
+    const enabledFeatureFlags = new Set<FeatureFlag>()
     beforeAll(async () => {
         await initCompletionProviderConfig({})
 
@@ -87,12 +91,28 @@ describe('InlineCompletionItemProvider', () => {
         } as any as vscode.Memento)
     })
     beforeEach(() => {
+        enabledFeatureFlags.clear()
+        enabledFeatureFlags.add(FeatureFlag.UseSscForCodySubscription)
+        enabledFeatureFlags.add(FeatureFlag.CodyProTrialEnded)
+        featureFlagProvider.instance = {
+            evaluateFeatureFlag: (flag: FeatureFlag) => Promise.resolve(enabledFeatureFlags.has(flag)),
+            getFromCache: (flag: FeatureFlag) => enabledFeatureFlags.has(flag),
+            getExposedExperiments: () => {
+                const exposedFlags: Record<string, boolean> = {}
+                for (const flag of enabledFeatureFlags) {
+                    exposedFlags[flag] = true
+                }
+                return exposedFlags
+            },
+            refresh: () => {},
+        } as FeatureFlagProvider
         vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValue(false)
         CompletionLogger.reset_testOnly()
     })
 
     afterEach(() => {
         vi.restoreAllMocks()
+        enabledFeatureFlags.clear()
     })
 
     it('returns results that span the whole line', async () => {
@@ -325,6 +345,24 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('log a completion if the suffix is inside the completion', async () => {
+            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
+
+            const completionParams = params('const a = [1, █];', [completion`2] ;`])
+            const provider = new MockableInlineCompletionItemProvider(() =>
+                getInlineCompletions(completionParams)
+            )
+            await provider.provideInlineCompletionItems(
+                completionParams.document,
+                completionParams.position,
+                DUMMY_CONTEXT
+            )
+
+            expect(spy).toHaveBeenCalled()
+        })
+
+        it('log a completion if the suffix is inside the completion', async () => {
+            enabledFeatureFlags.delete(FeatureFlag.CodyInLineSuffixAutocomplete)
+
             const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('const a = [1, █];', [completion`2] ;`])

@@ -9,6 +9,7 @@ import {
     contextFiltersProvider,
     isCodyIgnoredFile,
     telemetryRecorder,
+    featureFlagProvider,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -233,7 +234,9 @@ export class InlineCompletionItemProvider
             const currentLine = document.lineAt(lastSelection.active.line)
             const currentLinePrefix = currentLine.text.slice(0, lastSelection.active.character)
             const currentLineSuffix = currentLine.text.slice(lastSelection.active.character)
-
+            const codyInLineSuffixAutocomplete = await featureFlagProvider.instance!.evaluateFeatureFlag(
+                FeatureFlag.CodyInLineSuffixAutocomplete
+            )
             if (
                 currentLineSuffix.trim() === '' &&
                 !shouldCancelBasedOnCurrentLine({
@@ -241,6 +244,7 @@ export class InlineCompletionItemProvider
                     currentLineSuffix,
                     document,
                     position: lastSelection.active,
+                    codyInLineSuffixAutocomplete
                 })
             ) {
                 this.provideInlineCompletionItems(document, lastSelection.active, {
@@ -269,6 +273,7 @@ export class InlineCompletionItemProvider
                         currentLineSuffix: '',
                         document,
                         position: nextLinePosition,
+                        codyInLineSuffixAutocomplete
                     })
                 ) {
                     this.provideInlineCompletionItems(document, nextLinePosition, {
