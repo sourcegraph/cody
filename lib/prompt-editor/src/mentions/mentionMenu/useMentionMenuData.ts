@@ -157,7 +157,7 @@ export function useCallMentionMenuData({
     const mentionQuery: MentionQuery = useMemo(
         () => ({
             ...parseMentionQuery(query ?? '', provider),
-            includeRemoteRepositories: mentionSettings.resolutionMode === 'remote',
+            contextRemoteRepositoriesNames: mentionSettings.remoteRepositoriesNames,
         }),
         [query, provider, mentionSettings]
     )
