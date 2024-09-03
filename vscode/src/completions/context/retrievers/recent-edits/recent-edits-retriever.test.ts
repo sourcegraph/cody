@@ -38,16 +38,7 @@ describe('RecentEditsRetriever', () => {
         retriever.dispose()
     })
 
-    const testDocument = document(dedent`
-        function foo() {
-            console.log('foo')
-        }
-
-        function bar() {
-            console.log('bar')
-        }
-    `)
-    function replaceFooLogWithNumber(document = testDocument) {
+    function replaceFooLogWithNumber(document: vscode.TextDocument) {
         onDidChangeTextDocument({
             document,
             contentChanges: [
@@ -61,7 +52,7 @@ describe('RecentEditsRetriever', () => {
             reason: undefined,
         })
     }
-    function deleteBarLog(document = testDocument) {
+    function deleteBarLog(document: vscode.TextDocument) {
         onDidChangeTextDocument({
             document,
             contentChanges: [
@@ -75,7 +66,7 @@ describe('RecentEditsRetriever', () => {
             reason: undefined,
         })
     }
-    function addNumberLog(document = testDocument) {
+    function addNumberLog(document: vscode.TextDocument) {
         onDidChangeTextDocument({
             document,
             contentChanges: [
@@ -90,104 +81,159 @@ describe('RecentEditsRetriever', () => {
         })
     }
 
-    it('tracks document changes and creates a git diff', async () => {
-        replaceFooLogWithNumber()
+    describe('SingleDocumentDiff', () => {
+        const testDocument = document(dedent`
+            function foo() {
+                console.log('foo')
+            }
 
-        deleteBarLog()
-
-        addNumberLog()
-
-        const diff = await retriever.getDiff(testDocument.uri)
-        expect(diff!.toString().split('\n').slice(2).join('\n')).toMatchInlineSnapshot(`
-          "@@ -1,7 +1,7 @@
-           function foo() {
-          -    console.log('foo')
-          +    console.log(1337)
-           }
-
-           function bar() {
-          -    console.log('bar')
-          +    console.log(1338)
-           }
-          \\ No newline at end of file
-          "
+            function bar() {
+                console.log('bar')
+            }
         `)
-    })
 
-    it('no-ops for blocked files due to the context filter', async () => {
-        vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValueOnce('repo:foo')
+        it('tracks document changes and creates a git diff', async () => {
+            replaceFooLogWithNumber(testDocument)
 
-        replaceFooLogWithNumber()
+            deleteBarLog(testDocument)
 
-        deleteBarLog()
+            addNumberLog(testDocument)
 
-        addNumberLog()
+            const diff = await retriever.getDiff(testDocument.uri)
+            expect(diff!.toString().split('\n').slice(2).join('\n')).toMatchInlineSnapshot(`
+              "@@ -1,7 +1,7 @@
+               function foo() {
+              -    console.log('foo')
+              +    console.log(1337)
+               }
 
-        expect(await retriever.getDiff(testDocument.uri)).toBe(null)
-    })
-
-    it('does not yield changes that are older than the configured timeout', async () => {
-        replaceFooLogWithNumber()
-
-        vi.advanceTimersByTime(3 * 60 * 1000)
-        deleteBarLog()
-
-        vi.advanceTimersByTime(3 * 60 * 1000)
-        addNumberLog()
-
-        const diff = await retriever.getDiff(testDocument.uri)
-        expect(diff!.toString().split('\n').slice(2).join('\n')).toMatchInlineSnapshot(`
-          "@@ -2,6 +2,6 @@
-               console.log(1337)
-           }
-
-           function bar() {
-          -    console.log('bar')
-          +    console.log(1338)
-           }
-          \\ No newline at end of file
-          "
-        `)
-    })
-
-    it('handles renames', async () => {
-        replaceFooLogWithNumber()
-
-        vi.advanceTimersByTime(3 * 60 * 1000)
-        deleteBarLog()
-
-        const newUri = testFileUri('test2.ts')
-        onDidRenameFiles({
-            files: [
-                {
-                    oldUri: testDocument.uri,
-                    newUri,
-                },
-            ],
+               function bar() {
+              -    console.log('bar')
+              +    console.log(1338)
+               }
+              \\ No newline at end of file
+              "
+            `)
         })
-        const renamedDoc = { ...testDocument, uri: newUri }
 
-        vi.advanceTimersByTime(3 * 60 * 1000)
-        addNumberLog(renamedDoc)
+        it('no-ops for blocked files due to the context filter', async () => {
+            vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValueOnce('repo:foo')
 
-        const diff = await retriever.getDiff(newUri)
-        expect(diff!.toString().split('\n').slice(2).join('\n')).toMatchInlineSnapshot(`
-          "@@ -2,6 +2,6 @@
-               console.log(1337)
-           }
+            replaceFooLogWithNumber(testDocument)
 
-           function bar() {
-          -    console.log('bar')
-          +    console.log(1338)
-           }
-          \\ No newline at end of file
-          "
-        `)
+            deleteBarLog(testDocument)
+
+            addNumberLog(testDocument)
+
+            expect(await retriever.getDiff(testDocument.uri)).toBe(null)
+        })
+
+        it('does not yield changes that are older than the configured timeout', async () => {
+            replaceFooLogWithNumber(testDocument)
+
+            vi.advanceTimersByTime(3 * 60 * 1000)
+            deleteBarLog(testDocument)
+
+            vi.advanceTimersByTime(3 * 60 * 1000)
+            addNumberLog(testDocument)
+
+            const diff = await retriever.getDiff(testDocument.uri)
+            expect(diff!.toString().split('\n').slice(2).join('\n')).toMatchInlineSnapshot(`
+              "@@ -2,6 +2,6 @@
+                   console.log(1337)
+               }
+
+               function bar() {
+              -    console.log('bar')
+              +    console.log(1338)
+               }
+              \\ No newline at end of file
+              "
+            `)
+        })
+
+        it('handles renames', async () => {
+            replaceFooLogWithNumber(testDocument)
+
+            vi.advanceTimersByTime(3 * 60 * 1000)
+            deleteBarLog(testDocument)
+
+            const newUri = testFileUri('test2.ts')
+            onDidRenameFiles({
+                files: [
+                    {
+                        oldUri: testDocument.uri,
+                        newUri,
+                    },
+                ],
+            })
+            const renamedDoc = { ...testDocument, uri: newUri }
+
+            vi.advanceTimersByTime(3 * 60 * 1000)
+            addNumberLog(renamedDoc)
+
+            const diff = await retriever.getDiff(newUri)
+            expect(diff!.toString().split('\n').slice(2).join('\n')).toMatchInlineSnapshot(`
+              "@@ -2,6 +2,6 @@
+                   console.log(1337)
+               }
+
+               function bar() {
+              -    console.log('bar')
+              +    console.log(1338)
+               }
+              \\ No newline at end of file
+              "
+            `)
+        })
+
+        it('handles deletions', async () => {
+            replaceFooLogWithNumber(testDocument)
+            onDidDeleteFiles({ files: [testDocument.uri] })
+            expect(await retriever.getDiff(testDocument.uri)).toBe(null)
+        })
     })
 
-    it('handles deletions', async () => {
-        replaceFooLogWithNumber()
-        onDidDeleteFiles({ files: [testDocument.uri] })
-        expect(await retriever.getDiff(testDocument.uri)).toBe(null)
+    describe('MultiDocumentDiff', () => {
+        it('Changes across multiple files are returned', async () => {
+            const nDocuments = 10
+            for (let i = 0; i < nDocuments; i++) {
+                const currentDoc = document(
+                    dedent`
+                    function foo() {
+                        console.log('foo')
+                    }
+
+                    function bar() {
+                        console.log('bar')
+                    }
+                `,
+                    'typescript',
+                    `document-${i}.ts`
+                )
+                replaceFooLogWithNumber(currentDoc)
+                deleteBarLog(currentDoc)
+                addNumberLog(currentDoc)
+            }
+            const diffAcrossDocuments = await retriever.getDiffAcrossDocuments()
+            for (const [index, documentDiff] of diffAcrossDocuments.entries()) {
+                const diff = documentDiff.diff
+                expect(diff!.toString().split('\n').slice(2).join('\n')).toMatchInlineSnapshot(`
+                    "@@ -1,7 +1,7 @@
+                    function foo() {
+                    -    console.log('foo')
+                    +    console.log(1337)
+                    }
+
+                    function bar() {
+                    -    console.log('bar')
+                    +    console.log(1338)
+                    }
+                    \\ No newline at end of file
+                    "
+                `)
+                expect(documentDiff.uri.path).toBe(`/document-${index}.ts`)
+            }
+        })
     })
 })

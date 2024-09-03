@@ -42,6 +42,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
     public async retrieve(options: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
         const rawDiffs = await this.getDiffAcrossDocuments()
         const diffs = this.filterCandidateDiffs(rawDiffs, options.document)
+        // Heuristics ordering by timestamp, taking the most recent diffs first.
         diffs.sort((a, b) => b.latestChangeTimestamp - a.latestChangeTimestamp)
 
         const autocompleteContextSnippets = []
@@ -61,7 +62,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         // remove the startLine and endLine from the response similar to how we do
         // for BFG.
         // @ts-ignore
-        return autocompleteContextSnippets.slice(1)
+        return autocompleteContextSnippets
     }
 
     public async getDiffAcrossDocuments(): Promise<DiffAcrossDocuments[]> {
