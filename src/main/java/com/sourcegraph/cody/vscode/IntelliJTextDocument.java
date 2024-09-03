@@ -6,11 +6,8 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.sourcegraph.cody.agent.protocol_extensions.PositionKt;
 import com.sourcegraph.cody.agent.protocol_generated.Position;
-import com.sourcegraph.cody.agent.protocol_generated.Range;
 import java.net.URI;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
@@ -40,27 +37,16 @@ public class IntelliJTextDocument implements TextDocument {
   }
 
   @Override
-  public int offsetAt(Position position) {
-    return PositionKt.toOffset(position, this.editor.getDocument());
-  }
-
-  @Override
   public String getText() {
     return this.editor.getDocument().getText();
   }
 
   @Override
-  public String getText(Range range) {
-    return this.editor
-        .getDocument()
-        .getText(TextRange.create(offsetAt(range.getStart()), offsetAt(range.getEnd())));
-  }
-
-  @Override
   public Position positionAt(int offset) {
-    int line = this.editor.getDocument().getLineNumber(offset);
-    int lineStartOffset = offsetAt(new Position(line, 0));
-    return new Position(line, offset - lineStartOffset);
+    Document document = this.editor.getDocument();
+    int line = document.getLineNumber(offset);
+    int character = offset - document.getLineStartOffset(line);
+    return new Position(line, character);
   }
 
   @Override

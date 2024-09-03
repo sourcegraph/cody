@@ -1,7 +1,7 @@
 package com.sourcegraph.cody.agent.protocol
 
 import com.intellij.openapi.editor.Editor
-import com.sourcegraph.cody.agent.protocol_extensions.toOffset
+import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import junit.framework.TestCase
 
@@ -15,6 +15,6 @@ fun Editor.testing_selectSubstring(substring: String) {
 }
 
 fun Editor.testing_substring(range: Range): String {
-  return this.document.text.substring(
-      range.start.toOffset(this.document), range.end.toOffset(this.document))
+  val (start, end) = range.toOffsetRange(document)
+  return this.document.text.substring(start, end)
 }

@@ -6,7 +6,8 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
-import com.sourcegraph.cody.agent.protocol_extensions.toOffset
+import com.sourcegraph.cody.agent.protocol_extensions.toOffsetOrZero
+import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.CreateFileOperation
 import com.sourcegraph.cody.agent.protocol_generated.DeleteFileOperation
 import com.sourcegraph.cody.agent.protocol_generated.DeleteTextEdit
@@ -47,17 +48,17 @@ class EditService(val project: Project) {
       edits.reversed().all { edit ->
         when (edit) {
           is ReplaceTextEdit -> {
-            document.replaceString(
-                edit.range.start.toOffset(document), edit.range.end.toOffset(document), edit.value)
+            val (startOffset, endOffset) = edit.range.toOffsetRange(document)
+            document.replaceString(startOffset, endOffset, edit.value)
             true
           }
           is DeleteTextEdit -> {
-            document.deleteString(
-                edit.range.start.toOffset(document), edit.range.end.toOffset(document))
+            val (startOffset, endOffset) = edit.range.toOffsetRange(document)
+            document.deleteString(startOffset, endOffset)
             true
           }
           is InsertTextEdit -> {
-            document.insertString(edit.position.toOffset(document), edit.value)
+            document.insertString(edit.position.toOffsetOrZero(document), edit.value)
             true
           }
         }

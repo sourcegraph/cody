@@ -28,7 +28,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.ex.temp.TempFileSystem
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.withScheme
-import com.sourcegraph.cody.agent.protocol_extensions.toOffset
+import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.config.ConfigUtil
 import java.net.URI
@@ -60,8 +60,7 @@ object CodyEditorUtil {
 
   @JvmStatic
   fun getTextRange(document: Document, range: Range): TextRange {
-    val start = range.start.toOffset(document)
-    val end = range.end.toOffset(document)
+    val (start, end) = range.toOffsetRange(document)
     return TextRange.create(start, end)
   }
 

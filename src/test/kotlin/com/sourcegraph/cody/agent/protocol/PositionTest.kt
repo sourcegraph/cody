@@ -1,7 +1,10 @@
 package com.sourcegraph.cody.agent.protocol
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import com.sourcegraph.cody.agent.protocol_extensions.*
+import com.sourcegraph.cody.agent.protocol_extensions.getRealColumn
+import com.sourcegraph.cody.agent.protocol_extensions.getRealLine
+import com.sourcegraph.cody.agent.protocol_extensions.isOutsideOfDocument
+import com.sourcegraph.cody.agent.protocol_extensions.toOffsetOrZero
 import com.sourcegraph.cody.agent.protocol_generated.Position
 
 class PositionTest : BasePlatformTestCase() {
@@ -18,19 +21,19 @@ class PositionTest : BasePlatformTestCase() {
 
   fun test_isStartOrEndOfDocumentMarkerReturnsTrueWhenLineIsLessThanZero() {
     val position = Position(-1, 0)
-    val result = position.isStartOrEndOfDocumentMarker(document)
+    val result = position.isOutsideOfDocument(document)
     assertEquals(true, result)
   }
 
   fun test_isStartOrEndOfDocumentMarkerReturnsTrueWhenLineIsGreaterThanLineCount() {
     val position = Position(3, 0)
-    val result = position.isStartOrEndOfDocumentMarker(document)
+    val result = position.isOutsideOfDocument(document)
     assertEquals(true, result)
   }
 
   fun test_isStartOrEndOfDocumentMarkerReturnsFalseWhenLineIsWithinBounds() {
     val position = Position(1, 0)
-    val result = position.isStartOrEndOfDocumentMarker(document)
+    val result = position.isOutsideOfDocument(document)
     assertEquals(false, result)
   }
 
@@ -64,9 +67,9 @@ class PositionTest : BasePlatformTestCase() {
     myFixture.openFileInEditor(file)
     val document = myFixture.editor.document
 
-    assertEquals(0, Position(0, 0).toOffset(document))
-    assertEquals(0, Position(0, 3).toOffset(document))
-    assertEquals(0, Position(1, 1).toOffset(document))
+    assertEquals(0, Position(0, 0).toOffsetOrZero(document))
+    assertEquals(0, Position(0, 3).toOffsetOrZero(document))
+    assertEquals(0, Position(1, 1).toOffsetOrZero(document))
   }
 
   fun test_toOffsetReturnsCorrectOffsetOnOneNewlineFile() {
@@ -75,16 +78,16 @@ class PositionTest : BasePlatformTestCase() {
     myFixture.openFileInEditor(file)
     val document = myFixture.editor.document
 
-    assertEquals(0, Position(0, 0).toOffset(document))
-    assertEquals(0, Position(0, 3).toOffset(document))
-    assertEquals(1, Position(2, 2).toOffset(document))
+    assertEquals(0, Position(0, 0).toOffsetOrZero(document))
+    assertEquals(0, Position(0, 3).toOffsetOrZero(document))
+    assertEquals(1, Position(2, 2).toOffsetOrZero(document))
   }
 
   fun test_toOffsetReturnsCorrectOffset() {
-    assertEquals(0, Position(0, 0).toOffset(document))
-    assertEquals(2, Position(0, 2).toOffset(document))
-    assertEquals(5, Position(0, 5).toOffset(document))
-    assertEquals(6, Position(1, 0).toOffset(document))
-    assertEquals(content.length, Position(12, 12).toOffset(document))
+    assertEquals(0, Position(0, 0).toOffsetOrZero(document))
+    assertEquals(2, Position(0, 2).toOffsetOrZero(document))
+    assertEquals(5, Position(0, 5).toOffsetOrZero(document))
+    assertEquals(6, Position(1, 0).toOffsetOrZero(document))
+    assertEquals(content.length, Position(12, 12).toOffsetOrZero(document))
   }
 }

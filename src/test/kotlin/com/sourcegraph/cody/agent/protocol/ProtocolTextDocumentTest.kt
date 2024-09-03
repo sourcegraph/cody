@@ -1,11 +1,11 @@
 package com.sourcegraph.cody.agent.protocol
 
 import com.intellij.openapi.application.WriteAction
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileEditorProvider
 import com.intellij.openapi.fileEditor.impl.text.TextEditorProvider
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import com.sourcegraph.cody.agent.protocol_extensions.PositionFactory
 import com.sourcegraph.cody.agent.protocol_generated.Position
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.cody.listeners.EditorChangesBus
@@ -14,6 +14,12 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
   private val content = "Start line 1\nline 2\nline 3\nline 4\nline 5 End"
   private val filename = "test.txt"
   private val file: VirtualFile by lazy { myFixture.createFile(filename, content) }
+
+  fun fromOffset(document: Document, offset: Int): Position {
+    val line = document.getLineNumber(offset)
+    val lineStartOffset = document.getLineStartOffset(line)
+    return Position(line.toLong(), (offset - lineStartOffset).toLong())
+  }
 
   override fun setUp() {
     super.setUp()
@@ -120,8 +126,8 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
       val offset = if (isAppend) currentContent.length else 0
       assertEquals(
           Range(
-              PositionFactory.fromOffset(myFixture.editor.document, offset),
-              PositionFactory.fromOffset(myFixture.editor.document, offset),
+              fromOffset(myFixture.editor.document, offset),
+              fromOffset(myFixture.editor.document, offset),
           ),
           lastTextDocument!!.contentChanges!!.first().range)
     }
@@ -141,10 +147,8 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
 
       val removalStartOffset = myFixture.editor.document.text.indexOf(removedContent)
       val removalEndOffset = removalStartOffset + removedContent.length
-      val removalStartPosition =
-          PositionFactory.fromOffset(myFixture.editor.document, removalStartOffset)
-      val removalEndPosition =
-          PositionFactory.fromOffset(myFixture.editor.document, removalEndOffset)
+      val removalStartPosition = fromOffset(myFixture.editor.document, removalStartOffset)
+      val removalEndPosition = fromOffset(myFixture.editor.document, removalEndOffset)
 
       WriteAction.run<RuntimeException> { file.setBinaryContent(newContent.toByteArray()) }
 
@@ -173,8 +177,8 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
 
       val startOffset = currentContent.indexOf(oldSubstring)
       val endOffset = startOffset + oldSubstring.length
-      val startPosition = PositionFactory.fromOffset(myFixture.editor.document, startOffset)
-      val endPosition = PositionFactory.fromOffset(myFixture.editor.document, endOffset)
+      val startPosition = fromOffset(myFixture.editor.document, startOffset)
+      val endPosition = fromOffset(myFixture.editor.document, endOffset)
 
       WriteAction.run<RuntimeException> { file.setBinaryContent(newContent.toByteArray()) }
 
@@ -199,8 +203,8 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
     fun insert(afterSubstring: String, insertSubstring: String) {
       val currentContent = myFixture.editor.document.text
       val startOffset = currentContent.indexOf(afterSubstring)
-      val startPosition = PositionFactory.fromOffset(myFixture.editor.document, startOffset)
-      val endPosition = PositionFactory.fromOffset(myFixture.editor.document, startOffset)
+      val startPosition = fromOffset(myFixture.editor.document, startOffset)
+      val endPosition = fromOffset(myFixture.editor.document, startOffset)
 
       val newContent =
           StringBuilder(currentContent).apply { insert(startOffset, insertSubstring) }.toString()

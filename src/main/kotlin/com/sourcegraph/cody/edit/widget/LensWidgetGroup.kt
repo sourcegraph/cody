@@ -24,7 +24,7 @@ import com.intellij.ui.JBColor
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.agent.protocol_extensions.toLogicalPosition
-import com.sourcegraph.cody.agent.protocol_extensions.toOffset
+import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import java.awt.Cursor
 import java.awt.Font
@@ -114,11 +114,11 @@ class LensWidgetGroup(parentComponent: Editor) : EditorCustomElementRenderer, Di
 
   @RequiresEdt
   fun show(range: Range, shouldScrollToLens: Boolean) {
-    val offset = range.start.toOffset(editor.document)
+    val (startOffset, _) = range.toOffsetRange(editor.document)
     if (isDisposed.get()) {
       throw IllegalStateException("Request to show disposed inlay: $this")
     }
-    inlay = editor.inlayModel.addBlockElement(offset, false, true, 0, this)
+    inlay = editor.inlayModel.addBlockElement(startOffset, false, true, 0, this)
     Disposer.register(this, inlay!!)
 
     if (shouldScrollToLens) {

@@ -12,15 +12,7 @@ fun Position(line: Int, character: Int): Position {
   return Position(line.toLong(), character.toLong())
 }
 
-object PositionFactory {
-  fun fromOffset(document: Document, offset: Int): Position {
-    val line = document.getLineNumber(offset)
-    val lineStartOffset = document.getLineStartOffset(line)
-    return Position(line.toLong(), (offset - lineStartOffset).toLong())
-  }
-}
-
-fun Position.isStartOrEndOfDocumentMarker(document: Document): Boolean {
+fun Position.isOutsideOfDocument(document: Document): Boolean {
   return line < 0 || line > document.lineCount
 }
 
@@ -38,8 +30,7 @@ fun Position.toLogicalPosition(document: Document): LogicalPosition {
   return LogicalPosition(getRealLine(document), getRealColumn(document))
 }
 
-/** Return zero-based offset of this position in the document. */
-fun Position.toOffset(document: Document): Int {
+fun Position.toOffsetOrZero(document: Document): Int {
   val lineStartOffset = document.getLineStartOffset(getRealLine(document))
   return lineStartOffset + getRealColumn(document)
 }
