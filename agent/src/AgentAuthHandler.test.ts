@@ -32,14 +32,14 @@ describe('AgentAuthHandler', () => {
     describe('handleCallback', () => {
         it.each([
             [
-                'valid endpointUri for JetBrains',
+                'valid endpointUri',
                 'https://sourcegraph.test/user/settings/tokens/new/callback?requestFrom=CODY_JETBRAINS',
                 'https://sourcegraph.test/user/settings/tokens/new/callback?requestFrom=CODY_JETBRAINS-123',
             ],
             [
-                'valid endpointUri with tokenReceiverUrl param appended',
+                'valid endpointUri with additional params appended',
                 'https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=VISUAL_STUDIO&tokenReceiverUrl=https%3A%2F%2Fexample.com',
-                'https://sourcegraph.com/user/settings/tokens/new/callback?tokenReceiverUrl=https%3A%2F%2Fexample.com&requestFrom=VISUAL_STUDIO-123',
+                'https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=VISUAL_STUDIO-123&tokenReceiverUrl=https%3A%2F%2Fexample.com',
             ],
             ['invalid IDE', 'https://sourcegraph.com', 'https://sourcegraph.com/'],
             ['invalid endpointUri', 'invalid-url', undefined],

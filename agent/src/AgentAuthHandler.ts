@@ -52,18 +52,18 @@ export class AgentAuthHandler {
             if (req.url?.startsWith('/api/sourcegraph/token')) {
                 const url = new URL(req.url, `http://127.0.0.1:${this.port}`)
                 const token = url.searchParams.get('token')
-
                 if (token) {
                     for (const handler of this.tokenCallbackHandlers) {
                         handler(URI.parse(req.url), token)
                     }
                     res.writeHead(200, { 'Content-Type': 'text/html' })
+                    // Close the window once the token is received.
                     res.end(`
                         <html>
                             <body>
                                 Token received. This window will close automatically.
                                 <script>
-                                    setTimeout(() => window.close(), 3000);
+                                    window.close();
                                 </script>
                             </body>
                         </html>
@@ -81,8 +81,8 @@ export class AgentAuthHandler {
 
         // Bind the server to the loopback interface
         server.listen(0, '127.0.0.1', () => {
-            // The server is now bound to the loopback interface (127.0.0.1)
-            // This ensures that only local processes can connect to it
+            // The server is now bound to the loopback interface (127.0.0.1).
+            // This ensures that only local processes can connect to it.
             this.port = (server.address() as AddressInfo).port
             this.server = server
             logDebug('AgentAuthHandler', `Server listening on port ${this.port}`)
@@ -116,27 +116,20 @@ export class AgentAuthHandler {
      * @param callbackUri - The original callback URI to be updated.
      */
     private redirectToEndpointLoginPage(callbackUri: string): void {
-        const updatedCallbackUri = new URL(callbackUri)
-        const searchParams = new URLSearchParams(decodeURIComponent(updatedCallbackUri.search))
-
-        const currentRequestFrom = searchParams.get('requestFrom')
-        const newRequestFromValue = `${currentRequestFrom}-${this.port}`
-        if (currentRequestFrom) {
+        const uri = new URL(callbackUri)
+        const params = new URLSearchParams(decodeURIComponent(uri.search))
+        const requestFrom = params.get('requestFrom')
+        if (requestFrom) {
             // Add the new parameter with the correct port number appended.
-            searchParams.set('requestFrom', newRequestFromValue)
-
-            const currentRedirectValue = searchParams.get('redirect')
-            if (currentRedirectValue) {
-                searchParams.set(
-                    'redirect',
-                    currentRedirectValue.replace(currentRequestFrom, newRequestFromValue)
-                )
+            const newRequestFrom = `${requestFrom}-${this.port}`
+            params.set('requestFrom', newRequestFrom)
+            const redirect = params.get('redirect')
+            if (redirect) {
+                params.set('redirect', redirect.replace(requestFrom, newRequestFrom))
             }
-
-            updatedCallbackUri.search = searchParams.toString()
+            uri.search = params.toString()
         }
-
-        open(updatedCallbackUri.toString())
+        open(uri.toString())
     }
 
     public dispose(): void {
