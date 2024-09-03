@@ -24,6 +24,7 @@ import {
 } from './command-auth/command-login'
 import { errorSpinner, notAuthenticated } from './command-auth/messages'
 import { isNonEmptyArray } from './isNonEmptyArray'
+import { legacyCodyClientName } from './legacyCodyClientName'
 
 declare const process: { pkg: { entrypoint: string } } & NodeJS.Process
 export interface ChatOptions extends AuthenticationOptions {
@@ -129,7 +130,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         capabilities: {
             completions: 'none',
         },
-        legacyNameForServerIdentification: 'jetbrains',
+        legacyNameForServerIdentification: legacyCodyClientName,
         extensionConfiguration: {
             serverEndpoint: options.endpoint,
             accessToken: options.accessToken,

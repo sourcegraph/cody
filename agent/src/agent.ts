@@ -1516,6 +1516,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
         return this.clientInfo?.name.toLowerCase() || 'uninitialized-agent'
     }
 
+    get httpClientNameForLegacyReasons(): string | undefined {
+        return this.clientInfo?.legacyNameForServerIdentification ?? undefined
+    }
+
     get clientVersion(): string {
         return this.clientInfo?.version || '0.0.0'
     }
