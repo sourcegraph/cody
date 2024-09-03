@@ -18,7 +18,7 @@ import { secretStorage } from '../services/SecretStorageProvider'
 import { maybeAdjustContextWindows, syncModels } from './sync'
 import { getEnterpriseContextWindow } from './utils'
 
-describe.skip('syncModels', () => {
+describe('syncModels', () => {
     const setModelsSpy = vi.spyOn(modelsService.instance!, 'setModels')
 
     beforeEach(() => {
@@ -89,7 +89,7 @@ describe.skip('syncModels', () => {
 
 // Tests specific to how `syncModels` operates when the VS Code instance is
 // configured to fetch models from the Sourcegraph backend.
-describe.skip('syncModels from the server', () => {
+describe('syncModels from the server', () => {
     const testEndpoint = 'https://sourcegraph.acme-corp.com'
     const testUserCreds = 'hunter2'
     const testServerSideModels: ServerModel[] = [
