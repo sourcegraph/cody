@@ -315,6 +315,22 @@ function logCompletionPartiallyAcceptedEvent(params: PartiallyAcceptedEventPaylo
         params
     )
 }
+
+function logSuggestionsDocumentDiffEvent(params: PersistencePresentEventPayload): void {
+    // Use automatic splitting for now - make this manual as needed
+    const { metadata, privateMetadata } = splitSafeMetadata(params)
+    writeCompletionEvent(
+        'suggestion',
+        'documentDiff',
+        {
+            version: 0,
+            metadata,
+            privateMetadata,
+        },
+        params
+    )
+}
+
 function logCompletionPersistencePresentEvent(params: PersistencePresentEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
@@ -580,6 +596,7 @@ const completionIdsMarkedAsSuggested = new LRUCache<CompletionAnalyticsID, true>
 })
 
 let persistenceTracker: PersistenceTracker<CompletionAnalyticsID> | null = null
+let suggestionTracker: PersistenceTracker<CompletionAnalyticsID> | null = null
 
 let completionsStartedSinceLastSuggestion = 0
 
@@ -651,7 +668,6 @@ export function loaded(params: LoadedParams): void {
         isFuzzyMatch,
         inlineContextParams = undefined,
     } = params
-
     const event = activeSuggestionRequests.get(logId)
 
     if (!event) {
@@ -718,6 +734,47 @@ export function loaded(params: LoadedParams): void {
                 filePath: snippet.uri.fsPath,
             })),
         }
+        const document = requestParams.document
+        suggestionDocumentDiffTracker(event.params.id, document)
+    }
+}
+
+export function suggestionDocumentDiffTracker(
+    interactionId: CompletionAnalyticsID,
+    document: vscode.TextDocument
+): void {
+    // Add SuggestionDiffTracker for the public repos useful for suggestion diffs.
+    if (suggestionTracker === null) {
+        suggestionTracker = new PersistenceTracker<CompletionAnalyticsID>(
+            vscode.workspace,
+            // Only Log the diff if the document was not deleted.
+            {
+                onPresent: logSuggestionsDocumentDiffEvent,
+                onRemoved: () => {},
+            },
+            true
+        )
+    }
+    const insertRange = new vscode.Range(
+        new vscode.Position(0, 0),
+        document.lineAt(document.lineCount - 1).range.end
+    )
+    const documentText = document.getText(insertRange)
+
+    const isValidCodeFile = document.uri.scheme === 'file'
+    const isValidSize = documentText.length < 256 * 1024
+    if (isValidCodeFile && isValidSize) {
+        const persistenceTimeoutList = [
+            30 * 1000, // 30 seconds
+        ]
+        suggestionTracker.track({
+            id: interactionId,
+            insertedAt: Date.now(),
+            insertText: documentText,
+            insertRange,
+            document,
+            persistenceTimeoutList,
+        })
     }
 }
 

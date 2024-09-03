@@ -13,6 +13,8 @@ export interface PersistencePresentEventPayload<T = string> {
     charCount: number
     /** Attached metadata to the insertion */
     metadata?: PersistenceEventMetadata
+
+    diff?: string
 }
 
 export interface PersistenceRemovedEventPayload<T = string> {

@@ -1,6 +1,6 @@
 import levenshtein from 'js-levenshtein'
 import type * as vscode from 'vscode'
-
+import { createGitDiff } from '../../../../lib/shared/src/editor/create-git-diff'
 import { updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 
 import type {
@@ -8,13 +8,6 @@ import type {
     PersistencePresentEventPayload,
     PersistenceRemovedEventPayload,
 } from './types'
-
-const MEASURE_TIMEOUTS = [
-    30 * 1000, // 30 seconds
-    120 * 1000, // 2 minutes
-    300 * 1000, // 5 minutes
-    600 * 1000, // 10 minutes
-]
 
 interface TrackedInsertion<T = string> {
     id: T
@@ -27,6 +20,15 @@ interface TrackedInsertion<T = string> {
     insertRange: vscode.Range
     latestRange: vscode.Range
     metadata?: PersistenceEventMetadata
+}
+
+function getDefaultMeasureTimeouts(): number[] {
+    return [
+        30 * 1000, // 30 seconds
+        120 * 1000, // 2 minutes
+        300 * 1000, // 5 minutes
+        600 * 1000, // 10 minutes
+    ]
 }
 
 export class PersistenceTracker<T = string> implements vscode.Disposable {
@@ -44,7 +46,8 @@ export class PersistenceTracker<T = string> implements vscode.Disposable {
         public logger: {
             onRemoved: (event: PersistenceRemovedEventPayload<T>) => void
             onPresent: (event: PersistencePresentEventPayload<T>) => void
-        }
+        },
+        private readonly shouldComputeCodeDiff = false
     ) {
         this.disposables.push(workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this)))
         this.disposables.push(workspace.onDidRenameFiles(this.onDidRenameFiles.bind(this)))
@@ -58,6 +61,7 @@ export class PersistenceTracker<T = string> implements vscode.Disposable {
         insertRange,
         document,
         metadata,
+        persistenceTimeoutList = getDefaultMeasureTimeouts(),
     }: {
         id: T
         insertedAt: number
@@ -65,6 +69,7 @@ export class PersistenceTracker<T = string> implements vscode.Disposable {
         insertRange: vscode.Range
         document: vscode.TextDocument
         metadata?: PersistenceEventMetadata
+        persistenceTimeoutList?: number[]
     }): void {
         if (insertText.length === 0) {
             return
@@ -89,14 +94,18 @@ export class PersistenceTracker<T = string> implements vscode.Disposable {
 
         documentInsertions.add(trackedInsertion)
         const firstTimeoutIndex = 0
-        this.enqueueMeasure(trackedInsertion, firstTimeoutIndex)
+        this.enqueueMeasure(trackedInsertion, firstTimeoutIndex, persistenceTimeoutList)
     }
-
-    private enqueueMeasure(trackedInsertion: TrackedInsertion<T>, nextTimeoutIndex: number): void {
-        const timeout = trackedInsertion.insertedAt + MEASURE_TIMEOUTS[nextTimeoutIndex] - Date.now()
+    private enqueueMeasure(
+        trackedInsertion: TrackedInsertion<T>,
+        nextTimeoutIndex: number,
+        persistenceTimeoutList: number[]
+    ): void {
+        const timeout =
+            trackedInsertion.insertedAt + persistenceTimeoutList[nextTimeoutIndex] - Date.now()
         const timeoutId = setTimeout(() => {
             this.managedTimeouts.delete(timeoutId)
-            this.measure(trackedInsertion, nextTimeoutIndex)
+            this.measure(trackedInsertion, nextTimeoutIndex, persistenceTimeoutList)
         }, timeout)
         this.managedTimeouts.add(timeoutId)
     }
@@ -104,7 +113,8 @@ export class PersistenceTracker<T = string> implements vscode.Disposable {
     private measure(
         trackedInsertion: TrackedInsertion<T>,
         // The index in the MEASURE_TIMEOUTS array
-        measureTimeoutsIndex: number
+        measureTimeoutsIndex: number,
+        persistenceTimeoutList: number[]
     ): void {
         const isStillTracked = this.trackedInsertions
             .get(trackedInsertion.uri.toString())
@@ -127,20 +137,24 @@ export class PersistenceTracker<T = string> implements vscode.Disposable {
             const maxLength = Math.max(initialText.length, latestText.length)
             const editOperations = levenshtein(initialText, latestText)
             const difference = editOperations / maxLength
+            const diff = this.shouldComputeCodeDiff
+                ? createGitDiff(trackedInsertion.uri.toString(), initialText, latestText)
+                : undefined
 
             this.logger.onPresent({
                 id: trackedInsertion.id,
-                afterSec: MEASURE_TIMEOUTS[measureTimeoutsIndex] / 1000,
+                afterSec: persistenceTimeoutList[measureTimeoutsIndex] / 1000,
                 difference,
                 lineCount:
                     trackedInsertion.latestRange.end.line - trackedInsertion.latestRange.start.line + 1,
                 charCount: latestText.length,
                 metadata: trackedInsertion.metadata,
+                diff,
             })
 
             // If the text is not deleted yet and there are more timeouts, schedule a new run.
-            if (measureTimeoutsIndex < MEASURE_TIMEOUTS.length - 1) {
-                this.enqueueMeasure(trackedInsertion, measureTimeoutsIndex + 1)
+            if (measureTimeoutsIndex < persistenceTimeoutList.length - 1) {
+                this.enqueueMeasure(trackedInsertion, measureTimeoutsIndex + 1, persistenceTimeoutList)
                 return
             }
         }
