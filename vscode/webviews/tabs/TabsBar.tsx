@@ -6,10 +6,12 @@ import {
     BookTextIcon,
     CircleUserIcon,
     DownloadIcon,
+    ExternalLink,
     HistoryIcon,
     type LucideProps,
     MessageSquarePlusIcon,
     MessagesSquareIcon,
+    PlusCircle,
     SettingsIcon,
     Trash2Icon,
 } from 'lucide-react'
@@ -23,6 +25,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui
 import { useConfig } from '../utils/useConfig'
 
 import { Button } from '../components/shadcn/ui/button'
+
 import styles from './TabsBar.module.css'
 import { getCreateNewChatCommand } from './utils'
 
@@ -46,6 +49,7 @@ interface TabSubAction {
     command: string
     arg?: string | undefined | null
     callback?: () => void
+    uri?: string
     confirmation?: {
         title: string
         description: string
@@ -142,7 +146,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                 </div>
                 <div className={styles.subTabs}>
                     {currentViewSubActions.map(subAction => (
-                        <Fragment key={subAction.command}>
+                        <Fragment key={`${subAction.command}/${subAction.uri ?? ''}`}>
                             {subAction.confirmation ? (
                                 <ActionButtonWithConfirmation
                                     title={subAction.title}
@@ -159,6 +163,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                                 <TabButton
                                     Icon={subAction.Icon}
                                     title={subAction.title}
+                                    uri={subAction.uri}
                                     IDE={IDE}
                                     alwaysShowTitle={true}
                                     tooltipExtra={subAction.tooltipExtra}
@@ -253,6 +258,7 @@ interface TabButtonProps {
     title: string
     Icon: IconComponent
     IDE: CodyIDE
+    uri?: string
     view?: View
     isActive?: boolean
     onClick?: () => void
@@ -270,6 +276,7 @@ export const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, r
         Icon,
         isActive,
         onClick,
+        uri,
         title,
         alwaysShowTitle,
         tooltipExtra,
@@ -277,15 +284,20 @@ export const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, r
         'data-testid': dataTestId,
     } = props
 
+    const Component = uri ? 'a' : 'button'
+
     return (
         <Tooltip>
             <TooltipTrigger asChild>
-                <button
-                    type="button"
-                    onClick={onClick}
-                    ref={ref}
+                <Component
+                    type={uri ? undefined : 'button'}
+                    onClick={uri ? undefined : onClick}
+                    href={uri}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    ref={ref as any}
                     className={clsx(
-                        'tw-flex tw-gap-3 tw-items-center tw-leading-none tw-py-3 tw-px-2 tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
+                        'tw-flex tw-gap-3 tw-items-center tw-leading-none tw-py-3 tw-px-2 !tw-font-normal !tw-text-inherit tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
                         {
                             '!tw-opacity-100 !tw-border-[var(--vscode-tab-activeBorderTop)]': isActive,
                             '!tw-opacity-100': prominent,
@@ -295,7 +307,7 @@ export const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, r
                 >
                     <Icon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
                     <span className={alwaysShowTitle ? '' : styles.tabActionLabel}>{title}</span>
-                </button>
+                </Component>
             </TooltipTrigger>
             <TooltipContent portal={IDE === CodyIDE.Web}>
                 {title} {tooltipExtra}
@@ -313,7 +325,7 @@ TabButton.displayName = 'TabButton'
 function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabConfig[] {
     const { IDE, onDownloadChatClick } = input
     const {
-        config: { multipleWebviewsEnabled },
+        config: { multipleWebviewsEnabled, serverEndpoint },
     } = useConfig()
 
     return useMemo<TabConfig[]>(
@@ -368,6 +380,20 @@ function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabC
                         title: IDE === CodyIDE.Web ? 'Prompts' : 'Prompts & Commands',
                         Icon: BookTextIcon,
                         changesView: true,
+                        subActions: [
+                            {
+                                title: 'Create prompt',
+                                Icon: PlusCircle,
+                                command: '',
+                                uri: `${serverEndpoint}prompts/new`,
+                            },
+                            {
+                                title: 'Open prompts library',
+                                Icon: ExternalLink,
+                                command: '',
+                                uri: `${serverEndpoint}prompts`,
+                            },
+                        ],
                     },
                     multipleWebviewsEnabled
                         ? {
@@ -388,6 +414,6 @@ function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabC
                         : null,
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, onDownloadChatClick, multipleWebviewsEnabled]
+        [IDE, onDownloadChatClick, multipleWebviewsEnabled, serverEndpoint]
     )
 }

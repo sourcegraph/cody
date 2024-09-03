@@ -19,7 +19,7 @@ import { useClientActionDispatcher } from './client/clientState'
 import { ScrollDown } from './components/ScrollDown'
 import { PromptList } from './components/promptList/PromptList'
 import { onPromptSelectInPanel, onPromptSelectInPanelActionLabels } from './prompts/PromptsTab'
-import type { View } from './tabs'
+import { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
 
@@ -237,15 +237,16 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             />
             {transcript.length === 0 && (
                 <PromptList
-                    IDE={IDE}
-                    onSelect={item => onPromptSelectInPanel(item, setView, dispatchClientAction)}
-                    onSelectActionLabels={onPromptSelectInPanelActionLabels}
                     telemetryLocation="ChatTab"
                     showSearch={false}
+                    showSwitchToPromptAction={true}
                     showInitialSelectedItem={false}
                     showCommandOrigins={true}
                     showPromptLibraryUnsupportedMessage={false}
                     className="tw-rounded-none tw-px-4 tw-flex-shrink-0"
+                    onSelectActionLabels={onPromptSelectInPanelActionLabels}
+                    onSwitchToPromptsTab={() => setView(View.Prompts)}
+                    onSelect={item => onPromptSelectInPanel(item, setView, dispatchClientAction)}
                 />
             )}
             {transcript.length === 0 && showWelcomeMessage && (

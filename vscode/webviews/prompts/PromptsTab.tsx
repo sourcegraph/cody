@@ -8,17 +8,17 @@ import { getVSCodeAPI } from '../utils/VSCodeApi'
 export const PromptsTab: React.FC<{
     IDE: CodyIDE
     setView: (view: View) => void
-}> = ({ IDE, setView }) => {
+}> = ({ setView }) => {
     const dispatchClientAction = useClientActionDispatcher()
     return (
         <div className="tw-overflow-auto tw-p-8">
             <PromptList
-                IDE={IDE}
                 onSelect={item => onPromptSelectInPanel(item, setView, dispatchClientAction)}
                 onSelectActionLabels={onPromptSelectInPanelActionLabels}
                 showCommandOrigins={true}
                 showSearch={true}
                 showInitialSelectedItem={false}
+                showSwitchToPromptAction={false}
                 showPromptLibraryUnsupportedMessage={true}
                 telemetryLocation="PromptsTab"
             />

@@ -1,5 +1,4 @@
 import type { CodyCommand, Prompt } from '@sourcegraph/cody-shared'
-import { CodyIDE } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import {
     BookOpenIcon,
@@ -17,7 +16,6 @@ import { type FunctionComponent, useCallback, useState } from 'react'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { useConfig } from '../../utils/useConfig'
 import { useDebounce } from '../../utils/useDebounce'
-import { Kbd } from '../Kbd'
 import { UserAvatar } from '../UserAvatar'
 import { Badge } from '../shadcn/ui/badge'
 import { Button } from '../shadcn/ui/button'
@@ -44,19 +42,20 @@ type SelectActionLabel = 'insert' | 'run'
  * custom commands (which are both deprecated in favor of the Prompt Library).
  */
 export const PromptList: React.FunctionComponent<{
-    IDE: CodyIDE
-    onSelect: (item: PromptOrDeprecatedCommand) => void
-    onSelectActionLabels?: { prompt: SelectActionLabel; command: SelectActionLabel }
     showSearch?: boolean
     showInitialSelectedItem?: boolean
     showPromptLibraryUnsupportedMessage?: boolean
     showCommandOrigins?: boolean
     className?: string
     commandListClassName?: string
+    showSwitchToPromptAction?: boolean
     telemetryLocation: 'ChatTab' | 'PromptsTab'
+    onSelect: (item: PromptOrDeprecatedCommand) => void
+    onSwitchToPromptsTab?: () => void
+    onSelectActionLabels?: { prompt: SelectActionLabel; command: SelectActionLabel }
 }> = ({
-    IDE,
     onSelect: parentOnSelect,
+    onSwitchToPromptsTab,
     onSelectActionLabels,
     showSearch = true,
     showInitialSelectedItem = false,
@@ -64,6 +63,7 @@ export const PromptList: React.FunctionComponent<{
     showCommandOrigins = false,
     className,
     commandListClassName,
+    showSwitchToPromptAction = false,
     telemetryLocation,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
@@ -248,21 +248,20 @@ export const PromptList: React.FunctionComponent<{
                         Error: {error.message || 'unknown'}
                     </CommandLoading>
                 )}
-                <CommandRow className="tw-items-center tw-justify-center tw-py-2">
-                    <Button variant="ghost" size="sm" asChild>
-                        <a
-                            href={new URL('/prompts', endpointURL).toString()}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="!tw-text-muted-foreground"
-                        >
-                            Open Prompt Library
-                            {IDE === CodyIDE.VSCode && (
-                                <Kbd macOS="Opt+Q" linuxAndWindows="Alt+Q" className="tw-ml-2" />
-                            )}
-                        </a>
-                    </Button>
-                </CommandRow>
+
+                {showSwitchToPromptAction && (
+                    <CommandRow className="tw-items-center tw-justify-center tw-py-4">
+                        <Button variant="ghost" size="sm" asChild>
+                            <button
+                                type="button"
+                                className="!tw-text-muted-foreground !hover:tw-text-button-foreground"
+                                onClick={onSwitchToPromptsTab}
+                            >
+                                Switch to Prompt Library
+                            </button>
+                        </Button>
+                    </CommandRow>
+                )}
             </CommandList>
         </Command>
     )
