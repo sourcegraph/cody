@@ -153,7 +153,7 @@ export const PromptList: React.FunctionComponent<{
             loop={true}
             tabIndex={0}
             className={clsx(
-                'focus:tw-outline-none tw-border-0 !tw-max-w-[unset] tw-w-full !tw-h-[unset] !tw-bg-[unset]',
+                '!tw-overflow-visible focus:tw-outline-none tw-border-0 !tw-max-w-[unset] tw-w-full !tw-h-[unset] !tw-bg-[unset]',
                 className
             )}
             shouldFilter={false}
@@ -164,7 +164,7 @@ export const PromptList: React.FunctionComponent<{
         >
             <CommandList
                 className={clsx(
-                    '!tw-max-h-[unset] [&_[cmdk-group]]:tw-pt-0 [&_[cmdk-group-heading]]:tw-flex [&_[cmdk-group-heading]]:tw-gap-2 [&_[cmdk-group-heading]]:tw-items-center [&_[cmdk-group-heading]]:!tw-min-h-[30px] [&_[cmdk-group-heading]]:tw--mx-2 [&_[cmdk-group-heading]]:tw-px-4 [&_[cmdk-group-heading]]:tw-mb-2 [&_[cmdk-group-heading]]:tw-bg-muted [&_[cmdk-group]]:!tw-border-0',
+                    '!tw-max-h-[unset] !tw-overflow-visible [&_[cmdk-group]]:tw-pt-0 [&_[cmdk-group-heading]]:tw-flex [&_[cmdk-group-heading]]:tw-gap-2 [&_[cmdk-group-heading]]:tw-items-center [&_[cmdk-group-heading]]:!tw-min-h-[30px] [&_[cmdk-group-heading]]:tw--mx-2 [&_[cmdk-group-heading]]:tw-px-4 [&_[cmdk-group-heading]]:tw-mb-2 [&_[cmdk-group-heading]]:tw-bg-muted [&_[cmdk-group]]:!tw-border-0',
                     commandListClassName
                 )}
             >
