@@ -994,6 +994,18 @@ export interface TestingTelemetryEvent {
         client: string
         clientVersion: string
     }
+    parameters: {
+        metadata: {
+            [key: string]: number
+        }
+        billingMetadata: {
+            product: string
+            category: string
+        }
+        privateMetadata: {
+            [key: string]: string
+        }
+    }
     timestamp: string
     testOnlyAnonymousUserID: string
 }
