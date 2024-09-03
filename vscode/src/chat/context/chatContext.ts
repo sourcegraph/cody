@@ -114,8 +114,6 @@ interface GetContextItemsOptions {
     // character is typed). Don't log otherwise because we would be logging prefixes of the same
     // query repeatedly, which is not needed.
     telemetryRecorder?: GetContextItemsTelemetry
-
-    remoteRepositoriesNames?: string[]
     rangeFilter?: boolean
 }
 
@@ -124,7 +122,7 @@ export async function getChatContextItemsForMention(
     _?: AbortSignal
 ): Promise<ContextItem[]> {
     const MAX_RESULTS = 20
-    const { mentionQuery, telemetryRecorder, remoteRepositoriesNames, rangeFilter = true } = options
+    const { mentionQuery, telemetryRecorder, rangeFilter = true } = options
 
     switch (mentionQuery.provider) {
         case null:
@@ -133,7 +131,11 @@ export async function getChatContextItemsForMention(
         case SYMBOL_CONTEXT_MENTION_PROVIDER.id:
             telemetryRecorder?.withProvider(mentionQuery.provider)
             // It would be nice if the VS Code symbols API supports cancellation, but it doesn't
-            return getSymbolContextFiles(mentionQuery.text, MAX_RESULTS, remoteRepositoriesNames)
+            return getSymbolContextFiles(
+                mentionQuery.text,
+                MAX_RESULTS,
+                mentionQuery.contextRemoteRepositoriesNames
+            )
         case FILE_CONTEXT_MENTION_PROVIDER.id: {
             telemetryRecorder?.withProvider(mentionQuery.provider)
             const files = mentionQuery.text
@@ -141,7 +143,7 @@ export async function getChatContextItemsForMention(
                       query: mentionQuery.text,
                       range: mentionQuery.range,
                       maxResults: MAX_RESULTS,
-                      repositoriesNames: remoteRepositoriesNames,
+                      repositoriesNames: mentionQuery.contextRemoteRepositoriesNames,
                   })
                 : await getOpenTabsContextFile()
 

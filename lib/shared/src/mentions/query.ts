@@ -33,11 +33,11 @@ export interface MentionQuery {
     maybeHasRangeSuffix?: boolean
 
     /**
-     * To control source of mention suggestions, if it's set to true
-     * search logic will try to find suggestions across remote repositories
+     * To control source of standard mention suggestions (files and symbols),
+     * search API will try to find suggestions across remote repositories
      * user has on their instance. (Cody Web use case)
      */
-    includeRemoteRepositories?: boolean
+    contextRemoteRepositoriesNames?: string[]
 }
 
 /**
