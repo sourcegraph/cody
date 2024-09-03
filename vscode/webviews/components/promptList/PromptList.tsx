@@ -135,10 +135,14 @@ export const PromptList: React.FunctionComponent<{
 
     const endpointURL = new URL(useConfig().authStatus.endpoint)
 
+<<<<<<< Updated upstream
     // Don't show builtin commands to insert in the prompt editor.
     const filteredCommands = showOnlyPromptInsertableCommands
         ? result?.commands.filter(c => c.type !== 'default')
         : result?.commands
+=======
+    const itemClassName = 'tw-border tw-border-button-border !tw-rounded-lg !tw-p-4'
+>>>>>>> Stashed changes
 
     return (
         <Command
@@ -283,6 +287,24 @@ export const PromptList: React.FunctionComponent<{
                         Error: {error.message || 'unknown'}
                     </CommandLoading>
                 )}
+<<<<<<< Updated upstream
+=======
+                <CommandRow className="tw-items-center tw-justify-center tw-py-4">
+                    <Button variant="ghost" size="sm" asChild>
+                        <a
+                            href={new URL('/prompts', endpointURL).toString()}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="!tw-text-muted-foreground !hover:tw-text-button-foreground"
+                        >
+                            Switch to Prompt Library
+                            {IDE === CodyIDE.VSCode && (
+                                <Kbd macOS="Opt+Q" linuxAndWindows="Alt+Q" className="tw-ml-2" />
+                            )}
+                        </a>
+                    </Button>
+                </CommandRow>
+>>>>>>> Stashed changes
             </CommandList>
         </Command>
     )

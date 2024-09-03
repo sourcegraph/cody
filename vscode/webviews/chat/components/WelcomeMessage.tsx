@@ -3,7 +3,7 @@ import {
     AtSignIcon,
     type LucideProps,
     MessageSquarePlusIcon,
-    SettingsIcon,
+    BookOpenTextIcon,
     TextIcon,
 } from 'lucide-react'
 import type { FunctionComponent } from 'react'
@@ -16,7 +16,7 @@ import { onPromptSelectInPanel, onPromptSelectInPanelActionLabels } from '../../
 import type { View } from '../../tabs'
 
 const MenuExample: FunctionComponent<{ children: React.ReactNode }> = ({ children }) => (
-    <span className="tw-p-1 tw-rounded tw-text-keybinding-foreground tw-border tw-border-keybinding-border tw-bg-keybinding-background tw-whitespace-nowrap">
+    <span className="tw-p-1 tw-rounded tw-border tw-border-keybinding-border tw-bg-keybinding-background tw-whitespace-nowrap">
         {children}
     </span>
 )
@@ -74,9 +74,16 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE; setView: (view: V
             <CollapsiblePanel
                 storageKey="chat-help"
                 title="Chat Help"
-                className="tw-mb-6 tw-mt-2"
+                className="tw-mb-12 tw-mt-8"
                 initialOpen={true}
             >
+                {IDE === CodyIDE.VSCode && (
+                    <>
+                        <FeatureRow icon={MessageSquarePlusIcon}>
+                            Start a new chat using <Kbd macOS="opt+L" linuxAndWindows="alt+L" /> or the command <MenuExample>Cody: New Chat</MenuExample>
+                        </FeatureRow>
+                    </>
+                )}
                 <FeatureRow icon={AtSignIcon}>
                     Type <Kbd macOS="@" linuxAndWindows="@" /> to add context to your chat
                 </FeatureRow>
@@ -86,16 +93,26 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE; setView: (view: V
                             To add code context from an editor, right click and use{' '}
                             <MenuExample>Cody &gt; Add File/Selection to Cody Chat</MenuExample>
                         </FeatureRow>
-                        <FeatureRow icon={MessageSquarePlusIcon}>
-                            Start a new chat using <Kbd macOS="opt+L" linuxAndWindows="alt+L" />
-                        </FeatureRow>
-                        <FeatureRow icon={SettingsIcon}>
-                            Customize chat settings with the <FeatureRowInlineIcon Icon={SettingsIcon} />{' '}
-                            button, or see the{' '}
-                            <a href="https://sourcegraph.com/docs/cody">documentation</a>
-                        </FeatureRow>
                     </>
                 )}
+                <div className="tw-flex tw-justify-center tw-items-center tw-w-full tw-gap-10 tw-px-4 tw-pt-4 tw-pb-3 tw-mt-6 tw-border-t tw-border-button-border tw-transition-all">
+                    <a
+                        href="https://docs.sourcegraph.com/cody"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="tw-text-muted-foreground hover:tw-text-button-foreground"
+                    >
+                        Documentation
+                    </a>
+                    <a
+                        href="https://help.sourcegraph.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="tw-text-muted-foreground hover:tw-text-button-foreground"
+                    >
+                        Help & Support
+                    </a>
+                </div>
             </CollapsiblePanel>
         </div>
     )
