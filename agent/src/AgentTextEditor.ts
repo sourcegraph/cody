@@ -10,6 +10,13 @@ export class AgentTextEditor implements vscode.TextEditor {
         private readonly params?: { edit?: EditFunction }
     ) {
         this._selection = new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(0, 0))
+        const protocolSelection = this.agentDocument.protocolDocument.selection
+        if (protocolSelection) {
+            this._selection = new vscode.Selection(
+                new vscode.Position(protocolSelection.start.line, protocolSelection.start.character),
+                new vscode.Position(protocolSelection.end.line, protocolSelection.end.character)
+            )
+        }
     }
     get document(): AgentTextDocument {
         return this.agentDocument
