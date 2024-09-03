@@ -134,7 +134,10 @@ async function searchRemote(
         if (!remoteSearch) {
             return []
         }
-        return (await remoteSearch.query(input, repoIDs, signal)).map(result => {
+        return (await remoteSearch.query(input, repoIDs, signal)).flatMap(result => {
+            if (result.startLine < 0 || result.endLine < 0) {
+                return []
+            }
             return {
                 type: 'file',
                 content: result.content,
@@ -417,7 +420,7 @@ export async function retrieveContextGracefully<T>(
             logError('ChatController', `resolveContext > ${strategy}' (aborted)`)
             throw error
         }
-        logError('ChatController', `resolveContext > ${strategy}' (error)`, error)
+        logError('ChatController', `resolveContext > ${strategy} (error)`, error)
         return []
     } finally {
         logDebug('ChatController', `resolveContext > ${strategy} (end)`)
