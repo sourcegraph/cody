@@ -41,6 +41,11 @@ export interface ExtensionClient {
     get clientName(): string
     get clientVersion(): string
     get capabilities(): ClientCapabilities | undefined
+
+    // Override this to customize the "client-name" that is sent in HTTP requests to /.api/completions/stream
+    // For historical reasons, older SG instances reject requests from unknown client names.
+    // See https://github.com/sourcegraph/sourcegraph-public-snapshot/pull/63855 for more details.
+    httpClientNameForLegacyReasons?: string
 }
 
 /**
