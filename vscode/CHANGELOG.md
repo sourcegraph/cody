@@ -11,6 +11,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 Command: Fixed an issue where the experimental `Generate Commit Message` command would fail on Windows due to incorrect parsing of the git diff output. [pull/5449](https://github.com/sourcegraph/cody/pull/5449)
 
 ### Changed
+- Changelog: Implemented cursor feedback for Generate Tests and Document Code commands to improve user experience by indicating command execution. [pull/5341](https://github.com/sourcegraph/cody/pull/5341)
 
 ## 1.32.5
 
