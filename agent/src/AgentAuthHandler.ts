@@ -1,24 +1,33 @@
 import type { IncomingMessage, Server, ServerResponse } from 'node:http'
 import http from 'node:http'
-import { type CodyIDE, getCodyAuthReferralCode, logDebug } from '@sourcegraph/cody-shared'
+import type { AddressInfo } from 'node:net'
+import { logDebug } from '@sourcegraph/cody-shared'
 import open from 'open'
 import { URI } from 'vscode-uri'
 
 type CallbackHandler = (url: URI, token?: string) => void
 
+const SIX_MINUTES = 6 * 60 * 1000
+
 export class AgentAuthHandler {
-    private readonly port = 43452
-    private readonly IDE: CodyIDE
-    private endpointUri: URI | null = null
+    private port = 0
     private tokenCallbackHandlers: CallbackHandler[] = []
     private server: Server | null = null
 
-    constructor(agentClientName: string) {
-        this.IDE = agentClientName as CodyIDE
-    }
-
     public setTokenCallbackHandler(handler: CallbackHandler): void {
         this.tokenCallbackHandlers.push(handler)
+    }
+
+    public handleCallback(url: URI): void {
+        try {
+            const formattedUri = isValidCallbackURI(url.toString())
+            if (!formattedUri) {
+                throw new Error(url.toString() + ' is not a valid URL')
+            }
+            this.startServer(formattedUri.toString())
+        } catch (error) {
+            logDebug('AgentAuthHandler', `Invalid callback URL: ${error}`)
+        }
     }
 
     private startServer(callbackUri: string): void {
@@ -27,9 +36,15 @@ export class AgentAuthHandler {
             return
         }
 
-        this.server = http.createServer((req: IncomingMessage, res: ServerResponse) => {
+        if (this.server) {
+            logDebug('AgentAuthHandler', 'Server already running')
+            this.redirectToEndpointLoginPage(callbackUri)
+            return
+        }
+
+        const server = http.createServer((req: IncomingMessage, res: ServerResponse) => {
             if (req.url?.startsWith('/api/sourcegraph/token')) {
-                const url = new URL(req.url, `http://localhost:${this.port}`)
+                const url = new URL(req.url)
                 const token = url.searchParams.get('token')
 
                 if (token) {
@@ -49,41 +64,50 @@ export class AgentAuthHandler {
             }
         })
 
-        open(callbackUri)
-
-        this.server.listen(this.port, () => {
+        server.listen(0, '127.0.0.1', () => {
+            this.port = (server.address() as AddressInfo).port
             logDebug('AgentAuthHandler', `Server listening on port ${this.port}`)
-            setTimeout(() => this.closeServer(), 3 * 60 * 1000)
+            this.server = server
+            // Automatically close the server after 6 minutes,
+            // as the startTokenReceiver in token-receiver.ts only listens for 5 minutes.
+            setTimeout(() => this.closeServer(), SIX_MINUTES)
         })
 
-        this.server.on('error', error => {
+        server.on('error', error => {
             logDebug('AgentAuthHandler', `Server error: ${error}`)
             this.closeServer()
         })
+
+        this.redirectToEndpointLoginPage(callbackUri)
     }
 
     private closeServer(): void {
         if (this.server) {
             logDebug('AgentAuthHandler', 'Auth server closed')
             this.server.close()
+            this.server = null
         }
-        this.endpointUri = null
     }
 
-    public handleCallback(url: URI): void {
-        this.startServer(url.toString())
-    }
+    private redirectToEndpointLoginPage(callbackUri: string): void {
+        const updatedCallbackUri = new URL(callbackUri)
+        const searchParams = updatedCallbackUri.searchParams
 
-    public redirectToEndpointLoginPage(endpoint: string): void {
-        const endpointUri = formatURL(endpoint)
-        const referralCode = getCodyAuthReferralCode(this.IDE)
-        if (!endpointUri || !referralCode) {
-            throw new Error('Failed to construct callback URL')
+        // Find the key that starts with 'requestFrom'
+        const requestFromKey = Array.from(searchParams.keys()).find(key => key.startsWith('requestFrom'))
+
+        if (requestFromKey) {
+            const [, currentRequestFrom] = requestFromKey.split('=')
+            if (currentRequestFrom) {
+                // Remove the old parameter.
+                searchParams.delete(requestFromKey)
+                // Add the new parameter with the correct port number appended.
+                searchParams.set('requestFrom', `${currentRequestFrom}-${this.port}`)
+                updatedCallbackUri.search = searchParams.toString()
+            }
         }
-        this.endpointUri = endpointUri
-        const callbackUri = new URL('/user/settings/tokens/new/callback', this.endpointUri.toString())
-        callbackUri.searchParams.append('requestFrom', `${referralCode}-${this.port}`)
-        this.startServer(callbackUri.toString())
+
+        open(updatedCallbackUri.toString())
     }
 
     public dispose(): void {
@@ -91,12 +115,15 @@ export class AgentAuthHandler {
     }
 }
 
-export function formatURL(uri: string): URI | null {
-    if (!uri.length) {
-        return null
+function isValidCallbackURI(uri: string): URI | null {
+    if (!uri || uri.startsWith('file:')) {
+        throw new Error('Empty URL')
     }
     try {
-        const endpointUri = new URL(uri.startsWith('http') ? uri : `https://${uri}`)
+        const endpointUri = new URL(uri)
+        if (!endpointUri.protocol.startsWith('http')) {
+            endpointUri.protocol = 'https:'
+        }
         return URI.parse(endpointUri.href)
     } catch (error) {
         logDebug('Invalid URL: ', `${error}`)

@@ -413,7 +413,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 })
             }
             if (clientInfo.capabilities?.authentication === 'enabled') {
-                this.authenticationHandler = new AgentAuthHandler(clientInfo.name)
+                this.authenticationHandler = new AgentAuthHandler()
             }
             if (process.env.CODY_DEBUG === 'true') {
                 console.error(

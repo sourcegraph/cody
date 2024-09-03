@@ -1,57 +1,58 @@
 import http from 'node:http'
 import open from 'open'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { URI } from 'vscode-uri'
 import { AgentAuthHandler } from './AgentAuthHandler'
 
 vi.mock('open')
 vi.mock('node:http', () => ({
     default: {
         createServer: vi.fn().mockReturnValue({
-            listen: vi.fn().mockImplementation((port, callback) => {
+            listen: vi.fn().mockImplementation((port, uri, callback) => {
                 callback()
             }),
             on: vi.fn(),
+            address: vi.fn().mockReturnValue({ port: 123 }),
         }),
     },
 }))
 
 describe('AgentAuthHandler', () => {
-    describe('redirectToEndpointLoginPage', () => {
-        /**
-         * Tests the redirectToEndpointLoginPage function of the AgentAuthHandler class.
-         * This function constructs a callback URI with a Cody auth referral code and server port,
-         * then opens the URI in the user's default web browser.
-         *
-         * The test cases cover:
-         * - When a valid endpointUri is set, the correct callback URI is constructed and opened.
-         * - When endpointUri is null, nothing happens (open is not called).
-         */
+    let agentAuthHandler: AgentAuthHandler
+
+    beforeEach(() => {
+        agentAuthHandler = new AgentAuthHandler()
+        agentAuthHandler.setTokenCallbackHandler(uri => console.log(`Token received: ${uri}`))
+    })
+
+    afterEach(() => {
+        vi.clearAllMocks()
+    })
+
+    describe('handleCallback', () => {
         it.each([
             [
                 'valid endpointUri for JetBrains',
-                'JetBrains',
-                'https://sourcegraph.test',
-                'https://sourcegraph.test/user/settings/tokens/new/callback?requestFrom=CODY_JETBRAINS-43452',
+                'https://sourcegraph.test/user/settings/tokens/new/callback?requestFrom=CODY_JETBRAINS',
+                'https://sourcegraph.test/user/settings/tokens/new/callback?requestFrom=CODY_JETBRAINS-123',
             ],
             [
                 'valid endpointUri for VisualStudio',
-                'VisualStudio',
-                'https://sourcegraph.com',
-                'https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=VISUAL_STUDIO-43452',
+                'https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=VISUAL_STUDIO',
+                'https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=VISUAL_STUDIO-123',
             ],
-            ['invalid IDE', 'Sublime', 'https://sourcegraph.com', undefined],
-            ['invalid endpointUri', 'Web', '', undefined],
-        ])('%s', (_: string, IDE: string, endpointUri: string, expectedUrl?: string) => {
-            const agentAuthHandler = new AgentAuthHandler(IDE)
-            agentAuthHandler.setTokenCallbackHandler(() => {})
+            ['invalid IDE', 'https://sourcegraph.com', 'https://sourcegraph.com/'],
+            ['invalid endpointUri', 'invalid-url', undefined],
+        ])('%s', (_, endpointUri: string, expectedUrl?: string) => {
+            const uri = URI.parse(endpointUri)
+
+            agentAuthHandler.handleCallback(uri)
+
             if (!expectedUrl) {
-                expect(() => agentAuthHandler.redirectToEndpointLoginPage(endpointUri)).toThrow(
-                    'Failed to construct callback URL'
-                )
+                expect(http.createServer).not.toHaveBeenCalled()
             } else {
-                agentAuthHandler.redirectToEndpointLoginPage(endpointUri)
                 expect(http.createServer).toHaveBeenCalled()
-                expect(open).toHaveBeenCalledWith(expectedUrl)
+                expect(open).toHaveBeenCalledWith(expect.stringContaining(expectedUrl))
             }
         })
     })
