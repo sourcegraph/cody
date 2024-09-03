@@ -2,8 +2,8 @@ import { contextFiltersProvider, testFileUri } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
-import { document } from '../../completions/test-helpers'
-import { range } from '../../testutils/textDocument'
+import { range } from '../../../../testutils/textDocument'
+import { document } from '../../../test-helpers'
 import { RecentEditsRetriever } from './recent-edits-retriever'
 
 const FIVE_MINUTES = 5 * 60 * 1000

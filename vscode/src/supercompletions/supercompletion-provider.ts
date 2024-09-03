@@ -1,8 +1,8 @@
 import type { ChatClient } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { RecentEditsRetriever } from '../completions/context/retrievers/recent-edits/recent-edits-retriever'
 import type { CodyStatusBar } from '../services/StatusBar'
 import { type Supercompletion, getSupercompletions } from './get-supercompletion'
-import { RecentEditsRetriever } from './recent-edits/recent-edits-retriever'
 import { SupercompletionRenderer } from './renderer'
 
 const EDIT_HISTORY = 5 * 60 * 1000

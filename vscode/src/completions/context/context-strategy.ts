@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 import type { ContextRetriever } from '../types'
 import type { BfgRetriever } from './retrievers/bfg/bfg-retriever'
-import { EditsRetriever } from './retrievers/edits/edits-retriever'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
 import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
+import { RecentEditsRetriever } from './retrievers/recent-edits/recent-edits-retriever'
 import { loadTscRetriever } from './retrievers/tsc/load-tsc-retriever'
 
 export type ContextStrategy =
@@ -35,7 +35,7 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
             case 'none':
                 break
             case 'recent-edits':
-                this.localRetriever = new EditsRetriever()
+                this.localRetriever = new RecentEditsRetriever(60 * 1000)
                 this.disposables.push(this.localRetriever)
                 break
             case 'tsc-mixed':
