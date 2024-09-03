@@ -503,6 +503,8 @@ export type ServerNotifications = {
     // When the when-claude context has changed.
     // For example, 'cody.activated' is set based on user's latest authentication status.
     'window/didChangeContext': [{ key: string; value?: string | undefined | null }]
+    // Client should move the focus to the sidebar.
+    'window/focusSidebar': [null]
 }
 
 export interface WebviewCreateWebviewPanelOptions {

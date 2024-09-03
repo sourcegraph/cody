@@ -9,10 +9,15 @@ type CallbackHandler = (url: URI, token?: string) => void
 
 const SIX_MINUTES = 6 * 60 * 1000
 
+/**
+ * Handles the authentication flow for Agent clients.
+ * Manages the creation and lifecycle of an HTTP server to handle the token callback from the Sourcegraph login flow.
+ * Redirects the user to the Sourcegraph instance login page and handles the token callback.
+ */
 export class AgentAuthHandler {
     private port = 0
-    private tokenCallbackHandlers: CallbackHandler[] = []
     private server: Server | null = null
+    private tokenCallbackHandlers: CallbackHandler[] = []
 
     public setTokenCallbackHandler(handler: CallbackHandler): void {
         this.tokenCallbackHandlers.push(handler)
@@ -20,11 +25,13 @@ export class AgentAuthHandler {
 
     public handleCallback(url: URI): void {
         try {
-            const formattedUri = isValidCallbackURI(url.toString())
-            if (!formattedUri) {
+            const callbackUri = getValidCallbackUri(url.toString())
+            if (!callbackUri) {
                 throw new Error(url.toString() + ' is not a valid URL')
             }
-            this.startServer(formattedUri.toString())
+            this.startServer(callbackUri.toString())
+            // Redirect the user to the login page
+            this.redirectToEndpointLoginPage(callbackUri.toString())
         } catch (error) {
             logDebug('AgentAuthHandler', `Invalid callback URL: ${error}`)
         }
@@ -42,6 +49,7 @@ export class AgentAuthHandler {
             return
         }
 
+        // Create an HTTP server to handle the token callback
         const server = http.createServer((req: IncomingMessage, res: ServerResponse) => {
             if (req.url?.startsWith('/api/sourcegraph/token')) {
                 const url = new URL(req.url)
@@ -64,21 +72,23 @@ export class AgentAuthHandler {
             }
         })
 
+        // Bind the server to the loopback interface
         server.listen(0, '127.0.0.1', () => {
+            // The server is now bound to the loopback interface (127.0.0.1)
+            // This ensures that only local processes can connect to it
             this.port = (server.address() as AddressInfo).port
-            logDebug('AgentAuthHandler', `Server listening on port ${this.port}`)
             this.server = server
+            logDebug('AgentAuthHandler', `Server listening on port ${this.port}`)
             // Automatically close the server after 6 minutes,
             // as the startTokenReceiver in token-receiver.ts only listens for 5 minutes.
             setTimeout(() => this.closeServer(), SIX_MINUTES)
         })
 
+        // Handle server errors
         server.on('error', error => {
             logDebug('AgentAuthHandler', `Server error: ${error}`)
             this.closeServer()
         })
-
-        this.redirectToEndpointLoginPage(callbackUri)
     }
 
     private closeServer(): void {
@@ -89,6 +99,14 @@ export class AgentAuthHandler {
         }
     }
 
+    /**
+     * Redirects the user to the endpoint login page with the updated callback URI.
+     *
+     * The callback URI is updated by finding the 'requestFrom' parameter in the query string,
+     * removing the old parameter, and adding a new parameter with the correct port number appended.
+     *
+     * @param callbackUri - The original callback URI to be updated.
+     */
     private redirectToEndpointLoginPage(callbackUri: string): void {
         const updatedCallbackUri = new URL(callbackUri)
         const searchParams = updatedCallbackUri.searchParams
@@ -115,7 +133,14 @@ export class AgentAuthHandler {
     }
 }
 
-function isValidCallbackURI(uri: string): URI | null {
+/**
+ * Validates and normalizes a given callback URI.
+ *
+ * @param uri - The callback URI to validate and normalize.
+ * @returns The validated and normalized URI, or `null` if the input URI is invalid.
+ * @throws {Error} If the input URI is empty or starts with `file:`.
+ */
+function getValidCallbackUri(uri: string): URI | null {
     if (!uri || uri.startsWith('file:')) {
         throw new Error('Empty URL')
     }

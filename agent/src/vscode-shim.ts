@@ -623,10 +623,14 @@ const _window: typeof vscode.window = {
     onDidCloseTerminal: emptyEvent(),
     onDidOpenTerminal: emptyEvent(),
     registerUriHandler: (vsceHandler: vscode.UriHandler) => {
-        if (agent?.authenticationHandler) {
-            const handler = agent?.authenticationHandler
+        if (agent?.authenticationHandler && vsceHandler.handleUri) {
+            // Add the token callback handler implemented for VS Code to the agent authentication handler.
+            const handler = agent.authenticationHandler
             handler.setTokenCallbackHandler(vsceHandler.handleUri)
-            return new Disposable(() => handler?.dispose())
+            // A callback to notify the client to focus the sidebar when the token callback is handled.
+            const callbackFocusNotifier = () => agent?.notify('window/focusSidebar', null)
+            handler.setTokenCallbackHandler(callbackFocusNotifier)
+            return new Disposable(() => handler.dispose())
         }
         return emptyDisposable
     },
