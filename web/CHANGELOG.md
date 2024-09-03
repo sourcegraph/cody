@@ -1,5 +1,5 @@
 # 0.7.6
-- Simplify prompt list UI (no prompt toolbar anymore)
+- The "Prompts" toolbar item in chat is no longer displayed. To use a prompt from the prompt library, select it from the list shown on the chat tab or prompts tab.
 - Fix setting prompt from prompts tab
 
 ## 0.7.5 
