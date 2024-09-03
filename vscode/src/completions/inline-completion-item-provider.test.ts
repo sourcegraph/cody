@@ -3,7 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import * as vscode from 'vscode'
 
 import {
-    type AuthStatus,
+    type AuthenticatedAuthStatus,
     DOTCOM_URL,
     type GraphQLAPIClientConfig,
     RateLimitError,
@@ -34,10 +34,9 @@ const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
 }
 
-const DUMMY_AUTH_STATUS: AuthStatus = {
+const DUMMY_AUTH_STATUS: AuthenticatedAuthStatus = {
     endpoint: DOTCOM_URL.toString(),
     isFireworksTracingEnabled: false,
-    showInvalidAccessTokenError: false,
     authenticated: true,
     hasVerifiedEmail: true,
     requiresVerifiedEmail: true,

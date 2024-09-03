@@ -124,7 +124,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
             config: newConfig,
         })
         if (providerConfig) {
-            const authStatus = authProvider.instance!.status
+            const authStatus = authProvider.instance!.statusAuthed
             const completionsProvider = new InlineCompletionItemProvider({
                 authStatus,
                 providerConfig,

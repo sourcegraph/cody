@@ -71,7 +71,7 @@ export async function createInlineCompletionItemProvider({
     ])
 
     if (providerConfig) {
-        const authStatus = authProvider.instance!.status
+        const authStatus = authProvider.instance!.statusAuthed
         const completionsProvider = new InlineCompletionItemProvider({
             authStatus,
             providerConfig,

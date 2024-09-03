@@ -2,7 +2,7 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import type {
-    AuthStatus,
+    AuthenticatedAuthStatus,
     ChatMessage,
     CodyIDE,
     Guardrails,
@@ -230,7 +230,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 export interface UserAccountInfo {
     isDotComUser: boolean
     isCodyProUser: boolean
-    user: Pick<AuthStatus, 'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail'>
+    user: Pick<
+        AuthenticatedAuthStatus,
+        'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail'
+    >
     ide: CodyIDE
 }
 

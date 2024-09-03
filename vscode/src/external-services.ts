@@ -81,7 +81,7 @@ export async function configureExternalServices(
             ? await platform.createLocalEmbeddingsController?.(initialConfig)
             : undefined
 
-    const chatClient = new ChatClient(completionsClient, () => authProvider.instance!.status)
+    const chatClient = new ChatClient(completionsClient, () => authProvider.instance!.statusAuthed)
 
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient, initialConfig)
 

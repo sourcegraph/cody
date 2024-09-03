@@ -182,13 +182,13 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 
     // Wait for all the data to be loaded before rendering Chat View
-    if (!view || !config || !userHistory) {
+    if (!view || !config) {
         return <LoadingPage />
     }
 
     return (
         <ComposedWrappers wrappers={wrappers}>
-            {config.authStatus.showNetworkError ? (
+            {!config.authStatus.authenticated && config.authStatus.showNetworkError ? (
                 <div className={styles.outerContainer}>
                     <ConnectionIssuesPage
                         configuredEndpoint={config.authStatus.endpoint}
@@ -218,7 +218,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     vscodeAPI={vscodeAPI}
                     isTranscriptError={isTranscriptError}
                     guardrails={guardrails}
-                    userHistory={userHistory}
+                    userHistory={userHistory ?? []}
                     smartApplyEnabled={config.config.smartApply}
                 />
             )}

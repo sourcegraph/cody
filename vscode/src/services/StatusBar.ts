@@ -313,13 +313,13 @@ export function createStatusBar(): CodyStatusBar {
         // yellow status bar icon when extension first loads but login hasn't
         // initialized yet
         if (authStatus) {
-            if (authStatus.isOfflineMode) {
+            if (authStatus.authenticated && authStatus.isOfflineMode) {
                 statusBarItem.text = '$(cody-logo-heavy) Offline'
                 statusBarItem.tooltip = 'Cody is in offline mode'
                 statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
                 return
             }
-            if (authStatus.showNetworkError) {
+            if (!authStatus.authenticated && authStatus.showNetworkError) {
                 statusBarItem.text = '$(cody-logo-heavy) Connection Issues'
                 statusBarItem.tooltip = 'Resolve network issues for Cody to work again'
                 statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground')

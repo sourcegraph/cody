@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
-import { defaultAuthStatus } from '@sourcegraph/cody-shared'
+import { AUTH_STATUS_FIXTURE_AUTHED } from '@sourcegraph/cody-shared'
 import { App } from './App'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
@@ -29,7 +29,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 smartApply: false,
             },
             authStatus: {
-                ...defaultAuthStatus,
+                ...AUTH_STATUS_FIXTURE_AUTHED,
                 displayName: 'Tim Lucas',
                 avatarURL: 'https://avatars.githubusercontent.com/u/153?v=4',
                 authenticated: true,

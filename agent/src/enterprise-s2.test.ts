@@ -35,6 +35,9 @@ describe('Enterprise - S2 (close main branch)', () => {
         })
 
         expect(serverInfo.authStatus?.authenticated).toBeTruthy()
+        if (!serverInfo.authStatus?.authenticated) {
+            throw new Error('unreachable')
+        }
         expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
     }, 10_000)
 

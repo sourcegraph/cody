@@ -34,7 +34,7 @@ export async function showSignInMenu(
             if (!instanceUrl) {
                 return
             }
-            authStatus.endpoint = instanceUrl
+            authProvider.instance!.setAuthPendingToEndpoint(instanceUrl)
             redirectToEndpointLogin(instanceUrl)
             break
         }
@@ -238,7 +238,7 @@ export function redirectToEndpointLogin(uri: string): void {
 
     const newTokenCallbackUrl = new URL('/user/settings/tokens/new/callback', endpoint)
     newTokenCallbackUrl.searchParams.append('requestFrom', getAuthReferralCode())
-    authProvider.instance!.status.endpoint = endpoint
+    authProvider.instance!.setAuthPendingToEndpoint(endpoint)
     void vscode.env.openExternal(vscode.Uri.parse(newTokenCallbackUrl.href))
 }
 
@@ -331,6 +331,6 @@ export async function showSignOutMenu(): Promise<void> {
 async function signOut(endpoint: string): Promise<void> {
     await secretStorage.deleteToken(endpoint)
     await localStorage.deleteEndpoint()
-    await authProvider.instance!.auth({ endpoint: '', token: null })
+    await authProvider.instance!.auth({ endpoint, token: null })
     await vscode.commands.executeCommand('setContext', 'cody.activated', false)
 }

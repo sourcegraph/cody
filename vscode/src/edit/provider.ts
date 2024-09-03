@@ -54,6 +54,7 @@ export class EditProvider {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
             const contextWindow = modelsService.instance!.getContextWindowByID(model)
+            const authStatus = authProvider.instance!.statusAuthed
             const {
                 messages,
                 stopSequences,
@@ -61,7 +62,7 @@ export class EditProvider {
                 responsePrefix = '',
             } = await buildInteraction({
                 model,
-                codyApiVersion: authProvider.instance!.status.codyApiVersion,
+                codyApiVersion: authStatus.codyApiVersion,
                 contextWindow: contextWindow.input,
                 task: this.config.task,
                 editor: this.config.editor,

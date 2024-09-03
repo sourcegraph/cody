@@ -179,6 +179,9 @@ describe('Agent', () => {
             customHeaders: {},
         })
         expect(valid?.authenticated).toBeTruthy()
+        if (!valid?.authenticated) {
+            throw new Error('unreachable')
+        }
 
         const reauthenticatedModels = await client.request('chat/models', {
             modelUsage: ModelUsage.Chat,
@@ -447,6 +450,10 @@ describe('Agent', () => {
                 transcript: transcript,
             })
             const auth = await client.request('extensionConfiguration/status', null)
+            expect(auth?.authenticated).toBeTruthy()
+            if (!auth?.authenticated) {
+                throw new Error('unreachable')
+            }
 
             const transcript1: SerializedChatTranscript = {
                 id: 'transcript1',
@@ -1235,6 +1242,9 @@ describe('Agent', () => {
             const serverInfo = await rateLimitedClient.initialize()
 
             expect(serverInfo.authStatus?.authenticated).toBeTruthy()
+            if (!serverInfo.authStatus?.authenticated) {
+                throw new Error('unreachable')
+            }
             expect(serverInfo.authStatus?.username).toStrictEqual('sourcegraphcodyclients-1-efapb')
         }, 10_000)
 

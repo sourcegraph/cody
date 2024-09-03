@@ -494,7 +494,10 @@ function registerAuthCommands(disposables: vscode.Disposable[]): void {
         vscode.commands.registerCommand('cody.auth.signout', () => showSignOutMenu()),
         vscode.commands.registerCommand('cody.auth.account', () => showAccountMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
-        vscode.commands.registerCommand('cody.auth.status', () => authProvider.instance!.status), // Used by the agent
+        vscode.commands.registerCommand(
+            'cody.auth.status',
+            () => authProvider.instance?.statusOrNotReadyYet ?? null
+        ), // Used by the agent
         vscode.commands.registerCommand(
             'cody.agent.auth.authenticate',
             async ({ serverEndpoint, accessToken, customHeaders }) => {

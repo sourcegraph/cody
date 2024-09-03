@@ -1,5 +1,5 @@
 import {
-    type AuthStatus,
+    type AuthenticatedAuthStatus,
     type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
     type Model,
@@ -25,7 +25,7 @@ import { createProviderConfig as createUnstableOpenAIProviderConfig } from './un
 export async function createProviderConfig(
     config: ClientConfigurationWithAccessToken,
     client: CodeCompletionsClient,
-    authStatus: AuthStatus
+    authStatus: AuthenticatedAuthStatus
 ): Promise<ProviderConfig | null> {
     // Resolve the provider config from the VS Code config.
     if (config.autocompleteAdvancedProvider) {
@@ -73,7 +73,7 @@ export async function createProviderConfig(
 
 interface CreateConfigHelperParams {
     client: CodeCompletionsClient
-    authStatus: AuthStatus
+    authStatus: AuthenticatedAuthStatus
     modelId: string | undefined
     provider: string
     config: ClientConfigurationWithAccessToken

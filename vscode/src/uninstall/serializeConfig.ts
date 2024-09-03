@@ -45,7 +45,7 @@ function writeSnapshot(directory: string, filename: string, content: any) {
 
 interface UninstallerConfig {
     config?: ClientConfigurationWithAccessToken
-    authStatus?: AuthStatus
+    authStatus: AuthStatus | undefined
     extensionDetails: ExtensionDetails
     anonymousUserID: string
 }
