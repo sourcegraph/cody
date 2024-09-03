@@ -1,10 +1,22 @@
-import { type CodyCommand, CustomCommandType, type Prompt } from '@sourcegraph/cody-shared'
+import type { CodyCommand, Prompt } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
-import { PlusIcon } from 'lucide-react'
-import { type ComponentProps, type FunctionComponent, useCallback, useState } from 'react'
+import {
+    BookOpenIcon,
+    BugIcon,
+    CombineIcon,
+    FileQuestionIcon,
+    HammerIcon,
+    type LucideIcon,
+    MessageCircleCode,
+    PencilIcon,
+    PlayIcon,
+    ShieldCheckIcon,
+} from 'lucide-react'
+import { type FunctionComponent, useCallback, useState } from 'react'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { useConfig } from '../../utils/useConfig'
 import { useDebounce } from '../../utils/useDebounce'
+import { UserAvatar } from '../UserAvatar'
 import { Badge } from '../shadcn/ui/badge'
 import { Button } from '../shadcn/ui/button'
 import {
@@ -14,9 +26,9 @@ import {
     CommandItem,
     CommandList,
     CommandLoading,
+    CommandRow,
     CommandSeparator,
 } from '../shadcn/ui/command'
-import { Tooltip, TooltipContent, TooltipTrigger } from '../shadcn/ui/tooltip'
 import { usePromptsQuery } from './usePromptsQuery'
 
 export type PromptOrDeprecatedCommand =
@@ -28,31 +40,30 @@ type SelectActionLabel = 'insert' | 'run'
 /**
  * A list of prompts from the Prompt Library. For backcompat, it also displays built-in commands and
  * custom commands (which are both deprecated in favor of the Prompt Library).
- *
- * It is used in the {@link PromptSelectField} in a popover and in {@link PromptsTab} as a list (not
- * in a popover).
  */
 export const PromptList: React.FunctionComponent<{
-    onSelect: (item: PromptOrDeprecatedCommand) => void
-    onSelectActionLabels?: { prompt: SelectActionLabel; command: SelectActionLabel }
     showSearch?: boolean
-    showOnlyPromptInsertableCommands?: boolean
     showInitialSelectedItem?: boolean
     showPromptLibraryUnsupportedMessage?: boolean
     showCommandOrigins?: boolean
     className?: string
     commandListClassName?: string
-    telemetryLocation: 'PromptSelectField' | 'PromptsTab'
+    showSwitchToPromptAction?: boolean
+    telemetryLocation: 'ChatTab' | 'PromptsTab'
+    onSelect: (item: PromptOrDeprecatedCommand) => void
+    onSwitchToPromptsTab?: () => void
+    onSelectActionLabels?: { prompt: SelectActionLabel; command: SelectActionLabel }
 }> = ({
     onSelect: parentOnSelect,
+    onSwitchToPromptsTab,
     onSelectActionLabels,
     showSearch = true,
-    showOnlyPromptInsertableCommands,
-    showInitialSelectedItem = true,
+    showInitialSelectedItem = false,
     showPromptLibraryUnsupportedMessage = true,
     showCommandOrigins = false,
     className,
     commandListClassName,
+    showSwitchToPromptAction = false,
     telemetryLocation,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
@@ -135,22 +146,25 @@ export const PromptList: React.FunctionComponent<{
 
     const endpointURL = new URL(useConfig().authStatus.endpoint)
 
-    // Don't show builtin commands to insert in the prompt editor.
-    const filteredCommands = showOnlyPromptInsertableCommands
-        ? result?.commands.filter(c => c.type !== 'default')
-        : result?.commands
+    const itemClassName = 'tw-border tw-border-border !tw-rounded-lg !tw-p-4'
 
     return (
         <Command
             loop={true}
             tabIndex={0}
-            className={clsx('focus:tw-outline-none', className)}
+            className={clsx(
+                '!tw-overflow-visible focus:tw-outline-none tw-border-0 !tw-max-w-[unset] tw-w-full !tw-h-[unset] !tw-bg-[unset]',
+                className
+            )}
             shouldFilter={false}
+            // Makes it so that if you hover over a command, it doesn't remain selected after you
+            // move your mouse entirely away from the list.
+            disablePointerSelection={true}
             defaultValue={showInitialSelectedItem ? undefined : 'xxx-no-item'}
         >
             <CommandList
                 className={clsx(
-                    '[&_[cmdk-group]]:tw-pt-0 [&_[cmdk-group-heading]]:tw-flex [&_[cmdk-group-heading]]:tw-gap-2 [&_[cmdk-group-heading]]:tw-items-center [&_[cmdk-group-heading]]:!tw-min-h-[30px] [&_[cmdk-group-heading]]:tw--mx-2 [&_[cmdk-group-heading]]:tw-px-4 [&_[cmdk-group-heading]]:tw-mb-2 [&_[cmdk-group-heading]]:tw-bg-muted [&_[cmdk-group]]:!tw-border-0',
+                    '!tw-max-h-[unset] !tw-overflow-visible [&_[cmdk-group]]:tw-pt-0 [&_[cmdk-group-heading]]:tw-flex [&_[cmdk-group-heading]]:tw-gap-2 [&_[cmdk-group-heading]]:tw-items-center [&_[cmdk-group-heading]]:!tw-min-h-[30px] [&_[cmdk-group-heading]]:tw--mx-2 [&_[cmdk-group-heading]]:tw-px-4 [&_[cmdk-group-heading]]:tw-mb-2 [&_[cmdk-group-heading]]:tw-bg-muted [&_[cmdk-group]]:!tw-border-0',
                     commandListClassName
                 )}
             >
@@ -160,43 +174,12 @@ export const PromptList: React.FunctionComponent<{
                         onValueChange={setQuery}
                         placeholder="Search..."
                         autoFocus={true}
+                        wrapperClassName="!tw-border-0 tw-mb-3 tw-px-2"
+                        className="!tw-border-border tw-rounded-md focus:!tw-border-ring !tw-py-3"
                     />
                 )}
                 {result && result.prompts.type !== 'unsupported' && (
-                    <CommandGroup
-                        heading={
-                            <>
-                                <span>Prompt Library</span>
-                                <div className="tw-flex-grow" />
-                                <Button variant="ghost" size="sm" asChild>
-                                    <a
-                                        href={new URL('/prompts', endpointURL).toString()}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="!tw-text-[unset]"
-                                    >
-                                        Manage
-                                    </a>
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="tw-flex tw-items-center tw-gap-0.5"
-                                    asChild
-                                >
-                                    <a
-                                        href={new URL('/prompts/new', endpointURL).toString()}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="!tw-text-[unset]"
-                                    >
-                                        <PlusIcon size={12} strokeWidth={1.25} />
-                                        New
-                                    </a>
-                                </Button>
-                            </>
-                        }
-                    >
+                    <CommandGroup className="[&_[cmdk-group-items]]:tw-space-y-4">
                         {result.prompts.type === 'results' ? (
                             <>
                                 {result.prompts.results.length === 0 && (
@@ -227,6 +210,17 @@ export const PromptList: React.FunctionComponent<{
                                         prompt={prompt}
                                         onSelect={onSelect}
                                         selectActionLabel={onSelectActionLabels?.prompt}
+                                        className={itemClassName}
+                                    />
+                                ))}
+                                {result?.commands?.map(command => (
+                                    <CodyCommandItem
+                                        key={command.key}
+                                        command={command}
+                                        onSelect={onSelect}
+                                        selectActionLabel={onSelectActionLabels?.command}
+                                        showCommandOrigins={showCommandOrigins}
+                                        className={itemClassName}
                                     />
                                 ))}
                             </>
@@ -236,36 +230,7 @@ export const PromptList: React.FunctionComponent<{
                         )}
                     </CommandGroup>
                 )}
-                {result && filteredCommands && filteredCommands.length > 0 && (
-                    <CommandGroup
-                        heading={
-                            <>
-                                <span>Commands</span>
-                                <div className="tw-flex-grow" />
-                                {hasCustomCommands(filteredCommands) && (
-                                    <Button variant="ghost" size="sm" asChild>
-                                        <a
-                                            className="!tw-text-[unset]"
-                                            href="command:cody.menu.commands-settings"
-                                        >
-                                            Manage
-                                        </a>
-                                    </Button>
-                                )}
-                            </>
-                        }
-                    >
-                        {filteredCommands.map(command => (
-                            <CodyCommandItem
-                                key={command.key}
-                                command={command}
-                                onSelect={onSelect}
-                                selectActionLabel={onSelectActionLabels?.command}
-                                showCommandOrigins={showCommandOrigins}
-                            />
-                        ))}
-                    </CommandGroup>
-                )}
+
                 {showPromptLibraryUnsupportedMessage &&
                     result &&
                     result.prompts.type === 'unsupported' && (
@@ -283,15 +248,22 @@ export const PromptList: React.FunctionComponent<{
                         Error: {error.message || 'unknown'}
                     </CommandLoading>
                 )}
+
+                {showSwitchToPromptAction && (
+                    <CommandRow className="tw-items-center tw-justify-center tw-py-4">
+                        <Button variant="ghost" size="sm" asChild>
+                            <button
+                                type="button"
+                                className="!tw-text-muted-foreground !hover:tw-text-button-foreground"
+                                onClick={onSwitchToPromptsTab}
+                            >
+                                Switch to Prompt Library
+                            </button>
+                        </Button>
+                    </CommandRow>
+                )}
             </CommandList>
         </Command>
-    )
-}
-
-function hasCustomCommands(commands: CodyCommand[]): boolean {
-    return commands.some(
-        command =>
-            command.type === CustomCommandType.Workspace || command.type === CustomCommandType.User
     )
 }
 
@@ -303,18 +275,24 @@ const PromptCommandItem: FunctionComponent<{
     prompt: Prompt
     onSelect: (value: string) => void
     selectActionLabel: SelectActionLabel | undefined
-}> = ({ prompt, onSelect, selectActionLabel }) => (
+    className?: string
+}> = ({ prompt, onSelect, selectActionLabel, className }) => (
     <CommandItem
         value={commandRowValue({ type: 'prompt', value: prompt })}
         onSelect={onSelect}
-        className="!tw-items-start tw-group/[cmdk-item]"
+        className={clsx('!tw-items-start tw-overflow-hidden tw-gap-3 tw-group/[cmdk-item]', className)}
     >
-        <div>
-            <div className="tw-flex tw-gap-3 tw-w-full tw-items-start">
-                <span>
-                    <span className="tw-text-muted-foreground">{prompt.owner.namespaceName} / </span>
-                    <strong>{prompt.name}</strong>
-                </span>
+        <UserAvatar
+            user={{
+                username: prompt.owner.namespaceName,
+                displayName: prompt.owner.displayName ?? undefined,
+            }}
+            size={22}
+            className="tw-flex-shrink-0 tw-text-xxs"
+        />
+        <div className="tw-text-nowrap tw-text-ellipsis tw-overflow-hidden">
+            <div className="tw-flex tw-text-nowrap tw-gap-3 tw-w-full tw-items-start tw-overflow-hidden">
+                <span className="">{prompt.name}</span>
                 {prompt.draft && (
                     <Badge variant="secondary" className="tw-text-xxs tw-mt-0.5">
                         Draft
@@ -322,13 +300,9 @@ const PromptCommandItem: FunctionComponent<{
                 )}
             </div>
             {prompt.description && (
-                <span className="tw-text-xs tw-text-muted-foreground tw-text-nowrap tw-overflow-hidden tw-text-ellipsis tw-w-full">
-                    {prompt.description}
-                </span>
+                <span className="tw-text-muted-foreground tw-w-full">{prompt.description}</span>
             )}
         </div>
-        <div className="tw-flex-grow" />
-        {selectActionLabel && <CommandItemAction label={selectActionLabel} />}
     </CommandItem>
 )
 
@@ -337,22 +311,28 @@ const CodyCommandItem: FunctionComponent<{
     onSelect: (value: string) => void
     selectActionLabel: SelectActionLabel | undefined
     showCommandOrigins: boolean
-}> = ({ command, onSelect, selectActionLabel, showCommandOrigins }) => (
+    className?: string
+}> = ({ command, onSelect, selectActionLabel, showCommandOrigins, className }) => (
     <CommandItem
         value={commandRowValue({ type: 'command', value: command })}
         onSelect={onSelect}
-        className="!tw-items-start tw-group/[cmdk-item]"
+        className={clsx('!tw-items-start tw-overflow-hidden tw-gap-3 tw-group/[cmdk-item]', className)}
     >
-        <div>
+        <div className="tw-w-[22px] tw-flex-shrink-0">
+            <CommandItemIcon
+                command={command}
+                size={13}
+                className="tw-text-muted-foreground tw-mt-2 tw-mx-auto"
+            />
+        </div>
+        <div className="tw-text-nowrap tw-text-ellipsis tw-overflow-hidden">
             <div className="tw-flex tw-flex-wrap tw-gap-3 tw-w-full tw-items-start">
-                <strong className="tw-whitespace-nowrap">
+                <span className="tw-whitespace-nowrap">
                     {command.type === 'default' ? command.description : command.key}
-                </strong>
+                </span>
                 {showCommandOrigins && command.type !== 'default' && (
                     <Badge variant="secondary" className="tw-text-xxs tw-mt-0.5 tw-whitespace-nowrap">
-                        {command.type === CustomCommandType.User
-                            ? 'Local User Settings'
-                            : 'Workspace Settings'}
+                        Custom Command
                     </Badge>
                 )}
             </div>
@@ -362,49 +342,30 @@ const CodyCommandItem: FunctionComponent<{
                 </span>
             )}
         </div>
-        <div className="tw-flex-grow" />
-        {selectActionLabel && <CommandItemAction label={selectActionLabel} />}
     </CommandItem>
 )
 
-/** Indicator for what will occur when a CommandItem is selected. */
-const CommandItemAction: FunctionComponent<{ label: SelectActionLabel; className?: string }> = ({
-    label,
+const CommandItemIcon: FunctionComponent<{ command: CodyCommand; size: number; className?: string }> = ({
+    command,
+    size,
     className,
-}) => (
-    <Tooltip>
-        <TooltipTrigger asChild>
-            <Button
-                type="button"
-                variant="default"
-                size="xs"
-                className={clsx(
-                    'tw-tracking-tight tw-text-accent-foreground tw-opacity-30 tw-bg-transparent hover:tw-bg-transparent tw-invisible group-[[aria-selected="true"]]/[cmdk-item]:tw-visible group-hover/[cmdk-item]:tw-visible',
-                    className
-                )}
-            >
-                {label === 'insert' ? 'Insert' : 'Run'}
-            </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-            {label === 'insert'
-                ? 'Append prompt text to chat message'
-                : 'Run command on current selection in editor'}
-        </TooltipContent>
-    </Tooltip>
-)
+}) => {
+    const Icon = iconForCommand(command)
+    return <Icon size={size} className={className} />
+}
 
-/**
- * A variant of {@link PromptList} that is visually more suited for a non-popover.
- */
-export const PromptListSuitedForNonPopover: FunctionComponent<
-    Omit<ComponentProps<typeof PromptList>, 'showSearch' | 'showInitialSelectedItem'>
-> = ({ className, commandListClassName, ...props }) => (
-    <PromptList
-        {...props}
-        showSearch={false}
-        showInitialSelectedItem={false}
-        className={clsx('tw-w-full !tw-max-w-[unset] !tw-bg-[unset]', className)}
-        commandListClassName={clsx('!tw-max-h-[unset]', commandListClassName)}
-    />
-)
+function iconForCommand(command: CodyCommand): (typeof ICON_KEYWORDS)[number]['icon'] {
+    return ICON_KEYWORDS.find(icon => command.key.toLowerCase().includes(icon.keyword))?.icon ?? PlayIcon
+}
+
+const ICON_KEYWORDS: { keyword: string; icon: LucideIcon }[] = [
+    { keyword: 'edit', icon: PencilIcon },
+    { keyword: 'doc', icon: BookOpenIcon },
+    { keyword: 'explain', icon: FileQuestionIcon },
+    { keyword: 'test', icon: HammerIcon },
+    { keyword: 'fix', icon: BugIcon },
+    { keyword: 'debug', icon: BugIcon },
+    { keyword: 'secur', icon: ShieldCheckIcon },
+    { keyword: 'refactor', icon: CombineIcon },
+    { keyword: 'review', icon: MessageCircleCode },
+]

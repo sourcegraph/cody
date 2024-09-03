@@ -1,3 +1,4 @@
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
 import { Observable } from 'observable-fns'
@@ -19,6 +20,7 @@ const meta: Meta<typeof Chat> = {
         },
     },
     args: {
+        IDE: CodyIDE.VSCode,
         transcript: FIXTURE_TRANSCRIPT.simple2,
         messageInProgress: null,
         chatEnabled: true,

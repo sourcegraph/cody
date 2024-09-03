@@ -1,3 +1,6 @@
+# 0.7.6
+- The "Prompts" toolbar item in chat is no longer displayed. To use a prompt from the prompt library, select it from the list shown on the chat tab or prompts tab.
+
 ## 0.7.5 
 - Improve tabs UI layout for Cody Web tabs configuration 
 - Fix Safari not working cursor click on mention panel problem  
