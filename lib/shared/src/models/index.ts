@@ -445,14 +445,18 @@ export class ModelsService {
     }
 
     /**
-     * Add new models for use.
+     * Add new models in addition to the primary models for use.
+     * NOTE: use setModels for a complete replacement of the primary models.
      */
     public addModels(models: Model[]): void {
-        const set = new Set(this.primaryModels)
-        for (const provider of models) {
-            set.add(provider)
-        }
-        this.primaryModels = Array.from(set)
+        const existingIds = new Set(
+            this.primaryModels.filter(m => m.tags.includes(ModelTag.BYOK)).map(m => m.id)
+        )
+        // Filter out any models that are already in the cache.
+        this.primaryModels = [
+            ...this.primaryModels,
+            ...models.filter(model => !existingIds.has(model.id)),
+        ]
     }
 
     private getModelsByType(usage: ModelUsage): Model[] {
