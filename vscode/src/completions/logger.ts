@@ -842,12 +842,12 @@ export function prepareSuggestionEvent(
                 completionIdsMarkedAsSuggested.set(completionId, true)
                 event.suggestionAnalyticsLoggedAt = performance.now()
 
-                const authStatus = authProvider.instance!.statusAuthed
-                const isDotComUser = isDotCom(authStatus.endpoint || '')
+                const authStatus = authProvider.instance?.statusAuthed
                 // 🚨 SECURITY: Track the diff in the document after suggestion is shown for DotCom users and public repos.
                 if (
                     event.params.id &&
-                    isDotComUser &&
+                    authStatus &&
+                    isDotCom(authStatus.endpoint || '') &&
                     event.params.inlineCompletionItemContext?.isRepoPublic
                 ) {
                     suggestionDocumentDiffTracker(event.params.id, param.document, param.position)
