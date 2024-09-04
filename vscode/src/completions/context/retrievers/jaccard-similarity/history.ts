@@ -1,7 +1,7 @@
 import { FeatureFlag } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { completionProviderConfig } from '../../../completion-provider-config'
-import { shouldBeUsedAsContext } from '../../utils'
+import { type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 
 interface HistoryItem {
     document: Pick<vscode.TextDocument, 'uri' | 'languageId'>
@@ -74,15 +74,14 @@ export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable
             if (ignoreSet.has(item.document.uri)) {
                 continue
             }
-            if (
-                shouldBeUsedAsContext(
-                    completionProviderConfig.getPrefetchedFlag(
-                        FeatureFlag.CodyAutocompleteContextExtendLanguagePool
-                    ),
-                    baseLanguageId,
-                    item.document.languageId
-                )
-            ) {
+            const params: ShouldUseContextParams = {
+                enableExtendedLanguagePool: completionProviderConfig.getPrefetchedFlag(
+                    FeatureFlag.CodyAutocompleteContextExtendLanguagePool
+                ),
+                baseLanguageId: baseLanguageId,
+                languageId: item.document.languageId,
+            }
+            if (shouldBeUsedAsContext(params)) {
                 continue
             }
             ret.push(item)

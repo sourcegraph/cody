@@ -6,7 +6,6 @@ class CompletionProviderConfig {
     private _config?: ClientConfiguration
 
     private flagsToResolve = [
-        FeatureFlag.CodyAutocompleteContextBfgMixed,
         FeatureFlag.CodyAutocompleteUserLatency,
         FeatureFlag.CodyAutocompleteTracing,
         FeatureFlag.CodyAutocompleteContextExtendLanguagePool,
@@ -71,11 +70,7 @@ class CompletionProviderConfig {
     }
 
     public experimentBasedContextStrategy(): ContextStrategy {
-        const defaultContextStrategy = this.getPrefetchedFlag(
-            FeatureFlag.CodyAutocompleteContextBfgMixed
-        )
-            ? 'bfg-mixed'
-            : 'jaccard-similarity'
+        const defaultContextStrategy = 'jaccard-similarity'
 
         const isContextExperimentFlagEnabled = this.getPrefetchedFlag(
             FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag

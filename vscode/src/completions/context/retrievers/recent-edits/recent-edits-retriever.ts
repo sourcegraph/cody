@@ -4,7 +4,7 @@ import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getLanguageConfig } from '../../../../tree-sitter/language'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
-import { shouldBeUsedAsContext } from '../../utils'
+import { type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 
 interface TrackedDocument {
     content: string
@@ -107,7 +107,12 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         const filterCandidateDiffs: DiffAcrossDocuments[] = []
         for (const diff of allDiffs) {
             const currentDocumentLanguageId = document.languageId
-            if (shouldBeUsedAsContext(false, currentDocumentLanguageId, diff.languageId)) {
+            const params: ShouldUseContextParams = {
+                enableExtendedLanguagePool: false,
+                baseLanguageId: currentDocumentLanguageId,
+                languageId: diff.languageId,
+            }
+            if (shouldBeUsedAsContext(params)) {
                 filterCandidateDiffs.push(diff)
             }
         }

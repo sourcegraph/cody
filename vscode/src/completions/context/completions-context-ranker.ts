@@ -20,11 +20,9 @@ interface PriorityBasedContextSnippets {
 
 export class DefaultCompletionsContextRanker implements CompletionsContextRanker {
     public rankAndFuseContext(results: RetrievedContextResults[]): Set<AutocompleteContextSnippet> {
-        const [recentEditsVariant] = [
-            completionProviderConfig.getPrefetchedFlag(
-                FeatureFlag.CodyAutocompleteContextExperimentVariant1
-            ),
-        ]
+        const recentEditsVariant = completionProviderConfig.getPrefetchedFlag(
+            FeatureFlag.CodyAutocompleteContextExperimentVariant1
+        )
         if (recentEditsVariant) {
             return this.getRecentEditsBasedContextFusion(results)
         }
