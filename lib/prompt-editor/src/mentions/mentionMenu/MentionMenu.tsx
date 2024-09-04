@@ -284,6 +284,18 @@ export const MentionMenu: FunctionComponent<
                     </CommandGroup>
                 )}
 
+                {params.parentItem?.id === REMOTE_DIRECTORY_PROVIDER_URI && !!data.items?.length && (
+                    <CommandLoading
+                        className={clsx(
+                            COMMAND_ROW_CLASS_NAME,
+                            COMMAND_ROW_TEXT_CLASS_NAME,
+                            'tw-bg-accent'
+                        )}
+                    >
+                        * Sourced from the remote default branch
+                    </CommandLoading>
+                )}
+
                 {data.items && data.items.length === 0 ? (
                     <CommandEmpty className={clsx(COMMAND_ROW_CLASS_NAME, COMMAND_ROW_TEXT_CLASS_NAME)}>
                         {getEmptyLabel(params.parentItem, mentionQuery)}
@@ -357,8 +369,8 @@ function getItemsHeading(
             <div className="tw-flex tw-flex-gap-2 tw-items-center tw-justify-between">
                 <div>
                     {mentionQuery.text.includes(':')
-                        ? 'Directory - Select a directory'
-                        : 'Directory - Select a repository'}
+                        ? 'Directory - Select a directory*'
+                        : 'Directory - Select a repository*'}
                 </div>
                 <div
                     className={clsx(
