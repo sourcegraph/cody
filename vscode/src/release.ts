@@ -46,6 +46,7 @@ export function getReleaseNotesURLByIDE(version: string, IDE: CodyIDE): string {
 
     switch (IDE) {
         case CodyIDE.VSCode:
+            // TODO need to fix this once we get proper tagged versions 
             return getReleaseBlogPostURL(version, IDE)
 
         case CodyIDE.JetBrains:
@@ -69,17 +70,20 @@ export function getReleaseNotesURLByIDE(version: string, IDE: CodyIDE): string {
  * @returns The release blog post URL for the given IDE and version.
  */
 function getReleaseBlogPostURL(version: string, IDE: CodyIDE): string {
-    const blogURL = new URL(SG_BLOG_URL)
+    // const blogURL = new URL(SG_BLOG_URL)
 
-    if (IDE === CodyIDE.VSCode) {
-        // Examples of version:
-        // 1.24.3 (stable), 1.25.123143 (pre-release)
-        const versionNums = version.split('.')
-        // NOTE: We do not generate blog post for pre-releases (odd minor number).
-        const minor = Number(versionNums[1]) % 2 === 0 ? versionNums[1] : `${Number(versionNums[1]) - 1}`
-        // Example: https://sourcegraph.com/blog/cody-vscode-1-24-0-release
-        blogURL.pathname += `cody-vscode-${versionNums[0]}-${minor}-0-release`
-    }
+    // if (IDE === CodyIDE.VSCode) {
+    //     // Examples of version:
+    //     // 1.24.3 (stable), 1.25.123143 (pre-release)
+    //     const versionNums = version.split('.')
+    //     // NOTE: We do not generate blog post for pre-releases (odd minor number).
+    //     const minor = Number(versionNums[1]) % 2 === 0 ? versionNums[1] : `${Number(versionNums[1]) - 1}`
+    //     // Example: https://sourcegraph.com/blog/cody-vscode-1-24-0-release
+    //     blogURL.pathname += `cody-vscode-${versionNums[0]}-${minor}-0-release`
+    // }
+    
+    // TODO @KALAN CLEANUP ONCE WE HAVE A PROPER URL structure for VS Code changelogs
+    const blogURL = new URL('https://sourcegraph.com/changelog?topics=VS+Code')
 
     return blogURL.href
 }
