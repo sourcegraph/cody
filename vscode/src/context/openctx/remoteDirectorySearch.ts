@@ -89,7 +89,7 @@ export async function getDirectoryItem(
     const dataOrError = await graphqlClient.contextSearch({
         repoIDs: [repoID],
         query,
-        filePatterns: [directoryPath],
+        filePatterns: [`^${directoryPath}.*`],
     })
 
     if (isError(dataOrError) || dataOrError === null) {

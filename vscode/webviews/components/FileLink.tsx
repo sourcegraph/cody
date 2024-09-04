@@ -104,7 +104,7 @@ export const FileLink: React.FunctionComponent<
             {(isIgnored || isTooLarge) && (
                 <i className="codicon codicon-warning" title={linkDetails.tooltip} />
             )}
-            {source === 'unified' ? (
+            {source === 'unified' || uri.scheme === 'http' || uri.scheme === 'https' ? (
                 <a
                     className={linkClassName}
                     title={linkDetails.tooltip}
