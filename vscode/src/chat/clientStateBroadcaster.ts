@@ -50,22 +50,33 @@ export function startClientStateBroadcaster({
         signal?.throwIfAborted()
         if (contextFile) {
             const range = contextFile.range ? expandToLineRange(contextFile.range) : undefined
-            const item = {
+
+            // Always add the current file item
+            items.push({
                 ...contextFile,
                 type: 'file',
-                title: range ? 'Current Selection' : 'Current File',
-                description: `${displayPathBasename(contextFile.uri)}${
-                    range ? `:${displayLineRange(range)}` : ''
-                }`,
-                range,
+                title: 'Current File',
+                description: displayPathBasename(contextFile.uri),
+                range: undefined,
                 isTooLarge: contextFile.size !== undefined && contextFile.size > userContextSize,
                 source: ContextItemSource.Initial,
-                icon: range ? 'list-selection' : 'file',
-            } satisfies ContextItem
+                icon: 'file',
+            })
 
-            items.push(item)
+            // Add the current selection item if there's a range
+            if (range) {
+                items.push({
+                    ...contextFile,
+                    type: 'file',
+                    title: 'Current Selection',
+                    description: `${displayPathBasename(contextFile.uri)}:${displayLineRange(range)}`,
+                    range,
+                    isTooLarge: contextFile.size !== undefined && contextFile.size > userContextSize,
+                    source: ContextItemSource.Initial,
+                    icon: 'list-selection',
+                })
+            }
         }
-
         const corpusItems = getCorpusContextItemsForEditorState(useRemoteSearch)
         items.push(...(await corpusItems))
 

@@ -67,6 +67,7 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
 export function getContextItemTokenUsageType(item: ContextItem): ContextTokenUsageType {
     switch (item.source) {
         case 'user':
+        case 'initial':
         case 'selection':
             return 'user'
         default:
