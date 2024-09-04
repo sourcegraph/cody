@@ -11,7 +11,7 @@ import { captureException } from '../../services/sentry/sentry'
 
 // Available releases: https://github.com/sourcegraph/bfg/releases
 type BfgVersionString = SemverString<''>
-export const defaultBfgVersion: BfgVersionString = '5.6.2618'
+export const defaultBfgVersion: BfgVersionString = '5.6.4943'
 
 export const _config = {
     //delay before trying to re-lock a active file
@@ -25,7 +25,7 @@ export async function getBfgPath(context: vscode.ExtensionContext): Promise<stri
     // If user-specified symf path is set, use that
     // TODO: maybe we do want an option to download bfg if it's not found?
     const config = vscode.workspace.getConfiguration()
-    const userBfgPath = '/Users/jan/repos/bfg-private/target/release/bfg' //config.get<string>('cody.experimental.cody-engine.path')
+    const userBfgPath = config.get<string>('cody.experimental.cody-engine.path')
     if (userBfgPath) {
         if (!(await fileExists(userBfgPath))) {
             throw new Error(`bfg can't be loaded from user provided path: ${userBfgPath}`)
