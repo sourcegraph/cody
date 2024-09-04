@@ -321,7 +321,7 @@ function logCompletionPartiallyAcceptedEvent(params: PartiallyAcceptedEventPaylo
 }
 
 function logSuggestionsDocumentDiffEvent(params: PersistencePresentEventPayload): void {
-    if (params.diff && Buffer.byteLength(params.diff, 'utf8') <= 256 * 1024) {
+    if (params.diff && Buffer.byteLength(params.diff, 'utf8') >= 256 * 1024) {
         // Don't log large diffs
         return
     }
