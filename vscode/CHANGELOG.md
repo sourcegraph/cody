@@ -8,10 +8,12 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
-Command: Fixed an issue where the experimental `Generate Commit Message` command would fail on Windows due to incorrect parsing of the git diff output. [pull/5449](https://github.com/sourcegraph/cody/pull/5449)
+- Command: Fixed an issue where the experimental `Generate Commit Message` command would fail on Windows due to incorrect parsing of the git diff output. [pull/5449](https://github.com/sourcegraph/cody/pull/5449)
 
 ### Changed
-- Changelog: Implemented cursor feedback for Generate Tests and Document Code commands to improve user experience by indicating command execution. [pull/5341](https://github.com/sourcegraph/cody/pull/5341)
+
+- Edit: Implemented cursor feedback for Generate Tests and Document Code commands to improve user experience by indicating command execution. [pull/5341](https://github.com/sourcegraph/cody/pull/5341)
+- Dev: Added support for configurable "options" field in locally configured LLM providers, available behind the `cody.dev.models` setting. [pull/5467](https://github.com/sourcegraph/cody/pull/5467)
 
 ## 1.32.5
 
@@ -19,7 +21,7 @@ Command: Fixed an issue where the experimental `Generate Commit Message` command
 
 - Autocomplete: Fix autocomplete character trimming from hot-streak. [pull/5378](https://github.com/sourcegraph/cody/pull/5378)
 - Autocomplete: Fix anthropic model for PLG users. [pull/5380](https://github.com/sourcegraph/cody/pull/5380)
-- Adjust context windows for Mistral models configured in the site config. [pull/5434](https://github.com/sourcegraph/cody/pull/5434)
+- Chat: Adjust context windows for Mistral models configured in the site config. [pull/5434](https://github.com/sourcegraph/cody/pull/5434)
 
 ## 1.32.4
 
