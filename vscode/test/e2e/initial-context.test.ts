@@ -64,12 +64,20 @@ testWithGitRemote('initial context - file', async ({ page, sidebar, server }) =>
     await expect(chatInputMentions(lastChatInput)).toHaveText(['README.md', 'host.example/user/myrepo'])
 
     await clickEditorTab(page, 'main.c')
-    await expect(chatInputMentions(lastChatInput)).toHaveText(['main.c:1-3', 'host.example/user/myrepo'])
+    await expect(chatInputMentions(lastChatInput)).toHaveText([
+        'main.c',
+        'main.c:1-3',
+        'host.example/user/myrepo',
+    ])
 
     // After typing into the input, it no longer updates the initial context.
     await lastChatInput.press('x')
     await clickEditorTab(page, 'README.md')
-    await expect(chatInputMentions(lastChatInput)).toHaveText(['main.c:1-3', 'host.example/user/myrepo'])
+    await expect(chatInputMentions(lastChatInput)).toHaveText([
+        'main.c',
+        'main.c:1-3',
+        'host.example/user/myrepo',
+    ])
 })
 
 testWithGitRemote.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
