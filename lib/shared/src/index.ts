@@ -275,6 +275,7 @@ export {
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'
 export * from './auth/tokens'
+export * from './auth/referral'
 export * from './chat/sse-iterator'
 export {
     parseMentionQuery,

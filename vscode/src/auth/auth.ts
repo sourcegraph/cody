@@ -272,7 +272,7 @@ export async function tokenCallbackHandler(
     closeAuthProgressIndicator()
 
     const params = new URLSearchParams(uri.query)
-    const token = params.get('code')
+    const token = params.get('code') || params.get('token')
     const endpoint = authProvider.instance!.status.endpoint
     if (!token || !endpoint) {
         return

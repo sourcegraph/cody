@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { DOTCOM_URL } from '@sourcegraph/cody-shared'
+import { CodyIDE, DOTCOM_URL, getCodyAuthReferralCode } from '@sourcegraph/cody-shared'
 
 import type { AuthMethod } from '../chat/protocol'
 
@@ -11,8 +11,12 @@ import { authProvider } from './AuthProvider'
 // for dotcom, and doesn't work on VScode web. See LoginSimplified.
 
 export class AuthProviderSimplified {
-    public async openExternalAuthUrl(method: AuthMethod, tokenReceiverUrl?: string): Promise<boolean> {
-        if (!(await openExternalAuthUrl(method, tokenReceiverUrl))) {
+    public async openExternalAuthUrl(
+        method: AuthMethod,
+        tokenReceiverUrl?: string,
+        agentIDE?: CodyIDE
+    ): Promise<boolean> {
+        if (!(await openExternalAuthUrl(method, tokenReceiverUrl, agentIDE))) {
             return false
         }
         authProvider.instance!.setAuthPendingToEndpoint(DOTCOM_URL.toString())
@@ -34,11 +38,15 @@ export function getAuthReferralCode(): string {
 }
 
 // Opens authentication URLs for simplified onboarding.
-function openExternalAuthUrl(provider: AuthMethod, tokenReceiverUrl?: string): Thenable<boolean> {
+function openExternalAuthUrl(
+    provider: AuthMethod,
+    tokenReceiverUrl?: string,
+    agentIDE = CodyIDE.VSCode
+): Thenable<boolean> {
     // Create the chain of redirects:
     // 1. Specific login page (GitHub, etc.) redirects to the new token page
     // 2. New token page redirects back to the extension with the new token
-    const referralCode = getAuthReferralCode()
+    const referralCode = getCodyAuthReferralCode(agentIDE, vscode.env.uriScheme)
     const tokenReceiver = tokenReceiverUrl
         ? `&tokenReceiverUrl=${encodeURIComponent(tokenReceiverUrl)}`
         : ''

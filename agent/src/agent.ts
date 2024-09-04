@@ -61,6 +61,7 @@ import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldi
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
+import { AgentAuthHandler } from './AgentAuthHandler'
 import { AgentFixupControls } from './AgentFixupControls'
 import { AgentProviders } from './AgentProviders'
 import { AgentClientManagedSecretStorage, AgentStatelessSecretStorage } from './AgentSecretStorage'
@@ -340,6 +341,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
     public webPanels = new AgentWebviewPanels()
     public webviewViewProviders = new Map<string, vscode.WebviewViewProvider>()
 
+    public authenticationHandler: AgentAuthHandler | null = null
     private authenticationPromise: Promise<AuthStatus | undefined> = Promise.resolve(undefined)
 
     private clientInfo: ClientInfo | null = null
@@ -410,6 +412,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.notify('ignore/didChange', null)
                 })
             }
+            if (clientInfo.capabilities?.authentication === 'enabled') {
+                this.authenticationHandler = new AgentAuthHandler()
+            }
             if (process.env.CODY_DEBUG === 'true') {
                 console.error(
                     `Cody Agent: handshake with client '${clientInfo.name}' (version '${clientInfo.version}') at workspace root path '${clientInfo.workspaceRootUri}'\n`
@@ -434,11 +439,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     secrets
                 )
 
-                this.authenticationPromise = clientInfo.extensionConfiguration
+                this.authenticationPromise = clientInfo.extensionConfiguration?.accessToken
                     ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
                           forceAuthentication: true,
                       })
                     : this.authStatus()
+
                 const authStatus = await this.authenticationPromise
 
                 const webviewKind = clientInfo.capabilities?.webview || 'agentic'

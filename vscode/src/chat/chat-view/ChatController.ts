@@ -471,9 +471,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
                     const authProviderSimplified = new AuthProviderSimplified()
                     const authMethod = message.authMethod || 'dotcom'
+                    const config = getConfigWithEndpoint()
                     const successfullyOpenedUrl = await authProviderSimplified.openExternalAuthUrl(
                         authMethod,
-                        tokenReceiverUrl
+                        tokenReceiverUrl,
+                        config?.agentIDE
                     )
                     if (!successfullyOpenedUrl) {
                         closeAuthProgressIndicator()

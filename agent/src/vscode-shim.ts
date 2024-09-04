@@ -622,7 +622,18 @@ const _window: typeof vscode.window = {
     onDidChangeWindowState: emptyEvent(),
     onDidCloseTerminal: emptyEvent(),
     onDidOpenTerminal: emptyEvent(),
-    registerUriHandler: () => emptyDisposable,
+    registerUriHandler: (vsceHandler: vscode.UriHandler) => {
+        if (agent?.authenticationHandler && vsceHandler.handleUri) {
+            // Add the token callback handler implemented for VS Code to the agent authentication handler.
+            const handler = agent.authenticationHandler
+            handler.setTokenCallbackHandler(vsceHandler.handleUri)
+            // A callback to notify the client to focus the sidebar when the token callback is handled.
+            const callbackFocusNotifier = () => agent?.notify('window/focusSidebar', null)
+            handler.setTokenCallbackHandler(callbackFocusNotifier)
+            return new Disposable(() => handler.dispose())
+        }
+        return emptyDisposable
+    },
     registerWebviewViewProvider: (
         viewId: string,
         provider: vscode.WebviewViewProvider,
@@ -1039,6 +1050,12 @@ const _env: Partial<typeof vscode.env> = {
         writeText: () => Promise.resolve(),
     },
     openExternal: (uri: vscode.Uri): Thenable<boolean> => {
+        // Handle the case where the user is trying to authenticate with redirect URI.
+        if (uri.toString()?.includes('user/settings/tokens/new/callback?requestFrom')) {
+            agent?.authenticationHandler?.handleCallback(uri)
+            return Promise.resolve(true)
+        }
+
         try {
             open(uri.toString())
             return Promise.resolve(true)

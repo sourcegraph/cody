@@ -4,6 +4,7 @@ package com.sourcegraph.cody.agent.protocol_generated;
 import com.google.gson.annotations.SerializedName;
 
 data class ClientCapabilities(
+  val authentication: AuthenticationEnum? = null, // Oneof: enabled, none
   val completions: CompletionsEnum? = null, // Oneof: none
   val chat: ChatEnum? = null, // Oneof: none, streaming
   val git: GitEnum? = null, // Oneof: none, enabled
@@ -22,6 +23,11 @@ data class ClientCapabilities(
   val webview: WebviewEnum? = null, // Oneof: agentic, native
   val webviewNativeConfig: WebviewNativeConfigParams? = null,
 ) {
+
+  enum class AuthenticationEnum {
+    @SerializedName("enabled") Enabled,
+    @SerializedName("none") None,
+  }
 
   enum class CompletionsEnum {
     @SerializedName("none") None,
