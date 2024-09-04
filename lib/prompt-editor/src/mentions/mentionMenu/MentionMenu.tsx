@@ -334,7 +334,7 @@ function getEmptyLabel(
 function getItemsHeading(
     parentItem: ContextMentionProviderMetadata | null,
     mentionQuery: MentionQuery
-): string {
+): React.ReactNode {
     if (
         (!parentItem || parentItem.id === FILE_CONTEXT_MENTION_PROVIDER.id) &&
         mentionQuery.maybeHasRangeSuffix
@@ -351,6 +351,27 @@ function getItemsHeading(
         // Don't show heading for these common types because it's just noisy.
         return ''
     }
+
+    if (parentItem.id === REMOTE_DIRECTORY_PROVIDER_URI) {
+        return (
+            <div className="tw-flex tw-flex-gap-2 tw-items-center tw-justify-between">
+                <div>
+                    {mentionQuery.text.includes(':')
+                        ? 'Directory - Select a directory'
+                        : 'Directory - Select a repository'}
+                </div>
+                <div
+                    className={clsx(
+                        'tw-text-xs tw-rounded tw-px-2 tw-text-foreground',
+                        styles.experimental
+                    )}
+                >
+                    Experimental
+                </div>
+            </div>
+        )
+    }
+
     return parentItem.title ?? parentItem.id
 }
 

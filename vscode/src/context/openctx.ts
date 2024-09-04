@@ -1,6 +1,5 @@
 import {
     type AuthStatus,
-    CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
     type ClientConfiguration,
     CodyIDE,
     type ConfigWatcher,
@@ -25,7 +24,6 @@ import type { createController } from '@openctx/vscode-lib'
 import { Observable } from 'observable-fns'
 import { logDebug, outputChannel } from '../log'
 import { authProvider } from '../services/AuthProvider'
-import CurrentRepositoryDirectoryProvider from './openctx/currentRepositoryDirectorySearch'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openctx/remoteDirectorySearch'
@@ -111,12 +109,6 @@ export function getOpenCtxProviders(
                         settings: true,
                         provider: RemoteDirectoryProvider,
                         providerUri: RemoteDirectoryProvider.providerUri,
-                    })
-
-                    providers.push({
-                        settings: true,
-                        provider: CurrentRepositoryDirectoryProvider,
-                        providerUri: CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
                     })
                 }
 
