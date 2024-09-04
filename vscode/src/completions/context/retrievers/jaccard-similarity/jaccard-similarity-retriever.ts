@@ -8,7 +8,7 @@ import { type DocumentHistory, VSCodeDocumentHistory } from './history'
 import { FeatureFlag, isDefined } from '@sourcegraph/cody-shared'
 import { completionProviderConfig } from '../../../completion-provider-config'
 import { lastNLines } from '../../../text-processing'
-import { shouldBeUsedAsContext } from '../../utils'
+import { type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 import { type CachedRerieverOptions, CachedRetriever } from '../cached-retriever'
 import { type JaccardMatch, bestJaccardMatches } from './bestJaccardMatch'
 
@@ -132,16 +132,14 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
             if (!['file', 'vscode-userdata'].includes(document.uri.scheme)) {
                 return
             }
-
-            if (
-                !shouldBeUsedAsContext(
-                    completionProviderConfig.getPrefetchedFlag(
-                        FeatureFlag.CodyAutocompleteContextExtendLanguagePool
-                    ),
-                    curLang,
-                    document.languageId
-                )
-            ) {
+            const params: ShouldUseContextParams = {
+                enableExtendedLanguagePool: completionProviderConfig.getPrefetchedFlag(
+                    FeatureFlag.CodyAutocompleteContextExtendLanguagePool
+                ),
+                baseLanguageId: curLang,
+                languageId: document.languageId,
+            }
+            if (!shouldBeUsedAsContext(params)) {
                 return
             }
 

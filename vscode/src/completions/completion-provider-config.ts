@@ -1,11 +1,11 @@
 import { type ClientConfiguration, FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
+import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { ContextStrategy } from './context/context-strategy'
 
 class CompletionProviderConfig {
     private _config?: ClientConfiguration
 
     private flagsToResolve = [
-        FeatureFlag.CodyAutocompleteContextBfgMixed,
         FeatureFlag.CodyAutocompleteUserLatency,
         FeatureFlag.CodyAutocompleteTracing,
         FeatureFlag.CodyAutocompleteContextExtendLanguagePool,
@@ -13,6 +13,12 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompletePreloadingExperimentVariant1,
         FeatureFlag.CodyAutocompletePreloadingExperimentVariant2,
         FeatureFlag.CodyAutocompletePreloadingExperimentVariant3,
+        FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag,
+        FeatureFlag.CodyAutocompleteContextExperimentVariant1,
+        FeatureFlag.CodyAutocompleteContextExperimentVariant2,
+        FeatureFlag.CodyAutocompleteContextExperimentVariant3,
+        FeatureFlag.CodyAutocompleteContextExperimentVariant4,
+        FeatureFlag.CodyAutocompleteContextExperimentControl,
     ] as const
 
     private get config() {
@@ -59,11 +65,52 @@ class CompletionProviderConfig {
                 return 'jaccard-similarity'
             case 'new-jaccard-similarity':
                 return 'new-jaccard-similarity'
+            case 'recent-edits':
+                return 'recent-edits'
+            case 'recent-edits-1m':
+                return 'recent-edits-1m'
+            case 'recent-edits-5m':
+                return 'recent-edits-5m'
+            case 'recent-edits-mixed':
+                return 'recent-edits-mixed'
             default:
-                return this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextBfgMixed)
-                    ? 'bfg-mixed'
-                    : 'jaccard-similarity'
+                return this.experimentBasedContextStrategy()
         }
+    }
+
+    public experimentBasedContextStrategy(): ContextStrategy {
+        const defaultContextStrategy = 'jaccard-similarity'
+
+        const isContextExperimentFlagEnabled = this.getPrefetchedFlag(
+            FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag
+        )
+        if (isRunningInsideAgent() || !isContextExperimentFlagEnabled) {
+            return defaultContextStrategy
+        }
+
+        const [variant1, variant2, variant3, variant4, control] = [
+            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextExperimentVariant1),
+            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextExperimentVariant2),
+            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextExperimentVariant3),
+            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextExperimentVariant4),
+            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextExperimentControl),
+        ]
+        if (variant1) {
+            return 'recent-edits-1m'
+        }
+        if (variant2) {
+            return 'recent-edits-5m'
+        }
+        if (variant3) {
+            return 'recent-edits-mixed'
+        }
+        if (variant4) {
+            return 'none'
+        }
+        if (control) {
+            return defaultContextStrategy
+        }
+        return defaultContextStrategy
     }
 
     private getPreloadingExperimentGroup(): 'variant1' | 'variant2' | 'variant3' | 'control' {

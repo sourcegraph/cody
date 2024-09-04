@@ -3,35 +3,42 @@ import { cloneDeep } from 'lodash'
 import * as vscode from 'vscode'
 import { logDebug } from '../log'
 import { authProvider } from '../services/AuthProvider'
+import { completionProviderConfig } from './completion-provider-config'
 import type { InlineCompletionItemProviderArgs } from './create-inline-completion-item-provider'
-import type { MultiModelCompletionsResults } from './inline-completion-item-provider'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfigHelper } from './providers/create-provider'
+
+export interface MultiModelCompletionsResults {
+    provider: string
+    model: string
+    contextStrategy: string
+    completion?: string
+}
 
 interface providerConfig {
     providerName: string
     modelName: string
+    contextStrategy: string
     completionsProvider: InlineCompletionItemProvider
 }
 
 async function manuallyGetCompletionItemsForProvider(
-    completionsProviderConfig: providerConfig,
+    config: providerConfig,
     document: vscode.TextDocument,
     position: vscode.Position,
     context: vscode.InlineCompletionContext
 ): Promise<MultiModelCompletionsResults> {
-    const result = await completionsProviderConfig.completionsProvider.provideInlineCompletionItems(
+    const result = await config.completionsProvider.provideInlineCompletionItems(
         document,
         position,
         context,
         new vscode.CancellationTokenSource().token
     )
-    const model = completionsProviderConfig.modelName
-    const provider = completionsProviderConfig.providerName
     const completion = result?.items[0].insertText?.toString() || ''
     return {
-        provider,
-        model,
+        provider: config.providerName,
+        model: config.modelName,
+        contextStrategy: config.contextStrategy,
         completion,
     }
 }
@@ -58,7 +65,7 @@ async function triggerMultiModelAutocompletionsForComparison(
     const completions = await Promise.all(allPromises)
     let completionsOutput = ''
     for (const result of completions) {
-        completionsOutput += `Model: ${result.model}\n${result.completion}\n\n`
+        completionsOutput += `Model: ${result.model}\t Context: ${result.contextStrategy} \n${result.completion}\n\n`
     }
     logDebug('MultiModelAutoComplete:\n', completionsOutput)
 }
@@ -92,6 +99,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
                 model: currentProviderConfig.model,
                 enableExperimentalFireworksOverrides:
                     currentProviderConfig.enableExperimentalFireworksOverrides ?? false,
+                context: currentProviderConfig.context,
             })
         }
     }
@@ -102,7 +110,8 @@ export async function createInlineCompletionItemFromMultipleProviders({
         }
     }
 
-    const allPromises = multiModelConfigsList.map(async currentProviderConfig => {
+    const allCompletionsProviders: providerConfig[] = []
+    for (const currentProviderConfig of multiModelConfigsList) {
         const newConfig: typeof config = {
             ...cloneDeep(config),
             // Override some config to ensure we are not logging extra events.
@@ -114,8 +123,17 @@ export async function createInlineCompletionItemFromMultipleProviders({
                     : undefined,
             // Don't use the advanced provider config to get the model
             autocompleteAdvancedModel: null,
+            autocompleteExperimentalGraphContext: currentProviderConfig.context as
+                | 'lsp-light'
+                | 'bfg'
+                | 'bfg-mixed'
+                | 'tsc'
+                | 'tsc-mixed'
+                | null,
         }
 
+        // Use the experimental config to get the context provider
+        completionProviderConfig.setConfig(newConfig)
         const providerConfig = await createProviderConfigHelper({
             client,
             authStatus,
@@ -138,21 +156,15 @@ export async function createInlineCompletionItemFromMultipleProviders({
                 isDotComUser: isDotCom(authStatus.endpoint || ''),
                 noInlineAccept: true,
             })
-            return {
+            allCompletionsProviders.push({
                 providerName: currentProviderConfig.provider,
                 modelName: currentProviderConfig.model,
                 completionsProvider: completionsProvider,
-            }
-        }
-        return undefined
-    })
-    const allProviders = await Promise.all(allPromises)
-    const allCompletionsProviders: providerConfig[] = []
-    for (const provider of allProviders) {
-        if (provider) {
-            allCompletionsProviders.push(provider)
+                contextStrategy: currentProviderConfig.context,
+            })
         }
     }
+    completionProviderConfig.setConfig(config)
     disposables.push(
         vscode.commands.registerCommand('cody.multi-model-autocomplete.manual-trigger', () =>
             triggerMultiModelAutocompletionsForComparison(allCompletionsProviders)

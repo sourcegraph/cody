@@ -10,8 +10,8 @@ import {
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
+import type { RecentEditsRetriever } from '../completions/context/retrievers/recent-edits/recent-edits-retriever'
 import { ASSISTANT_EXAMPLE, HUMAN_EXAMPLE, MODEL, PROMPT, SYSTEM } from './prompt'
-import type { RecentEditsRetriever } from './recent-edits/recent-edits-retriever'
 import { fixIndentation } from './utils/fix-indentation'
 import { fuzzyFindLocation } from './utils/fuzzy-find-location'
 

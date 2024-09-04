@@ -67,12 +67,6 @@ interface AutocompleteResult extends vscode.InlineCompletionList {
     completionEvent?: CompletionBookkeepingEvent
 }
 
-export interface MultiModelCompletionsResults {
-    provider: string
-    model: string
-    completion?: string
-}
-
 interface CompletionRequest {
     document: vscode.TextDocument
     position: vscode.Position

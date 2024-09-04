@@ -1,14 +1,15 @@
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-
 import {
     type AutocompleteContextSnippet,
     CODY_IGNORE_URI_PATH,
+    type GraphQLAPIClientConfig,
     contextFiltersProvider,
+    graphqlClient,
     ignores,
     isCodyIgnoredFile,
     testFileUri,
     uriBasename,
 } from '@sourcegraph/cody-shared'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getCurrentDocContext } from '../get-current-doc-context'
 import { documentAndPosition } from '../test-helpers'
@@ -19,6 +20,8 @@ import { ContextMixer } from './context-mixer'
 import type { ContextStrategyFactory } from './context-strategy'
 
 import type * as vscode from 'vscode'
+
+graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
 
 function createMockStrategy(resultSets: AutocompleteContextSnippet[][]): ContextStrategyFactory {
     const retrievers = []

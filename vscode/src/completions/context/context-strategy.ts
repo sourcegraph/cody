@@ -3,6 +3,7 @@ import type { ContextRetriever } from '../types'
 import type { BfgRetriever } from './retrievers/bfg/bfg-retriever'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
 import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
+import { RecentEditsRetriever } from './retrievers/recent-edits/recent-edits-retriever'
 import { loadTscRetriever } from './retrievers/tsc/load-tsc-retriever'
 
 export type ContextStrategy =
@@ -14,6 +15,10 @@ export type ContextStrategy =
     | 'tsc'
     | 'tsc-mixed'
     | 'none'
+    | 'recent-edits'
+    | 'recent-edits-1m'
+    | 'recent-edits-5m'
+    | 'recent-edits-mixed'
 
 export interface ContextStrategyFactory extends vscode.Disposable {
     getStrategy(document: vscode.TextDocument): { name: ContextStrategy; retrievers: ContextRetriever[] }
@@ -31,6 +36,24 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
     ) {
         switch (contextStrategy) {
             case 'none':
+                break
+            case 'recent-edits':
+                this.localRetriever = new RecentEditsRetriever(60 * 1000)
+                this.disposables.push(this.localRetriever)
+                break
+            case 'recent-edits-1m':
+                this.localRetriever = new RecentEditsRetriever(60 * 1000)
+                this.disposables.push(this.localRetriever)
+                break
+            case 'recent-edits-5m':
+                this.localRetriever = new RecentEditsRetriever(60 * 5 * 1000)
+                this.disposables.push(this.localRetriever)
+                break
+            case 'recent-edits-mixed':
+                this.localRetriever = new RecentEditsRetriever(60 * 1000)
+                this.graphRetriever = new JaccardSimilarityRetriever()
+                this.disposables.push(this.localRetriever)
+                this.disposables.push(this.graphRetriever)
                 break
             case 'tsc-mixed':
                 this.localRetriever = new JaccardSimilarityRetriever()
@@ -108,9 +131,21 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                 break
 
             // The jaccard similarity strategies only uses the local retriever
-            case 'jaccard-similarity': {
+            case 'jaccard-similarity':
+            case 'recent-edits':
+            case 'recent-edits-1m':
+            case 'recent-edits-5m': {
                 if (this.localRetriever) {
                     retrievers.push(this.localRetriever)
+                }
+                break
+            }
+            case 'recent-edits-mixed': {
+                if (this.localRetriever) {
+                    retrievers.push(this.localRetriever)
+                }
+                if (this.graphRetriever?.isSupportedForLanguageId(document.languageId)) {
+                    retrievers.push(this.graphRetriever)
                 }
                 break
             }
