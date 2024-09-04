@@ -296,7 +296,7 @@ const ModelTitleWithIcon: FunctionComponent<{
             [styles.disabled]: modelAvailability !== 'available',
         })}
     >
-        {showIcon && <ChatModelIcon model={model.id} className={styles.modelIcon} />}
+        {showIcon && <ChatModelIcon model={model.provider} className={styles.modelIcon} />}
         <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
         {modelAvailability === 'needs-cody-pro' && (
             <Badge variant="secondary" className={clsx(styles.badge, 'tw-opacity-75')}>

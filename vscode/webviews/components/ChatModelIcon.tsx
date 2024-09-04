@@ -11,19 +11,19 @@ import {
 export function chatModelIconComponent(
     model: string
 ): FunctionComponent<{ size: number; className?: string }> {
-    if (model.startsWith('openai/')) {
+    if (model.startsWith('openai')) {
         return OpenAILogo
     }
-    if (model.startsWith('anthropic/')) {
+    if (model.startsWith('anthropic')) {
         return AnthropicLogo
     }
-    if (model.startsWith('google/')) {
+    if (model.startsWith('google')) {
         return GeminiLogo
     }
-    if (model.startsWith('ollama/')) {
+    if (model.startsWith('ollama')) {
         return OllamaLogo
     }
-    if (model.includes('mixtral')) {
+    if (model.startsWith('mistral')) {
         return MistralLogo
     }
     return CodyLogoBW
