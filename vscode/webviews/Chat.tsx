@@ -196,6 +196,17 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
     }, [])
 
+    const handleScrollDownClick = useCallback(() => {
+        // Scroll to the bottom instead of focus input for unsent message
+        // it's possible that we just want to scroll to the bottom in case of
+        // welcome message screen
+        if (transcript.length === 0) {
+            return
+        }
+
+        focusLastHumanMessageEditor()
+    }, [transcript])
+
     return (
         <>
             {!chatEnabled && (
@@ -221,7 +232,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 <WelcomeMessage IDE={userInfo.ide} setView={setView} />
             )}
             {scrollableParent && (
-                <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
+                <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />
             )}
         </>
     )
