@@ -5,5 +5,6 @@ data class ClientSideConfig(
   val apiKey: String? = null,
   val apiEndpoint: String? = null,
   val openAICompatible: OpenAICompatible? = null,
+  val options: Map<String, Any>? = null,
 )
 
