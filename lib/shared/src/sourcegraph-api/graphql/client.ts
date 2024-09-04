@@ -418,7 +418,6 @@ export interface Prompt {
     nameWithOwner: string
     owner: {
         namespaceName: string
-        displayName?: string | null
     }
     description?: string
     draft: boolean

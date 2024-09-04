@@ -1,26 +1,27 @@
-import type { CodyIDE } from '@sourcegraph/cody-shared'
 import type { ComponentProps } from 'react'
 import { useClientActionDispatcher } from '../client/clientState'
-import { PromptList, type PromptOrDeprecatedCommand } from '../components/promptList/PromptList'
+import {
+    type PromptList,
+    PromptListSuitedForNonPopover,
+    type PromptOrDeprecatedCommand,
+} from '../components/promptList/PromptList'
 import { View } from '../tabs/types'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 export const PromptsTab: React.FC<{
-    IDE: CodyIDE
     setView: (view: View) => void
 }> = ({ setView }) => {
     const dispatchClientAction = useClientActionDispatcher()
     return (
         <div className="tw-overflow-auto tw-p-8">
-            <PromptList
+            <PromptListSuitedForNonPopover
                 onSelect={item => onPromptSelectInPanel(item, setView, dispatchClientAction)}
                 onSelectActionLabels={onPromptSelectInPanelActionLabels}
                 showCommandOrigins={true}
-                showSearch={true}
-                showInitialSelectedItem={false}
-                showSwitchToPromptAction={false}
                 showPromptLibraryUnsupportedMessage={true}
+                showOnlyPromptInsertableCommands={false}
                 telemetryLocation="PromptsTab"
+                className="tw-border tw-border-border"
             />
         </div>
     )

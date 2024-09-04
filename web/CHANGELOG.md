@@ -1,4 +1,7 @@
-# 0.7.6
+## 0.7.7 
+- Revert "prompts and commands" new UI 
+
+## 0.7.6
 - The "Prompts" toolbar item in chat is no longer displayed. To use a prompt from the prompt library, select it from the list shown on the chat tab or prompts tab.
 
 ## 0.7.5 
