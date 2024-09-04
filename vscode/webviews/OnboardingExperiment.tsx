@@ -11,8 +11,8 @@ import signInLogoGoogle from './sign-in-logo-google.svg'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './OnboardingExperiment.module.css'
-import { useTelemetryRecorder } from './utils/telemetry'
 import { ClientSignInForm } from './components/ClientSignInForm'
+import { useTelemetryRecorder } from './utils/telemetry'
 import { useConfig } from './utils/useConfig'
 
 interface LoginProps {
