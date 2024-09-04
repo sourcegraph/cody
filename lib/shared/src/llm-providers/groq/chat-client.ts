@@ -43,7 +43,7 @@ export async function groqChatClient({
             params.messages.map(async msg => {
                 return {
                     role: msg.speaker === 'human' ? 'user' : 'assistant',
-                    content: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '',
+                    content: (await msg.text?.toFilteredString(contextFiltersProvider.instance!)) ?? '',
                 }
             })
         ),

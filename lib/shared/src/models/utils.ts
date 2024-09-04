@@ -34,10 +34,6 @@ export function isCodyProModel(model: Model): boolean {
     return modelHasTag(model, ModelTag.Pro)
 }
 
-export function isLocalModel(model: Model): boolean {
-    return modelHasTag(model, ModelTag.Local)
-}
-
 export function isCustomModel(model: Model): boolean {
     return (
         modelHasTag(model, ModelTag.Local) ||
@@ -46,10 +42,6 @@ export function isCustomModel(model: Model): boolean {
     )
 }
 
-export function isOllamaModel(model: Model): boolean {
-    return model.provider.toLowerCase() === 'ollama' || modelHasTag(model, ModelTag.Ollama)
-}
-
-export function modelHasTag(model: Model, modelTag: ModelTag): boolean {
+function modelHasTag(model: Model, modelTag: ModelTag): boolean {
     return model.tags.includes(modelTag)
 }

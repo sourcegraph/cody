@@ -20,7 +20,7 @@ import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/GraphQLTe
 import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockServerTelemetryExporter'
 
 import type { BillingCategory, BillingProduct } from '.'
-import type { AuthStatusProvider } from '../auth/types'
+import type { AuthStatus, AuthStatusProvider } from '../auth/types'
 import { getTier } from './cody-tier'
 
 export interface ExtensionDetails {
@@ -99,7 +99,7 @@ type TestTelemetryEventInput = TelemetryEventInput & { testOnlyAnonymousUserID: 
 
 // creating a delegate to the TESTING_TELEMETRY_EXPORTER to allow for easy access to exported events.
 // This instance must be shared for a consistent view of what has been exported.
-export class DelegateTelemetryExporter implements TelemetryExporter {
+class DelegateTelemetryExporter implements TelemetryExporter {
     private exportedEvents: TestTelemetryEventInput[] = []
     // default to unset to make it clear when it's not set
     private anonymousUserID = 'unset'
@@ -191,15 +191,23 @@ class ConfigurationMetadataProcessor implements TelemetryProcessor {
         if (!event.parameters.metadata) {
             event.parameters.metadata = []
         }
-        event.parameters.metadata.push(
-            {
-                key: 'contextSelection',
-                value: CONTEXT_SELECTION_ID[this.config.useContext],
-            },
-            {
+
+        event.parameters.metadata.push({
+            key: 'contextSelection',
+            value: CONTEXT_SELECTION_ID[this.config.useContext],
+        })
+
+        // The tier is not known yet when the user is not authed, and
+        // `this.authStatusProvider.status` will throw, so omit it.
+        let authStatus: AuthStatus | undefined
+        try {
+            authStatus = this.authStatusProvider.status
+        } catch {}
+        if (authStatus) {
+            event.parameters.metadata.push({
                 key: 'tier',
-                value: getTier(this.authStatusProvider.getAuthStatus()),
-            }
-        )
+                value: getTier(authStatus),
+            })
+        }
     }
 }

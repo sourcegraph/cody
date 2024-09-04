@@ -2,7 +2,7 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import type {
-    AuthStatus,
+    AuthenticatedAuthStatus,
     ChatMessage,
     CodyIDE,
     Guardrails,
@@ -15,12 +15,16 @@ import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncatio
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
+import { useClientActionDispatcher } from './client/clientState'
 import { ScrollDown } from './components/ScrollDown'
-import type { View } from './tabs'
+import { PromptList } from './components/promptList/PromptList'
+import { onPromptSelectInPanel, onPromptSelectInPanelActionLabels } from './prompts/PromptsTab'
+import { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
 
 interface ChatboxProps {
+    IDE: CodyIDE
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
@@ -35,6 +39,7 @@ interface ChatboxProps {
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
+    IDE,
     messageInProgress,
     transcript,
     vscodeAPI,
@@ -196,6 +201,19 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
     }, [])
 
+    const dispatchClientAction = useClientActionDispatcher()
+
+    const handleScrollDownClick = useCallback(() => {
+        // Scroll to the bottom instead of focus input for unsent message
+        // it's possible that we just want to scroll to the bottom in case of
+        // welcome message screen
+        if (transcript.length === 0) {
+            return
+        }
+
+        focusLastHumanMessageEditor()
+    }, [transcript])
+
     return (
         <>
             {!chatEnabled && (
@@ -217,11 +235,25 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 guardrails={guardrails}
                 smartApplyEnabled={smartApplyEnabled}
             />
+            {transcript.length === 0 && (
+                <PromptList
+                    telemetryLocation="ChatTab"
+                    showSearch={false}
+                    showSwitchToPromptAction={true}
+                    showInitialSelectedItem={false}
+                    showCommandOrigins={true}
+                    showPromptLibraryUnsupportedMessage={false}
+                    className="tw-rounded-none tw-px-4 tw-flex-shrink-0"
+                    onSelectActionLabels={onPromptSelectInPanelActionLabels}
+                    onSwitchToPromptsTab={() => setView(View.Prompts)}
+                    onSelect={item => onPromptSelectInPanel(item, setView, dispatchClientAction)}
+                />
+            )}
             {transcript.length === 0 && showWelcomeMessage && (
                 <WelcomeMessage IDE={userInfo.ide} setView={setView} />
             )}
             {scrollableParent && (
-                <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
+                <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />
             )}
         </>
     )
@@ -230,7 +262,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 export interface UserAccountInfo {
     isDotComUser: boolean
     isCodyProUser: boolean
-    user: Pick<AuthStatus, 'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail'>
+    user: Pick<
+        AuthenticatedAuthStatus,
+        'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail'
+    >
     ide: CodyIDE
 }
 

@@ -1,11 +1,10 @@
 import type { Model } from '@sourcegraph/cody-shared'
+import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
-import { type FunctionComponent, useCallback } from 'react'
+import { type FunctionComponent, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
-import type { PromptOrDeprecatedCommand } from '../../../../../../components/promptList/PromptList'
-import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
-import { useChatModelContext } from '../../../../../models/chatModelContext'
+import { useConfig } from '../../../../../../utils/useConfig'
 import { AddContextButton } from './AddContextButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
 
@@ -26,7 +25,6 @@ export const Toolbar: FunctionComponent<{
     onGapClick?: () => void
 
     focusEditor?: () => void
-    appendTextToEditor: (text: string) => void
 
     hidden?: boolean
     className?: string
@@ -38,7 +36,6 @@ export const Toolbar: FunctionComponent<{
     submitState,
     onGapClick,
     focusEditor,
-    appendTextToEditor,
     hidden,
     className,
 }) => {
@@ -79,18 +76,13 @@ export const Toolbar: FunctionComponent<{
                         className="tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2"
                     />
                 )}
-                <PromptSelectFieldToolbarItem
-                    focusEditor={focusEditor}
-                    appendTextToEditor={appendTextToEditor}
-                    className="tw-ml-1 tw-mr-1"
-                />
                 <ModelSelectFieldToolbarItem
                     userInfo={userInfo}
                     focusEditor={focusEditor}
                     className="tw-mr-1"
                 />
             </div>
-            <div className="tw-flex-1 tw-text-right">
+            <div className="tw-flex tw-justify-end tw-flex-1 tw-text-right">
                 <SubmitButton
                     onClick={onSubmitClick}
                     isEditorFocused={isEditorFocused}
@@ -101,45 +93,34 @@ export const Toolbar: FunctionComponent<{
     )
 }
 
-const PromptSelectFieldToolbarItem: FunctionComponent<{
-    focusEditor?: () => void
-    appendTextToEditor: (text: string) => void
-    className?: string
-}> = ({ focusEditor, appendTextToEditor, className }) => {
-    const onSelect = useCallback(
-        (item: PromptOrDeprecatedCommand) => {
-            appendTextToEditor(item.type === 'prompt' ? item.value.definition.text : item.value.prompt)
-            focusEditor?.()
-        },
-        [appendTextToEditor, focusEditor]
-    )
-
-    return <PromptSelectField onSelect={onSelect} onCloseByEscape={focusEditor} className={className} />
-}
-
 const ModelSelectFieldToolbarItem: FunctionComponent<{
     userInfo: UserAccountInfo
     focusEditor?: () => void
     className?: string
 }> = ({ userInfo, focusEditor, className }) => {
-    const { chatModels, onCurrentChatModelChange, serverSentModelsEnabled } = useChatModelContext()
+    const config = useConfig()
+
+    const api = useExtensionAPI()
 
     const onModelSelect = useCallback(
         (model: Model) => {
-            onCurrentChatModelChange?.(model)
+            api.setChatModel(model.id).subscribe({
+                error: error => console.error('setChatModel:', error),
+            })
             focusEditor?.()
         },
-        [onCurrentChatModelChange, focusEditor]
+        [api.setChatModel, focusEditor]
     )
+
+    const { value: chatModels } = useObservable(useMemo(() => api.models(), [api.models]))
 
     return (
         !!chatModels?.length &&
-        (userInfo.isDotComUser || serverSentModelsEnabled) &&
-        onCurrentChatModelChange && (
+        (userInfo.isDotComUser || config.configFeatures.serverSentModels) && (
             <ModelSelectField
                 models={chatModels}
                 onModelSelect={onModelSelect}
-                serverSentModelsEnabled={!!serverSentModelsEnabled}
+                serverSentModelsEnabled={config.configFeatures.serverSentModels}
                 userInfo={userInfo}
                 onCloseByEscape={focusEditor}
                 className={className}

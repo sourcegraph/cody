@@ -29,6 +29,9 @@ export function convertGitCloneURLToCodebaseName(cloneURL: string): string | nul
     return result
 }
 
+// This converts a git clone URL to the what is *likely* the repoName on Sourcegraph.
+// This is not guaranteed to be correct, and we should add an endpoint to Sourcegraph
+// to resolve the repoName from the cloneURL.
 export function convertGitCloneURLToCodebaseNameOrError(cloneURL: string): string | Error {
     if (!cloneURL) {
         return new Error(
@@ -126,3 +129,12 @@ type TupleFromUnion<T, U = T> = [T] extends [never]
 
 // Helper type to ensure an array contains all members of T
 export type ArrayContainsAll<T extends string> = TupleFromUnion<T>
+
+/** Make T readonly (recursively). */
+export type ReadonlyDeep<T> = {
+    readonly [P in keyof T]: T[P] extends (infer U)[]
+        ? ReadonlyArray<ReadonlyDeep<U>>
+        : T[P] extends object
+          ? ReadonlyDeep<T[P]>
+          : T[P]
+}

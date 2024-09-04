@@ -1,6 +1,7 @@
 import {
-    type AuthStatus,
+    type AuthenticatedAuthStatus,
     type ClientConfiguration,
+    DOTCOM_URL,
     type GraphQLAPIClientConfig,
     contextFiltersProvider,
     graphqlClient,
@@ -39,16 +40,12 @@ const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
 }
 
-const DUMMY_AUTH_STATUS: AuthStatus = {
-    endpoint: 'https://fastsourcegraph.com',
-    isDotCom: true,
-    isLoggedIn: true,
+const DUMMY_AUTH_STATUS: AuthenticatedAuthStatus = {
+    endpoint: DOTCOM_URL.toString(),
     isFireworksTracingEnabled: false,
-    showInvalidAccessTokenError: false,
     authenticated: true,
     hasVerifiedEmail: true,
     requiresVerifiedEmail: true,
-    siteHasCodyEnabled: true,
     siteVersion: '1234',
     username: 'uwu',
     userCanUpgrade: false,
@@ -199,7 +196,7 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
         })
 
         beforeEach(() => {
-            vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+            vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValue(false)
             getCompletionProviderSpy = vi.spyOn(CompletionProvider, 'getCompletionProvider')
         })
 

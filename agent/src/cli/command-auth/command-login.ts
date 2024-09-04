@@ -1,45 +1,58 @@
 import http from 'node:http'
 import { input, select } from '@inquirer/prompts'
-import { SourcegraphGraphQLAPIClient, isError } from '@sourcegraph/cody-shared'
-import { Command } from 'commander'
+import { DOTCOM_URL, SourcegraphGraphQLAPIClient, isError } from '@sourcegraph/cody-shared'
+import { Command, Option } from 'commander'
 import open from 'open'
 import ora from 'ora'
 import type { Ora } from 'ora'
-import { formatURL } from '../../../../vscode/src/services/AuthProvider'
+import { formatURL } from '../../../../vscode/src/auth/auth'
 import { AuthenticatedAccount } from './AuthenticatedAccount'
+import { errorSpinner, unknownErrorSpinner } from './messages'
 import { writeCodySecret } from './secrets'
 import { type Account, type UserSettings, loadUserSettings, writeUserSettings } from './settings'
 
-interface LoginOptions {
+export interface AuthenticationOptions {
+    accessToken: string
+    endpoint: string
+}
+
+export const DEFAULT_AUTHENTICATION_OPTIONS: AuthenticationOptions = {
+    accessToken: '',
+    endpoint: DOTCOM_URL.toString(),
+}
+
+export const accessTokenOption = new Option('--access-token <token>', 'Manually provide an access token')
+    .env('SRC_ACCESS_TOKEN')
+    .default('')
+
+export const endpointOption = new Option(
+    '--endpoint <url>',
+    'Manually provide the URL of the Sourcegraph instance'
+)
+    .env('SRC_ENDPOINT')
+    .default(DEFAULT_AUTHENTICATION_OPTIONS.endpoint)
+
+interface LoginOptions extends AuthenticationOptions {
     web: boolean
-    accessToken?: string
-    endpoint?: string
 }
 
 export const loginCommand = new Command('login')
     .description('Log in to Sourcegraph')
     .option('--web', 'Open a browser to authenticate')
-    .option(
-        '--access-token <token>',
-        'Manually provide an access token (env SRC_ACCESS_TOKEN)',
-        process.env.SRC_ACCESS_TOKEN
-    )
-    .option(
-        '--endpoint <url>',
-        'Manually provide a server endpoint (env SRC_ENDPOINT)',
-        process.env.SRC_ENDPOINT ?? 'https://sourcegraph.com/'
-    )
+    .addOption(accessTokenOption)
+    .addOption(endpointOption)
     .action(async (options: LoginOptions) => {
         const spinner = ora('Logging in...').start()
-        const account = await AuthenticatedAccount.fromUserSettings(spinner)
-        if (!spinner.isSpinning) {
+        const account = await AuthenticatedAccount.fromUserSettings(spinner, options)
+        if (isError(account)) {
+            errorSpinner(spinner, account, options)
             process.exit(1)
         }
-        const userInfo = await account?.getCurrentUserInfo()
-        if (!isError(userInfo) && userInfo?.username) {
-            spinner.succeed('You are already logged in as ' + userInfo.username)
+        if (account?.userInfo.username && account.source === 'SECRET_STORAGE') {
+            spinner.succeed('You are already logged in as ' + account.userInfo.username)
             process.exit(0)
         }
+
         if (!options.web && !options.accessToken) {
             spinner
                 .start()
@@ -54,31 +67,24 @@ export const loginCommand = new Command('login')
         }
         try {
             const account = await loginAction(options, spinner)
-            if (!account) {
-                if (spinner.isSpinning) {
-                    spinner.fail('Failed to authenticate')
-                }
+            if (isError(account)) {
+                errorSpinner(spinner, account, options)
                 process.exit(1)
             }
-            const userInfo = await account.getCurrentUserInfo()
-            if (!userInfo || isError(userInfo)) {
-                spinner.fail(
-                    `Failed to fetch username for account ${account.id} in ${account.serverEndpoint}`
+            if (!account?.userInfo.username) {
+                errorSpinner(
+                    spinner,
+                    new Error(`failed to authenticate with credentials ${JSON.stringify(options)}`),
+                    options
                 )
                 process.exit(1)
             }
             spinner.succeed(
-                `Authenticated as ${userInfo.username} at Sourcegraph endpoint ${account.serverEndpoint}`
+                `Logged in as ${account.userInfo.username} at Sourcegraph endpoint ${account.serverEndpoint}. Run 'cody auth logout' to log out.`
             )
             process.exit(0)
         } catch (error) {
-            if (error instanceof Error) {
-                spinner.suffixText = error.stack ?? ''
-                spinner.fail(error.message)
-            } else {
-                spinner.suffixText = String(error)
-                spinner.fail('Failed to login')
-            }
+            unknownErrorSpinner(spinner, error, options)
             process.exit(1)
         }
     })
@@ -88,10 +94,10 @@ export const loginCommand = new Command('login')
 // environment variable
 type LoginMethod = 'web-login' | 'cli-login'
 
-export async function loginAction(
+async function loginAction(
     options: LoginOptions,
     spinner: Ora
-): Promise<AuthenticatedAccount | undefined> {
+): Promise<AuthenticatedAccount | Error | undefined> {
     const loginMethod: LoginMethod =
         options.web && options.accessToken
             ? // Ambiguous, the user provided both --web and --access-token
@@ -139,8 +145,7 @@ export async function loginAction(
     const newAccounts = [account, ...oldAccounts]
     const newSettings: UserSettings = { accounts: newAccounts, activeAccountID: account.id }
     writeUserSettings(newSettings)
-    const result = await AuthenticatedAccount.fromUserSettings(spinner)
-    return result
+    return AuthenticatedAccount.fromUserSettings(spinner, options)
 }
 
 /**

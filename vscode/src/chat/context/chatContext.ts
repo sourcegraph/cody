@@ -22,22 +22,24 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getConfiguration } from '../../configuration'
-import type { RemoteSearch } from '../../context/remote-search'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
     getSymbolContextFiles,
 } from '../../editor/utils/editor-context'
+import {
+    fetchRepoMetadataForFolder,
+    workspaceReposMonitor,
+} from '../../repository/repo-metadata-from-git-api'
 import type { ChatModel } from '../chat-view/ChatModel'
 
-export interface GetContextItemsTelemetry {
+interface GetContextItemsTelemetry {
     empty: () => void
     withProvider: (type: MentionQuery['provider'], metadata?: { id: string }) => void
 }
 
 export function getMentionMenuData(
     query: MentionQuery,
-    remoteSearch: RemoteSearch | null,
     chatModel: ChatModel
 ): Observable<MentionMenuData> {
     const source = 'chat'
@@ -74,9 +76,6 @@ export function getMentionMenuData(
                     mentionQuery: query,
                     telemetryRecorder: scopedTelemetryRecorder,
                     rangeFilter: !isCodyWeb,
-                    remoteRepositoriesNames: query.includeRemoteRepositories
-                        ? remoteSearch?.getRepos('all')?.map(repo => repo.name)
-                        : undefined,
                 },
                 signal
             ).then(items =>
@@ -115,17 +114,15 @@ interface GetContextItemsOptions {
     // character is typed). Don't log otherwise because we would be logging prefixes of the same
     // query repeatedly, which is not needed.
     telemetryRecorder?: GetContextItemsTelemetry
-
-    remoteRepositoriesNames?: string[]
     rangeFilter?: boolean
 }
 
 export async function getChatContextItemsForMention(
     options: GetContextItemsOptions,
-    signal?: AbortSignal
+    _?: AbortSignal
 ): Promise<ContextItem[]> {
     const MAX_RESULTS = 20
-    const { mentionQuery, telemetryRecorder, remoteRepositoriesNames, rangeFilter = true } = options
+    const { mentionQuery, telemetryRecorder, rangeFilter = true } = options
 
     switch (mentionQuery.provider) {
         case null:
@@ -134,7 +131,11 @@ export async function getChatContextItemsForMention(
         case SYMBOL_CONTEXT_MENTION_PROVIDER.id:
             telemetryRecorder?.withProvider(mentionQuery.provider)
             // It would be nice if the VS Code symbols API supports cancellation, but it doesn't
-            return getSymbolContextFiles(mentionQuery.text, MAX_RESULTS, remoteRepositoriesNames)
+            return getSymbolContextFiles(
+                mentionQuery.text,
+                MAX_RESULTS,
+                mentionQuery.contextRemoteRepositoriesNames
+            )
         case FILE_CONTEXT_MENTION_PROVIDER.id: {
             telemetryRecorder?.withProvider(mentionQuery.provider)
             const files = mentionQuery.text
@@ -142,7 +143,7 @@ export async function getChatContextItemsForMention(
                       query: mentionQuery.text,
                       range: mentionQuery.range,
                       maxResults: MAX_RESULTS,
-                      repositoriesNames: remoteRepositoriesNames,
+                      repositoriesNames: mentionQuery.contextRemoteRepositoriesNames,
                   })
                 : await getOpenTabsContextFile()
 
@@ -167,7 +168,7 @@ export async function getChatContextItemsForMention(
             }
 
             const items = await openCtx.controller.mentions(
-                { query: mentionQuery.text },
+                { query: mentionQuery.text, ...(await getActiveEditorContextForOpenCtxMentions()) },
                 // get mention items for the selected provider only.
                 { providerUri: mentionQuery.provider }
             )
@@ -177,6 +178,21 @@ export async function getChatContextItemsForMention(
             )
         }
     }
+}
+
+export async function getActiveEditorContextForOpenCtxMentions(): Promise<{
+    uri: string | undefined
+    codebase: string | undefined
+}> {
+    const uri = vscode.window.activeTextEditor?.document.uri?.toString()
+    const activeWorkspaceURI =
+        uri &&
+        workspaceReposMonitor?.getFolderURIs().find(folderURI => uri?.startsWith(folderURI.toString()))
+
+    const codebase =
+        activeWorkspaceURI && (await fetchRepoMetadataForFolder(activeWorkspaceURI))[0]?.repoName
+
+    return { uri, codebase }
 }
 
 export function contextItemMentionFromOpenCtxItem(

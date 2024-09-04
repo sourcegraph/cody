@@ -4,8 +4,6 @@ import { URI } from 'vscode-uri'
 
 import {
     type ClientConfigurationWithAccessToken,
-    type ContextGroup,
-    type ContextStatusProvider,
     type EmbeddingsModelConfig,
     type EmbeddingsSearchResult,
     FeatureFlag,
@@ -19,7 +17,6 @@ import {
     isFileURI,
     recordErrorToSpan,
     telemetryRecorder,
-    uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -36,7 +33,9 @@ export async function createLocalEmbeddingsController(
 ): Promise<LocalEmbeddingsController> {
     const modelConfig =
         config.testingModelConfig ||
-        (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEmbeddingsGenerateMetadata))
+        (await featureFlagProvider.instance!.evaluateFeatureFlag(
+            FeatureFlag.CodyEmbeddingsGenerateMetadata
+        ))
             ? sourcegraphMetadataModelConfig
             : sourcegraphModelConfig
 
@@ -96,9 +95,7 @@ const sourcegraphMetadataModelConfig: EmbeddingsModelConfig = {
     indexPath: getIndexLibraryPath('st-metadata'),
 }
 
-export class LocalEmbeddingsController
-    implements LocalEmbeddingsFetcher, ContextStatusProvider, vscode.Disposable
-{
+export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode.Disposable {
     private disposables: vscode.Disposable[] = []
 
     // The cody-engine child process, if starting or started.
@@ -125,19 +122,12 @@ export class LocalEmbeddingsController
     // The status bar item local embeddings is displaying, if any.
     private statusBar: vscode.StatusBarItem | undefined
 
-    // Fires when available local embeddings (may) have changed. This updates
-    // the codebase context, which touches the network and file system, so only
-    // use it for major changes like local embeddings being available at all,
-    // or the first index for a repository comes online.
-    private readonly changeEmitter = new vscode.EventEmitter<LocalEmbeddingsController>()
-
     constructor(
         private readonly context: vscode.ExtensionContext,
         config: LocalEmbeddingsConfig,
         private readonly modelConfig: EmbeddingsModelConfig
     ) {
         logDebug('LocalEmbeddingsController', 'constructor')
-        this.disposables.push(this.changeEmitter, this.statusEmitter)
         this.disposables.push(
             vscode.commands.registerCommand('cody.embeddings.resolveIssue', () =>
                 this.resolveIssueCommand()
@@ -154,10 +144,6 @@ export class LocalEmbeddingsController
             disposable.dispose()
         }
         this.statusBar?.dispose()
-    }
-
-    public get onChange(): vscode.Event<LocalEmbeddingsController> {
-        return this.changeEmitter.event
     }
 
     // Hint that local embeddings should start cody-engine, if necessary.
@@ -190,14 +176,6 @@ export class LocalEmbeddingsController
             'setAccessToken',
             endpointIsDotcom ? 'is dotcom' : 'not dotcom'
         )
-        if (endpointIsDotcom !== this.endpointIsDotcom) {
-            // We will show, or hide, status depending on whether we are using
-            // dotcom. We do not offer local embeddings to Enterprise.
-            this.statusEmitter.fire(this)
-            if (this.serviceStarted) {
-                this.changeEmitter.fire(this)
-            }
-        }
         this.endpointIsDotcom = endpointIsDotcom
         if (token === this.accessToken) {
             return Promise.resolve()
@@ -266,7 +244,6 @@ export class LocalEmbeddingsController
             await service.request('embeddings/set-token', this.accessToken)
         }
         this.serviceStarted = true
-        this.changeEmitter.fire(this)
     }
 
     // After indexing succeeds or fails, try to load the index. Update state
@@ -280,7 +257,6 @@ export class LocalEmbeddingsController
             void (async () => {
                 const loadedOk = await this.eagerlyLoad(path)
                 logDebug('LocalEmbeddingsController', 'load after indexing "done"', path, loadedOk)
-                this.changeEmitter.fire(this)
                 if (loadedOk && !this.lastError) {
                     await vscode.window.showInformationMessage('✨ Cody Embeddings Index Complete')
                 }
@@ -293,97 +269,6 @@ export class LocalEmbeddingsController
         }
 
         this.dirBeingIndexed = undefined
-        this.statusEmitter.fire(this)
-    }
-
-    // ContextStatusProvider implementation
-
-    private statusEmitter: vscode.EventEmitter<ContextStatusProvider> = new vscode.EventEmitter()
-
-    public onDidChangeStatus(callback: (provider: ContextStatusProvider) => void): vscode.Disposable {
-        return this.statusEmitter.event(callback)
-    }
-
-    public get status(): ContextGroup[] {
-        logDebug('LocalEmbeddingsController', 'get status')
-        if (!this.endpointIsDotcom) {
-            // There are no local embeddings for Enterprise.
-            return []
-        }
-        // TODO: Summarize the path with ~, etc.
-        const dir = this.lastRepo?.dir ?? vscode.workspace.workspaceFolders?.[0]?.uri
-        if (!dir || !this.lastRepo) {
-            return [
-                {
-                    dir,
-                    displayName: dir ? uriBasename(dir) : '(No workspace loaded)',
-                    providers: [
-                        {
-                            kind: 'embeddings',
-                            state: 'indeterminate',
-                            embeddingsAPIProvider: this.modelConfig.provider,
-                        },
-                    ],
-                },
-            ]
-        }
-        if (this.dirBeingIndexed?.toString() === dir.toString()) {
-            return [
-                {
-                    dir,
-                    displayName: uriBasename(dir),
-                    providers: [
-                        {
-                            kind: 'embeddings',
-                            state: 'indexing',
-                            embeddingsAPIProvider: this.modelConfig.provider,
-                        },
-                    ],
-                },
-            ]
-        }
-        if (this.lastRepo.repoName) {
-            return [
-                {
-                    dir,
-                    displayName: uriBasename(dir),
-                    providers: [
-                        {
-                            kind: 'embeddings',
-                            state: 'ready',
-                            embeddingsAPIProvider: this.modelConfig.provider,
-                        },
-                    ],
-                },
-            ]
-        }
-        const repoState = this.repoState.get(dir.toString())
-        let stateAndErrors: {
-            state: 'unconsented' | 'no-match'
-            errorReason?: 'not-a-git-repo' | 'git-repo-has-no-remote'
-        }
-        if (repoState?.indexable) {
-            stateAndErrors = { state: 'unconsented' }
-        } else if (repoState?.errorReason) {
-            stateAndErrors = { state: 'no-match', errorReason: repoState.errorReason }
-        } else {
-            logDebug('LocalEmbeddings', 'state', '"no-match" state should provide a reason')
-            stateAndErrors = { state: 'no-match' }
-        }
-
-        return [
-            {
-                dir,
-                displayName: uriBasename(dir),
-                providers: [
-                    {
-                        kind: 'embeddings',
-                        ...stateAndErrors,
-                        embeddingsAPIProvider: this.modelConfig.provider,
-                    },
-                ],
-            },
-        ]
     }
 
     // Interactions with cody-engine
@@ -422,7 +307,6 @@ export class LocalEmbeddingsController
                 vscode.StatusBarAlignment.Right,
                 0
             )
-            this.statusEmitter.fire(this)
         } catch (error: any) {
             logDebug('LocalEmbeddingsController', captureException(error), error)
         }
@@ -499,7 +383,6 @@ export class LocalEmbeddingsController
                 this.lastRepo = { dir: repoDir, repoName: false }
             }
         })
-        this.statusEmitter.fire(this)
         return !!this.lastRepo?.repoName
     }
 

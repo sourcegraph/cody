@@ -17,7 +17,7 @@ import {
     type GitIdentifiersForFile,
     gitMetadataForCurrentEditor,
 } from '../repository/git-metadata-for-editor'
-import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
+import { GitHubDotComRepoMetadata } from '../repository/repo-metadata-from-git-api'
 import type { ContextMixer } from './context/context-mixer'
 import { getCompletionProvider } from './get-completion-provider'
 import { insertIntoDocContext } from './get-current-doc-context'
@@ -246,7 +246,7 @@ async function doGetInlineCompletions(
     const gitIdentifiersForFile =
         isDotComUser === true ? gitMetadataForCurrentEditor.getGitIdentifiersForFile() : undefined
     if (gitIdentifiersForFile?.gitUrl) {
-        const repoMetadataInstance = RepoMetadatafromGitApi.getInstance()
+        const repoMetadataInstance = GitHubDotComRepoMetadata.getInstance()
         // Calling this so that it precomputes the `gitRepoUrl` and store in its cache for query later.
         repoMetadataInstance.getRepoMetadataUsingGitUrl(gitIdentifiersForFile.gitUrl)
     }

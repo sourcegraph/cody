@@ -5,6 +5,7 @@ import type { Memento } from 'vscode'
 import type {
     AccountKeyedChatHistory,
     AuthStatus,
+    AuthenticatedAuthStatus,
     ChatHistoryKey,
     ClientConfigurationWithAccessToken,
     UserLocalHistory,
@@ -100,13 +101,16 @@ class LocalStorage {
         return username && endpoint ? { endpoint, username } : null
     }
 
-    public getChatHistory(authStatus: AuthStatus): UserLocalHistory {
+    public getChatHistory(authStatus: AuthenticatedAuthStatus): UserLocalHistory {
         const history = this.storage.get<AccountKeyedChatHistory | null>(this.KEY_LOCAL_HISTORY, null)
         const accountKey = getKeyForAuthStatus(authStatus)
         return history?.[accountKey] ?? { chat: {} }
     }
 
-    public async setChatHistory(authStatus: AuthStatus, history: UserLocalHistory): Promise<void> {
+    public async setChatHistory(
+        authStatus: AuthenticatedAuthStatus,
+        history: UserLocalHistory
+    ): Promise<void> {
         try {
             const key = getKeyForAuthStatus(authStatus)
             let fullHistory = this.storage.get<AccountKeyedChatHistory | null>(
@@ -146,7 +150,7 @@ class LocalStorage {
         await this.storage.update(this.KEY_LOCAL_HISTORY, history)
     }
 
-    public async deleteChatHistory(authStatus: AuthStatus, chatID: string): Promise<void> {
+    public async deleteChatHistory(authStatus: AuthenticatedAuthStatus, chatID: string): Promise<void> {
         const userHistory = this.getChatHistory(authStatus)
         if (userHistory) {
             try {
@@ -168,7 +172,7 @@ class LocalStorage {
         return this.storage.get<string | null>(this.KEY_LOCAL_MINION_HISTORY, null)
     }
 
-    public async removeChatHistory(authStatus: AuthStatus): Promise<void> {
+    public async removeChatHistory(authStatus: AuthenticatedAuthStatus): Promise<void> {
         try {
             await this.setChatHistory(authStatus, { chat: {} })
         } catch (error) {
@@ -252,6 +256,6 @@ class LocalStorage {
  */
 export const localStorage = new LocalStorage()
 
-function getKeyForAuthStatus(authStatus: AuthStatus): ChatHistoryKey {
+function getKeyForAuthStatus(authStatus: AuthenticatedAuthStatus): ChatHistoryKey {
     return `${authStatus.endpoint}-${authStatus.username}`
 }

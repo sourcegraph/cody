@@ -1,5 +1,4 @@
 import {
-    type AuthStatusProvider,
     type ClientConfiguration,
     type ClientConfigurationWithAccessToken,
     CodyIDE,
@@ -18,6 +17,7 @@ import { logDebug } from '../log'
 import { getOSArch } from '../os'
 import { version } from '../version'
 
+import { authProvider } from './AuthProvider'
 import { localStorage } from './LocalStorageProvider'
 
 const { platform, arch } = getOSArch()
@@ -61,8 +61,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
      * Hardcode isExtensionModeDevOrTest to false to test real exports - when
      * true, exports are logged to extension output instead.
      */
-    isExtensionModeDevOrTest: boolean,
-    authStatusProvider: AuthStatusProvider
+    isExtensionModeDevOrTest: boolean
 ): Promise<void> {
     const extensionDetails = getExtensionDetails(config)
 
@@ -86,7 +85,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
             new MockServerTelemetryRecorderProvider(
                 extensionDetails,
                 config,
-                authStatusProvider,
+                authProvider.instance!,
                 anonymousUserID
             )
         )
@@ -98,7 +97,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
             new TelemetryRecorderProvider(
                 extensionDetails,
                 config,
-                authStatusProvider,
+                authProvider.instance!,
                 anonymousUserID,
                 legacyBackcompatLogEventMode
             )
@@ -117,7 +116,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
              * New user
              */
             telemetryRecorder.recordEvent('cody.extension', 'installed')
-        } else if (!config.isRunningInsideAgent) {
+        } else if (!config.isRunningInsideAgent || config.agentHasPersistentStorage) {
             /**
              * Repeat user
              */

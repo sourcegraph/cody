@@ -1,17 +1,11 @@
 import type { Decorator } from '@storybook/react'
 
-import {
-    type Model,
-    getDotComDefaultModels,
-    isWindows,
-    setDisplayPathEnvInfo,
-} from '@sourcegraph/cody-shared'
+import { isWindows, setDisplayPathEnvInfo } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { type CSSProperties, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { URI } from 'vscode-uri'
 import '../../node_modules/@vscode/codicons/dist/codicon.css'
 import { AppWrapperForTest } from '../AppWrapperForTest'
-import { type ChatModelContext, ChatModelContextProvider } from '../chat/models/chatModelContext'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from '../utils/telemetry'
 import styles from './VSCodeStoryDecorator.module.css'
 
@@ -84,25 +78,13 @@ export function VSCodeDecorator(className: string | undefined, style?: CSSProper
         return (
             <div className={clsx(styles.container, className)} style={style}>
                 <AppWrapperForTest>
-                    <ChatModelContextProvider value={useDummyChatModelContext()}>
-                        <TelemetryRecorderContext.Provider value={telemetryRecorder}>
-                            {story()}
-                        </TelemetryRecorderContext.Provider>
-                    </ChatModelContextProvider>
+                    <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                        {story()}
+                    </TelemetryRecorderContext.Provider>
                 </AppWrapperForTest>
             </div>
         )
     }
-}
-
-function useDummyChatModelContext(): ChatModelContext {
-    const [chatModels, setChatModels] = useState(getDotComDefaultModels())
-    const onCurrentChatModelChange = (value: Model): void => {
-        setChatModels(chatModels =>
-            chatModels.map(model => ({ ...model, default: model.id === value.id }))
-        )
-    }
-    return { chatModels, onCurrentChatModelChange }
 }
 
 const acquireVsCodeApi = () => ({

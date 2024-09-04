@@ -95,6 +95,22 @@ export const MentionMenu: FunctionComponent<
         return () => window.removeEventListener('keydown', listener, { capture: true })
     }, [])
 
+    // Mouse down events cause input blur event and as a result in Safari
+    // where this problem came up originally (I suspect that for Safari typehead plugin
+    // has some special logic), it moves cursor to the very beginning of input and hence
+    // it loses state and breaks the flow of mention picking.
+    // Ignore mousedown events to prevent input focus lose.
+
+    // See issue for more details https://github.com/facebook/lexical/issues/3998
+    useEffect(() => {
+        const listener = (e: Event) => {
+            e.preventDefault()
+            e.stopPropagation()
+        }
+        window.addEventListener('mousedown', listener, { capture: true })
+        return () => window.removeEventListener('mousedown', listener, { capture: true })
+    }, [])
+
     const onProviderSelect = useCallback(
         (value: string): void => {
             const provider = data.providers.find(p => commandRowValue(p) === value)

@@ -24,11 +24,7 @@ export function relevantTypeIdentifiers(
     return { kind, nodes }
 }
 
-export function pushTypeIdentifiers(
-    result: ts.Node[],
-    checker: ts.TypeChecker,
-    node: ts.Node
-): NodeMatchKind {
+function pushTypeIdentifiers(result: ts.Node[], checker: ts.TypeChecker, node: ts.Node): NodeMatchKind {
     if (ts.isSourceFile(node)) {
         ts.forEachChild(node, child => {
             if (ts.isImportDeclaration(child)) {

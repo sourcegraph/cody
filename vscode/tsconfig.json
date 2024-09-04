@@ -6,12 +6,10 @@
     "outDir": "dist/tsc",
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "types": [
-      "@testing-library/jest-dom"
-    ],
+    "types": ["@testing-library/jest-dom"],
     "paths": {
-      "@/*": ["./webviews/*"],
-    },
+      "@/*": ["./webviews/*"]
+    }
   },
   "include": [
     "src",
@@ -23,7 +21,7 @@
     "e2e",
     "webviews",
     "webviews/*.d.ts",
-    "package.json",
+    "package.json"
   ],
   "exclude": [
     "typehacks",
@@ -31,7 +29,7 @@
     "dist",
     "test/integration",
     "**/test-data",
-    "webviews/vite.config.mts",
+    "webviews/vite.config.mts"
   ],
   "references": [
     {

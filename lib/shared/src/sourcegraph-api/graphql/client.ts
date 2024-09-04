@@ -71,7 +71,7 @@ interface SiteVersionResponse {
     site: { productVersion: string } | null
 }
 
-export type FuzzyFindFilesResponse = {
+type FuzzyFindFilesResponse = {
     __typename?: 'Query'
     search: {
         results: {
@@ -80,7 +80,7 @@ export type FuzzyFindFilesResponse = {
     } | null
 }
 
-export type FuzzyFindSymbolsResponse = {
+type FuzzyFindSymbolsResponse = {
     __typename?: 'Query'
     search: {
         results: {
@@ -178,9 +178,6 @@ interface CurrentUserInfoResponse {
 //
 // For the canonical type definition, see https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/clientconfig/types.go
 interface CodyClientConfig {
-    // Whether the site admin allows this user to make use of Cody at all.
-    codyEnabled: boolean
-
     // Whether the site admin allows this user to make use of the Cody chat feature.
     chatEnabled: boolean
 
@@ -320,7 +317,7 @@ interface FileContentsResponse {
     } | null
 }
 
-interface RepositoryIdResponse {
+export interface RepositoryIdResponse {
     repository: { id: string } | null
 }
 
@@ -421,6 +418,7 @@ export interface Prompt {
     nameWithOwner: string
     owner: {
         namespaceName: string
+        displayName?: string | null
     }
     description?: string
     draft: boolean
@@ -600,10 +598,6 @@ export class SourcegraphGraphQLAPIClient {
      */
     public setAnonymousUserID(anonymousUID: string): void {
         this.anonymousUserID = anonymousUID
-    }
-
-    public isDotCom(): boolean {
-        return isDotCom(this.config.serverEndpoint)
     }
 
     // Gets the server endpoint for this client.
@@ -1194,7 +1188,7 @@ export class SourcegraphGraphQLAPIClient {
          * If connected to dotcom, just log events to the instance, as it means
          * the same thing.
          */
-        if (this.isDotCom()) {
+        if (isDotCom(this.config.serverEndpoint)) {
             return this.sendEventLogRequestToAPI(event)
         }
 
@@ -1546,7 +1540,7 @@ export class ClientConfigSingleton {
     }
 
     public async setAuthStatus(authStatus: AuthStatus): Promise<void> {
-        this.isSignedIn = authStatus.authenticated && authStatus.isLoggedIn
+        this.isSignedIn = authStatus.authenticated
         if (this.isSignedIn) {
             await this.refreshConfig()
         } else {
@@ -1667,7 +1661,6 @@ export class ClientConfigSingleton {
         const features = await this.fetchConfigFeaturesLegacy(this.featuresLegacy)
 
         return graphqlClient.isCodyEnabled().then(isCodyEnabled => ({
-            codyEnabled: isCodyEnabled.enabled,
             chatEnabled: features.chat,
             autoCompleteEnabled: features.autoComplete,
             customCommandsEnabled: features.commands,

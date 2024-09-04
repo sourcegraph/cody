@@ -72,7 +72,7 @@ export class CodySourceControl implements vscode.Disposable {
     public async generate(scm?: vscode.SourceControl): Promise<void> {
         telemetryRecorder.recordEvent('cody.command.generate-commit', 'executed')
 
-        const currentWorkspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri
+        const currentWorkspaceUri = scm?.rootUri ?? vscode.workspace.workspaceFolders?.[0]?.uri
         if (!this.gitAPI || !currentWorkspaceUri) {
             vscode.window.showInformationMessage('Git is not available in the current workspace.')
             return
@@ -232,7 +232,7 @@ export class CodySourceControl implements vscode.Disposable {
     }
 
     public setAuthStatus(_: AuthStatus): void {
-        const models = modelsService.getModels(ModelUsage.Chat)
+        const models = modelsService.instance!.getModels(ModelUsage.Chat)
         const preferredModel = models.find(p => p.id.includes('claude-3-haiku'))
         this.model = preferredModel ?? models[0]
     }

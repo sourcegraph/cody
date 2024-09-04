@@ -5,11 +5,12 @@ import {
     convertGitCloneURLToCodebaseName,
     graphqlClient,
     isDefined,
+    isDotCom,
     isFileURI,
 } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
-import type { AuthProvider } from '../services/AuthProvider'
+import { authProvider } from '../services/AuthProvider'
 
 import { gitRemoteUrlsFromGitExtension } from './git-extension-api'
 import { gitRemoteUrlsFromParentDirs } from './remote-urls-from-parent-dirs'
@@ -19,16 +20,12 @@ type RemoteUrl = string
 type UriFsPath = string
 
 export class RepoNameResolver {
-    private authProvider: AuthProvider | undefined
-
     private fsPathToRepoNameCache = new LRUCache<UriFsPath, RepoName[]>({ max: 1000 })
     private remoteUrlToRepoNameCache = new LRUCache<RemoteUrl, Promise<RepoName | null>>({ max: 1000 })
 
-    public init(authProvider: AuthProvider): void {
-        this.authProvider = authProvider
-
+    public init(): void {
         // TODO(beyang): handle disposable
-        this.authProvider.changes.subscribe(() => {
+        authProvider.instance!.changes.subscribe(() => {
             this.fsPathToRepoNameCache.clear()
             this.remoteUrlToRepoNameCache.clear()
         })
@@ -96,14 +93,14 @@ export class RepoNameResolver {
     }
 
     private async getRepoNamesFromRemoteUrls(remoteUrls: string[]): Promise<string[]> {
-        if (!this.authProvider) {
+        if (!authProvider.instance) {
             throw new Error('RepoNameResolver not initialized')
         }
 
         const uniqueRemoteUrls = Array.from(new Set(remoteUrls))
 
         // Use local conversion function for non-enterprise accounts.
-        if (this.authProvider.getAuthStatus().isDotCom) {
+        if (isDotCom(authProvider.instance.status)) {
             return uniqueRemoteUrls.map(convertGitCloneURLToCodebaseName).filter(isDefined)
         }
 

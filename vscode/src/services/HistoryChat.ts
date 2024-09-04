@@ -6,7 +6,11 @@ import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { type AuthStatus, type ChatMessage, PromptString } from '@sourcegraph/cody-shared'
 import { prepareChatMessage } from '../chat/chat-view/ChatModel'
 import { getRelativeChatPeriod } from '../common/time-date'
-import type { CodySidebarTreeItem } from './tree-views/treeViewItems'
+
+interface CodySidebarTreeItem {
+    id: string
+    title: string
+}
 
 interface GroupedChats {
     [groupName: string]: CodySidebarTreeItem[]
@@ -21,7 +25,7 @@ interface HistoryItem {
 export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats | null {
     const chatHistoryGroups = new Map<string, CodySidebarTreeItem[]>()
 
-    if (!authStatus) {
+    if (!authStatus || !authStatus.authenticated) {
         return null
     }
 
@@ -54,17 +58,10 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
                 chatHistoryGroups.set(timeUnit, [])
             }
 
-            const chatItem = {
+            chatHistoryGroups.get(timeUnit)?.push({
                 id,
                 title: chatTitle,
-                icon: 'comment-discussion',
-                command: {
-                    command: 'cody.chat.panel.restore',
-                    args: [id, chatTitle],
-                },
-            }
-
-            chatHistoryGroups.get(timeUnit)?.push(chatItem)
+            })
         }
     }
 

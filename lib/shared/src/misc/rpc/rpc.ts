@@ -134,9 +134,9 @@ export function createMessageAPIForExtension<
 export function createMessageAPIForWebview<
     TExtensionMessage extends { type: 'rpc/response'; message: ResponseMessage } | { type: string },
 >(
-    vscodeAPI: GenericVSCodeWrapper<
-        { command: 'rpc/request'; message: RequestMessage },
-        TExtensionMessage
+    vscodeAPI: Pick<
+        GenericVSCodeWrapper<{ command: 'rpc/request'; message: RequestMessage }, TExtensionMessage>,
+        'postMessage' | 'onMessage'
     >
 ): MessageAPI<RequestMessage, ResponseMessage> {
     function isRPCResponse(
@@ -181,8 +181,6 @@ export function createMessageAPIForWebview<
         },
     }
 }
-
-const isWebview = Boolean(typeof window !== 'undefined' && window.document?.body)
 
 /**
  * Send a message and return an Observable that will emit the responses.
@@ -240,9 +238,6 @@ export function proxyExtensionAPI<M extends keyof WebviewToExtensionAPI>(
     messageAPI: MessageAPI<RequestMessage, ResponseMessage>,
     method: M
 ): WebviewToExtensionAPI[M] {
-    if (!isWebview) {
-        throw new Error('tried to call extension API function from extension itself')
-    }
     return (...args: any[]): Observable<any> => {
         logRPCMessage(`X->W: call method=${method} args=${JSON.stringify(args)}`)
         return callExtensionAPI(messageAPI, method, args)
@@ -256,10 +251,6 @@ export function addMessageListenersForExtensionAPI(
     messageAPI: MessageAPI<ResponseMessage, RequestMessage>,
     api: WebviewToExtensionAPI
 ): { dispose: () => void } {
-    if (isWebview) {
-        throw new Error('must be called from extension')
-    }
-
     const activeListeners: Pick<AbortController, 'abort'>[] = []
     function messageListener({ data }: Pick<MessageEvent<RequestMessage>, 'data'>): void {
         if (!('method' in data)) {

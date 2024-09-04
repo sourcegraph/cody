@@ -23,22 +23,10 @@ import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
-import { repoNameResolver } from '../../repository/repo-name-resolver'
 
 export interface HumanInput {
     text: PromptString
     mentions: ContextItem[]
-}
-
-export async function remoteRepositoryURIsForLocalTrees(input: HumanInput): Promise<string[]> {
-    const trees: ContextItemTree[] = input.mentions.filter(
-        (item): item is ContextItemTree => item.type === 'tree'
-    )
-
-    const groups = await Promise.all(
-        trees.map(tree => repoNameResolver.getRepoNamesFromWorkspaceUri(tree.uri))
-    )
-    return Array.from(new Set(groups.flat()))
 }
 
 /**
@@ -146,7 +134,10 @@ async function searchRemote(
         if (!remoteSearch) {
             return []
         }
-        return (await remoteSearch.query(input, repoIDs, signal)).map(result => {
+        return (await remoteSearch.query(input, repoIDs, signal)).flatMap(result => {
+            if (result.startLine < 0 || result.endLine < 0) {
+                return []
+            }
             return {
                 type: 'file',
                 content: result.content,
@@ -234,7 +225,7 @@ export async function searchSymf(
     })
 }
 
-async function searchEmbeddingsLocal(
+export async function searchEmbeddingsLocal(
     localEmbeddings: LocalEmbeddingsController,
     text: PromptString,
     numResults: number = NUM_CODE_RESULTS + NUM_TEXT_RESULTS
@@ -429,7 +420,7 @@ export async function retrieveContextGracefully<T>(
             logError('ChatController', `resolveContext > ${strategy}' (aborted)`)
             throw error
         }
-        logError('ChatController', `resolveContext > ${strategy}' (error)`, error)
+        logError('ChatController', `resolveContext > ${strategy} (error)`, error)
         return []
     } finally {
         logDebug('ChatController', `resolveContext > ${strategy} (end)`)

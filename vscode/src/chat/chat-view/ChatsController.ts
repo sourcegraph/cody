@@ -3,9 +3,11 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
+    type AuthenticatedAuthStatus,
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
     type ChatClient,
-    CodyIDE,
+    type ClientConfigurationWithAccessToken,
+    type ConfigWatcher,
     DEFAULT_EVENT_SOURCE,
     type Guardrails,
     editorStateFromPromptString,
@@ -23,7 +25,7 @@ import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import { getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ExtensionClient } from '../../extension-client'
-import type { AuthProvider } from '../../services/AuthProvider'
+import { authProvider } from '../../services/AuthProvider'
 import { type ChatLocation, localStorage } from '../../services/LocalStorageProvider'
 import {
     handleCodeFromInsertAtCursor,
@@ -32,6 +34,7 @@ import {
 import type { ContextAPIClient } from '../context/contextAPIClient'
 import type { SmartApplyResult } from '../protocol'
 import {
+    AuthDependentRetrievers,
     ChatController,
     type ChatSession,
     disposeWebviewViewOrPanel,
@@ -44,7 +47,7 @@ import type { ContextRetriever } from './ContextRetriever'
 
 export const CodyChatEditorViewType = 'cody.editorPanel'
 
-export interface Options extends MessageProviderOptions {
+interface Options extends MessageProviderOptions {
     extensionUri: vscode.Uri
     startTokenReceiver?: typeof startTokenReceiver
 }
@@ -58,14 +61,15 @@ export class ChatsController implements vscode.Disposable {
     private activeEditor: ChatController | undefined = undefined
 
     // We keep track of the currently authenticated account and dispose open chats when it changes
-    private currentAuthAccount: undefined | { endpoint: string; primaryEmail?: string; username: string }
+    private currentAuthAccount:
+        | undefined
+        | Pick<AuthenticatedAuthStatus, 'endpoint' | 'primaryEmail' | 'username'>
 
     protected disposables: vscode.Disposable[] = []
 
     constructor(
         private options: Options,
         private chatClient: ChatClient,
-        private authProvider: AuthProvider,
 
         private readonly enterpriseContext: EnterpriseContextFactory,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
@@ -75,33 +79,28 @@ export class ChatsController implements vscode.Disposable {
 
         private readonly guardrails: Guardrails,
         private readonly contextAPIClient: ContextAPIClient | null,
-        private readonly extensionClient: ExtensionClient
+        private readonly extensionClient: ExtensionClient,
+        private readonly configWatcher: ConfigWatcher<ClientConfigurationWithAccessToken>
     ) {
         logDebug('ChatsController:constructor', 'init')
         this.panel = this.createChatController()
 
         this.disposables.push(
             subscriptionDisposable(
-                this.authProvider.changes.subscribe(authStatus => this.setAuthStatus(authStatus))
+                authProvider.instance!.changes.subscribe(authStatus => this.setAuthStatus(authStatus))
             )
         )
     }
 
     private async setAuthStatus(authStatus: AuthStatus): Promise<void> {
-        const hasLoggedOut = !authStatus.isLoggedIn
+        const hasLoggedOut = !authStatus.authenticated
         const hasSwitchedAccount =
             this.currentAuthAccount && this.currentAuthAccount.endpoint !== authStatus.endpoint
         if (hasLoggedOut || hasSwitchedAccount) {
             this.disposeAllChats()
         }
 
-        const endpoint = authStatus.endpoint ?? ''
-        this.currentAuthAccount = {
-            endpoint,
-            primaryEmail: authStatus.primaryEmail,
-            username: authStatus.username,
-        }
-
+        this.currentAuthAccount = authStatus.authenticated ? { ...authStatus } : undefined
         this.panel.setAuthStatus(authStatus)
     }
 
@@ -273,9 +272,10 @@ export class ChatsController implements vscode.Disposable {
      */
     private async getActiveChatController(): Promise<ChatController> {
         // Check if any existing panel is available
-        // NOTE: Never reuse webviews when running inside the agent.
         if (this.activeEditor) {
-            if (getConfiguration().isRunningInsideAgent) {
+            // NOTE: Never reuse webviews when running inside the agent without native webviews
+            // TODO: Find out, document why we don't reuse webviews when running inside agent without native webviews
+            if (!getConfiguration().hasNativeWebview) {
                 return await this.getOrCreateEditorChatController()
             }
             return this.activeEditor
@@ -346,8 +346,8 @@ export class ChatsController implements vscode.Disposable {
      */
     private async exportHistory(): Promise<void> {
         telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
-        const authStatus = this.options.authProvider.getAuthStatus()
-        if (authStatus.isLoggedIn) {
+        const authStatus = authProvider.instance!.status
+        if (authStatus.authenticated) {
             try {
                 const historyJson = chatHistory.getLocalHistory(authStatus)
                 const exportPath = await vscode.window.showSaveDialog({
@@ -376,7 +376,7 @@ export class ChatsController implements vscode.Disposable {
         // The chat ID for client to pass in to clear all chats without showing window pop-up for confirmation.
         const ClearWithoutConfirmID = 'clear-all-no-confirm'
         const isClearAll = !chatID || chatID === ClearWithoutConfirmID
-        const authStatus = this.options.authProvider.getAuthStatus()
+        const authStatus = authProvider.instance!.statusAuthed
 
         if (isClearAll) {
             if (chatID !== ClearWithoutConfirmID) {
@@ -438,8 +438,6 @@ export class ChatsController implements vscode.Disposable {
         const chatController = this.createChatController()
         if (chatID) {
             await chatController.restoreSession(chatID)
-        } else {
-            await chatController.newSession()
         }
 
         if (panel) {
@@ -474,28 +472,20 @@ export class ChatsController implements vscode.Disposable {
      * Creates a provider for a chat view.
      */
     private createChatController(): ChatController {
-        const authStatus = this.options.authProvider.getAuthStatus()
-        const isConsumer = authStatus.isDotCom
-
-        // Enterprise context is used for remote repositories context fetching
-        // in vs cody extension it should be always off if extension is connected
-        // to dot com instance, but in Cody Web it should be on by default for
-        // all instances (including dot com)
-        const isCodyWeb =
-            vscode.workspace.getConfiguration().get<string>('cody.advanced.agent.ide') === CodyIDE.Web
-        const allowRemoteContext = isCodyWeb || !isConsumer
-
         return new ChatController({
             ...this.options,
             chatClient: this.chatClient,
-            localEmbeddings: isConsumer ? this.localEmbeddings : null,
-            symf: isConsumer ? this.symf : null,
-            enterpriseContext: allowRemoteContext ? this.enterpriseContext : null,
+            retrievers: new AuthDependentRetrievers(
+                this.localEmbeddings,
+                this.symf,
+                this.enterpriseContext
+            ),
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,
             contextAPIClient: this.contextAPIClient,
             contextRetriever: this.contextRetriever,
             extensionClient: this.extensionClient,
+            configWatcher: this.configWatcher,
         })
     }
 

@@ -3,7 +3,8 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import * as vscode from 'vscode'
 
 import {
-    type AuthStatus,
+    type AuthenticatedAuthStatus,
+    DOTCOM_URL,
     type GraphQLAPIClientConfig,
     RateLimitError,
     contextFiltersProvider,
@@ -33,16 +34,12 @@ const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
 }
 
-const DUMMY_AUTH_STATUS: AuthStatus = {
-    endpoint: 'https://fastsourcegraph.com',
-    isDotCom: true,
-    isLoggedIn: true,
+const DUMMY_AUTH_STATUS: AuthenticatedAuthStatus = {
+    endpoint: DOTCOM_URL.toString(),
     isFireworksTracingEnabled: false,
-    showInvalidAccessTokenError: false,
     authenticated: true,
     hasVerifiedEmail: true,
     requiresVerifiedEmail: true,
-    siteHasCodyEnabled: true,
     siteVersion: '1234',
     username: 'uwu',
     userCanUpgrade: false,
@@ -87,7 +84,7 @@ describe('InlineCompletionItemProvider', () => {
         } as any as vscode.Memento)
     })
     beforeEach(() => {
-        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+        vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValue(false)
         CompletionLogger.reset_testOnly()
     })
 
@@ -244,7 +241,7 @@ describe('InlineCompletionItemProvider', () => {
     })
 
     it('no-ops on files that are ignored by the context filter policy', async () => {
-        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValueOnce('repo:foo')
+        vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValueOnce('repo:foo')
         const completionParams = params('const foo = █', [completion`bar`])
         const fn = vi.fn()
         const provider = new MockableInlineCompletionItemProvider(fn)

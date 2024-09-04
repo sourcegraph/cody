@@ -1,16 +1,19 @@
 import dedent from 'dedent'
 import { isEqual } from 'lodash'
-import { expect } from 'vitest'
+import { expect, vi } from 'vitest'
+import type { URI } from 'vscode-uri'
 
 import {
-    type AuthStatus,
+    AUTH_STATUS_FIXTURE_AUTHED,
     type ClientConfiguration,
     type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
     type CompletionParameters,
     type CompletionResponse,
     CompletionStopReason,
-    defaultAuthStatus,
+    type GraphQLAPIClientConfig,
+    featureFlagProvider,
+    graphqlClient,
     testFileUri,
 } from '@sourcegraph/cody-shared'
 
@@ -18,7 +21,7 @@ import type {
     CodeCompletionsParams,
     CompletionResponseWithMetaData,
 } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
-import { DEFAULT_VSCODE_SETTINGS, emptyMockFeatureFlagProvider } from '../../testutils/mocks'
+import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
 import { getParser } from '../../tree-sitter/parser'
@@ -51,9 +54,6 @@ import { sleep } from '../utils'
 // mimicking the default indentation of four spaces
 export const T = '\t'
 
-const URI_FIXTURE = testFileUri('test.ts')
-
-const dummyAuthStatus: AuthStatus = defaultAuthStatus
 const getVSCodeConfigurationWithAccessToken = (
     config: Partial<ClientConfiguration> = {}
 ): ClientConfigurationWithAccessToken => ({
@@ -72,6 +72,7 @@ type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'd
     ) => Generator<CompletionResponse> | AsyncGenerator<CompletionResponse>
     providerOptions?: Partial<ProviderOptions>
     configuration?: Partial<ClientConfiguration>
+    documentUri?: URI
 }
 
 export interface ParamsResult extends InlineCompletionsParams {
@@ -104,6 +105,7 @@ export function params(
         isDotComUser = false,
         providerOptions,
         configuration,
+        documentUri = testFileUri('test.ts'),
         ...restParams
     } = params
 
@@ -163,12 +165,12 @@ export function params(
     const providerConfig = createProviderConfig({
         client,
         providerOptions,
-        authStatus: dummyAuthStatus,
+        authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         model: configuration?.autocompleteAdvancedModel!,
         config: configWithAccessToken,
     })
 
-    const { document, position } = documentAndPosition(code, languageId, URI_FIXTURE.toString())
+    const { document, position } = documentAndPosition(code, languageId, documentUri.toString())
 
     const parser = getParser(document.languageId as SupportedLanguage)
     if (parser) {
@@ -256,7 +258,7 @@ interface ParamsWithInlinedCompletion extends Params {
  *   return result█
  * }
  */
-function paramsWithInlinedCompletion(
+export function paramsWithInlinedCompletion(
     code: string,
     { delayBetweenChunks, ...completionParams }: ParamsWithInlinedCompletion = {}
 ): ParamsResult {
@@ -307,6 +309,7 @@ function paramsWithInlinedCompletion(
 
 interface GetInlineCompletionResult extends Omit<ParamsResult & InlineCompletionsResult, 'logId'> {
     acceptFirstCompletionAndPressEnter(): Promise<GetInlineCompletionResult>
+    pressEnter(): Promise<GetInlineCompletionResult>
 }
 
 /**
@@ -329,9 +332,7 @@ export async function getInlineCompletionsWithInlinedChunks(
         throw new Error('This test helpers should always return a result')
     }
 
-    const acceptFirstCompletionAndPressEnter = () => {
-        const [{ insertText }] = result.items
-
+    const pressEnter = (insertText = '') => {
         const newLineString = pressEnterAndGetIndentString(
             insertText,
             params.docContext.currentLinePrefix,
@@ -353,7 +354,11 @@ export async function getInlineCompletionsWithInlinedChunks(
         })
     }
 
-    return { ...params, ...result, acceptFirstCompletionAndPressEnter }
+    const acceptFirstCompletionAndPressEnter = () => {
+        return pressEnter(result.items[0].insertText)
+    }
+
+    return { ...params, ...result, acceptFirstCompletionAndPressEnter, pressEnter }
 }
 
 /**
@@ -403,7 +408,9 @@ export async function getInlineCompletionsInsertText(params: ParamsResult): Prom
 export type V = Awaited<ReturnType<typeof getInlineCompletions>>
 
 export function initCompletionProviderConfig(config: Partial<ClientConfiguration>) {
-    return completionProviderConfig.init(config as ClientConfiguration, emptyMockFeatureFlagProvider)
+    graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
+    vi.spyOn(featureFlagProvider.instance!, 'getFromCache').mockReturnValue(false)
+    return completionProviderConfig.init(config as ClientConfiguration)
 }
 
 expect.extend({

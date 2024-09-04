@@ -2,9 +2,11 @@ import {
     type AuthStatus,
     type ContextItem,
     type ContextItemSymbol,
+    EMPTY,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SymbolKind,
+    getDotComDefaultModels,
     promiseFactoryToObservable,
 } from '@sourcegraph/cody-shared'
 import { ClientStateContextProvider, ExtensionAPIProviderForTestsOnly } from '@sourcegraph/prompt-editor'
@@ -12,8 +14,11 @@ import { Observable } from 'observable-fns'
 import { type ComponentProps, type FunctionComponent, type ReactNode, useMemo } from 'react'
 import { URI } from 'vscode-uri'
 import { COMMON_WRAPPERS } from './AppWrapper'
-import { FIXTURE_COMMANDS, makePromptsAPIWithData } from './components/promptList/fixtures'
-import { FIXTURE_PROMPTS } from './components/promptSelectField/fixtures'
+import {
+    FIXTURE_COMMANDS,
+    FIXTURE_PROMPTS,
+    makePromptsAPIWithData,
+} from './components/promptList/fixtures'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
 import { TelemetryRecorderContext } from './utils/telemetry'
 import { ConfigProvider } from './utils/useConfig'
@@ -74,6 +79,8 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         prompts: { type: 'results', results: FIXTURE_PROMPTS },
                         commands: FIXTURE_COMMANDS,
                     }),
+                    models: () => Observable.of(getDotComDefaultModels()),
+                    setChatModel: () => EMPTY,
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
             {
@@ -93,6 +100,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                             serverSentModels: true,
                             attribution: true,
                         },
+                        isDotComUser: true,
                     },
                 },
             } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,

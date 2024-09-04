@@ -1,13 +1,7 @@
-import * as vscode from 'vscode'
-
 import {
-    type ContextGroup,
     type ContextSearchResult,
-    type ContextStatusProvider,
-    type Disposable,
     type PromptString,
     type SourcegraphCompletionsClient,
-    contextFiltersProvider,
     graphqlClient,
 } from '@sourcegraph/cody-shared'
 
@@ -24,17 +18,10 @@ interface DisplayRepo {
     displayName: string
 }
 
-export class RemoteSearch implements ContextStatusProvider {
+export class RemoteSearch {
     public static readonly MAX_REPO_COUNT = 10
-    private disposeOnContextFilterChanged: () => void
 
-    constructor(private completions: SourcegraphCompletionsClient) {
-        this.disposeOnContextFilterChanged = contextFiltersProvider.onContextFiltersChanged(() => {
-            this.statusChangedEmitter.fire(this)
-        })
-    }
-
-    private statusChangedEmitter = new vscode.EventEmitter<ContextStatusProvider>()
+    constructor(private completions: SourcegraphCompletionsClient) {}
 
     // Repositories we are including automatically because of the workspace.
     private reposAuto: Map<string, DisplayRepo> = new Map()
@@ -42,45 +29,9 @@ export class RemoteSearch implements ContextStatusProvider {
     // Repositories the user has added manually.
     private reposManual: Map<string, DisplayRepo> = new Map()
 
-    public dispose(): void {
-        this.statusChangedEmitter.dispose()
-        this.disposeOnContextFilterChanged()
-    }
-
-    // #region ContextStatusProvider implementation.
-
-    public onDidChangeStatus(callback: (provider: ContextStatusProvider) => void): Disposable {
-        return this.statusChangedEmitter.event(callback)
-    }
-
-    public get status(): ContextGroup[] {
-        return this.getRepoIdSet().map(id => {
-            const auto = this.reposAuto.get(id)
-            const manual = this.reposManual.get(id)
-            const displayName = auto?.displayName || manual?.displayName || '?'
-            return {
-                displayName,
-                providers: [
-                    {
-                        kind: 'search',
-                        type: 'remote',
-                        state: 'ready',
-                        id,
-                        inclusion: auto ? 'auto' : 'manual',
-                        isIgnored: contextFiltersProvider.isRepoNameIgnored(displayName),
-                    },
-                ],
-            }
-        })
-    }
-
-    // #endregion
-
     // Removes a manually included repository.
     public removeRepo(repoId: string): void {
-        if (this.reposManual.delete(repoId)) {
-            this.statusChangedEmitter.fire(this)
-        }
+        this.reposManual.delete(repoId)
     }
 
     // Sets the repos to search. RepoInclusion.Automatic is for repositories added
@@ -101,7 +52,6 @@ export class RemoteSearch implements ContextStatusProvider {
                 break
             }
         }
-        this.statusChangedEmitter.fire(this)
     }
 
     public getRepos(inclusion: RepoInclusion | 'all'): repofetcher.Repo[] {

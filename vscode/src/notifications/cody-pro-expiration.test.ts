@@ -2,20 +2,22 @@ import { afterEach, beforeEach, describe, expect, it, vi, vitest } from 'vitest'
 import { localStorage } from '../services/LocalStorageProvider'
 
 import {
+    AUTH_STATUS_FIXTURE_AUTHED,
     type AuthStatus,
+    DOTCOM_URL,
     FeatureFlag,
-    FeatureFlagProvider,
+    type FeatureFlagProvider,
+    type GraphQLAPIClientConfig,
     type SourcegraphGraphQLAPIClient,
-    defaultAuthStatus,
+    featureFlagProvider,
+    graphqlClient,
 } from '@sourcegraph/cody-shared'
-import type { AuthProvider } from '../services/AuthProvider'
+import { type AuthProvider, authProvider } from '../services/AuthProvider'
 import { CodyProExpirationNotifications } from './cody-pro-expiration'
 
 describe('Cody Pro expiration notifications', () => {
     let notifier: CodyProExpirationNotifications
     let apiClient: SourcegraphGraphQLAPIClient
-    let authProvider: AuthProvider
-    let featureFlagProvider: FeatureFlagProvider
     let authStatus: AuthStatus
     let authChangeListener = () => {}
     let codyPlan: string
@@ -43,15 +45,18 @@ describe('Cody Pro expiration notifications', () => {
         enabledFeatureFlags.clear()
         enabledFeatureFlags.add(FeatureFlag.UseSscForCodySubscription)
         enabledFeatureFlags.add(FeatureFlag.CodyProTrialEnded)
-        apiClient = {
+        featureFlagProvider.instance = {
             evaluateFeatureFlag: (flag: FeatureFlag) => Promise.resolve(enabledFeatureFlags.has(flag)),
-            getEvaluatedFeatureFlags: () => ({}), // Unused, but called.
+            refresh: () => {},
+        } as FeatureFlagProvider
+        graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
+        apiClient = {
             getCurrentUserCodySubscription: () => ({
                 status: codyStatus,
                 plan: codyPlan,
             }),
         } as unknown as SourcegraphGraphQLAPIClient
-        authProvider = {
+        authProvider.instance = {
             changes: {
                 subscribe: (f: () => void) => {
                     authChangeListener = f
@@ -63,23 +68,24 @@ describe('Cody Pro expiration notifications', () => {
                     }
                 },
             },
-            getAuthStatus: () => authStatus,
-        } as unknown as AuthProvider
-        featureFlagProvider = new FeatureFlagProvider(apiClient)
-        authStatus = { ...defaultAuthStatus, isLoggedIn: true, isDotCom: true }
+            get status() {
+                return authStatus
+            },
+        } as AuthProvider
+        authStatus = { ...AUTH_STATUS_FIXTURE_AUTHED, endpoint: DOTCOM_URL.toString() }
         localStorageData = {}
     })
 
     afterEach(() => {
         vi.restoreAllMocks()
+        authProvider.instance = null
+        featureFlagProvider.instance = null
         notifier?.dispose()
     })
 
     function createNotifier() {
         return new CodyProExpirationNotifications(
             apiClient,
-            authProvider,
-            featureFlagProvider,
             showInformationMessage,
             openExternal,
             10,
@@ -158,14 +164,14 @@ describe('Cody Pro expiration notifications', () => {
         expect(localStorageData[localStorageKey]).toBeTruthy()
     })
 
-    it('does not show if not logged in', async () => {
-        authStatus.isLoggedIn = false
+    it('does not show if not authenticated', async () => {
+        authStatus.authenticated = false
         await createNotifier().triggerExpirationCheck()
         expectNoNotification()
     })
 
     it('does not show if not DotCom', async () => {
-        authStatus.isDotCom = false
+        authStatus.endpoint = 'https://example.com' // non-dotcom
         await createNotifier().triggerExpirationCheck()
         expectNoNotification()
     })
@@ -197,7 +203,7 @@ describe('Cody Pro expiration notifications', () => {
         // For testing, our poll period is set to 10ms, so enable the flag and then wait
         // to allow that to trigger
         enabledFeatureFlags.add(FeatureFlag.UseSscForCodySubscription)
-        featureFlagProvider.refresh() // Force clear cache of feature flags
+        featureFlagProvider.instance!.refresh() // Force clear cache of feature flags
         await new Promise(resolve => setTimeout(resolve, 20))
 
         // Should have been called by the timer.
@@ -206,12 +212,12 @@ describe('Cody Pro expiration notifications', () => {
 
     it('shows later if auth status changes', async () => {
         // Not shown initially because not logged in
-        authStatus.isLoggedIn = false
+        authStatus.authenticated = false
         await createNotifier().triggerExpirationCheck()
         expectNoNotification()
 
         // Simulate login status change.
-        authStatus.isLoggedIn = true
+        authStatus.authenticated = true
         authChangeListener()
 
         // Allow time async operations (checking feature flags) to run as part of the check

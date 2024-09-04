@@ -3,6 +3,7 @@ import type { EmbeddingsProvider } from './codebase-context/context-status'
 import type { FileURI } from './common/uri'
 
 import type { PromptString } from './prompt/prompt-string'
+import type { ReadonlyDeep } from './utils'
 
 export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified'
 
@@ -26,10 +27,7 @@ export interface ConfigWatcher<C> {
     get(): C
 }
 
-/**
- * Client configuration, such as VS Code settings.
- */
-export interface ClientConfiguration {
+interface RawClientConfiguration {
     proxy?: string | null
     codebase?: string
     debugFilter: RegExp | null
@@ -90,14 +88,21 @@ export interface ClientConfiguration {
     /**
      * Hidden settings
      */
+    hasNativeWebview: boolean
     isRunningInsideAgent?: boolean
     agentIDE?: CodyIDE
     agentIDEVersion?: string
     agentExtensionVersion?: string
+    agentHasPersistentStorage?: boolean
     autocompleteFirstCompletionTimeout: number
 
     testingModelConfig: EmbeddingsModelConfig | undefined
 }
+
+/**
+ * Client configuration, such as VS Code settings.
+ */
+export type ClientConfiguration = ReadonlyDeep<RawClientConfiguration>
 
 export enum CodyIDE {
     VSCode = 'VSCode',
@@ -111,10 +116,10 @@ export enum CodyIDE {
 
 export type ClientConfigurationWithEndpoint = Omit<ClientConfigurationWithAccessToken, 'accessToken'>
 
-export interface ClientConfigurationWithAccessToken extends ClientConfiguration {
-    serverEndpoint: string
+export interface ClientConfigurationWithAccessToken extends ReadonlyDeep<RawClientConfiguration> {
+    readonly serverEndpoint: string
     /** The access token, which is stored in the secret storage (not configuration). */
-    accessToken: string | null
+    readonly accessToken: string | null
 }
 
 export interface OllamaOptions {

@@ -85,7 +85,7 @@ export async function getFileContextFiles(options: FileContextItemsOptions): Pro
             size: range ? 100 : item.file.byteSize,
             source: ContextItemSource.User,
             remoteRepositoryName: item.repository.name,
-            isIgnored: contextFiltersProvider.isRepoNameIgnored(item.repository.name),
+            isIgnored: contextFiltersProvider.instance!.isRepoNameIgnored(item.repository.name),
             uri: URI.file(`${item.repository.name}/${item.file.path}`),
         }))
     }
@@ -193,7 +193,7 @@ export async function getSymbolContextFiles(
                 type: 'symbol',
                 remoteRepositoryName: item.repository.name,
                 uri: URI.file(`${item.repository.name}/${symbol.location.resource.path}`),
-                isIgnored: contextFiltersProvider.isRepoNameIgnored(item.repository.name),
+                isIgnored: contextFiltersProvider.instance!.isRepoNameIgnored(item.repository.name),
                 source: ContextItemSource.User,
                 symbolName: symbol.name,
                 // TODO [VK] Support other symbols kind
@@ -304,7 +304,7 @@ async function createContextFileFromUri(
                   uri,
                   range,
                   source,
-                  isIgnored: Boolean(await contextFiltersProvider.isUriIgnored(uri)),
+                  isIgnored: Boolean(await contextFiltersProvider.instance!.isUriIgnored(uri)),
               }
             : {
                   type,

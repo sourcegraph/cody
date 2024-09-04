@@ -1,17 +1,8 @@
-import {
-    type ClientConfiguration,
-    FeatureFlag,
-    type FeatureFlagProvider,
-} from '@sourcegraph/cody-shared'
+import { type ClientConfiguration, FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
 import type { ContextStrategy } from './context/context-strategy'
 
 class CompletionProviderConfig {
     private _config?: ClientConfiguration
-
-    /**
-     * Use the injected feature flag provider to make testing easier.
-     */
-    private featureFlagProvider?: FeatureFlagProvider
 
     private flagsToResolve = [
         FeatureFlag.CodyAutocompleteContextBfgMixed,
@@ -36,14 +27,12 @@ class CompletionProviderConfig {
      * Should be called before `InlineCompletionItemProvider` instance is created, so that the singleton
      * with resolved values is ready for downstream use.
      */
-    public async init(
-        config: ClientConfiguration,
-        featureFlagProvider: FeatureFlagProvider
-    ): Promise<void> {
+    public async init(config: ClientConfiguration): Promise<void> {
         this._config = config
-        this.featureFlagProvider = featureFlagProvider
 
-        await Promise.all(this.flagsToResolve.map(flag => featureFlagProvider.evaluateFeatureFlag(flag)))
+        await Promise.all(
+            this.flagsToResolve.map(flag => featureFlagProvider.instance!.evaluateFeatureFlag(flag))
+        )
     }
 
     public setConfig(config: ClientConfiguration) {
@@ -51,11 +40,7 @@ class CompletionProviderConfig {
     }
 
     public getPrefetchedFlag(flag: (typeof this.flagsToResolve)[number]): boolean {
-        if (!this.featureFlagProvider) {
-            throw new Error('CompletionProviderConfig is not initialized')
-        }
-
-        return Boolean(this.featureFlagProvider.getFromCache(flag as FeatureFlag))
+        return Boolean(featureFlagProvider.instance!.getFromCache(flag as FeatureFlag))
     }
 
     public get contextStrategy(): ContextStrategy {

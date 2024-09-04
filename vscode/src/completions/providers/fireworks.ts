@@ -1,5 +1,5 @@
 import {
-    type AuthStatus,
+    type AuthenticatedAuthStatus,
     type AutocompleteContextSnippet,
     type ClientConfiguration,
     type ClientConfigurationWithAccessToken,
@@ -7,6 +7,7 @@ import {
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
     dotcomTokenToGatewayToken,
+    isDotCom,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
@@ -41,24 +42,25 @@ export interface FireworksOptions {
         'accessToken' | 'autocompleteExperimentalFireworksOptions'
     >
     authStatus: Pick<
-        AuthStatus,
-        'userCanUpgrade' | 'isDotCom' | 'endpoint' | 'isFireworksTracingEnabled'
+        AuthenticatedAuthStatus,
+        'userCanUpgrade' | 'endpoint' | 'isFireworksTracingEnabled'
     >
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
 
-export const FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED =
-    'fim-lang-specific-model-deepseek-stack-trained'
-export const FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED = 'fim-lang-specific-model-deepseek-logs-trained'
+export const FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0 = 'deepseek-finetuned-lang-specific-v0'
+export const FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1 = 'deepseek-finetuned-lang-specific-v1'
+export const FIREWORKS_DEEPSEEK_7B_LANG_ALL = 'deepseek-finetuned-lang-all-v0'
 
+export const DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE = 'deepseek-coder-v2-lite-base-direct-route'
 export const DEEPSEEK_CODER_V2_LITE_BASE = 'deepseek-coder-v2-lite-base'
 
 // Context window experiments with DeepSeek Model
 export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096 = 'deepseek-coder-v2-lite-base-context-4096'
-export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192 = 'deepseek-coder-v2-lite-base-context-8192'
-export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384 = 'deepseek-coder-v2-lite-base-context-16383'
-export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768 = 'deepseek-coder-v2-lite-base-context-32768'
+const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192 = 'deepseek-coder-v2-lite-base-context-8192'
+const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384 = 'deepseek-coder-v2-lite-base-context-16383'
+const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768 = 'deepseek-coder-v2-lite-base-context-32768'
 
 // Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
 // conversations
@@ -71,9 +73,12 @@ const MODEL_MAP = {
     // Fireworks model identifiers
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
 
-    [FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED]: FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED,
-    [FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED]: FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED,
+    [FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0]: 'finetuned-fim-lang-specific-model-ds2-v0',
+    [FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1]: 'finetuned-fim-lang-specific-model-ds2-v1',
+    [FIREWORKS_DEEPSEEK_7B_LANG_ALL]: 'accounts/sourcegraph/models/finetuned-fim-lang-all-model-ds2-v0',
     [DEEPSEEK_CODER_V2_LITE_BASE]: 'fireworks/deepseek-coder-v2-lite-base',
+    [DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE]:
+        'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384]:
@@ -101,9 +106,11 @@ function getMaxContextTokens(model: FireworksModel): number {
             // Llama 2 on Fireworks supports up to 4k tokens. We're constraining it here to better
             // compare the results
             return 2048
-        case FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED:
-        case FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED:
-        case DEEPSEEK_CODER_V2_LITE_BASE: {
+        case FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0:
+        case FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1:
+        case FIREWORKS_DEEPSEEK_7B_LANG_ALL:
+        case DEEPSEEK_CODER_V2_LITE_BASE:
+        case DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE: {
             return 2048
         }
         case DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096:
@@ -130,13 +137,14 @@ class FireworksProvider extends Provider {
     private client: CodeCompletionsClient
     private fastPathAccessToken?: string
     private authStatus: Pick<
-        AuthStatus,
-        'userCanUpgrade' | 'isDotCom' | 'endpoint' | 'isFireworksTracingEnabled'
+        AuthenticatedAuthStatus,
+        'userCanUpgrade' | 'endpoint' | 'isFireworksTracingEnabled'
     >
     private isLocalInstance: boolean
     private fireworksConfig?: ClientConfiguration['autocompleteExperimentalFireworksOptions']
     private modelHelper: DefaultModel
     private anonymousUserID: string | undefined
+    private shouldEnableDirectRoute = false
 
     constructor(
         options: ProviderOptions,
@@ -156,6 +164,7 @@ class FireworksProvider extends Provider {
         this.client = client
         this.authStatus = authStatus
         this.anonymousUserID = anonymousUserID
+        this.shouldEnableDirectRoute = this.checkIfDirectRouteShouldBeEnabled()
         this.isLocalInstance = Boolean(
             this.authStatus.endpoint?.includes('sourcegraph.test') ||
                 this.authStatus.endpoint?.includes('localhost')
@@ -165,7 +174,7 @@ class FireworksProvider extends Provider {
         this.fastPathAccessToken =
             config.accessToken &&
             // Require the upstream to be dotcom
-            (this.authStatus.isDotCom || this.isLocalInstance) &&
+            (isDotCom(this.authStatus) || this.isLocalInstance) &&
             process.env.CODY_DISABLE_FASTPATH !== 'true' && // Used for testing
             // The fast path client only supports Node.js style response streams
             isNode
@@ -179,6 +188,17 @@ class FireworksProvider extends Provider {
             this.fastPathAccessToken = config.autocompleteExperimentalFireworksOptions?.token
             this.fireworksConfig = config.autocompleteExperimentalFireworksOptions
         }
+    }
+
+    private checkIfDirectRouteShouldBeEnabled(): boolean {
+        const directRouteModels = [
+            DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE,
+            DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096,
+            FIREWORKS_DEEPSEEK_7B_LANG_ALL,
+            FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0,
+            FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1,
+        ]
+        return directRouteModels.includes(this.model)
     }
 
     public generateCompletions(
@@ -199,14 +219,14 @@ class FireworksProvider extends Provider {
                 ? MODEL_MAP[useMultilineModel ? 'starcoder-16b' : 'starcoder-7b']
                 : MODEL_MAP[this.model]
 
-        const prompt = this.modelHelper.getFireworksPrompt({
+        const prompt = this.modelHelper.getPrompt({
             snippets,
             docContext: this.options.docContext,
             document: this.options.document,
             promptChars: this.promptChars,
         })
 
-        const requestParams = this.modelHelper.getFireworksRequestParams({
+        const requestParams = this.modelHelper.getRequestParams({
             ...partialRequestParams,
             messages: [{ speaker: 'human', text: prompt }],
             temperature: 0.2,
@@ -254,7 +274,14 @@ class FireworksProvider extends Provider {
     private getCustomHeaders = (): Record<string, string> => {
         // Enabled Fireworks tracing for Sourcegraph teammates.
         // https://readme.fireworks.ai/docs/enabling-tracing
-        return this.authStatus.isFireworksTracingEnabled ? { 'X-Fireworks-Genie': 'true' } : {}
+        const customHeader: Record<string, string> = {}
+        if (this.authStatus.isFireworksTracingEnabled) {
+            customHeader['X-Fireworks-Genie'] = 'true'
+        }
+        if (this.shouldEnableDirectRoute) {
+            customHeader['X-Sourcegraph-Use-Direct-Route'] = 'true'
+        }
+        return customHeader
     }
 
     private createClient(
@@ -298,7 +325,7 @@ export function createProviderConfig({
 }: Omit<FireworksOptions, 'model' | 'maxContextTokens'> & {
     model: string | null
 }): ProviderConfig {
-    const clientModel = getClientModel(model, otherOptions.authStatus.isDotCom)
+    const clientModel = getClientModel(model, isDotCom(otherOptions.authStatus))
     const maxContextTokens = getMaxContextTokens(clientModel)
 
     return {

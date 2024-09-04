@@ -1,4 +1,4 @@
-import type { AuthStatus, EditModel } from '@sourcegraph/cody-shared'
+import { type AuthStatus, type EditModel, isDotCom } from '@sourcegraph/cody-shared'
 import type { EditIntent } from '../types'
 
 export function getOverridenModelForIntent(
@@ -6,7 +6,7 @@ export function getOverridenModelForIntent(
     currentModel: EditModel,
     authStatus: AuthStatus
 ): EditModel {
-    if (!authStatus.isDotCom) {
+    if (!isDotCom(authStatus)) {
         // We do not want to override the model if the user is connected to an enterprise instance.
         // We cannot assume what models will be available here.
         return currentModel

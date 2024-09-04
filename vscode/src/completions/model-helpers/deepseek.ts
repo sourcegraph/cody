@@ -6,8 +6,8 @@ import {
 } from '@sourcegraph/cody-shared'
 import {
     DefaultModel,
-    type FormatFireworksPromptParams,
     type FormatIntroSnippetsParams,
+    type FormatPromptParams,
     type GetOllamaPromptParams,
 } from './default'
 
@@ -54,7 +54,7 @@ export class DeepseekCoder extends DefaultModel {
         return ps`#${PromptString.fromDisplayPath(snippet.uri)}\n${content}`
     }
 
-    formatFireworksPrompt(params: FormatFireworksPromptParams): PromptString {
+    formatPrompt(params: FormatPromptParams): PromptString {
         const { intro, prefix, suffix, repoName, fileName } = params
 
         // Deepseek paper: https://arxiv.org/pdf/2401.14196

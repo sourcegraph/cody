@@ -19,14 +19,20 @@ import { isError } from 'lodash'
 import * as vscode from 'vscode'
 import { getConfiguration } from '../../configuration'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
+import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { rewriteKeywordQuery } from '../../local-context/rewrite-keyword-query'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { gitLocallyModifiedFiles } from '../../repository/git-extension-api'
 import { repoNameResolver } from '../../repository/repo-name-resolver'
-import { retrieveContextGracefully, searchSymf, truncateSymfResult } from './context'
+import {
+    retrieveContextGracefully,
+    searchEmbeddingsLocal,
+    searchSymf,
+    truncateSymfResult,
+} from './context'
 
-export interface StructuredMentions {
+interface StructuredMentions {
     repos: ContextItemRepository[]
     trees: ContextItemTree[]
     files: ContextItemFile[]
@@ -114,12 +120,13 @@ async function codebaseRootsFromMentions(
     )
     const localRepoNames = treesToRepoNames.flatMap(t => t.names)
 
-    const localRepoIDs =
+    let localRepoIDs =
         localRepoNames.length === 0
             ? []
             : await graphqlClient.getRepoIds(localRepoNames, localRepoNames.length, signal)
     if (isError(localRepoIDs)) {
-        throw localRepoIDs
+        logError('codebaseRootFromMentions', 'Failed to get repo IDs from Sourcegraph', localRepoIDs)
+        localRepoIDs = []
     }
     const uriToId: { [uri: string]: string } = {}
     for (const r of localRepoIDs) {
@@ -154,6 +161,7 @@ export class ContextRetriever implements vscode.Disposable {
     constructor(
         private editor: VSCodeEditor,
         private symf: SymfRunner | undefined,
+        private localEmbeddings: LocalEmbeddingsController | undefined,
         private llms: SourcegraphCompletionsClient
     ) {}
 
@@ -167,8 +175,13 @@ export class ContextRetriever implements vscode.Disposable {
         span: Span,
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
-        const roots = await codebaseRootsFromMentions(mentions, signal)
-        return this._retrieveContext(roots, inputTextWithoutContextChips, span, signal)
+        try {
+            const roots = await codebaseRootsFromMentions(mentions, signal)
+            return await this._retrieveContext(roots, inputTextWithoutContextChips, span, signal)
+        } catch (error) {
+            logError('ContextRetriever', 'Unhandled error retrieving context', error)
+            return []
+        }
     }
 
     private async _retrieveContext(
@@ -195,11 +208,20 @@ export class ContextRetriever implements vscode.Disposable {
             localRoots.push(root.local)
         }
 
-        const changedFilesByRoot = await Promise.all(
-            localRoots.map(root => gitLocallyModifiedFiles(root, signal))
-        )
-        const changedFiles = changedFilesByRoot.flat()
-
+        let changedFilesByRoot: string[][] = []
+        let changedFiles: string[] = []
+        try {
+            changedFilesByRoot = await Promise.all(
+                localRoots.map(root => gitLocallyModifiedFiles(root, signal))
+            )
+            changedFiles = changedFilesByRoot.flat()
+        } catch (error) {
+            logDebug(
+                'ContextRetriever',
+                'Failed to get locally modified files, falling back to indexed context only',
+                error
+            )
+        }
         const [liveContext, indexedContext] = await Promise.all([
             this.retrieveLiveContext(query, rewrittenQuery.rewritten, changedFiles, signal),
             this.retrieveIndexedContext(roots, query, rewrittenQuery.rewritten, span, signal),
@@ -266,25 +288,48 @@ export class ContextRetriever implements vscode.Disposable {
         span: Span,
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
+        const preferServerContext = vscode.workspace
+            .getConfiguration()
+            .get<boolean>('cody.internal.serverSideContext', false)
         const repoIDsOnRemote = new Set<string>()
         const localRootURIs = new Map<string, FileURI>()
-        for (const root of roots) {
-            if (root.remoteRepos.length > 0) {
-                // Note: we just take the first remote. In the future,
-                // we could try to choose the best remote or query each
-                // in succession.
-                for (const rr of root.remoteRepos) {
-                    if (rr.id) {
-                        repoIDsOnRemote.add(rr.id)
-                        break
+
+        if (preferServerContext) {
+            for (const root of roots) {
+                if (root.remoteRepos.length > 0) {
+                    // Note: we just take the first remote. In the future,
+                    // we could try to choose the best remote or query each
+                    // in succession.
+                    for (const rr of root.remoteRepos) {
+                        if (rr.id) {
+                            repoIDsOnRemote.add(rr.id)
+                            break
+                        }
                     }
+                } else if (root.local && isFileURI(root.local)) {
+                    localRootURIs.set(root.local.toString(), root.local)
+                } else {
+                    throw new Error(
+                        `Codebase root ${JSON.stringify(root)} is missing both remote and local root`
+                    )
                 }
-            } else if (root.local && isFileURI(root.local)) {
-                localRootURIs.set(root.local.toString(), root.local)
-            } else {
-                throw new Error(
-                    `Codebase root ${JSON.stringify(root)} is missing both remote and local root`
-                )
+            }
+        } else {
+            for (const root of roots) {
+                if (root.local && isFileURI(root.local)) {
+                    localRootURIs.set(root.local?.toString(), root.local)
+                } else if (root.remoteRepos.length > 0) {
+                    for (const rr of root.remoteRepos) {
+                        if (rr.id) {
+                            repoIDsOnRemote.add(rr.id)
+                            break
+                        }
+                    }
+                } else {
+                    throw new Error(
+                        `Codebase root ${JSON.stringify(root)} is missing both remote and local root`
+                    )
+                }
             }
         }
 
@@ -342,10 +387,10 @@ export class ContextRetriever implements vscode.Disposable {
         const contextStrategy = config.useContext
         span.setAttribute('strategy', contextStrategy)
 
-        // symf retrieval
         const symf = this.symf
+        let localSymfResults: Promise<ContextItem[]> = Promise.resolve([])
         if (symf && contextStrategy !== 'embeddings' && localRootURIs.length > 0) {
-            const localRootResults = await Promise.all(
+            localSymfResults = Promise.all(
                 localRootURIs.map(rootURI =>
                     // TODO(beyang): retire searchSymf and retrieveContextGracefully
                     // (see invocation of symf in retrieveLiveContext)
@@ -354,11 +399,20 @@ export class ContextRetriever implements vscode.Disposable {
                         `symf ${rootURI.path}`
                     )
                 )
-            )
-            return localRootResults.flat()
+            ).then(r => r.flat())
         }
 
-        return []
+        const localEmbeddings = this.localEmbeddings
+        let localEmbeddingsResults: Promise<ContextItem[]> = Promise.resolve([])
+        if (localEmbeddings && contextStrategy !== 'keyword' && localRootURIs.length > 0) {
+            // TODO(beyang): retire this
+            localEmbeddingsResults = retrieveContextGracefully(
+                searchEmbeddingsLocal(localEmbeddings, originalQuery),
+                'local-embeddings'
+            )
+        }
+
+        return (await Promise.all([localSymfResults, localEmbeddingsResults])).flat()
     }
 }
 

@@ -9,7 +9,7 @@ import { type Arch, Platform, getOSArch } from '../os'
 import { captureException } from '../services/sentry/sentry'
 import { downloadFile, fileExists, unzip } from './utils'
 
-export type SymfVersionString = SemverString<'v'>
+type SymfVersionString = SemverString<'v'>
 const symfVersion: SymfVersionString = 'v0.0.16'
 
 export const _config = {

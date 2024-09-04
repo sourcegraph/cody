@@ -1,36 +1,38 @@
 import {
+    AUTH_STATUS_FIXTURE_AUTHED,
+    AUTH_STATUS_FIXTURE_UNAUTHED,
+    type AuthenticatedAuthStatus,
     ClientConfigSingleton,
+    DOTCOM_URL,
     Model,
     ModelTag,
     ModelUsage,
     RestClient,
-    defaultAuthStatus,
+    type ServerModel,
+    type ServerModelConfiguration,
     getDotComDefaultModels,
     modelsService,
-    unauthenticatedStatus,
 } from '@sourcegraph/cody-shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { secretStorage } from '../services/SecretStorageProvider'
-import { syncModels } from './sync'
+import { maybeAdjustContextWindows, syncModels } from './sync'
 import { getEnterpriseContextWindow } from './utils'
 
 describe('syncModels', () => {
-    const setModelsSpy = vi.spyOn(modelsService, 'setModels')
+    const setModelsSpy = vi.spyOn(modelsService.instance!, 'setModels')
 
     beforeEach(() => {
         setModelsSpy.mockClear()
 
         // Mock the /.api/client-config for these tests so that modelsAPIEnabled == false
-        const mockClientConfig = {
-            codyEnabled: true,
+        vi.spyOn(ClientConfigSingleton.prototype, 'getConfig').mockResolvedValue({
             chatEnabled: true,
             autoCompleteEnabled: true,
             customCommandsEnabled: true,
             attributionEnabled: true,
             smartContextWindowEnabled: true,
             modelsAPIEnabled: false,
-        }
-        vi.spyOn(ClientConfigSingleton.prototype, 'getConfig').mockResolvedValue(mockClientConfig)
+        })
     })
     afterEach(() => {
         // SUPER IMPORTANT: We need to call restoreAllMocks (instead of resetAllMocks)
@@ -41,30 +43,26 @@ describe('syncModels', () => {
     })
 
     it('does not register models if not authenticated', async () => {
-        await syncModels(unauthenticatedStatus)
+        await syncModels(AUTH_STATUS_FIXTURE_UNAUTHED)
         expect(setModelsSpy).toHaveBeenCalledWith([])
     })
 
     it('sets dotcom default models if on dotcom', async () => {
-        const authStatus = { ...defaultAuthStatus, isDotCom: true, authenticated: true }
-
-        await syncModels(authStatus)
+        await syncModels({ ...AUTH_STATUS_FIXTURE_AUTHED, endpoint: DOTCOM_URL.toString() })
         expect(setModelsSpy).toHaveBeenCalledWith(getDotComDefaultModels())
     })
 
     it('sets no models if the enterprise instance does not have Cody enabled', async () => {
-        const authStatus = { ...defaultAuthStatus, isDotCom: false, authenticated: true }
-
-        await syncModels(authStatus)
+        await syncModels({ ...AUTH_STATUS_FIXTURE_AUTHED, endpoint: 'https://example.com' })
         expect(setModelsSpy).toHaveBeenCalledWith([])
     })
 
     it('sets enterprise context window model if chatModel config overwrite exists', async () => {
         const chatModel = 'custom-model'
-        const authStatus = {
-            ...defaultAuthStatus,
+        const authStatus: AuthenticatedAuthStatus = {
+            ...AUTH_STATUS_FIXTURE_AUTHED,
             authenticated: true,
-            isDotCom: false,
+            endpoint: 'https://example.com',
             configOverwrites: { chatModel },
         }
 
@@ -74,9 +72,9 @@ describe('syncModels', () => {
         expect(setModelsSpy).not.toHaveBeenCalledWith(getDotComDefaultModels())
         expect(setModelsSpy).toHaveBeenCalledWith([
             new Model({
-                id: authStatus.configOverwrites.chatModel,
+                id: authStatus.configOverwrites!.chatModel!,
                 usage: [ModelUsage.Chat, ModelUsage.Edit],
-                contextWindow: getEnterpriseContextWindow(chatModel, authStatus.configOverwrites),
+                contextWindow: getEnterpriseContextWindow(chatModel, authStatus.configOverwrites!),
                 tags: [ModelTag.Enterprise],
             }),
         ])
@@ -88,19 +86,26 @@ describe('syncModels', () => {
 describe('syncModels from the server', () => {
     const testEndpoint = 'https://sourcegraph.acme-corp.com'
     const testUserCreds = 'hunter2'
-    const testServerSideModels: Model[] = getDotComDefaultModels()
+    const testServerSideModels: ServerModel[] = [
+        {
+            modelName: 'test-model',
+            displayName: 'test model',
+            modelRef: 'a::a::a',
+            contextWindow: { maxInputTokens: 1024, maxOutputTokens: 1024 },
+            capabilities: [],
+        } as Partial<ServerModel> as ServerModel,
+    ]
 
     // Unlike the other mocks, we define setModelsSpy here so that it can
     // be referenced by individual tests. (But like the other spys, it needs
     // to be reset/restored after each test.)
-    let setModelsSpy = vi.spyOn(modelsService, 'setModels')
+    let setModelsSpy = vi.spyOn(modelsService.instance!, 'setModels')
 
     beforeEach(() => {
-        setModelsSpy = vi.spyOn(modelsService, 'setModels')
+        setModelsSpy = vi.spyOn(modelsService.instance!, 'setModels')
 
         // Mock the /.api/client-config for these tests so that modelsAPIEnabled == true
         const mockClientConfig = {
-            codyEnabled: true,
             chatEnabled: true,
             autoCompleteEnabled: true,
             customCommandsEnabled: true,
@@ -121,8 +126,16 @@ describe('syncModels from the server', () => {
 
         // Attach our mock to the RestClient's prototype. So the class will get instantiated
         // like normal, but any instance will use our mock implementation.
-        const getAvaialbleModelsSpy = vi.spyOn(RestClient.prototype, 'getAvailableModels')
-        getAvaialbleModelsSpy.mockImplementation(() => Promise.resolve(undefined))
+        const getAvailableModelsSpy = vi.spyOn(RestClient.prototype, 'getAvailableModels')
+        getAvailableModelsSpy.mockImplementation(() =>
+            Promise.resolve({
+                models: testServerSideModels,
+                defaultModels: { chat: 'a::a::a', fastChat: 'a::a::a', codeCompletion: 'a::a::a' },
+                providers: [],
+                revision: '1',
+                schemaVersion: '1',
+            } satisfies ServerModelConfiguration)
+        )
     })
     afterEach(() => {
         // SUPER IMPORTANT: We need to call restoreAllMocks (instead of resetAllMocks)
@@ -136,24 +149,110 @@ describe('syncModels from the server', () => {
     // skip this tests since these checks have been removed to make Cody Web working
     it.skip('throws if no creds are available', async () => {
         await expect(async () => {
-            const authStatus = {
-                ...defaultAuthStatus,
+            await syncModels({
+                ...AUTH_STATUS_FIXTURE_AUTHED,
                 authenticated: true,
                 // Our mock for secretStorage will only return a user access token if
                 // the endpoint matches what is expected.
                 endpoint: 'something other than testEndpoint',
-            }
-            await syncModels(authStatus)
+            })
         }).rejects.toThrowError('no userAccessToken available. Unable to fetch models.')
     })
 
     it('works', async () => {
-        const authStatus = {
-            ...defaultAuthStatus,
+        await syncModels({
+            ...AUTH_STATUS_FIXTURE_AUTHED,
             authenticated: true,
             endpoint: testEndpoint,
+        })
+        expect(setModelsSpy).toHaveBeenCalledWith(testServerSideModels.map(Model.fromApi))
+    })
+})
+
+describe('maybeAdjustContextWindows', () => {
+    it('works', () => {
+        const defaultMaxInputTokens = 8192
+        /**
+         * {@link defaultMaxInputTokens} * 0.85
+         * Max input token count adjustment comapred to the default OpenAI tokenizer
+         * (see {@link maybeAdjustContextWindows} implementation).
+         */
+        const mistralAdjustedMaxInputTokens = 6963
+        const contextWindow = {
+            maxInputTokens: defaultMaxInputTokens,
+            maxOutputTokens: 4096,
         }
-        await syncModels(authStatus)
-        expect(setModelsSpy).toHaveBeenCalledWith(testServerSideModels)
+        const testServerSideModels = [
+            {
+                modelRef: 'fireworks::v1::deepseek-coder-v2-lite-base',
+                displayName: '(Fireworks) DeepSeek V2 Lite Base',
+                modelName: 'deepseek-coder-v2-lite-base',
+                capabilities: ['autocomplete'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Enterprise,
+                contextWindow,
+            } satisfies ServerModel,
+            {
+                modelRef: 'fireworks::v1::mixtral-8x7b-instruct',
+                displayName: '(Fireworks) Mixtral 8x7b Instruct',
+                modelName: 'mixtral-8x7b-instruct',
+                capabilities: ['chat', 'autocomplete'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Enterprise,
+                contextWindow,
+            } satisfies ServerModel,
+            {
+                modelRef: 'fireworks::v1::mixtral-8x22b-instruct',
+                displayName: '(Fireworks) Mixtral 8x22b Instruct',
+                modelName: 'mixtral-8x22b-instruct',
+                capabilities: ['chat', 'autocomplete'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Enterprise,
+                contextWindow,
+            } satisfies ServerModel,
+            {
+                modelRef: 'fireworks::v1::starcoder-16b',
+                displayName: '(Fireworks) Starcoder 16B',
+                modelName: 'starcoder-16b',
+                capabilities: ['autocomplete'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Enterprise,
+                contextWindow,
+            } satisfies ServerModel,
+            {
+                modelRef: 'fireworks::v1::mistral-large-latest',
+                displayName: '(Mistral API) Mistral Large',
+                modelName: 'mistral-large-latest',
+                capabilities: ['chat'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Enterprise,
+                contextWindow,
+            } satisfies ServerModel,
+            {
+                modelRef: 'fireworks::v1::llama-v3p1-70b-instruct',
+                displayName: '(Fireworks) Llama 3.1 70B Instruct',
+                modelName: 'llama-v3p1-70b-instruct',
+                capabilities: ['chat'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Enterprise,
+                contextWindow,
+            } satisfies ServerModel,
+        ]
+
+        const results = maybeAdjustContextWindows(testServerSideModels)
+        const mistralModelNamePrefixes = ['mistral', 'mixtral']
+        for (const model of results) {
+            let wantMaxInputTokens = defaultMaxInputTokens
+            if (mistralModelNamePrefixes.some(p => model.modelName.startsWith(p))) {
+                wantMaxInputTokens = mistralAdjustedMaxInputTokens
+            }
+            expect(model.contextWindow.maxInputTokens).toBe(wantMaxInputTokens)
+        }
     })
 })

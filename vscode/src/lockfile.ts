@@ -44,7 +44,7 @@ interface LockOptions {
     realpath?: boolean
     lockfilePath?: string
 }
-export async function lock(file: string, options?: LockOptions): Promise<() => void> {
+async function lock(file: string, options?: LockOptions): Promise<() => void> {
     const release = await toPromise(_lock)(file, options)
     return toPromise(release)
 }

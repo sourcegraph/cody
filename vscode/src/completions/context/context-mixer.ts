@@ -28,6 +28,10 @@ export interface ContextSummary {
     duration: number
     /** Total characters of combined context snippets */
     totalChars: number
+    /** The number of characters in the prompt used from the document prefix. */
+    prefixChars: number
+    /** The number of characters in the prompt used from the document suffix. */
+    suffixChars: number
     /** Detailed information for each retriever that has run */
     retrieverStats: {
         [identifier: string]: {
@@ -35,6 +39,8 @@ export interface ContextSummary {
             suggestedItems: number
             /** Number of total snippets */
             retrievedItems: number
+            /** Number of characters in the suggested Items from the retriever */
+            retrieverChars: number
             /** Duration of the individual retriever */
             duration: number
             /**
@@ -75,7 +81,9 @@ export class ContextMixer implements vscode.Disposable {
                 context: [],
                 logSummary: {
                     strategy: 'none',
-                    totalChars: 0,
+                    totalChars: options.docContext.prefix.length + options.docContext.suffix.length,
+                    prefixChars: options.docContext.prefix.length,
+                    suffixChars: options.docContext.suffix.length,
                     duration: 0,
                     retrieverStats: {},
                 },
@@ -147,11 +155,13 @@ export class ContextMixer implements vscode.Disposable {
                     retrieverStats[retrieverId] = {
                         suggestedItems: 0,
                         positionBitmap: 0,
+                        retrieverChars: 0,
                         retrievedItems:
                             results.find(r => r.identifier === retrieverId)?.snippets.size ?? 0,
                         duration: results.find(r => r.identifier === retrieverId)?.duration ?? 0,
                     }
                 }
+                retrieverStats[retrieverId].retrieverChars += snippet.content.length
                 retrieverStats[retrieverId].suggestedItems++
                 // Only log the position for the first 32 results to avoid overflowing the bitmap
                 if (position < 32) {
@@ -166,6 +176,8 @@ export class ContextMixer implements vscode.Disposable {
             strategy,
             duration: performance.now() - start,
             totalChars,
+            prefixChars: options.docContext.prefix.length,
+            suffixChars: options.docContext.suffix.length,
             retrieverStats,
         }
 
@@ -187,7 +199,7 @@ async function filter(snippets: AutocompleteContextSnippet[]): Promise<Autocompl
                 if (isCodyIgnoredFile(snippet.uri)) {
                     return null
                 }
-                if (await contextFiltersProvider.isUriIgnored(snippet.uri)) {
+                if (await contextFiltersProvider.instance!.isUriIgnored(snippet.uri)) {
                     return null
                 }
                 return snippet

@@ -82,6 +82,8 @@ describe('getConfiguration', () => {
                         return 'bfg'
                     case 'cody.advanced.agent.running':
                         return false
+                    case 'cody.advanced.hasNativeWebview':
+                        return true
                     case 'cody.advanced.agent.ide':
                         return undefined
                     case 'cody.advanced.agent.ide.version':
@@ -104,6 +106,8 @@ describe('getConfiguration', () => {
                         return 0
                     case 'cody.experimental.guardrailsTimeoutSeconds':
                         return undefined
+                    case 'cody.advanced.agent.capabilities.storage':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -133,11 +137,13 @@ describe('getConfiguration', () => {
             commandHints: true,
             isRunningInsideAgent: false,
             agentIDE: undefined,
+            hasNativeWebview: true,
             internalUnstable: false,
             internalDebugContext: false,
             debugVerbose: true,
             debugFilter: /.*/,
             telemetryLevel: 'off',
+            agentHasPersistentStorage: false,
             autocompleteAdvancedProvider: 'unstable-openai',
             autocompleteAdvancedModel: 'starcoder-16b',
             autocompleteCompleteSuggestWidgetSelection: false,

@@ -1,18 +1,79 @@
-.tabs-container {
-    background-color: var(--vscode-sideBar-background);
-    display: inline-flex;
-    justify-content: space-between;
-}
-
-.active-tab {
-    border-color: var(--vscode-button-background);
-    color: var(--vscode-button-background);
-    border-width: 1.25px;
-}
-
 :root {
     --vscode-overlay-background: rgba(0, 0, 0, 0.5);
     --vscode-modal-background: var(--vscode-sideBar-background);
+}
+
+/*
+    Root element which only exists to use container query
+    for changing header tabs layout.
+*/
+.tabs-root {
+    container-type: inline-size;
+    container-name: tabs-container;
+
+    isolation: isolate;
+    z-index: 1;
+}
+
+.tabs-container {
+    display: flex;
+    width: 100%;
+    padding: 0;
+    flex-direction: column;
+    justify-content: space-between;
+    position: sticky;
+    border-bottom: 1px solid var(--vscode-dropdown-border);
+    background-color: var(--vscode-sideBar-background);
+}
+
+.tabs {
+    display: flex;
+    flex-shrink: 0;
+    gap: 2px;
+    width: 100%;
+    padding: 0 8px;
+    border-bottom: 1px solid var(--vscode-dropdown-border);
+
+    & > * {
+        flex-shrink: 0;
+    }
+}
+
+.sub-tabs {
+    display: flex;
+    flex-shrink: 0;
+    gap: 8px;
+    padding: 0 8px;
+
+    & > * {
+        flex-shrink: 0;
+    }
+}
+
+.tab-action-label {
+    display: inline;
+}
+
+/*
+    For small container turn off tabs labels completely and go back
+    to one row layout for tabs and its sub actions. Note that for
+    Cody Web we have a special override since it has different tabs
+    configurations (later we switch to dynamic items query and remove
+    this override)
+*/
+@container tabs-container (width < 575px) {
+    .tabs-root:not(.tabs-root--cody-web) {
+        .tab-action-label {
+            display: none;
+        }
+    }
+}
+
+/* Special override for Cody Web tabs */
+@container tabs-container (width < 375px) {
+    .tabs-root--cody-web .tab-action-label {
+        display: none;
+    }
 }
 
 .dialog {
@@ -23,17 +84,18 @@
     }
 
     &-content {
-        background-color: var(--vscode-modal-background);
-        border-radius: 6px;
-        box-shadow: hsl(206 22% 7% / 35%) 0 10px 38px -10px, hsl(206 22% 7% / 20%) 0 10px 20px -15px;
+        width: 90vw;
+        max-width: 450px;
+        max-height: 85vh;
         position: fixed;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 90vw;
-        max-width: 450px;
-        max-height: 85vh;
         padding: 25px;
+
+        border-radius: 6px;
+        background-color: var(--vscode-modal-background);
+        box-shadow: hsl(206 22% 7% / 35%) 0 10px 38px -10px, hsl(206 22% 7% / 20%) 0 10px 20px -15px;
 
         &:focus {
             outline: none;

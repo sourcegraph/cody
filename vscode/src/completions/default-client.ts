@@ -52,7 +52,7 @@ export function createClient(
         return tracer.startActiveSpan(
             `POST ${url}`,
             async function* (span): CompletionResponseGenerator {
-                const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlag(
+                const tracingFlagEnabled = await featureFlagProvider.instance!.evaluateFeatureFlag(
                     FeatureFlag.CodyAutocompleteTracing
                 )
 
@@ -100,7 +100,7 @@ export function createClient(
                     messages: await Promise.all(
                         params.messages.map(async m => ({
                             ...m,
-                            text: await m.text?.toFilteredString(contextFiltersProvider),
+                            text: await m.text?.toFilteredString(contextFiltersProvider.instance!),
                         }))
                     ),
                 }

@@ -5,7 +5,7 @@ import { Button } from './shadcn/ui/button'
 const MARGIN = 200 /* px */
 
 interface Scroller {
-    root: HTMLElement | Window
+    root: HTMLElement
     getObserveElement: () => Element
     getScrollTop: () => number
     getScrollHeight: () => number
@@ -38,25 +38,26 @@ export const ScrollDown: FC<ScrollDownProps> = props => {
     const scrollerAPI = useMemo(() => createScrollerAPI(scrollableParent), [scrollableParent])
 
     useEffect(() => {
-        function handleScroll() {
-            const scrollPosition = scrollerAPI.getScrollTop()
+        function calculateScrollState() {
+            const scrollTop = scrollerAPI.getScrollTop()
             const scrollHeight = scrollerAPI.getScrollHeight()
             const clientHeight = scrollerAPI.getClientHeight()
-            setCanScrollDown(scrollPosition + clientHeight < scrollHeight - MARGIN)
+
+            setCanScrollDown(scrollTop + clientHeight < scrollHeight - MARGIN)
         }
-        handleScroll()
-        scrollerAPI.root.addEventListener('scroll', handleScroll)
-        scrollerAPI.root.addEventListener('resize', handleScroll)
+
+        calculateScrollState()
 
         const resizeObserver = new ResizeObserver(() => {
-            handleScroll()
+            calculateScrollState()
         })
+
         resizeObserver.observe(scrollerAPI.getObserveElement())
+        scrollerAPI.root.addEventListener('scroll', calculateScrollState)
 
         return () => {
-            scrollerAPI.root.removeEventListener('scroll', handleScroll)
-            scrollerAPI.root.removeEventListener('resize', handleScroll)
             resizeObserver.disconnect()
+            scrollerAPI.root.removeEventListener('scroll', calculateScrollState)
         }
     }, [scrollerAPI])
 
@@ -70,13 +71,8 @@ export const ScrollDown: FC<ScrollDownProps> = props => {
 
     return canScrollDown ? (
         <div className="tw-sticky tw-bottom-0 tw-w-full tw-text-center tw-py-4">
-            <Button
-                variant="outline"
-                size="lg"
-                onClick={onClick}
-                className="tw-py-3 hover:tw-bg-primary-hover"
-            >
-                <ArrowDownIcon size={24} />
+            <Button variant="outline" onClick={onClick} className="tw-py-3 hover:tw-bg-primary-hover">
+                <ArrowDownIcon size={16} /> Skip to end
             </Button>
         </div>
     ) : null

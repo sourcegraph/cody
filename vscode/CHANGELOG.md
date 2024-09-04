@@ -8,11 +8,43 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
-- Autocomplete: Enable deepseek-coder-v2-lite-base model for enterprise users. [pull/5272](https://github.com/sourcegraph/cody/pull/5272)
+Command: Fixed an issue where the experimental `Generate Commit Message` command would fail on Windows due to incorrect parsing of the git diff output. [pull/5449](https://github.com/sourcegraph/cody/pull/5449)
 
 ### Changed
+- Changelog: Implemented cursor feedback for Generate Tests and Document Code commands to improve user experience by indicating command execution. [pull/5341](https://github.com/sourcegraph/cody/pull/5341)
 
-- Autocomplete: Enabled hot-streak and smart-throttle for enterprise users. [pull/5339](https://github.com/sourcegraph/cody/pull/5339)
+## 1.32.5
+
+### Fixed
+
+- Autocomplete: Fix autocomplete character trimming from hot-streak. [pull/5378](https://github.com/sourcegraph/cody/pull/5378)
+- Autocomplete: Fix anthropic model for PLG users. [pull/5380](https://github.com/sourcegraph/cody/pull/5380)
+- Adjust context windows for Mistral models configured in the site config. [pull/5434](https://github.com/sourcegraph/cody/pull/5434)
+
+## 1.32.4
+
+### Added
+
+- Refactoring: refactoring configurations to make more reactive. [pull/5330](https://github.com/sourcegraph/cody/pull/5330)
+- Autocomplete: Enable smart throttle and hot streak. [pull/5339](https://github.com/sourcegraph/cody/pull/5339)
+- Autocomplete: Fix model mapping for deepseek-coder-v2. [pull/5272](https://github.com/sourcegraph/cody/pull/5272)
+- Autocomplete: Prompt caching and direct routing experiment. [pull/5246](https://github.com/sourcegraph/cody/pull/5246)
+
+## 1.32.3
+
+### Added
+
+- Autocomplete Refactoring: Extract fast-path client for the fireworks provider. [pull/5284](https://github.com/sourcegraph/cody/pull/5284)
+- Autocomplete Refactoring: Reduce `createProviderConfig` duplication. [pull/5282](https://github.com/sourcegraph/cody/pull/5282)
+- Autocomplete Refactoring: Remove starcoder2. [pull/5283](https://github.com/sourcegraph/cody/pull/5283)
+- Autocomplete Refactoring: Remove unused models in the fireworks provider. [pull/5286](https://github.com/sourcegraph/cody/pull/5286)
+- Autocomplete Refactoring: Refactor the Fireworks provider. [pull/5307](https://github.com/sourcegraph/cody/pull/5307)
+
+## 1.32.2
+
+### Fixed
+
+- Fixed an issue where chats could hang if there have been no changes since the last local indexing. [pull/5319](https://github.com/sourcegraph/cody/pull/5319)
 
 ## 1.32.1
 

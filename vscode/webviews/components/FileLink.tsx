@@ -42,7 +42,6 @@ const hoverSourceLabels: Record<ContextItemSource, string | undefined> = {
     selection: 'from selected code',
     user: 'via @-mention',
     terminal: 'from terminal output',
-    uri: 'from URI', // todo(tim): what is this?
     history: 'from git history',
     initial: 'from open repo or file',
 }

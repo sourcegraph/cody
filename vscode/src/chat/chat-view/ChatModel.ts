@@ -27,12 +27,12 @@ export class ChatModel {
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
     ) {
-        this.contextWindow = modelsService.getContextWindowByID(this.modelID)
+        this.contextWindow = modelsService.instance!.getContextWindowByID(this.modelID)
     }
 
     public updateModel(newModelID: string) {
         this.modelID = newModelID
-        this.contextWindow = modelsService.getContextWindowByID(this.modelID)
+        this.contextWindow = modelsService.instance!.getContextWindowByID(this.modelID)
     }
 
     public isEmpty(): boolean {
@@ -166,12 +166,18 @@ export class ChatModel {
     /**
      * Serializes to the transcript JSON format.
      */
-    public toSerializedChatTranscript(): SerializedChatTranscript {
+    public toSerializedChatTranscript(): SerializedChatTranscript | undefined {
         const interactions: SerializedChatInteraction[] = []
         for (let i = 0; i < this.messages.length; i += 2) {
             const humanMessage = this.messages[i]
+            if (humanMessage.error) {
+                // Ignore chats that have errors, we don't need to serialize them
+                return undefined
+            }
             const assistantMessage = this.messages.at(i + 1)
-            interactions.push(messageToSerializedChatInteraction(humanMessage, assistantMessage))
+            interactions.push(
+                messageToSerializedChatInteraction(humanMessage, assistantMessage, this.messages)
+            )
         }
         const result: SerializedChatTranscript = {
             id: this.sessionID,
@@ -190,18 +196,27 @@ export class ChatModel {
 
 function messageToSerializedChatInteraction(
     humanMessage: ChatMessage,
-    assistantMessage?: ChatMessage
+    assistantMessage: ChatMessage | undefined,
+    messages: ChatMessage[]
 ): SerializedChatInteraction {
     if (humanMessage?.speaker !== 'human') {
-        throw new Error('expected human message, got bot')
+        throw new Error(
+            `expected human message, got bot. Messages: ${JSON.stringify(messages, null, 2)}`
+        )
     }
 
     if (humanMessage.speaker !== 'human') {
-        throw new Error(`expected human message to have speaker == 'human', got ${humanMessage.speaker}`)
+        throw new Error(
+            `expected human message to have speaker == 'human', got ${
+                humanMessage.speaker
+            }. Messages: ${JSON.stringify(messages, null, 2)}`
+        )
     }
     if (assistantMessage && assistantMessage.speaker !== 'assistant') {
         throw new Error(
-            `expected bot message to have speaker == 'assistant', got ${assistantMessage.speaker}`
+            `expected bot message to have speaker == 'assistant', got ${
+                assistantMessage.speaker
+            }. Messages: ${JSON.stringify(messages, null, 2)}`
         )
     }
 

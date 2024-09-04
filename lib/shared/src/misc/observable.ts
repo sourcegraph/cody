@@ -5,7 +5,6 @@ import {
     Subject,
     type Subscription,
     map,
-    multicast,
     unsubscribe,
 } from 'observable-fns'
 import { AsyncSerialScheduler } from 'observable-fns/dist/_scheduler'
@@ -78,6 +77,15 @@ export async function firstValueFrom<T>(observable: Observable<T>): Promise<T> {
             complete: () => {
                 reject('Observable completed without emitting a value')
             },
+        })
+    })
+}
+
+export async function waitUntilComplete(observable: Observable<unknown>): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+        observable.subscribe({
+            error: reject,
+            complete: () => resolve(),
         })
     })
 }
@@ -319,22 +327,29 @@ type VSCodeEvent<T> = (
     disposables?: VSCodeDisposable[]
 ) => VSCodeDisposable
 
+export const NO_INITIAL_VALUE = Symbol('noInitialValue')
+
 /**
- * Create an Observable from a VS Code event.
+ * Create an Observable from a VS Code event. If {@link getInitial} is provided, the Observable will
+ * emit the initial value upon subscription (unless it's {@link NO_INITIAL_VALUE}).
  */
 export function fromVSCodeEvent<T>(
     event: VSCodeEvent<T>,
-    getInitialValue?: () => T | Promise<T>
+    getInitialValue?: () => T | typeof NO_INITIAL_VALUE | Promise<T | typeof NO_INITIAL_VALUE>
 ): Observable<T> {
     return new Observable(observer => {
         if (getInitialValue) {
             const initialValue = getInitialValue()
             if (initialValue instanceof Promise) {
                 initialValue.then(value => {
-                    observer.next(value)
+                    if (value !== NO_INITIAL_VALUE) {
+                        observer.next(value)
+                    }
                 })
             } else {
-                observer.next(initialValue)
+                if (initialValue !== NO_INITIAL_VALUE) {
+                    observer.next(initialValue)
+                }
             }
         }
 
@@ -351,107 +366,6 @@ export function fromVSCodeEvent<T>(
             observer.complete()
         }
     })
-}
-
-/**
- * An {@link Observable} whose latest value is available synchronously (and is guaranteed to exist).
- */
-export interface SyncObservable<T> extends Observable<T> {
-    /**
-     * The latest value emitted by this Observable.
-     */
-    value: T
-}
-
-export function syncObservableOf<T>(value: T): SyncObservable<T> {
-    return createSyncObservable(value, Observable.of(value))
-}
-
-/**
- * Create a {@link SyncObservable} with an initial value.
- */
-export function createSyncObservable<T>(
-    initialValue: T,
-    observable: Observable<T>,
-    emitInitialValue = true
-): SyncObservable<T> {
-    let latestValue = initialValue
-    const syncObservable = new Observable<T>(observer => {
-        const scheduler = new AsyncSerialScheduler(observer)
-        if (emitInitialValue) {
-            scheduler.schedule(async next => next(initialValue))
-        }
-
-        const subscription = observable.subscribe({
-            next: value => {
-                latestValue = value
-                scheduler.schedule(async next => next(value))
-            },
-            error: error => {
-                scheduler.error(error)
-            },
-            complete: () => {
-                scheduler.complete()
-            },
-        })
-        return () => subscription.unsubscribe()
-    })
-    return Object.defineProperty(syncObservable, 'value', {
-        get: () => latestValue,
-    }) as typeof syncObservable & { value: T }
-}
-
-export function mapSyncObservable<T, U>(
-    observable: SyncObservable<T>,
-    mapFn: (value: T) => Promise<U>
-): Promise<SyncObservable<U>>
-export function mapSyncObservable<T, U>(
-    observable: SyncObservable<T>,
-    mapFn: (value: T) => U
-): SyncObservable<U>
-export function mapSyncObservable<T, U>(
-    observable: SyncObservable<T>,
-    mapFn: (value: T) => U | Promise<U>
-): SyncObservable<U> | Promise<SyncObservable<U>> {
-    const initialValue = mapFn(observable.value)
-    if (initialValue instanceof Promise) {
-        return initialValue.then(value =>
-            createSyncObservable(
-                value,
-                observable.pipe(map(value => (mapFn as (value: T) => Promise<U>)(value))),
-                false
-            )
-        )
-    }
-    return createSyncObservable(initialValue, observable.map(mapFn as (value: T) => U), false)
-}
-
-export function pipeSyncObservable<T>(
-    observable: SyncObservable<T>,
-    ...pipeFns: ((observable: Observable<T>) => Observable<T>)[]
-): SyncObservable<T> {
-    const piped = pipeFns.length > 0 ? observable.pipe(...pipeFns) : observable
-    const desc = Object.getOwnPropertyDescriptor(observable, 'value')!
-    Object.defineProperty(piped, 'value', desc)
-    return piped as typeof piped & { value: T }
-}
-
-export function combineLatestSyncObservable<T1, T2>(
-    observables: [SyncObservable<T1>, SyncObservable<T2>]
-): SyncObservable<[T1, T2]>
-export function combineLatestSyncObservable<T1, T2, T3>(
-    observables: [SyncObservable<T1>, SyncObservable<T2>, SyncObservable<T3>]
-): SyncObservable<[T1, T2, T3]>
-export function combineLatestSyncObservable<T1, T2, T3, T4>(
-    observables: [SyncObservable<T1>, SyncObservable<T2>, SyncObservable<T3>, SyncObservable<T4>]
-): SyncObservable<[T1, T2, T3, T4]>
-export function combineLatestSyncObservable<T>(observables: SyncObservable<T>[]): SyncObservable<T[]>
-export function combineLatestSyncObservable<T>(observables: SyncObservable<T>[]): SyncObservable<T[]> {
-    return createSyncObservable(
-        observables.map(o => o.value),
-        combineLatest(observables),
-        false
-    )
 }
 
 export function pluck<T, K extends keyof T>(key: K): (input: ObservableLike<T>) => Observable<T[K]>
@@ -480,11 +394,13 @@ export function pick<T, K extends keyof T>(
     )
 }
 
+// biome-ignore lint/suspicious/noConfusingVoidType:
+export type UnsubscribableLike = Unsubscribable | (() => void) | void | null
+
 export function shareReplay<T>(): (observable: ObservableLike<T>) => Observable<T> {
     return (observable: ObservableLike<T>): Observable<T> => {
         const subject = new Subject<T>()
-        // biome-ignore lint/suspicious/noConfusingVoidType:
-        let subscription: Unsubscribable | (() => void) | void | null = null
+        let subscription: UnsubscribableLike = null
         let hasValue = false
         let latestValue: T
         let refCount = 0
@@ -582,9 +498,33 @@ function isEqualJSON(a: unknown, b: unknown): boolean {
     return JSON.stringify(a) === JSON.stringify(b)
 }
 
-export function multicastSync<T>(coldObservable: SyncObservable<T>): SyncObservable<T> {
-    const hot = multicast(coldObservable)
-    const desc = Object.getOwnPropertyDescriptor(coldObservable, 'value')!
-    Object.defineProperty(hot, 'value', desc)
-    return hot as typeof hot & { value: T }
+export function startWith<T, R>(value: R): (source: ObservableLike<T>) => Observable<R | T> {
+    return (source: ObservableLike<T>) =>
+        new Observable<R | T>(observer => {
+            let sourceSubscription: UnsubscribableLike | undefined
+
+            try {
+                observer.next(value)
+
+                sourceSubscription = source.subscribe({
+                    next(val) {
+                        observer.next(val)
+                    },
+                    error(err) {
+                        observer.error(err)
+                    },
+                    complete() {
+                        observer.complete()
+                    },
+                })
+            } catch (err) {
+                observer.error(err)
+            }
+
+            return () => {
+                if (sourceSubscription) {
+                    unsubscribe(sourceSubscription)
+                }
+            }
+        })
 }

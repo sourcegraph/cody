@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process'
 import path from 'node:path'
 
-import { extensionForLanguage, logDebug, logError, setClientNameVersion } from '@sourcegraph/cody-shared'
+import { extensionForLanguage, logDebug, logError } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
@@ -120,7 +120,6 @@ const emptyFileWatcher: vscode.FileSystemWatcher = {
 export let clientInfo: ClientInfo | undefined
 export function setClientInfo(newClientInfo: ClientInfo): void {
     clientInfo = newClientInfo
-    setClientNameVersion(clientInfo.name, clientInfo.version)
     if (newClientInfo.extensionConfiguration) {
         setExtensionConfiguration(newClientInfo.extensionConfiguration)
     }

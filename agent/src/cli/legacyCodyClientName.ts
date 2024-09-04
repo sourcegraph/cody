@@ -1,4 +1,4 @@
-// Context https://github.com/sourcegraph/sourcegraph/pull/63855
+// Context https://github.com/sourcegraph/sourcegraph-public-snapshot/issues/63855
 // The Sourcegraph Enterprise backend rejects requests from unknown clients on
 // the assumption that they may not support context filters. This logic is flawed because
 // it has both false positives and false negatives.
@@ -19,4 +19,4 @@
 // back to cody-cli once all Enterprise instances have upgraded to a release
 // that includes this PR https://github.com/sourcegraph/sourcegraph/pull/63855
 
-export const codyCliClientName = 'jetbrains'
+export const legacyCodyClientName = 'jetbrains'

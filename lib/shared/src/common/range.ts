@@ -17,7 +17,7 @@ export interface RangeData {
  * A specialization of RangeData such that character is always 0. This is a
  * 0-indexed line range [start, end).
  */
-export interface LineRangeData {
+interface LineRangeData {
     start: { line: number; character: 0 }
     end: { line: number; character: 0 }
 }

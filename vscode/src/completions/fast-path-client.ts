@@ -76,7 +76,9 @@ export function createFastPathClient(
         }
 
         // Convert the SG instance messages array back to the original prompt
-        const prompt = await requestParams.messages[0]!.text!.toFilteredString(contextFiltersProvider)
+        const prompt = await requestParams.messages[0]!.text!.toFilteredString(
+            contextFiltersProvider.instance!
+        )
 
         // c.f. https://readme.fireworks.ai/reference/createcompletion
         const fireworksRequest = {
@@ -90,7 +92,7 @@ export function createFastPathClient(
             stop: [...(requestParams.stopSequences || []), ...(fireworksConfig?.parameters?.stop || [])],
             stream: true,
             languageId: providerOptions.document.languageId,
-            anonymousUserID,
+            user: anonymousUserID,
         }
         const headers = new Headers(customHeaders)
         // Force HTTP connection reuse to reduce latency.
@@ -118,7 +120,7 @@ export function createFastPathClient(
         // identical to the SG instance response but does not contain information on whether a user
         // is eligible to upgrade to the pro plan. We get this from the authState instead.
         if (response.status === 429) {
-            const upgradeIsAvailable = authStatus.userCanUpgrade
+            const upgradeIsAvailable = !!authStatus.userCanUpgrade
 
             throw recordErrorToSpan(
                 span,

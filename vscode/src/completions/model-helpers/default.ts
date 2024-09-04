@@ -31,20 +31,30 @@ export interface FormatIntroSnippetsParams {
     languageConfig: LanguageConfig | null
 }
 
-export interface GetFireworksPromptParams {
+interface GetPromptParams {
     snippets: AutocompleteContextSnippet[]
     docContext: DocumentContext
     document: vscode.TextDocument
     promptChars: number
     gitContext?: GitContext
+    /**
+     * Used only with StarChat: only use infill if the suffix is not empty.
+     */
+    isInfill?: boolean
 }
 
-export interface FormatFireworksPromptParams {
+export interface FormatPromptParams {
     repoName: PromptString | undefined
     fileName: PromptString
     intro: PromptString
     prefix: PromptString
     suffix: PromptString
+    isInfill: boolean
+}
+
+export interface GetDefaultIntroSnippetsParams {
+    document: vscode.TextDocument
+    isInfill: boolean
 }
 
 export class DefaultModel {
@@ -71,7 +81,7 @@ export class DefaultModel {
         return params
     }
 
-    public getFireworksRequestParams(params: CodeCompletionsParams): CodeCompletionsParams {
+    public getRequestParams(params: CodeCompletionsParams): CodeCompletionsParams {
         return {
             ...params,
             stopSequences: [...(params.stopSequences || []), ...this.stopSequences],
@@ -80,19 +90,23 @@ export class DefaultModel {
 
     protected formatIntroSnippets(params: FormatIntroSnippetsParams): PromptString {
         const { intro, languageConfig } = params
+        const commentStart = languageConfig ? languageConfig.commentStart : ps`// `
 
-        const commentedOutSnippets = PromptString.join(intro, ps`\n\n`)
-            .split('\n')
-            .map(line => ps`${languageConfig ? languageConfig.commentStart : ps`// `}${line}`)
+        const commentedOutSnippets = intro.map(snippet => {
+            return PromptString.join(
+                snippet.split('\n').map(line => ps`${commentStart}${line}`),
+                ps`\n`
+            )
+        })
 
-        return ps`${PromptString.join(commentedOutSnippets, ps`\n`)}\n`
+        return ps`${PromptString.join(commentedOutSnippets, ps`\n\n`)}\n\n`
     }
 
-    public getFireworksPrompt(params: GetFireworksPromptParams): PromptString {
-        const { snippets, docContext, document, promptChars, gitContext } = params
+    public getPrompt(params: GetPromptParams): PromptString {
+        const { snippets, docContext, document, promptChars, gitContext, isInfill = true } = params
         const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(docContext, document.uri)
 
-        const introSnippets = this.getDefaultIntroSnippets(document)
+        const introSnippets = this.getDefaultIntroSnippets({ document, isInfill })
         let currentPrompt = ps``
 
         const languageConfig = getLanguageConfig(document.languageId)
@@ -118,7 +132,8 @@ export class DefaultModel {
 
             const intro = this.formatIntroSnippets({ intro: introSnippets, languageConfig })
 
-            const nextPrompt = this.formatFireworksPrompt({
+            const nextPrompt = this.formatPrompt({
+                isInfill,
                 fileName,
                 repoName,
                 intro,
@@ -140,7 +155,7 @@ export class DefaultModel {
         return content.replace(' <EOT>', '')
     }
 
-    protected getDefaultIntroSnippets(document: vscode.TextDocument): PromptString[] {
+    protected getDefaultIntroSnippets(params: GetDefaultIntroSnippetsParams): PromptString[] {
         return []
     }
 
@@ -149,15 +164,15 @@ export class DefaultModel {
         const { content } = PromptString.fromAutocompleteContextSnippet(snippet)
 
         const uriPromptString = PromptString.fromDisplayPath(uri)
-        return ps`Here is a reference snippet of code from ${uriPromptString}:\n\n${content}`
+        return ps`Here is a reference snippet of code from ${uriPromptString}:\n${content}`
     }
 
-    protected formatFireworksPrompt(param: FormatFireworksPromptParams): PromptString {
+    protected formatPrompt(param: FormatPromptParams): PromptString {
         return ps`${param.intro}${param.prefix}`
     }
 }
 
 function symbolSnippetToPromptString(snippet: AutocompleteSymbolContextSnippet): PromptString {
     const { content, symbol } = PromptString.fromAutocompleteContextSnippet(snippet)
-    return ps`Additional documentation for \`${symbol!}\`:\n\n${content}`
+    return ps`Additional documentation for \`${symbol!}\`:\n${content}`
 }

@@ -8,7 +8,7 @@ import { getExtensionDetails } from '../telemetry-v2'
 // Ensure to ad exposed experiments at the very end to make sure we include experiments that the
 // user is being exposed to while the span was generated
 export function recordExposedExperimentsToSpan(span: Span): void {
-    span.setAttributes(featureFlagProvider.getExposedExperiments())
+    span.setAttributes(featureFlagProvider.instance!.getExposedExperiments())
     const extensionDetails = getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration()))
     span.setAttributes(extensionDetails as any)
 

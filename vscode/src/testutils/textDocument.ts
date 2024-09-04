@@ -107,13 +107,6 @@ export function withPosixPaths<T extends object>(obj: T): T {
     return obj
 }
 
-export function withPosixPathsInString(text: string): string {
-    return text
-        .replaceAll('file:///c%3A%5C', 'file:///')
-        .replaceAll('file:///c%3A/', 'file:///')
-        .replaceAll('\\', '/')
-}
-
 function normalizeFilePathToPosix(filePath: string): string {
     // Remove any drive letter.
     if (filePath[1] === ':') {

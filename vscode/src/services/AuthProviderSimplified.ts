@@ -4,22 +4,18 @@ import { DOTCOM_URL } from '@sourcegraph/cody-shared'
 
 import type { AuthMethod } from '../chat/protocol'
 
-import type { AuthProvider } from './AuthProvider'
+import { authProvider } from './AuthProvider'
 
 // An auth provider for simplified onboarding. This is a sidecar to AuthProvider
 // so we can deprecate the experiment later. AuthProviderSimplified only works
 // for dotcom, and doesn't work on VScode web. See LoginSimplified.
 
 export class AuthProviderSimplified {
-    public async openExternalAuthUrl(
-        classicAuthProvider: AuthProvider,
-        method: AuthMethod,
-        tokenReceiverUrl?: string
-    ): Promise<boolean> {
+    public async openExternalAuthUrl(method: AuthMethod, tokenReceiverUrl?: string): Promise<boolean> {
         if (!(await openExternalAuthUrl(method, tokenReceiverUrl))) {
             return false
         }
-        classicAuthProvider.authProviderSimplifiedWillAttemptAuth()
+        authProvider.instance!.setAuthPendingToEndpoint(DOTCOM_URL.toString())
         return true
     }
 }

@@ -1,63 +1,64 @@
 import semver from 'semver'
 
-import { type AuthStatus, offlineModeAuthStatus, unauthenticatedStatus } from '@sourcegraph/cody-shared'
+import { type AuthStatus, type AuthenticatedAuthStatus, isDotCom } from '@sourcegraph/cody-shared'
 import type { CurrentUserInfo } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
-export type NewAuthStatusOptions = Omit<
-    AuthStatus,
-    | 'isLoggedIn'
-    | 'isFireworksTracingEnabled'
-    | 'codyApiVersion'
-    | 'showInvalidAccessToken'
-    | 'showInvalidAccessTokenError'
-    | 'requiresVerifiedEmail'
-    | 'primaryEmail'
-> & {
-    userOrganizations?: CurrentUserInfo['organizations']
-    primaryEmail?:
-        | string
-        | {
-              email: string
-          }
-        | null
-}
+type NewAuthStatusOptions = { endpoint: string } & (
+    | { authenticated: false; showNetworkError?: boolean; showInvalidAccessTokenError?: boolean }
+    | (Pick<
+          AuthenticatedAuthStatus,
+          | 'authenticated'
+          | 'username'
+          | 'siteVersion'
+          | 'configOverwrites'
+          | 'hasVerifiedEmail'
+          | 'displayName'
+          | 'avatarURL'
+          | 'userCanUpgrade'
+          | 'isOfflineMode'
+      > & {
+          userOrganizations?: CurrentUserInfo['organizations']
+          primaryEmail?:
+              | string
+              | {
+                    email: string
+                }
+              | null
+      })
+)
 
 export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
-    const {
-        isOfflineMode,
-        endpoint,
-        siteHasCodyEnabled,
-        username,
-        authenticated,
-        isDotCom,
-        siteVersion,
-        userOrganizations,
-    } = options
+    if (!options.authenticated) {
+        return { authenticated: false, endpoint: options.endpoint, showInvalidAccessTokenError: true }
+    }
+
+    const { isOfflineMode, username, endpoint, siteVersion, userOrganizations } = options
 
     if (isOfflineMode) {
-        return { ...offlineModeAuthStatus, endpoint, username }
+        return {
+            authenticated: true,
+            endpoint,
+            username,
+            codyApiVersion: 0,
+            siteVersion: 'offline',
+            isOfflineMode: true,
+        }
     }
-    if (!authenticated) {
-        return { ...unauthenticatedStatus, endpoint }
-    }
+
+    const isDotCom_ = isDotCom(endpoint)
     const primaryEmail =
-        typeof options.primaryEmail === 'string'
-            ? options.primaryEmail
-            : options.primaryEmail?.email || ''
-    const requiresVerifiedEmail = isDotCom
-    const hasVerifiedEmail = requiresVerifiedEmail && options.hasVerifiedEmail
-    const isAllowed = !requiresVerifiedEmail || hasVerifiedEmail
+        typeof options.primaryEmail === 'string' ? options.primaryEmail : options.primaryEmail?.email
+    const requiresVerifiedEmail = isDotCom_
+    const hasVerifiedEmail = requiresVerifiedEmail && options.authenticated && options.hasVerifiedEmail
     return {
         ...options,
-        showInvalidAccessTokenError: false,
         endpoint,
         primaryEmail,
         requiresVerifiedEmail,
         hasVerifiedEmail,
-        isLoggedIn: siteHasCodyEnabled && authenticated && isAllowed,
-        codyApiVersion: inferCodyApiVersion(siteVersion, isDotCom),
+        codyApiVersion: inferCodyApiVersion(siteVersion, isDotCom_),
         isFireworksTracingEnabled:
-            isDotCom && !!userOrganizations?.nodes.find(org => org.name === 'sourcegraph'),
+            isDotCom_ && !!userOrganizations?.nodes.find(org => org.name === 'sourcegraph'),
     }
 }
 

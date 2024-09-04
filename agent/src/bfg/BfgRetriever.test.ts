@@ -42,7 +42,7 @@ describe('BfgRetriever', async () => {
             vscode.Uri.file(process.cwd()),
             activate,
             defaultVSCodeExtensionClient(),
-            new AgentGlobalState('vscode'),
+            await AgentGlobalState.initialize('vscode'),
             new AgentStatelessSecretStorage()
         )
 

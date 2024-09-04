@@ -7,9 +7,10 @@ import {
     ModelUsage,
     RestClient,
     getDotComDefaultModels,
+    isDotCom,
     modelsService,
 } from '@sourcegraph/cody-shared'
-import type { ServerModelConfiguration } from '@sourcegraph/cody-shared/src/models'
+import type { ServerModel, ServerModelConfiguration } from '@sourcegraph/cody-shared/src/models'
 import { ModelTag } from '@sourcegraph/cody-shared/src/models/tags'
 import * as vscode from 'vscode'
 import { getConfiguration } from '../configuration'
@@ -26,15 +27,15 @@ import { getEnterpriseContextWindow } from './utils'
  */
 export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // Offline mode only support Ollama models, which would be synced seperately.
-    modelsService.setAuthStatus(authStatus)
-    if (authStatus.isOfflineMode) {
-        modelsService.setModels([])
+    modelsService.instance!.setAuthStatus(authStatus)
+    if (authStatus.authenticated && authStatus.isOfflineMode) {
+        modelsService.instance!.setModels([])
         return
     }
 
     // If you are not authenticated, you cannot use Cody. Sorry.
     if (!authStatus.authenticated) {
-        modelsService.setModels([])
+        modelsService.instance!.setModels([])
         return
     }
 
@@ -47,7 +48,10 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
         const serverSideModels = await fetchServerSideModels(authStatus.endpoint || '')
         // If the request failed, fall back to using the default models
         if (serverSideModels) {
-            modelsService.setServerSentModels(serverSideModels)
+            modelsService.instance!.setServerSentModels({
+                ...serverSideModels,
+                models: maybeAdjustContextWindows(serverSideModels.models),
+            })
             // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't entirely make sense in
             // a world where LLM models are managed server-side. However, this is how Cody can be extended
             // to use locally running LLMs such as Ollama. (Though some more testing is needed.)
@@ -59,8 +63,8 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
 
     // If you are connecting to Sourcegraph.com, we use the Cody Pro set of models.
     // (Only some of them may not be available if you are on the Cody Free plan.)
-    if (authStatus.isDotCom) {
-        modelsService.setModels(getDotComDefaultModels())
+    if (isDotCom(authStatus)) {
+        modelsService.instance!.setModels(getDotComDefaultModels())
         registerModelsFromVSCodeConfiguration()
         return
     }
@@ -75,7 +79,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // NOTE: If authStatus?.configOverwrites?.chatModel is empty,
     // automatically fallback to use the default model configured on the instance.
     if (authStatus?.configOverwrites?.chatModel) {
-        modelsService.setModels([
+        modelsService.instance!.setModels([
             new Model({
                 id: authStatus.configOverwrites.chatModel,
                 // TODO (umpox) Add configOverwrites.editModel for separate edit support
@@ -91,7 +95,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
         // If the enterprise instance didn't have any configuration data for Cody,
         // clear the models available in the modelsService. Otherwise there will be
         // stale, defunct models available.
-        modelsService.setModels([])
+        modelsService.instance!.setModels([])
     }
 }
 
@@ -120,7 +124,7 @@ export function registerModelsFromVSCodeConfiguration() {
         return
     }
 
-    modelsService.addModels(
+    modelsService.instance!.addModels(
         modelsConfig.map(
             m =>
                 new Model({
@@ -156,3 +160,32 @@ async function fetchServerSideModels(endpoint: string): Promise<ServerModelConfi
     const client = new RestClient(endpoint, userAccessToken, customHeaders)
     return await client.getAvailableModels()
 }
+
+/**
+ * maybeAdjustContextWindows adjusts the context window input tokens for specific models to prevent
+ * context window overflow caused by token count discrepancies.
+ *
+ * Currently, the OpenAI tokenizer is used by default for all models. However, it often
+ * counts tokens incorrectly for non-OpenAI models (e.g., Mistral), leading to over-counting
+ * and potentially causing completion requests to fail due to exceeding the context window.
+ *
+ * The proper fix would be to use model-specific tokenizers, but this would require significant
+ * refactoring. As a temporary workaround, this function reduces the `maxInputTokens` for specific
+ * models to mitigate the risk of context window overflow.
+ *
+ * @param {ServerModel[]} models - An array of models from the site config.
+ * @returns {ServerModel[]} - The array of models with adjusted context windows where applicable.
+ */
+export const maybeAdjustContextWindows = (models: ServerModel[]): ServerModel[] =>
+    models.map(model => {
+        let maxInputTokens = model.contextWindow.maxInputTokens
+        if (/^mi(x|s)tral/.test(model.modelName)) {
+            // Adjust the context window size for Mistral models because the OpenAI tokenizer undercounts tokens in English
+            // compared to the Mistral tokenizer. Based on our observations, the OpenAI tokenizer usually undercounts by about 13%.
+            // We reduce the context window by 15% (0.85 multiplier) to provide a safety buffer and prevent potential overflow.
+            // Note: In other languages, the OpenAI tokenizer might actually overcount tokens. As a result, we accept the risk
+            // of using a slightly smaller context window than what's available for those languages.
+            maxInputTokens = Math.round(model.contextWindow.maxInputTokens * 0.85)
+        }
+        return { ...model, contextWindow: { ...model.contextWindow, maxInputTokens } }
+    })

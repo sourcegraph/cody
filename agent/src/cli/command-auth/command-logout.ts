@@ -1,12 +1,28 @@
 import { Command } from 'commander'
 import ora from 'ora'
+import {
+    type AuthenticationOptions,
+    DEFAULT_AUTHENTICATION_OPTIONS,
+    accessTokenOption,
+    endpointOption,
+} from './command-login'
+import { unknownErrorSpinner } from './messages'
 import { removeCodySecret } from './secrets'
 import { loadUserSettings, userSettingsPath, writeUserSettings } from './settings'
 
 export const logoutCommand = new Command('logout')
     .description('Log out of Sourcegraph')
-    .action(async () => {
-        const spinner = ora('Loading active accounts')
+    .addOption(accessTokenOption)
+    .addOption(endpointOption)
+    .action(async (options: AuthenticationOptions) => {
+        const spinner = ora()
+        if (options.accessToken) {
+            spinner.fail(
+                'You cannot logout when using SRC_ACCESS_TOKEN with logout. To fix this problem, run `unset SRC_ACCESS_TOKEN` and try again.'
+            )
+            process.exit(1)
+        }
+        spinner.text = 'Loading active accounts'
         try {
             const settings = loadUserSettings()
             if (!settings?.accounts || settings.accounts.length === 0 || !settings.activeAccountID) {
@@ -30,13 +46,7 @@ export const logoutCommand = new Command('logout')
             spinner.succeed(`Logged out of account ${account.username} on ${account.serverEndpoint}`)
             process.exit(0)
         } catch (error) {
-            if (error instanceof Error) {
-                spinner.prefixText = error.stack ?? ''
-                spinner.fail(error.message)
-            } else {
-                spinner.prefixText = String(error)
-                spinner.fail('Failed to load active account')
-            }
+            unknownErrorSpinner(spinner, error, DEFAULT_AUTHENTICATION_OPTIONS)
             process.exit(1)
         }
     })

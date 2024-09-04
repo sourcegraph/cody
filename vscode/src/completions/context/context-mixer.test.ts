@@ -59,7 +59,7 @@ const defaultOptions = {
 
 describe('ContextMixer', () => {
     beforeEach(() => {
-        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+        vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValue(false)
     })
 
     describe('with no retriever', () => {
@@ -72,7 +72,9 @@ describe('ContextMixer', () => {
                 duration: 0,
                 retrieverStats: {},
                 strategy: 'none',
-                totalChars: 0,
+                totalChars: 8,
+                prefixChars: 8,
+                suffixChars: 0,
             })
         })
     })
@@ -120,10 +122,13 @@ describe('ContextMixer', () => {
                         positionBitmap: 3,
                         retrievedItems: 2,
                         suggestedItems: 2,
+                        retrieverChars: 34,
                     },
                 },
                 strategy: 'jaccard-similarity',
                 totalChars: 42,
+                prefixChars: 8,
+                suffixChars: 0,
             })
         })
     })
@@ -218,16 +223,20 @@ describe('ContextMixer', () => {
                         positionBitmap: 0b00101,
                         retrievedItems: 2,
                         suggestedItems: 2,
+                        retrieverChars: 36,
                     },
                     retriever2: {
                         duration: expect.any(Number),
                         positionBitmap: 0b11010,
                         retrievedItems: 3,
                         suggestedItems: 3,
+                        retrieverChars: 92,
                     },
                 },
                 strategy: 'jaccard-similarity',
                 totalChars: 136,
+                prefixChars: 8,
+                suffixChars: 0,
             })
         })
 
@@ -296,7 +305,7 @@ describe('ContextMixer', () => {
 
         describe('retrieved context is filtered by context filters', () => {
             beforeAll(() => {
-                vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockImplementation(
+                vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockImplementation(
                     async (uri: vscode.Uri) => {
                         if (uri.path.includes('foo.ts')) {
                             return 'repo:foo'

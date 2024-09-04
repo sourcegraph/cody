@@ -1,6 +1,6 @@
 // Add anything else here that needs to be used outside of this library.
 
-export { Model, modelsService } from './models'
+export { Model, modelsService, type ServerModel, type ServerModelConfiguration } from './models'
 export {
     type EditModel,
     type EditProvider,
@@ -56,7 +56,6 @@ export { reformatBotMessageForChat } from './chat/viewHelpers'
 export type {
     ContextGroup,
     ContextProvider,
-    ContextStatusProvider,
     Disposable,
     EnhancedContextContextT,
     LocalEmbeddingsProvider,
@@ -219,6 +218,7 @@ export {
     isContextWindowLimitError,
     isAuthError,
     isNetworkError,
+    isNetworkLikeError,
     isRateLimitError,
 } from './sourcegraph-api/errors'
 export {
@@ -241,6 +241,8 @@ export {
     type RepoListResponse,
     type SuggestionsRepo,
     type RepoSuggestionsSearchResponse,
+    type InputContextItem,
+    type ChatIntentResult,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
@@ -268,6 +270,7 @@ export {
     createSubscriber,
     isError,
     nextTick,
+    type ReadonlyDeep,
 } from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'
@@ -334,3 +337,4 @@ export {
     createMessageAPIForExtension,
 } from './misc/rpc/rpc'
 export * from './misc/observable'
+export * from './singletons'

@@ -1,7 +1,7 @@
 import { ProgrammingLanguage, languageFromFilename } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 
-export function matchJavascriptFormatting(incoming: string, original: string): string {
+function matchJavascriptFormatting(incoming: string, original: string): string {
     const incomingHasSemiColons = incoming.includes(';')
     const originalHasSemiColons = original.includes(';')
 

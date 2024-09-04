@@ -103,7 +103,7 @@ export class RemoteRepoPicker implements vscode.Disposable {
             id: repo.id,
             label: repo.name,
             name: repo.name,
-            isIgnored: contextFiltersProvider.isRepoNameIgnored(repo.name),
+            isIgnored: contextFiltersProvider.instance!.isRepoNameIgnored(repo.name),
         }))
         this.handleRepoListChanged()
 
@@ -171,7 +171,7 @@ export class RemoteRepoPicker implements vscode.Disposable {
                 continue
             }
             displayedRepos.add(repo.id)
-            const isIgnored = contextFiltersProvider.isRepoNameIgnored(repo.name)
+            const isIgnored = contextFiltersProvider.instance!.isRepoNameIgnored(repo.name)
 
             const inWorkspace = workspaceRepos.has(repo.id)
             const shortName = repo.name.slice(repo.name.lastIndexOf('/') + 1)
