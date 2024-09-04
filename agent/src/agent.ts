@@ -86,7 +86,6 @@ import type {
     GetDocumentsParams,
     GetDocumentsResult,
     GetFoldingRangeResult,
-    ProtocolCommand,
     ProtocolTextDocument,
     TextEdit,
 } from './protocol-alias'
@@ -393,11 +392,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
             if (clientInfo.capabilities?.codeLenses === 'enabled') {
                 vscode_shim.onDidRegisterNewCodeLensProvider(codeLensProvider => {
-                    this.codeLens.addProvider(
-                        codeLensProvider,
-                        codeLensProvider.onDidChangeCodeLenses?.(() => this.updateCodeLenses())
-                    )
-                    this.updateCodeLenses()
+                    this.codeLens.addProvider(codeLensProvider)
                 })
                 vscode_shim.onDidUnregisterNewCodeLensProvider(codeLensProvider =>
                     this.codeLens.removeProvider(codeLensProvider)
@@ -1527,78 +1522,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             throw new Error('Extension registration not yet complete')
         }
         return this.maybeExtension
-    }
-
-    private codeLensToken = new vscode.CancellationTokenSource()
-    /**
-     * Matches VS Code codicon syntax, e.g. $(cody-logo)
-     * Source: https://sourcegraph.com/github.com/microsoft/vscode@f34d4/-/blob/src/vs/base/browser/ui/iconLabel/iconLabels.ts?L9
-     */
-    private labelWithIconsRegex = /(\\)?\$\(([A-Za-z0-9-]+(?:~[A-Za-z]+)?)\)/g
-    /**
-     * Given a title, such as "$(cody-logo) Cody", returns the raw
-     * title without icons and the icons matched with their respective positions.
-     */
-    private splitIconsFromTitle(title: string): ProtocolCommand['title'] {
-        const icons: { value: string; position: number }[] = []
-        const matches = [...title.matchAll(this.labelWithIconsRegex)]
-
-        for (const match of matches) {
-            if (match.index !== undefined) {
-                icons.push({ value: match[0], position: match.index })
-            }
-        }
-
-        return { text: title.replace(this.labelWithIconsRegex, ''), icons }
-    }
-
-    private async updateCodeLenses(): Promise<void> {
-        const uri = this.workspace.activeDocumentFilePath
-        if (!uri) {
-            return
-        }
-        const document = this.workspace.getDocument(uri)
-        if (!document) {
-            return
-        }
-        this.codeLensToken.cancel()
-        this.codeLensToken = new vscode.CancellationTokenSource()
-        const promises: Promise<vscode.CodeLens[]>[] = []
-        for (const provider of this.codeLens.providers()) {
-            promises.push(this.provideCodeLenses(provider, document))
-        }
-        const lenses = (await Promise.all(promises)).flat()
-
-        // VS Code supports icons in code lenses, but we cannot render these through agent.
-        // We need to strip any icons from the title and provide those seperately, so the client can decide how to render them.
-        const agentLenses = lenses.map(lens => {
-            if (!lens.command) {
-                return {
-                    ...lens,
-                    command: undefined,
-                }
-            }
-
-            return {
-                ...lens,
-                command: {
-                    ...lens.command,
-                    title: this.splitIconsFromTitle(lens.command.title),
-                },
-            }
-        })
-
-        this.notify('codeLenses/display', {
-            uri: uri.toString(),
-            codeLenses: agentLenses,
-        })
-    }
-    private async provideCodeLenses(
-        provider: vscode.CodeLensProvider,
-        document: vscode.TextDocument
-    ): Promise<vscode.CodeLens[]> {
-        const result = await provider.provideCodeLenses(document, this.codeLensToken.token)
-        return result ?? []
     }
 
     private async handleConfigChanges(
