@@ -1,6 +1,5 @@
 import {
     type AuthStatus,
-    CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
     type ClientConfiguration,
     DOTCOM_URL,
     GIT_OPENCTX_PROVIDER_URI,
@@ -51,7 +50,6 @@ describe('getOpenCtxProviders', () => {
             WEB_PROVIDER_URI,
             RemoteRepositorySearch.providerUri,
             RemoteDirectoryProvider.providerUri,
-            CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
             RemoteFileProvider.providerUri,
         ])
     })
