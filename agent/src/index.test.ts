@@ -2,7 +2,7 @@ import assert from 'node:assert'
 import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
     type ContextItem,
@@ -29,6 +29,28 @@ const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-t
 
 const mayRecord =
     process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
+
+async function returnTelemetryEvents(currentClient: TestClient) {
+    const response = await currentClient.request('testing/exportedTelemetryEvents', null)
+
+    // send data to testing pub/sub topic
+    // for each request in response, send to logtest
+    const testRunId = uuid.v4()
+    for (const event of response.events) {
+        // Assuming logTestingData is defined elsewhere in the codebase
+        logTestingData(
+            JSON.stringify(event),
+            'v2-agent-e2e',
+            expect.getState().currentTestName,
+            testRunId
+        )
+    }
+    // Equality check to ensure all expected events(feature:action) were fired
+    const loggedTelemetryEventsV2 = response.events.map(
+        (event: { feature: string; action: string }) => `${event.feature}:${event.action}`
+    )
+    return loggedTelemetryEventsV2
+}
 
 describe('Agent', () => {
     const client = TestClient.create({
@@ -100,36 +122,6 @@ describe('Agent', () => {
         await client.request('testing/reset', null)
     })
 
-    afterEach(async () => {
-        // declare enterprise client
-        let currentClient: TestClient
-        const testName = expect.getState().currentTestName ?? 'NoTestName'
-        // Choose client based on test name
-        if (testName.includes('RateLimitedAgent')) {
-            currentClient = rateLimitedClient
-        } else {
-            currentClient = client // Default client
-        }
-
-        const response = await currentClient.request('testing/exportedTelemetryEvents', null)
-
-        // send data to testing pub/sub topic
-        // for each request in response, send to logtest
-        const testRunId = uuid.v4()
-        for (const event of response.events) {
-            // Assuming logTestingData is defined elsewhere in the codebase
-            logTestingData(
-                JSON.stringify(event),
-                'v2-agent-e2e',
-                expect.getState().currentTestName,
-                testRunId
-            )
-        }
-        // Equality check to ensure all expected events(feature:action) were fired
-        const loggedTelemetryEventsV2 = response.events.map(event => `${event.feature}:${event.action}`)
-        expect(loggedTelemetryEventsV2).toEqual(expect.arrayContaining(currentClient.expectedEvents))
-    })
-
     const sumUri = workspace.file('src', 'sum.ts')
     const animalUri = workspace.file('src', 'animal.ts')
     const squirrelUri = workspace.file('src', 'squirrel.ts')
@@ -199,6 +191,12 @@ describe('Agent', () => {
         //
         // If you don't have access to this private file then you need to ask
         expect(valid?.username).toStrictEqual('sourcegraphbot9k-fnwmu')
+
+        // telemetry assertion, to validate the expected events fired during the test run
+        // Do not remove this assertion, and instead update the expectedEvents list above
+        expect(await returnTelemetryEvents(client)).toEqual(
+            expect.arrayContaining(client.expectedEvents)
+        )
     }, 10_000)
 
     it('graphql/getCurrentUserCodySubscription', async () => {
@@ -217,6 +215,11 @@ describe('Agent', () => {
             "status": "ACTIVE",
           }
         `)
+        // telemetry assertion, to validate the expected events fired during the test run
+        // Do not remove this assertion, and instead update the expectedEvents list above
+        expect(await returnTelemetryEvents(client)).toEqual(
+            expect.arrayContaining(client.expectedEvents)
+        )
     }, 10_000)
 
     describe('Chat', () => {
@@ -236,6 +239,11 @@ describe('Agent', () => {
                 "text": "Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding tasks today? Whether you need assistance with writing code, debugging, explaining concepts, or anything else related to programming, I'm here to help. What would you like to work on?",
               }
             `
+            )
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await returnTelemetryEvents(client)).toEqual(
+                expect.arrayContaining(client.expectedEvents)
             )
         }, 30_000)
 
@@ -289,6 +297,11 @@ describe('Agent', () => {
             `,
                 explainPollyError
             )
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await returnTelemetryEvents(client)).toEqual(
+                expect.arrayContaining(client.expectedEvents)
+            )
         }, 30_000)
 
         it('chat/restore', async () => {
@@ -341,6 +354,11 @@ describe('Agent', () => {
                 `"Your name is Lars Monsen, as you mentioned in your previous message."`,
                 explainPollyError
             )
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await returnTelemetryEvents(client)).toEqual(
+                expect.arrayContaining(client.expectedEvents)
+            )
         }, 30_000)
 
         it('chat/restore (With null model)', async () => {
@@ -392,6 +410,11 @@ describe('Agent', () => {
             `,
                 explainPollyError
             )
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await returnTelemetryEvents(client)).toEqual(
+                expect.arrayContaining(client.expectedEvents)
+            )
         }, 30_000)
 
         it('chat/restore (multiple) & export', async () => {
@@ -442,6 +465,11 @@ describe('Agent', () => {
   "lastInteractionTimestamp": "${myDate}",
 }`)
             })
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await returnTelemetryEvents(client)).toEqual(
+                expect.arrayContaining(client.expectedEvents)
+            )
         }, 30_000)
 
         it('chat/import allows importing a chat transcript from an external source', async () => {
@@ -582,6 +610,11 @@ describe('Agent', () => {
             `,
                 explainPollyError
             )
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await returnTelemetryEvents(client)).toEqual(
+                expect.arrayContaining(client.expectedEvents)
+            )
         }, 30_000)
 
         it('chat/submitMessage (squirrel test)', async () => {
@@ -603,6 +636,11 @@ describe('Agent', () => {
             const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
             expect(contextFiles).not.toHaveLength(0)
             expect(contextFiles.map(file => file.uri.toString())).includes(squirrelUri.toString())
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await returnTelemetryEvents(client)).toEqual(
+                expect.arrayContaining(client.expectedEvents)
+            )
         }, 30_000)
 
         it('webview/receiveMessage (type: chatModel)', async () => {
@@ -618,6 +656,11 @@ describe('Agent', () => {
                 const lastMessage = await client.sendMessage(id, 'what color is the sky?')
                 expect(lastMessage?.text?.toLocaleLowerCase().includes('blue')).toBeTruthy()
             }
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await returnTelemetryEvents(client)).toEqual(
+                expect.arrayContaining(client.expectedEvents)
+            )
         }, 30_000)
 
         it('webview/receiveMessage (type: reset)', async () => {
@@ -651,6 +694,11 @@ describe('Agent', () => {
                 const lastMessage = await client.sendMessage(id, 'kramer')
                 expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeFalsy()
             }
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await returnTelemetryEvents(client)).toEqual(
+                expect.arrayContaining(client.expectedEvents)
+            )
         })
 
         describe('chat/editMessage', () => {
@@ -694,6 +742,11 @@ describe('Agent', () => {
                         const lastMessage = await client.sendMessage(id, 'georgey')
                         expect(lastMessage?.text?.toLocaleLowerCase().includes('festivus')).toBeTruthy()
                     }
+                    // telemetry assertion, to validate the expected events fired during the test run
+                    // Do not remove this assertion, and instead update the expectedEvents list above
+                    expect(await returnTelemetryEvents(client)).toEqual(
+                        expect.arrayContaining(client.expectedEvents)
+                    )
                 },
                 { timeout: mayRecord ? 10_000 : undefined }
             )
@@ -739,6 +792,11 @@ describe('Agent', () => {
                     expect(answer?.includes('bird')).toBeFalsy()
                     expect(answer?.includes('dog')).toBeFalsy()
                 }
+                // telemetry assertion, to validate the expected events fired during the test run
+                // Do not remove this assertion, and instead update the expectedEvents list above
+                expect(await returnTelemetryEvents(client)).toEqual(
+                    expect.arrayContaining(client.expectedEvents)
+                )
             }, 30_000)
         })
     })
@@ -965,6 +1023,11 @@ describe('Agent', () => {
             `,
                 explainPollyError
             )
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await returnTelemetryEvents(client)).toEqual(
+                expect.arrayContaining(client.expectedEvents)
+            )
         }, 30_000)
 
         // This test seems extra sensitive on Node v16 for some reason.
@@ -1072,6 +1135,11 @@ describe('Agent', () => {
                 `,
                     explainPollyError
                 )
+                // telemetry assertion, to validate the expected events fired during the test run
+                // Do not remove this assertion, and instead update the expectedEvents list above
+                expect(await returnTelemetryEvents(client)).toEqual(
+                    expect.arrayContaining(client.expectedEvents)
+                )
             },
             30_000
         )
@@ -1148,6 +1216,11 @@ describe('Agent', () => {
             `,
                 explainPollyError
             )
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await returnTelemetryEvents(client)).toEqual(
+                expect.arrayContaining(client.expectedEvents)
+            )
         }, 30_000)
     })
 
@@ -1215,6 +1288,11 @@ describe('Agent', () => {
                 ],
               ]
             `)
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await returnTelemetryEvents(client)).toEqual(
+                expect.arrayContaining(client.expectedEvents)
+            )
         })
 
         it('progress/cancel', async () => {
@@ -1233,6 +1311,11 @@ describe('Agent', () => {
             } finally {
                 disposable.dispose()
             }
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await returnTelemetryEvents(client)).toEqual(
+                expect.arrayContaining(client.expectedEvents)
+            )
         })
     })
 
