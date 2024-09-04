@@ -1,5 +1,5 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
-import { SG_BLOG_URL } from './chat/protocol'
+import { SG_CHANGELOG_URL } from './chat/protocol'
 
 type ReleaseType = 'stable' | 'insiders'
 
@@ -83,7 +83,7 @@ function getReleaseBlogPostURL(version: string, IDE: CodyIDE): string {
     // }
     
     // TODO @KALAN CLEANUP ONCE WE HAVE A PROPER URL structure for VS Code changelogs
-    const blogURL = new URL('https://sourcegraph.com/changelog?topics=VS+Code')
+    const blogURL = new URL(SG_CHANGELOG_URL)
 
     return blogURL.href
 }

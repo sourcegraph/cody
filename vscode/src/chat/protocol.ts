@@ -303,6 +303,7 @@ export interface ConfigurationSubsetForWebview
  */
 export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
 export const SG_BLOG_URL = new URL('https://sourcegraph.com/blog/')
+export const SG_CHANGELOG_URL = new URL('https://sourcegraph.com/changelog?topics=VS+Code')
 
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
