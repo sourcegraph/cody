@@ -7,9 +7,12 @@ import {
     type BillingCategory,
     type BillingProduct,
     FeatureFlag,
+    isDotCom,
     isNetworkError,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
+import { authProvider } from '../services/AuthProvider'
+
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
@@ -85,6 +88,7 @@ interface InlineCompletionItemContext {
     suffix?: string
     triggerLine?: number
     triggerCharacter?: number
+    isRepoPublic?: boolean
     context?: InlineCompletionItemRetrievedContext[]
 }
 
@@ -189,7 +193,7 @@ interface SharedEventPayload extends InteractionIDPayload {
     gatewayLatency?: number
 
     /** Inline Context items used by LLM to get the completions */
-    // 🚨 SECURITY: included log for DotCom users.
+    // 🚨 SECURITY: included log for DotCom users and public repos.
     inlineCompletionItemContext?: InlineCompletionItemContext
 }
 
@@ -722,12 +726,14 @@ export function loaded(params: LoadedParams): void {
             event.params.inlineCompletionItemContext = {
                 gitUrl: inlineContextParams.gitUrl,
                 commit: inlineContextParams.commit,
+                isRepoPublic: gitRepoMetadata?.isPublic,
             }
             return
         }
         event.params.inlineCompletionItemContext = {
             gitUrl: inlineContextParams.gitUrl,
             commit: inlineContextParams.commit,
+            isRepoPublic: gitRepoMetadata?.isPublic,
             filePath: inlineContextParams.filePath,
             prefix: requestParams.docContext.prefix,
             suffix: requestParams.docContext.suffix,
@@ -742,27 +748,23 @@ export function loaded(params: LoadedParams): void {
         }
     }
 }
-
 export function suggestionDocumentDiffTracker(
     interactionId: CompletionAnalyticsID,
-    document: vscode.TextDocument
+    document: vscode.TextDocument,
+    position: vscode.Position
 ): void {
-    const { activeTextEditor } = vscode.window
     // If user is not in the same document, we don't track the diff.
-    if (activeTextEditor?.document.uri !== document.uri || document.uri.scheme !== 'file') {
+    if (document.uri.scheme !== 'file') {
         return
     }
-    const cursorPosition = activeTextEditor.selection.active
     if (persistenceTracker === null) {
         persistenceTracker = new PersistenceTracker<CompletionAnalyticsID>(vscode.workspace)
     }
     // Offset around the current cursor position to track the diff
     const offsetBytes = 1024 * 128
-    const startPosition = document.positionAt(
-        Math.max(0, document.offsetAt(cursorPosition) - offsetBytes)
-    )
+    const startPosition = document.positionAt(Math.max(0, document.offsetAt(position) - offsetBytes))
     const endPosition = document.positionAt(
-        Math.min(document.getText().length, document.offsetAt(cursorPosition) + offsetBytes)
+        Math.min(document.getText().length, document.offsetAt(position) + offsetBytes)
     )
     const trackingRange = new vscode.Range(startPosition, endPosition)
     const documentText = document.getText(trackingRange)
@@ -785,6 +787,11 @@ export function suggestionDocumentDiffTracker(
     })
 }
 
+export type SuggestionMarkReadParam = {
+    document: vscode.TextDocument
+    position: vscode.Position
+}
+
 // Suggested completions will not be logged immediately. Instead, we log them when we either hide
 // them again (they are NOT accepted) or when they ARE accepted. This way, we can calculate the
 // duration they were actually visible for.
@@ -794,7 +801,10 @@ export function suggestionDocumentDiffTracker(
 export function prepareSuggestionEvent(
     id: CompletionLogID,
     span?: Span
-): { getEvent: () => CompletionBookkeepingEvent | undefined; markAsRead: () => void } | null {
+): {
+    getEvent: () => CompletionBookkeepingEvent | undefined
+    markAsRead: (param: SuggestionMarkReadParam) => void
+} | null {
     const event = activeSuggestionRequests.get(id)
     if (!event) {
         return null
@@ -822,7 +832,7 @@ export function prepareSuggestionEvent(
 
         return {
             getEvent: () => activeSuggestionRequests.get(id),
-            markAsRead: () => {
+            markAsRead: (param: SuggestionMarkReadParam) => {
                 if (completionIdsMarkedAsSuggested.has(completionId)) {
                     return
                 }
@@ -831,10 +841,17 @@ export function prepareSuggestionEvent(
                 statistics.logSuggested()
                 completionIdsMarkedAsSuggested.set(completionId, true)
                 event.suggestionAnalyticsLoggedAt = performance.now()
-                // // Track the diff in the document after suggestion is shown
-                // if (event.params.id) {
-                //     suggestionDocumentDiffTracker(event.params.id, document)
-                // }
+
+                const authStatus = authProvider.instance!.statusAuthed
+                const isDotComUser = isDotCom(authStatus.endpoint || '')
+                // 🚨 SECURITY: Track the diff in the document after suggestion is shown for DotCom users and public repos.
+                if (
+                    event.params.id &&
+                    isDotComUser &&
+                    event.params.inlineCompletionItemContext?.isRepoPublic
+                ) {
+                    suggestionDocumentDiffTracker(event.params.id, param.document, param.position)
+                }
             },
         }
     }

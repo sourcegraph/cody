@@ -11,7 +11,6 @@ import {
     telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 
@@ -736,7 +735,6 @@ export class InlineCompletionItemProvider
         if (!suggestionEvent) {
             return
         }
-
         // Clear any existing timeouts, only one completion can be shown at a time
         clearTimeout(this.completionSuggestedTimeoutId)
 
@@ -811,9 +809,11 @@ export class InlineCompletionItemProvider
                 takeSuggestWidgetSelectionIntoAccount,
                 undefined
             )
-
             if (isStillVisible) {
-                suggestionEvent.markAsRead()
+                suggestionEvent.markAsRead({
+                    document: invokedDocument,
+                    position: invokedPosition,
+                })
             }
         }, this.COMPLETION_VISIBLE_DELAY_MS)
     }
