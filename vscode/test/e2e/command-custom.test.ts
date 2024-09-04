@@ -183,11 +183,11 @@ test.extend<ExpectedV2Events>({
     await expectContextCellCounts(contextCell, { files: 2 })
     await openContextCell(contextCell)
     await expect(
-        chatPanel.getByRole('button', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
+        chatPanel.getByRole('button', { name: withPlatformSlashes('lib/batches/env/var.go') })
     ).toBeVisible()
     // Click on the file link should open the 'var.go file in the editor
     await contextCell
-        .getByRole('button', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
+        .getByRole('button', { name: withPlatformSlashes('lib/batches/env/var.go') })
         .click()
     await expect(page.getByRole('tab', { name: 'var.go' })).toBeVisible()
 
