@@ -12,6 +12,8 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './OnboardingExperiment.module.css'
 import { useTelemetryRecorder } from './utils/telemetry'
+import { ClientSignInForm } from './components/ClientSignInForm'
+import { useConfig } from './utils/useConfig'
 
 interface LoginProps {
     simplifiedLoginRedirect: (method: AuthMethod) => void
@@ -75,6 +77,7 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
     }
     const isNonVSCodeIDE = codyIDE !== CodyIDE.Web && codyIDE !== CodyIDE.VSCode
     const isCodyWebUI = (uiKindIsWeb || codyIDE === CodyIDE.Web) && !isNonVSCodeIDE
+    const authStatus = useConfig().authStatus
     return (
         <div className={styles.container}>
             <div className={styles.sectionsContainer}>
@@ -138,24 +141,28 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                         </div>
                     </div>
                 </div>
-                <div className={styles.section}>
-                    <h1>Cody Enterprise</h1>
-                    <div className={styles.buttonWidthSizer}>
-                        <div className={styles.buttonStack}>
-                            <VSCodeButton
-                                className={styles.button}
-                                type="button"
-                                onClick={otherSignInClick}
-                            >
-                                Sign In to Your Enterprise&nbsp;Instance
-                            </VSCodeButton>
+                {isCodyWebUI || codyIDE === CodyIDE.VSCode ? (
+                    <div className={styles.section}>
+                        <h1>Cody Enterprise</h1>
+                        <div className={styles.buttonWidthSizer}>
+                            <div className={styles.buttonStack}>
+                                <VSCodeButton
+                                    className={styles.button}
+                                    type="button"
+                                    onClick={otherSignInClick}
+                                >
+                                    Sign In to Your Enterprise&nbsp;Instance
+                                </VSCodeButton>
+                            </div>
                         </div>
+                        <p>
+                            Learn more about{' '}
+                            <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a>
+                        </p>
                     </div>
-                    <p>
-                        Learn more about{' '}
-                        <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a>
-                    </p>
-                </div>
+                ) : (
+                    <ClientSignInForm authStatus={authStatus} />
+                )}
             </div>
             <div className={styles.terms}>
                 By signing in to Cody you agree to our{' '}
