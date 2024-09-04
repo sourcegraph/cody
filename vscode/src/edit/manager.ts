@@ -218,7 +218,19 @@ export class EditManager implements vscode.Disposable {
                 model: task.model,
             },
         })
-
+        /**
+         * Updates the editor's selection and view for 'doc' or 'test' intents, causing the cursor to
+         * move to the beginning of the selection range considered for the edit.
+         *
+         */
+        if (editor.active && (intent === 'doc' || intent === 'test')) {
+            const newPosition = proposedRange.start
+            editor.active.selection = new vscode.Selection(newPosition, newPosition)
+            editor.active.revealRange(
+                new vscode.Range(newPosition, newPosition),
+                vscode.TextEditorRevealType.InCenter
+            )
+        }
         const provider = this.getProviderForTask(task)
         await provider.startEdit()
         return task
@@ -294,6 +306,7 @@ export class EditManager implements vscode.Disposable {
         // queries to ask the LLM to generate a selection, and then ultimately apply the edit.
         const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
 
+        const authStatus = authProvider.instance!.statusAuthed
         const selection = await getSmartApplySelection(
             configuration.id,
             configuration.instruction,
@@ -301,7 +314,7 @@ export class EditManager implements vscode.Disposable {
             configuration.document,
             model,
             this.options.chat,
-            authProvider.instance!.status.codyApiVersion
+            authStatus.codyApiVersion
         )
 
         // We finished prompting the LLM for the selection, we can now remove the "progress" decoration

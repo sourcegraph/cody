@@ -162,7 +162,10 @@ const register = async (
     isExtensionModeDevOrTest: boolean
 ): Promise<vscode.Disposable> => {
     const disposables: vscode.Disposable[] = []
-    setClientNameVersion(platform.extensionClient.clientName, platform.extensionClient.clientVersion)
+    setClientNameVersion(
+        platform.extensionClient.httpClientNameForLegacyReasons ?? platform.extensionClient.clientName,
+        platform.extensionClient.clientVersion
+    )
 
     // Initialize `displayPath` first because it might be used to display paths in error messages
     // from the subsequent initialization.
@@ -494,7 +497,10 @@ function registerAuthCommands(disposables: vscode.Disposable[]): void {
         vscode.commands.registerCommand('cody.auth.signout', () => showSignOutMenu()),
         vscode.commands.registerCommand('cody.auth.account', () => showAccountMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
-        vscode.commands.registerCommand('cody.auth.status', () => authProvider.instance!.status), // Used by the agent
+        vscode.commands.registerCommand(
+            'cody.auth.status',
+            () => authProvider.instance?.statusOrNotReadyYet ?? null
+        ), // Used by the agent
         vscode.commands.registerCommand(
             'cody.agent.auth.authenticate',
             async ({ serverEndpoint, accessToken, customHeaders }) => {
@@ -533,7 +539,7 @@ function registerUpgradeHandlers(
         // Check if user has just moved back from a browser window to upgrade cody pro
         vscode.window.onDidChangeWindowState(async ws => {
             const authStatus = authProvider.instance!.status
-            if (ws.focused && isDotCom(authStatus) && authStatus.isLoggedIn) {
+            if (ws.focused && isDotCom(authStatus) && authStatus.authenticated) {
                 const res = await graphqlClient.getCurrentUserCodyProEnabled()
                 if (res instanceof Error) {
                     logError('onDidChangeWindowState', 'getCurrentUserCodyProEnabled', res)

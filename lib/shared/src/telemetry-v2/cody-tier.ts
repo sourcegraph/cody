@@ -7,10 +7,12 @@ enum CodyTier {
     Enterprise = 2,
 }
 
-export function getTier(authStatus: AuthStatus): CodyTier {
-    return !isDotCom(authStatus)
-        ? CodyTier.Enterprise
-        : authStatus.userCanUpgrade
-          ? CodyTier.Free
-          : CodyTier.Pro
+export function getTier(authStatus: AuthStatus): CodyTier | undefined {
+    return !authStatus.authenticated
+        ? undefined
+        : !isDotCom(authStatus)
+          ? CodyTier.Enterprise
+          : authStatus.userCanUpgrade
+            ? CodyTier.Free
+            : CodyTier.Pro
 }

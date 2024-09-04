@@ -1,5 +1,5 @@
 import {
-    type AuthStatus,
+    type AuthenticatedAuthStatus,
     type AutocompleteContextSnippet,
     type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
@@ -35,7 +35,7 @@ interface OpenAICompatibleOptions {
     maxContextTokens?: number
     client: CodeCompletionsClient
     config: Pick<ClientConfigurationWithAccessToken, 'accessToken'>
-    authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'endpoint'>
+    authStatus: Pick<AuthenticatedAuthStatus, 'userCanUpgrade' | 'endpoint'>
 }
 
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { DOTCOM_URL, EMPTY, defaultAuthStatus, graphqlClient } from '@sourcegraph/cody-shared'
+import { AUTH_STATUS_FIXTURE_AUTHED, DOTCOM_URL, EMPTY, graphqlClient } from '@sourcegraph/cody-shared'
 
 import { type AuthProvider, authProvider } from '../services/AuthProvider'
 
@@ -17,8 +17,8 @@ describe('getRepoNamesFromWorkspaceUri', () => {
         authProvider.instance = {
             changes: EMPTY,
             status: {
-                ...defaultAuthStatus,
-                isLoggedIn: true,
+                ...AUTH_STATUS_FIXTURE_AUTHED,
+                authenticated: true,
                 endpoint: 'https://example.com',
             },
         } as Pick<AuthProvider, 'changes' | 'status'> as unknown as AuthProvider
@@ -56,8 +56,8 @@ describe('getRepoNamesFromWorkspaceUri', () => {
         authProvider.instance = {
             changes: EMPTY,
             status: {
-                ...defaultAuthStatus,
-                isLoggedIn: true,
+                ...AUTH_STATUS_FIXTURE_AUTHED,
+                authenticated: true,
                 endpoint: DOTCOM_URL.toString(),
             },
         } as Pick<AuthProvider, 'changes' | 'status'> as unknown as AuthProvider

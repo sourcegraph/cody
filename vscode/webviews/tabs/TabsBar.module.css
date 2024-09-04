@@ -17,9 +17,11 @@
 
 .tabs-container {
     display: flex;
+    width: 100%;
+    padding: 0;
+    flex-direction: column;
     justify-content: space-between;
     position: sticky;
-    padding: 0 8px;
     border-bottom: 1px solid var(--vscode-dropdown-border);
     background-color: var(--vscode-sideBar-background);
 }
@@ -28,6 +30,9 @@
     display: flex;
     flex-shrink: 0;
     gap: 2px;
+    width: 100%;
+    padding: 0 8px;
+    border-bottom: 1px solid var(--vscode-dropdown-border);
 
     & > * {
         flex-shrink: 0;
@@ -38,6 +43,7 @@
     display: flex;
     flex-shrink: 0;
     gap: 8px;
+    padding: 0 8px;
 
     & > * {
         flex-shrink: 0;
@@ -48,61 +54,25 @@
     display: inline;
 }
 
-.tooltip {
-    /*
-        Hide tooltips by default, show them only for state when labels are hidden.
-        Important is needed to override standard tailwind styles in tooltip internals
-    */
-    display: none !important;
-}
-
-/*
-    By default if we have enough space we render tabs and its
-    sub action tabs in one row but if we don't have enough space
-    which currently is just static value we switch to two rows
-    layout (one for tab and one below for sub-actions)
- */
-@container tabs-container (width < 750px) {
-    .tabs-container {
-        padding: 0;
-        flex-direction: column;
-    }
-
-    .tabs {
-        padding: 0 8px;
-        border-bottom: 1px solid var(--vscode-dropdown-border);
-    }
-
-    .sub-tabs {
-        padding: 0 8px;
-    }
-}
-
 /*
     For small container turn off tabs labels completely and go back
-    to one row layout for tabs and its sub actions
+    to one row layout for tabs and its sub actions. Note that for
+    Cody Web we have a special override since it has different tabs
+    configurations (later we switch to dynamic items query and remove
+    this override)
 */
-@container tabs-container (width < 475px) {
-    .tab-action-label {
+@container tabs-container (width < 575px) {
+    .tabs-root:not(.tabs-root--cody-web) {
+        .tab-action-label {
+            display: none;
+        }
+    }
+}
+
+/* Special override for Cody Web tabs */
+@container tabs-container (width < 375px) {
+    .tabs-root--cody-web .tab-action-label {
         display: none;
-    }
-
-    .tabs-container {
-        padding: 0 8px;
-        flex-direction: row;
-    }
-
-    .tabs {
-        padding: 0;
-        border-bottom: none;
-    }
-
-    .sub-tabs {
-        padding: 0;
-    }
-
-    .tooltip {
-        display: block !important;
     }
 }
 

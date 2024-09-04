@@ -19,7 +19,10 @@ describe('Enterprise', () => {
     beforeAll(async () => {
         const serverInfo = await demoEnterpriseClient.initialize()
 
-        expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
+        expect(serverInfo.authStatus?.authenticated).toBeTruthy()
+        if (!serverInfo.authStatus?.authenticated) {
+            throw new Error('unreachable')
+        }
         expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
     }, 10_000)
 

@@ -7,6 +7,7 @@ import { type ContextItem, ModelUsage, TokenCounterUtils, isDotCom } from '@sour
 import { Command } from 'commander'
 
 import Table from 'easy-table'
+import { isError } from 'lodash'
 import * as vscode from 'vscode'
 import type { ExtensionTranscriptMessage } from '../../../vscode/src/chat/protocol'
 import { activate } from '../../../vscode/src/extension.node'
@@ -15,15 +16,18 @@ import packageJson from '../../package.json'
 import { newEmbeddedAgentClient } from '../agent'
 import type { ClientInfo } from '../protocol-alias'
 import { Streams } from './Streams'
-import { codyCliClientName } from './codyCliClientName'
 import { AuthenticatedAccount } from './command-auth/AuthenticatedAccount'
-import { notLoggedIn } from './command-auth/messages'
+import {
+    type AuthenticationOptions,
+    accessTokenOption,
+    endpointOption,
+} from './command-auth/command-login'
+import { errorSpinner, notAuthenticated } from './command-auth/messages'
 import { isNonEmptyArray } from './isNonEmptyArray'
+import { legacyCodyClientName } from './legacyCodyClientName'
 
 declare const process: { pkg: { entrypoint: string } } & NodeJS.Process
-export interface ChatOptions {
-    endpoint: string
-    accessToken: string
+export interface ChatOptions extends AuthenticationOptions {
     message: string
     stdin?: boolean
     messageArgs?: string[]
@@ -59,16 +63,8 @@ Enterprise Only:
         // `string[]`, which is not what we want. This means that cody chat
         // --help does not document you can pass arguments, it will just
         // silently work.
-        .option(
-            '--endpoint <url>',
-            'Sourcegraph instance URL',
-            process.env.SRC_ENDPOINT ?? 'https://sourcegraph.com'
-        )
-        .option(
-            '--access-token <token>',
-            'Sourcegraph access token. ' + loginInstruction,
-            process.env.SRC_ACCESS_TOKEN ?? ''
-        )
+        .addOption(accessTokenOption)
+        .addOption(endpointOption)
         .option('-C, --dir <dir>', 'Run in directory <dir>', process.cwd())
         .option('--model <model>', 'Chat model to use')
         .option(
@@ -86,18 +82,18 @@ Enterprise Only:
         .option('--debug', 'Enable debug logging', false)
         .action(async (options: ChatOptions, cmd) => {
             options.messageArgs = cmd.args
-            if (!options.accessToken) {
-                const spinner = ora().start('Loading access token')
-                const account = await AuthenticatedAccount.fromUserSettings(spinner)
-                if (!spinner.isSpinning) {
-                    process.exit(1)
-                }
-                spinner.stop()
-                if (account) {
-                    options.accessToken = account.accessToken
-                    options.endpoint = account.serverEndpoint
-                }
+            const spinner = ora().start('Logging in')
+            const account = await AuthenticatedAccount.fromUserSettings(spinner, options)
+            if (isError(account)) {
+                errorSpinner(spinner, account, options)
+                process.exit(1)
             }
+            if (!account?.username) {
+                notAuthenticated(spinner)
+                process.exit(1)
+            }
+            options.accessToken = account.accessToken
+            options.endpoint = account.serverEndpoint
             let polly: Polly | undefined
             if (process.env.CODY_RECORDING_DIRECTORY && process.env.CODY_RECORDING_NAME) {
                 polly = startPollyRecording({
@@ -114,8 +110,6 @@ Enterprise Only:
             process.exit(exitCode)
         })
 
-const loginInstruction = 'Sign in with the command: cody auth login --web'
-
 export async function chatAction(options: ChatOptions): Promise<number> {
     const streams = options.streams ?? Streams.default()
     const spinner = ora({
@@ -130,12 +124,13 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     }
     const workspaceRootUri = vscode.Uri.file(path.resolve(options.dir))
     const clientInfo: ClientInfo = {
-        name: codyCliClientName,
+        name: 'cody-cli',
         version: options.isTesting ? '6.0.0-SNAPSHOT' : packageJson.version,
         workspaceRootUri: workspaceRootUri.toString(),
         capabilities: {
             completions: 'none',
         },
+        legacyNameForServerIdentification: legacyCodyClientName,
         extensionConfiguration: {
             serverEndpoint: options.endpoint,
             accessToken: options.accessToken,
@@ -149,17 +144,17 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     }
     spinner.text = 'Initializing...'
     const { serverInfo, client, messageHandler } = await newEmbeddedAgentClient(clientInfo, activate)
+    if (!serverInfo.authStatus?.authenticated) {
+        notAuthenticated(spinner)
+        return 1
+    }
+
     const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
 
     if (options.debug) {
         messageHandler.registerNotification('debug/message', message => {
             console.log(`${message.channel}: ${message.message}`)
         })
-    }
-
-    if (!serverInfo.authStatus?.isLoggedIn) {
-        notLoggedIn(spinner)
-        return 1
     }
 
     const endpoint = serverInfo.authStatus.endpoint ?? options.endpoint

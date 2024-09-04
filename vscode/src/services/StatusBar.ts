@@ -100,10 +100,10 @@ export function createStatusBar(): CodyStatusBar {
     let authStatus: AuthStatus | undefined
     const command = vscode.commands.registerCommand(STATUS_BAR_INTERACTION_COMMAND, async () => {
         telemetryRecorder.recordEvent('cody.statusbarIcon', 'clicked', {
-            privateMetadata: { loggedIn: Boolean(authStatus?.isLoggedIn) },
+            privateMetadata: { loggedIn: Boolean(authStatus?.authenticated) },
         })
 
-        if (!authStatus?.isLoggedIn) {
+        if (!authStatus?.authenticated) {
             // Bring up the sidebar view
             void vscode.commands.executeCommand('cody.chat.focus')
             return
@@ -313,19 +313,19 @@ export function createStatusBar(): CodyStatusBar {
         // yellow status bar icon when extension first loads but login hasn't
         // initialized yet
         if (authStatus) {
-            if (authStatus.isOfflineMode) {
+            if (authStatus.authenticated && authStatus.isOfflineMode) {
                 statusBarItem.text = '$(cody-logo-heavy) Offline'
                 statusBarItem.tooltip = 'Cody is in offline mode'
                 statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
                 return
             }
-            if (authStatus.showNetworkError) {
+            if (!authStatus.authenticated && authStatus.showNetworkError) {
                 statusBarItem.text = '$(cody-logo-heavy) Connection Issues'
                 statusBarItem.tooltip = 'Resolve network issues for Cody to work again'
                 statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground')
                 return
             }
-            if (!authStatus.isLoggedIn) {
+            if (!authStatus.authenticated) {
                 statusBarItem.text = '$(cody-logo-heavy) Sign In'
                 statusBarItem.tooltip = 'Sign in to get started with Cody'
                 statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')

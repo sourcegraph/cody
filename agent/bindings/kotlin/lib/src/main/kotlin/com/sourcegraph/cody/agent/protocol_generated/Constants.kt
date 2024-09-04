@@ -2,7 +2,6 @@
 package com.sourcegraph.cody.agent.protocol_generated;
 
 object Constants {
-  const val `` = ""
   const val Applied = "Applied"
   const val Applying = "Applying"
   const val Automatic = "Automatic"
@@ -45,6 +44,7 @@ object Constants {
   const val function = "function"
   const val gateway = "gateway"
   const val history = "history"
+  const val `https__/example.com` = "https://example.com"
   const val human = "human"
   const val ignore = "ignore"
   const val indentation = "indentation"

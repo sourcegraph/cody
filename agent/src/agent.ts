@@ -362,7 +362,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 '*',
                 new IndentationBasedFoldingRangeProvider()
             )
-            this.globalState = this.newGlobalState(clientInfo)
+            this.globalState = await this.newGlobalState(clientInfo)
 
             if (clientInfo.capabilities && clientInfo.capabilities?.webview === undefined) {
                 // Make it possible to do `capabilities.webview === 'agentic'`
@@ -463,8 +463,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 return {
                     name: 'cody-agent',
                     authenticated: authStatus?.authenticated,
-                    codyEnabled: authStatus?.siteHasCodyEnabled,
-                    codyVersion: authStatus?.siteVersion,
+                    codyVersion: authStatus?.authenticated ? authStatus.siteVersion : undefined,
                     authStatus,
                 }
             } catch (error) {
@@ -1219,6 +1218,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
         // TODO: JetBrains no longer uses this, consider deleting it.
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            if (!authStatus.authenticated) {
+                throw new Error('Not authenticated')
+            }
             modelID ??= modelsService.instance!.getDefaultChatModel() ?? ''
             const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
             const chatModel = new ChatModel(modelID, chatID, chatMessages)
@@ -1239,6 +1241,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('chat/export', async input => {
             const { fullHistory = false } = input ?? {}
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            if (!authStatus.authenticated) {
+                throw new Error('Not authenticated')
+            }
             const localHistory = chatHistory.getLocalHistory(authStatus)
 
             if (localHistory != null) {
@@ -1276,6 +1281,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
             })
 
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            if (!authStatus.authenticated) {
+                throw new Error('Not authenticated')
+            }
             const localHistory = await chatHistory.getLocalHistory(authStatus)
 
             if (localHistory != null) {
@@ -1439,17 +1447,17 @@ export class Agent extends MessageHandler implements ExtensionClient {
         }
     }
 
-    private newGlobalState(clientInfo: ClientInfo): AgentGlobalState {
+    private async newGlobalState(clientInfo: ClientInfo): Promise<AgentGlobalState> {
         switch (clientInfo.capabilities?.globalState) {
             case 'server-managed':
-                return new AgentGlobalState(
+                return AgentGlobalState.initialize(
                     clientInfo.name,
                     clientInfo.globalStateDir ?? codyPaths().data
                 )
             case 'client-managed':
                 throw new Error('client-managed global state is not supported')
             default:
-                return new AgentGlobalState(clientInfo.name)
+                return AgentGlobalState.initialize(clientInfo.name)
         }
     }
 
@@ -1515,6 +1523,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
     get clientName(): string {
         return this.clientInfo?.name.toLowerCase() || 'uninitialized-agent'
+    }
+
+    get httpClientNameForLegacyReasons(): string | undefined {
+        return this.clientInfo?.legacyNameForServerIdentification ?? undefined
     }
 
     get clientVersion(): string {

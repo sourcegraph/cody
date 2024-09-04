@@ -3,13 +3,13 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     type AuthStatusProvider,
+    type AuthenticatedAuthStatus,
     ClientConfigSingleton,
     type ClientConfigurationWithAccessToken,
     CodyIDE,
-    DOTCOM_URL,
     NO_INITIAL_VALUE,
+    type ReadonlyDeep,
     SourcegraphGraphQLAPIClient,
-    defaultAuthStatus,
     distinctUntilChanged,
     fromVSCodeEvent,
     graphqlClient,
@@ -17,11 +17,8 @@ import {
     isError,
     isNetworkLikeError,
     logError,
-    networkErrorAuthStatus,
-    offlineModeAuthStatus,
     singletonNotYetSet,
     telemetryRecorder,
-    unauthenticatedStatus,
 } from '@sourcegraph/cody-shared'
 
 import type { Observable } from 'observable-fns'
@@ -73,7 +70,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         }).catch(error => logError('AuthProvider:init:failed', lastEndpoint, { verbose: error }))
     }
 
-    public changes: Observable<AuthStatus> = fromVSCodeEvent(
+    public changes: Observable<ReadonlyDeep<AuthStatus>> = fromVSCodeEvent(
         this.didChangeEvent.event,
         () => this._status ?? NO_INITIAL_VALUE
     ).pipe(distinctUntilChanged())
@@ -93,18 +90,25 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
 
         if (isOfflineMode) {
             const lastUser = localStorage.getLastStoredUser()
-            return { ...offlineModeAuthStatus, endpoint, ...lastUser }
+            return {
+                endpoint: lastUser?.endpoint ?? 'https://offline.sourcegraph.com',
+                username: lastUser?.username ?? 'offline-user',
+                authenticated: true,
+                isOfflineMode: true,
+                codyApiVersion: 0,
+                siteVersion: '',
+            }
         }
 
         // Cody Web can work without access token since authorization flow
         // relies on cookie authentication
         if (isCodyWeb) {
             if (!endpoint) {
-                return { ...defaultAuthStatus, endpoint }
+                return { authenticated: false, endpoint }
             }
         } else {
             if (!token || !endpoint) {
-                return { ...defaultAuthStatus, endpoint }
+                return { authenticated: false, endpoint }
             }
         }
         // Cache the config and GraphQL client
@@ -123,10 +127,16 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         logDebug('CodyLLMConfiguration', JSON.stringify(codyLLMConfiguration))
         // check first if it's a network error
         if (isError(userInfo) && isNetworkLikeError(userInfo)) {
-            return { ...networkErrorAuthStatus, endpoint }
+            return { authenticated: false, showNetworkError: true, endpoint }
         }
         if (!userInfo || isError(userInfo)) {
-            return { ...unauthenticatedStatus, endpoint }
+            return { authenticated: false, endpoint, showInvalidAccessTokenError: true }
+        }
+        if (!siteHasCodyEnabled) {
+            vscode.window.showErrorMessage(
+                `Cody is not enabled on this Sourcegraph instance (${endpoint}). Ask a site administrator to enable it.`
+            )
+            return { authenticated: false, endpoint }
         }
 
         const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
@@ -139,7 +149,6 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
                 configOverwrites,
                 authenticated: true,
                 hasVerifiedEmail: false,
-                siteHasCodyEnabled,
                 userCanUpgrade: false,
             })
         }
@@ -157,7 +166,6 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         return newAuthStatus({
             ...userInfo,
             endpoint,
-            siteHasCodyEnabled,
             siteVersion,
             configOverwrites,
             authenticated: !!userInfo.id,
@@ -166,10 +174,26 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         })
     }
 
-    public get status(): AuthStatus {
+    public get status(): ReadonlyDeep<AuthStatus> {
         if (!this._status) {
             throw new Error('AuthStatus is not initialized')
         }
+        return this._status
+    }
+
+    /** Like {@link AuthProvider.status} but throws if not authed. */
+    public get statusAuthed(): ReadonlyDeep<AuthenticatedAuthStatus> {
+        if (!this._status) {
+            throw new Error('AuthStatus is not initialized')
+        }
+        if (!this._status.authenticated) {
+            throw new Error('Not authenticated')
+        }
+        return this._status satisfies AuthenticatedAuthStatus
+    }
+
+    /** Like {@link AuthProvider.status} but returns null instead of throwing if not ready. */
+    public get statusOrNotReadyYet(): AuthStatus | null {
         return this._status
     }
 
@@ -187,8 +211,13 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         isExtensionStartup?: boolean
         isOfflineMode?: boolean
     }): Promise<AuthStatus> {
+        const formattedEndpoint = formatURL(endpoint)
+        if (!formattedEndpoint) {
+            throw new Error(`invalid endpoint URL: ${JSON.stringify(endpoint)}`)
+        }
+
         const config = {
-            serverEndpoint: formatURL(endpoint) ?? '',
+            serverEndpoint: formattedEndpoint,
             accessToken: token,
             customHeaders: customHeaders || this.config.customHeaders,
         }
@@ -200,16 +229,20 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
                 await this.storeAuthInfo(config.serverEndpoint, config.accessToken)
             }
 
-            await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
+            await vscode.commands.executeCommand(
+                'setContext',
+                'cody.activated',
+                authStatus.authenticated
+            )
 
             await this.setAuthStatus(authStatus)
 
             // If the extension is authenticated on startup, it can't be a user's first
             // ever authentication. We store this to prevent logging first-ever events
             // for already existing users.
-            if (isExtensionStartup && authStatus.isLoggedIn) {
+            if (isExtensionStartup && authStatus.authenticated) {
                 await this.setHasAuthenticatedBefore()
-            } else if (authStatus.isLoggedIn) {
+            } else if (authStatus.authenticated) {
                 this.handleFirstEverAuthentication()
             }
 
@@ -218,7 +251,10 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
             logDebug('AuthProvider:auth', 'failed', error)
 
             // Try to reload auth status in case of network error, else return default auth status
-            return await this.reloadAuthStatus().catch(() => unauthenticatedStatus)
+            return await this.reloadAuthStatus().catch(() => ({
+                authenticated: false,
+                endpoint: config.serverEndpoint,
+            }))
         }
     }
 
@@ -256,10 +292,10 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         } finally {
             this.didChangeEvent.fire(this.status)
             let eventValue: 'disconnected' | 'connected' | 'failed'
-            if (authStatus.showNetworkError || authStatus.showInvalidAccessTokenError) {
-                eventValue = 'failed'
-            } else if (authStatus.isLoggedIn) {
+            if (authStatus.authenticated) {
                 eventValue = 'connected'
+            } else if (authStatus.showNetworkError || authStatus.showInvalidAccessTokenError) {
+                eventValue = 'failed'
             } else {
                 eventValue = 'disconnected'
             }
@@ -281,16 +317,9 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         }
     }
 
-    // Notifies the AuthProvider that the simplified onboarding experiment is
-    // kicking off an authorization flow. That flow ends when (if) this
-    // AuthProvider gets a call to tokenCallbackHandler.
-    public authProviderSimplifiedWillAttemptAuth(): void {
-        // FIXME: This is equivalent to what redirectToEndpointLogin does. But
-        // the existing design is weak--it mixes other authStatus with this
-        // endpoint and races with everything else this class does.
-
-        // Simplified onboarding only supports dotcom.
-        this.status.endpoint = DOTCOM_URL.toString()
+    public setAuthPendingToEndpoint(endpoint: string): void {
+        this._status = { authenticated: false, endpoint }
+        this.didChangeEvent.fire(this._status)
     }
 
     // Logs a telemetry event if the user has never authenticated to Sourcegraph.

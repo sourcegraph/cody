@@ -1,7 +1,10 @@
 import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
-import { FIXTURE_COMMANDS, makePromptsAPIWithData } from '../components/promptList/fixtures'
-import { FIXTURE_PROMPTS } from '../components/promptSelectField/fixtures'
+import {
+    FIXTURE_COMMANDS,
+    FIXTURE_PROMPTS,
+    makePromptsAPIWithData,
+} from '../components/promptList/fixtures'
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
 import { PromptsTab } from './PromptsTab'
 
@@ -44,6 +47,22 @@ export const WithOnlyCommands: Story = {
                 prompts: makePromptsAPIWithData({
                     prompts: { type: 'unsupported' },
                     commands: FIXTURE_COMMANDS,
+                }),
+            }}
+        >
+            <PromptsTab {...args} />
+        </ExtensionAPIProviderForTestsOnly>
+    ),
+}
+
+export const WithOnlyPrompts: Story = {
+    render: args => (
+        <ExtensionAPIProviderForTestsOnly
+            value={{
+                ...MOCK_API,
+                prompts: makePromptsAPIWithData({
+                    prompts: { type: 'results', results: FIXTURE_PROMPTS },
+                    commands: undefined,
                 }),
             }}
         >

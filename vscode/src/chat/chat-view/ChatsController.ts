@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
+    type AuthenticatedAuthStatus,
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
     type ChatClient,
     type ClientConfigurationWithAccessToken,
@@ -60,7 +61,9 @@ export class ChatsController implements vscode.Disposable {
     private activeEditor: ChatController | undefined = undefined
 
     // We keep track of the currently authenticated account and dispose open chats when it changes
-    private currentAuthAccount: undefined | { endpoint: string; primaryEmail?: string; username: string }
+    private currentAuthAccount:
+        | undefined
+        | Pick<AuthenticatedAuthStatus, 'endpoint' | 'primaryEmail' | 'username'>
 
     protected disposables: vscode.Disposable[] = []
 
@@ -90,20 +93,14 @@ export class ChatsController implements vscode.Disposable {
     }
 
     private async setAuthStatus(authStatus: AuthStatus): Promise<void> {
-        const hasLoggedOut = !authStatus.isLoggedIn
+        const hasLoggedOut = !authStatus.authenticated
         const hasSwitchedAccount =
             this.currentAuthAccount && this.currentAuthAccount.endpoint !== authStatus.endpoint
         if (hasLoggedOut || hasSwitchedAccount) {
             this.disposeAllChats()
         }
 
-        const endpoint = authStatus.endpoint ?? ''
-        this.currentAuthAccount = {
-            endpoint,
-            primaryEmail: authStatus.primaryEmail,
-            username: authStatus.username,
-        }
-
+        this.currentAuthAccount = authStatus.authenticated ? { ...authStatus } : undefined
         this.panel.setAuthStatus(authStatus)
     }
 
@@ -350,7 +347,7 @@ export class ChatsController implements vscode.Disposable {
     private async exportHistory(): Promise<void> {
         telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
         const authStatus = authProvider.instance!.status
-        if (authStatus.isLoggedIn) {
+        if (authStatus.authenticated) {
             try {
                 const historyJson = chatHistory.getLocalHistory(authStatus)
                 const exportPath = await vscode.window.showSaveDialog({
@@ -379,7 +376,7 @@ export class ChatsController implements vscode.Disposable {
         // The chat ID for client to pass in to clear all chats without showing window pop-up for confirmation.
         const ClearWithoutConfirmID = 'clear-all-no-confirm'
         const isClearAll = !chatID || chatID === ClearWithoutConfirmID
-        const authStatus = authProvider.instance!.status
+        const authStatus = authProvider.instance!.statusAuthed
 
         if (isClearAll) {
             if (chatID !== ClearWithoutConfirmID) {

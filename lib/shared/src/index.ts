@@ -270,6 +270,7 @@ export {
     createSubscriber,
     isError,
     nextTick,
+    type ReadonlyDeep,
 } from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'

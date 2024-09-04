@@ -1,4 +1,4 @@
-import type { AuthStatus } from '../auth/types'
+import type { AuthenticatedAuthStatus } from '../auth/types'
 import type { Message } from '../sourcegraph-api'
 import type { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
 import type {
@@ -18,8 +18,12 @@ export class ChatClient {
     constructor(
         private completions: SourcegraphCompletionsClient,
         private getAuthStatus: () => Pick<
-            AuthStatus,
-            'userCanUpgrade' | 'endpoint' | 'codyApiVersion' | 'isFireworksTracingEnabled'
+            AuthenticatedAuthStatus,
+            | 'authenticated'
+            | 'userCanUpgrade'
+            | 'endpoint'
+            | 'codyApiVersion'
+            | 'isFireworksTracingEnabled'
         >
     ) {}
 
@@ -56,9 +60,7 @@ export class ChatClient {
         // Enabled Fireworks tracing for Sourcegraph teammates.
         // https://readme.fireworks.ai/docs/enabling-tracing
         const customHeaders: Record<string, string> =
-            isFireworks && this.getAuthStatus().isFireworksTracingEnabled
-                ? { 'X-Fireworks-Genie': 'true' }
-                : {}
+            isFireworks && authStatus.isFireworksTracingEnabled ? { 'X-Fireworks-Genie': 'true' } : {}
 
         return this.completions.stream(
             completionParams,

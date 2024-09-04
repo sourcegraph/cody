@@ -198,13 +198,6 @@ export const HumanMessageEditor: FunctionComponent<{
         [onGapClick]
     )
 
-    const appendTextToEditor = useCallback((text: string): void => {
-        if (!editorRef.current) {
-            throw new Error('No editorRef')
-        }
-        editorRef.current.appendText(text)
-    }, [])
-
     const onMentionClick = useCallback((): void => {
         if (!editorRef.current) {
             throw new Error('No editorRef')
@@ -254,9 +247,14 @@ export const HumanMessageEditor: FunctionComponent<{
                     if (isSent) {
                         return
                     }
-                    if (editorRef.current) {
-                        editorRef.current.appendText(appendTextToLastPromptEditor)
-                    }
+
+                    // Schedule append text task to the next tick to avoid collisions with
+                    // initial text set (add initial mentions first then append text from prompt)
+                    requestAnimationFrame(() => {
+                        if (editorRef.current) {
+                            editorRef.current.appendText(appendTextToLastPromptEditor)
+                        }
+                    })
                 }
             },
             [isSent]
@@ -329,7 +327,6 @@ export const HumanMessageEditor: FunctionComponent<{
                     submitState={submitState}
                     onGapClick={onGapClick}
                     focusEditor={focusEditor}
-                    appendTextToEditor={appendTextToEditor}
                     hidden={!focused && isSent}
                     className={styles.toolbar}
                 />

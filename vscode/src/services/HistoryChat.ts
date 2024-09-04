@@ -25,7 +25,7 @@ interface HistoryItem {
 export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats | null {
     const chatHistoryGroups = new Map<string, CodySidebarTreeItem[]>()
 
-    if (!authStatus) {
+    if (!authStatus || !authStatus.authenticated) {
         return null
     }
 

@@ -30,13 +30,18 @@ describe('cody chat', () => {
         args: string[]
         expectedExitCode?: number
     }): Promise<ChatCommandResult> {
-        // For some reason, I can't get the option parsing working with
-        // `--access-token` or `--endpoint` so we modify process.env instead.
-        process.env.SRC_ACCESS_TOKEN = credentials.token ?? credentials.redactedToken
-        process.env.SRC_ENDPOINT = credentials.serverEndpoint
         process.env.DISABLE_FEATURE_FLAGS = 'true'
         process.env.CODY_TELEMETRY_EXPORTER = 'testing'
-        const args = [...params.args, '--dir', tmp.rootPath, '--silent']
+        const args = [
+            ...params.args,
+            '--dir',
+            tmp.rootPath,
+            '--endpoint',
+            credentials.serverEndpoint,
+            '--access-token',
+            credentials.token ?? credentials.redactedToken,
+            '--silent',
+        ]
 
         const command = chatCommand()
         const parseResult = command.parseOptions(args)

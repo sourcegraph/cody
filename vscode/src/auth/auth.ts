@@ -17,7 +17,7 @@ export async function showSignInMenu(
     uri?: string
 ): Promise<void> {
     const authStatus = authProvider.instance!.status
-    const mode = authStatus.isLoggedIn ? 'switch' : 'signin'
+    const mode = authStatus.authenticated ? 'switch' : 'signin'
     logDebug('AuthProvider:signinMenu', mode)
     telemetryRecorder.recordEvent('cody.auth.login', 'clicked')
     const item = await showAuthMenu(mode)
@@ -34,7 +34,7 @@ export async function showSignInMenu(
             if (!instanceUrl) {
                 return
             }
-            authStatus.endpoint = instanceUrl
+            authProvider.instance!.setAuthPendingToEndpoint(instanceUrl)
             redirectToEndpointLogin(instanceUrl)
             break
         }
@@ -57,7 +57,7 @@ export async function showSignInMenu(
                 endpoint: selectedEndpoint,
                 token: token || null,
             })
-            if (!authStatus?.isLoggedIn) {
+            if (!authStatus?.authenticated) {
                 const newToken = await showAccessTokenInputBox(item.uri)
                 if (!newToken) {
                     return
@@ -213,7 +213,7 @@ async function signinMenuForInstanceUrl(instanceUrl: string): Promise<void> {
     })
     telemetryRecorder.recordEvent('cody.auth.signin.token', 'clicked', {
         metadata: {
-            success: authState.isLoggedIn ? 1 : 0,
+            success: authState.authenticated ? 1 : 0,
         },
     })
     await showAuthResultMessage(instanceUrl, authState)
@@ -238,7 +238,7 @@ export function redirectToEndpointLogin(uri: string): void {
 
     const newTokenCallbackUrl = new URL('/user/settings/tokens/new/callback', endpoint)
     newTokenCallbackUrl.searchParams.append('requestFrom', getAuthReferralCode())
-    authProvider.instance!.status.endpoint = endpoint
+    authProvider.instance!.setAuthPendingToEndpoint(endpoint)
     void vscode.env.openExternal(vscode.Uri.parse(newTokenCallbackUrl.href))
 }
 
@@ -246,7 +246,7 @@ async function showAuthResultMessage(
     endpoint: string,
     authStatus: AuthStatus | undefined
 ): Promise<void> {
-    if (authStatus?.isLoggedIn) {
+    if (authStatus?.authenticated) {
         const authority = vscode.Uri.parse(endpoint).authority
         await vscode.window.showInformationMessage(`Signed in to ${authority || endpoint}`)
     } else {
@@ -280,10 +280,10 @@ export async function tokenCallbackHandler(
     const authState = await authProvider.instance!.auth({ endpoint, token, customHeaders })
     telemetryRecorder.recordEvent('cody.auth.fromCallback.web', 'succeeded', {
         metadata: {
-            success: authState?.isLoggedIn ? 1 : 0,
+            success: authState?.authenticated ? 1 : 0,
         },
     })
-    if (authState?.isLoggedIn) {
+    if (authState?.authenticated) {
         await vscode.window.showInformationMessage(`Signed in to ${endpoint}`)
     } else {
         await showAuthFailureMessage(endpoint)
@@ -331,6 +331,6 @@ export async function showSignOutMenu(): Promise<void> {
 async function signOut(endpoint: string): Promise<void> {
     await secretStorage.deleteToken(endpoint)
     await localStorage.deleteEndpoint()
-    await authProvider.instance!.auth({ endpoint: '', token: null })
+    await authProvider.instance!.auth({ endpoint, token: null })
     await vscode.commands.executeCommand('setContext', 'cody.activated', false)
 }

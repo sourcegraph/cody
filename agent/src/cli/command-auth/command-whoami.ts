@@ -2,39 +2,30 @@ import { Command } from 'commander'
 import { isError } from 'lodash'
 import ora from 'ora'
 import { AuthenticatedAccount } from './AuthenticatedAccount'
-import { failSpinner } from './command-auth'
-import { notLoggedIn } from './messages'
+import { type AuthenticationOptions, accessTokenOption, endpointOption } from './command-login'
+import { errorSpinner, notAuthenticated, unknownErrorSpinner } from './messages'
 
 export const whoamiCommand = new Command('whoami')
     .description('Print the active authenticated account')
-    .action(async () => {
+    .addOption(accessTokenOption)
+    .addOption(endpointOption)
+    .action(async (options: AuthenticationOptions) => {
         const spinner = ora('Loading active account')
         try {
-            const account = await AuthenticatedAccount.fromUserSettings(spinner)
-            if (!account) {
-                notLoggedIn(spinner)
+            const account = await AuthenticatedAccount.fromUserSettings(spinner, options)
+            if (isError(account)) {
+                errorSpinner(spinner, account, options)
                 process.exit(1)
             }
-            const userInfo = await account.getCurrentUserInfo()
-            if (!userInfo || isError(userInfo)) {
-                failSpinner(
-                    spinner,
-                    `Failed to fetch username for account ${account.id} in ${account.serverEndpoint}`,
-                    userInfo ?? new Error('no authenticated user')
-                )
+            if (!account?.username) {
+                notAuthenticated(spinner)
                 process.exit(1)
-            } else {
-                spinner.succeed(`Authenticated as ${userInfo.username} on ${account.serverEndpoint}`)
-                process.exit(0)
             }
+
+            spinner.succeed(`Authenticated as ${account.username} on ${account.serverEndpoint}`)
+            process.exit(0)
         } catch (error) {
-            if (error instanceof Error) {
-                spinner.prefixText = error.stack ?? ''
-                spinner.fail(error.message)
-            } else {
-                spinner.prefixText = String(error)
-                spinner.fail('Failed to load active account')
-            }
+            unknownErrorSpinner(spinner, error, options)
             process.exit(1)
         }
     })

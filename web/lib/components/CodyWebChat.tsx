@@ -100,10 +100,6 @@ export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
     )
 }
 
-const CONTEXT_MENTIONS_SETTINGS: ChatMentionsSettings = {
-    resolutionMode: 'remote',
-}
-
 interface CodyWebPanelProps {
     vscodeAPI: VSCodeWrapper
     initialContext: InitialContext | undefined
@@ -240,6 +236,15 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         () => getAppWrappers(vscodeAPI, telemetryRecorder, clientState, config, envVars),
         [vscodeAPI, telemetryRecorder, clientState, config, envVars]
     )
+
+    const CONTEXT_MENTIONS_SETTINGS = useMemo<ChatMentionsSettings>(() => {
+        const { repository } = initialContext ?? {}
+
+        return {
+            resolutionMode: 'remote',
+            remoteRepositoriesNames: repository?.name ? [repository.name] : [],
+        }
+    }, [initialContext])
 
     const isLoading = !config || !view || !userHistory
 

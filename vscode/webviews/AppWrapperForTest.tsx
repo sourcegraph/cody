@@ -14,8 +14,11 @@ import { Observable } from 'observable-fns'
 import { type ComponentProps, type FunctionComponent, type ReactNode, useMemo } from 'react'
 import { URI } from 'vscode-uri'
 import { COMMON_WRAPPERS } from './AppWrapper'
-import { FIXTURE_COMMANDS, makePromptsAPIWithData } from './components/promptList/fixtures'
-import { FIXTURE_PROMPTS } from './components/promptSelectField/fixtures'
+import {
+    FIXTURE_COMMANDS,
+    FIXTURE_PROMPTS,
+    makePromptsAPIWithData,
+} from './components/promptList/fixtures'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
 import { TelemetryRecorderContext } from './utils/telemetry'
 import { ConfigProvider } from './utils/useConfig'
