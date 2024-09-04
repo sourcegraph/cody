@@ -41,3 +41,10 @@ export const LoginWeb: StoryObj<typeof LoginSimplified> = {
         codyIDE: CodyIDE.Web,
     },
 }
+
+export const LoginEditor: StoryObj<typeof LoginSimplified> = {
+    args: {
+        uiKindIsWeb: true,
+        codyIDE: CodyIDE.VisualStudio,
+    },
+}
