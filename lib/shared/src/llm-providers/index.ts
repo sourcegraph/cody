@@ -7,6 +7,8 @@ export type CompletionsModelConfig = {
     model: string
     key: string
     endpoint?: string
+    stream?: boolean
+    options?: Record<string, string | number | boolean>
 }
 
 export interface ChatNetworkClientParams {

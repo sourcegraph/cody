@@ -106,6 +106,11 @@ interface ChatModelProviderConfig {
     outputTokens?: number
     apiKey?: string
     apiEndpoint?: string
+    /**
+     * The additional setting options for the model.
+     * E.g. `{"temperature": 0.5, "max_tokens": 100, "stream": false}`
+     */
+    options?: Record<string, string | number | boolean>
 }
 
 /**
@@ -134,7 +139,11 @@ export function registerModelsFromVSCodeConfiguration() {
                         input: m.inputTokens ?? CHAT_INPUT_TOKEN_BUDGET,
                         output: m.outputTokens ?? ANSWER_TOKENS,
                     },
-                    clientSideConfig: { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint },
+                    clientSideConfig: {
+                        apiKey: m.apiKey,
+                        apiEndpoint: m.apiEndpoint,
+                        options: m.options,
+                    },
                     tags: [ModelTag.Local, ModelTag.BYOK, ModelTag.Experimental],
                 })
         )
