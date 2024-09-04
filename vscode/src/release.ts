@@ -41,7 +41,7 @@ const IDE_BLOG_TOPICS = {
     [CodyIDE.Neovim]: 'Cody',
     [CodyIDE.Emacs]: 'Cody',
     [CodyIDE.Web]: 'Cody',
-};
+}
 
 /**
  * Determines the URL for the release notes for the given IDE and version.
@@ -56,15 +56,15 @@ const IDE_BLOG_TOPICS = {
  * @returns The URL for the release notes for the given IDE and version.
  */
 export function getReleaseNotesURLByIDE(version: string, IDE: CodyIDE): string {
-    const blogTopic =  IDE in IDE_BLOG_TOPICS && IDE_BLOG_TOPICS[IDE as keyof typeof IDE_BLOG_TOPICS];
+    const blogTopic = IDE in IDE_BLOG_TOPICS && IDE_BLOG_TOPICS[IDE as keyof typeof IDE_BLOG_TOPICS]
     if (IDE in IDE_BLOG_TOPICS && blogTopic) {
-        const blogURL = new URL(SG_CHANGELOG_URL);
-        blogURL.searchParams.set('topics', blogTopic);
-        return blogURL.href;
+        const blogURL = new URL(SG_CHANGELOG_URL)
+        blogURL.searchParams.set('topics', blogTopic)
+        return blogURL.href
     }
 
-    const isStable = getReleaseTypeByIDE(IDE, version) === 'stable';
+    const isStable = getReleaseTypeByIDE(IDE, version) === 'stable'
     return isStable
         ? `https://github.com/sourcegraph/cody/releases/tag/v${version}`
-        : 'https://github.com/sourcegraph/cody/releases';
+        : 'https://github.com/sourcegraph/cody/releases'
 }
