@@ -26,23 +26,20 @@ describe('PersistenceTracker', () => {
     beforeEach(() => {
         vi.useFakeTimers()
 
-        tracker = new PersistenceTracker(
-            {
-                onDidChangeTextDocument(listener) {
-                    onDidChangeTextDocument = listener
-                    return { dispose: () => {} }
-                },
-                onDidRenameFiles(listener) {
-                    onDidRenameFiles = listener
-                    return { dispose: () => {} }
-                },
-                onDidDeleteFiles(listener) {
-                    onDidDeleteFiles = listener
-                    return { dispose: () => {} }
-                },
+        tracker = new PersistenceTracker({
+            onDidChangeTextDocument(listener) {
+                onDidChangeTextDocument = listener
+                return { dispose: () => {} }
             },
-            { onPresent: onPresentSpy, onRemoved: onRemoveSpy }
-        )
+            onDidRenameFiles(listener) {
+                onDidRenameFiles = listener
+                return { dispose: () => {} }
+            },
+            onDidDeleteFiles(listener) {
+                onDidDeleteFiles = listener
+                return { dispose: () => {} }
+            },
+        })
     })
     afterEach(() => {
         onPresentSpy.mockReset()
@@ -60,6 +57,7 @@ describe('PersistenceTracker', () => {
             insertText: 'foo',
             insertRange: getDocumentRange(doc),
             document: doc,
+            logger: { onPresent: onPresentSpy, onRemoved: onRemoveSpy },
         })
 
         const sharedArgs = {
@@ -108,6 +106,7 @@ describe('PersistenceTracker', () => {
             insertText: 'foo',
             insertRange: getDocumentRange(doc),
             document: doc,
+            logger: { onPresent: onPresentSpy, onRemoved: onRemoveSpy },
         })
 
         const sharedArgs = {
@@ -157,6 +156,7 @@ describe('PersistenceTracker', () => {
             insertText: 'foo',
             insertRange: getDocumentRange(doc),
             document: doc,
+            logger: { onPresent: onPresentSpy, onRemoved: onRemoveSpy },
         })
 
         const renamedDoc = document('fo0', 'typescript', 'file:///test2.ts')
@@ -204,6 +204,7 @@ describe('PersistenceTracker', () => {
             insertText: 'foo',
             insertRange: getDocumentRange(doc),
             document: doc,
+            logger: { onPresent: onPresentSpy, onRemoved: onRemoveSpy },
         })
 
         onDidDeleteFiles({ files: [doc.uri] })
@@ -223,6 +224,7 @@ describe('PersistenceTracker', () => {
             insertText: 'foo',
             insertRange: getDocumentRange(doc),
             document: doc,
+            logger: { onPresent: onPresentSpy, onRemoved: onRemoveSpy },
         })
 
         vi.advanceTimersToNextTimer()

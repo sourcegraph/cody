@@ -13,7 +13,8 @@ export interface PersistencePresentEventPayload<T = string> {
     charCount: number
     /** Attached metadata to the insertion */
     metadata?: PersistenceEventMetadata
-
+    /** The diff between the current document state and the accepted completion */
+    // 🚨 SECURITY: We diff calculated here should only be logged for dotCom users with public repos.
     diff?: string
 }
 

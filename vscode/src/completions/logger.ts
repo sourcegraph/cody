@@ -317,14 +317,21 @@ function logCompletionPartiallyAcceptedEvent(params: PartiallyAcceptedEventPaylo
 }
 
 function logSuggestionsDocumentDiffEvent(params: PersistencePresentEventPayload): void {
+    if (params.diff && Buffer.byteLength(params.diff, 'utf8') <= 256 * 1024) {
+        // Don't log large diffs
+        return
+    }
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
-        'suggestion',
-        'documentDiff',
+        'persistence',
+        'generateDiff',
         {
             version: 0,
-            metadata,
+            metadata: {
+                ...metadata,
+                recordsPrivateMetadataTranscript: params.diff !== undefined ? 1 : 0,
+            },
             privateMetadata,
         },
         params
@@ -596,7 +603,6 @@ const completionIdsMarkedAsSuggested = new LRUCache<CompletionAnalyticsID, true>
 })
 
 let persistenceTracker: PersistenceTracker<CompletionAnalyticsID> | null = null
-let suggestionTracker: PersistenceTracker<CompletionAnalyticsID> | null = null
 
 let completionsStartedSinceLastSuggestion = 0
 
@@ -734,8 +740,6 @@ export function loaded(params: LoadedParams): void {
                 filePath: snippet.uri.fsPath,
             })),
         }
-        const document = requestParams.document
-        suggestionDocumentDiffTracker(event.params.id, document)
     }
 }
 
@@ -743,39 +747,42 @@ export function suggestionDocumentDiffTracker(
     interactionId: CompletionAnalyticsID,
     document: vscode.TextDocument
 ): void {
-    // Add SuggestionDiffTracker for the public repos useful for suggestion diffs.
-    if (suggestionTracker === null) {
-        suggestionTracker = new PersistenceTracker<CompletionAnalyticsID>(
-            vscode.workspace,
-            // Only Log the diff if the document was not deleted.
-            {
-                onPresent: logSuggestionsDocumentDiffEvent,
-                onRemoved: () => {},
-            },
-            true
-        )
+    const { activeTextEditor } = vscode.window
+    // If user is not in the same document, we don't track the diff.
+    if (activeTextEditor?.document.uri !== document.uri || document.uri.scheme !== 'file') {
+        return
     }
-    const insertRange = new vscode.Range(
-        new vscode.Position(0, 0),
-        document.lineAt(document.lineCount - 1).range.end
+    const cursorPosition = activeTextEditor.selection.active
+    if (persistenceTracker === null) {
+        persistenceTracker = new PersistenceTracker<CompletionAnalyticsID>(vscode.workspace)
+    }
+    // Offset around the current cursor position to track the diff
+    const offsetBytes = 1024 * 128
+    const startPosition = document.positionAt(
+        Math.max(0, document.offsetAt(cursorPosition) - offsetBytes)
     )
-    const documentText = document.getText(insertRange)
+    const endPosition = document.positionAt(
+        Math.min(document.getText().length, document.offsetAt(cursorPosition) + offsetBytes)
+    )
+    const trackingRange = new vscode.Range(startPosition, endPosition)
+    const documentText = document.getText(trackingRange)
 
-    const isValidCodeFile = document.uri.scheme === 'file'
-    const isValidSize = documentText.length < 256 * 1024
-    if (isValidCodeFile && isValidSize) {
-        const persistenceTimeoutList = [
-            30 * 1000, // 30 seconds
-        ]
-        suggestionTracker.track({
-            id: interactionId,
-            insertedAt: Date.now(),
-            insertText: documentText,
-            insertRange,
-            document,
-            persistenceTimeoutList,
-        })
-    }
+    const persistenceTimeoutList = [
+        30 * 1000, // 30 seconds
+    ]
+    persistenceTracker.track({
+        id: interactionId,
+        insertedAt: Date.now(),
+        insertText: documentText,
+        insertRange: trackingRange,
+        document,
+        persistenceTimeoutList,
+        shouldComputeCodeDiff: true,
+        logger: {
+            onPresent: logSuggestionsDocumentDiffEvent,
+            onRemoved: () => {},
+        },
+    })
 }
 
 // Suggested completions will not be logged immediately. Instead, we log them when we either hide
@@ -824,6 +831,10 @@ export function prepareSuggestionEvent(
                 statistics.logSuggested()
                 completionIdsMarkedAsSuggested.set(completionId, true)
                 event.suggestionAnalyticsLoggedAt = performance.now()
+                // // Track the diff in the document after suggestion is shown
+                // if (event.params.id) {
+                //     suggestionDocumentDiffTracker(event.params.id, document)
+                // }
             },
         }
     }
@@ -899,10 +910,7 @@ export function accepted(
         return
     }
     if (persistenceTracker === null) {
-        persistenceTracker = new PersistenceTracker<CompletionAnalyticsID>(vscode.workspace, {
-            onPresent: logCompletionPersistencePresentEvent,
-            onRemoved: logCompletionPersistenceRemovedEvent,
-        })
+        persistenceTracker = new PersistenceTracker<CompletionAnalyticsID>(vscode.workspace)
     }
 
     // The trackedRange for the completion is relative to the state before the completion was inserted.
@@ -924,6 +932,10 @@ export function accepted(
         insertText: completion.insertText,
         insertRange,
         document,
+        logger: {
+            onPresent: logCompletionPersistencePresentEvent,
+            onRemoved: logCompletionPersistenceRemovedEvent,
+        },
     })
 }
 
