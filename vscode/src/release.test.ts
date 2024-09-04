@@ -43,31 +43,37 @@ describe('getReleaseTypeByIDE', () => {
 describe('getReleaseNotesURLByIDE', () => {
     it('returns stable release blog post URL for VS Code stable builds', () => {
         expect(getReleaseNotesURLByIDE('1.24.0', CodyIDE.VSCode)).toEqual(
-            'https://sourcegraph.com/blog/cody-vscode-1-24-0-release'
+            'https://sourcegraph.com/changelog?topics=VS+Code'
         )
     })
 
     it('returns stable release blog post URL for VS Code patch release', () => {
         expect(getReleaseNotesURLByIDE('1.24.2', CodyIDE.VSCode)).toEqual(
-            'https://sourcegraph.com/blog/cody-vscode-1-24-0-release'
+            'https://sourcegraph.com/changelog?topics=VS+Code'
         )
     })
 
     it('returns stable release blog post URL for VS Code insiders builds', () => {
         expect(getReleaseNotesURLByIDE('1.25.1720624657', CodyIDE.VSCode)).toEqual(
-            'https://sourcegraph.com/blog/cody-vscode-1-24-0-release'
+            'https://sourcegraph.com/changelog?topics=VS+Code'
         )
     })
 
     it('returns GitHub release notes for JetBrains stable builds', () => {
         expect(getReleaseNotesURLByIDE('5.5.10', CodyIDE.JetBrains)).toEqual(
-            'https://github.com/sourcegraph/jetbrains/releases/tag/v5.5.10'
+            'https://sourcegraph.com/changelog?topics=JetBrains'
         )
     })
 
     it('returns GitHub release notes homepage for JetBrains nightly builds', () => {
         expect(getReleaseNotesURLByIDE('5.5.1-nightly', CodyIDE.JetBrains)).toEqual(
-            'https://github.com/sourcegraph/jetbrains/releases'
+            'https://sourcegraph.com/changelog?topics=JetBrains'
+        )
+    })
+
+    it('returns GitHub release notes homepage for Visual Studio', () => {
+        expect(getReleaseNotesURLByIDE('', CodyIDE.VisualStudio)).toEqual(
+            'https://sourcegraph.com/changelog?topics=Visual+Studio'
         )
     })
 })
