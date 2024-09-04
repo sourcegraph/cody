@@ -9,6 +9,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Fixed
 
 - Command: Fixed an issue where the experimental `Generate Commit Message` command would fail on Windows due to incorrect parsing of the git diff output. [pull/5449](https://github.com/sourcegraph/cody/pull/5449)
+- Chat: Model list now shows the correct icon based on the model provider. [pull/5469](https://github.com/sourcegraph/cody/pull/5469)
+- Chat: Fixed an issue where local models were duplicated in the model list. [pull/5469](https://github.com/sourcegraph/cody/pull/5469)
 
 ### Changed
 
