@@ -1,5 +1,4 @@
 import {
-    CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
     type ContextItem,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
@@ -145,6 +144,5 @@ export const iconForProvider: Record<
     [REMOTE_REPOSITORY_PROVIDER_URI]: FolderGitIcon,
     [REMOTE_FILE_PROVIDER_URI]: FileIcon,
     [REMOTE_DIRECTORY_PROVIDER_URI]: FolderGitIcon,
-    [CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI]: FolderGitIcon,
     [WEB_PROVIDER_URI]: LinkIcon,
 }

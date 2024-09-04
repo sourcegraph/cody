@@ -834,7 +834,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         const resolvedExplicitMentionsPromise = resolveContextItems(
             this.editor,
-            [structuredMentions.symbols, structuredMentions.files].flat(),
+            [structuredMentions.symbols, structuredMentions.files, structuredMentions.openCtx].flat(),
             text,
             signal
         )
