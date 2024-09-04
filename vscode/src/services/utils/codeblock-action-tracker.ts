@@ -8,6 +8,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 
+import path from 'node:path'
 import { Utils } from 'vscode-uri'
 import { doesFileExist } from '../../commands/utils/workspace-files'
 import { executeSmartApply } from '../../edit/smart-apply'
@@ -134,8 +135,13 @@ export async function handleSmartApply(
 ): Promise<void> {
     const activeEditor = getEditor()?.active
     const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
+
     const uri =
-        fileUri && workspaceUri ? Utils.joinPath(workspaceUri, fileUri) : activeEditor?.document.uri
+        fileUri && workspaceUri
+            ? path.isAbsolute(fileUri)
+                ? vscode.Uri.file(fileUri)
+                : Utils.joinPath(workspaceUri, fileUri)
+            : activeEditor?.document.uri
 
     const isNewFile = uri && !(await doesFileExist(uri))
     if (isNewFile) {
