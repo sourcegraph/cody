@@ -70,7 +70,8 @@ export function getReleaseNotesURLByIDE(version: string, IDE: CodyIDE): string {
  * @returns The release blog post URL for the given IDE and version.
  */
 function getReleaseBlogPostURL(version: string, IDE: CodyIDE): string {
-    // const blogURL = new URL(SG_BLOG_URL)
+    // TODO @KALAN CLEANUP ONCE WE HAVE A PROPER URL structure for VS Code changelogs
+    const blogURL = new URL(SG_CHANGELOG_URL)
 
     // if (IDE === CodyIDE.VSCode) {
     //     // Examples of version:
@@ -82,8 +83,6 @@ function getReleaseBlogPostURL(version: string, IDE: CodyIDE): string {
     //     blogURL.pathname += `cody-vscode-${versionNums[0]}-${minor}-0-release`
     // }
     
-    // TODO @KALAN CLEANUP ONCE WE HAVE A PROPER URL structure for VS Code changelogs
-    const blogURL = new URL(SG_CHANGELOG_URL)
 
     return blogURL.href
 }
