@@ -38,31 +38,61 @@ export async function groqChatClient({
     const isCortex = config?.endpoint?.includes(':1337')
 
     const chatParams = {
+        ...config?.options,
         model: config?.model,
         messages: await Promise.all(
-            params.messages.map(async msg => {
-                return {
-                    role: msg.speaker === 'human' ? 'user' : 'assistant',
-                    content: (await msg.text?.toFilteredString(contextFiltersProvider.instance!)) ?? '',
-                }
-            })
+            params.messages.map(async msg => ({
+                role: msg.speaker === 'human' ? 'user' : 'assistant',
+                content: (await msg.text?.toFilteredString(contextFiltersProvider.instance!)) ?? '',
+            }))
         ),
-        stream: true,
-        ...(isCortex
-            ? {
-                  max_tokens: 1000,
-                  stop: [],
-                  frequency_penalty: 0,
-                  presence_penalty: 0,
-                  temperature: 0.1,
-                  top_p: -1,
-              }
-            : {}),
+        ...(isCortex && {
+            max_tokens: 1000,
+            stop: [],
+            frequency_penalty: 0,
+            presence_penalty: 0,
+            temperature: 0.1,
+            top_p: -1,
+        }),
     }
 
+    const completionResponse: CompletionResponse = {
+        completion: '',
+        stopReason: CompletionStopReason.RequestFinished,
+    }
+
+    // Non-stream requests
+    if (!config?.stream) {
+        try {
+            const response = await fetch(config?.endpoint ?? GROQ_CHAT_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${config.key}`,
+                },
+                body: JSON.stringify(chatParams),
+                signal,
+            })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`)
+            }
+
+            const { choices } = await response.json()
+            completionResponse.completion = choices[0]?.message?.content ?? ''
+            cb.onChange(completionResponse.completion)
+            cb.onComplete()
+        } catch (error) {
+            cb.onError(error instanceof Error ? error : new Error('Unknown error occurred'))
+        }
+        log?.onComplete(completionResponse)
+        return
+    }
+
+    // Stream requests
     fetch(config?.endpoint ?? GROQ_CHAT_API_URL, {
         method: 'POST',
-        body: JSON.stringify(chatParams),
+        body: JSON.stringify({ chatParams, stream: true }),
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${config.key}`,
@@ -85,14 +115,13 @@ export async function groqChatClient({
 
             onAbort(signal, () => reader.cancel())
 
-            let responseText = ''
             const textDecoder = new TextDecoder()
 
             // Handles the response stream to accumulate the full completion text.
             while (true) {
                 const { done, value } = await reader.read()
                 if (done) {
-                    cb.onChange(responseText)
+                    cb.onChange(completionResponse.completion)
                     cb.onComplete()
                     break
                 }
@@ -109,8 +138,8 @@ export async function groqChatClient({
                             const message = parsedData.choices?.[0]?.delta?.content
 
                             if (message) {
-                                responseText += message
-                                cb.onChange(responseText)
+                                completionResponse.completion += message
+                                cb.onChange(completionResponse.completion)
                             }
 
                             if (parsedData.error) {
@@ -121,11 +150,6 @@ export async function groqChatClient({
                         }
                     }
                 }
-            }
-
-            const completionResponse: CompletionResponse = {
-                completion: responseText,
-                stopReason: CompletionStopReason.RequestFinished,
             }
             log?.onComplete(completionResponse)
         })

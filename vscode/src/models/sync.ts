@@ -106,6 +106,7 @@ interface ChatModelProviderConfig {
     outputTokens?: number
     apiKey?: string
     apiEndpoint?: string
+    options?: Record<string, any>
 }
 
 /**
@@ -134,7 +135,11 @@ export function registerModelsFromVSCodeConfiguration() {
                         input: m.inputTokens ?? CHAT_INPUT_TOKEN_BUDGET,
                         output: m.outputTokens ?? ANSWER_TOKENS,
                     },
-                    clientSideConfig: { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint },
+                    clientSideConfig: {
+                        apiKey: m.apiKey,
+                        apiEndpoint: m.apiEndpoint,
+                        options: m.options,
+                    },
                     tags: [ModelTag.Local, ModelTag.BYOK, ModelTag.Experimental],
                 })
         )

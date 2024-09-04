@@ -47,8 +47,9 @@ export async function anthropicChatClient({
                 top_k: params.topK,
                 top_p: params.topP,
                 stop_sequences: params.stopSequences,
-                stream: true,
+                stream: config?.stream || true,
                 system: `${systemPrompt}`,
+                ...config?.options,
             })
             .then(async stream => {
                 onAbort(signal, () => stream.controller.abort())
