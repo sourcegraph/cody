@@ -4,7 +4,7 @@ import type { UserAccountInfo } from '../Chat'
 import styles from './UserAvatar.module.css'
 
 interface Props {
-    user: Pick<UserAccountInfo['user'], 'username' | 'avatarURL' | 'displayName'>
+    user: NonNullable<UserAccountInfo['user']>
     size: number
     sourcegraphGradientBorder?: boolean
     className?: string
@@ -74,9 +74,8 @@ const InnerUserAvatar: FunctionComponent<Omit<Props, 'sourcegraphGradientBorder'
     return (
         <div
             title={title}
-            className={clsx(styles.userAvatar, 'tw-bg-muted tw-text-muted-foreground', className)}
+            className={clsx(styles.userAvatar, className)}
             style={{ width: `${size}px`, height: `${size}px` }}
-            data-user-avatar={true}
         >
             <span className={styles.initials}>
                 {getInitials(user?.displayName || user?.username || '')}
