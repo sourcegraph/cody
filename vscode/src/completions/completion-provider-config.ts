@@ -15,6 +15,9 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompletePreloadingExperimentVariant3,
         FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag,
         FeatureFlag.CodyAutocompleteContextExperimentVariant1,
+        FeatureFlag.CodyAutocompleteContextExperimentVariant2,
+        FeatureFlag.CodyAutocompleteContextExperimentVariant3,
+        FeatureFlag.CodyAutocompleteContextExperimentVariant4,
         FeatureFlag.CodyAutocompleteContextExperimentControl,
     ] as const
 
@@ -64,6 +67,12 @@ class CompletionProviderConfig {
                 return 'new-jaccard-similarity'
             case 'recent-edits':
                 return 'recent-edits'
+            case 'recent-edits-1m':
+                return 'recent-edits-1m'
+            case 'recent-edits-5m':
+                return 'recent-edits-5m'
+            case 'recent-edits-mixed':
+                return 'recent-edits-mixed'
             default:
                 return this.experimentBasedContextStrategy()
         }
@@ -79,12 +88,24 @@ class CompletionProviderConfig {
             return defaultContextStrategy
         }
 
-        const [variant1, control] = [
+        const [variant1, variant2, variant3, variant4, control] = [
             this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextExperimentVariant1),
+            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextExperimentVariant2),
+            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextExperimentVariant3),
+            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextExperimentVariant4),
             this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextExperimentControl),
         ]
         if (variant1) {
-            return 'recent-edits'
+            return 'recent-edits-1m'
+        }
+        if (variant2) {
+            return 'recent-edits-5m'
+        }
+        if (variant3) {
+            return 'recent-edits-mixed'
+        }
+        if (variant4) {
+            return 'none'
         }
         if (control) {
             return defaultContextStrategy

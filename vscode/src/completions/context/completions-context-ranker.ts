@@ -1,6 +1,4 @@
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
-import { FeatureFlag } from '@sourcegraph/cody-shared'
-import { completionProviderConfig } from '../completion-provider-config'
 import { fuseResults } from './reciprocal-rank-fusion'
 
 export interface RetrievedContextResults {
@@ -20,13 +18,14 @@ interface PriorityBasedContextSnippets {
 
 export class DefaultCompletionsContextRanker implements CompletionsContextRanker {
     public rankAndFuseContext(results: RetrievedContextResults[]): Set<AutocompleteContextSnippet> {
-        const recentEditsVariant = completionProviderConfig.getPrefetchedFlag(
-            FeatureFlag.CodyAutocompleteContextExperimentVariant1
-        )
-        if (recentEditsVariant) {
+        if (this.containsRecentEditsBasedContext(results)) {
             return this.getRecentEditsBasedContextFusion(results)
         }
         return this.getRRFBasedContextFusion(results)
+    }
+
+    public containsRecentEditsBasedContext(results: RetrievedContextResults[]): boolean {
+        return results.some(result => result.identifier.includes('recent-edits'))
     }
 
     public getRecentEditsBasedContextFusion(
