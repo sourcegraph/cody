@@ -113,7 +113,7 @@ export abstract class Provider {
      */
     public legacyModel: string
     public contextSizeHints: ProviderContextSizeHints
-    public client: CodeCompletionsClient = defaultCodeCompletionsClient
+    public client: CodeCompletionsClient = defaultCodeCompletionsClient.instance!
 
     protected maxContextTokens: number
     protected anonymousUserID: string

@@ -21,6 +21,8 @@ import {
     isRateLimitError,
     logResponseHeadersToSpan,
     recordErrorToSpan,
+    setSingleton,
+    singletonNotYetSet,
     tracer,
 } from '@sourcegraph/cody-shared'
 
@@ -262,7 +264,8 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
     }
 }
 
-export const defaultCodeCompletionsClient = new DefaultCodeCompletionsClient()
+export const defaultCodeCompletionsClient = singletonNotYetSet<DefaultCodeCompletionsClient>()
+setSingleton(defaultCodeCompletionsClient, new DefaultCodeCompletionsClient())
 
 export async function createRateLimitErrorFromResponse(
     response: BrowserOrNodeResponse,

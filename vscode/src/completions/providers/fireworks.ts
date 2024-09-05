@@ -246,7 +246,7 @@ class FireworksProvider extends Provider {
                 fireworksConfig: useExperimentalFireworksConfig
                     ? config.autocompleteExperimentalFireworksOptions
                     : undefined,
-                logger: defaultCodeCompletionsClient.logger,
+                logger: defaultCodeCompletionsClient.instance!.logger,
                 providerOptions: options,
                 fastPathAccessToken,
                 customHeaders: this.getCustomHeaders(authStatus.isFireworksTracingEnabled),

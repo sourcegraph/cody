@@ -314,7 +314,7 @@ async function initializeSingletons(
                     )
                     void modelsService.instance!.onConfigChange(config)
                     upstreamHealthProvider.instance!.onConfigurationChange(config)
-                    defaultCodeCompletionsClient.onConfigurationChange(config)
+                    defaultCodeCompletionsClient.instance!.onConfigurationChange(config)
                 },
             })
         )
