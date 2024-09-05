@@ -610,7 +610,6 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
                     'query',
                     `returning ${resp.results.length} results`
                 )
-                void this.healthCheck(lastRepo.repoName, lastRepo.dir)
                 return resp.results.map(result => ({
                     ...result,
                     uri: vscode.Uri.joinPath(lastRepo.dir, result.fileName),

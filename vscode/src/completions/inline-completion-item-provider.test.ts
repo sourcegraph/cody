@@ -26,7 +26,7 @@ import {
 } from './get-inline-completions-tests/helpers'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import * as CompletionLogger from './logger'
-import { createProviderConfig } from './providers/anthropic'
+import { createProvider } from './providers/anthropic'
 import { completion, initTreeSitterParser } from './test-helpers'
 
 const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
@@ -58,9 +58,10 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             // Most of these are just passed directly to `getInlineCompletions`, which we've mocked, so
             // we can just make them `null`.
             statusBar: null as any,
-            providerConfig: createProviderConfig({
-                client: null as any,
-            }),
+            provider: createProvider({
+                authStatus: DUMMY_AUTH_STATUS,
+            } as any),
+            config: {} as any,
             authStatus: DUMMY_AUTH_STATUS,
             firstCompletionTimeout:
                 superArgs?.firstCompletionTimeout ??

@@ -13,3 +13,7 @@
         gap: 0.2rem;
     }
 }
+
+.experimental {
+    background: var(--vscode-inputOption-activeBackground);
+}

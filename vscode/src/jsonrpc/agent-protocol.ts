@@ -503,6 +503,8 @@ export type ServerNotifications = {
     // When the when-claude context has changed.
     // For example, 'cody.activated' is set based on user's latest authentication status.
     'window/didChangeContext': [{ key: string; value?: string | undefined | null }]
+    // Client should move the focus to the sidebar.
+    'window/focusSidebar': [null]
 }
 
 export interface WebviewCreateWebviewPanelOptions {
@@ -605,6 +607,7 @@ export interface ClientInfo {
 
 // The capability should match the name of the JSON-RPC methods.
 export interface ClientCapabilities {
+    authentication?: 'enabled' | 'none' | undefined | null
     completions?: 'none' | undefined | null
     //  When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
     chat?: 'none' | 'streaming' | undefined | null

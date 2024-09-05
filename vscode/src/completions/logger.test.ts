@@ -75,7 +75,7 @@ describe('logger', () => {
             isDotComUser: false,
         })
         const suggestionEvent = CompletionLogger.prepareSuggestionEvent(id)
-        suggestionEvent?.markAsRead()
+        suggestionEvent?.markAsRead({ document, position })
         CompletionLogger.accepted(id, document, item, range(0, 0, 0, 0), false)
 
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', {
@@ -108,7 +108,7 @@ describe('logger', () => {
             isDotComUser: false,
         })
         const firstSuggestionEvent = CompletionLogger.prepareSuggestionEvent(id1)
-        firstSuggestionEvent?.markAsRead()
+        firstSuggestionEvent?.markAsRead({ document, position })
 
         const loggerItem = CompletionLogger.getCompletionEvent(id1)
         const completionId = loggerItem?.params.id
@@ -126,7 +126,7 @@ describe('logger', () => {
             isDotComUser: false,
         })
         const secondSuggestionEvent = CompletionLogger.prepareSuggestionEvent(id2)
-        secondSuggestionEvent?.markAsRead()
+        secondSuggestionEvent?.markAsRead({ document, position })
         CompletionLogger.accepted(id2, document, item, range(0, 0, 0, 0), false)
 
         const loggerItem2 = CompletionLogger.getCompletionEvent(id2)
@@ -151,7 +151,7 @@ describe('logger', () => {
             isDotComUser: false,
         })
         const thirdSuggestionEvent = CompletionLogger.prepareSuggestionEvent(id3)
-        thirdSuggestionEvent?.markAsRead()
+        thirdSuggestionEvent?.markAsRead({ document, position })
 
         const loggerItem3 = CompletionLogger.getCompletionEvent(id3)
         expect(loggerItem3?.params.id).not.toBe(completionId)

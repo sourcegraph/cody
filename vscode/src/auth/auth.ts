@@ -1,10 +1,16 @@
 import * as vscode from 'vscode'
 
-import { type AuthStatus, DOTCOM_URL, isDotCom, telemetryRecorder } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    CodyIDE,
+    DOTCOM_URL,
+    getCodyAuthReferralCode,
+    isDotCom,
+    telemetryRecorder,
+} from '@sourcegraph/cody-shared'
 import { isSourcegraphToken } from '../chat/protocol'
 import { logDebug } from '../log'
 import { authProvider } from '../services/AuthProvider'
-import { getAuthReferralCode } from '../services/AuthProviderSimplified'
 import { localStorage } from '../services/LocalStorageProvider'
 import { secretStorage } from '../services/SecretStorageProvider'
 import { closeAuthProgressIndicator } from './auth-progress-indicator'
@@ -14,7 +20,8 @@ import { closeAuthProgressIndicator } from './auth-progress-indicator'
  */
 export async function showSignInMenu(
     type?: 'enterprise' | 'dotcom' | 'token',
-    uri?: string
+    uri?: string,
+    agentIDE: CodyIDE = CodyIDE.VSCode
 ): Promise<void> {
     const authStatus = authProvider.instance!.status
     const mode = authStatus.authenticated ? 'switch' : 'signin'
@@ -35,11 +42,11 @@ export async function showSignInMenu(
                 return
             }
             authProvider.instance!.setAuthPendingToEndpoint(instanceUrl)
-            redirectToEndpointLogin(instanceUrl)
+            redirectToEndpointLogin(instanceUrl, agentIDE)
             break
         }
         case 'dotcom':
-            redirectToEndpointLogin(DOTCOM_URL.href)
+            redirectToEndpointLogin(DOTCOM_URL.href, agentIDE)
             break
         case 'token': {
             const instanceUrl = await showInstanceURLInputBox(uri || item.uri)
@@ -220,13 +227,13 @@ async function signinMenuForInstanceUrl(instanceUrl: string): Promise<void> {
 }
 
 /** Open callback URL in browser to get token from instance. */
-export function redirectToEndpointLogin(uri: string): void {
+export function redirectToEndpointLogin(uri: string, agentIDE: CodyIDE = CodyIDE.VSCode): void {
     const endpoint = formatURL(uri)
     if (!endpoint) {
         return
     }
 
-    if (vscode.env.uiKind === vscode.UIKind.Web) {
+    if (agentIDE === CodyIDE.VSCode && vscode.env.uiKind === vscode.UIKind.Web) {
         // VS Code Web needs a different kind of callback using asExternalUri and changes to our
         // UserSettingsCreateAccessTokenCallbackPage.tsx page in the Sourcegraph web app. So,
         // just require manual token entry for now.
@@ -237,7 +244,10 @@ export function redirectToEndpointLogin(uri: string): void {
     }
 
     const newTokenCallbackUrl = new URL('/user/settings/tokens/new/callback', endpoint)
-    newTokenCallbackUrl.searchParams.append('requestFrom', getAuthReferralCode())
+    newTokenCallbackUrl.searchParams.append(
+        'requestFrom',
+        getCodyAuthReferralCode(agentIDE, vscode.env.uriScheme) ?? 'Cody'
+    )
     authProvider.instance!.setAuthPendingToEndpoint(endpoint)
     void vscode.env.openExternal(vscode.Uri.parse(newTokenCallbackUrl.href))
 }
@@ -272,7 +282,7 @@ export async function tokenCallbackHandler(
     closeAuthProgressIndicator()
 
     const params = new URLSearchParams(uri.query)
-    const token = params.get('code')
+    const token = params.get('code') || params.get('token')
     const endpoint = authProvider.instance!.status.endpoint
     if (!token || !endpoint) {
         return

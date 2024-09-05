@@ -8,6 +8,9 @@ import { type WrappedParser, createParser, getParser } from './parser'
 
 const parseTreesPerFile = new LRUCache<string, Tree>({
     max: 10,
+    // Important: we need to call `Tree.delete()` to free up memory. Without
+    // this, we leak memory. See CODY-3616.
+    disposeAfter: tree => tree.delete(),
 })
 
 interface ParseTreeCache {

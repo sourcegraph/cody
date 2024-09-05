@@ -88,11 +88,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 79b4e33611ddc3dc02848a4f81b12ddb
+    - _id: 795c156841b8b600fac296bbe0616f0e
       _order: 0
       cache: {}
       request:
-        bodySize: 369
+        bodySize: 386
         cookies: []
         headers:
           - _fromType: array
@@ -119,7 +119,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "369"
+            value: "386"
           - name: host
             value: sourcegraph.com
         headersSize: 396
@@ -150,6 +150,7 @@ log:
               - <file_sep>
             stream: true
             temperature: 0.2
+            timeoutMs: 7000
             topK: 0
         queryString:
           - name: client-name
@@ -158,10 +159,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
       response:
-        bodySize: 233
+        bodySize: 304
         content:
           mimeType: text/event-stream
-          size: 233
+          size: 304
           text: |+
             event: completion
             data: {"completion":"return a + b","stopReason":"stop"}
@@ -172,7 +173,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 27 Aug 2024 05:22:27 GMT
+            value: Fri, 30 Aug 2024 09:52:06 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -201,7 +202,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-27T05:22:25.933Z
+      startedDateTime: 2024-08-30T09:52:05.257Z
       time: 0
       timings:
         blocked: -1
@@ -211,11 +212,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: d8c8870dc957bf538d13d35604c8f983
+    - _id: 7d7784fe10336fad90dd58c64f39a343
       _order: 0
       cache: {}
       request:
-        bodySize: 500
+        bodySize: 517
         cookies: []
         headers:
           - _fromType: array
@@ -242,7 +243,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "500"
+            value: "517"
           - name: host
             value: sourcegraph.com
         headersSize: 396
@@ -284,6 +285,7 @@ log:
               - <file_sep>
             stream: true
             temperature: 0.2
+            timeoutMs: 7000
             topK: 0
         queryString:
           - name: client-name
@@ -292,14 +294,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
       response:
-        bodySize: 3120
+        bodySize: 4103
         content:
           mimeType: text/event-stream
-          size: 3120
+          size: 4103
           text: >+
             event: completion
 
-            data: {"completion":"for (let i = 0; i \u003c nums.length; i++) {\n        for (let j = i + 1; j \u003c nums.length; j++) {\n            if (nums[i] \u003e nums[j]) {\n                [nums[i], nums[j]] = [nums[j], nums[i]];\n            }\n        }\n    }","stopReason":"stop"}
+            data: {"completion":"for (let i = 0; i \u003c nums.length; i++) {\n        for (let j = 0; j \u003c nums.length; j++) {\n            if (nums[i] \u003c nums[j]) {\n                [nums[i], nums[j]] = [nums[j], nums[i]];\n            }\n        }\n    }","stopReason":"stop"}
 
 
             event: done
@@ -309,7 +311,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 27 Aug 2024 05:22:29 GMT
+            value: Fri, 30 Aug 2024 09:52:08 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -338,7 +340,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-27T05:22:27.831Z
+      startedDateTime: 2024-08-30T09:52:07.315Z
       time: 0
       timings:
         blocked: -1

@@ -2,20 +2,24 @@ import type { CompletionsModelConfig } from '.'
 import { modelsService } from '../models'
 
 export function getCompletionsModelConfig(modelID: string): CompletionsModelConfig | undefined {
-    const provider = modelsService.instance!.getModelByID(modelID)
+    const provider = modelsService.instance?.getModelByID(modelID)
     if (!provider) {
         return undefined
     }
 
-    const {
-        id: model,
-        clientSideConfig: { apiKey = '', apiEndpoint } = {},
-    } = provider
-    const strippedModelName = model.split('/').pop() || model
+    const { id, clientSideConfig = {} } = provider
+    const { apiKey = '', apiEndpoint, options = {} } = clientSideConfig
+
+    const model = id.split('/').pop() || id
+    const stream = Boolean(options?.stream ?? true)
+
+    const { stream: _, ...restOptions } = options || {}
 
     return {
-        model: strippedModelName,
+        model,
         key: apiKey,
         endpoint: apiEndpoint,
+        stream,
+        options: restOptions,
     }
 }

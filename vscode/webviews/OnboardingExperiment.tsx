@@ -86,7 +86,7 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                     <h1>Cody Free or Cody Pro</h1>
                     <div className={styles.buttonWidthSizer}>
                         <div className={styles.buttonStack}>
-                            {isCodyWebUI || isNonVSCodeIDE ? (
+                            {isCodyWebUI ? (
                                 <WebLogin
                                     telemetryRecorder={telemetryRecorder}
                                     vscodeAPI={vscodeAPI}
@@ -141,9 +141,9 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                         </div>
                     </div>
                 </div>
-                {isCodyWebUI || codyIDE === CodyIDE.VSCode ? (
-                    <div className={styles.section}>
-                        <h1>Cody Enterprise</h1>
+                <div className={styles.section}>
+                    <h1>Cody Enterprise</h1>
+                    {isCodyWebUI || codyIDE === CodyIDE.VSCode ? (
                         <div className={styles.buttonWidthSizer}>
                             <div className={styles.buttonStack}>
                                 <VSCodeButton
@@ -155,14 +155,14 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                                 </VSCodeButton>
                             </div>
                         </div>
-                        <p>
-                            Learn more about{' '}
-                            <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a>
-                        </p>
-                    </div>
-                ) : (
-                    <ClientSignInForm authStatus={authStatus} />
-                )}
+                    ) : (
+                        <ClientSignInForm authStatus={authStatus} vscodeAPI={vscodeAPI} />
+                    )}
+                    <p>
+                        Learn more about{' '}
+                        <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a>
+                    </p>
+                </div>
             </div>
             <div className={styles.terms}>
                 By signing in to Cody you agree to our{' '}

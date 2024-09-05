@@ -1,11 +1,9 @@
 import {
     type AutocompleteContextSnippet,
-    type CodeCompletionsClient,
     type CodeCompletionsParams,
     type Message,
     PromptString,
     ps,
-    tokensToChars,
 } from '@sourcegraph/cody-shared'
 
 import { type PrefixComponents, fixBadCompletionStart, getHeadAndTail } from '../text-processing'
@@ -15,21 +13,13 @@ import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
 } from './fetch-and-process-completions'
-import {
-    MAX_RESPONSE_TOKENS,
-    getCompletionParams,
-    getLineNumberDependentCompletionParams,
-} from './get-completion-params'
+import { getCompletionParams, getLineNumberDependentCompletionParams } from './get-completion-params'
 import {
     type CompletionProviderTracer,
+    type GenerateCompletionsOptions,
     Provider,
-    type ProviderConfig,
-    type ProviderOptions,
-    standardContextSizeHints,
+    type ProviderFactoryParams,
 } from './provider'
-
-const DEFAULT_GEMINI_MODEL = 'google/gemini-1.5-flash'
-const SUPPORTED_GEMINI_MODELS = ['gemini-1.5-flash', 'gemini-pro', 'gemini-1.0-pro']
 
 const MARKERS = {
     Prefix: ps`<|prefix|>`,
@@ -42,49 +32,28 @@ const lineNumberDependentCompletionParams = getLineNumberDependentCompletionPara
     multilineStopSequences: [`${MARKERS.Response}`],
 })
 
-interface GoogleGeminiOptions {
-    model?: string
-    maxContextTokens?: number
-    client: Pick<CodeCompletionsClient, 'complete'>
-}
-
-const PROVIDER_IDENTIFIER = 'google'
-
 class GoogleGeminiProvider extends Provider {
-    private model: string
-
-    private client: Pick<CodeCompletionsClient, 'complete'>
-
-    private promptChars: number
-
-    constructor(
-        options: ProviderOptions,
-        { maxContextTokens, client, model }: Required<GoogleGeminiOptions>
-    ) {
-        super(options)
-        this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
-        this.model = model
-        this.client = client
-    }
-
-    public emptyPromptLength(): number {
-        const { messages } = this.createPrompt([])
+    public emptyPromptLength(options: GenerateCompletionsOptions): number {
+        const { messages } = this.createPrompt(options, [])
         const promptNoSnippets = messagesToText(messages)
         return promptNoSnippets.length - 10
     }
 
-    protected createPrompt(snippets: AutocompleteContextSnippet[]): {
+    protected createPrompt(
+        options: GenerateCompletionsOptions,
+        snippets: AutocompleteContextSnippet[]
+    ): {
         messages: Message[]
         prefix: PrefixComponents
     } {
         const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
-            this.options.docContext,
-            this.options.document.uri
+            options.docContext,
+            options.document.uri
         )
 
         const { head, tail, overlap } = getHeadAndTail(prefix)
 
-        const relativeFilePath = PromptString.fromDisplayPath(this.options.document.uri)
+        const relativeFilePath = PromptString.fromDisplayPath(options.document.uri)
 
         let groupedSnippets = ps``
 
@@ -98,7 +67,7 @@ class GoogleGeminiProvider extends Provider {
             )
 
             if (
-                contextPrompt.length + 1 > this.promptChars - this.emptyPromptLength() ||
+                contextPrompt.length + 1 > this.promptChars - this.emptyPromptLength(options) ||
                 !contextPrompt.length
             ) {
                 break
@@ -137,41 +106,44 @@ Your response should contains only the code required to connect the gap, and the
     }
 
     public generateCompletions(
+        options: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
         const partialRequestParams = getCompletionParams({
-            providerOptions: this.options,
+            providerOptions: options,
             lineNumberDependentCompletionParams,
         })
 
         const requestParams: CodeCompletionsParams = {
             ...partialRequestParams,
-            messages: this.createPrompt(snippets).messages,
+            messages: this.createPrompt(options, snippets).messages,
             topP: 0.95,
             temperature: 0,
-            model: this.model,
+            model: this.legacyModel,
         }
 
         tracer?.params(requestParams)
 
-        const completionsGenerators = Array.from({ length: this.options.n }).map(() => {
-            const abortController = forkSignal(abortSignal)
+        const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
+            () => {
+                const abortController = forkSignal(abortSignal)
 
-            const completionResponseGenerator = generatorWithTimeout(
-                this.client.complete(requestParams, abortController),
-                requestParams.timeoutMs,
-                abortController
-            )
+                const completionResponseGenerator = generatorWithTimeout(
+                    this.client.complete(requestParams, abortController),
+                    requestParams.timeoutMs,
+                    abortController
+                )
 
-            return fetchAndProcessDynamicMultilineCompletions({
-                completionResponseGenerator,
-                abortController,
-                providerSpecificPostProcess: this.postProcess,
-                providerOptions: this.options,
-            })
-        })
+                return fetchAndProcessDynamicMultilineCompletions({
+                    completionResponseGenerator,
+                    abortController,
+                    providerSpecificPostProcess: this.postProcess,
+                    generateOptions: options,
+                })
+            }
+        )
 
         return zipGenerators(completionsGenerators)
     }
@@ -193,35 +165,19 @@ Your response should contains only the code required to connect the gap, and the
     }
 }
 
-export function createProviderConfig({
-    model,
-    maxContextTokens = 2048,
-    ...otherOptions
-}: GoogleGeminiOptions & { model?: string }): ProviderConfig {
-    if (!model) {
-        model = DEFAULT_GEMINI_MODEL
+const SUPPORTED_GEMINI_MODELS = ['gemini-1.5-flash', 'gemini-pro', 'gemini-1.0-pro'] as const
+
+export function createProvider(params: ProviderFactoryParams): Provider {
+    const { legacyModel, anonymousUserID } = params
+    const clientModel = legacyModel ?? 'google/gemini-1.5-flash'
+
+    if (!SUPPORTED_GEMINI_MODELS.some(m => clientModel.includes(m))) {
+        throw new Error(`Model ${legacyModel} is not supported by GeminiProvider`)
     }
 
-    if (!SUPPORTED_GEMINI_MODELS.some(m => model.includes(m))) {
-        throw new Error(`Model ${model} is not supported by GeminiProvider`)
-    }
-
-    return {
-        create(options: ProviderOptions) {
-            return new GoogleGeminiProvider(
-                {
-                    ...options,
-                    id: PROVIDER_IDENTIFIER,
-                },
-                {
-                    maxContextTokens,
-                    ...otherOptions,
-                    model,
-                }
-            )
-        },
-        contextSizeHints: standardContextSizeHints(maxContextTokens),
-        identifier: PROVIDER_IDENTIFIER,
-        model,
-    }
+    return new GoogleGeminiProvider({
+        id: 'google',
+        legacyModel: clientModel,
+        anonymousUserID,
+    })
 }

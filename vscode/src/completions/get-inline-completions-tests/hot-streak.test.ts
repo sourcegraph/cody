@@ -188,8 +188,8 @@ describe('[getInlineCompletions] hot streak', () => {
                 const`,
                 {
                     delayBetweenChunks: 20,
-                    providerOptions: {
-                        firstCompletionTimeout: 10,
+                    configuration: {
+                        autocompleteFirstCompletionTimeout: 10,
                     },
                     abortSignal: new AbortController().signal,
                     onNetworkRequest(_, requestManagerAbortController) {

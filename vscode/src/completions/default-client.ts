@@ -2,7 +2,6 @@ import {
     type BrowserOrNodeResponse,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
-    type CompletionLogger,
     type CompletionResponse,
     type CompletionResponseGenerator,
     CompletionStopReason,
@@ -22,6 +21,8 @@ import {
     isRateLimitError,
     logResponseHeadersToSpan,
     recordErrorToSpan,
+    setSingleton,
+    singletonNotYetSet,
     tracer,
 } from '@sourcegraph/cody-shared'
 
@@ -31,19 +32,30 @@ import type {
     CodeCompletionProviderOptions,
     CompletionResponseWithMetaData,
 } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
+import { logger } from '../log'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
  */
-export function createClient(
-    config: CompletionsClientConfig,
-    logger?: CompletionLogger
-): CodeCompletionsClient {
-    function complete(
-        { timeoutMs, ...params }: CodeCompletionsParams,
+class DefaultCodeCompletionsClient implements CodeCompletionsClient {
+    private config: CompletionsClientConfig | null = null
+    public logger = logger
+
+    public onConfigurationChange(newConfig: CompletionsClientConfig) {
+        this.config = newConfig
+    }
+
+    public complete(
+        params: CodeCompletionsParams,
         abortController: AbortController,
-        providerOptions: CodeCompletionProviderOptions
+        providerOptions?: CodeCompletionProviderOptions
     ): CompletionResponseGenerator {
+        const { config, logger } = this
+
+        if (config === null) {
+            throw new Error('DefaultCodeCompletionsClient is not initialized')
+        }
+
         const query = new URLSearchParams(getClientInfoParams())
         const url = new URL(`/.api/completions/code?${query.toString()}`, config.serverEndpoint).href
         const log = logger?.startCompletion(params, url)
@@ -90,7 +102,7 @@ export function createClient(
                     headers.set('Accept-Encoding', 'gzip;q=0')
                 }
 
-                headers.set('X-Timeout-Ms', timeoutMs.toString())
+                headers.set('X-Timeout-Ms', params.timeoutMs.toString())
 
                 const serializedParams: SerializedCodeCompletionsParams & {
                     stream: boolean
@@ -250,15 +262,10 @@ export function createClient(
             }
         )
     }
-
-    return {
-        complete,
-        logger,
-        onConfigurationChange(newConfig) {
-            config = newConfig
-        },
-    }
 }
+
+export const defaultCodeCompletionsClient = singletonNotYetSet<DefaultCodeCompletionsClient>()
+setSingleton(defaultCodeCompletionsClient, new DefaultCodeCompletionsClient())
 
 export async function createRateLimitErrorFromResponse(
     response: BrowserOrNodeResponse,
@@ -266,6 +273,7 @@ export async function createRateLimitErrorFromResponse(
 ): Promise<RateLimitError> {
     const retryAfter = response.headers.get('retry-after')
     const limit = response.headers.get('x-ratelimit-limit')
+
     return new RateLimitError(
         'autocompletions',
         await response.text(),

@@ -265,6 +265,8 @@ export interface MultimodelSingleModelConfig {
     model: string
     // This flag decides if to enable "cody.autocomplete.experimental.fireworksOptions" settings when creating a custom provider
     enableExperimentalFireworksOverrides: boolean
+    // Context strategy to use
+    context: string
 }
 
 export interface EmbeddingsModelConfig {

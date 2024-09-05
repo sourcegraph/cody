@@ -433,8 +433,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
                 break
             case 'auth': {
+                const config = getConfigWithEndpoint()
                 if (message.authKind === 'callback' && message.endpoint) {
-                    redirectToEndpointLogin(message.endpoint)
+                    redirectToEndpointLogin(message.endpoint, config.agentIDE)
                     break
                 }
                 if (message.authKind === 'offline') {
@@ -473,7 +474,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     const authMethod = message.authMethod || 'dotcom'
                     const successfullyOpenedUrl = await authProviderSimplified.openExternalAuthUrl(
                         authMethod,
-                        tokenReceiverUrl
+                        tokenReceiverUrl,
+                        config?.agentIDE
                     )
                     if (!successfullyOpenedUrl) {
                         closeAuthProgressIndicator()
@@ -834,7 +836,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         const resolvedExplicitMentionsPromise = resolveContextItems(
             this.editor,
-            [structuredMentions.symbols, structuredMentions.files].flat(),
+            [structuredMentions.symbols, structuredMentions.files, structuredMentions.openCtx].flat(),
             text,
             signal
         )

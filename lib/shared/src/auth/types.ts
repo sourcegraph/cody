@@ -73,6 +73,11 @@ export const AUTH_STATUS_FIXTURE_UNAUTHED: AuthStatus & { authenticated: false }
     authenticated: false,
 }
 
+export const AUTH_STATUS_FIXTURE_AUTHED_DOTCOM: AuthenticatedAuthStatus = {
+    ...AUTH_STATUS_FIXTURE_AUTHED,
+    endpoint: 'https://sourcegraph.com',
+}
+
 export const AUTH_STATUS_FIXTURE_OFFLINE: Omit<AuthenticatedAuthStatus, 'isOfflineMode'> & {
     isOfflineMode: true
 } = {

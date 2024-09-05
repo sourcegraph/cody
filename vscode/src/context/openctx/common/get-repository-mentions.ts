@@ -6,6 +6,7 @@ import {
     isError,
 } from '@sourcegraph/cody-shared'
 import { Fzf, type FzfOptions } from 'fzf'
+import { workspaceReposMonitor } from '../../../repository/repo-metadata-from-git-api'
 
 type ProviderMention = Mention & { providerUri: string }
 
@@ -40,13 +41,20 @@ export async function getRepositoryMentions(
 
     const repositories = dataOrError.search.results.repositories
     const fzf = new Fzf(repositories, REPO_FZF_OPTIONS)
+    const localRepos = (await workspaceReposMonitor?.getRepoMetadata()) || []
 
-    return fzf
-        .find(cleanRegex(query))
-        .map(repository => createRepositoryMention(repository.item, providerId))
+    return fzf.find(cleanRegex(query)).map(repository =>
+        createRepositoryMention(
+            {
+                ...repository.item,
+                current: !!localRepos.find(({ repoName }) => repoName === repository.item.name),
+            },
+            providerId
+        )
+    )
 }
 
-type MinimalRepoMention = Pick<SuggestionsRepo, 'id' | 'url' | 'name'>
+type MinimalRepoMention = Pick<SuggestionsRepo, 'id' | 'url' | 'name'> & { current?: boolean }
 
 export function createRepositoryMention(repo: MinimalRepoMention, providerId: string): ProviderMention {
     return {
@@ -57,7 +65,7 @@ export function createRepositoryMention(repo: MinimalRepoMention, providerId: st
         // By default, we show <title> <uri> in the mentions' menu.
         // As repo.url and repo.name are almost same, we do not want to show the uri.
         // So that is why we are setting the description to " " string.
-        description: ' ',
+        description: repo.current ? 'Current' : ' ',
         data: {
             repoId: repo.id,
             repoName: repo.name,

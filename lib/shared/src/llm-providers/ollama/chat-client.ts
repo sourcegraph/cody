@@ -52,8 +52,9 @@ export async function ollamaChatClient({
                     top_k: params.topK,
                     top_p: params.topP,
                     tfs_z: params.maxTokensToSample,
+                    ...config?.options,
                 },
-                stream: true,
+                stream: config?.stream || true,
             })
             .then(
                 async res => {

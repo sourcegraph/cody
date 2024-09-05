@@ -14,15 +14,21 @@ const htmlFamily = new Set([
     // import CSS modules but define them in the same file instead.
 ])
 
+export interface ShouldUseContextParams {
+    enableExtendedLanguagePool: boolean
+    baseLanguageId: string
+    languageId: string
+}
+
 /**
  * Returns true if the given language ID should be used as context for the base
  * language id.
  */
-export function shouldBeUsedAsContext(
-    enableExtendedLanguagePool: boolean,
-    baseLanguageId: string,
-    languageId: string
-): boolean {
+export function shouldBeUsedAsContext({
+    enableExtendedLanguagePool,
+    baseLanguageId,
+    languageId,
+}: ShouldUseContextParams): boolean {
     if (baseLanguageId === languageId) {
         return true
     }

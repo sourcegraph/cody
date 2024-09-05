@@ -1,5 +1,5 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
-import { SG_BLOG_URL } from './chat/protocol'
+import { SG_CHANGELOG_URL } from './chat/protocol'
 
 type ReleaseType = 'stable' | 'insiders'
 
@@ -32,54 +32,39 @@ export function getReleaseTypeByIDE(IDE: CodyIDE, version: string): ReleaseType 
     }
 }
 
-/**
- * Gets the release notes URL for the given IDE and version.
- *
- * NOTE: Each IDE is responsible for generating its own release notes.
- *
- * @param version - The version of the IDE.
- * @param IDE - The IDE to get the release notes URL for.
- * @returns The release notes URL for the given IDE and version.
- */
-export function getReleaseNotesURLByIDE(version: string, IDE: CodyIDE): string {
-    const isStable = getReleaseTypeByIDE(IDE, version) === 'stable'
-
-    switch (IDE) {
-        case CodyIDE.VSCode:
-            return getReleaseBlogPostURL(version, IDE)
-
-        case CodyIDE.JetBrains:
-            return isStable
-                ? `https://github.com/sourcegraph/jetbrains/releases/tag/v${version}`
-                : 'https://github.com/sourcegraph/jetbrains/releases'
-
-        default:
-            throw new Error(`No release note for ${IDE}.`)
-    }
+const IDE_BLOG_TOPICS = {
+    [CodyIDE.VSCode]: 'VS Code',
+    [CodyIDE.JetBrains]: 'JetBrains',
+    [CodyIDE.VisualStudio]: 'Visual Studio',
+    [CodyIDE.Eclipse]: 'Eclipse',
+    // Generic topics for IDEs without UI.
+    [CodyIDE.Neovim]: 'Cody',
+    [CodyIDE.Emacs]: 'Cody',
+    [CodyIDE.Web]: 'Cody',
 }
 
 /**
- * Gets the release blog post URL for the given IDE and version.
+ * Determines the URL for the release notes for the given IDE and version.
  *
- * This function constructs the release blog post URL for the given IDE and version.
- * For VS Code, it constructs the blog URL based on the version number.
+ * If the IDE has a corresponding blog topic in `IDE_BLOG_TOPICS`,
+ * the release notes URL will be a link to the Sourcegraph changelog with the blog topic as a filter.
+ * Otherwise, the release notes URL will be a link to the GitHub releases page for the given version,
+ * or the general releases page if the version is an 'insiders' release.
  *
  * @param version - The version of the IDE.
- * @param IDE - The IDE to get the release blog post URL for.
- * @returns The release blog post URL for the given IDE and version.
+ * @param IDE - The IDE to get the release notes URL for.
+ * @returns The URL for the release notes for the given IDE and version.
  */
-function getReleaseBlogPostURL(version: string, IDE: CodyIDE): string {
-    const blogURL = new URL(SG_BLOG_URL)
-
-    if (IDE === CodyIDE.VSCode) {
-        // Examples of version:
-        // 1.24.3 (stable), 1.25.123143 (pre-release)
-        const versionNums = version.split('.')
-        // NOTE: We do not generate blog post for pre-releases (odd minor number).
-        const minor = Number(versionNums[1]) % 2 === 0 ? versionNums[1] : `${Number(versionNums[1]) - 1}`
-        // Example: https://sourcegraph.com/blog/cody-vscode-1-24-0-release
-        blogURL.pathname += `cody-vscode-${versionNums[0]}-${minor}-0-release`
+export function getReleaseNotesURLByIDE(version: string, IDE: CodyIDE): string {
+    const blogTopic = IDE in IDE_BLOG_TOPICS && IDE_BLOG_TOPICS[IDE as keyof typeof IDE_BLOG_TOPICS]
+    if (IDE in IDE_BLOG_TOPICS && blogTopic) {
+        const blogURL = new URL(SG_CHANGELOG_URL)
+        blogURL.searchParams.set('topics', blogTopic)
+        return blogURL.href
     }
 
-    return blogURL.href
+    const isStable = getReleaseTypeByIDE(IDE, version) === 'stable'
+    return isStable
+        ? `https://github.com/sourcegraph/cody/releases/tag/v${version}`
+        : 'https://github.com/sourcegraph/cody/releases'
 }

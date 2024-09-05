@@ -10,13 +10,13 @@ describe('DefaultModel', () => {
     describe.skipIf(isWindows())('getPrompt', () => {
         it('returns the prompt with the correct intro snippets', () => {
             const model = new DefaultModel()
-            const { docContext, document, providerConfig } = completionParams
+            const { docContext, document, provider } = completionParams
 
             const result = model.getPrompt({
                 document,
                 docContext,
                 snippets: contextSnippets,
-                promptChars: providerConfig.contextSizeHints.totalChars,
+                promptChars: provider.contextSizeHints.totalChars,
             })
 
             expect(result).toMatchInlineSnapshot(`

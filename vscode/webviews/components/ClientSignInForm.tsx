@@ -1,15 +1,17 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
+import { GlobeIcon, LockKeyholeIcon } from 'lucide-react'
 import type React from 'react'
 import styles from './ClientSignInForm.module.css'
 
 import type { AuthStatus } from '@sourcegraph/cody-shared'
 import { useCallback, useState } from 'react'
 import { isSourcegraphToken } from '../../src/chat/protocol'
-import { getVSCodeAPI } from '../utils/VSCodeApi'
+import { type VSCodeWrapper, getVSCodeAPI } from '../utils/VSCodeApi'
 import { Form, FormControl, FormField, FormLabel, FormMessage } from './shadcn/ui/form'
 import { cn } from './shadcn/utils'
 
 interface ClientSignInFormProps {
+    vscodeAPI: VSCodeWrapper
     authStatus?: AuthStatus
     className?: string
 }
@@ -25,7 +27,11 @@ interface ClientSignInFormProps {
  * @param authStatus - The current authentication status, which may include an error message.
  * @returns A React component that renders the sign-in form.
  */
-export const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStatus }) => {
+export const ClientSignInForm: React.FC<ClientSignInFormProps> = ({
+    className,
+    authStatus,
+    vscodeAPI,
+}) => {
     const [formData, setFormData] = useState({
         endpoint: authStatus?.endpoint ?? '',
         accessToken: '',
@@ -35,6 +41,10 @@ export const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, a
         const { name, value } = e.target
         setFormData(prev => ({ ...prev, [name]: value }))
     }, [])
+
+    const signInWithBrowser = useCallback(() => {
+        vscodeAPI.postMessage({ command: 'auth', authKind: 'callback', endpoint: formData.endpoint })
+    }, [formData.endpoint, vscodeAPI])
 
     const onSubmitClick = useCallback(() => {
         getVSCodeAPI().postMessage({
@@ -46,13 +56,7 @@ export const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, a
     }, [formData])
 
     return (
-        <Form
-            className={cn(
-                'tw-flex-col tw-w-grid tw-grid-cols-6 tw-gap-4 tw-flex',
-                styles.container,
-                className
-            )}
-        >
+        <Form className={cn(styles.container, className)}>
             <FormField name="endpoint" className={styles.section}>
                 <FormLabel title="Sourcegraph Instance URL" />
                 <FormControl
@@ -68,6 +72,9 @@ export const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, a
                     Not a valid URL.
                 </FormMessage>
             </FormField>
+            <VSCodeButton className={styles.button} type="button" onClick={signInWithBrowser}>
+                <GlobeIcon className="tw-mr-2" /> Sign In with Browser
+            </VSCodeButton>
             <FormField
                 name="accessToken"
                 className={styles.section}
@@ -90,8 +97,13 @@ export const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, a
                     Please enter a valid access token.
                 </FormMessage>
             </FormField>
-            <VSCodeButton className={styles.button} type="button" onClick={onSubmitClick}>
-                Sign In with Access Token
+            <VSCodeButton
+                className={styles.button}
+                type="button"
+                onClick={onSubmitClick}
+                disabled={!formData.accessToken}
+            >
+                <LockKeyholeIcon className="tw-mr-2" /> Sign In with Access Token
             </VSCodeButton>
         </Form>
     )

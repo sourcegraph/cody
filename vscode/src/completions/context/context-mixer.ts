@@ -9,8 +9,11 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import type { LastInlineCompletionCandidate } from '../get-inline-completions'
+import {
+    DefaultCompletionsContextRanker,
+    type RetrievedContextResults,
+} from './completions-context-ranker'
 import type { ContextStrategy, ContextStrategyFactory } from './context-strategy'
-import { fuseResults } from './reciprocal-rank-fusion'
 
 interface GetContextOptions {
     document: vscode.TextDocument
@@ -90,7 +93,7 @@ export class ContextMixer implements vscode.Disposable {
             }
         }
 
-        const results = await Promise.all(
+        const results: RetrievedContextResults[] = await Promise.all(
             retrievers.map(async retriever => {
                 const retrieverStart = performance.now()
                 const allSnippets = await wrapInActiveSpan(
@@ -114,23 +117,8 @@ export class ContextMixer implements vscode.Disposable {
                 }
             })
         )
-
-        const fusedResults = fuseResults(
-            results.map(r => r.snippets),
-            result => {
-                // Ensure that context retrieved via BFG works where we do not have a startLine and
-                // endLine yet.
-                if (typeof result.startLine === 'undefined' || typeof result.endLine === 'undefined') {
-                    return [result.uri.toString()]
-                }
-
-                const lineIds = []
-                for (let i = result.startLine; i <= result.endLine; i++) {
-                    lineIds.push(`${result.uri.toString()}:${i}`)
-                }
-                return lineIds
-            }
-        )
+        const contextRanker = new DefaultCompletionsContextRanker()
+        const fusedResults = contextRanker.rankAndFuseContext(results)
 
         // The total chars size hint is inclusive of the prefix and suffix sizes, so we seed the
         // total chars with the prefix and suffix sizes.

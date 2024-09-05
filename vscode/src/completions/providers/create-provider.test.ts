@@ -3,7 +3,6 @@ import {
     type AuthenticatedAuthStatus,
     type ClientConfiguration,
     type ClientConfigurationWithAccessToken,
-    type CodeCompletionsClient,
     type CodyLLMSiteConfiguration,
     DOTCOM_URL,
     type GraphQLAPIClientConfig,
@@ -14,7 +13,7 @@ import type * as vscode from 'vscode'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 
-import { createProviderConfig } from './create-provider'
+import { createProvider } from './create-provider'
 
 const getVSCodeConfigurationWithAccessToken = (
     config: Partial<ClientConfiguration> = {}
@@ -24,15 +23,6 @@ const getVSCodeConfigurationWithAccessToken = (
     serverEndpoint: 'https://example.com',
     accessToken: 'foobar',
 })
-
-const dummyCodeCompletionsClient: CodeCompletionsClient = {
-    // biome-ignore lint/correctness/useYield: keep TS happy in tests.
-    async *complete() {
-        return { completionResponse: { completion: '', stopReason: '' } }
-    },
-    logger: undefined,
-    onConfigurationChange: () => undefined,
-}
 
 const dummyAuthStatus: AuthenticatedAuthStatus = {
     ...AUTH_STATUS_FIXTURE_AUTHED,
@@ -45,7 +35,7 @@ const dummyAuthStatus: AuthenticatedAuthStatus = {
 
 graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
 
-describe('createProviderConfig', () => {
+describe('createProvider', () => {
     beforeAll(async () => {
         localStorage.setStorage({
             get: () => null,
@@ -55,12 +45,11 @@ describe('createProviderConfig', () => {
 
     describe('if completions provider fields are defined in VSCode settings', () => {
         it('returns null if completions provider is not supported', async () => {
-            const provider = await createProviderConfig(
+            const provider = await createProvider(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider:
                         'nasa-ai' as ClientConfiguration['autocompleteAdvancedProvider'],
                 }),
-                dummyCodeCompletionsClient,
                 AUTH_STATUS_FIXTURE_AUTHED
             )
             expect(provider).toBeNull()
@@ -69,98 +58,90 @@ describe('createProviderConfig', () => {
 
     describe('if completions provider field is not defined in VSCode settings', () => {
         it('returns `null` if completions provider is not configured', async () => {
-            const provider = await createProviderConfig(
+            const provider = await createProvider(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider:
                         null as ClientConfiguration['autocompleteAdvancedProvider'],
                 }),
-                dummyCodeCompletionsClient,
                 AUTH_STATUS_FIXTURE_AUTHED
             )
             expect(provider).toBeNull()
         })
 
         it('returns "fireworks" provider config and corresponding model if specified', async () => {
-            const provider = await createProviderConfig(
+            const provider = await createProvider(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'fireworks',
                     autocompleteAdvancedModel: 'starcoder-7b',
                 }),
-                dummyCodeCompletionsClient,
                 dummyAuthStatus
             )
-            expect(provider?.identifier).toBe('fireworks')
-            expect(provider?.model).toBe('starcoder-7b')
+            expect(provider?.id).toBe('fireworks')
+            expect(provider?.legacyModel).toBe('starcoder-7b')
         })
 
         it('returns "fireworks" provider config if specified in settings and default model', async () => {
-            const provider = await createProviderConfig(
+            const provider = await createProvider(
                 getVSCodeConfigurationWithAccessToken({ autocompleteAdvancedProvider: 'fireworks' }),
-                dummyCodeCompletionsClient,
                 dummyAuthStatus
             )
-            expect(provider?.identifier).toBe('fireworks')
-            expect(provider?.model).toBe('deepseek-coder-v2-lite-base')
+            expect(provider?.id).toBe('fireworks')
+            expect(provider?.legacyModel).toBe('deepseek-coder-v2-lite-base')
         })
 
         it('returns "experimental-openaicompatible" provider config and corresponding model if specified', async () => {
-            const provider = await createProviderConfig(
+            const provider = await createProvider(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'experimental-openaicompatible',
                     autocompleteAdvancedModel: 'starchat-16b-beta',
                 }),
-                dummyCodeCompletionsClient,
                 dummyAuthStatus
             )
-            expect(provider?.identifier).toBe('experimental-openaicompatible')
-            expect(provider?.model).toBe('starchat-16b-beta')
+            expect(provider?.id).toBe('experimental-openaicompatible')
+            expect(provider?.legacyModel).toBe('starchat-16b-beta')
         })
 
         it('returns "experimental-openaicompatible" provider config if specified in settings and default model', async () => {
-            const provider = await createProviderConfig(
+            const provider = await createProvider(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'experimental-openaicompatible',
                 }),
-                dummyCodeCompletionsClient,
                 dummyAuthStatus
             )
-            expect(provider?.identifier).toBe('experimental-openaicompatible')
+            expect(provider?.id).toBe('experimental-openaicompatible')
             // TODO(slimsag): make this default to starchat2 once added
             // specifically just when using `experimental-openaicompatible`
-            expect(provider?.model).toBe('starcoder-hybrid')
+            expect(provider?.legacyModel).toBe('starcoder-hybrid')
         })
 
         it('returns "unstable-openai" provider config if specified in VSCode settings; model is ignored', async () => {
-            const provider = await createProviderConfig(
+            const provider = await createProvider(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'unstable-openai',
                     autocompleteAdvancedModel: 'hello-world',
                 }),
-                dummyCodeCompletionsClient,
                 dummyAuthStatus
             )
-            expect(provider?.identifier).toBe('unstable-openai')
-            expect(provider?.model).toBe('gpt-35-turbo')
+            expect(provider?.id).toBe('unstable-openai')
+            expect(provider?.legacyModel).toBe('gpt-35-turbo')
         })
 
         it('returns "anthropic" provider config if specified in VSCode settings', async () => {
-            const provider = await createProviderConfig(
+            const provider = await createProvider(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'anthropic',
                 }),
-                dummyCodeCompletionsClient,
                 dummyAuthStatus
             )
-            expect(provider?.identifier).toBe('anthropic')
-            expect(provider?.model).toBe('anthropic/claude-instant-1.2')
+            expect(provider?.id).toBe('anthropic')
+            expect(provider?.legacyModel).toBe('anthropic/claude-instant-1.2')
         })
 
         it('provider specified in VSCode settings takes precedence over the one defined in the site config', async () => {
-            const provider = await createProviderConfig(
+            const provider = await createProvider(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'unstable-openai',
                 }),
-                dummyCodeCompletionsClient,
                 {
                     ...dummyAuthStatus,
                     configOverwrites: {
@@ -169,60 +150,66 @@ describe('createProviderConfig', () => {
                     },
                 }
             )
-            expect(provider?.identifier).toBe('unstable-openai')
-            expect(provider?.model).toBe('gpt-35-turbo')
+            expect(provider?.id).toBe('unstable-openai')
+            expect(provider?.legacyModel).toBe('gpt-35-turbo')
         })
     })
 
     describe('completions provider and model are defined in the site config and not set in VSCode settings', () => {
         describe('if provider is "sourcegraph"', () => {
             const testCases: {
-                codyLLMConfig: CodyLLMSiteConfiguration
-                expected: { provider: string; model?: string } | null
+                configOverwrites: CodyLLMSiteConfiguration
+                expected: { provider: string; legacyModel?: string } | null
             }[] = [
                 // sourcegraph
                 {
-                    codyLLMConfig: { provider: 'sourcegraph', completionModel: 'hello-world' },
+                    configOverwrites: { provider: 'sourcegraph', completionModel: 'hello-world' },
                     expected: null,
                 },
                 {
-                    codyLLMConfig: {
+                    configOverwrites: {
                         provider: 'sourcegraph',
                         completionModel: 'anthropic/claude-instant-1.2',
                     },
-                    expected: { provider: 'anthropic', model: 'anthropic/claude-instant-1.2' },
+                    expected: { provider: 'anthropic', legacyModel: 'anthropic/claude-instant-1.2' },
                 },
                 {
-                    codyLLMConfig: { provider: 'sourcegraph', completionModel: 'anthropic/' },
+                    configOverwrites: { provider: 'sourcegraph', completionModel: 'anthropic/' },
                     expected: null,
                 },
                 {
-                    codyLLMConfig: { provider: 'sourcegraph', completionModel: '/claude-instant-1.2' },
+                    configOverwrites: {
+                        provider: 'sourcegraph',
+                        completionModel: '/claude-instant-1.2',
+                    },
                     expected: null,
                 },
                 {
-                    codyLLMConfig: { provider: 'sourcegraph', completionModel: 'fireworks/starcoder' },
-                    expected: { provider: 'fireworks', model: 'starcoder' },
+                    configOverwrites: {
+                        provider: 'sourcegraph',
+                        completionModel: 'fireworks/starcoder',
+                    },
+                    expected: { provider: 'fireworks', legacyModel: 'starcoder' },
                 },
 
                 // aws-bedrock
                 {
-                    codyLLMConfig: { provider: 'aws-bedrock', completionModel: 'hello-world' },
+                    configOverwrites: { provider: 'aws-bedrock', completionModel: 'hello-world' },
                     expected: null,
                 },
                 {
-                    codyLLMConfig: {
+                    configOverwrites: {
                         provider: 'aws-bedrock',
                         completionModel: 'anthropic.claude-instant-1.2',
                     },
-                    expected: { provider: 'anthropic', model: 'anthropic/claude-instant-1.2' },
+                    expected: { provider: 'anthropic', legacyModel: 'anthropic/claude-instant-1.2' },
                 },
                 {
-                    codyLLMConfig: { provider: 'aws-bedrock', completionModel: 'anthropic.' },
+                    configOverwrites: { provider: 'aws-bedrock', completionModel: 'anthropic.' },
                     expected: null,
                 },
                 {
-                    codyLLMConfig: {
+                    configOverwrites: {
                         provider: 'aws-bedrock',
                         completionModel: 'anthropic/claude-instant-1.2',
                     },
@@ -231,37 +218,37 @@ describe('createProviderConfig', () => {
 
                 // open-ai
                 {
-                    codyLLMConfig: { provider: 'openai', completionModel: 'gpt-35-turbo-test' },
-                    expected: { provider: 'unstable-openai', model: 'gpt-35-turbo-test' },
+                    configOverwrites: { provider: 'openai', completionModel: 'gpt-35-turbo-test' },
+                    expected: { provider: 'unstable-openai', legacyModel: 'gpt-35-turbo-test' },
                 },
                 {
-                    codyLLMConfig: { provider: 'openai' },
-                    expected: { provider: 'unstable-openai', model: 'gpt-35-turbo' },
+                    configOverwrites: { provider: 'openai' },
+                    expected: { provider: 'unstable-openai', legacyModel: 'gpt-35-turbo' },
                 },
 
                 // azure-openai
                 {
-                    codyLLMConfig: { provider: 'azure-openai', completionModel: 'gpt-35-turbo-test' },
-                    expected: { provider: 'unstable-openai', model: '' },
+                    configOverwrites: { provider: 'azure-openai', completionModel: 'gpt-35-turbo-test' },
+                    expected: { provider: 'unstable-openai', legacyModel: '' },
                 },
                 {
-                    codyLLMConfig: { provider: 'azure-openai' },
-                    expected: { provider: 'unstable-openai', model: 'gpt-35-turbo' },
+                    configOverwrites: { provider: 'azure-openai' },
+                    expected: { provider: 'unstable-openai', legacyModel: 'gpt-35-turbo' },
                 },
 
                 // fireworks
                 {
-                    codyLLMConfig: { provider: 'fireworks', completionModel: 'starcoder-7b' },
-                    expected: { provider: 'fireworks', model: 'starcoder-7b' },
+                    configOverwrites: { provider: 'fireworks', completionModel: 'starcoder-7b' },
+                    expected: { provider: 'fireworks', legacyModel: 'starcoder-7b' },
                 },
                 {
-                    codyLLMConfig: { provider: 'fireworks' },
-                    expected: { provider: 'fireworks', model: 'deepseek-coder-v2-lite-base' },
+                    configOverwrites: { provider: 'fireworks' },
+                    expected: { provider: 'fireworks', legacyModel: 'deepseek-coder-v2-lite-base' },
                 },
 
                 // unknown-provider
                 {
-                    codyLLMConfig: {
+                    configOverwrites: {
                         provider: 'unknown-provider',
                         completionModel: 'superdupercoder-7b',
                     },
@@ -270,25 +257,24 @@ describe('createProviderConfig', () => {
 
                 // provider not defined (backward compat)
                 {
-                    codyLLMConfig: { provider: undefined, completionModel: 'superdupercoder-7b' },
+                    configOverwrites: { provider: undefined, completionModel: 'superdupercoder-7b' },
                     expected: null,
                 },
             ]
 
-            for (const { codyLLMConfig, expected } of testCases) {
+            for (const { configOverwrites, expected } of testCases) {
                 it(`returns ${JSON.stringify(expected)} when cody LLM config is ${JSON.stringify(
-                    codyLLMConfig
+                    configOverwrites
                 )}`, async () => {
-                    const provider = await createProviderConfig(
-                        getVSCodeConfigurationWithAccessToken(),
-                        dummyCodeCompletionsClient,
-                        { ...dummyAuthStatus, configOverwrites: codyLLMConfig }
-                    )
+                    const provider = await createProvider(getVSCodeConfigurationWithAccessToken(), {
+                        ...dummyAuthStatus,
+                        configOverwrites,
+                    })
                     if (expected === null) {
                         expect(provider).toBeNull()
                     } else {
-                        expect(provider?.identifier).toBe(expected.provider)
-                        expect(provider?.model).toBe(expected.model)
+                        expect(provider?.id).toBe(expected.provider)
+                        expect(provider?.legacyModel).toBe(expected.legacyModel)
                     }
                 })
             }

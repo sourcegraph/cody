@@ -331,7 +331,11 @@ export class EditManager implements vscode.Disposable {
             return
         }
 
-        telemetryRecorder.recordEvent('cody.smart-apply.selection', selection.type)
+        telemetryRecorder.recordEvent('cody.smart-apply', 'selected', {
+            metadata: {
+                [selection.type]: 1,
+            },
+        })
 
         // Move focus to the determined selection
         editor.revealRange(selection.range, vscode.TextEditorRevealType.InCenter)

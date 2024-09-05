@@ -1,8 +1,4 @@
-import {
-    type ClientConfigurationWithAccessToken,
-    type CodeCompletionsClient,
-    isDotCom,
-} from '@sourcegraph/cody-shared'
+import { type ClientConfigurationWithAccessToken, isDotCom } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
 import { logDebug } from '../log'
@@ -12,12 +8,11 @@ import type { CodyStatusBar } from '../services/StatusBar'
 import { completionProviderConfig } from './completion-provider-config'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
-import { createProviderConfig } from './providers/create-provider'
+import { createProvider } from './providers/create-provider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
 
 export interface InlineCompletionItemProviderArgs {
     config: ClientConfigurationWithAccessToken
-    client: CodeCompletionsClient
     statusBar: CodyStatusBar
     createBfgRetriever?: () => BfgRetriever
 }
@@ -40,7 +35,6 @@ class NoopCompletionItemProvider implements vscode.InlineCompletionItemProvider 
 
 export async function createInlineCompletionItemProvider({
     config,
-    client,
     statusBar,
     createBfgRetriever,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
@@ -65,16 +59,17 @@ export async function createInlineCompletionItemProvider({
 
     const disposables: vscode.Disposable[] = []
 
-    const [providerConfig] = await Promise.all([
-        createProviderConfig(config, client, authStatus),
+    const [provider] = await Promise.all([
+        createProvider(config, authStatus),
         completionProviderConfig.init(config),
     ])
 
-    if (providerConfig) {
+    if (provider) {
         const authStatus = authProvider.instance!.statusAuthed
         const completionsProvider = new InlineCompletionItemProvider({
             authStatus,
-            providerConfig,
+            provider,
+            config,
             firstCompletionTimeout: config.autocompleteFirstCompletionTimeout,
             statusBar,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
@@ -102,7 +97,7 @@ export async function createInlineCompletionItemProvider({
         )
     } else if (config.isRunningInsideAgent) {
         throw new Error(
-            `Can't register completion provider because \`providerConfig\` evaluated to \`null\`. To fix this problem, debug why createProviderConfig returned null instead of ProviderConfig. To further debug this problem, here is the configuration:\n${JSON.stringify(
+            `Can't register completion provider because \`providerConfig\` evaluated to \`null\`. To fix this problem, debug why createProvider returned null instead of ProviderConfig. To further debug this problem, here is the configuration:\n${JSON.stringify(
                 config,
                 null,
                 2

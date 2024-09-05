@@ -17,13 +17,13 @@ import {
 import { trace } from '@opentelemetry/api'
 import { getDynamicMultilineDocContext } from './dynamic-multiline'
 import { type HotStreakExtractor, createHotStreakExtractor } from './hot-streak'
-import type { ProviderOptions } from './provider'
+import type { GenerateCompletionsOptions } from './provider'
 
 export interface FetchAndProcessCompletionsParams {
     abortController: AbortController
     completionResponseGenerator: CompletionResponseGenerator
     providerSpecificPostProcess: (insertText: string) => string
-    providerOptions: Readonly<ProviderOptions>
+    generateOptions: Readonly<GenerateCompletionsOptions>
 }
 
 export type FetchCompletionResult =
@@ -45,10 +45,10 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
     const {
         completionResponseGenerator,
         abortController,
-        providerOptions,
+        generateOptions,
         providerSpecificPostProcess,
     } = params
-    const { docContext, multiline, firstCompletionTimeout } = providerOptions
+    const { docContext, multiline, firstCompletionTimeout } = generateOptions
 
     let hotStreakExtractor: undefined | HotStreakExtractor
 
@@ -127,7 +127,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
         }
 
         const postProcessParams: ProcessItemParams = {
-            ...providerOptions,
+            ...generateOptions,
             metadata,
         }
 
@@ -138,7 +138,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
         if (multiline) {
             addAutocompleteDebugEvent('multiline_branch')
             const completion = extractCompletion(rawCompletion, {
-                document: providerOptions.document,
+                document: generateOptions.document,
                 docContext,
             })
 
@@ -166,14 +166,14 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
             ...docContext,
             ...getDynamicMultilineDocContext({
                 docContext,
-                languageId: providerOptions.document.languageId,
+                languageId: generateOptions.document.languageId,
                 insertText: rawCompletion,
             }),
         }
 
         if (dynamicMultilineDocContext.multilineTrigger && !isFirstCompletionTimeoutElapsed) {
             const completion = extractCompletion(rawCompletion, {
-                document: providerOptions.document,
+                document: generateOptions.document,
                 docContext: dynamicMultilineDocContext,
             })
 
@@ -184,7 +184,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
                 })
 
                 const completedCompletion = processCompletion(completion, {
-                    document: providerOptions.document,
+                    document: generateOptions.document,
                     position: dynamicMultilineDocContext.position,
                     docContext: dynamicMultilineDocContext,
                     metadata,
@@ -204,7 +204,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
              * Process this completion as a singleline completion: cut-off after the first new line char.
              */
             const completion = extractCompletion(rawCompletion, {
-                document: providerOptions.document,
+                document: generateOptions.document,
                 docContext,
             })
 

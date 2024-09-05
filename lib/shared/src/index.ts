@@ -275,6 +275,7 @@ export {
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'
 export * from './auth/tokens'
+export * from './auth/referral'
 export * from './chat/sse-iterator'
 export {
     parseMentionQuery,
@@ -311,7 +312,6 @@ export {
     REMOTE_REPOSITORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_DIRECTORY_PROVIDER_URI,
-    CURRENT_REPOSITORY_DIRECTORY_PROVIDER_URI,
     WEB_PROVIDER_URI,
     GIT_OPENCTX_PROVIDER_URI,
 } from './context/openctx/api'
