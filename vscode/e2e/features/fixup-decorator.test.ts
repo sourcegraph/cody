@@ -1,7 +1,6 @@
 import { type TestDetails, expect } from '@playwright/test'
 import { Annotations } from '../utils/test-info'
 import { fixture as test, uix } from '../utils/vscody'
-import { activeEditor, idx } from '../utils/vscody/uix/vscode'
 
 const DECORATION_SELECTOR =
     'div.view-overlays[role="presentation"] div[class*="TextEditorDecorationType"]'
@@ -19,14 +18,14 @@ test.describe('fixup decorator', testDetails, () => {
         workspaceDir,
         page,
         vscodeUI,
-        executeCommand,
         mitmProxy,
     }) => {
+        const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
         await test.step('setup', async () => {
             await uix.cody.preAuthenticate({ workspaceDir })
-            await uix.vscode.startSession({ page, vscodeUI, executeCommand, workspaceDir })
+            await session.start()
             await uix.cody.waitForStartup({ page })
-            await uix.vscode.openFile({ workspaceFile: 'index.html' }, { executeCommand })
+            await session.editor.openFile({ workspaceFile: 'index.html' })
         })
 
         const decorations = page.locator(DECORATION_SELECTOR)
@@ -34,16 +33,15 @@ test.describe('fixup decorator', testDetails, () => {
         await expect(decorations).toHaveCount(0)
 
         await test.step('trigger decorations with edit', async () => {
-            await uix.vscode.select(
-                { selection: { start: { line: idx(7) }, end: { line: idx(7), character: idx(9999) } } },
-                { executeCommand }
-            )
-            await page.getByRole('button', { name: 'Cody Commands' }).click()
-            await page.getByRole('option', { name: 'Edit code' }).first().click()
-            await page
-                .locator('input[aria-describedby="quickInput_message"]')
-                .fill('Replace hello with goodbeye', { force: true })
-            await page.keyboard.press('Enter')
+            await session.editor.select({
+                selection: { start: { line: 7 }, end: { line: 7, col: 9999 } },
+            })
+            // we need to skip the command result here because the edit command doesn't immediately resolve
+            await session.runCommand({ command: 'cody.command.edit-code', skipResult: true })
+            await session.QuickPick.input.fill('Replace hello with goodbeye', { force: true })
+            const submit = session.QuickPick.items({ hasText: /Submit/ })
+            await expect(submit).toBeVisible()
+            await submit.click()
         })
 
         await expect(decorations.first()).toBeVisible()
@@ -53,8 +51,8 @@ test.describe('fixup decorator', testDetails, () => {
         expect(decorationClassName).toBeDefined()
 
         await test.step('modify and navigate text to invalidate decorations', async () => {
-            await activeEditor({ page }).pressSequentially('Hello World')
-            await activeEditor({ page }).press('ArrowRight')
+            await session.editor.active.pressSequentially('Hello World')
+            await session.editor.active.press('ArrowRight')
         })
 
         //TODO(rnauta): I don't think this tests what was expected and it's also flaky. Follow up with @dominiccooney what the intent was.
