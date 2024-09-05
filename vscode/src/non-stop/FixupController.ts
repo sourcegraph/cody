@@ -54,16 +54,7 @@ export class FixupController
     private readonly editObserver: FixupDocumentEditObserver
     private readonly decorator = new FixupDecorator()
     private readonly controlApplicator
-    private readonly persistenceTracker = new PersistenceTracker(vscode.workspace, {
-        onPresent: ({ metadata, ...event }) => {
-            const safeMetadata = splitSafeMetadata({ ...event, ...metadata })
-            telemetryRecorder.recordEvent('cody.fixup.persistence', 'present', safeMetadata)
-        },
-        onRemoved: ({ metadata, ...event }) => {
-            const safeMetadata = splitSafeMetadata({ ...event, ...metadata })
-            telemetryRecorder.recordEvent('cody.fixup.persistence', 'present', safeMetadata)
-        },
-    })
+    private readonly persistenceTracker = new PersistenceTracker(vscode.workspace)
     /**
      * The event that fires when the user clicks the undo button on a code lens.
      * Used to help track the Edit rejection rate.
@@ -651,6 +642,16 @@ export class FixupController
             insertRange: trackedRange,
             document,
             metadata: legacyMetadata,
+            logger: {
+                onPresent: ({ metadata, ...event }) => {
+                    const safeMetadata = splitSafeMetadata({ ...event, ...metadata })
+                    telemetryRecorder.recordEvent('cody.fixup.persistence', 'present', safeMetadata)
+                },
+                onRemoved: ({ metadata, ...event }) => {
+                    const safeMetadata = splitSafeMetadata({ ...event, ...metadata })
+                    telemetryRecorder.recordEvent('cody.fixup.persistence', 'present', safeMetadata)
+                },
+            },
         })
 
         const logAcceptance = (acceptance: 'rejected' | 'accepted') => {
