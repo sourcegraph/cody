@@ -69,22 +69,15 @@ export class AgentFixupControls extends FixupCodeLenses {
     private async updateCodeLenses(uri: vscode.Uri, codeLenses: vscode.CodeLens[]): Promise<void> {
         // VS Code supports icons in code lenses, but we cannot render these through agent.
         // We need to strip any icons from the title and provide those seperately, so the client can decide how to render them.
-        const agentLenses = codeLenses.map(lens => {
-            if (!lens.command) {
-                return {
-                    ...lens,
-                    command: undefined,
-                }
-            }
-
-            return {
-                ...lens,
-                command: {
-                    ...lens.command,
-                    title: this.splitIconsFromTitle(lens.command.title),
-                },
-            }
-        })
+        const agentLenses = codeLenses.map(lens => ({
+            ...lens,
+            command: lens.command
+                ? {
+                      ...lens.command,
+                      title: this.splitIconsFromTitle(lens.command.title),
+                  }
+                : undefined,
+        }))
 
         this.notify('codeLenses/display', {
             uri: uri.toString(),

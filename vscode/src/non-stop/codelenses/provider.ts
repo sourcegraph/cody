@@ -157,9 +157,9 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
             this.removeLensesFor(task)
             return
         }
-        const value = getLensesForTask(task)
-        this.taskLenses.set(task, value)
-        this.notifyCodeLensesChanged(task.document.uri, value)
+        const lenses = getLensesForTask(task)
+        this.taskLenses.set(task, lenses)
+        this.notifyCodeLensesChanged(task.document.uri, lenses)
     }
 
     public didDeleteTask(task: FixupTask): void {
