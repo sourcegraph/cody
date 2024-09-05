@@ -1,10 +1,9 @@
 import {
     type AutocompleteContextSnippet,
-    type CodeCompletionsClient,
     type CodeCompletionsParams,
+    type DocumentContext,
     PromptString,
     ps,
-    tokensToChars,
 } from '@sourcegraph/cody-shared'
 
 import {
@@ -22,17 +21,12 @@ import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
 } from './fetch-and-process-completions'
-import {
-    MAX_RESPONSE_TOKENS,
-    getCompletionParams,
-    getLineNumberDependentCompletionParams,
-} from './get-completion-params'
+import { getCompletionParams, getLineNumberDependentCompletionParams } from './get-completion-params'
 import {
     type CompletionProviderTracer,
+    type GenerateCompletionsOptions,
     Provider,
-    type ProviderConfig,
-    type ProviderOptions,
-    standardContextSizeHints,
+    type ProviderFactoryParams,
 } from './provider'
 
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
@@ -40,37 +34,19 @@ const lineNumberDependentCompletionParams = getLineNumberDependentCompletionPara
     multilineStopSequences: [CLOSING_CODE_TAG.toString(), MULTILINE_STOP_SEQUENCE],
 })
 
-interface UnstableOpenAIOptions {
-    maxContextTokens?: number
-    client: Pick<CodeCompletionsClient, 'complete'>
-}
-
-const PROVIDER_IDENTIFIER = 'unstable-openai'
-
 class UnstableOpenAIProvider extends Provider {
-    private client: Pick<CodeCompletionsClient, 'complete'>
-    private promptChars: number
     private instructions =
         ps`You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags.  You only respond with code that works and fits seamlessly with surrounding code. Do not include anything else beyond the code.`
 
-    constructor(
-        options: ProviderOptions,
-        { maxContextTokens, client }: Required<UnstableOpenAIOptions>
-    ) {
-        super(options)
-        this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
-        this.client = client
-    }
-
-    public emptyPromptLength(): number {
-        const promptNoSnippets = [this.instructions, this.createPromptPrefix()].join('\n\n')
+    public emptyPromptLength(options: GenerateCompletionsOptions): number {
+        const promptNoSnippets = [this.instructions, this.createPromptPrefix(options)].join('\n\n')
         return promptNoSnippets.length - 10 // extra 10 chars of buffer cuz who knows
     }
 
-    private createPromptPrefix(): PromptString {
+    private createPromptPrefix(options: GenerateCompletionsOptions): PromptString {
         const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
-            this.options.docContext,
-            this.options.document.uri
+            options.docContext,
+            options.document.uri
         )
 
         const prefixLines = prefix.toString().split('\n')
@@ -88,7 +64,7 @@ class UnstableOpenAIProvider extends Provider {
         const infillPrefix = head.raw
         // code after the cursor
         const infillSuffix = suffix
-        const relativeFilePath = PromptString.fromDisplayPath(this.options.document.uri)
+        const relativeFilePath = PromptString.fromDisplayPath(options.document.uri)
 
         return ps`Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:\n\`\`\`\n${
             infillPrefix ? infillPrefix : ''
@@ -99,12 +75,14 @@ ${OPENING_CODE_TAG}${infillBlock}`
 
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
-    protected createPrompt(snippets: AutocompleteContextSnippet[]): PromptString {
-        const prefix = this.createPromptPrefix()
+    protected createPrompt(
+        options: GenerateCompletionsOptions,
+        snippets: AutocompleteContextSnippet[]
+    ): PromptString {
+        const prefix = this.createPromptPrefix(options)
 
         const referenceSnippetMessages: PromptString[] = []
-
-        let remainingChars = this.promptChars - this.emptyPromptLength()
+        let remainingChars = this.promptChars - this.emptyPromptLength(options)
 
         for (const snippet of snippets) {
             const contextPrompts = PromptString.fromAutocompleteContextSnippet(snippet)
@@ -131,25 +109,27 @@ ${OPENING_CODE_TAG}${infillBlock}`
     }
 
     public generateCompletions(
+        options: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
         const partialRequestParams = getCompletionParams({
-            providerOptions: this.options,
+            providerOptions: options,
             lineNumberDependentCompletionParams,
         })
 
+        const { docContext } = options
         const requestParams: CodeCompletionsParams = {
             ...partialRequestParams,
-            messages: [{ speaker: 'human', text: this.createPrompt(snippets) }],
+            messages: [{ speaker: 'human', text: this.createPrompt(options, snippets) }],
             topP: 0.5,
         }
 
         tracer?.params(requestParams)
 
         const completionsGenerators = Array.from({
-            length: this.options.n,
+            length: options.numberOfCompletionsToGenerate,
         }).map(() => {
             const abortController = forkSignal(abortSignal)
 
@@ -162,55 +142,55 @@ ${OPENING_CODE_TAG}${infillBlock}`
             return fetchAndProcessDynamicMultilineCompletions({
                 completionResponseGenerator,
                 abortController,
-                providerSpecificPostProcess: this.postProcess,
-                providerOptions: this.options,
+                providerSpecificPostProcess: this.postProcess(docContext),
+                generateOptions: options,
             })
         })
 
         return zipGenerators(completionsGenerators)
     }
 
-    private postProcess = (rawResponse: string): string => {
-        let completion = extractFromCodeBlock(rawResponse)
+    private postProcess =
+        (docContext: DocumentContext) =>
+        (rawResponse: string): string => {
+            let completion = extractFromCodeBlock(rawResponse)
 
-        const trimmedPrefixContainNewline = this.options.docContext.prefix
-            .slice(this.options.docContext.prefix.trimEnd().length)
-            .includes('\n')
-        if (trimmedPrefixContainNewline) {
-            // The prefix already contains a `\n` that LLM was not aware of, so we remove any
-            // leading `\n` followed by whitespace that might be add.
-            completion = completion.replace(/^\s*\n\s*/, '')
-        } else {
-            completion = trimLeadingWhitespaceUntilNewline(completion)
+            const trimmedPrefixContainNewline = docContext.prefix
+                .slice(docContext.prefix.trimEnd().length)
+                .includes('\n')
+            if (trimmedPrefixContainNewline) {
+                // The prefix already contains a `\n` that LLM was not aware of, so we remove any
+                // leading `\n` followed by whitespace that might be add.
+                completion = completion.replace(/^\s*\n\s*/, '')
+            } else {
+                completion = trimLeadingWhitespaceUntilNewline(completion)
+            }
+
+            // Remove bad symbols from the start of the completion string.
+            completion = fixBadCompletionStart(completion)
+
+            return completion
         }
-
-        // Remove bad symbols from the start of the completion string.
-        completion = fixBadCompletionStart(completion)
-
-        return completion
-    }
 }
 
-export function createProviderConfig({
-    model,
-    maxContextTokens = 2048,
-    ...otherOptions
-}: UnstableOpenAIOptions & { model?: string }): ProviderConfig {
-    return {
-        create(options: ProviderOptions) {
-            return new UnstableOpenAIProvider(
-                {
-                    ...options,
-                    id: PROVIDER_IDENTIFIER,
-                },
-                {
-                    maxContextTokens,
-                    ...otherOptions,
-                }
-            )
-        },
-        contextSizeHints: standardContextSizeHints(maxContextTokens),
-        identifier: PROVIDER_IDENTIFIER,
-        model: model ?? 'gpt-35-turbo',
+export function createProvider(params: ProviderFactoryParams): Provider {
+    const { legacyModel, provider, anonymousUserID } = params
+
+    let clientModel = legacyModel
+
+    if (provider === 'azure-openai' && legacyModel) {
+        // Model name for azure openai provider is a deployment name. It shouldn't appear in logs.
+        clientModel = ''
     }
+
+    if (provider === 'unstable-openai') {
+        // Model is ignored for `unstable-openai` provider
+        clientModel = undefined
+    }
+
+    return new UnstableOpenAIProvider({
+        id: 'unstable-openai',
+        legacyModel: clientModel ?? 'gpt-35-turbo',
+        anonymousUserID,
+    })
 }

@@ -1,5 +1,5 @@
 import dedent from 'dedent'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import type { CompletionParameters } from '@sourcegraph/cody-shared'
 
@@ -11,7 +11,7 @@ import { completion } from '../test-helpers'
 import { type V, getInlineCompletions, getInlineCompletionsFullResponse, params } from './helpers'
 
 describe('[getInlineCompletions] common', () => {
-    test('single-line mode only completes one line', async () => {
+    it('single-line mode only completes one line', async () => {
         const result = await getInlineCompletions(
             params(
                 `
@@ -35,7 +35,7 @@ describe('[getInlineCompletions] common', () => {
         expect(result!.source).toEqual(InlineCompletionsResultSource.Network)
     })
 
-    test('with selectedCompletionInfo', async () =>
+    it('with selectedCompletionInfo', async () =>
         expect(
             await getInlineCompletions(
                 params('array.so█', [completion`rt()`], {
@@ -47,7 +47,7 @@ describe('[getInlineCompletions] common', () => {
             source: InlineCompletionsResultSource.Network,
         }))
 
-    test('emits a completion even when the abort signal was triggered after a network fetch ', async () => {
+    it('emits a completion even when the abort signal was triggered after a network fetch ', async () => {
         const abortController = new AbortController()
         expect(
             await getInlineCompletions({
@@ -62,7 +62,7 @@ describe('[getInlineCompletions] common', () => {
         })
     })
 
-    test('trims whitespace in the prefix but keeps one \n', async () => {
+    it('trims whitespace in the prefix but keeps one \n', async () => {
         const requests: CompletionParameters[] = []
         await getInlineCompletions(
             params(
@@ -85,7 +85,7 @@ describe('[getInlineCompletions] common', () => {
         expect(messages.at(-1)!.text?.toString()).toBe('<CODE5711>class Range {')
     })
 
-    test('uses a more complex prompt for larger files', async () => {
+    it('uses a more complex prompt for larger files', async () => {
         const requests: CompletionParameters[] = []
         await getInlineCompletions(
             params(
@@ -128,7 +128,7 @@ describe('[getInlineCompletions] common', () => {
         expect(requests).toBeSingleLine()
     })
 
-    test('synthesizes a completion from a prior request', async () => {
+    it('synthesizes a completion from a prior request', async () => {
         // Reuse the same request manager for both requests in this test
         const requestManager = new RequestManager()
 

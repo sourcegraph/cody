@@ -1,7 +1,6 @@
 import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
-import type { AnthropicOptions } from './anthropic'
 import {
     DEEPSEEK_CODER_V2_LITE_BASE,
     DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE,
@@ -9,12 +8,11 @@ import {
     FIREWORKS_DEEPSEEK_7B_LANG_ALL,
     FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0,
     FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1,
-    type FireworksOptions,
 } from './fireworks'
 
 interface ProviderConfigFromFeatureFlags {
     provider: string
-    model?: FireworksOptions['model'] | AnthropicOptions['model']
+    model?: string
 }
 
 export async function getExperimentModel(

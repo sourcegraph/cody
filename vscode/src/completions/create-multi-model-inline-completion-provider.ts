@@ -6,7 +6,7 @@ import { authProvider } from '../services/AuthProvider'
 import { completionProviderConfig } from './completion-provider-config'
 import type { InlineCompletionItemProviderArgs } from './create-inline-completion-item-provider'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
-import { createProviderConfigHelper } from './providers/create-provider'
+import { createProviderHelper } from './providers/create-provider'
 
 export interface MultiModelCompletionsResults {
     provider: string
@@ -72,7 +72,6 @@ async function triggerMultiModelAutocompletionsForComparison(
 
 export async function createInlineCompletionItemFromMultipleProviders({
     config,
-    client,
     statusBar,
     createBfgRetriever,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
@@ -134,18 +133,18 @@ export async function createInlineCompletionItemFromMultipleProviders({
 
         // Use the experimental config to get the context provider
         completionProviderConfig.setConfig(newConfig)
-        const providerConfig = await createProviderConfigHelper({
-            client,
+        const provider = await createProviderHelper({
             authStatus,
-            modelId: currentProviderConfig.model,
+            legacyModel: currentProviderConfig.model,
             provider: currentProviderConfig.provider,
             config: newConfig,
         })
-        if (providerConfig) {
-            const authStatus = authProvider.instance!.statusAuthed
+
+        if (provider) {
             const completionsProvider = new InlineCompletionItemProvider({
                 authStatus,
-                providerConfig,
+                provider,
+                config: newConfig,
                 firstCompletionTimeout: config.autocompleteFirstCompletionTimeout,
                 statusBar,
                 completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,

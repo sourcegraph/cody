@@ -2,15 +2,10 @@
 // to non-experimental version
 
 import {
-    type AuthenticatedAuthStatus,
     type AutocompleteContextSnippet,
-    type ClientConfigurationWithAccessToken,
-    type CodeCompletionsClient,
     type CodeCompletionsParams,
-    type CompletionResponseGenerator,
     PromptString,
     ps,
-    tokensToChars,
 } from '@sourcegraph/cody-shared'
 
 import type * as vscode from 'vscode'
@@ -27,28 +22,13 @@ import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
 } from './fetch-and-process-completions'
-import {
-    MAX_RESPONSE_TOKENS,
-    getCompletionParams,
-    getLineNumberDependentCompletionParams,
-} from './get-completion-params'
+import { getCompletionParams, getLineNumberDependentCompletionParams } from './get-completion-params'
 import {
     type CompletionProviderTracer,
+    type GenerateCompletionsOptions,
     Provider,
-    type ProviderConfig,
-    type ProviderOptions,
-    standardContextSizeHints,
+    type ProviderFactoryParams,
 } from './provider'
-
-interface OpenAICompatibleOptions {
-    model: OpenAICompatibleModel
-    maxContextTokens?: number
-    client: CodeCompletionsClient
-    config: Pick<ClientConfigurationWithAccessToken, 'accessToken'>
-    authStatus: Pick<AuthenticatedAuthStatus, 'userCanUpgrade' | 'endpoint'>
-}
-
-const PROVIDER_IDENTIFIER = 'experimental-openaicompatible'
 
 const EOT_STARCHAT = '<|end|>'
 const EOT_STARCODER = '<|endoftext|>'
@@ -101,35 +81,24 @@ const lineNumberDependentCompletionParams = getLineNumberDependentCompletionPara
     multilineStopSequences: ['\n\n', '\n\r\n'],
 })
 
-class OpenAICompatibleProvider extends Provider {
-    private model: OpenAICompatibleModel
-    private promptChars: number
-    private client: CodeCompletionsClient
-
-    constructor(
-        options: ProviderOptions,
-        { model, maxContextTokens, client }: Required<OpenAICompatibleOptions>
-    ) {
-        super(options)
-        this.model = model
-        this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
-        this.client = client
-    }
-
-    private createPrompt(snippets: AutocompleteContextSnippet[]): PromptString {
+class ExpOpenAICompatibleProvider extends Provider {
+    private createPrompt(
+        options: GenerateCompletionsOptions,
+        snippets: AutocompleteContextSnippet[]
+    ): PromptString {
         const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
-            this.options.docContext,
-            this.options.document.uri
+            options.docContext,
+            options.document.uri
         )
 
         const intro: PromptString[] = []
         let prompt = ps``
 
-        const languageConfig = getLanguageConfig(this.options.document.languageId)
+        const languageConfig = getLanguageConfig(options.document.languageId)
 
         // In StarCoder we have a special token to announce the path of the file
-        if (!isStarCoderFamily(this.model)) {
-            intro.push(ps`Path: ${PromptString.fromDisplayPath(this.options.document.uri)}`)
+        if (!isStarCoderFamily(this.legacyModel)) {
+            intro.push(ps`Path: ${PromptString.fromDisplayPath(options.document.uri)}`)
         }
 
         for (let snippetsToInclude = 0; snippetsToInclude < snippets.length + 1; snippetsToInclude++) {
@@ -161,7 +130,8 @@ class OpenAICompatibleProvider extends Provider {
             const suffixAfterFirstNewline = getSuffixAfterFirstNewline(suffix)
 
             const nextPrompt = this.createInfillingPrompt(
-                PromptString.fromDisplayPath(this.options.document.uri),
+                options,
+                PromptString.fromDisplayPath(options.document.uri),
                 introString,
                 prefix,
                 suffixAfterFirstNewline
@@ -178,66 +148,69 @@ class OpenAICompatibleProvider extends Provider {
     }
 
     public generateCompletions(
+        options: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
         const partialRequestParams = getCompletionParams({
-            providerOptions: this.options,
+            providerOptions: options,
             lineNumberDependentCompletionParams,
         })
 
         const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
-            this.options.docContext,
-            this.options.document.uri
+            options.docContext,
+            options.document.uri
         )
 
         // starchat: Only use infill if the suffix is not empty
-        const useInfill = this.options.docContext.suffix.trim().length > 0
+        const useInfill = options.docContext.suffix.trim().length > 0
         const promptProps: Prompt = {
             snippets: [],
-            uri: this.options.document.uri,
+            uri: options.document.uri,
             prefix,
             suffix,
-            languageId: this.options.document.languageId,
+            languageId: options.document.languageId,
         }
 
-        const prompt = this.model.startsWith('starchat')
-            ? promptString(promptProps, useInfill, this.model)
-            : this.createPrompt(snippets)
+        const prompt = this.legacyModel.startsWith('starchat')
+            ? promptString(promptProps, useInfill, this.legacyModel)
+            : this.createPrompt(options, snippets)
 
-        const { multiline } = this.options
+        const { multiline } = options
         const requestParams: CodeCompletionsParams = {
             ...partialRequestParams,
             messages: [{ speaker: 'human', text: prompt }],
             temperature: 0.2,
             topK: 0,
             model:
-                this.model === 'starcoder-hybrid'
+                this.legacyModel === 'starcoder-hybrid'
                     ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
-                    : this.model.startsWith('starchat')
+                    : this.legacyModel.startsWith('starchat')
                       ? '' // starchat is not a supported backend model yet, use the default server-chosen model.
-                      : MODEL_MAP[this.model],
+                      : MODEL_MAP[this.legacyModel as keyof typeof MODEL_MAP],
         }
 
         tracer?.params(requestParams)
 
-        const completionsGenerators = Array.from({ length: this.options.n }).map(() => {
-            const abortController = forkSignal(abortSignal)
+        const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
+            () => {
+                const abortController = forkSignal(abortSignal)
 
-            const completionResponseGenerator = generatorWithTimeout(
-                this.createDefaultClient(requestParams, abortController),
-                requestParams.timeoutMs,
-                abortController
-            )
+                const completionResponseGenerator = generatorWithTimeout(
+                    this.client.complete(requestParams, abortController),
+                    requestParams.timeoutMs,
+                    abortController
+                )
 
-            return fetchAndProcessDynamicMultilineCompletions({
-                completionResponseGenerator,
-                abortController,
-                providerSpecificPostProcess: this.postProcess,
-                providerOptions: this.options,
-            })
-        })
+                return fetchAndProcessDynamicMultilineCompletions({
+                    completionResponseGenerator,
+                    abortController,
+                    providerSpecificPostProcess: this.postProcess,
+                    generateOptions: options,
+                })
+            }
+        )
 
         /**
          * This implementation waits for all generators to yield values
@@ -258,21 +231,22 @@ class OpenAICompatibleProvider extends Provider {
     }
 
     private createInfillingPrompt(
+        options: GenerateCompletionsOptions,
         filename: PromptString,
         intro: PromptString,
         prefix: PromptString,
         suffix: PromptString
     ): PromptString {
-        if (isStarCoderFamily(this.model) || isStarChatFamily(this.model)) {
+        if (isStarCoderFamily(this.legacyModel) || isStarChatFamily(this.legacyModel)) {
             // c.f. https://huggingface.co/bigcode/starcoder#fill-in-the-middle
             // c.f. https://arxiv.org/pdf/2305.06161.pdf
             return ps`<filename>${filename}<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
         }
-        if (isLlamaCode(this.model)) {
+        if (isLlamaCode(this.legacyModel)) {
             // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
             return ps`<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
         }
-        if (this.model === 'mistral-7b-instruct-4k') {
+        if (this.legacyModel === 'mistral-7b-instruct-4k') {
             // This part is copied from the anthropic prompt but fitted into the Mistral instruction format
             const { head, tail } = getHeadAndTail(prefix)
             const infillBlock = tail.trimmed.toString().endsWith('{\n')
@@ -280,7 +254,7 @@ class OpenAICompatibleProvider extends Provider {
                 : tail.trimmed
             const infillPrefix = head.raw
             return ps`<s>[INST] Below is the code from file path ${PromptString.fromDisplayPath(
-                this.options.document.uri
+                options.document.uri
             )}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:
 \`\`\`
 ${intro}${infillPrefix ? infillPrefix : ''}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${suffix}
@@ -288,69 +262,21 @@ ${intro}${infillPrefix ? infillPrefix : ''}${OPENING_CODE_TAG}${CLOSING_CODE_TAG
  ${OPENING_CODE_TAG}${infillBlock}`
         }
 
-        console.error('Could not generate infilling prompt for', this.model)
+        console.error('Could not generate infilling prompt for', this.legacyModel)
         return ps`${intro}${prefix}`
     }
 
     private postProcess = (content: string): string => {
-        if (isStarCoderFamily(this.model)) {
+        if (isStarCoderFamily(this.legacyModel)) {
             return content.replace(EOT_STARCODER, '')
         }
-        if (isStarChatFamily(this.model)) {
+        if (isStarChatFamily(this.legacyModel)) {
             return content.replace(EOT_STARCHAT, '')
         }
-        if (isLlamaCode(this.model)) {
+        if (isLlamaCode(this.legacyModel)) {
             return content.replace(EOT_LLAMA_CODE, '')
         }
         return content
-    }
-
-    private createDefaultClient(
-        requestParams: CodeCompletionsParams,
-        abortController: AbortController
-    ): CompletionResponseGenerator {
-        return this.client.complete(requestParams, abortController)
-    }
-}
-
-export function createProviderConfig({
-    model,
-    ...otherOptions
-}: Omit<OpenAICompatibleOptions, 'model' | 'maxContextTokens'> & {
-    model: string | null
-}): ProviderConfig {
-    const clientModel =
-        model === null || model === ''
-            ? 'starcoder-hybrid'
-            : model === 'starcoder-hybrid'
-              ? 'starcoder-hybrid'
-              : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
-                ? (model as keyof typeof MODEL_MAP)
-                : null
-
-    if (clientModel === null) {
-        throw new Error(`Unknown model: \`${model}\``)
-    }
-
-    const maxContextTokens = getMaxContextTokens(clientModel)
-
-    return {
-        create(options: ProviderOptions) {
-            return new OpenAICompatibleProvider(
-                {
-                    ...options,
-                    id: PROVIDER_IDENTIFIER,
-                },
-                {
-                    model: clientModel,
-                    maxContextTokens,
-                    ...otherOptions,
-                }
-            )
-        },
-        contextSizeHints: standardContextSizeHints(maxContextTokens),
-        identifier: PROVIDER_IDENTIFIER,
-        model: clientModel,
     }
 }
 
@@ -414,4 +340,29 @@ function promptString(prompt: Prompt, infill: boolean, model: string): PromptStr
     }
 
     return context.concat(currentFileNameComment, prompt.prefix)
+}
+
+function getClientModel(model?: string): OpenAICompatibleModel {
+    if (model === undefined || model === '') {
+        return 'starcoder-hybrid' as OpenAICompatibleModel
+    }
+
+    if (model === 'starcoder-hybrid' || Object.prototype.hasOwnProperty.call(MODEL_MAP, model)) {
+        return model as OpenAICompatibleModel
+    }
+
+    throw new Error(`Unknown model: \`${model}\``)
+}
+
+export function createProvider(params: ProviderFactoryParams): Provider {
+    const { legacyModel, anonymousUserID } = params
+
+    const clientModel = getClientModel(legacyModel)
+
+    return new ExpOpenAICompatibleProvider({
+        id: 'experimental-openaicompatible',
+        legacyModel: clientModel,
+        maxContextTokens: getMaxContextTokens(clientModel),
+        anonymousUserID,
+    })
 }

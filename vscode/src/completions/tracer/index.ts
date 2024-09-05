@@ -4,7 +4,11 @@ import type { CompletionParameters } from '@sourcegraph/cody-shared'
 
 import type { GetContextResult } from '../context/context-mixer'
 import type { InlineCompletionsResult, TriggerKind } from '../get-inline-completions'
-import type { CompletionProviderTracerResultData, Provider } from '../providers/provider'
+import type {
+    CompletionProviderTracerResultData,
+    GenerateCompletionsOptions,
+    Provider,
+} from '../providers/provider'
 
 /**
  * Traces invocations of {@link InlineCompletionItemProvider.provideInlineCompletionItems}.
@@ -30,7 +34,7 @@ export interface ProvideInlineCompletionsItemTraceData {
         triggerKind: TriggerKind
         selectedCompletionInfo?: vscode.SelectedCompletionInfo
     }
-    completers?: (Provider['options'] & { completionIntent?: string })[]
+    completers?: (Provider['options'] & GenerateCompletionsOptions & { completionIntent?: string })[]
 
     /**
      * @todo Make this support recording more than 1 call to a completion provider.

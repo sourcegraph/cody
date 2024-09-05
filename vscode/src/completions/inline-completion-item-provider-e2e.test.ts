@@ -11,15 +11,14 @@ import { type MockInstance, beforeAll, beforeEach, describe, expect, it, vi } fr
 import type * as vscode from 'vscode'
 import { localStorage } from '../services/LocalStorageProvider'
 import { DEFAULT_VSCODE_SETTINGS, vsCodeMocks } from '../testutils/mocks'
-import * as CompletionProvider from './get-completion-provider'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { TriggerKind } from './get-inline-completions'
 import { initCompletionProviderConfig, params } from './get-inline-completions-tests/helpers'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import * as CompletionLogger from './logger'
-import { createProviderConfig } from './providers/anthropic'
+import { createProvider } from './providers/anthropic'
 import type { FetchCompletionResult } from './providers/fetch-and-process-completions'
-import { Provider } from './providers/provider'
+import { type GenerateCompletionsOptions, Provider, type ProviderOptions } from './providers/provider'
 import type { RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
@@ -80,17 +79,23 @@ class MockRequestProvider extends Provider {
     public didAbort = false
     protected next: () => void = () => {}
     protected responseQueue: FetchCompletionResult[][] = []
+    private generateOptions: GenerateCompletionsOptions
+
+    constructor(options: ProviderOptions, testOptions: GenerateCompletionsOptions) {
+        super(options)
+        this.generateOptions = testOptions
+    }
 
     public yield(completions: string[] | InlineCompletionItemWithAnalytics[], keepAlive = false) {
         const result = completions.map(content =>
             typeof content === 'string'
                 ? {
                       completion: { insertText: content, stopReason: 'test' },
-                      docContext: this.options.docContext,
+                      docContext: this.generateOptions.docContext,
                   }
                 : {
                       completion: content,
-                      docContext: this.options.docContext,
+                      docContext: this.generateOptions.docContext,
                   }
         )
 
@@ -100,6 +105,7 @@ class MockRequestProvider extends Provider {
     }
 
     public async *generateCompletions(
+        options: GenerateCompletionsOptions,
         abortSignal: AbortSignal
     ): AsyncGenerator<FetchCompletionResult[]> {
         abortSignal.addEventListener('abort', () => {
@@ -128,7 +134,10 @@ function getInlineCompletionProvider(
     return new InlineCompletionItemProvider({
         completeSuggestWidgetSelection: true,
         statusBar: { addError: () => {}, hasError: () => {}, startLoading: () => {} } as any,
-        providerConfig: createProviderConfig({ client: null as any }),
+        provider: createProvider({
+            authStatus: DUMMY_AUTH_STATUS,
+        } as any),
+        config: {} as any,
         authStatus: DUMMY_AUTH_STATUS,
         firstCompletionTimeout:
             args?.firstCompletionTimeout ?? DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
@@ -137,17 +146,27 @@ function getInlineCompletionProvider(
 }
 
 function createNetworkProvider(params: RequestParams): MockRequestProvider {
-    return new MockRequestProvider({
-        id: 'mock-provider',
+    const providerOptions: GenerateCompletionsOptions = {
         docContext: params.docContext,
         document: params.document,
         position: params.position,
         multiline: false,
-        n: 1,
+        numberOfCompletionsToGenerate: 1,
         firstCompletionTimeout: 1500,
         triggerKind: TriggerKind.Automatic,
         completionLogId: 'mock-log-id' as CompletionLogger.CompletionLogID,
-    })
+        authStatus: DUMMY_AUTH_STATUS,
+        config: {} as any,
+    }
+
+    return new MockRequestProvider(
+        {
+            id: 'mock-provider',
+            anonymousUserID: 'anonymousUserID',
+            legacyModel: 'test-model',
+        },
+        providerOptions
+    )
 }
 
 function createCompletion(textWithCursor: string, provider: InlineCompletionItemProvider) {
@@ -185,8 +204,6 @@ function createCompletion(textWithCursor: string, provider: InlineCompletionItem
 // https://github.com/sourcegraph/cody/pull/4984
 describe.skip('InlineCompletionItemProvider E2E', () => {
     describe('smart throttle in-flight requests', () => {
-        let getCompletionProviderSpy: MockInstance
-
         beforeAll(async () => {
             await initCompletionProviderConfig({})
             localStorage.setStorage({
@@ -197,7 +214,6 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
 
         beforeEach(() => {
             vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValue(false)
-            getCompletionProviderSpy = vi.spyOn(CompletionProvider, 'getCompletionProvider')
         })
 
         /**
@@ -214,16 +230,8 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
             const logSpy: MockInstance = vi.spyOn(telemetryRecorder, 'recordEvent')
             const provider = getInlineCompletionProvider()
 
-            const { mockRequestProvider: provider1, resolve: resolve1 } = createCompletion(
-                'console.█',
-                provider
-            )
-            const { mockRequestProvider: provider2, resolve: resolve2 } = createCompletion(
-                'console.log(█',
-                provider
-            )
-
-            getCompletionProviderSpy.mockReturnValueOnce(provider1).mockReturnValueOnce(provider2)
+            const { resolve: resolve1 } = createCompletion('console.█', provider)
+            const { resolve: resolve2 } = createCompletion('console.log(█', provider)
 
             const [result1, result2] = await Promise.all([
                 resolve1("error('hello')", { duration: 100, delay: 0 }),
@@ -274,16 +282,8 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
             const logSpy: MockInstance = vi.spyOn(telemetryRecorder, 'recordEvent')
             const provider = getInlineCompletionProvider()
 
-            const { mockRequestProvider: provider1, resolve: resolve1 } = createCompletion(
-                'console.█',
-                provider
-            )
-            const { mockRequestProvider: provider2, resolve: resolve2 } = createCompletion(
-                'console.log(█',
-                provider
-            )
-
-            getCompletionProviderSpy.mockReturnValueOnce(provider1).mockReturnValueOnce(provider2)
+            const { resolve: resolve1 } = createCompletion('console.█', provider)
+            const { resolve: resolve2 } = createCompletion('console.log(█', provider)
 
             const [result1, result2] = await Promise.all([
                 resolve1("log('hello')", { duration: 100, delay: 0 }),
@@ -334,23 +334,9 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
             const logSpy: MockInstance = vi.spyOn(telemetryRecorder, 'recordEvent')
             const provider = getInlineCompletionProvider()
 
-            const { mockRequestProvider: provider1, resolve: resolve1 } = createCompletion(
-                'console.█',
-                provider
-            )
-            const { mockRequestProvider: provider2, resolve: resolve2 } = createCompletion(
-                'console.log(█',
-                provider
-            )
-            const { mockRequestProvider: provider3, resolve: resolve3 } = createCompletion(
-                "console.log('h█",
-                provider
-            )
-
-            getCompletionProviderSpy
-                .mockReturnValueOnce(provider1)
-                .mockReturnValueOnce(provider2)
-                .mockReturnValueOnce(provider3)
+            const { resolve: resolve1 } = createCompletion('console.█', provider)
+            const { resolve: resolve2 } = createCompletion('console.log(█', provider)
+            const { resolve: resolve3 } = createCompletion("console.log('h█", provider)
 
             const [result1, result2, result3] = await Promise.all([
                 // The first completion will be triggered immediately, but takes a while to resolve

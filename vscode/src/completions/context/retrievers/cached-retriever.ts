@@ -235,10 +235,10 @@ export abstract class CachedRetriever implements ContextRetriever {
                     document,
                     position,
                     maxPrefixLength:
-                        InlineCompletionItemProviderConfigSingleton.configuration.providerConfig
+                        InlineCompletionItemProviderConfigSingleton.configuration.provider
                             .contextSizeHints.prefixChars,
                     maxSuffixLength:
-                        InlineCompletionItemProviderConfigSingleton.configuration.providerConfig
+                        InlineCompletionItemProviderConfigSingleton.configuration.provider
                             .contextSizeHints.suffixChars,
                 }),
             })

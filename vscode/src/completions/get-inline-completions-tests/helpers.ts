@@ -4,7 +4,8 @@ import { expect, vi } from 'vitest'
 import type { URI } from 'vscode-uri'
 
 import {
-    AUTH_STATUS_FIXTURE_AUTHED,
+    AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
+    type AuthenticatedAuthStatus,
     type ClientConfiguration,
     type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
@@ -40,11 +41,10 @@ import { AutocompleteStageRecorder } from '../logger'
 import {
     MULTI_LINE_STOP_SEQUENCES,
     SINGLE_LINE_STOP_SEQUENCES,
-    createProviderConfig as createAnthropicProviderConfig,
+    createProvider as createAnthropicProvider,
 } from '../providers/anthropic'
-import { createProviderConfig as createFireworksProviderConfig } from '../providers/fireworks'
+import { createProvider as createFireworksProvider } from '../providers/fireworks'
 import { pressEnterAndGetIndentString } from '../providers/hot-streak'
-import type { ProviderOptions } from '../providers/provider'
 import { RequestManager } from '../request-manager'
 import { documentAndPosition } from '../test-helpers'
 import { sleep } from '../utils'
@@ -63,19 +63,21 @@ const getVSCodeConfigurationWithAccessToken = (
     accessToken: 'foobar',
 })
 
-type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext'>> & {
+type Params = Partial<
+    Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext' | 'authStatus'>
+> & {
+    authStatus?: AuthenticatedAuthStatus
     languageId?: string
     takeSuggestWidgetSelectionIntoAccount?: boolean
     onNetworkRequest?: (params: CodeCompletionsParams, abortController: AbortController) => void
     completionResponseGenerator?: (
         params: CompletionParameters
     ) => Generator<CompletionResponse> | AsyncGenerator<CompletionResponse>
-    providerOptions?: Partial<ProviderOptions>
     configuration?: Partial<ClientConfiguration>
     documentUri?: URI
 }
 
-export interface ParamsResult extends InlineCompletionsParams {
+export interface ParamsResult extends Omit<InlineCompletionsParams, 'authStatus'> {
     /**
      * A promise that's resolved once `completionResponseGenerator` is done.
      * Used to wait for all the completion response chunks to be processed by the
@@ -83,6 +85,7 @@ export interface ParamsResult extends InlineCompletionsParams {
      */
     completionResponseGeneratorPromise: Promise<unknown>
     configuration?: Partial<ClientConfiguration>
+    authStatus: AuthenticatedAuthStatus
 }
 
 /**
@@ -103,7 +106,6 @@ export function params(
         selectedCompletionInfo,
         takeSuggestWidgetSelectionIntoAccount,
         isDotComUser = false,
-        providerOptions,
         configuration,
         documentUri = testFileUri('test.ts'),
         ...restParams
@@ -154,21 +156,23 @@ export function params(
         logger: undefined,
     }
 
-    // TODO: add support for `createProviderConfig` from `vscode/src/completions/providers/create-provider.ts`
-    const createProviderConfig =
+    // TODO: add support for `createProvider` from `vscode/src/completions/providers/create-provider.ts`
+    const createProvider =
         configuration?.autocompleteAdvancedProvider === 'fireworks' &&
         configuration.autocompleteAdvancedModel
-            ? createFireworksProviderConfig
-            : createAnthropicProviderConfig
+            ? createFireworksProvider
+            : createAnthropicProvider
 
     const configWithAccessToken = getVSCodeConfigurationWithAccessToken(configuration)
-    const providerConfig = createProviderConfig({
-        client,
-        providerOptions,
-        authStatus: AUTH_STATUS_FIXTURE_AUTHED,
-        model: configuration?.autocompleteAdvancedModel!,
+    const provider = createProvider({
+        authStatus: AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
+        legacyModel: configuration?.autocompleteAdvancedModel!,
         config: configWithAccessToken,
+        anonymousUserID: 'anonymousUserID',
+        provider: configuration?.autocompleteAdvancedModel || 'anthropic',
     })
+
+    provider.client = client
 
     const { document, position } = documentAndPosition(code, languageId, documentUri.toString())
 
@@ -180,8 +184,8 @@ export function params(
     const docContext = getCurrentDocContext({
         document,
         position,
-        maxPrefixLength: providerConfig.contextSizeHints.prefixChars,
-        maxSuffixLength: providerConfig.contextSizeHints.suffixChars,
+        maxPrefixLength: provider.contextSizeHints.prefixChars,
+        maxSuffixLength: provider.contextSizeHints.suffixChars,
         context: takeSuggestWidgetSelectionIntoAccount
             ? {
                   triggerKind: 0,
@@ -195,12 +199,14 @@ export function params(
     }
 
     return {
+        authStatus: AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
+        config: configuration as any,
         document,
         position,
         docContext,
         triggerKind,
         selectedCompletionInfo,
-        providerConfig,
+        provider,
         firstCompletionTimeout:
             configuration?.autocompleteFirstCompletionTimeout ??
             DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
