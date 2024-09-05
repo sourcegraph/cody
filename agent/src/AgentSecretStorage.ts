@@ -40,7 +40,11 @@ export class AgentClientManagedSecretStorage implements vscode.SecretStorage {
 export class AgentStatefulSecretStorage implements vscode.SecretStorage {
     private readonly platform = process.platform
 
-    constructor(public readonly onDidChange: vscode.Event<vscode.SecretStorageChangeEvent>) {}
+    constructor(public readonly onDidChange: vscode.Event<vscode.SecretStorageChangeEvent>) {
+        if (this.platform === 'win32') {
+            this.ensureCredentialManagerInstalled()
+        }
+    }
 
     public async get(key: string): Promise<string | undefined> {
         switch (this.platform) {
@@ -54,9 +58,14 @@ export class AgentStatefulSecretStorage implements vscode.SecretStorage {
                     '-w',
                 ])
             case 'win32': {
-                const powershellCommand = `(Get-StoredCredential -Target "${this.target(
-                    key
-                )}").GetNetworkCredential().Password`
+                const powershellCommand = `
+                        $cred = Get-StoredCredential -Target "${this.target(key)}"
+                        if ($cred -ne $null) {
+                            $cred.GetNetworkCredential().Password
+                        } else {
+                            ""
+                        }
+                    `
                 return this.spawnAsync('powershell.exe', ['-Command', powershellCommand])
             }
             case 'linux':
@@ -183,5 +192,16 @@ export class AgentStatefulSecretStorage implements vscode.SecretStorage {
                 }
             })
         })
+    }
+
+    private async ensureCredentialManagerInstalled(): Promise<void> {
+        try {
+            await this.spawnAsync('powershell.exe', [
+                '-Command',
+                'if (-not (Get-Module -ListAvailable -Name CredentialManager)) { Install-Module -Name CredentialManager -Force -Scope CurrentUser }',
+            ])
+        } catch (error) {
+            console.error('Failed to install CredentialManager module:', error)
+        }
     }
 }
