@@ -112,12 +112,16 @@ export class IgnoreHelper {
         // Return all https URIs on the assumption that they origin from
         // remote context (e.g. unified, multi-repo) files, which are already
         // filtered by the backend to respect codyignore files during sync time.
-        if (uri.scheme === 'https') {
+        const allowedNonFileSchemes = new Set(['https', 'http'])
+        if (allowedNonFileSchemes.has(uri.scheme)) {
             return false
         }
 
-        if (uri.scheme === 'http') {
-            return false
+        // For notebook cells, we want to ignore the cell itself, but not the file it's in.
+        if (uri.scheme === 'vscode-notebook-cell') {
+            // Replace the scheme with the file scheme and remove the fragment that
+            // contains the cell id so we can use the same logic as for files.
+            uri = uri.with({ scheme: 'file', fragment: undefined })
         }
 
         // Ignore all other non-file URIs
