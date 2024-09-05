@@ -5,6 +5,7 @@ import type { URI } from 'vscode-uri'
 
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
+    type AuthenticatedAuthStatus,
     type ClientConfiguration,
     type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
@@ -62,7 +63,10 @@ const getVSCodeConfigurationWithAccessToken = (
     accessToken: 'foobar',
 })
 
-type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext'>> & {
+type Params = Partial<
+    Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext' | 'authStatus'>
+> & {
+    authStatus?: AuthenticatedAuthStatus
     languageId?: string
     takeSuggestWidgetSelectionIntoAccount?: boolean
     onNetworkRequest?: (params: CodeCompletionsParams, abortController: AbortController) => void
@@ -73,7 +77,7 @@ type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'd
     documentUri?: URI
 }
 
-export interface ParamsResult extends InlineCompletionsParams {
+export interface ParamsResult extends Omit<InlineCompletionsParams, 'authStatus'> {
     /**
      * A promise that's resolved once `completionResponseGenerator` is done.
      * Used to wait for all the completion response chunks to be processed by the
@@ -81,6 +85,7 @@ export interface ParamsResult extends InlineCompletionsParams {
      */
     completionResponseGeneratorPromise: Promise<unknown>
     configuration?: Partial<ClientConfiguration>
+    authStatus: AuthenticatedAuthStatus
 }
 
 /**
@@ -194,7 +199,7 @@ export function params(
     }
 
     return {
-        authStatus: dummyAuthStatus,
+        authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         config: configuration as any,
         document,
         position,

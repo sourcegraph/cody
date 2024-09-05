@@ -1,12 +1,13 @@
 import * as anthropic from '@anthropic-ai/sdk'
 
 import {
-    type AuthStatus,
+    type AuthenticatedAuthStatus,
     type AutocompleteContextSnippet,
     type CodeCompletionsParams,
     type DocumentContext,
     type Message,
     PromptString,
+    isDotCom,
     ps,
 } from '@sourcegraph/cody-shared'
 
@@ -259,9 +260,9 @@ class AnthropicProvider extends Provider {
         }
 }
 
-function getClientModel(provider: string, authStatus: AuthStatus): string {
+function getClientModel(provider: string, authStatus: AuthenticatedAuthStatus): string {
     // Always use the default PLG model on DotCom
-    if (authStatus.isDotCom) {
+    if (isDotCom(authStatus)) {
         return DEFAULT_PLG_ANTHROPIC_MODEL
     }
 

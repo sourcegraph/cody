@@ -181,7 +181,7 @@ class FireworksProvider extends Provider {
         return zipGenerators(completionsGenerators)
     }
 
-    private getCustomHeaders = (isFireworksTracingEnabled: boolean): Record<string, string> => {
+    private getCustomHeaders = (isFireworksTracingEnabled?: boolean): Record<string, string> => {
         // Enabled Fireworks tracing for Sourcegraph teammates.
         // https://readme.fireworks.ai/docs/enabling-tracing
         const customHeaders: Record<string, string> = {}
@@ -274,7 +274,7 @@ function getClientModel(isDotCom: boolean, model?: string): FireworksModel {
 export function createProvider(params: ProviderFactoryParams): Provider {
     const { legacyModel, authStatus, anonymousUserID } = params
 
-    const clientModel = getClientModel(authStatus.isDotCom, legacyModel)
+    const clientModel = getClientModel(isDotCom(authStatus), legacyModel)
 
     return new FireworksProvider({
         id: 'fireworks',

@@ -1,7 +1,6 @@
 import type { Position, TextDocument } from 'vscode'
 
 import {
-    type AuthStatus,
     type AuthenticatedAuthStatus,
     type AutocompleteContextSnippet,
     type ClientConfigurationWithAccessToken,

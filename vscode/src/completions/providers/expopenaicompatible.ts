@@ -340,7 +340,7 @@ function promptString(prompt: Prompt, infill: boolean, model: string): PromptStr
     return context.concat(currentFileNameComment, prompt.prefix)
 }
 
-function getClientModel(isDotCom: boolean, model?: string): OpenAICompatibleModel {
+function getClientModel(model?: string): OpenAICompatibleModel {
     if (model === undefined || model === '') {
         return 'starcoder-hybrid' as OpenAICompatibleModel
     }
@@ -353,9 +353,9 @@ function getClientModel(isDotCom: boolean, model?: string): OpenAICompatibleMode
 }
 
 export function createProvider(params: ProviderFactoryParams): Provider {
-    const { legacyModel, authStatus, anonymousUserID } = params
+    const { legacyModel, anonymousUserID } = params
 
-    const clientModel = getClientModel(authStatus.isDotCom, legacyModel)
+    const clientModel = getClientModel(legacyModel)
 
     return new ExpOpenAICompatibleProvider({
         id: 'experimental-openaicompatible',
