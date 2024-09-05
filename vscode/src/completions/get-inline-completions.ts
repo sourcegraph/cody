@@ -68,7 +68,7 @@ export interface InlineCompletionsParams {
     tracer?: (data: Partial<ProvideInlineCompletionsItemTraceData>) => void
     artificialDelay?: number
     firstCompletionTimeout: number
-    n?: number
+    numberOfCompletionsToGenerate?: number
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
@@ -247,7 +247,7 @@ async function doGetInlineCompletions(
         stageRecorder,
         authStatus,
         config,
-        n,
+        numberOfCompletionsToGenerate: n,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })

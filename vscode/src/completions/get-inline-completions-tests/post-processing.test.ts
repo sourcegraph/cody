@@ -84,7 +84,7 @@ for (const isTreeSitterEnabled of cases) {
                     `,
                     ],
                     {
-                        n: 3,
+                        numberOfCompletionsToGenerate: 3,
                     }
                 )
             )
@@ -180,7 +180,7 @@ for (const isTreeSitterEnabled of cases) {
                             stopReason: 'unknown',
                         })),
                         {
-                            n: 3,
+                            numberOfCompletionsToGenerate: 3,
                         }
                     )
                 )

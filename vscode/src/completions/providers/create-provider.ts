@@ -151,7 +151,7 @@ function getProviderCreator(params: GetProviderCreatorParams): ProviderFactory |
     return null
 }
 
-type AutocompleteProviderID = keyof typeof AUTOCOMPLETE_PROVIDER_ID
+export type AutocompleteProviderID = keyof typeof AUTOCOMPLETE_PROVIDER_ID
 
 export const AUTOCOMPLETE_PROVIDER_ID = {
     /**

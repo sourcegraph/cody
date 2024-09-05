@@ -303,7 +303,7 @@ for (const isTreeSitterEnabled of cases) {
                     ┴┴┴┴`,
                         ],
                         {
-                            n: 2,
+                            numberOfCompletionsToGenerate: 2,
                         }
                     )
                 )
