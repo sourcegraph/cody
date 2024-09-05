@@ -138,7 +138,7 @@ describe('[getInlineCompletions] completion event', () => {
                   "multiline": true,
                   "multilineMode": "block",
                   "providerIdentifier": "anthropic",
-                  "providerModel": "",
+                  "providerModel": "anthropic/claude-instant-1.2",
                   "resolvedModel": "sourcegraph/gateway-model",
                   "responseHeaders": {
                     "fireworks-speculation-matched-tokens": "100",
@@ -210,7 +210,7 @@ describe('[getInlineCompletions] completion event', () => {
                   "multiline": false,
                   "multilineMode": null,
                   "providerIdentifier": "anthropic",
-                  "providerModel": "",
+                  "providerModel": "anthropic/claude-instant-1.2",
                   "resolvedModel": "sourcegraph/gateway-model",
                   "responseHeaders": {
                     "fireworks-speculation-matched-tokens": "100",

@@ -4,7 +4,7 @@ import { expect, vi } from 'vitest'
 import type { URI } from 'vscode-uri'
 
 import {
-    AUTH_STATUS_FIXTURE_AUTHED,
+    AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
     type AuthenticatedAuthStatus,
     type ClientConfiguration,
     type ClientConfigurationWithAccessToken,
@@ -165,7 +165,7 @@ export function params(
 
     const configWithAccessToken = getVSCodeConfigurationWithAccessToken(configuration)
     const provider = createProvider({
-        authStatus: AUTH_STATUS_FIXTURE_AUTHED,
+        authStatus: AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
         legacyModel: configuration?.autocompleteAdvancedModel!,
         config: configWithAccessToken,
         anonymousUserID: 'anonymousUserID',
@@ -199,7 +199,7 @@ export function params(
     }
 
     return {
-        authStatus: AUTH_STATUS_FIXTURE_AUTHED,
+        authStatus: AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
         config: configuration as any,
         document,
         position,

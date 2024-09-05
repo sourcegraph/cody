@@ -280,6 +280,7 @@ function getClientModel(provider: string, authStatus: AuthenticatedAuthStatus): 
 
     return ''
 }
+
 export function createProvider(params: ProviderFactoryParams): Provider {
     const { authStatus, provider, anonymousUserID } = params
 
