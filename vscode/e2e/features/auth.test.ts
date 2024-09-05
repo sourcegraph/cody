@@ -5,20 +5,14 @@ test.describe('Auth', () => {
     test.use({
         templateWorkspaceDir: 'test/fixtures/workspace',
     })
-    test('Pre-Authenticated', async ({
-        page,
-        mitmProxy,
-        vscodeUI,
-        polly,
-        executeCommand,
-        workspaceDir,
-    }) => {
+    test('Pre-Authenticated', async ({ page, vscodeUI, workspaceDir }) => {
+        const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
         await test.step('setup', async () => {
             await uix.cody.preAuthenticate({ workspaceDir })
-            await uix.vscode.startSession({ page, vscodeUI, executeCommand, workspaceDir })
+            await session.start()
             await uix.cody.waitForStartup({ page })
 
-            await executeCommand('workbench.view.extension.cody')
+            await session.runCommand('workbench.view.extension.cody')
         })
 
         await test.step('can view account info', async () => {

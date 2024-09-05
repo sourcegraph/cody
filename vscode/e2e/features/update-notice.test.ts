@@ -21,20 +21,20 @@ test.describe('update notices', testDetails, () => {
         templateWorkspaceDir: 'test/fixtures/workspace',
     })
 
-    test('work as expected', async ({ workspaceDir, page, vscodeUI, executeCommand, mitmProxy }) => {
+    test('work as expected', async ({ workspaceDir, page, vscodeUI, mitmProxy }) => {
         let sidebar: WebView
+        const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
         await test.step('setup', async () => {
             await uix.cody.preAuthenticate({ workspaceDir })
-            await uix.vscode.startSession({ page, vscodeUI, executeCommand, workspaceDir })
+            await session.start()
             await uix.cody.waitForStartup({ page })
-            await executeCommand('workbench.view.extension.cody')
             sidebar = (await uix.cody.WebView.all({ page }, { atLeast: 1 }))[0]
         })
 
         await test.step('new installs should not show a toast', async () => {
             await sidebar.waitUntilReady()
             const updateNotice = sidebar.content.getByTestId('update-notice')
-            await expect(updateNotice).not.toBeVisible()
+            await expect(updateNotice).toBeHidden()
         })
 
         let currentVersion: string
@@ -64,7 +64,7 @@ test.describe('update notices', testDetails, () => {
             // TODO: we don't currently check the value set here on show/hide of the sidebar
             // so instead we open a new chat in the editor.
 
-            await executeCommand('cody.chat.newEditorPanel')
+            await session.runCommand('cody.chat.newEditorPanel')
 
             editorChat = (await uix.cody.WebView.all({ page }, { atLeast: 1, ignoring: [sidebar] }))[0]
 
@@ -78,6 +78,8 @@ test.describe('update notices', testDetails, () => {
     })
 })
 
+//TODO: Move this to UIX or potentially we can just use the VSCody Test Utils directly
+// Not worth doing it right now as we don't show a update notice anymore.
 function getVersion(sidebar: uix.cody.WebView): Promise<string | null> {
     return sidebar.content.locator(':root').evaluate(
         (_, { VERSION_UPDATE_STORAGE_KEY }) => {

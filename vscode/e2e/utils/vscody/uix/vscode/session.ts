@@ -64,6 +64,13 @@ export class Session {
         return this.runCommand<Return, [string, ...Args]>('vscody.eval', fn.toString(), ...args)
     }
 
+    tick() {
+        //wait for UI interactions to have been handled
+        return this.runMacro(async () => {
+            return null
+        }, [])
+    }
+
     get page() {
         return this.init.page
     }

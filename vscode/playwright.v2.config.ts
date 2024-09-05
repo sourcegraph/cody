@@ -22,7 +22,7 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
     workers: '50%',
     retries: 0, // NO MORE FLAKE ALLOWED! It's a slippery slope.
     forbidOnly: isCI,
-    fullyParallel: true,
+    fullyParallel: true, // Important: parallelizes all tests even in the same file. As such do not save global state in a global scope.
     timeout: isWin || isCI ? 30000 : 20000,
     expect: {
         timeout: isWin || isCI ? 20000 : 10000,
