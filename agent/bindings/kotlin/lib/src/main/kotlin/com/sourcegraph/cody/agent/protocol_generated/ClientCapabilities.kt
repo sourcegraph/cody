@@ -19,7 +19,7 @@ data class ClientCapabilities(
   val codeActions: CodeActionsEnum? = null, // Oneof: none, enabled
   val webviewMessages: WebviewMessagesEnum? = null, // Oneof: object-encoded, string-encoded
   val globalState: GlobalStateEnum? = null, // Oneof: stateless, server-managed, client-managed
-  val secrets: SecretsEnum? = null, // Oneof: stateless, client-managed
+  val secrets: SecretsEnum? = null, // Oneof: stateless, server-managed, client-managed
   val webview: WebviewEnum? = null, // Oneof: agentic, native
   val webviewNativeConfig: WebviewNativeConfigParams? = null,
 ) {
@@ -101,6 +101,7 @@ data class ClientCapabilities(
 
   enum class SecretsEnum {
     @SerializedName("stateless") Stateless,
+    @SerializedName("server-managed") `Server-managed`,
     @SerializedName("client-managed") `Client-managed`,
   }
 

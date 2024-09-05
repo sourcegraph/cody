@@ -645,7 +645,7 @@ export interface ClientCapabilities {
     // - Stateless: the secrets are not persisted between agent processes.
     // - Client managed: the client must implement the 'secrets/get',
     // 'secrets/store', and 'secrets/delete' requests.
-    secrets?: 'stateless' | 'client-managed' | undefined | null
+    secrets?: 'stateless' | 'server-managed' | 'client-managed' | undefined | null
     // Whether the client supports the VSCode WebView API. If 'agentic', uses
     // AgentWebViewPanel which just delegates bidirectional postMessage over
     // the Agent protocol. If 'native', implements a larger subset of the VSCode

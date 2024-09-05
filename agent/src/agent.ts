@@ -64,7 +64,11 @@ import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdi
 import { AgentAuthHandler } from './AgentAuthHandler'
 import { AgentFixupControls } from './AgentFixupControls'
 import { AgentProviders } from './AgentProviders'
-import { AgentClientManagedSecretStorage, AgentStatelessSecretStorage } from './AgentSecretStorage'
+import {
+    AgentClientManagedSecretStorage,
+    AgentStatefulSecretStorage,
+    AgentStatelessSecretStorage,
+} from './AgentSecretStorage'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
@@ -429,7 +433,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 const secrets =
                     clientInfo.capabilities?.secrets === 'client-managed'
                         ? new AgentClientManagedSecretStorage(this, this.secretsDidChange.event)
-                        : new AgentStatelessSecretStorage()
+                        : clientInfo.capabilities?.secrets === 'server-managed'
+                          ? new AgentStatefulSecretStorage(this.secretsDidChange.event)
+                          : new AgentStatelessSecretStorage()
 
                 await initializeVscodeExtension(
                     this.workspace.workspaceRootUri,
