@@ -1,5 +1,5 @@
 log:
-  _recordingName: decorations from un-applied Cody changes appear
+  _recordingName: e2e/features/command-edit.test.ts/edit command/can be accepted
   creator:
     comment: persister:fs
     name: Polly.JS
@@ -31,7 +31,7 @@ log:
             value: sourcegraph.dotcom
           - name: x-mitm-auth-token-name
             value: sourcegraph.dotcom
-        headersSize: 513
+        headersSize: 586
         httpVersion: HTTP/1.1
         method: GET
         queryString: []
@@ -54,7 +54,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 Aug 2024 15:53:16 GMT
+            value: Fri, 06 Sep 2024 10:56:06 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -83,8 +83,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-19T15:53:16.110Z
-      time: 235
+      startedDateTime: 2024-09-06T10:56:06.163Z
+      time: 241
       timings:
         blocked: -1
         connect: -1
@@ -92,12 +92,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 235
-    - _id: 976e9b158f023488a0ab282e4e318d40
+        wait: 241
+    - _id: 58b3db3baa0fa3bf8a628a1f402c3a72
       _order: 0
       cache: {}
       request:
-        bodySize: 2324
+        bodySize: 1963
         cookies: []
         headers:
           - name: transfer-encoding
@@ -107,7 +107,7 @@ log:
           - name: connection
             value: close
           - name: traceparent
-            value: 00-668d875d86c8514b34ec3fa9db3028d2-bcd8c2815826e00f-01
+            value: 00-e74637700c6f310ce1df021557643b75-840f52c7d55f000c-01
           - name: authorization
             value: token
               REDACTED_5313821e901984ba7bbf1999deafb5f6f722c05ed13b6dfa6cffbd6128089e39
@@ -130,9 +130,10 @@ log:
             messages:
               - speaker: system
                 text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. - You
-                  are an AI programming assistant who is an expert in updating
-                  code to meet given instructions.
+                  You are Cody, an AI coding assistant from Sourcegraph.
+
+
+                  - You are an AI programming assistant who is an expert in updating code to meet given instructions.
 
                   - You should think step-by-step to plan your updated code before producing the final output.
 
@@ -150,27 +151,16 @@ log:
 
                   - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
               - speaker: human
-                text: >
-                  Codebase context from file path index.html: Codebase context
-                  from file index.html:
-
-                  <!DOCTYPE html>
-
-                  <html lang="en">
-                      <head>
-                          <meta charset="UTF-8" />
-                          <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-                          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
                 text: >-
-                  This is part of the file: index.html
+                  This is part of the file: type.ts
 
 
                   The user has the following code in their selection:
 
-                  <SELECTEDCODE7662>        <title>Hello Cody</title>
+                  <SELECTEDCODE7662>interface Fruit {
+                      appleName: string
+                      appleAge: number
+                  }
 
                   </SELECTEDCODE7662>
 
@@ -181,7 +171,7 @@ log:
 
                   <INSTRUCTIONS7390>
 
-                  Replace hello with goodbeye
+                  Replace apple with banana
 
                   </INSTRUCTIONS7390>
               - speaker: assistant
@@ -198,17 +188,17 @@ log:
           - name: client-name
             value: vscode
           - name: client-version
-            value: 1.30.3
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=vscode&client-version=1.30.3
+            value: 1.32.1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=vscode&client-version=1.32.1
       response:
-        bodySize: 617
+        bodySize: 782
         content:
           mimeType: text/event-stream
-          size: 617
+          size: 782
           text: >+
             event: completion
 
-            data: {"completion":"        \u003ctitle\u003eGoodbye Cody\u003c/title\u003e\n","stopReason":"stop_sequence"}
+            data: {"completion":"interface Fruit {\n    bananaName: string\n    bananaAge: number\n}\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -218,13 +208,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 21 Aug 2024 21:13:28 GMT
+            value: Fri, 06 Sep 2024 10:56:09 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
+          - name: retry-after
+            value: "599"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -242,13 +234,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1279
+        headersSize: 1386
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-21T21:13:27.122Z
-      time: 1737
+      startedDateTime: 2024-09-06T10:56:08.260Z
+      time: 1598
       timings:
         blocked: -1
         connect: -1
@@ -256,7 +248,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1737
+        wait: 1598
     - _id: 97d1abafdf0933c23295cc7d7b7ea7f9
       _order: 0
       cache: {}
@@ -285,7 +277,7 @@ log:
             value: sourcegraph.dotcom
           - name: x-mitm-auth-token-name
             value: sourcegraph.dotcom
-        headersSize: 544
+        headersSize: 617
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -315,13 +307,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 Aug 2024 15:53:16 GMT
+            value: Fri, 06 Sep 2024 10:56:07 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "53"
           - name: connection
             value: close
+          - name: retry-after
+            value: "600"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -339,13 +333,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1296
+        headersSize: 1403
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-19T15:53:16.616Z
-      time: 207
+      startedDateTime: 2024-09-06T10:56:06.770Z
+      time: 249
       timings:
         blocked: -1
         connect: -1
@@ -353,7 +347,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 207
+        wait: 249
     - _id: 28c346c4c160958f92e8f989a1737e5e
       _order: 0
       cache: {}
@@ -409,23 +403,23 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 275
+        bodySize: 293
         content:
           mimeType: application/json
-          size: 275
+          size: 293
           text: "{\"data\":{\"site\":{\"codyLLMConfiguration\":{\"chatModel\":\"anthropic\
             /claude-3-sonnet-20240229\",\"chatModelMaxTokens\":12000,\"fastChat\
             Model\":\"anthropic/claude-3-haiku-20240307\",\"fastChatModelMaxTok\
-            ens\":12000,\"completionModel\":\"fireworks/starcoder\",\"completio\
-            nModelMaxTokens\":9000}}}}"
+            ens\":12000,\"completionModel\":\"fireworks/deepseek-coder-v2-lite-\
+            base\",\"completionModelMaxTokens\":9000}}}}"
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 Aug 2024 15:53:15 GMT
+            value: Fri, 06 Sep 2024 10:56:05 GMT
           - name: content-type
             value: application/json
           - name: content-length
-            value: "275"
+            value: "293"
           - name: connection
             value: close
           - name: access-control-allow-credentials
@@ -450,8 +444,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-19T15:53:15.252Z
-      time: 237
+      startedDateTime: 2024-09-06T10:56:05.313Z
+      time: 239
       timings:
         blocked: -1
         connect: -1
@@ -459,7 +453,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 237
+        wait: 239
     - _id: a4d641ac3093a4efbffe59352b351757
       _order: 0
       cache: {}
@@ -519,7 +513,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 Aug 2024 15:53:15 GMT
+            value: Fri, 06 Sep 2024 10:56:05 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -548,8 +542,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-19T15:53:15.254Z
-      time: 238
+      startedDateTime: 2024-09-06T10:56:05.316Z
+      time: 221
       timings:
         blocked: -1
         connect: -1
@@ -557,7 +551,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 238
+        wait: 221
     - _id: 06568f66a76daea32430b82552305046
       _order: 0
       cache: {}
@@ -617,7 +611,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 Aug 2024 15:53:15 GMT
+            value: Fri, 06 Sep 2024 10:56:05 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -646,8 +640,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-19T15:53:15.253Z
-      time: 225
+      startedDateTime: 2024-09-06T10:56:05.315Z
+      time: 232
       timings:
         blocked: -1
         connect: -1
@@ -655,7 +649,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 225
+        wait: 232
     - _id: d1e9e9d8ae116eb7e71823b775d35828
       _order: 0
       cache: {}
@@ -730,7 +724,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 Aug 2024 15:53:15 GMT
+            value: Fri, 06 Sep 2024 10:56:05 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -759,8 +753,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-19T15:53:15.256Z
-      time: 234
+      startedDateTime: 2024-09-06T10:56:05.317Z
+      time: 233
       timings:
         blocked: -1
         connect: -1
@@ -768,7 +762,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 234
+        wait: 233
     - _id: 9fdf3418a505d251116e020fda591c55
       _order: 0
       cache: {}
@@ -834,7 +828,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 Aug 2024 15:53:15 GMT
+            value: Fri, 06 Sep 2024 10:56:05 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -863,8 +857,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-19T15:53:15.496Z
-      time: 363
+      startedDateTime: 2024-09-06T10:56:05.561Z
+      time: 330
       timings:
         blocked: -1
         connect: -1
@@ -872,7 +866,105 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 363
+        wait: 330
+    - _id: 34f0242529b88d6ed08202747e213ebd
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 144
+        cookies: []
+        headers:
+          - name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+          - name: accept-encoding
+            value: identity
+          - name: user-agent
+            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
+          - name: content-length
+            value: "144"
+          - name: accept
+            value: "*/*"
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: authorization
+            value: token
+              REDACTED_5313821e901984ba7bbf1999deafb5f6f722c05ed13b6dfa6cffbd6128089e39
+          - name: x-mitm-proxy-name
+            value: sourcegraph.dotcom
+          - name: x-mitm-auth-token-name
+            value: sourcegraph.dotcom
+        headersSize: 613
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query Repository($name: String!) {
+              	repository(name: $name) {
+              		id
+              	}
+              }
+            variables:
+              name: github.com/sourcegraph/cody
+        queryString:
+          - name: Repository
+            value: null
+        url: https://sourcegraph.com/.api/graphql?Repository
+      response:
+        bodySize: 61
+        content:
+          mimeType: application/json
+          size: 61
+          text: "{\"data\":{\"repository\":{\"id\":\"UmVwb3NpdG9yeTo2MTMyNTMyOA==\"}}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 06 Sep 2024 10:56:07 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "61"
+          - name: connection
+            value: close
+          - name: retry-after
+            value: "600"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1403
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-06T10:56:07.050Z
+      time: 255
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 255
     - _id: a4f06f44ac6627e56ffe62ff40b4aaa9
       _order: 0
       cache: {}
@@ -925,12 +1017,12 @@ log:
         content:
           mimeType: application/json
           size: 73
-          text: "{\"data\":{\"site\":{\"productVersion\":\"287885_2024-08-19_5.6-cb1ce4f7\
-            5b89\"}}}"
+          text: "{\"data\":{\"site\":{\"productVersion\":\"290390_2024-09-06_5.7-64a7efa9\
+            3265\"}}}"
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 Aug 2024 15:53:15 GMT
+            value: Fri, 06 Sep 2024 10:56:05 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -959,8 +1051,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-19T15:53:15.248Z
-      time: 236
+      startedDateTime: 2024-09-06T10:56:05.311Z
+      time: 229
       timings:
         blocked: -1
         connect: -1
@@ -968,6 +1060,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 236
+        wait: 229
   pages: []
   version: "1.2"

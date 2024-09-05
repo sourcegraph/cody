@@ -51,7 +51,7 @@ export class QuickPick extends SessionChild {
         hasNotText?: string | RegExp
         hasText?: string | RegExp
     }) {
-        return this.locator.locator('.quick-input-list').locator('.monaco-list-row', options)
+        return this.locator.locator('.quick-input-list').locator('.quick-input-list-entry', options)
     }
     //TODO: Quick Input Action OK
     //TODO: Quick Input Custom Action

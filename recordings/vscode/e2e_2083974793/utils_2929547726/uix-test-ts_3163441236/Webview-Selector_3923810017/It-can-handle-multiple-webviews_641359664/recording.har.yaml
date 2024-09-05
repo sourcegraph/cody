@@ -1,5 +1,5 @@
 log:
-  _recordingName: It can handle multiple webviews
+  _recordingName: e2e/utils/uix.test.ts/Webview Selector/It can handle multiple webviews
   creator:
     comment: persister:fs
     name: Polly.JS
@@ -31,7 +31,7 @@ log:
             value: sourcegraph.dotcom
           - name: x-mitm-auth-token-name
             value: sourcegraph.dotcom
-        headersSize: 513
+        headersSize: 586
         httpVersion: HTTP/1.1
         method: GET
         queryString: []
@@ -54,7 +54,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 Aug 2024 15:53:15 GMT
+            value: Fri, 06 Sep 2024 10:56:00 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -83,8 +83,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-19T15:53:14.769Z
-      time: 217
+      startedDateTime: 2024-09-06T10:55:59.867Z
+      time: 249
       timings:
         blocked: -1
         connect: -1
@@ -92,7 +92,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 217
+        wait: 249
     - _id: 97d1abafdf0933c23295cc7d7b7ea7f9
       _order: 0
       cache: {}
@@ -121,7 +121,7 @@ log:
             value: sourcegraph.dotcom
           - name: x-mitm-auth-token-name
             value: sourcegraph.dotcom
-        headersSize: 544
+        headersSize: 617
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -151,7 +151,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 Aug 2024 15:53:15 GMT
+            value: Fri, 06 Sep 2024 10:56:00 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -180,8 +180,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-19T15:53:15.254Z
-      time: 232
+      startedDateTime: 2024-09-06T10:56:00.707Z
+      time: 244
       timings:
         blocked: -1
         connect: -1
@@ -189,7 +189,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 232
+        wait: 244
     - _id: 28c346c4c160958f92e8f989a1737e5e
       _order: 0
       cache: {}
@@ -245,23 +245,23 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 275
+        bodySize: 293
         content:
           mimeType: application/json
-          size: 275
+          size: 293
           text: "{\"data\":{\"site\":{\"codyLLMConfiguration\":{\"chatModel\":\"anthropic\
             /claude-3-sonnet-20240229\",\"chatModelMaxTokens\":12000,\"fastChat\
             Model\":\"anthropic/claude-3-haiku-20240307\",\"fastChatModelMaxTok\
-            ens\":12000,\"completionModel\":\"fireworks/starcoder\",\"completio\
-            nModelMaxTokens\":9000}}}}"
+            ens\":12000,\"completionModel\":\"fireworks/deepseek-coder-v2-lite-\
+            base\",\"completionModelMaxTokens\":9000}}}}"
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 Aug 2024 15:53:14 GMT
+            value: Fri, 06 Sep 2024 10:55:59 GMT
           - name: content-type
             value: application/json
           - name: content-length
-            value: "275"
+            value: "293"
           - name: connection
             value: close
           - name: access-control-allow-credentials
@@ -286,8 +286,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-19T15:53:13.903Z
-      time: 223
+      startedDateTime: 2024-09-06T10:55:59.008Z
+      time: 240
       timings:
         blocked: -1
         connect: -1
@@ -295,7 +295,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 223
+        wait: 240
     - _id: a4d641ac3093a4efbffe59352b351757
       _order: 0
       cache: {}
@@ -355,7 +355,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 Aug 2024 15:53:14 GMT
+            value: Fri, 06 Sep 2024 10:55:59 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -384,8 +384,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-19T15:53:13.905Z
-      time: 251
+      startedDateTime: 2024-09-06T10:55:59.012Z
+      time: 253
       timings:
         blocked: -1
         connect: -1
@@ -393,7 +393,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 251
+        wait: 253
     - _id: 06568f66a76daea32430b82552305046
       _order: 0
       cache: {}
@@ -453,7 +453,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 Aug 2024 15:53:14 GMT
+            value: Fri, 06 Sep 2024 10:55:59 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -482,8 +482,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-19T15:53:13.904Z
-      time: 257
+      startedDateTime: 2024-09-06T10:55:59.010Z
+      time: 261
       timings:
         blocked: -1
         connect: -1
@@ -491,7 +491,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 257
+        wait: 261
     - _id: d1e9e9d8ae116eb7e71823b775d35828
       _order: 0
       cache: {}
@@ -566,7 +566,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 Aug 2024 15:53:14 GMT
+            value: Fri, 06 Sep 2024 10:55:59 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -595,8 +595,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-19T15:53:13.906Z
-      time: 230
+      startedDateTime: 2024-09-06T10:55:59.014Z
+      time: 235
       timings:
         blocked: -1
         connect: -1
@@ -604,7 +604,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 230
+        wait: 235
     - _id: 9fdf3418a505d251116e020fda591c55
       _order: 0
       cache: {}
@@ -670,7 +670,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 Aug 2024 15:53:14 GMT
+            value: Fri, 06 Sep 2024 10:55:59 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -699,8 +699,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-19T15:53:14.166Z
-      time: 335
+      startedDateTime: 2024-09-06T10:55:59.282Z
+      time: 331
       timings:
         blocked: -1
         connect: -1
@@ -708,7 +708,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 335
+        wait: 331
     - _id: a4f06f44ac6627e56ffe62ff40b4aaa9
       _order: 0
       cache: {}
@@ -737,7 +737,7 @@ log:
             value: sourcegraph.dotcom
           - name: x-mitm-auth-token-name
             value: sourcegraph.dotcom
-        headersSize: 548
+        headersSize: 621
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -761,12 +761,12 @@ log:
         content:
           mimeType: application/json
           size: 73
-          text: "{\"data\":{\"site\":{\"productVersion\":\"287885_2024-08-19_5.6-cb1ce4f7\
-            5b89\"}}}"
+          text: "{\"data\":{\"site\":{\"productVersion\":\"290390_2024-09-06_5.7-64a7efa9\
+            3265\"}}}"
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 Aug 2024 15:53:14 GMT
+            value: Fri, 06 Sep 2024 10:55:59 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -795,8 +795,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-19T15:53:13.900Z
-      time: 227
+      startedDateTime: 2024-09-06T10:55:58.975Z
+      time: 256
       timings:
         blocked: -1
         connect: -1
@@ -804,6 +804,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 227
+        wait: 256
   pages: []
   version: "1.2"
