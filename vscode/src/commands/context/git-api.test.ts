@@ -17,7 +17,6 @@ describe('getContextFilesFromGitDiff', () => {
         diffWithHEAD: vi.fn(),
         diff: vi.fn(),
     } as unknown as Repository
-
     const mockTokenCounter = {
         countTokens: vi.fn(),
     }
@@ -52,7 +51,7 @@ describe('getContextFilesFromGitDiff', () => {
             title: 'git diff --cached',
             uri: URI.parse('file:///path/file1.ts'),
             source: ContextItemSource.Terminal,
-            size: 56,
+            size: 57,
         })
     })
 
@@ -68,7 +67,7 @@ describe('getContextFilesFromGitDiff', () => {
         )
 
         mockDoesFileExist.mockResolvedValue(true)
-        mockTokenCounter.countTokens.mockResolvedValue(57)
+        mockTokenCounter.countTokens.mockResolvedValue(59)
 
         const result = await getContextFilesFromGitDiff(mockGitRepo)
 
@@ -78,7 +77,7 @@ describe('getContextFilesFromGitDiff', () => {
             title: 'git diff',
             uri: URI.parse('file:///path/to/file2.ts'),
             source: ContextItemSource.Terminal,
-            size: 57,
+            size: 59,
         })
     })
 
@@ -142,10 +141,14 @@ describe('getContextFilesFromGitDiff', () => {
                 '+console.log("Windows path");\n'
         )
 
+        // Windows path
+        vi.mock('../../utils/path-utils', () => ({
+            displayPath: vi.fn().mockReturnValue('path\\to\\file3.ts'),
+        }))
+
         mockDoesFileExist.mockResolvedValue(true)
 
         const result = await getContextFilesFromGitDiff(mockGitRepo)
-
         expect(result).toHaveLength(1)
         expect(result[0]).toMatchObject({
             type: 'file',

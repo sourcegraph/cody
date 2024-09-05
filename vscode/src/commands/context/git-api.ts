@@ -85,7 +85,6 @@ export async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<C
             const normalizedDiffPath = normalizePath(diffPath)
             const matchingFile = diffFiles.find(file => {
                 const filePath = normalizePath(displayPath(file.uri))
-                console.log(filePath)
                 return filePath.endsWith(normalizedDiffPath)
             })
             if (!matchingFile || !(await doesFileExist(matchingFile.uri))) {
@@ -116,7 +115,7 @@ export async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<C
         return diffs.sort((a, b) => a.size! - b.size!)
     } catch (error) {
         logError('getContextFileFromGitDiff', 'failed', { verbose: error })
-        throw new Error(`Failed to get git diff: ${error}`)
+        throw new Error('Failed to get git diff.')
     }
 }
 
