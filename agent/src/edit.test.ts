@@ -1,7 +1,13 @@
 import path from 'node:path'
-import { getDotComDefaultModels, modelsService } from '@sourcegraph/cody-shared'
+import { defaultAuthStatus, getDotComDefaultModels, modelsService, ps } from '@sourcegraph/cody-shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import * as vscode from 'vscode'
+import type { SmartApplyArguments } from '../../vscode/src/edit/smart-apply'
+import { defaultVSCodeExtensionClient } from '../../vscode/src/extension-client'
+import { FixupController } from '../../vscode/src/non-stop/FixupController'
+import type { AuthProvider } from '../../vscode/src/services/AuthProvider'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
+import { AgentFixupControls } from './AgentFixupControls'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 import { explainPollyError } from './explainPollyError'
@@ -38,6 +44,60 @@ describe('Edit', () => {
         expect(lenses).toHaveLength(2)
         await client.request('editTask/accept', { id: task.id })
         const newContent = client.workspace.getDocument(uri)?.content
+        expect(trimEndOfLine(newContent)).toMatchInlineSnapshot(
+            `
+                    "export function sum(c: number, b: number): number {
+                        /* CURSOR */
+                    }
+                    "
+                    `,
+            explainPollyError
+        )
+    })
+
+    it('editCommands/code (having one file active apply to the other file)', async () => {
+        const initiallyActiveFileUri = workspace.file('src', 'sum.ts')
+        await client.openFile(initiallyActiveFileUri)
+
+        const fileToEditUri = workspace.file('src', 'newFile.ts')
+        const newDocument = { uri: fileToEditUri } as vscode.TextDocument
+
+        const args: SmartApplyArguments = {
+            configuration: {
+                id: 'test-task-id',
+                instruction: ps`Add a simple function`,
+                replacement: 'function greet() { return "Hello"; }',
+                document: newDocument,
+            },
+        }
+        const authStatus = { ...defaultAuthStatus, isLoggedIn: true, isDotCom: true }
+        const authProvider = {
+            getAuthStatus: () => authStatus,
+        } as AuthProvider
+        const controller = new FixupController(authProvider, defaultVSCodeExtensionClient())
+        const fixupTask = await controller.createTask(
+            newDocument,
+            args.configuration?.instruction!,
+            [],
+            new vscode.Range(0, 0, 0, 0),
+            'add',
+            'insert',
+            modelsService.getDefaultChatModel()!,
+            'chat',
+            args.configuration?.document.uri,
+            undefined,
+            {},
+            args.configuration?.id
+        )
+        const task = AgentFixupControls.serialize(fixupTask)
+        await client.taskHasReachedAppliedPhase(task)
+        const initiallyActiveFileLenses = client.codeLenses.get(initiallyActiveFileUri.toString()) ?? []
+        const fileToEditLenses = client.codeLenses.get(fileToEditUri.toString()) ?? []
+        expect(initiallyActiveFileLenses).toHaveLength(0)
+        expect(fileToEditLenses).toHaveLength(4)
+        expect(fileToEditLenses[0].command?.command).toBe('cody.fixup.codelens.accept')
+        await client.request('editTask/accept', { id: task.id })
+        const newContent = client.workspace.getDocument(fileToEditUri)?.content
         expect(trimEndOfLine(newContent)).toMatchInlineSnapshot(
             `
                     "export function sum(c: number, b: number): number {
