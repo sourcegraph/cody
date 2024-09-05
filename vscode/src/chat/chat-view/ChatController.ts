@@ -433,8 +433,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
                 break
             case 'auth': {
+                const config = getConfigWithEndpoint()
                 if (message.authKind === 'callback' && message.endpoint) {
-                    redirectToEndpointLogin(message.endpoint)
+                    redirectToEndpointLogin(message.endpoint, config.agentIDE)
                     break
                 }
                 if (message.authKind === 'offline') {
@@ -471,7 +472,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
                     const authProviderSimplified = new AuthProviderSimplified()
                     const authMethod = message.authMethod || 'dotcom'
-                    const config = getConfigWithEndpoint()
                     const successfullyOpenedUrl = await authProviderSimplified.openExternalAuthUrl(
                         authMethod,
                         tokenReceiverUrl,
