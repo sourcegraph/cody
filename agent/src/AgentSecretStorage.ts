@@ -95,9 +95,10 @@ export class AgentStatefulSecretStorage implements vscode.SecretStorage {
                 ])
                 break
             case 'win32': {
-                const powershellCommand = `& {New-StoredCredential -Target '${this.target(
-                    key
-                )}' -Password '${value}' -Persist LocalMachine}`
+                const powershellCommand = `
+                        $securePassword = ConvertTo-SecureString '${value}' -AsPlainText -Force
+                        New-StoredCredential -Target '${this.target(key)}' -UserName 'CodyUser' -SecurePassword $securePassword -Persist LocalMachine
+                    `
                 await this.spawnAsync('powershell.exe', ['-Command', powershellCommand])
                 break
             }
@@ -132,12 +133,16 @@ export class AgentStatefulSecretStorage implements vscode.SecretStorage {
                     this.account(key),
                 ])
                 break
-            case 'win32':
-                await this.spawnAsync('powershell.exe', [
-                    '-Command',
-                    `& {Remove-StoredCredential -Target '${this.target(key)}'}`,
-                ])
+            case 'win32': {
+                const powershellCommand = `
+                        $cred = Get-StoredCredential -Target '${this.target(key)}'
+                        if ($cred -ne $null) {
+                            Remove-StoredCredential -Target '${this.target(key)}'
+                        }
+                    `
+                await this.spawnAsync('powershell.exe', ['-Command', powershellCommand])
                 break
+            }
             case 'linux':
                 await this.spawnAsync('secret-tool', [
                     'clear',
