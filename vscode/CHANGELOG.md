@@ -9,6 +9,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Fixed
 
 - Cody Ignore: Fixed an issue where Cody would treat Notebook cells as ignored files when .cody/ignore is enabled. [pull/5473](https://github.com/sourcegraph/cody/pull/5473)
+- Command: Fixed the `Generate Commit Message` command on Windows caused by file path. [pull/5555](https://github.com/sourcegraph/cody/pull/5555)
 
 ### Changed
 
