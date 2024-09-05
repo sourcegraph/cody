@@ -243,7 +243,7 @@
                         class="com.sourcegraph.cody.edit.actions.EditCodeAction"
                         description="Opens the Edit Code dialog"
                         text="Edit Code...">
-                    <keyboard-shortcut replace-all="true" first-keystroke="alt ENTER" keymap="$default"/>
+                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl ENTER" keymap="$default"/>
                     <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt ENTER" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Edit Code..."/>
                 </action>
