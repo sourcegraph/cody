@@ -38,7 +38,7 @@ import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/pro
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 
-import { mkdirSync, statSync } from 'node:fs'
+import fs, { mkdirSync, statSync } from 'node:fs'
 import { PassThrough } from 'node:stream'
 import type { Har } from '@pollyjs/persister'
 import { TESTING_TELEMETRY_EXPORTER } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
@@ -381,6 +381,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
                       scheme: 'file',
                       path: clientInfo.workspaceRootPath ?? undefined,
                   })
+
+            if (!fs.existsSync(this.workspace.workspaceRootUri.fsPath)) {
+                throw new Error(
+                    `Workspace root '${this.workspace.workspaceRootUri.fsPath}' does not exist`
+                )
+            }
 
             vscode_shim.setWorkspaceDocuments(this.workspace)
             if (clientInfo.capabilities?.codeActions === 'enabled') {
