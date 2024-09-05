@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process'
 import type * as vscode from 'vscode'
+import { logDebug } from '../../vscode/src/log'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import type { MessageHandler } from './jsonrpc-alias'
 
@@ -205,7 +206,11 @@ export class AgentServerManagedSecretStorage implements vscode.SecretStorage {
                 'if (-not (Get-Module -ListAvailable -Name CredentialManager)) { Install-Module -Name CredentialManager -Force -Scope CurrentUser }',
             ])
         } catch (error) {
-            console.error('Failed to install CredentialManager module:', error)
+            logDebug(
+                'AgentServerManagedSecretStorage',
+                'Failed to install CredentialManager module:',
+                error
+            )
         }
     }
 }
