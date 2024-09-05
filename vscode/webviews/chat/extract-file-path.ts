@@ -41,7 +41,8 @@ export const remarkAttachFilePathToCodeBlocks: Plugin<[], Root> = () => {
                     ...node.data,
                     hProperties: {
                         ...(node.data as CodeNodeData)?.hProperties,
-                        'data-file-path': filePath.trim(),
+                        // We sanitize spaces in markdown path files using `PromptString` class, now we can convert them back
+                        'data-file-path': filePath.trim().replaceAll('%20', ' '),
                     },
                 }
             }
