@@ -8,6 +8,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Cody Ignore: Fixed an issue where Cody would treat Notebook cells as ignored files when .cody/ignore is enabled. [pull/](https://github.com/sourcegraph/cody/pull/)
+
 ### Changed
 
 ## 1.34.0
