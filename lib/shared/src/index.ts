@@ -284,9 +284,8 @@ export {
 } from './mentions/query'
 export {
     type ContextItemProps,
-    allMentionProvidersMetadata,
-    webMentionProvidersMetadata,
-    jetbrainsMentionProvidersMetadata,
+    type OptionalProviderId,
+    mentionProvidersMetadata,
     openCtxProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,

@@ -7,6 +7,7 @@ import type {
     CurrentUserCodySubscription,
     Model,
     ModelUsage,
+    OptionalProviderId,
     SerializedChatMessage,
     SerializedChatTranscript,
     event,
@@ -577,6 +578,7 @@ export interface ClientCapabilities {
     showWindowMessage?: 'notification' | 'request' | undefined | null
     ignore?: 'none' | 'enabled' | undefined | null
     codeActions?: 'none' | 'enabled' | undefined | null
+    disabledMentionsProviders?: OptionalProviderId[] | undefined | null
     // When 'object-encoded' (default), the server uses the `webview/postMessage` method
     // to send structured JSON objects.  When 'string-encoded', the server uses the
     // `webview/postMessageStringEncoded` method to send a JSON-encoded string. This is

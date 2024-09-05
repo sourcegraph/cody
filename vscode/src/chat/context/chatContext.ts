@@ -7,16 +7,15 @@ import {
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionMenuData,
     type MentionQuery,
+    type OptionalProviderId,
     REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
-    allMentionProvidersMetadata,
     combineLatest,
     isAbortError,
-    jetbrainsMentionProvidersMetadata,
+    mentionProvidersMetadata,
     openCtx,
     promiseFactoryToObservable,
     telemetryRecorder,
-    webMentionProvidersMetadata,
 } from '@sourcegraph/cody-shared'
 import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
@@ -40,6 +39,7 @@ interface GetContextItemsTelemetry {
 }
 
 export function getMentionMenuData(
+    disabledMentionsProviders: OptionalProviderId[] | undefined | null,
     query: MentionQuery,
     chatModel: ChatModel
 ): Observable<MentionMenuData> {
@@ -76,7 +76,6 @@ export function getMentionMenuData(
     }
 
     const isCodyWeb = getConfiguration().agentIDE === CodyIDE.Web
-    const isJetBrains = getConfiguration().agentIDE === CodyIDE.JetBrains
 
     const { input, context } = chatModel.contextWindow
 
@@ -101,11 +100,7 @@ export function getMentionMenuData(
 
         const providers = (
             query.provider === null
-                ? isCodyWeb
-                    ? webMentionProvidersMetadata()
-                    : isJetBrains
-                      ? jetbrainsMentionProvidersMetadata()
-                      : allMentionProvidersMetadata()
+                ? mentionProvidersMetadata(disabledMentionsProviders)
                 : Observable.of([])
         ).pipe(map(providers => providers.filter(p => p.title.toLowerCase().includes(queryLower))))
 

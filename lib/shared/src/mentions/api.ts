@@ -51,24 +51,18 @@ export const SYMBOL_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata & {
     emptyLabel: 'No symbols found',
 }
 
-/** Metadata for all registered {@link ContextMentionProvider}s. */
-export function allMentionProvidersMetadata(): Observable<ContextMentionProviderMetadata[]> {
+const availableMentionProviders = [FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER]
+export type OptionalProviderId = (typeof availableMentionProviders)[number]['id']
+
+export function mentionProvidersMetadata(
+    disabledMentionsProviders?: OptionalProviderId[] | undefined | null
+): Observable<ContextMentionProviderMetadata[]> {
     return openCtxMentionProviders().map(providers => [
-        FILE_CONTEXT_MENTION_PROVIDER,
-        SYMBOL_CONTEXT_MENTION_PROVIDER,
+        ...availableMentionProviders.filter(
+            provider => !disabledMentionsProviders?.includes(provider.id)
+        ),
         ...providers,
     ])
-}
-
-// TODO: CODY-3047 - Implement symbol context (@#) in JetBrains
-export function jetbrainsMentionProvidersMetadata(): Observable<ContextMentionProviderMetadata[]> {
-    return openCtxMentionProviders().map(providers => [FILE_CONTEXT_MENTION_PROVIDER, ...providers])
-}
-
-// Cody Web providers don't include standard file provider since
-// it uses openctx remote file provider instead
-export function webMentionProvidersMetadata(): Observable<ContextMentionProviderMetadata[]> {
-    return openCtxMentionProviders().map(providers => [SYMBOL_CONTEXT_MENTION_PROVIDER, ...providers])
 }
 
 export function openCtxProviderMetadata(
