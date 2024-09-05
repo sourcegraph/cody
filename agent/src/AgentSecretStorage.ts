@@ -36,8 +36,7 @@ export class AgentClientManagedSecretStorage implements vscode.SecretStorage {
     }
 }
 
-// Store secrets in system keychain or equivalent based on platform.
-export class AgentStatefulSecretStorage implements vscode.SecretStorage {
+export class AgentServerManagedSecretStorage implements vscode.SecretStorage {
     private readonly platform = process.platform
 
     constructor(public readonly onDidChange: vscode.Event<vscode.SecretStorageChangeEvent>) {

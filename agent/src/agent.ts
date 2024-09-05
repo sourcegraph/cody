@@ -66,7 +66,7 @@ import { AgentFixupControls } from './AgentFixupControls'
 import { AgentProviders } from './AgentProviders'
 import {
     AgentClientManagedSecretStorage,
-    AgentStatefulSecretStorage,
+    AgentServerManagedSecretStorage,
     AgentStatelessSecretStorage,
 } from './AgentSecretStorage'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
@@ -434,7 +434,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     clientInfo.capabilities?.secrets === 'client-managed'
                         ? new AgentClientManagedSecretStorage(this, this.secretsDidChange.event)
                         : clientInfo.capabilities?.secrets === 'server-managed'
-                          ? new AgentStatefulSecretStorage(this.secretsDidChange.event)
+                          ? new AgentServerManagedSecretStorage(this.secretsDidChange.event)
                           : new AgentStatelessSecretStorage()
 
                 await initializeVscodeExtension(
