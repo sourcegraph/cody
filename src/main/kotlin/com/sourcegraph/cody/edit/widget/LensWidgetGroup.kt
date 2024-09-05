@@ -231,10 +231,7 @@ class LensWidgetGroup(parentComponent: Editor) : EditorCustomElementRenderer, Di
 
   fun addWidget(widget: LensWidget) {
     widgets.add(widget)
-  }
-
-  fun registerWidgets() {
-    widgets.forEach { Disposer.register(this, it) }
+    Disposer.register(this, widget)
   }
 
   // Computes the X coordinate in the Editor where the first widget is drawn.

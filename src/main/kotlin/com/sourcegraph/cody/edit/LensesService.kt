@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.edit
 
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
@@ -8,6 +7,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolCodeLens
 import com.sourcegraph.cody.edit.widget.LensAction
@@ -57,46 +57,45 @@ class LensesService(val project: Project) {
         ?.first
   }
 
+  @RequiresEdt
   fun updateLenses(uri: String, codeLens: List<ProtocolCodeLens>) {
-    runInEdt {
-      val vf = CodyEditorUtil.findFileOrScratch(project, uri) ?: return@runInEdt
-      val fileDesc = OpenFileDescriptor(project, vf)
-      val editor =
-          FileEditorManager.getInstance(project).openTextEditor(fileDesc, /* focusEditor = */ false)
-              ?: return@runInEdt
+    val vf = CodyEditorUtil.findFileOrScratch(project, uri) ?: return
+    val fileDesc = OpenFileDescriptor(project, vf)
+    val editor =
+        FileEditorManager.getInstance(project).openTextEditor(fileDesc, /* focusEditor = */ false)
+            ?: return
 
-      val ranges = codeLens.groupBy { it.range }.keys.sortedBy { it.start.line }
-      ranges.zipWithNext { r1, r2 ->
-        if (r1.end.line > r2.start.line)
-            throw Exception("Lens ranges $r1 and $r2 for file $uri cannot overlap")
-      }
-
-      val newLensGroups =
-          codeLens
-              .groupBy { it.range }
-              .map { (range, codeLensesModels) ->
-                val taskId = codeLensesModels.firstNotNullOf { getTaskId(it) }
-                taskId to (range to createLensGroup(editor, codeLensesModels))
-              }
-              .toMap()
-
-      lensGroups[uri]?.values?.forEach { Disposer.dispose(it) }
-      newLensGroups.forEach { (taskId, rangeAndLensGroup) ->
-        val (range, lensGroup) = rangeAndLensGroup
-        val isNewTask = !lensGroups.containsKey(taskId)
-        lensGroup.show(range, shouldScrollToLens = isNewTask)
-      }
-
-      newLensGroups.forEach { (taskId, rangeAndLensGroup) ->
-        val lenses = codeLens.filter { getTaskId(it) == taskId }
-        listeners.forEach { it.onLensesUpdate(rangeAndLensGroup.second, lenses) }
-      }
-      if (newLensGroups.isEmpty()) {
-        listeners.forEach { it.onLensesUpdate(null, emptyList()) }
-      }
-
-      lensGroups[uri] = newLensGroups.mapValues { it.value.second }
+    val ranges = codeLens.groupBy { it.range }.keys.sortedBy { it.start.line }
+    ranges.zipWithNext { r1, r2 ->
+      if (r1.end.line > r2.start.line)
+          throw Exception("Lens ranges $r1 and $r2 for file $uri cannot overlap")
     }
+
+    val newLensGroups =
+        codeLens
+            .groupBy { it.range }
+            .map { (range, codeLensesModels) ->
+              val taskId = codeLensesModels.firstNotNullOf { getTaskId(it) }
+              taskId to (range to createLensGroup(editor, codeLensesModels))
+            }
+            .toMap()
+
+    lensGroups[uri]?.values?.forEach { Disposer.dispose(it) }
+    newLensGroups.forEach { (taskId, rangeAndLensGroup) ->
+      val (range, lensGroup) = rangeAndLensGroup
+      val isNewTask = !lensGroups.containsKey(taskId)
+      lensGroup.show(range, shouldScrollToLens = isNewTask)
+    }
+
+    newLensGroups.forEach { (taskId, rangeAndLensGroup) ->
+      val lenses = codeLens.filter { getTaskId(it) == taskId }
+      listeners.forEach { it.onLensesUpdate(rangeAndLensGroup.second, lenses) }
+    }
+    if (newLensGroups.isEmpty()) {
+      listeners.forEach { it.onLensesUpdate(null, emptyList()) }
+    }
+
+    lensGroups[uri] = newLensGroups.mapValues { it.value.second }
   }
 
   private fun getTaskId(codeLens: ProtocolCodeLens): String? {
