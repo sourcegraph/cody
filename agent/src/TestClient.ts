@@ -145,7 +145,7 @@ export class TestClient extends MessageHandler {
             bin === 'node'
                 ? [
                       '--enable-source-maps',
-                      // '--expose-gc', // Uncoment when running memory.test.ts
+                      '--expose-gc', // Used by `memory.test.ts` to reproduce memory leaks.
                       agentScript,
                       'api',
                       'jsonrpc-stdio',
