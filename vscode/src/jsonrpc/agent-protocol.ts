@@ -1001,16 +1001,12 @@ export interface TestingTelemetryEvent {
         client: string
         clientVersion: string
     }
-    parameters: {
-        metadata: {
-            [key: string]: number
-        }
+    parameters?: {
+        metadata: Record<string, any>
+        privateMetadata: Record<string, any>
         billingMetadata: {
             product: string
             category: string
-        }
-        privateMetadata: {
-            [key: string]: string
         }
     }
     timestamp: string
