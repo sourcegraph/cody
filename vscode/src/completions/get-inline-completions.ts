@@ -247,7 +247,7 @@ async function doGetInlineCompletions(
         stageRecorder,
         authStatus,
         config,
-        numberOfCompletionsToGenerate: n,
+        numberOfCompletionsToGenerate,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
@@ -472,7 +472,7 @@ async function doGetInlineCompletions(
         }
     }
 
-    const numberOfCompletionsToGenerate = provider.mayUseOnDeviceInference
+    const n = provider.mayUseOnDeviceInference
         ? 1
         : // Show more if manually triggered (but only showing 1 is faster, so we use it
           // in the automatic trigger case).
@@ -490,7 +490,7 @@ async function doGetInlineCompletions(
         gitContext,
         authStatus,
         config,
-        n: n ?? numberOfCompletionsToGenerate,
+        numberOfCompletionsToGenerate: numberOfCompletionsToGenerate ?? n,
         multiline: !!docContext.multilineTrigger,
     }
 

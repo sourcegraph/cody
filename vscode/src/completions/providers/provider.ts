@@ -41,7 +41,7 @@ export interface GenerateCompletionsOptions {
     /**
      * Number of parallel LLM requests per completion.
      */
-    n: number
+    numberOfCompletionsToGenerate: number
     /**
      *  Timeout in milliseconds for the first completion to be yielded from the completions generator.
      */
@@ -103,10 +103,17 @@ export abstract class Provider {
      * A unique and descriptive identifier for the provider.
      */
     public id: string
+    /**
+     * The Model info constructed from the server-side model configuration payload.
+     */
     public model?: Model
+    /**
+     * Either `provider/model-name` or `model-name` depending on the provider implementation.
+     * TODO: migrate to one syntax.
+     */
     public legacyModel: string
-    public client: CodeCompletionsClient = defaultCodeCompletionsClient
     public contextSizeHints: ProviderContextSizeHints
+    public client: CodeCompletionsClient = defaultCodeCompletionsClient
 
     protected maxContextTokens: number
     protected anonymousUserID: string

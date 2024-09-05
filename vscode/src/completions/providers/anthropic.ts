@@ -194,45 +194,47 @@ class AnthropicProvider extends Provider {
 
         tracer?.params(requestParams)
 
-        const completionsGenerators = Array.from({ length: options.n }).map(() => {
-            const abortController = forkSignal(abortSignal)
+        const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
+            () => {
+                const abortController = forkSignal(abortSignal)
 
-            const completionResponseGenerator = generatorWithErrorObserver(
-                generatorWithTimeout(
-                    this.client.complete(requestParams, abortController),
-                    requestParams.timeoutMs,
-                    abortController
-                ),
-                error => {
-                    if (error instanceof Error) {
-                        // If an "unsupported code completion model" error is thrown for Anthropic,
-                        // it's most likely because we started adding the `model` identifier to
-                        // requests to ensure the clients does not crash when the default site
-                        // config value changes.
-                        //
-                        // Older instances do not allow for the `model` to be set, even to
-                        // identifiers it supports and thus the error.
-                        //
-                        // If it happens once, we disable the behavior where the client includes a
-                        // `model` parameter.
-                        if (
-                            error.message.includes('Unsupported code completion model') ||
-                            error.message.includes('Unsupported chat model') ||
-                            error.message.includes('Unsupported custom model')
-                        ) {
-                            isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist = true
+                const completionResponseGenerator = generatorWithErrorObserver(
+                    generatorWithTimeout(
+                        this.client.complete(requestParams, abortController),
+                        requestParams.timeoutMs,
+                        abortController
+                    ),
+                    error => {
+                        if (error instanceof Error) {
+                            // If an "unsupported code completion model" error is thrown for Anthropic,
+                            // it's most likely because we started adding the `model` identifier to
+                            // requests to ensure the clients does not crash when the default site
+                            // config value changes.
+                            //
+                            // Older instances do not allow for the `model` to be set, even to
+                            // identifiers it supports and thus the error.
+                            //
+                            // If it happens once, we disable the behavior where the client includes a
+                            // `model` parameter.
+                            if (
+                                error.message.includes('Unsupported code completion model') ||
+                                error.message.includes('Unsupported chat model') ||
+                                error.message.includes('Unsupported custom model')
+                            ) {
+                                isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist = true
+                            }
                         }
                     }
-                }
-            )
+                )
 
-            return fetchAndProcessDynamicMultilineCompletions({
-                completionResponseGenerator,
-                abortController,
-                providerSpecificPostProcess: this.postProcess(docContext),
-                generateOptions: options,
-            })
-        })
+                return fetchAndProcessDynamicMultilineCompletions({
+                    completionResponseGenerator,
+                    abortController,
+                    providerSpecificPostProcess: this.postProcess(docContext),
+                    generateOptions: options,
+                })
+            }
+        )
 
         return zipGenerators(completionsGenerators)
     }

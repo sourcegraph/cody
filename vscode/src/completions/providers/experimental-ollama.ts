@@ -171,26 +171,28 @@ class ExperimentalOllamaProvider extends Provider {
         tracer?.params(requestParams as any)
         const ollamaClient = createOllamaClient(this.ollamaOptions, logger)
 
-        const completionsGenerators = Array.from({ length: options.n }).map(() => {
-            const abortController = forkSignal(abortSignal)
+        const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
+            () => {
+                const abortController = forkSignal(abortSignal)
 
-            const completionResponseGenerator = generatorWithTimeout(
-                ollamaClient.complete(requestParams, abortController),
-                timeoutMs,
-                abortController
-            )
+                const completionResponseGenerator = generatorWithTimeout(
+                    ollamaClient.complete(requestParams, abortController),
+                    timeoutMs,
+                    abortController
+                )
 
-            return fetchAndProcessDynamicMultilineCompletions({
-                completionResponseGenerator,
-                abortController,
-                providerSpecificPostProcess: insertText => insertText.trim(),
-                generateOptions: {
-                    ...options,
-                    // Increased first completion timeout value to account for the higher latency.
-                    firstCompletionTimeout: 3_0000,
-                },
-            })
-        })
+                return fetchAndProcessDynamicMultilineCompletions({
+                    completionResponseGenerator,
+                    abortController,
+                    providerSpecificPostProcess: insertText => insertText.trim(),
+                    generateOptions: {
+                        ...options,
+                        // Increased first completion timeout value to account for the higher latency.
+                        firstCompletionTimeout: 3_0000,
+                    },
+                })
+            }
+        )
 
         return zipGenerators(completionsGenerators)
     }

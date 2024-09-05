@@ -135,7 +135,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
         completionProviderConfig.setConfig(newConfig)
         const provider = await createProviderHelper({
             authStatus,
-            modelId: currentProviderConfig.model,
+            legacyModel: currentProviderConfig.model,
             provider: currentProviderConfig.provider,
             config: newConfig,
         })

@@ -26,7 +26,7 @@ export async function createProvider(
     if (config.autocompleteAdvancedProvider) {
         return createProviderHelper({
             authStatus,
-            modelId: config.autocompleteAdvancedModel || undefined,
+            legacyModel: config.autocompleteAdvancedModel || undefined,
             provider: config.autocompleteAdvancedProvider,
             config,
         })
@@ -39,7 +39,7 @@ export async function createProvider(
     if (configFromFeatureFlags) {
         return createProviderHelper({
             authStatus,
-            modelId: configFromFeatureFlags.model,
+            legacyModel: configFromFeatureFlags.model,
             provider: configFromFeatureFlags.provider,
             config,
         })
@@ -52,11 +52,11 @@ export async function createProvider(
         return null
     }
 
-    const { provider, modelId, model } = modelInfoOrError
+    const { provider, legacyModel, model } = modelInfoOrError
 
     return createProviderHelper({
         authStatus,
-        modelId,
+        legacyModel,
         model,
         provider,
         config,
@@ -65,14 +65,14 @@ export async function createProvider(
 
 interface CreateConfigHelperParams {
     authStatus: AuthenticatedAuthStatus
-    modelId: string | undefined
+    legacyModel: string | undefined
     provider: string
     config: ClientConfigurationWithAccessToken
     model?: Model
 }
 
 export function createProviderHelper(params: CreateConfigHelperParams): Provider | null {
-    const { authStatus, modelId, model, provider, config } = params
+    const { authStatus, legacyModel, model, provider, config } = params
     const { anonymousUserID } = localStorage.anonymousUserID()
 
     const providerCreator = getProviderCreator({
@@ -83,7 +83,7 @@ export function createProviderHelper(params: CreateConfigHelperParams): Provider
     if (providerCreator) {
         return providerCreator({
             model,
-            legacyModel: modelId,
+            legacyModel: legacyModel,
             authStatus,
             config,
             anonymousUserID,

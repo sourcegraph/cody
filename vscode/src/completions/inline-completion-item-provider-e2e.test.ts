@@ -151,7 +151,7 @@ function createNetworkProvider(params: RequestParams): MockRequestProvider {
         document: params.document,
         position: params.position,
         multiline: false,
-        n: 1,
+        numberOfCompletionsToGenerate: 1,
         firstCompletionTimeout: 1500,
         triggerKind: TriggerKind.Automatic,
         completionLogId: 'mock-log-id' as CompletionLogger.CompletionLogID,

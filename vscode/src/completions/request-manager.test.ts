@@ -117,7 +117,7 @@ describe('RequestManager', () => {
                     document,
                     position,
                     multiline: false,
-                    n: 1,
+                    numberOfCompletionsToGenerate: 1,
                     firstCompletionTimeout: 1500,
                     triggerKind: TriggerKind.Automatic,
                     completionLogId: 'mock-log-id' as CompletionLogID,

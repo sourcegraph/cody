@@ -193,22 +193,24 @@ class ExpOpenAICompatibleProvider extends Provider {
 
         tracer?.params(requestParams)
 
-        const completionsGenerators = Array.from({ length: options.n }).map(() => {
-            const abortController = forkSignal(abortSignal)
+        const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
+            () => {
+                const abortController = forkSignal(abortSignal)
 
-            const completionResponseGenerator = generatorWithTimeout(
-                this.client.complete(requestParams, abortController),
-                requestParams.timeoutMs,
-                abortController
-            )
+                const completionResponseGenerator = generatorWithTimeout(
+                    this.client.complete(requestParams, abortController),
+                    requestParams.timeoutMs,
+                    abortController
+                )
 
-            return fetchAndProcessDynamicMultilineCompletions({
-                completionResponseGenerator,
-                abortController,
-                providerSpecificPostProcess: this.postProcess,
-                generateOptions: options,
-            })
-        })
+                return fetchAndProcessDynamicMultilineCompletions({
+                    completionResponseGenerator,
+                    abortController,
+                    providerSpecificPostProcess: this.postProcess,
+                    generateOptions: options,
+                })
+            }
+        )
 
         /**
          * This implementation waits for all generators to yield values

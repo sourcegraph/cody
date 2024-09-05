@@ -129,7 +129,7 @@ ${OPENING_CODE_TAG}${infillBlock}`
         tracer?.params(requestParams)
 
         const completionsGenerators = Array.from({
-            length: options.n,
+            length: options.numberOfCompletionsToGenerate,
         }).map(() => {
             const abortController = forkSignal(abortSignal)
 

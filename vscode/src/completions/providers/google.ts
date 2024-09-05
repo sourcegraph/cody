@@ -21,9 +21,6 @@ import {
     type ProviderFactoryParams,
 } from './provider'
 
-const DEFAULT_GEMINI_MODEL = 'google/gemini-1.5-flash'
-const SUPPORTED_GEMINI_MODELS = ['gemini-1.5-flash', 'gemini-pro', 'gemini-1.0-pro']
-
 const MARKERS = {
     Prefix: ps`<|prefix|>`,
     Suffix: ps`<|suffix|>`,
@@ -129,22 +126,24 @@ Your response should contains only the code required to connect the gap, and the
 
         tracer?.params(requestParams)
 
-        const completionsGenerators = Array.from({ length: options.n }).map(() => {
-            const abortController = forkSignal(abortSignal)
+        const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
+            () => {
+                const abortController = forkSignal(abortSignal)
 
-            const completionResponseGenerator = generatorWithTimeout(
-                this.client.complete(requestParams, abortController),
-                requestParams.timeoutMs,
-                abortController
-            )
+                const completionResponseGenerator = generatorWithTimeout(
+                    this.client.complete(requestParams, abortController),
+                    requestParams.timeoutMs,
+                    abortController
+                )
 
-            return fetchAndProcessDynamicMultilineCompletions({
-                completionResponseGenerator,
-                abortController,
-                providerSpecificPostProcess: this.postProcess,
-                generateOptions: options,
-            })
-        })
+                return fetchAndProcessDynamicMultilineCompletions({
+                    completionResponseGenerator,
+                    abortController,
+                    providerSpecificPostProcess: this.postProcess,
+                    generateOptions: options,
+                })
+            }
+        )
 
         return zipGenerators(completionsGenerators)
     }
@@ -166,9 +165,11 @@ Your response should contains only the code required to connect the gap, and the
     }
 }
 
+const SUPPORTED_GEMINI_MODELS = ['gemini-1.5-flash', 'gemini-pro', 'gemini-1.0-pro'] as const
+
 export function createProvider(params: ProviderFactoryParams): Provider {
     const { legacyModel, anonymousUserID } = params
-    const clientModel = legacyModel ?? DEFAULT_GEMINI_MODEL
+    const clientModel = legacyModel ?? 'google/gemini-1.5-flash'
 
     if (!SUPPORTED_GEMINI_MODELS.some(m => clientModel.includes(m))) {
         throw new Error(`Model ${legacyModel} is not supported by GeminiProvider`)

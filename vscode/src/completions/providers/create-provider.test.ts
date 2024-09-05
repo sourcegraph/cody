@@ -158,52 +158,58 @@ describe('createProvider', () => {
     describe('completions provider and model are defined in the site config and not set in VSCode settings', () => {
         describe('if provider is "sourcegraph"', () => {
             const testCases: {
-                codyLLMConfig: CodyLLMSiteConfiguration
-                expected: { provider: string; model?: string } | null
+                configOverwrites: CodyLLMSiteConfiguration
+                expected: { provider: string; legacyModel?: string } | null
             }[] = [
                 // sourcegraph
                 {
-                    codyLLMConfig: { provider: 'sourcegraph', completionModel: 'hello-world' },
+                    configOverwrites: { provider: 'sourcegraph', completionModel: 'hello-world' },
                     expected: null,
                 },
                 {
-                    codyLLMConfig: {
+                    configOverwrites: {
                         provider: 'sourcegraph',
                         completionModel: 'anthropic/claude-instant-1.2',
                     },
-                    expected: { provider: 'anthropic', model: 'anthropic/claude-instant-1.2' },
+                    expected: { provider: 'anthropic', legacyModel: 'anthropic/claude-instant-1.2' },
                 },
                 {
-                    codyLLMConfig: { provider: 'sourcegraph', completionModel: 'anthropic/' },
+                    configOverwrites: { provider: 'sourcegraph', completionModel: 'anthropic/' },
                     expected: null,
                 },
                 {
-                    codyLLMConfig: { provider: 'sourcegraph', completionModel: '/claude-instant-1.2' },
+                    configOverwrites: {
+                        provider: 'sourcegraph',
+                        completionModel: '/claude-instant-1.2',
+                    },
                     expected: null,
                 },
                 {
-                    codyLLMConfig: { provider: 'sourcegraph', completionModel: 'fireworks/starcoder' },
-                    expected: { provider: 'fireworks', model: 'starcoder' },
+                    configOverwrites: {
+                        provider: 'sourcegraph',
+                        completionModel: 'fireworks/starcoder',
+                    },
+                    expected: { provider: 'fireworks', legacyModel: 'starcoder' },
                 },
 
                 // aws-bedrock
                 {
-                    codyLLMConfig: { provider: 'aws-bedrock', completionModel: 'hello-world' },
+                    configOverwrites: { provider: 'aws-bedrock', completionModel: 'hello-world' },
                     expected: null,
                 },
                 {
-                    codyLLMConfig: {
+                    configOverwrites: {
                         provider: 'aws-bedrock',
                         completionModel: 'anthropic.claude-instant-1.2',
                     },
-                    expected: { provider: 'anthropic', model: 'anthropic/claude-instant-1.2' },
+                    expected: { provider: 'anthropic', legacyModel: 'anthropic/claude-instant-1.2' },
                 },
                 {
-                    codyLLMConfig: { provider: 'aws-bedrock', completionModel: 'anthropic.' },
+                    configOverwrites: { provider: 'aws-bedrock', completionModel: 'anthropic.' },
                     expected: null,
                 },
                 {
-                    codyLLMConfig: {
+                    configOverwrites: {
                         provider: 'aws-bedrock',
                         completionModel: 'anthropic/claude-instant-1.2',
                     },
@@ -212,37 +218,37 @@ describe('createProvider', () => {
 
                 // open-ai
                 {
-                    codyLLMConfig: { provider: 'openai', completionModel: 'gpt-35-turbo-test' },
-                    expected: { provider: 'unstable-openai', model: 'gpt-35-turbo-test' },
+                    configOverwrites: { provider: 'openai', completionModel: 'gpt-35-turbo-test' },
+                    expected: { provider: 'unstable-openai', legacyModel: 'gpt-35-turbo-test' },
                 },
                 {
-                    codyLLMConfig: { provider: 'openai' },
-                    expected: { provider: 'unstable-openai', model: 'gpt-35-turbo' },
+                    configOverwrites: { provider: 'openai' },
+                    expected: { provider: 'unstable-openai', legacyModel: 'gpt-35-turbo' },
                 },
 
                 // azure-openai
                 {
-                    codyLLMConfig: { provider: 'azure-openai', completionModel: 'gpt-35-turbo-test' },
-                    expected: { provider: 'unstable-openai', model: '' },
+                    configOverwrites: { provider: 'azure-openai', completionModel: 'gpt-35-turbo-test' },
+                    expected: { provider: 'unstable-openai', legacyModel: '' },
                 },
                 {
-                    codyLLMConfig: { provider: 'azure-openai' },
-                    expected: { provider: 'unstable-openai', model: 'gpt-35-turbo' },
+                    configOverwrites: { provider: 'azure-openai' },
+                    expected: { provider: 'unstable-openai', legacyModel: 'gpt-35-turbo' },
                 },
 
                 // fireworks
                 {
-                    codyLLMConfig: { provider: 'fireworks', completionModel: 'starcoder-7b' },
-                    expected: { provider: 'fireworks', model: 'starcoder-7b' },
+                    configOverwrites: { provider: 'fireworks', completionModel: 'starcoder-7b' },
+                    expected: { provider: 'fireworks', legacyModel: 'starcoder-7b' },
                 },
                 {
-                    codyLLMConfig: { provider: 'fireworks' },
-                    expected: { provider: 'fireworks', model: 'deepseek-coder-v2-lite-base' },
+                    configOverwrites: { provider: 'fireworks' },
+                    expected: { provider: 'fireworks', legacyModel: 'deepseek-coder-v2-lite-base' },
                 },
 
                 // unknown-provider
                 {
-                    codyLLMConfig: {
+                    configOverwrites: {
                         provider: 'unknown-provider',
                         completionModel: 'superdupercoder-7b',
                     },
@@ -251,24 +257,24 @@ describe('createProvider', () => {
 
                 // provider not defined (backward compat)
                 {
-                    codyLLMConfig: { provider: undefined, completionModel: 'superdupercoder-7b' },
+                    configOverwrites: { provider: undefined, completionModel: 'superdupercoder-7b' },
                     expected: null,
                 },
             ]
 
-            for (const { codyLLMConfig, expected } of testCases) {
+            for (const { configOverwrites, expected } of testCases) {
                 it(`returns ${JSON.stringify(expected)} when cody LLM config is ${JSON.stringify(
-                    codyLLMConfig
+                    configOverwrites
                 )}`, async () => {
                     const provider = await createProvider(getVSCodeConfigurationWithAccessToken(), {
                         ...dummyAuthStatus,
-                        configOverwrites: codyLLMConfig,
+                        configOverwrites,
                     })
                     if (expected === null) {
                         expect(provider).toBeNull()
                     } else {
                         expect(provider?.id).toBe(expected.provider)
-                        expect(provider?.legacyModel).toBe(expected.model)
+                        expect(provider?.legacyModel).toBe(expected.legacyModel)
                     }
                 })
             }

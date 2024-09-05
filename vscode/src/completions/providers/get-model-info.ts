@@ -7,7 +7,7 @@ import {
 
 interface ModelInfo {
     provider: string
-    modelId?: string
+    legacyModel?: string
     model?: Model
 }
 
@@ -19,13 +19,13 @@ export function getModelInfo(authStatus: AuthenticatedAuthStatus): ModelInfo | E
         if (model.clientSideConfig?.openAICompatible) {
             provider = 'openaicompatible'
         }
-        return { provider, modelId: model.id, model }
+        return { provider, legacyModel: model.id, model }
     }
 
     if (authStatus.configOverwrites?.provider) {
         return parseProviderAndModel({
             provider: authStatus.configOverwrites.provider,
-            modelId: authStatus.configOverwrites.completionModel,
+            legacyModel: authStatus.configOverwrites.completionModel,
         })
     }
 
@@ -51,24 +51,24 @@ const delimiters: Record<string, string> = {
  * E.g. for "sourcegraph" provider the completions model name consists of model provider and model name separated by "/".
  * So when received `{ provider: "sourcegraph", model: "anthropic/claude-instant-1" }` the expected output would be `{ provider: "anthropic", model: "claude-instant-1" }`.
  */
-function parseProviderAndModel({ provider, modelId }: ModelInfo): ModelInfo | Error {
+function parseProviderAndModel({ provider, legacyModel }: ModelInfo): ModelInfo | Error {
     const delimiter = delimiters[provider]
     if (!delimiter) {
-        return { provider, modelId }
+        return { provider, legacyModel: legacyModel }
     }
 
-    if (modelId) {
-        const index = modelId.indexOf(delimiter)
-        const parsedProvider = modelId.slice(0, index)
-        const parsedModel = modelId.slice(index + 1)
+    if (legacyModel) {
+        const index = legacyModel.indexOf(delimiter)
+        const parsedProvider = legacyModel.slice(0, index)
+        const parsedModel = legacyModel.slice(index + 1)
         if (parsedProvider && parsedModel) {
-            return { provider: parsedProvider, modelId: parsedModel }
+            return { provider: parsedProvider, legacyModel: parsedModel }
         }
     }
 
     return new Error(
-        (modelId
-            ? `Failed to parse the model name ${modelId}`
+        (legacyModel
+            ? `Failed to parse the model name ${legacyModel}`
             : `Model missing but delimiter ${delimiter} expected`) +
             `for '${provider}' completions provider.`
     )
