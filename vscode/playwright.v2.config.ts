@@ -49,8 +49,11 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
                 ? process.env.CODY_RECORD_IF_MISSING === 'true'
                 : false,
         recordingMode: (process.env.CODY_RECORDING_MODE as any) ?? 'replay',
-        recordingDir: '../recordings/vscode/',
-        keepUnusedRecordings: false,
+        recordingDir: path.join(testRootDir, '../recordings/vscode/'),
+        keepUnusedRecordings:
+            typeof process.env.CODY_RECORD_KEEP_UNUSED === 'string'
+                ? process.env.CODY_RECORD_KEEP_UNUSED === 'true'
+                : false,
         bypassCSP: true,
         locale: 'en-US',
         timezoneId: 'America/Los_Angeles',
@@ -80,6 +83,7 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
             name: 'credentials',
             testDir: './e2e/utils',
             testMatch: ['credentials.setup.ts'],
+            dependencies: ['tmpdir'],
         },
         {
             name: 'utils',

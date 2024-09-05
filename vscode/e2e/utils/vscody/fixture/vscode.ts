@@ -3,7 +3,7 @@ import type { Dirent } from 'node:fs'
 import fs from 'node:fs/promises'
 import szip from '7zip-min'
 import pspawn from '@npmcli/promise-spawn'
-import { test as _test, expect } from '@playwright/test'
+import { test as _test } from '@playwright/test'
 import { isWindows } from '@sourcegraph/cody-shared'
 import 'node:http'
 import 'node:https'
@@ -206,38 +206,6 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
                 killChildrenSync(serverProcess.pid, 'SIGTERM')
                 killSync(serverProcess.pid, 'SIGTERM')
             }
-        },
-        { scope: 'test' },
-    ],
-    // This exposes some bare-bones VSCode APIs in the browser context. You can
-    // now simply execute a command from the chrome debugger which is a lot less
-    // flaky then relying on Button Clicks etc.
-    //TODO(rnauta): move this to use window.testUtils and expose all the other helpers
-    executeCommand: [
-        async ({ page }, use) => {
-            const commandFn = async (command: string, ...args: any[]): Promise<any> => {
-                return await _test.step(
-                    'executeCommand',
-                    async () => {
-                        await expect(page.locator('meta[name="__exposed-vscode-api__"]')).toBeAttached({
-                            timeout: 4000,
-                        })
-                        const res = await page.evaluate(
-                            async ({ command, args }) => {
-                                //@ts-ignore
-                                return await window.__testUtils.vscode.executeCommand(command, ...args)
-                            },
-                            {
-                                command,
-                                args,
-                            }
-                        )
-                        return res
-                    },
-                    { box: true }
-                )
-            }
-            use(commandFn)
         },
         { scope: 'test' },
     ],
