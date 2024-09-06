@@ -61,7 +61,6 @@ testGitWorkspace.extend<ExtraWorkspaceSettings>({
     // Commit the change so we empty the input box
     page.getByRole('button', { name: 'Commit' })
 
-    // await page.getByRole('heading', { name: 'Source Control' }).hover()
     await page.getByText('Changes3').click()
     await page.getByText('Changes3').getByLabel('Stage All Changes').click()
 
