@@ -92,7 +92,7 @@ export async function groqChatClient({
     // Stream requests
     fetch(config?.endpoint ?? GROQ_CHAT_API_URL, {
         method: 'POST',
-        body: JSON.stringify({ chatParams, stream: true }),
+        body: JSON.stringify({ ...chatParams, stream: true }),
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${config.key}`,

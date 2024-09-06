@@ -10,6 +10,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Cody Ignore: Fixed an issue where Cody would treat Notebook cells as ignored files when .cody/ignore is enabled. [pull/5473](https://github.com/sourcegraph/cody/pull/5473)
 - Command: Fixed the `Generate Commit Message` command on Windows caused by file path. [pull/5483](https://github.com/sourcegraph/cody/pull/5483)
+- Dev: Fixed an issue where incorrect request parameters caused stream requests to fail when using BYOK OpenAI-compatible models. [pull/5490](https://github.com/sourcegraph/cody/pull/5490)
 
 ### Changed
 
