@@ -13,7 +13,7 @@ test.describe('Demonstrations', () => {
                 .post('/.api/graphql')
                 .filter(req => 'RecordTelemetryEvents' in req.query)
                 .intercept((req, res, interceptor) => {
-                    console.log('Custom interceptor')
+                    // just to show a custom interceptor in action
                     res.sendStatus(500)
                 })
         })

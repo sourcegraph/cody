@@ -98,9 +98,7 @@ test.describe('edit command', {}, () => {
 
         const workingLens = session.editor.active.getByRole('button', { name: 'Cody is working...' })
         await stretchTimeout(
-            async () => {
-                expect(workingLens).not.toBeVisible() // we wait for the command to settle
-            },
+            () => expect(workingLens).not.toBeVisible(), // we wait for the command to settle
             { max: 10000, testInfo }
         )
 
@@ -145,20 +143,23 @@ test.describe('edit command', {}, () => {
 
         await session.QuickPick.items({ hasText: /Range/ }).click()
         await session.QuickPick.items({ hasText: /Selection/ }).click()
-
         const getSelection = () =>
-            session.runMacro(async function () {
-                // get the current active selection range
-                const res = this.vscode.window.activeTextEditor?.selection
-                return {
-                    startLine: (res?.start.line ?? 0) + 1,
-                    startCol: (res?.start.character ?? 0) + 1,
-                    endLine: (res?.end.line ?? 0) + 1,
-                    endCol: (res?.end.character ?? 0) + 1,
-                }
-            }, [])
+            session.runMacro(
+                'getSelection',
+                async function () {
+                    // get the current active selection range
+                    const res = this.vscode.window.activeTextEditor?.selection
+                    return {
+                        startLine: (res?.start.line ?? 0) + 1,
+                        startCol: (res?.start.character ?? 0) + 1,
+                        endLine: (res?.end.line ?? 0) + 1,
+                        endCol: (res?.end.character ?? 0) + 1,
+                    }
+                },
+                []
+            )
 
-        expect(await getSelection()).toEqual({
+        await expect(await getSelection()).toEqual({
             startLine: 2,
             startCol: 5,
             endLine: 3,
