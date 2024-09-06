@@ -1005,7 +1005,7 @@ export interface TestingTelemetryEvent {
         clientVersion: string
     }
     parameters: {
-        metadata: Record<string, any>
+        metadata: Record<string, number>
         privateMetadata: Record<string, any>
         billingMetadata: {
             product: string
