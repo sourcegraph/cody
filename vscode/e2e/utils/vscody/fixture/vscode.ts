@@ -257,7 +257,7 @@ async function downloadVSCodeServer(
 
     const releaseLock = await waitForLock(config.serverExecutableDir, {
         lockfilePath: path.join(config.serverExecutableDir, `${commitSha}.lock`),
-        delay: 1000,
+        delay: 100,
     })
     try {
         const ok = await fs.readFile(path.join(versionedExecutableDir, 'ok'), 'utf-8').catch(() => null)
@@ -352,27 +352,20 @@ async function installExtensions({
     const nodeExecutable = isWindows() ? 'node.exe' : 'node'
     const sharedExtensionsDir = path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.vscodeExtensionCacheDir)
     await fs.mkdir(sharedExtensionsDir, { recursive: true })
-    if (validOptions.vscodeExtensions.length) {
-        const releaseLock = await waitForLock(sharedExtensionsDir, {
-            lockfilePath: path.join(sharedExtensionsDir, '.lock'),
-            delay: 1000,
+
+    if (validOptions.vscodeExtensions.length > 0) {
+        const args = [
+            'out/server-main.js',
+            `--extensions-dir=${sharedExtensionsDir}`,
+            ...validOptions.vscodeExtensions.map(extension => `--install-extension=${extension}`),
+        ]
+        await pspawn(nodeExecutable, args, {
+            env: {
+                ...process.env,
+            },
+            cwd: versionedServerExecutableDir,
+            stdio: ['inherit', 'ignore', 'inherit'],
         })
-        try {
-            const args = [
-                'out/server-main.js',
-                `--extensions-dir=${sharedExtensionsDir}`,
-                ...validOptions.vscodeExtensions.map(extension => `--install-extension=${extension}`),
-            ]
-            await pspawn(nodeExecutable, args, {
-                env: {
-                    ...process.env,
-                },
-                cwd: versionedServerExecutableDir,
-                stdio: ['inherit', 'ignore', 'inherit'],
-            })
-        } finally {
-            releaseLock()
-        }
     }
 
     // Next, we link any symlinkExtensions directly to the test-server extensions

@@ -1,32 +1,36 @@
+import { test as t } from '@playwright/test'
 import type { GreaterThanOrEqual } from 'type-fest'
 import { URI } from 'vscode-uri'
 import { SessionChild } from './sessionChild'
-
 export class Editor extends SessionChild {
-    async openFile(args: OpenFileArgs) {
-        //todo: we might want to open in a specific editor pane
-        const file = await this.session.runMacro(
-            async function (args) {
-                const { file = `\${workspaceFolder}/${args.workspaceFile}`, viewColumn } = args
-                const uri = this.vscode.Uri.file(this.utils.substitutePathVars(file))
-                const showOptions = { preserveFocus: true, preview: false, viewColumn }
-                await this.vscode.commands.executeCommand('vscode.open', uri, showOptions)
-                return uri
-            },
-            [args]
-        )
-        // it comes back JSON serialized, so we need to parse it
-        const uri = URI.from(file)
-        if (args.selection) {
-            //TODO: pass in returned file
-            await this.select({ selection: args.selection })
-        }
-        return uri
+    openFile(args: OpenFileArgs) {
+        return t.step('Editor.openFile', async () => {
+            //todo: we might want to open in a specific editor pane
+            const file = await this.session.runMacro(
+                'uix:openFile',
+                async function (args) {
+                    const { file = `\${workspaceFolder}/${args.workspaceFile}`, viewColumn } = args
+                    const uri = this.vscode.Uri.file(this.utils.substitutePathVars(file))
+                    const showOptions = { preserveFocus: true, preview: false, viewColumn }
+                    await this.vscode.commands.executeCommand('vscode.open', uri, showOptions)
+                    return uri
+                },
+                [args]
+            )
+            // it comes back JSON serialized, so we need to parse it
+            const uri = URI.from(file)
+            if (args.selection) {
+                //TODO: pass in returned file
+                await this.select({ selection: args.selection })
+            }
+            return uri
+        })
     }
 
     async select(args: SelectArgs) {
         //TODO: We might want to activate a specific editor/file. For now we just assume the currently active one
         return await this.session.runMacro(
+            'uix:select',
             async function (args) {
                 const editor = this.vscode.window.activeTextEditor
                 if (!editor) {

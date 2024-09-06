@@ -107,7 +107,8 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
         },
     ],
     reporter: [
-        ['line', { printSteps: true, includeProjectInTestName: true }],
+        // ['line', { printSteps: true, includeProjectInTestName: true }],
+        ['list', {}],
         ['html', { outputFolder: '.test-reports', fileName: 'report.html', open: 'never' }],
         ['json', { outputFile: '.test-reports/report.json', open: 'never' }],
         ...(isCI
