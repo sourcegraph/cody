@@ -34,6 +34,10 @@ export async function showSignInMenu(
     const menuID = type || item?.id
     telemetryRecorder.recordEvent('cody.auth.signin.menu', 'clicked', {
         privateMetadata: { menuID },
+        billingMetadata: {
+            product: 'cody',
+            category: 'billable',
+        }
     })
     switch (menuID) {
         case 'enterprise': {
@@ -222,6 +226,10 @@ async function signinMenuForInstanceUrl(instanceUrl: string): Promise<void> {
         metadata: {
             success: authState.authenticated ? 1 : 0,
         },
+        billingMetadata: {
+            product: 'cody',
+            category: 'billable',
+        }
     })
     await showAuthResultMessage(instanceUrl, authState)
 }
@@ -292,6 +300,10 @@ export async function tokenCallbackHandler(
         metadata: {
             success: authState?.authenticated ? 1 : 0,
         },
+        billingMetadata: {
+            product: 'cody',
+            category: 'billable',
+        }
     })
     if (authState?.authenticated) {
         await vscode.window.showInformationMessage(`Signed in to ${endpoint}`)
@@ -326,7 +338,10 @@ export function formatURL(uri: string): string | null {
 }
 
 export async function showSignOutMenu(): Promise<void> {
-    telemetryRecorder.recordEvent('cody.auth.logout', 'clicked')
+    telemetryRecorder.recordEvent('cody.auth.logout', 'clicked' ,{billingMetadata: {
+        product: 'cody',
+        category: 'billable',
+    }})
     const { endpoint } = authProvider.instance!.status
 
     if (endpoint) {

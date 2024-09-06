@@ -65,6 +65,10 @@ export const ModelSelectField: React.FunctionComponent<{
                     modelProvider: model.provider,
                     modelTitle: model.title,
                 },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
             })
 
             if (showCodyProBadge && isCodyProModel(model)) {
@@ -106,6 +110,10 @@ export const ModelSelectField: React.FunctionComponent<{
                     metadata: {
                         isCodyProUser: isCodyProUser ? 1 : 0,
                         totalModels: models.length,
+                    },
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'billable',
                     },
                 })
             }
@@ -227,7 +235,13 @@ export const ModelSelectField: React.FunctionComponent<{
                                     onSelect={() => {
                                         telemetryRecorder.recordEvent(
                                             'cody.modelSelector',
-                                            'clickEnterpriseModelOption'
+                                            'clickEnterpriseModelOption',
+                                            {
+                                                billingMetadata: {
+                                                    product: 'cody',
+                                                    category: 'billable',
+                                                },
+                                            }
                                         )
                                     }}
                                     className={styles.modelTitleWithIcon}

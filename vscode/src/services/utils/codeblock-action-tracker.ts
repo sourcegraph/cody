@@ -83,6 +83,11 @@ function setLastStoredCode(
             source,
             op: operation,
         },
+        billingMetadata: {
+            product: 'cody',
+            // 🚨 ensure that any new event names added qualify as core events, or update this parameter.
+            category: 'core',
+        },
     })
 }
 
@@ -230,6 +235,10 @@ export async function onTextDocumentChange(newCode: string): Promise<void> {
             privateMetadata: {
                 source,
                 op,
+            },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
             },
         })
     }

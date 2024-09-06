@@ -285,6 +285,10 @@ export class FixupController
                     ...privateMetadata,
                     model: task.model,
                 },
+                billingMetadata: {
+                    category: 'billable',
+                    product: 'cody',
+                },
             })
         }
     }
@@ -612,6 +616,10 @@ export class FixupController
         telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
             metadata,
             privateMetadata,
+            billingMetadata: {
+                category: 'core',
+                product: 'cody',
+            },
         })
 
         /**
@@ -658,6 +666,10 @@ export class FixupController
             telemetryRecorder.recordEvent('cody.fixup.user', acceptance, {
                 metadata,
                 privateMetadata,
+                billingMetadata: {
+                    category: acceptance == 'rejected' ? 'billable' : 'core',
+                    product: 'cody',
+                },
             })
         }
 

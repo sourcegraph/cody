@@ -115,7 +115,12 @@ export async function createOrUpdateTelemetryRecorderProvider(
             /**
              * New user
              */
-            telemetryRecorder.recordEvent('cody.extension', 'installed')
+            telemetryRecorder.recordEvent('cody.extension', 'installed', {
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
         } else if (!config.isRunningInsideAgent || config.agentHasPersistentStorage) {
             /**
              * Repeat user

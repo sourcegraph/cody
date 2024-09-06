@@ -384,7 +384,12 @@ async function registerOtherCommands(disposables: vscode.Disposable[]) {
             vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
         ),
         vscode.commands.registerCommand('cody.welcome', async () => {
-            telemetryRecorder.recordEvent('cody.walkthrough', 'clicked')
+            telemetryRecorder.recordEvent('cody.walkthrough', 'clicked', {
+                billingMetadata: {
+                    category: 'billable',
+                    product: 'cody',
+                },
+            })
             // Hack: We have to run this twice to force VS Code to register the walkthrough
             // Open issue: https://github.com/microsoft/vscode/issues/186165
             await vscode.commands.executeCommand('workbench.action.openWalkthrough')

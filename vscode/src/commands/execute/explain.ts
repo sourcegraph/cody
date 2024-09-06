@@ -86,6 +86,10 @@ export async function executeExplainCommand(
                 source: args?.source,
                 traceId: span.spanContext().traceId,
             },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
+            }
         })
 
         const chatArguments = await explainCommand(span, args)

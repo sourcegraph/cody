@@ -80,6 +80,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                         ? truncateTextStart(transcriptRef.current.toString(), CHAT_INPUT_TOKEN_BUDGET)
                         : '',
                 },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
             })
         },
         [userInfo, telemetryRecorder]

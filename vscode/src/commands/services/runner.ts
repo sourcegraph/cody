@@ -72,6 +72,10 @@ export class CommandRunner implements vscode.Disposable {
                 source: this.args.source,
                 traceId: this.span.spanContext().traceId,
             },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
+            },
         })
 
         // Conditions checks

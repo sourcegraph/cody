@@ -177,7 +177,12 @@ async function refresh(uri: vscode.Uri): Promise<void> {
 function setCodyIgnoreFiles(ws: vscode.Uri, files: IgnoreFileContent[]): void {
     ignores.setIgnoreFiles(ws, files)
     if (files.length) {
-        telemetryRecorder.recordEvent('cody.codyIgnore', 'hasFile')
+        telemetryRecorder.recordEvent('cody.codyIgnore', 'hasFile', {
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
+            }
+        })
     }
 }
 
