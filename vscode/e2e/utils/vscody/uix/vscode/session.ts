@@ -1,6 +1,7 @@
 import type { execSync } from 'node:child_process'
 import type * as fs from 'node:fs'
 import type path from 'node:path'
+import { test } from '@playwright/test'
 import type * as vscode from 'vscode'
 import type { UIXContextFnContext } from '..'
 import { Editor, QuickPick, Sidebar, start } from './internal'
@@ -20,7 +21,7 @@ export class Session {
     }
 
     runCommand<Return = unknown, Args extends Array<any> = []>(
-        opts: { command: string; skipResult?: boolean },
+        opts: { command: string; skipResult?: boolean; name?: string },
         ...args: Args
     ): Promise<Return>
     runCommand<Return = unknown, Args extends Array<any> = []>(
@@ -28,47 +29,65 @@ export class Session {
         ...args: Args
     ): Promise<Return>
     runCommand<Return = unknown, Args extends Array<any> = []>(
-        commandOrOpts: string | { command: string; skipResult?: boolean },
+        commandOrOpts: string | { command: string; skipResult?: boolean; name?: string },
         ...args: Args
     ): Promise<Return> {
-        const { command, skipResult } =
-            typeof commandOrOpts === 'string'
-                ? { command: commandOrOpts, skipResult: undefined }
-                : commandOrOpts
-        return this.page.evaluate(
-            async ({ command, args, skipResult }) => {
-                //@ts-ignore
-                let res = window.__testUtils.vscode.executeCommand(command, ...args)
-                // we forward the event loop
+        const {
+            command,
+            skipResult,
+            name = command,
+        } = typeof commandOrOpts === 'string'
+            ? { command: commandOrOpts, skipResult: undefined }
+            : commandOrOpts
+        return test.step(
+            `Running command: ${name}`,
+            () => {
+                return this.page.evaluate(
+                    async ({ command, args, skipResult }) => {
+                        //@ts-ignore
+                        let res = window.__testUtils.vscode.executeCommand(command, ...args)
+                        // we forward the event loop
 
-                if (skipResult) {
-                    await new Promise(r => setTimeout(r, 0))
-                    return undefined
-                }
-                res = await res
-                await new Promise(r => setTimeout(r, 0))
-                return res
+                        if (skipResult) {
+                            await new Promise(r => setTimeout(r, 0))
+                            return undefined
+                        }
+                        res = await res
+                        await new Promise(r => setTimeout(r, 0))
+                        return res
+                    },
+                    {
+                        command,
+                        args,
+                        skipResult,
+                    }
+                )
             },
-            {
-                command,
-                args,
-                skipResult,
-            }
+            { box: true }
         )
     }
 
     runMacro<Return = unknown, Args extends Array<any> = []>(
+        name: string,
         fn: JavascriptFn<Args, Return>,
         args: Args
     ): Promise<Return> {
-        return this.runCommand<Return, [string, ...Args]>('vscody.eval', fn.toString(), ...args)
+        return this.runCommand<Return, [string, ...Args]>(
+            { command: 'vscody.eval', name: `runMacro<${name}>` },
+            fn.toString(),
+            ...args
+        )
     }
 
     tick() {
         //wait for UI interactions to have been handled
-        return this.runMacro(async () => {
-            return null
-        }, [])
+        return this.runMacro(
+            'void:tick',
+            async () => {
+                return null
+            },
+            []
+        )
     }
 
     get page() {
