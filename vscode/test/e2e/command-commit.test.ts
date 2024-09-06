@@ -27,7 +27,7 @@ testGitWorkspace.extend<ExtraWorkspaceSettings>({
     // Open the Source Control View to confirm this is a git workspace
     const sourceControlView = page.getByLabel(/Source Control/).nth(2)
     await sourceControlView.click()
-    await expect(page.getByRole('heading', { name: 'Source Control' })).toBeVisible()
+    await expect(page.locator('h2').filter({ hasText: 'Source Control' })).toBeVisible()
     await expect(page.getByText('index.js')).toBeVisible()
 
     // Disable do-not-disturb
