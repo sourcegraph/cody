@@ -281,7 +281,7 @@ testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => 
     // Check the change is showing as a Git file in the sidebar
     const sourceControlView = page.getByLabel(/Source Control/).nth(2)
     await sourceControlView.click()
-    await page.getByRole('heading', { name: 'Source Control' }).hover()
+    await page.locator('h2').filter({ hasText: 'Source Control' }).hover()
     await page.getByText('index.js').hover()
     await page.locator('a').filter({ hasText: 'index.js' }).click()
 
