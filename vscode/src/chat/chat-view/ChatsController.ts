@@ -250,10 +250,12 @@ export class ChatsController implements vscode.Disposable {
     }
 
     private async sendEditorContextToChat(uri?: URI): Promise<void> {
-        telemetryRecorder.recordEvent('cody.addChatContext', 'clicked', {billingMetadata: {
-            category: 'billable',
-            product: 'cody',
-        }})
+        telemetryRecorder.recordEvent('cody.addChatContext', 'clicked', {
+            billingMetadata: {
+                category: 'billable',
+                product: 'cody',
+            },
+        })
         const provider = await this.getActiveChatController()
         if (provider === this.panel) {
             await vscode.commands.executeCommand('cody.chat.focus')

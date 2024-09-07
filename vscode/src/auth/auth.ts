@@ -37,7 +37,7 @@ export async function showSignInMenu(
         billingMetadata: {
             product: 'cody',
             category: 'billable',
-        }
+        },
     })
     switch (menuID) {
         case 'enterprise': {
@@ -229,7 +229,7 @@ async function signinMenuForInstanceUrl(instanceUrl: string): Promise<void> {
         billingMetadata: {
             product: 'cody',
             category: 'billable',
-        }
+        },
     })
     await showAuthResultMessage(instanceUrl, authState)
 }
@@ -303,7 +303,7 @@ export async function tokenCallbackHandler(
         billingMetadata: {
             product: 'cody',
             category: 'billable',
-        }
+        },
     })
     if (authState?.authenticated) {
         await vscode.window.showInformationMessage(`Signed in to ${endpoint}`)
@@ -338,10 +338,12 @@ export function formatURL(uri: string): string | null {
 }
 
 export async function showSignOutMenu(): Promise<void> {
-    telemetryRecorder.recordEvent('cody.auth.logout', 'clicked' ,{billingMetadata: {
-        product: 'cody',
-        category: 'billable',
-    }})
+    telemetryRecorder.recordEvent('cody.auth.logout', 'clicked', {
+        billingMetadata: {
+            product: 'cody',
+            category: 'billable',
+        },
+    })
     const { endpoint } = authProvider.instance!.status
 
     if (endpoint) {

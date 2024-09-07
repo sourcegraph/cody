@@ -181,7 +181,7 @@ function setCodyIgnoreFiles(ws: vscode.Uri, files: IgnoreFileContent[]): void {
             billingMetadata: {
                 product: 'cody',
                 category: 'billable',
-            }
+            },
         })
     }
 }

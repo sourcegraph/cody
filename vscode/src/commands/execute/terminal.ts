@@ -35,7 +35,7 @@ export async function executeExplainOutput(
             billingMetadata: {
                 product: 'cody',
                 category: 'core',
-            }
+            },
         })
 
         const promptArgs = PromptString.fromTerminalOutputArguments(args)

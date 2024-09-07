@@ -14,12 +14,18 @@ import { getReleaseNotesURLByIDE } from '../release'
 import { version } from '../version'
 
 export function logSidebarClick(feature: string, billingCategory?: BillingCategory) {
-    telemetryRecorder.recordEvent(`cody.sidebar.${feature}`, 'clicked', billingCategory ? {
-        billingMetadata: {
-            category: billingCategory,
-            product: 'cody',
-        },
-    } : {})
+    telemetryRecorder.recordEvent(
+        `cody.sidebar.${feature}`,
+        'clicked',
+        billingCategory
+            ? {
+                  billingMetadata: {
+                      category: billingCategory,
+                      product: 'cody',
+                  },
+              }
+            : {}
+    )
 }
 
 export function registerSidebarCommands(): vscode.Disposable[] {

@@ -34,7 +34,7 @@ export class CustomCommandsBuilderMenu {
                 billingMetadata: {
                     product: 'cody',
                     category: 'core',
-                }
+                },
             })
 
             return { key, prompt: { ...prompt, key, mode }, type }

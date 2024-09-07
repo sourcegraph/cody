@@ -89,7 +89,7 @@ export async function executeTestChatCommand(
             billingMetadata: {
                 product: 'cody',
                 category: 'core',
-            }
+            },
         })
 
         return {

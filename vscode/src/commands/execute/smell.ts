@@ -89,7 +89,7 @@ export async function executeSmellCommand(
             billingMetadata: {
                 product: 'cody',
                 category: 'core',
-            }
+            },
         })
 
         const chatArguments = await smellCommand(span, args)

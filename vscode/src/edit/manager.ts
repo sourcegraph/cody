@@ -220,7 +220,7 @@ export class EditManager implements vscode.Disposable {
             billingMetadata: {
                 product: 'cody',
                 category: 'core',
-            }
+            },
         })
         /**
          * Updates the editor's selection and view for 'doc' or 'test' intents, causing the cursor to

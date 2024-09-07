@@ -463,7 +463,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                     billingMetadata: {
                                         product: 'cody',
                                         category: 'billable',
-                                    }
+                                    },
                                 }
                             )
                             if (!authStatus?.authenticated) {
@@ -808,7 +808,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             billingMetadata: {
                 product: 'cody',
                 category: 'core',
-            }
+            },
         })
     }
 
@@ -1323,7 +1323,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             billingMetadata: {
                 product: 'cody',
                 category: 'billable',
-            }
+            },
         })
     }
 
@@ -1638,7 +1638,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             billingMetadata: {
                 product: 'cody',
                 category: 'billable',
-            }
+            },
         })
     }
 }

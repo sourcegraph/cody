@@ -85,7 +85,7 @@ export async function executeExplainHistoryCommand(
             billingMetadata: {
                 product: 'cody',
                 category: 'core',
-            }
+            },
         })
 
         const sessionArgs = await explainHistoryCommand(span, commandsProvider, args)

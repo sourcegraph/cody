@@ -89,7 +89,7 @@ export async function executeExplainCommand(
             billingMetadata: {
                 product: 'cody',
                 category: 'core',
-            }
+            },
         })
 
         const chatArguments = await explainCommand(span, args)

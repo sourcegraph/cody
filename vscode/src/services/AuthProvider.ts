@@ -299,10 +299,12 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
             } else {
                 eventValue = 'disconnected'
             }
-            telemetryRecorder.recordEvent('cody.auth', eventValue, {billingMetadata: {
-                product: 'cody',
-                category: 'billable',
-            }})
+            telemetryRecorder.recordEvent('cody.auth', eventValue, {
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
         }
     }
 
@@ -331,10 +333,12 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
             // User has authenticated before, noop
             return
         }
-        telemetryRecorder.recordEvent('cody.auth.login', 'firstEver', {billingMetadata: {
-            product: 'cody',
-            category: 'billable',
-        }})
+        telemetryRecorder.recordEvent('cody.auth.login', 'firstEver', {
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
+            },
+        })
         this.setHasAuthenticatedBefore()
         void maybeStartInteractiveTutorial()
     }

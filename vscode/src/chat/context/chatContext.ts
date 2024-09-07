@@ -59,7 +59,7 @@ export function getMentionMenuData(
                 billingMetadata: {
                     product: 'cody',
                     category: 'core',
-                }
+                },
             })
         },
         withProvider: (provider, providerMetadata) => {
@@ -69,7 +69,7 @@ export function getMentionMenuData(
                 billingMetadata: {
                     product: 'cody',
                     category: 'core',
-                }
+                },
             })
         },
     }
