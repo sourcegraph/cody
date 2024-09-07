@@ -79,7 +79,7 @@ class CompletionProviderConfig {
     }
 
     public experimentBasedContextStrategy(): ContextStrategy {
-        const defaultContextStrategy = 'jaccard-similarity'
+        const defaultContextStrategy = 'recent-edits-mixed'
 
         const isContextExperimentFlagEnabled = this.getPrefetchedFlag(
             FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag

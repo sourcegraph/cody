@@ -1,11 +1,10 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { applyPatch } from 'fast-myers-diff'
 import { afterAll, beforeAll, describe, it } from 'vitest'
-import * as vscode from 'vscode'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
+import { applyEvent, parseEditorEvents } from './cody-nes-events'
 
 // Disabled because we don't need to run this test in CI on every PR.  We're
 // keeping the test around because it has useful infrastructure to debug memory
@@ -27,40 +26,6 @@ describe.skip('Memory Usage', () => {
         await workspace.afterAll()
         await client.afterAll()
     }, 20_000)
-
-    async function applyEvent(event: EditorEvent): Promise<void> {
-        if (event.eventType === 'initialize') {
-            return
-        }
-        if (!event.uri) {
-            return
-        }
-        const uri = vscode.Uri.parse(event.uri)
-
-        if (event.eventType === 'document/didOpen' || event.eventType === 'document/wasOpen') {
-            const content: string = JSON.parse(event.json ?? '{}')?.content ?? ''
-            await client.openFile(uri, { text: content })
-            return
-        }
-
-        if (event.eventType === 'document/didClose') {
-            client.notify('textDocument/didClose', { uri: event.uri })
-            return
-        }
-
-        if (event.eventType === 'document/didChange') {
-            const document = client.workspace.getDocument(uri)
-            if (!document) {
-                throw new Error(`Document ${uri} not found`)
-            }
-            const contentChanges: [number, number, string][] =
-                JSON.parse(event.json ?? '{}')?.changes ?? []
-            const newText = [...applyPatch(document.content, contentChanges)].join('')
-            await client.changeFile(uri, {
-                text: newText,
-            })
-        }
-    }
 
     // The test case below was used to fix CODY-3616, a memory leak that
     // happened in our LRU cache for tree-sitter trees. The fix was to
@@ -92,7 +57,7 @@ describe.skip('Memory Usage', () => {
                 continue
             }
             for (const [index, event] of events.entries()) {
-                await applyEvent(event)
+                await applyEvent(client, event)
                 if (index % 50 === 0) {
                     const memory2 = await client.request('testing/memoryUsage', null)
                     console.log({
@@ -156,49 +121,4 @@ function prettyPrintBytes(bytes: number): string {
     }
 
     return `${bytes.toFixed(2)} ${units[unitIndex]}`
-}
-
-interface EditorEvent {
-    readonly timestamp: string
-    readonly eventType:
-        | 'initialize'
-        | 'document/wasOpen'
-        | 'document/didOpen'
-        | 'document/didClose'
-        | 'document/didSave'
-        | 'document/didFocus'
-        | 'document/didChange'
-        | 'selection/didChange'
-        | 'visibleRanges/didChange'
-        | 'diagnostics/didChange'
-        | 'unknown'
-    readonly uri?: string
-    readonly languageId?: string
-
-    /** String-encoded JSON object of the relevant metadata.
-     * For example, see SelectionInfos. */
-    readonly json?: string
-    recordName?: string // Intentionally mutable
-}
-
-function parseEditorEvents(file: string): EditorEvent[] {
-    // Parses the output of `cody-nes convert-to-json`.
-    const json: string[][] = JSON.parse(fs.readFileSync(file, 'utf8'))
-    const result: EditorEvent[] = []
-    for (const row of json) {
-        const [timestamp, eventType, uri, languageId, json] = row
-        if (timestamp === 'TIMESTAMP') {
-            // header row
-            continue
-        }
-        const event: EditorEvent = {
-            timestamp,
-            eventType: eventType as EditorEvent['eventType'],
-            uri,
-            languageId,
-            json,
-        }
-        result.push(event)
-    }
-    return result
 }

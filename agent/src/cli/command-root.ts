@@ -7,6 +7,7 @@ import { jsonrpcCommand } from './command-jsonrpc-stdio'
 import { serverCommand } from './command-jsonrpc-websocket'
 
 import { version } from '../../package.json'
+import { autocompleteContextBench } from './command-autocomplete-bench'
 import { contextCommand } from './command-context/command-context'
 
 export const rootCommand = new Command()
@@ -18,4 +19,9 @@ export const rootCommand = new Command()
     .addCommand(authCommand())
     .addCommand(chatCommand())
     .addCommand(new Command('api').addCommand(serverCommand).addCommand(jsonrpcCommand))
-    .addCommand(new Command('internal').addCommand(benchCommand).addCommand(contextCommand))
+    .addCommand(
+        new Command('internal')
+            .addCommand(benchCommand)
+            .addCommand(contextCommand)
+            .addCommand(autocompleteContextBench)
+    )

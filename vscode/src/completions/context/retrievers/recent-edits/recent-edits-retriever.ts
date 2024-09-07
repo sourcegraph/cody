@@ -37,6 +37,45 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         this.disposables.push(workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this)))
         this.disposables.push(workspace.onDidRenameFiles(this.onDidRenameFiles.bind(this)))
         this.disposables.push(workspace.onDidDeleteFiles(this.onDidDeleteFiles.bind(this)))
+        this.disposables.push(
+            vscode.window.onDidChangeTextEditorSelection(this.onDidChangeTextEditorSelection.bind(this))
+        )
+    }
+
+    private async onDidChangeTextEditorSelection(
+        event: vscode.TextEditorSelectionChangeEvent
+    ): Promise<void> {
+        const editor = event.textEditor
+        const selection = editor.selection
+        if (!selection.isEmpty) {
+            const selectedText = editor.document.getText(selection)
+            const clipboardText = await vscode.env.clipboard.readText()
+            if (selectedText === clipboardText) {
+                console.log('Text was copied:', selectedText)
+                // You can perform additional actions here, such as tracking the copy event
+                this.trackCopyEvent(selectedText, editor.document.uri)
+            }
+        }
+    }
+
+    private trackCopyEvent(copiedText: string, documentUri: vscode.Uri): void {
+        // Implement your tracking logic here
+        // For example, you could add it to the trackedDocuments map or emit an event
+        console.log(`Copy event tracked in document: ${documentUri.toString()}`)
+        console.log(`Copied text: ${copiedText}`)
+    }
+
+    public async checkIfCopied(editor: vscode.TextEditor | undefined) {
+        if (!editor) return
+        const selection = editor.selection
+        if (!selection.isEmpty) {
+            const text = editor.document.getText(selection)
+            const clipboardText = await vscode.env.clipboard.readText()
+            if (text === clipboardText) {
+                console.log('Text was copied:', text)
+                // You can perform additional actions here
+            }
+        }
     }
 
     public async retrieve(options: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {

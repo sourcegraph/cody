@@ -556,14 +556,18 @@ export class TestClient extends MessageHandler {
         if (!this.workspace.activeDocumentFilePath) {
             throw new Error('No active document')
         }
-        const document = this.workspace.getDocument(this.workspace.activeDocumentFilePath)
-        const position = document?.protocolDocument?.selection?.start
-        if (position === undefined) {
-            throw new Error('No cursor position')
+        // const document = this.workspace.getDocument(this.workspace.activeDocumentFilePath)
+        // const position = document?.protocolDocument?.selection?.start
+        // if (position === undefined) {
+        //     throw new Error('No cursor position')
+        // }
+        const pos: Position = {
+            line: 0,
+            character: 0,
         }
         return this.request('autocomplete/execute', {
             uri: this.workspace.activeDocumentFilePath.toString(),
-            position,
+            position: pos,
             ...params,
         })
     }
