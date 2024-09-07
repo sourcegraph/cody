@@ -908,6 +908,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
 
             try {
+                if (params.forceMultiline === true) {
+                    provider.forceNextCompletionIsMultiline = true
+                }
                 if (params.triggerKind === 'Invoke') {
                     await provider?.manuallyTriggerCompletion?.()
                 }
