@@ -1,7 +1,7 @@
 import { Observable } from 'observable-fns'
 import type { Event } from 'vscode'
 import { logDebug } from '../logger'
-import { fromVSCodeEvent } from '../misc/observable'
+import { distinctUntilChanged, fromVSCodeEvent } from '../misc/observable'
 import { setSingleton, singletonNotYetSet } from '../singletons'
 import { type SourcegraphGraphQLAPIClient, graphqlClient } from '../sourcegraph-api/graphql'
 import { wrapInActiveSpan } from '../tracing'
@@ -86,7 +86,7 @@ export class FeatureFlagProvider {
     // flags are updated in the background.
     private unexposedFeatureFlags: Record<string, Set<string>> = {}
 
-    private subscriptions: Map<
+    private subscriptionsForEndpoint: Map<
         string, // ${endpoint}#${prefix filter}
         { lastSnapshot: Record<string, boolean>; callbacks: Set<() => void> }
     > = new Map()
@@ -167,10 +167,12 @@ export class FeatureFlagProvider {
         const onChangeEvent: Event<boolean | undefined> = (
             listener: (value: boolean | undefined) => void
         ) => {
-            const dispose = this.onFeatureFlagChanged('', () => listener(this.getFromCache(flagName)))
+            const dispose = this.onFeatureFlagChanged(() => listener(this.getFromCache(flagName)))
             return { dispose }
         }
-        return fromVSCodeEvent(onChangeEvent, () => this.evaluateFeatureFlag(flagName))
+        return fromVSCodeEvent(onChangeEvent, () => this.evaluateFeatureFlag(flagName)).pipe(
+            distinctUntilChanged()
+        )
     }
 
     public async refresh(): Promise<void> {
@@ -203,29 +205,30 @@ export class FeatureFlagProvider {
                 clearTimeout(this.nextRefreshTimeout)
                 this.nextRefreshTimeout = undefined
             }
-            if (this.subscriptions.size > 0) {
+            if (this.subscriptionsForEndpoint.size > 0) {
                 this.nextRefreshTimeout = setTimeout(() => this.refreshFeatureFlags(), ONE_HOUR)
             }
         })
     }
 
-    // Allows you to subscribe to a change event that is triggered when feature flags with a
-    // predefined prefix are updated. Can be used to sync code that only queries flags at startup
-    // to outside changes.
-    //
-    // Note this will only update feature flags that a user is currently exposed to. For feature
-    // flags not defined upstream, the changes will require a new call to `evaluateFeatureFlag` to
-    // be picked up.
-    public onFeatureFlagChanged(prefixFilter: string, callback: () => void): () => void {
+    /**
+     * Allows you to subscribe to a change event that is triggered when feature flags change that
+     * the user is currently exposed to.
+     *
+     * Note this will only update feature flags that a user is currently exposed to. For feature
+     * flags not defined upstream, the changes will require a new call to
+     * {@link FeatureFlagProvider.evaluateFeatureFlag} or
+     * {@link FeatureFlagProvider.evaluatedFeatureFlag} to be picked up.
+     */
+    private onFeatureFlagChanged(callback: () => void): () => void {
         const endpoint = this.apiClient.endpoint
-        const key = endpoint + '#' + prefixFilter
-        const subscription = this.subscriptions.get(key)
+        const subscription = this.subscriptionsForEndpoint.get(endpoint)
         if (subscription) {
             subscription.callbacks.add(callback)
             return () => subscription.callbacks.delete(callback)
         }
-        this.subscriptions.set(key, {
-            lastSnapshot: this.computeFeatureFlagSnapshot(endpoint, prefixFilter),
+        this.subscriptionsForEndpoint.set(endpoint, {
+            lastSnapshot: this.computeFeatureFlagSnapshot(endpoint),
             callbacks: new Set([callback]),
         })
 
@@ -237,14 +240,14 @@ export class FeatureFlagProvider {
         }
 
         return () => {
-            const subscription = this.subscriptions.get(key)
+            const subscription = this.subscriptionsForEndpoint.get(endpoint)
             if (subscription) {
                 subscription.callbacks.delete(callback)
                 if (subscription.callbacks.size === 0) {
-                    this.subscriptions.delete(key)
+                    this.subscriptionsForEndpoint.delete(endpoint)
                 }
 
-                if (this.subscriptions.size === 0 && this.nextRefreshTimeout) {
+                if (this.subscriptionsForEndpoint.size === 0 && this.nextRefreshTimeout) {
                     clearTimeout(this.nextRefreshTimeout)
                     this.nextRefreshTimeout = undefined
                 }
@@ -254,12 +257,8 @@ export class FeatureFlagProvider {
 
     private notifyFeatureFlagChanged(): void {
         const callbacksToTrigger: (() => void)[] = []
-        for (const [key, subs] of this.subscriptions) {
-            const parts = key.split('#')
-            const endpoint = parts[0]
-            const prefixFilter = parts[1]
-
-            const currentSnapshot = this.computeFeatureFlagSnapshot(endpoint, prefixFilter)
+        for (const [endpoint, subs] of this.subscriptionsForEndpoint) {
+            const currentSnapshot = this.computeFeatureFlagSnapshot(endpoint)
             // We only care about flags being changed that we previously already captured. A new
             // evaluation should not trigger a change event unless that new value is later changed.
             if (
@@ -281,18 +280,8 @@ export class FeatureFlagProvider {
         }
     }
 
-    private computeFeatureFlagSnapshot(endpoint: string, prefixFilter: string): Record<string, boolean> {
-        const featureFlags = this.exposedFeatureFlags[endpoint]
-        if (!featureFlags) {
-            return NO_FLAGS
-        }
-        const keys = Object.keys(featureFlags)
-        const filteredKeys = keys.filter(key => key.startsWith(prefixFilter))
-        const filteredFeatureFlags = filteredKeys.reduce((acc: any, key) => {
-            acc[key] = featureFlags[key]
-            return acc
-        }, {})
-        return filteredFeatureFlags
+    private computeFeatureFlagSnapshot(endpoint: string): Record<string, boolean> {
+        return this.exposedFeatureFlags[endpoint] ?? NO_FLAGS
     }
 }
 

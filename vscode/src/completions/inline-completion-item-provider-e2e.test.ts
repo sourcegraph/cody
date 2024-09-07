@@ -4,6 +4,7 @@ import {
     type GraphQLAPIClientConfig,
     contextFiltersProvider,
     graphqlClient,
+    nextTick,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { type MockInstance, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -411,6 +412,7 @@ describe('InlineCompletionItemProvider preloading', () => {
         const provider = getInlineCompletionProvider(autocompleteParams)
         await vi.runOnlyPendingTimersAsync()
         const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
+        await nextTick()
 
         const [handler] = onDidChangeTextEditorSelection.mock.calls[0] as any
 
@@ -442,6 +444,7 @@ describe('InlineCompletionItemProvider preloading', () => {
 
         const { document, position } = autocompleteParams
         const provider = getInlineCompletionProvider(autocompleteParams)
+        await vi.runOnlyPendingTimersAsync()
         const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
         const [handler] = onDidChangeTextEditorSelection.mock.lastCall as any
 
@@ -490,6 +493,7 @@ describe('InlineCompletionItemProvider preloading', () => {
 
         const { document, position } = autocompleteParams
         const provider = getInlineCompletionProvider(autocompleteParams)
+        await vi.runOnlyPendingTimersAsync()
         const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
         const [handler] = onDidChangeTextEditorSelection.mock.lastCall as any
 

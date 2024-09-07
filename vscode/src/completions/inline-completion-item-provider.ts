@@ -7,6 +7,7 @@ import {
     FeatureFlag,
     RateLimitError,
     contextFiltersProvider,
+    createDisposables,
     featureFlagProvider,
     isCodyIgnoredFile,
     subscriptionDisposable,
@@ -97,7 +98,7 @@ export class InlineCompletionItemProvider
     // private reportedErrorMessages: Map<string, number> = new Map()
 
     private requestManager: RequestManager
-    private contextMixer: Promise<ContextMixer>
+    private contextMixer: ContextMixer
     private smartThrottleService: SmartThrottleService | null = null
 
     /** Mockable (for testing only). */
@@ -179,13 +180,14 @@ export class InlineCompletionItemProvider
         }
 
         this.requestManager = new RequestManager()
-        this.contextMixer = completionProviderConfig.contextStrategy().then(contextStrategy => {
-            const contextMixer = new ContextMixer(
-                new DefaultContextStrategyFactory(contextStrategy, createBfgRetriever)
-            )
-            this.disposables.push(contextMixer)
-            return contextMixer
-        })
+
+        const strategyFactory = new DefaultContextStrategyFactory(
+            completionProviderConfig.contextStrategy,
+            createBfgRetriever
+        )
+        this.disposables.push(strategyFactory)
+
+        this.contextMixer = new ContextMixer(strategyFactory)
 
         this.smartThrottleService = new SmartThrottleService()
         this.disposables.push(this.smartThrottleService)
@@ -210,21 +212,27 @@ export class InlineCompletionItemProvider
             )
         }
 
-        completionProviderConfig
-            .autocompletePreloadDebounceInterval()
-            .then(preloadDebounceInterval => {
-                if (preloadDebounceInterval > 0) {
-                    this.onSelectionChangeDebounced = debounce(
-                        this.preloadCompletionOnSelectionChange.bind(this),
-                        preloadDebounceInterval
-                    )
-                }
-            })
-            .catch(error => console.error(error))
         this.disposables.push(
-            vscode.window.onDidChangeTextEditorSelection(e => {
-                this.onSelectionChangeDebounced?.(e)
-            })
+            subscriptionDisposable(
+                completionProviderConfig.autocompletePreloadDebounceInterval
+                    .pipe(
+                        createDisposables(preloadDebounceInterval => {
+                            this.onSelectionChangeDebounced = undefined
+                            if (preloadDebounceInterval > 0) {
+                                this.onSelectionChangeDebounced = debounce(
+                                    this.preloadCompletionOnSelectionChange.bind(this),
+                                    preloadDebounceInterval
+                                )
+
+                                return vscode.window.onDidChangeTextEditorSelection(
+                                    this.onSelectionChangeDebounced
+                                )
+                            }
+                            return undefined
+                        })
+                    )
+                    .subscribe({})
+            )
         )
 
         // Warm caches for the config feature configuration to avoid the first completion call
@@ -462,7 +470,7 @@ export class InlineCompletionItemProvider
                     config: this.config.config,
                     provider: this.config.provider,
                     authStatus: this.config.authStatus,
-                    contextMixer: await this.contextMixer,
+                    contextMixer: this.contextMixer,
                     smartThrottleService: this.smartThrottleService,
                     requestManager: this.requestManager,
                     lastCandidate: this.lastCandidate,

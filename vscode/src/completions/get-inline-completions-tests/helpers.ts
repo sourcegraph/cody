@@ -22,6 +22,7 @@ import type {
     CodeCompletionsParams,
     CompletionResponseWithMetaData,
 } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
+import { Observable } from 'observable-fns'
 import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
@@ -211,7 +212,7 @@ export function params(
             configuration?.autocompleteFirstCompletionTimeout ??
             DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
         requestManager: new RequestManager(),
-        contextMixer: new ContextMixer(new DefaultContextStrategyFactory('none')),
+        contextMixer: new ContextMixer(new DefaultContextStrategyFactory(Observable.of('none'))),
         smartThrottleService: null,
         completionIntent: getCompletionIntent({
             document,
