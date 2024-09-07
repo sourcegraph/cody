@@ -667,7 +667,7 @@ export class FixupController
                 metadata,
                 privateMetadata,
                 billingMetadata: {
-                    category: acceptance == 'rejected' ? 'billable' : 'core',
+                    category: acceptance === 'rejected' ? 'billable' : 'core',
                     product: 'cody',
                 },
             })

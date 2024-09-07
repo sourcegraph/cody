@@ -512,7 +512,7 @@ function writeCompletionEvent<SubFeature extends string, Action extends string, 
             billingMetadata: {
                 product: 'cody',
                 // Only acceptance events qualify as "core" usage.
-                category: action == 'partiallyAccepted' || action == 'accepted' ? 'core' : 'billable',
+                category: action === 'partiallyAccepted' || action === 'accepted' ? 'core' : 'billable',
             },
         }
 

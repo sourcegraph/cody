@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { BillingCategory, CodyIDE, telemetryRecorder } from '@sourcegraph/cody-shared'
+import { type BillingCategory, CodyIDE, telemetryRecorder } from '@sourcegraph/cody-shared'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
