@@ -308,6 +308,11 @@ const ModelTitleWithIcon: FunctionComponent<{
                 Experimental
             </Badge>
         )}
+        {model.tags.includes(ModelTag.Preview) && (
+            <Badge variant="secondary" className={styles.badge}>
+                Early Access
+            </Badge>
+        )}
         {model.tags.includes(ModelTag.Recommended) && modelAvailability !== 'needs-cody-pro' ? (
             <Badge variant="secondary" className={styles.badge}>
                 Recommended

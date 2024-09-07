@@ -63,7 +63,7 @@ export const DEFAULT_DOT_COM_MODELS = [
     },
     {
         title: 'Gemini 1.5 Pro',
-        id: 'google/gemini-1.5-pro-latest',
+        id: 'google/gemini-1.5-pro',
         provider: 'Google',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
@@ -71,11 +71,45 @@ export const DEFAULT_DOT_COM_MODELS = [
     },
 
     // --------------------------------
+    // Preview / Early Access
+    // --------------------------------
+    {
+        // NOTE: stream param is set to false during preview
+        title: 'Gemini 1.5 Pro Latest',
+        id: 'google/gemini-1.5-pro-latest',
+        provider: 'Google',
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: basicContextWindow,
+        tags: [
+            ModelTag.Gateway,
+            ModelTag.Power,
+            ModelTag.Pro,
+            ModelTag.Preview,
+            ModelTag.StreamDisabled,
+        ],
+    },
+    {
+        // NOTE: stream param is set to false during preview
+        title: 'Gemini 1.5 Flash Latest',
+        id: 'google/gemini-1.5-flash-latest',
+        provider: 'Google',
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: basicContextWindow,
+        tags: [
+            ModelTag.Gateway,
+            ModelTag.Power,
+            ModelTag.Pro,
+            ModelTag.Preview,
+            ModelTag.StreamDisabled,
+        ],
+    },
+
+    // --------------------------------
     // Faster models
     // --------------------------------
     {
         title: 'Gemini 1.5 Flash',
-        id: 'google/gemini-1.5-flash-latest',
+        id: 'google/gemini-1.5-flash',
         provider: 'Google',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,

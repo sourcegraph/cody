@@ -21,7 +21,7 @@ interface ModelRef {
 }
 
 export type ModelCategory = ModelTag.Power | ModelTag.Balanced | ModelTag.Speed
-type ModelStatus = ModelTag.Experimental | ModelTag.Experimental | 'stable' | ModelTag.Deprecated
+type ModelStatus = ModelTag.Experimental | ModelTag.Preview | 'stable' | ModelTag.Deprecated
 export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise
 type ModelCapability = 'chat' | 'autocomplete'
 
@@ -553,7 +553,10 @@ export class ModelsService {
             return modelID
         }
 
-        return this.models.find(m => modelID.includes(m.id))
+        return (
+            this.models.find(m => modelID.endsWith(m.id)) ??
+            this.models.find(m => modelID.includes(m.id))
+        )
     }
 
     /**

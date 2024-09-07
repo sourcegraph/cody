@@ -12,6 +12,7 @@ export enum ModelTag {
     // Statuses
     Recommended = 'recommended',
     Deprecated = 'deprecated',
+    Preview = 'preview',
     Experimental = 'experimental',
 
     // Tiers - the level of access to the model
@@ -25,4 +26,7 @@ export enum ModelTag {
     Local = 'local',
     Ollama = 'ollama',
     Dev = 'dev',
+
+    // Additional Info about the model
+    StreamDisabled = 'streamDisabled', // Model does not support streaming
 }
