@@ -252,13 +252,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // Advise local embeddings to start up if necessary.
         void this.retrievers.localEmbeddings?.start()
 
-        // Keep feature flags updated.
-        this.disposables.push({
-            dispose: featureFlagProvider.instance!.onFeatureFlagChanged('', () => {
-                void this.sendConfig()
-            }),
-        })
-
         this.disposables.push(
             startClientStateBroadcaster({
                 useRemoteSearch: this.retrievers.allowRemoteContext,
