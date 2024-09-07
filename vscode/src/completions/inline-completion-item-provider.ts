@@ -7,7 +7,9 @@ import {
     FeatureFlag,
     RateLimitError,
     contextFiltersProvider,
+    featureFlagProvider,
     isCodyIgnoredFile,
+    subscriptionDisposable,
     telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -95,7 +97,7 @@ export class InlineCompletionItemProvider
     // private reportedErrorMessages: Map<string, number> = new Map()
 
     private requestManager: RequestManager
-    private contextMixer: ContextMixer
+    private contextMixer: Promise<ContextMixer>
     private smartThrottleService: SmartThrottleService | null = null
 
     /** Mockable (for testing only). */
@@ -113,6 +115,12 @@ export class InlineCompletionItemProvider
     private isProbablyNewInstall = true
 
     private firstCompletionDecoration = new FirstCompletionDecorationHandler()
+
+    /**
+     * The evaluated value of {@link FeatureFlag.CodyAutocompleteTracing}, available synchronously
+     * because it's used in timing-sensitive code.
+     */
+    private shouldSample = false
 
     private get config(): InlineCompletionItemProviderConfig {
         return InlineCompletionItemProviderConfigSingleton.configuration
@@ -141,6 +149,16 @@ export class InlineCompletionItemProvider
 
         autocompleteStageCounterLogger.setProviderModel(config.provider.legacyModel)
 
+        this.disposables.push(
+            subscriptionDisposable(
+                featureFlagProvider
+                    .instance!.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
+                    .subscribe(shouldSample => {
+                        this.shouldSample = Boolean(shouldSample)
+                    })
+            )
+        )
+
         if (this.config.completeSuggestWidgetSelection) {
             // This must be set to true, or else the suggest widget showing will suppress inline
             // completions. Note that the VS Code proposed API inlineCompletionsAdditions contains
@@ -161,12 +179,13 @@ export class InlineCompletionItemProvider
         }
 
         this.requestManager = new RequestManager()
-        this.contextMixer = new ContextMixer(
-            new DefaultContextStrategyFactory(
-                completionProviderConfig.contextStrategy,
-                createBfgRetriever
+        this.contextMixer = completionProviderConfig.contextStrategy().then(contextStrategy => {
+            const contextMixer = new ContextMixer(
+                new DefaultContextStrategyFactory(contextStrategy, createBfgRetriever)
             )
-        )
+            this.disposables.push(contextMixer)
+            return contextMixer
+        })
 
         this.smartThrottleService = new SmartThrottleService()
         this.disposables.push(this.smartThrottleService)
@@ -179,7 +198,6 @@ export class InlineCompletionItemProvider
             [this.config.provider.id, this.config.provider.legacyModel].join('/')
         )
 
-        this.disposables.push(this.contextMixer)
         if (!this.config.noInlineAccept) {
             // We don't want to accept and log items when we are doing completion comparison from different models.
             this.disposables.push(
@@ -192,18 +210,22 @@ export class InlineCompletionItemProvider
             )
         }
 
-        const preloadDebounceInterval = completionProviderConfig.autocompletePreloadDebounceInterval
-
-        if (preloadDebounceInterval > 0) {
-            this.onSelectionChangeDebounced = debounce(
-                this.preloadCompletionOnSelectionChange.bind(this),
-                preloadDebounceInterval
-            )
-
-            this.disposables.push(
-                vscode.window.onDidChangeTextEditorSelection(this.onSelectionChangeDebounced)
-            )
-        }
+        completionProviderConfig
+            .autocompletePreloadDebounceInterval()
+            .then(preloadDebounceInterval => {
+                if (preloadDebounceInterval > 0) {
+                    this.onSelectionChangeDebounced = debounce(
+                        this.preloadCompletionOnSelectionChange.bind(this),
+                        preloadDebounceInterval
+                    )
+                }
+            })
+            .catch(error => console.error(error))
+        this.disposables.push(
+            vscode.window.onDidChangeTextEditorSelection(e => {
+                this.onSelectionChangeDebounced?.(e)
+            })
+        )
 
         // Warm caches for the config feature configuration to avoid the first completion call
         // having to block on this.
@@ -410,7 +432,7 @@ export class InlineCompletionItemProvider
             }
 
             const latencyFeatureFlags: LatencyFeatureFlags = {
-                user: completionProviderConfig.getPrefetchedFlag(
+                user: await featureFlagProvider.instance!.evaluateFeatureFlag(
                     FeatureFlag.CodyAutocompleteUserLatency
                 ),
             }
@@ -440,7 +462,7 @@ export class InlineCompletionItemProvider
                     config: this.config.config,
                     provider: this.config.provider,
                     authStatus: this.config.authStatus,
-                    contextMixer: this.contextMixer,
+                    contextMixer: await this.contextMixer,
                     smartThrottleService: this.smartThrottleService,
                     requestManager: this.requestManager,
                     lastCandidate: this.lastCandidate,
@@ -724,7 +746,8 @@ export class InlineCompletionItemProvider
     public markCompletionAsSuggestedAfterDelay(completion: AutocompleteItem): void {
         const suggestionEvent = CompletionLogger.prepareSuggestionEvent(
             completion.logId,
-            completion.span
+            completion.span,
+            this.shouldSample
         )
         if (!suggestionEvent) {
             return

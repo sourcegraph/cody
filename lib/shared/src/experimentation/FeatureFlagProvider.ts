@@ -95,7 +95,14 @@ export class FeatureFlagProvider {
 
     constructor(private apiClient: SourcegraphGraphQLAPIClient) {}
 
-    public getFromCache(flagName: FeatureFlag): boolean | undefined {
+    /**
+     * Get a flag's value from the cache. The returned value could be stale. You must have
+     * previously called {@link FeatureFlagProvider.evaluateFeatureFlag} or
+     * {@link FeatureFlagProvider.evaluatedFeatureFlag} to ensure that this feature flag's value is
+     * present in the cache. For that reason, this method is private because it is easy for external
+     * callers to mess that up when calling it.
+     */
+    private getFromCache(flagName: FeatureFlag): boolean | undefined {
         void this.refreshIfStale()
 
         const endpoint = this.apiClient.endpoint
@@ -172,7 +179,7 @@ export class FeatureFlagProvider {
         await this.refreshFeatureFlags()
     }
 
-    public async refreshIfStale(): Promise<void> {
+    private async refreshIfStale(): Promise<void> {
         const now = Date.now()
         if (now - this.lastRefreshTimestamp > ONE_HOUR) {
             // Cache expired, refresh

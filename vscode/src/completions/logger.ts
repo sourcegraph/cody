@@ -6,7 +6,6 @@ import {
     type AutocompleteContextSnippet,
     type BillingCategory,
     type BillingProduct,
-    FeatureFlag,
     isDotCom,
     isNetworkError,
     telemetryRecorder,
@@ -32,7 +31,6 @@ import {
     autocompleteStageCounterLogger,
 } from '../services/autocomplete-stage-counter-logger'
 import { type CompletionIntent, CompletionIntentTelemetryMetadataMapping } from '../tree-sitter/queries'
-import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
 import {
     InlineCompletionsResultSource,
@@ -800,7 +798,8 @@ export type SuggestionMarkReadParam = {
 // suggested completion count as soon as we count it as such.
 export function prepareSuggestionEvent(
     id: CompletionLogID,
-    span?: Span
+    span: Span | undefined,
+    shouldSample?: boolean
 ): {
     getEvent: () => CompletionBookkeepingEvent | undefined
     markAsRead: (param: SuggestionMarkReadParam) => void
@@ -822,10 +821,6 @@ export function prepareSuggestionEvent(
         span?.addEvent('suggested')
 
         // Mark the completion as sampled if tracing is enable for this user
-        const shouldSample = completionProviderConfig.getPrefetchedFlag(
-            FeatureFlag.CodyAutocompleteTracing
-        )
-
         if (shouldSample && span) {
             span.setAttribute('sampled', true)
         }
