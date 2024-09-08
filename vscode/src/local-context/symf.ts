@@ -14,6 +14,7 @@ import {
     type Result,
     type SourcegraphCompletionsClient,
     assertFileURI,
+    authStatus,
     displayPath,
     isAbortError,
     isDefined,
@@ -30,7 +31,6 @@ import { logDebug } from '../log'
 
 import path from 'node:path'
 import { getEditor } from '../editor/active-editor'
-import { authProvider } from '../services/AuthProvider'
 import { getSymfPath } from './download-symf'
 import { rewriteKeywordQuery } from './rewrite-keyword-query'
 
@@ -90,7 +90,7 @@ export class SymfRunner implements vscode.Disposable {
         let isInitialized = false
         this.disposables.push(
             subscriptionDisposable(
-                authProvider.instance!.changes.subscribe(authStatus => {
+                authStatus.subscribe(authStatus => {
                     if (!isInitialized && authStatus.authenticated && !isEnterpriseUser(authStatus)) {
                         // Only initialize symf after the user has authenticated AND it's not an enterprise account.
                         isInitialized = true

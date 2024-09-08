@@ -8,6 +8,7 @@ import {
     type Guardrails,
     PromptString,
     type ResolvedConfiguration,
+    authStatus,
     combineLatest,
     contextFiltersProvider,
     distinctUntilChanged,
@@ -252,7 +253,7 @@ const register = async (
         statusBar,
         sourceControl,
         subscriptionDisposable(
-            authProvider.instance!.changes.subscribe({
+            authStatus.subscribe({
                 next: authStatus => {
                     sourceControl.setAuthStatus(authStatus)
                     statusBar.setAuthStatus(authStatus)
@@ -694,7 +695,11 @@ function registerAutocomplete(
             })
         return setupAutocompleteQueue
     }
-    disposables.push(subscriptionDisposable(resolvedConfig.subscribe({ next: setupAutocomplete })))
+    disposables.push(
+        subscriptionDisposable(
+            combineLatest([resolvedConfig, authStatus]).subscribe({ next: setupAutocomplete })
+        )
+    )
     return setupAutocomplete().catch(() => {})
 }
 

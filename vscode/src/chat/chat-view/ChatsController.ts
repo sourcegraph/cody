@@ -8,6 +8,7 @@ import {
     type ChatClient,
     DEFAULT_EVENT_SOURCE,
     type Guardrails,
+    authStatus,
     editorStateFromPromptString,
     subscriptionDisposable,
     telemetryRecorder,
@@ -81,9 +82,7 @@ export class ChatsController implements vscode.Disposable {
         this.panel = this.createChatController()
 
         this.disposables.push(
-            subscriptionDisposable(
-                authProvider.instance!.changes.subscribe(authStatus => this.setAuthStatus(authStatus))
-            )
+            subscriptionDisposable(authStatus.subscribe(authStatus => this.setAuthStatus(authStatus)))
         )
     }
 

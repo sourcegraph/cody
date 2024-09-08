@@ -2,6 +2,7 @@ import {
     FeatureFlag,
     type SourcegraphGraphQLAPIClient,
     type Unsubscribable,
+    authStatus,
     featureFlagProvider,
     isDotCom,
 } from '@sourcegraph/cody-shared'
@@ -83,14 +84,14 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
             // right flags.
             //
             // See https://sourcegraph.slack.com/archives/C05AGQYD528/p1706872864488829
-            this.authProviderSubscription = authProvider.instance!.changes.subscribe(() =>
+            this.authProviderSubscription = authStatus.subscribe(() =>
                 setTimeout(() => this.triggerExpirationCheck(), this.autoUpdateDelay)
             )
         }
 
         // Not logged in or not DotCom, don't show.
-        const authStatus = authProvider.instance!.status
-        if (!authStatus.authenticated || !isDotCom(authStatus)) return
+        const authStatus_ = authProvider.instance!.status
+        if (!authStatus_.authenticated || !isDotCom(authStatus_)) return
 
         const useSscForCodySubscription = await featureFlagProvider.evaluateFeatureFlag(
             FeatureFlag.UseSscForCodySubscription

@@ -2,6 +2,7 @@ import { LRUCache } from 'lru-cache'
 import type * as vscode from 'vscode'
 
 import {
+    authStatus,
     convertGitCloneURLToCodebaseName,
     graphqlClient,
     isDefined,
@@ -25,7 +26,7 @@ export class RepoNameResolver {
 
     public init(): void {
         // TODO(beyang): handle disposable
-        authProvider.instance!.changes.subscribe(() => {
+        authStatus.subscribe(() => {
             this.fsPathToRepoNameCache.clear()
             this.remoteUrlToRepoNameCache.clear()
         })

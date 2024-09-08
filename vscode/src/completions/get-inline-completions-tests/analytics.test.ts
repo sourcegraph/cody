@@ -7,6 +7,7 @@ import * as CompletionLogger from '../logger'
 import type { CompletionBookkeepingEvent } from '../logger'
 import { initTreeSitterParser } from '../test-helpers'
 
+import { DOTCOM_URL } from '@sourcegraph/cody-shared'
 import { Response } from 'node-fetch'
 import { getInlineCompletions, params } from './helpers'
 
@@ -49,7 +50,14 @@ describe('[getInlineCompletions] completion event', () => {
                         },
                     },
                 ],
-                additionalParams
+                {
+                    authStatus: {
+                        authenticated: true,
+                        endpoint: additionalParams.isDotComUser
+                            ? DOTCOM_URL.toString()
+                            : 'https://example.com',
+                    },
+                }
             )
         )
 
