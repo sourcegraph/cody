@@ -1,9 +1,17 @@
-import type { Observable } from 'observable-fns'
 import type { EmbeddingsProvider } from './codebase-context/context-status'
 import type { FileURI } from './common/uri'
 
 import type { PromptString } from './prompt/prompt-string'
 import type { ReadonlyDeep } from './utils'
+
+/**
+ * The user's authentication credentials, which are stored separately from the rest of the
+ * configuration.
+ */
+export interface AuthCredentials {
+    serverEndpoint: string
+    accessToken: string | null
+}
 
 export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified'
 
@@ -16,15 +24,6 @@ export const CONTEXT_SELECTION_ID: Record<ConfigurationUseContext, number> = {
     keyword: 2,
     blended: 10,
     unified: 11,
-}
-
-/**
- * A wrapper around a configuration source that lets the client retrieve the current config and
- * watch for changes.
- */
-export interface ConfigWatcher<C> {
-    changes: Observable<C>
-    get(): C
 }
 
 interface RawClientConfiguration {
@@ -116,11 +115,9 @@ export enum CodyIDE {
 
 export type ClientConfigurationWithEndpoint = Omit<ClientConfigurationWithAccessToken, 'accessToken'>
 
-export interface ClientConfigurationWithAccessToken extends ReadonlyDeep<RawClientConfiguration> {
-    readonly serverEndpoint: string
-    /** The access token, which is stored in the secret storage (not configuration). */
-    readonly accessToken: string | null
-}
+export interface ClientConfigurationWithAccessToken
+    extends ReadonlyDeep<RawClientConfiguration>,
+        AuthCredentials {}
 
 export interface OllamaOptions {
     /**

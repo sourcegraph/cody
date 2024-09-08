@@ -3,14 +3,15 @@ import type * as vscode from 'vscode'
 import {
     ChatClient,
     type ClientConfigurationWithAccessToken,
-    type ConfigWatcher,
     type Guardrails,
     type GuardrailsClientConfig,
     type SourcegraphCompletionsClient,
     SourcegraphGuardrailsClient,
+    firstValueFrom,
     graphqlClient,
     isDotCom,
     isError,
+    resolvedConfigWithAccessToken,
 } from '@sourcegraph/cody-shared'
 
 import { ContextAPIClient } from './chat/context/contextAPIClient'
@@ -47,7 +48,6 @@ type ExternalServicesConfiguration = Pick<
 
 export async function configureExternalServices(
     context: vscode.ExtensionContext,
-    config: ConfigWatcher<ExternalServicesConfiguration>,
     platform: Pick<
         PlatformContext,
         | 'createLocalEmbeddingsController'
@@ -57,7 +57,7 @@ export async function configureExternalServices(
         | 'createSymfRunner'
     >
 ): Promise<ExternalServices> {
-    const initialConfig = config.get()
+    const initialConfig = await firstValueFrom(resolvedConfigWithAccessToken)
     const sentryService = platform.createSentryService?.(initialConfig)
     const openTelemetryService = platform.createOpenTelemetryService?.(initialConfig)
     const completionsClient = platform.createCompletionsClient(initialConfig, logger)

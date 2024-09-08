@@ -2,16 +2,22 @@ import _ from 'lodash'
 import * as uuid from 'uuid'
 import type { Memento } from 'vscode'
 
-import type {
-    AccountKeyedChatHistory,
-    AuthStatus,
-    AuthenticatedAuthStatus,
-    ChatHistoryKey,
-    ClientConfigurationWithAccessToken,
-    UserLocalHistory,
+import {
+    type AccountKeyedChatHistory,
+    type AuthStatus,
+    type AuthenticatedAuthStatus,
+    type ChatHistoryKey,
+    type ClientConfigurationWithAccessToken,
+    type ClientState,
+    type UserLocalHistory,
+    distinctUntilChanged,
+    fromVSCodeEvent,
+    startWith,
 } from '@sourcegraph/cody-shared'
 
+import { type Observable, map } from 'observable-fns'
 import { isSourcegraphToken } from '../chat/protocol'
+import { EventEmitter } from '../testutils/mocks'
 
 export type ChatLocation = 'editor' | 'sidebar'
 
@@ -44,6 +50,23 @@ class LocalStorage {
 
     public setStorage(storage: Memento): void {
         this._storage = storage
+    }
+
+    public getClientState(): ClientState {
+        return {
+            lastUsedEndpoint: this.getEndpoint(),
+            anonymousUserID: this.anonymousUserID().anonymousUserID,
+            lastUsedChatModality: this.getLastUsedChatModality(),
+        }
+    }
+
+    private onChange = new EventEmitter<void>()
+    public get clientStateChanges(): Observable<ClientState> {
+        return fromVSCodeEvent(this.onChange.event).pipe(
+            startWith(undefined),
+            map(() => this.getClientState()),
+            distinctUntilChanged()
+        )
     }
 
     public getEndpoint(): string | null {
@@ -237,6 +260,7 @@ class LocalStorage {
     public async set<T>(key: string, value: T): Promise<void> {
         try {
             await this.storage.update(key, value)
+            this.onChange.fire()
         } catch (error) {
             console.error(error)
         }
@@ -244,6 +268,7 @@ class LocalStorage {
 
     public async delete(key: string): Promise<void> {
         await this.storage.update(key, undefined)
+        this.onChange.fire()
     }
 }
 

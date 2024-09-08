@@ -1,11 +1,11 @@
 import {
     type ClientConfiguration,
-    type ClientConfigurationWithAccessToken,
     CodyIDE,
     type ExtensionDetails,
     type LogEventMode,
     MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
+    type ResolvedConfiguration,
     TelemetryRecorderProvider,
     telemetryRecorder,
     telemetryRecorderProvider,
@@ -56,19 +56,19 @@ const debugLogLabel = 'telemetry-v2'
  * https://sourcegraph.com/docs/dev/background-information/telemetry
  */
 export async function createOrUpdateTelemetryRecorderProvider(
-    config: ClientConfigurationWithAccessToken,
+    config: ResolvedConfiguration,
     /**
      * Hardcode isExtensionModeDevOrTest to false to test real exports - when
      * true, exports are logged to extension output instead.
      */
     isExtensionModeDevOrTest: boolean
 ): Promise<void> {
-    const extensionDetails = getExtensionDetails(config)
+    const extensionDetails = getExtensionDetails(config.configuration)
 
     // Add timestamp processor for realistic data in output for dev or no-op scenarios
     const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([new TimestampTelemetryProcessor()])
 
-    if (config.telemetryLevel === 'off' || !extensionDetails.ide) {
+    if (config.configuration.telemetryLevel === 'off' || !extensionDetails.ide) {
         updateGlobalTelemetryInstances(defaultNoOpProvider)
         return
     }
@@ -84,7 +84,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
         updateGlobalTelemetryInstances(
             new MockServerTelemetryRecorderProvider(
                 extensionDetails,
-                config,
+                config.configuration,
                 authProvider.instance!,
                 anonymousUserID
             )
@@ -96,7 +96,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
         updateGlobalTelemetryInstances(
             new TelemetryRecorderProvider(
                 extensionDetails,
-                config,
+                { ...config.configuration, ...config.auth },
                 authProvider.instance!,
                 anonymousUserID,
                 legacyBackcompatLogEventMode
@@ -104,7 +104,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
         )
     }
 
-    const isCodyWeb = config.agentIDE === CodyIDE.Web
+    const isCodyWeb = config.configuration.agentIDE === CodyIDE.Web
 
     /**
      * On first initialization, also record some initial events.
@@ -121,7 +121,10 @@ export async function createOrUpdateTelemetryRecorderProvider(
                     category: 'billable',
                 },
             })
-        } else if (!config.isRunningInsideAgent || config.agentHasPersistentStorage) {
+        } else if (
+            !config.configuration.isRunningInsideAgent ||
+            config.configuration.agentHasPersistentStorage
+        ) {
             /**
              * Repeat user
              */
