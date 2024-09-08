@@ -1028,7 +1028,7 @@
         "cody.autocomplete.triggerDelay": {
           "order": 5,
           "type": "number",
-          "markdownDescription": "Adds a delay in milliseconds before triggering autocomplete. This is useful for avoiding accidental autocomplete triggers when typing. Restart VS Code to apply changes.",
+          "markdownDescription": "The trigger delay ensures a minimum wait time before showing autocomplete suggestions to avoid accidental autocomplete triggers. Restart VS Code to apply changes.",
           "default": 0
         },
         "cody.autocomplete.languages": {
