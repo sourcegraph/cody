@@ -112,7 +112,7 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                     messages: await Promise.all(
                         params.messages.map(async m => ({
                             ...m,
-                            text: await m.text?.toFilteredString(contextFiltersProvider.instance!),
+                            text: await m.text?.toFilteredString(contextFiltersProvider),
                         }))
                     ),
                 }

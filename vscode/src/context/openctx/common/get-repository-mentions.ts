@@ -69,7 +69,7 @@ export function createRepositoryMention(repo: MinimalRepoMention, providerId: st
         data: {
             repoId: repo.id,
             repoName: repo.name,
-            isIgnored: contextFiltersProvider.instance!.isRepoNameIgnored(repo.name),
+            isIgnored: contextFiltersProvider.isRepoNameIgnored(repo.name),
         },
     }
 }

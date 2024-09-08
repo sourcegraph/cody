@@ -21,7 +21,6 @@ describe('getRepoNamesFromWorkspaceUri', () => {
                 endpoint: 'https://example.com',
             },
         } as Pick<AuthProvider, 'status'> as unknown as AuthProvider
-        repoNameResolver.init()
 
         vi.spyOn(gitExtensionAPI, 'gitRemoteUrlsFromGitExtension').mockReturnValue([
             'git@github.com:sourcegraph/cody.git',
@@ -59,7 +58,6 @@ describe('getRepoNamesFromWorkspaceUri', () => {
                 endpoint: DOTCOM_URL.toString(),
             },
         } as Pick<AuthProvider, 'status'> as unknown as AuthProvider
-        repoNameResolver.init()
 
         vi.spyOn(gitExtensionAPI, 'gitRemoteUrlsFromGitExtension').mockReturnValue([
             'git@github.com:sourcegraph/cody.git',

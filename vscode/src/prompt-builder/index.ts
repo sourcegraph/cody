@@ -125,10 +125,7 @@ export class PromptBuilder {
 
         for (const item of contextItems) {
             // Skip context items that are in the Cody ignore list
-            if (
-                isCodyIgnoredFile(item.uri) ||
-                (await contextFiltersProvider.instance!.isUriIgnored(item.uri))
-            ) {
+            if (isCodyIgnoredFile(item.uri) || (await contextFiltersProvider.isUriIgnored(item.uri))) {
                 result.ignored.push(item)
                 continue
             }
@@ -140,7 +137,7 @@ export class PromptBuilder {
                 item.type === 'file' &&
                 (item.uri.scheme === 'https' || item.uri.scheme === 'http') &&
                 item.repoName &&
-                contextFiltersProvider.instance!.isRepoNameIgnored(item.repoName)
+                (await contextFiltersProvider.isRepoNameIgnored(item.repoName))
             ) {
                 result.ignored.push(item)
                 continue

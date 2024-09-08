@@ -52,7 +52,7 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
                 // Reconstruct the file URI with the file name and directory URI
                 const fileUri = Utils.joinPath(dirUri, name)
 
-                if (await contextFiltersProvider.instance!.isUriIgnored(fileUri)) {
+                if (await contextFiltersProvider.isUriIgnored(fileUri)) {
                     continue
                 }
 

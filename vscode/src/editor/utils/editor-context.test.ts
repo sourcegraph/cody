@@ -24,7 +24,7 @@ afterEach(() => {
 
 describe('getFileContextFiles', () => {
     beforeEach(() => {
-        vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValue(false)
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
     })
     function setFiles(relativePaths: string[]) {
         vscode.workspace.findFiles = vi
