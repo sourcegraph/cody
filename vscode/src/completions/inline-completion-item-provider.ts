@@ -20,7 +20,7 @@ import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils
 import { isInTutorial } from '../tutorial/helpers'
 import { type LatencyFeatureFlags, getArtificialDelay, resetArtificialDelay } from './artificial-delay'
 import { completionProviderConfig } from './completion-provider-config'
-import { ContextMixer } from './context/context-mixer'
+import {ContextMixer, GetContextResult} from './context/context-mixer';
 import { DefaultContextStrategyFactory } from './context/context-strategy'
 import { getCompletionIntent } from './doc-context-getters'
 import { FirstCompletionDecorationHandler } from './first-completion-decoration-handler'
@@ -63,6 +63,7 @@ interface AutocompleteResult extends vscode.InlineCompletionList {
     items: AutocompleteItem[]
     /** @deprecated */
     completionEvent?: CompletionBookkeepingEvent
+    contextResults?: GetContextResult
 }
 
 interface CompletionRequest {
@@ -565,14 +566,14 @@ export class InlineCompletionItemProvider
 
                 stageRecorder.record('preVisibilityCheck')
 
-                // A completion that won't be visible in VS Code will not be returned and not be logged.
-                if (visibleItems.length === 0) {
-                    // Returning null will clear any existing suggestions, thus we need to reset the
-                    // last candidate.
-                    this.lastCandidate = undefined
-                    CompletionLogger.noResponse(result.logId)
-                    return null
-                }
+                // // A completion that won't be visible in VS Code will not be returned and not be logged.
+                // if (visibleItems.length === 0) {
+                //     // Returning null will clear any existing suggestions, thus we need to reset the
+                //     // last candidate.
+                //     this.lastCandidate = undefined
+                //     CompletionLogger.noResponse(result.logId)
+                //     return null
+                // }
 
                 // Since we now know that the completion is going to be visible in the UI, we save the
                 // completion as the last candidate (that is shown as ghost text in the editor) so that
@@ -599,6 +600,7 @@ export class InlineCompletionItemProvider
                     logId: result.logId,
                     items: updateInsertRangeForVSCode(visibleItems),
                     completionEvent: CompletionLogger.getCompletionEvent(result.logId),
+                    contextResults: result.contextResults
                 }
 
                 if (!this.config.isRunningInsideAgent) {

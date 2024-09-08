@@ -14,6 +14,15 @@ const htmlFamily = new Set([
     // import CSS modules but define them in the same file instead.
 ])
 
+export enum RetrievedIdentifier {
+    BfgRetriever = 'bfg',
+    JaccardSimilarityRetriever = 'jaccard-similarity',
+    LspLightRetriever = 'lsp-light',
+    RecentEdits = 'recent-edits',
+    TscRetriever = 'tsc'
+}
+
+
 export interface ShouldUseContextParams {
     enableExtendedLanguagePool: boolean
     baseLanguageId: string

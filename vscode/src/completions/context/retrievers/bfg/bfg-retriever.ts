@@ -14,6 +14,7 @@ import {
     getLastNGraphContextIdentifiersFromString,
 } from '../graph/identifiers'
 import { type SimpleRepository, inferGitRepository } from './simple-git'
+import {RetrievedIdentifier} from '../../utils';
 
 export class BfgRetriever implements ContextRetriever {
     public identifier = 'bfg'
@@ -235,6 +236,7 @@ export class BfgRetriever implements ContextRetriever {
             // Convert BFG snippets to match the format expected on the client.
             const symbols = (response.symbols || []).map(contextSnippet => ({
                 ...contextSnippet,
+                identifier: RetrievedIdentifier.BfgRetriever,
                 uri: vscode.Uri.from({ scheme: 'file', path: contextSnippet.fileName }),
             })) satisfies Omit<AutocompleteContextSnippet, 'startLine' | 'endLine'>[]
 

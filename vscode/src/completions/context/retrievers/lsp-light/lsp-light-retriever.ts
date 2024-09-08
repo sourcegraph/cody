@@ -11,6 +11,7 @@ import {
 import { SupportedLanguage } from '../../../../tree-sitter/grammars'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { getLastNGraphContextIdentifiersFromDocument } from '../graph/identifiers'
+import {RetrievedIdentifier} from '../../utils';
 
 const SUPPORTED_LANGUAGES = new Set([
     SupportedLanguage.python,
@@ -26,7 +27,7 @@ const RECURSION_LIMIT = 3
 const IDENTIFIERS_TO_RESOLVE = 1
 
 export class LspLightRetriever implements ContextRetriever {
-    public identifier = 'lsp-light'
+    public identifier = RetrievedIdentifier.LspLightRetriever
     private disposables: vscode.Disposable[] = []
     private isCacheDisabled = IS_LSP_LIGHT_CACHE_DISABLED
 

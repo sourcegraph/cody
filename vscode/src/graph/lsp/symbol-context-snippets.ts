@@ -30,6 +30,7 @@ import {
     getTypeDefinitionLocations,
     lspRequestLimiter,
 } from './lsp-commands'
+import {RetrievedIdentifier} from '../../completions/context/utils';
 
 async function getParsedHovers(
     uri: vscode.Uri,
@@ -126,6 +127,7 @@ async function getSnippetForLocationGetter(
     }
 
     const symbolContextSnippet = {
+        identifier: RetrievedIdentifier.LspLightRetriever,
         key: `${definitionUri}::${definitionRange.start.line}:${definitionRange.start.character}`,
         uri: definitionUri,
         startLine: definitionRange.start.line,

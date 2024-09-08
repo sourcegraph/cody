@@ -24,6 +24,7 @@ import type { CompletionBookkeepingEvent } from '../completions/logger'
 import type { Repo } from '../context/repo-fetcher'
 import type { FixupTaskID } from '../non-stop/FixupTask'
 import type { CodyTaskState } from '../non-stop/state'
+import {GetContextResult} from '../completions/context/context-mixer';
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
@@ -571,6 +572,7 @@ export interface AutocompleteResult {
 
     /** completionEvent is not deprecated because it's used by non-editor clients like cody-bench that need access to book-keeping data to evaluate results. */
     completionEvent?: CompletionBookkeepingEvent | undefined | null
+    contextResults?: GetContextResult
 }
 
 export interface AutocompleteItem {

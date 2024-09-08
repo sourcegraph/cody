@@ -58,9 +58,15 @@ export interface ContextSummary {
     }
 }
 
+export interface RetrievalSummary {
+    contextCandidatesPreRanking: AutocompleteContextSnippet[]
+    contextCandidatesPostRanking: AutocompleteContextSnippet[]
+}
+
 export interface GetContextResult {
     context: AutocompleteContextSnippet[]
     logSummary: ContextSummary
+    retrievalSummary: RetrievalSummary
 }
 
 /**
@@ -90,6 +96,10 @@ export class ContextMixer implements vscode.Disposable {
                     duration: 0,
                     retrieverStats: {},
                 },
+                retrievalSummary: {
+                    contextCandidatesPreRanking: [],
+                    contextCandidatesPostRanking: [],
+                }
             }
         }
 
@@ -169,12 +179,21 @@ export class ContextMixer implements vscode.Disposable {
             retrieverStats,
         }
 
+        const contextCandidatesPreRanking: AutocompleteContextSnippet[] = []
+        for (const result of results) {
+            contextCandidatesPreRanking.push(...result.snippets)
+        }
+        const retrievalSummary: RetrievalSummary = {
+            contextCandidatesPreRanking: contextCandidatesPreRanking,
+            contextCandidatesPostRanking: Array.from(fusedResults),
+        }
+
         return {
             context: mixedContext,
             logSummary,
+            retrievalSummary
         }
     }
-
     public dispose(): void {
         this.strategyFactory.dispose()
     }

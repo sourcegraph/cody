@@ -21,6 +21,7 @@ import { SymbolFormatter, isStdLibNode } from './SymbolFormatter'
 import { getTSSymbolAtLocation } from './getTSSymbolAtLocation'
 import { type NodeMatchKind, relevantTypeIdentifiers } from './relevantTypeIdentifiers'
 import { supportedTscLanguages } from './supportedTscLanguages'
+import {RetrievedIdentifier} from '../../utils';
 
 interface LoadedCompiler {
     service: ts.LanguageService
@@ -112,7 +113,7 @@ interface DocumentSnapshot {
  * information about the autocomplete request location.
  */
 export class TscRetriever implements ContextRetriever {
-    public identifier = 'tsc'
+    public identifier = RetrievedIdentifier.TscRetriever
 
     constructor(private options: TscRetrieverOptions = defaultTscRetrieverOptions()) {
         this.disposables.push(
@@ -535,6 +536,7 @@ class SymbolCollector {
                 // Skip module declarations because they can be too large.
                 // We still format them to queue the referenced types.
                 const snippet: AutocompleteContextSnippet = {
+                    identifier: RetrievedIdentifier.TscRetriever,
                     symbol: sym.name,
                     content,
                     startLine: start.line,

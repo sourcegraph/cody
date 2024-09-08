@@ -941,8 +941,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
                             ? [{ id, insertText, range }]
                             : []
                     ) ?? []
-
-                return { items, completionEvent: result?.completionEvent }
+                const autocompleteResult: agent_protocol.AutocompleteResult = {
+                    items,
+                    completionEvent: result?.completionEvent,
+                    contextResults: result?.contextResults,
+                }
+                return autocompleteResult
             } catch (error) {
                 if (isRateLimitError(error)) {
                     throw error

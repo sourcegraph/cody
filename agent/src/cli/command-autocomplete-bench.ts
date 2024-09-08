@@ -6,6 +6,8 @@ import * as vscode from 'vscode'
 import type { RpcMessageHandler } from '../../../vscode/src/jsonrpc/jsonrpc'
 import { newAgentClient } from '../agent'
 import { type EditorEvent, applyEventForRPCClient } from '../cody-nes-events'
+import {AutocompleteContextSnippet} from '@sourcegraph/cody-shared';
+// import {AutocompleteResult} from '../../../vscode/src/jsonrpc/agent-protocol';
 
 // pnpm agent internal autocomplete-context-bench \
 //   --config-path /Users/hiteshsagtani/Desktop/completion-eval-dataset.json \
@@ -34,12 +36,22 @@ interface AutocompleteContextBenchOptions {
     srcEndpoint: string
     configPath: string
     tempRepoPath: string
+    outputPath: string
+}
+
+interface AutocompleteContextResult extends ContextDatapoint {
+    preRankingContextCandidates?: AutocompleteContextSnippet[]
+    postRankingContextCandidates?: AutocompleteContextSnippet[]
+    providerModel?: string
+    resolvedModel?: string
+    prefix?: string
+    suffix?: string
 }
 
 async function evaluateCompletions(
     option: AutocompleteContextBenchOptions,
     datapoint: ContextDatapoint
-) {
+): Promise<AutocompleteContextResult> {
     const { owner, name } = getRepoOwnerAndName(datapoint.repoURL)
     const repoClonePath = path.join(option.tempRepoPath, owner, name)
     // todo: Use git work tree instead
@@ -47,23 +59,28 @@ async function evaluateCompletions(
     checkoutRepoToCommit(repoClonePath, datapoint.commit)
     const client = await initializeClientForWorkSpace(option, repoClonePath)
     await applyEventToWorkspace(client, datapoint.events, repoClonePath)
-
     const documentPath = path.join(repoClonePath, datapoint.filePath)
-    const result = await client.request('autocomplete/execute', {
+
+    const autocompleteResult = await client.request('autocomplete/execute', {
         uri: documentPath,
         filePath: documentPath,
         position: new vscode.Position(datapoint.line, datapoint.column),
-        // We don't use the "automatic" trigger to avoid certain code paths like
-        // synthetic latency when acceptance rate is low.
         triggerKind: 'Invoke',
     })
-    console.log(result)
+    const result: AutocompleteContextResult = {
+        ...datapoint,
+        preRankingContextCandidates: autocompleteResult.contextResults?.retrievalSummary.contextCandidatesPreRanking,
+        postRankingContextCandidates: autocompleteResult.contextResults?.retrievalSummary.contextCandidatesPostRanking,
+        providerModel: autocompleteResult.completionEvent?.params.providerModel,
+        resolvedModel: autocompleteResult.completionEvent?.params.resolvedModel,
+        prefix: autocompleteResult.completionEvent?.params.inlineCompletionItemContext?.prefix,
+        suffix: autocompleteResult.completionEvent?.params.inlineCompletionItemContext?.suffix,
+    }
+    return result
 }
 
 async function applyEventToWorkspace(client: RpcMessageHandler, events: Event[], repoClonePath: string) {
     for (const event of events) {
-        console.log(`applying event ${event.eventName}`)
-
         const { timestamp, eventName, filePath, language, data } = event
         const editorEvent: EditorEvent = {
             timestamp: timestamp.toString(),
@@ -91,12 +108,16 @@ export const autocompleteContextBench = new commander.Command('autocomplete-cont
     )
     .option('--temp-repo-path <path>', 'Temporary Path to save the cloned repos to')
     .option('--config-path <path>', 'Path to a JSON with configuration to compute TSC context')
+    .option('--output-path <path>', 'Path to a Save the results')
     .action(async (option: AutocompleteContextBenchOptions) => {
         const configBuffer = await fs.promises.readFile(option.configPath)
         const dataPoints = JSON.parse(configBuffer.toString()) as ContextDatapoint[]
+
+        const results: AutocompleteContextResult[] = []
         for (const datapoint of dataPoints) {
-            await evaluateCompletions(option, datapoint)
+            results.push(await evaluateCompletions(option, datapoint))
         }
+        await fs.promises.writeFile(option.outputPath, JSON.stringify(results, null, 2))
         process.exit(0)
     })
 

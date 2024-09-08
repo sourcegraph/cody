@@ -3,7 +3,6 @@ import type { URI } from 'vscode-uri'
 
 import {
     type AuthStatus,
-    type AutocompleteContextSnippet,
     type ClientConfigurationWithAccessToken,
     type DocumentContext,
     getActiveTraceAndSpanId,
@@ -20,7 +19,7 @@ import {
     gitMetadataForCurrentEditor,
 } from '../repository/git-metadata-for-editor'
 import { GitHubDotComRepoMetadata } from '../repository/repo-metadata-from-git-api'
-import type { ContextMixer } from './context/context-mixer'
+import {ContextMixer, GetContextResult} from './context/context-mixer';
 import { insertIntoDocContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
 import type { CompletionLogID } from './logger'
@@ -121,6 +120,7 @@ export interface InlineCompletionsResult {
      * This will be the case if it is left in-flight but superseded by a newer request.
      */
     stale?: boolean
+    contextResults?: GetContextResult
 }
 
 /**
@@ -526,7 +526,7 @@ async function doGetInlineCompletions(
         requestParams,
         isDotComUser,
         stale,
-        context: contextResult?.context ?? [],
+        contextResult,
     })
 }
 
@@ -537,7 +537,7 @@ interface ProcessRequestManagerResultParams {
     requestParams: RequestParams
     isDotComUser: boolean
     stale: boolean | undefined
-    context?: AutocompleteContextSnippet[]
+    contextResult?: GetContextResult
 }
 
 function processRequestManagerResult(
@@ -549,7 +549,7 @@ function processRequestManagerResult(
         requestParams,
         isDotComUser,
         stale,
-        context,
+        contextResult,
     } = params
 
     let { logId } = params
@@ -563,7 +563,7 @@ function processRequestManagerResult(
     }
 
     const inlineContextParams = {
-        context: context ?? [],
+        context: contextResult?.context ?? [],
         filePath: gitIdentifiersForFile?.filePath,
         gitUrl: gitIdentifiersForFile?.gitUrl,
         commit: gitIdentifiersForFile?.commit,
@@ -584,6 +584,7 @@ function processRequestManagerResult(
         items: completions,
         source,
         stale,
+        contextResults: contextResult
     }
 }
 

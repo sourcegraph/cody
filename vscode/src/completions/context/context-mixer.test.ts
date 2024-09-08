@@ -88,17 +88,19 @@ describe('ContextMixer', () => {
                 createMockStrategy([
                     [
                         {
+                            identifier: 'jacarrd-similarity',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo() {}',
                             startLine: 0,
                             endLine: 0,
                         },
                         {
+                            identifier: 'jacarrd-similarity',
                             uri: testFileUri('bar.ts'),
                             content: 'function bar() {}',
                             startLine: 0,
                             endLine: 0,
-                        },
+                        }
                     ],
                 ])
             )
@@ -142,12 +144,14 @@ describe('ContextMixer', () => {
                 createMockStrategy([
                     [
                         {
+                            identifier: 'jacarrd-similarity',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo1() {}',
                             startLine: 0,
                             endLine: 0,
                         },
                         {
+                            identifier: 'jacarrd-similarity',
                             uri: testFileUri('bar.ts'),
                             content: 'function bar1() {}',
                             startLine: 0,
@@ -157,18 +161,21 @@ describe('ContextMixer', () => {
 
                     [
                         {
+                            identifier: 'jacarrd-similarity',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo3() {}',
                             startLine: 10,
                             endLine: 10,
                         },
                         {
+                            identifier: 'jacarrd-similarity',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo1() {}\nfunction foo2() {}',
                             startLine: 0,
                             endLine: 1,
                         },
                         {
+                            identifier: 'jacarrd-similarity',
                             uri: testFileUri('bar.ts'),
                             content: 'function bar1() {}\nfunction bar2() {}',
                             startLine: 0,
@@ -260,12 +267,14 @@ describe('ContextMixer', () => {
                     createMockStrategy([
                         [
                             {
+                                identifier: 'jacarrd-similarity',
                                 uri: testFileUri('foo.ts'),
                                 content: 'function foo1() {}',
                                 startLine: 0,
                                 endLine: 0,
                             },
                             {
+                                identifier: 'jacarrd-similarity',
                                 uri: testFileUri('foo/bar.ts'),
                                 content: 'function bar1() {}',
                                 startLine: 0,
@@ -274,18 +283,21 @@ describe('ContextMixer', () => {
                         ],
                         [
                             {
+                                identifier: 'jacarrd-similarity',
                                 uri: testFileUri('test/foo.ts'),
                                 content: 'function foo3() {}',
                                 startLine: 10,
                                 endLine: 10,
                             },
                             {
+                                identifier: 'jacarrd-similarity',
                                 uri: testFileUri('foo.ts'),
                                 content: 'function foo1() {}\nfunction foo2() {}',
                                 startLine: 0,
                                 endLine: 1,
                             },
                             {
+                                identifier: 'jacarrd-similarity',
                                 uri: testFileUri('example/bar.ts'),
                                 content: 'function bar1() {}\nfunction bar2() {}',
                                 startLine: 0,
@@ -322,12 +334,14 @@ describe('ContextMixer', () => {
                     createMockStrategy([
                         [
                             {
+                                identifier: 'jacarrd-similarity',
                                 uri: testFileUri('foo.ts'),
                                 content: 'function foo1() {}',
                                 startLine: 0,
                                 endLine: 0,
                             },
                             {
+                                identifier: 'jacarrd-similarity',
                                 uri: testFileUri('foo/bar.ts'),
                                 content: 'function bar1() {}',
                                 startLine: 0,
@@ -336,18 +350,21 @@ describe('ContextMixer', () => {
                         ],
                         [
                             {
+                                identifier: 'jacarrd-similarity',
                                 uri: testFileUri('test/foo.ts'),
                                 content: 'function foo3() {}',
                                 startLine: 10,
                                 endLine: 10,
                             },
                             {
+                                identifier: 'jacarrd-similarity',
                                 uri: testFileUri('foo.ts'),
                                 content: 'function foo1() {}\nfunction foo2() {}',
                                 startLine: 0,
                                 endLine: 1,
                             },
                             {
+                                identifier: 'jacarrd-similarity',
                                 uri: testFileUri('example/bar.ts'),
                                 content: 'function bar1() {}\nfunction bar2() {}',
                                 startLine: 0,
