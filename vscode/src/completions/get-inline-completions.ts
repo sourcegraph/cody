@@ -5,8 +5,10 @@ import {
     type AutocompleteContextSnippet,
     type ClientConfigurationWithAccessToken,
     type DocumentContext,
+    currentAuthStatus,
     getActiveTraceAndSpanId,
     isAbortError,
+    isDotCom,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -19,7 +21,6 @@ import {
     gitMetadataForCurrentEditor,
 } from '../repository/git-metadata-for-editor'
 import { GitHubDotComRepoMetadata } from '../repository/repo-metadata-from-git-api'
-import { authProvider } from '../services/AuthProvider'
 import type { ContextMixer } from './context/context-mixer'
 import { insertIntoDocContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
@@ -47,7 +48,7 @@ export interface InlineCompletionsParams {
     completionIntent?: CompletionIntent
     lastAcceptedCompletionItem?: Pick<AutocompleteItem, 'requestParams' | 'analyticsItem'>
     provider: Provider
-    config: ClientConfigurationWithAccessToken
+    configuration: ClientConfigurationWithAccessToken
 
     // Shared
     requestManager: RequestManager
@@ -56,7 +57,6 @@ export interface InlineCompletionsParams {
     stageRecorder: CompletionLogger.AutocompleteStageRecorder
 
     // UI state
-    isDotComUser: boolean
     lastCandidate?: LastInlineCompletionCandidate
     debounceInterval?: { singleLine: number; multiLine: number }
     setIsLoading?: (isLoading: boolean) => void
@@ -242,14 +242,16 @@ async function doGetInlineCompletions(
         firstCompletionTimeout,
         completionIntent,
         lastAcceptedCompletionItem,
-        isDotComUser,
         stageRecorder,
-        config,
+        configuration: config,
         numberOfCompletionsToGenerate,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
 
+    const authStatus = await currentAuthStatus()
+
+    const isDotComUser = isDotCom(authStatus.endpoint)
     const gitIdentifiersForFile =
         isDotComUser === true ? gitMetadataForCurrentEditor.getGitIdentifiersForFile() : undefined
     if (gitIdentifiersForFile?.gitUrl) {
@@ -486,7 +488,7 @@ async function doGetInlineCompletions(
         firstCompletionTimeout,
         completionLogId: logId,
         gitContext,
-        authStatus: authProvider.instance!.statusAuthed,
+        authStatus,
         config,
         numberOfCompletionsToGenerate: numberOfCompletionsToGenerate ?? n,
         multiline: !!docContext.multilineTrigger,

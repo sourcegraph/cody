@@ -4,6 +4,7 @@ import {
     ContextItemSource,
     type ContextItemTree,
     REMOTE_REPOSITORY_PROVIDER_URI,
+    authStatus,
     contextFiltersProvider,
     displayLineRange,
     displayPathBasename,
@@ -17,7 +18,6 @@ import { URI } from 'vscode-uri'
 import { getSelectionOrFileContext } from '../commands/context/selection'
 import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
 import { workspaceReposMonitor } from '../repository/repo-metadata-from-git-api'
-import { authProvider } from '../services/AuthProvider'
 import type { ChatModel } from './chat-view/ChatModel'
 import {
     contextItemMentionFromOpenCtxItem,
@@ -109,7 +109,7 @@ export function startClientStateBroadcaster({
     )
     disposables.push(
         subscriptionDisposable(
-            authProvider.instance!.changes.subscribe(async () => {
+            authStatus.subscribe(async () => {
                 // Infrequent action, so don't debounce and show immediately in the UI.
                 void sendClientState('immediate')
             })

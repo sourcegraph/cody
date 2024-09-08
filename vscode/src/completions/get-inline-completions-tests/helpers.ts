@@ -4,6 +4,7 @@ import { expect, vi } from 'vitest'
 import type { URI } from 'vscode-uri'
 
 import {
+    AUTH_STATUS_FIXTURE_AUTHED,
     AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
     type AuthenticatedAuthStatus,
     type ClientConfiguration,
@@ -15,6 +16,7 @@ import {
     type GraphQLAPIClientConfig,
     featureFlagProvider,
     graphqlClient,
+    mockAuthStatus,
     testFileUri,
 } from '@sourcegraph/cody-shared'
 
@@ -65,9 +67,11 @@ const getVSCodeConfigurationWithAccessToken = (
 })
 
 type Params = Partial<
-    Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext' | 'authStatus'>
+    Omit<
+        InlineCompletionsParams,
+        'document' | 'position' | 'docContext' | 'configuration' | 'authStatus'
+    >
 > & {
-    authStatus?: AuthenticatedAuthStatus
     languageId?: string
     takeSuggestWidgetSelectionIntoAccount?: boolean
     onNetworkRequest?: (params: CodeCompletionsParams, abortController: AbortController) => void
@@ -75,18 +79,19 @@ type Params = Partial<
         params: CompletionParameters
     ) => Generator<CompletionResponse> | AsyncGenerator<CompletionResponse>
     configuration?: Partial<ClientConfiguration>
+    authStatus?: Partial<AuthenticatedAuthStatus>
     documentUri?: URI
 }
 
-export interface ParamsResult extends Omit<InlineCompletionsParams, 'authStatus'> {
+export interface ParamsResult extends Omit<InlineCompletionsParams, 'configuration' | 'authStatus'> {
     /**
      * A promise that's resolved once `completionResponseGenerator` is done.
      * Used to wait for all the completion response chunks to be processed by the
      * request manager in autocomplete tests.
      */
     completionResponseGeneratorPromise: Promise<unknown>
-    configuration?: Partial<ClientConfiguration>
-    authStatus: AuthenticatedAuthStatus
+    configuration?: Partial<ClientConfigurationWithAccessToken>
+    authStatus: Partial<AuthenticatedAuthStatus>
 }
 
 /**
@@ -106,7 +111,6 @@ export function params(
         triggerKind = TriggerKind.Automatic,
         selectedCompletionInfo,
         takeSuggestWidgetSelectionIntoAccount,
-        isDotComUser = false,
         configuration,
         documentUri = testFileUri('test.ts'),
         ...restParams
@@ -201,7 +205,7 @@ export function params(
 
     return {
         authStatus: AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
-        config: configuration as any,
+        configuration,
         document,
         position,
         docContext,
@@ -219,8 +223,6 @@ export function params(
             position,
             prefix: docContext.prefix,
         }),
-        isDotComUser,
-        configuration,
         stageRecorder: new AutocompleteStageRecorder({ isPreloadRequest: false }),
         ...restParams,
 
@@ -375,10 +377,12 @@ export async function getInlineCompletionsWithInlinedChunks(
 export async function getInlineCompletionsFullResponse(
     params: ParamsResult
 ): Promise<InlineCompletionsResult | null> {
-    const { configuration = {} } = params
-    await initCompletionProviderConfig(configuration)
+    await initCompletionProviderConfig(params)
 
-    const result = await _getInlineCompletions(params)
+    const result = await _getInlineCompletions({
+        ...params,
+        configuration: params.configuration as ClientConfigurationWithAccessToken,
+    })
     if (!result) {
         completionProviderConfig.setConfig({} as ClientConfiguration)
     }
@@ -414,10 +418,14 @@ export async function getInlineCompletionsInsertText(params: ParamsResult): Prom
 
 export type V = Awaited<ReturnType<typeof getInlineCompletions>>
 
-export function initCompletionProviderConfig(config: Partial<ClientConfiguration>) {
+export function initCompletionProviderConfig({
+    configuration,
+    authStatus,
+}: Partial<Pick<ParamsResult, 'configuration' | 'authStatus'>>): Promise<void> {
     graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
     vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockResolvedValue(false)
-    return completionProviderConfig.init(config as ClientConfiguration)
+    mockAuthStatus(authStatus ?? AUTH_STATUS_FIXTURE_AUTHED)
+    return completionProviderConfig.init((configuration ?? {}) as ClientConfiguration)
 }
 
 expect.extend({

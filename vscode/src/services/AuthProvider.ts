@@ -10,18 +10,16 @@ import {
     NO_INITIAL_VALUE,
     type ReadonlyDeep,
     SourcegraphGraphQLAPIClient,
-    distinctUntilChanged,
     fromVSCodeEvent,
     graphqlClient,
     isDotCom,
     isError,
     isNetworkLikeError,
     logError,
+    setAuthStatusObservable,
     singletonNotYetSet,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-
-import type { Observable } from 'observable-fns'
 import { formatURL } from '../auth/auth'
 import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
@@ -44,7 +42,11 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         new vscode.EventEmitter<AuthStatus>()
     private disposables: vscode.Disposable[] = [this.didChangeEvent]
 
-    constructor(private config: AuthConfig) {}
+    constructor(private config: AuthConfig) {
+        setAuthStatusObservable(
+            fromVSCodeEvent(this.didChangeEvent.event, () => this._status ?? NO_INITIAL_VALUE)
+        )
+    }
 
     public dispose(): void {
         for (const d of this.disposables) {
@@ -69,11 +71,6 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
             isExtensionStartup: true,
         }).catch(error => logError('AuthProvider:init:failed', lastEndpoint, { verbose: error }))
     }
-
-    public changes: Observable<ReadonlyDeep<AuthStatus>> = fromVSCodeEvent(
-        this.didChangeEvent.event,
-        () => this._status ?? NO_INITIAL_VALUE
-    ).pipe(distinctUntilChanged())
 
     // Create Auth Status
     private async makeAuthStatus(

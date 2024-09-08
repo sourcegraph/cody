@@ -8,6 +8,7 @@ import {
     FeatureFlag,
     type GraphQLAPIClientConfig,
     type SourcegraphGraphQLAPIClient,
+    authStatus,
     featureFlagProvider,
     graphqlClient,
 } from '@sourcegraph/cody-shared'
@@ -19,7 +20,7 @@ vi.mock('../../../lib/shared/src/experimentation/FeatureFlagProvider')
 describe('Cody Pro expiration notifications', () => {
     let notifier: CodyProExpirationNotifications
     let apiClient: SourcegraphGraphQLAPIClient
-    let authStatus: AuthStatus
+    let authStatus_: AuthStatus
     let authChangeListener = () => {}
     let codyPlan: string
     let codyStatus: string
@@ -57,23 +58,21 @@ describe('Cody Pro expiration notifications', () => {
                 plan: codyPlan,
             }),
         } as unknown as SourcegraphGraphQLAPIClient
-        authProvider.instance = {
-            changes: {
-                subscribe: (f: () => void) => {
-                    authChangeListener = f
-                    // (return an object that simulates the unsubscribe
-                    return {
-                        unsubscribe: () => {
-                            authChangeListener = () => {}
-                        },
-                    }
+        vi.spyOn(authStatus, 'subscribe').mockImplementation((f: any): any => {
+            authChangeListener = f
+            // (return an object that simulates the unsubscribe
+            return {
+                unsubscribe: () => {
+                    authChangeListener = () => {}
                 },
-            },
+            }
+        })
+        authProvider.instance = {
             get status() {
-                return authStatus
+                return authStatus_
             },
         } as AuthProvider
-        authStatus = { ...AUTH_STATUS_FIXTURE_AUTHED, endpoint: DOTCOM_URL.toString() }
+        authStatus_ = { ...AUTH_STATUS_FIXTURE_AUTHED, endpoint: DOTCOM_URL.toString() }
         localStorageData = {}
     })
 
@@ -165,13 +164,13 @@ describe('Cody Pro expiration notifications', () => {
     })
 
     it('does not show if not authenticated', async () => {
-        authStatus.authenticated = false
+        authStatus_.authenticated = false
         await createNotifier().triggerExpirationCheck()
         expectNoNotification()
     })
 
     it('does not show if not DotCom', async () => {
-        authStatus.endpoint = 'https://example.com' // non-dotcom
+        authStatus_.endpoint = 'https://example.com' // non-dotcom
         await createNotifier().triggerExpirationCheck()
         expectNoNotification()
     })
@@ -212,12 +211,12 @@ describe('Cody Pro expiration notifications', () => {
 
     it('shows later if auth status changes', async () => {
         // Not shown initially because not logged in
-        authStatus.authenticated = false
+        authStatus_.authenticated = false
         await createNotifier().triggerExpirationCheck()
         expectNoNotification()
 
         // Simulate login status change.
-        authStatus.authenticated = true
+        authStatus_.authenticated = true
         authChangeListener()
 
         // Allow time async operations (checking feature flags) to run as part of the check

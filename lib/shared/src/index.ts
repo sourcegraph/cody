@@ -339,3 +339,4 @@ export {
 export * from './misc/observable'
 export * from './configuration/resolver'
 export * from './singletons'
+export * from './auth/authStatus'

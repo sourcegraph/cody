@@ -462,7 +462,7 @@ export class InlineCompletionItemProvider
                     triggerKind,
                     selectedCompletionInfo: context.selectedCompletionInfo,
                     docContext,
-                    config: this.config.config,
+                    configuration: this.config.config,
                     provider: this.config.provider,
                     contextMixer: this.contextMixer,
                     smartThrottleService: this.smartThrottleService,
@@ -484,7 +484,6 @@ export class InlineCompletionItemProvider
                     firstCompletionTimeout: this.config.firstCompletionTimeout,
                     completionIntent,
                     lastAcceptedCompletionItem: this.lastAcceptedCompletionItem,
-                    isDotComUser: this.config.isDotComUser,
                     stageRecorder,
                 })
 
