@@ -3,8 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import * as vscode from 'vscode'
 
 import {
-    type AuthenticatedAuthStatus,
-    DOTCOM_URL,
+    AUTH_STATUS_FIXTURE_AUTHED,
     type GraphQLAPIClientConfig,
     RateLimitError,
     contextFiltersProvider,
@@ -34,18 +33,6 @@ const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
 }
 
-const DUMMY_AUTH_STATUS: AuthenticatedAuthStatus = {
-    endpoint: DOTCOM_URL.toString(),
-    isFireworksTracingEnabled: false,
-    authenticated: true,
-    hasVerifiedEmail: true,
-    requiresVerifiedEmail: true,
-    siteVersion: '1234',
-    username: 'uwu',
-    userCanUpgrade: false,
-    codyApiVersion: 0,
-}
-
 graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
 
 class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider {
@@ -59,10 +46,10 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             // we can just make them `null`.
             statusBar: null as any,
             provider: createProvider({
-                authStatus: DUMMY_AUTH_STATUS,
+                authStatus: AUTH_STATUS_FIXTURE_AUTHED,
             } as any),
             config: {} as any,
-            authStatus: DUMMY_AUTH_STATUS,
+            authStatus: AUTH_STATUS_FIXTURE_AUTHED,
             firstCompletionTimeout:
                 superArgs?.firstCompletionTimeout ??
                 DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
