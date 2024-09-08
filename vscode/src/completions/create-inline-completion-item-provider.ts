@@ -76,7 +76,6 @@ export function createInlineCompletionItemProvider({
                     if (provider) {
                         const authStatus = authProvider.instance!.statusAuthed
                         const completionsProvider = new InlineCompletionItemProvider({
-                            authStatus,
                             provider,
                             config,
                             firstCompletionTimeout: config.autocompleteFirstCompletionTimeout,
