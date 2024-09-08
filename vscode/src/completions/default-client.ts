@@ -64,7 +64,7 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
         return tracer.startActiveSpan(
             `POST ${url}`,
             async function* (span): CompletionResponseGenerator {
-                const tracingFlagEnabled = await featureFlagProvider.instance!.evaluateFeatureFlag(
+                const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlag(
                     FeatureFlag.CodyAutocompleteTracing
                 )
 

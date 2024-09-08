@@ -127,7 +127,7 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
         const curLang = currentDocument.languageId
 
         const enableExtendedLanguagePool = Boolean(
-            await featureFlagProvider.instance!.evaluateFeatureFlag(
+            await featureFlagProvider.evaluateFeatureFlag(
                 FeatureFlag.CodyAutocompleteContextExtendLanguagePool
             )
         )

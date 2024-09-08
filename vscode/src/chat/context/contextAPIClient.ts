@@ -63,8 +63,6 @@ export class ContextAPIClient {
         if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.serverSideContext')) {
             return true
         }
-        return await featureFlagProvider.instance!.evaluateFeatureFlag(
-            FeatureFlag.CodyServerSideContextAPI
-        )
+        return await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyServerSideContextAPI)
     }
 }

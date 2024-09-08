@@ -286,7 +286,7 @@ async function initializeSingletons(
                 next: config => {
                     void localStorage.setConfig(config)
                     graphqlClient.setConfig(config)
-                    void featureFlagProvider.instance!.refresh()
+                    void featureFlagProvider.refresh()
                     contextFiltersProvider.instance!.init(
                         repoNameResolver.getRepoNamesFromWorkspaceUri,
                         authProvider.instance!

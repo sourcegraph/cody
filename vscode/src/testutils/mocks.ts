@@ -872,7 +872,7 @@ export const vsCodeMocks = {
 
 export class MockFeatureFlagProvider extends FeatureFlagProvider {
     constructor(private readonly enabledFlags: Set<FeatureFlag>) {
-        super(null as any)
+        super()
     }
 
     public evaluateFeatureFlag(flag: FeatureFlag): Promise<boolean> {

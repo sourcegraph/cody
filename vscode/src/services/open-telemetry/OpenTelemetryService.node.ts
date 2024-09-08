@@ -43,9 +43,7 @@ export class OpenTelemetryService {
     private async reconfigure(): Promise<void> {
         this.isTracingEnabled =
             this.config.experimentalTracing ||
-            (await featureFlagProvider.instance!.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteTracing
-            ))
+            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing))
 
         const traceUrl = new URL('/-/debug/otlp/v1/traces', this.config.serverEndpoint).toString()
         if (this.lastTraceUrl === traceUrl) {

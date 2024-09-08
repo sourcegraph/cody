@@ -43,9 +43,7 @@ class CompletionProviderConfig {
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant2,
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant3,
         ]
-        await Promise.all(
-            featureFlagsUsed.map(flag => featureFlagProvider.instance!.evaluateFeatureFlag(flag))
-        )
+        await Promise.all(featureFlagsUsed.map(flag => featureFlagProvider.evaluateFeatureFlag(flag)))
     }
 
     public setConfig(config: ClientConfiguration) {
@@ -76,7 +74,7 @@ class CompletionProviderConfig {
         const defaultContextStrategy = 'jaccard-similarity'
 
         return featureFlagProvider
-            .instance!.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag)
+            .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag)
             .pipe(
                 mergeMap(isContextExperimentFlagEnabled => {
                     if (isRunningInsideAgent() || !isContextExperimentFlagEnabled) {
@@ -84,19 +82,19 @@ class CompletionProviderConfig {
                     }
 
                     return combineLatest([
-                        featureFlagProvider.instance!.evaluatedFeatureFlag(
+                        featureFlagProvider.evaluatedFeatureFlag(
                             FeatureFlag.CodyAutocompleteContextExperimentVariant1
                         ),
-                        featureFlagProvider.instance!.evaluatedFeatureFlag(
+                        featureFlagProvider.evaluatedFeatureFlag(
                             FeatureFlag.CodyAutocompleteContextExperimentVariant2
                         ),
-                        featureFlagProvider.instance!.evaluatedFeatureFlag(
+                        featureFlagProvider.evaluatedFeatureFlag(
                             FeatureFlag.CodyAutocompleteContextExperimentVariant3
                         ),
-                        featureFlagProvider.instance!.evaluatedFeatureFlag(
+                        featureFlagProvider.evaluatedFeatureFlag(
                             FeatureFlag.CodyAutocompleteContextExperimentVariant4
                         ),
-                        featureFlagProvider.instance!.evaluatedFeatureFlag(
+                        featureFlagProvider.evaluatedFeatureFlag(
                             FeatureFlag.CodyAutocompleteContextExperimentControl
                         ),
                     ]).pipe(
@@ -139,16 +137,16 @@ class CompletionProviderConfig {
         // - CodyAutocompleteVariant2 100%
         // - CodyAutocompleteVariant3 50%
         return combineLatest([
-            featureFlagProvider.instance!.evaluatedFeatureFlag(
+            featureFlagProvider.evaluatedFeatureFlag(
                 FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag
             ),
-            featureFlagProvider.instance!.evaluatedFeatureFlag(
+            featureFlagProvider.evaluatedFeatureFlag(
                 FeatureFlag.CodyAutocompletePreloadingExperimentVariant1
             ),
-            featureFlagProvider.instance!.evaluatedFeatureFlag(
+            featureFlagProvider.evaluatedFeatureFlag(
                 FeatureFlag.CodyAutocompletePreloadingExperimentVariant2
             ),
-            featureFlagProvider.instance!.evaluatedFeatureFlag(
+            featureFlagProvider.evaluatedFeatureFlag(
                 FeatureFlag.CodyAutocompletePreloadingExperimentVariant3
             ),
         ]).pipe(
