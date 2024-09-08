@@ -195,7 +195,7 @@ function createCompletion(textWithCursor: string, provider: InlineCompletionItem
 describe.skip('InlineCompletionItemProvider E2E', () => {
     describe('smart throttle in-flight requests', () => {
         beforeAll(async () => {
-            await initCompletionProviderConfig({})
+            await initCompletionProviderConfig({ configuration: {} })
             localStorage.setStorage({
                 get: () => null,
                 update: () => {},
@@ -397,7 +397,7 @@ describe('InlineCompletionItemProvider preloading', () => {
     beforeAll(async () => {
         vi.useFakeTimers()
 
-        await initCompletionProviderConfig(autocompleteConfig)
+        await initCompletionProviderConfig({ configuration: autocompleteConfig })
 
         localStorage.setStorage({
             get: () => null,

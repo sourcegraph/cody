@@ -5,6 +5,7 @@ import {
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
     WEB_PROVIDER_URI,
+    authStatus,
     combineLatest,
     currentResolvedConfig,
     distinctUntilChanged,
@@ -26,7 +27,6 @@ import type {
 import type { createController } from '@openctx/vscode-lib'
 import { Observable } from 'observable-fns'
 import { logDebug, outputChannel } from '../log'
-import { authProvider } from '../services/AuthProvider'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openctx/remoteDirectorySearch'
@@ -59,7 +59,7 @@ export async function exposeOpenCtxClient(
             features: isCodyWeb ? {} : { annotations: true, statusBar: true },
             providers: isCodyWeb
                 ? Observable.of(getCodyWebOpenCtxProviders())
-                : getOpenCtxProviders(authProvider.instance!.changes, isValidSiteVersion),
+                : getOpenCtxProviders(authStatus, isValidSiteVersion),
             mergeConfiguration,
         })
         setOpenCtx({
