@@ -155,7 +155,7 @@ export class InlineCompletionItemProvider
         this.disposables.push(
             subscriptionDisposable(
                 featureFlagProvider
-                    .instance!.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
+                    .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
                     .subscribe(shouldSample => {
                         this.shouldSample = Boolean(shouldSample)
                     })
@@ -443,7 +443,7 @@ export class InlineCompletionItemProvider
             }
 
             const latencyFeatureFlags: LatencyFeatureFlags = {
-                user: await featureFlagProvider.instance!.evaluateFeatureFlag(
+                user: await featureFlagProvider.evaluateFeatureFlag(
                     FeatureFlag.CodyAutocompleteUserLatency
                 ),
             }

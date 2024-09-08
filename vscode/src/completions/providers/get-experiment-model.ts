@@ -26,14 +26,12 @@ export function getExperimentModel(
     isDotCom: boolean
 ): Observable<ProviderConfigFromFeatureFlags | null> {
     return combineLatest([
-        featureFlagProvider.instance!.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-        featureFlagProvider.instance!.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
-        featureFlagProvider.instance!.evaluatedFeatureFlag(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
+        featureFlagProvider.evaluatedFeatureFlag(
             FeatureFlag.CodyAutocompleteFIMModelExperimentBaseFeatureFlag
         ),
-        featureFlagProvider.instance!.evaluatedFeatureFlag(
-            FeatureFlag.CodyAutocompleteDeepseekV2LiteBase
-        ),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase),
     ]).pipe(
         mergeMap(([starCoderHybrid, claude3, fimModelExperimentFlag, deepseekV2LiteBase]) => {
             // We run fine tuning experiment for VSC client only.
@@ -74,22 +72,12 @@ export function getExperimentModel(
  */
 function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<typeof getExperimentModel> {
     return combineLatest([
-        featureFlagProvider.instance!.evaluatedFeatureFlag(
-            FeatureFlag.CodyAutocompleteFIMModelExperimentControl
-        ),
-        featureFlagProvider.instance!.evaluatedFeatureFlag(
-            FeatureFlag.CodyAutocompleteFIMModelExperimentVariant1
-        ),
-        featureFlagProvider.instance!.evaluatedFeatureFlag(
-            FeatureFlag.CodyAutocompleteFIMModelExperimentVariant2
-        ),
-        featureFlagProvider.instance!.evaluatedFeatureFlag(
-            FeatureFlag.CodyAutocompleteFIMModelExperimentVariant3
-        ),
-        featureFlagProvider.instance!.evaluatedFeatureFlag(
-            FeatureFlag.CodyAutocompleteFIMModelExperimentVariant4
-        ),
-        featureFlagProvider.instance!.evaluatedFeatureFlag(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentControl),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant1),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant2),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant3),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant4),
+        featureFlagProvider.evaluatedFeatureFlag(
             FeatureFlag.CodyAutocompleteFIMModelExperimentCurrentBest
         ),
     ]).pipe(
