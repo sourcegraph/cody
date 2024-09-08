@@ -38,6 +38,7 @@ Chat: Fixed feedback buttons not working in chat. [pull/5509](https://github.com
 
 - Edit: Implemented cursor feedback for Generate Tests and Document Code commands to improve user experience by indicating command execution. [pull/5341](https://github.com/sourcegraph/cody/pull/5341)
 - Dev: Added support for configurable "options" field in locally configured LLM providers, available behind the `cody.dev.models` setting. [pull/5467](https://github.com/sourcegraph/cody/pull/5467)
+- Autocomplete Trigger Delay: Introduced a configurable setting to add a delay before returning autocomplete results, enhancing user control over completion suggestion timing. [pull/5350](https://github.com/sourcegraph/cody/pull/5350)
 
 ## 1.32.5
 

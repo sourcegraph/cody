@@ -1025,6 +1025,12 @@
           "markdownDescription": "Enables code autocompletions.",
           "default": true
         },
+        "cody.autocomplete.triggerDelay": {
+          "order": 5,
+          "type": "number",
+          "markdownDescription": "Adds a delay in milliseconds before triggering autocomplete. This is useful for avoiding accidental autocomplete triggers when typing. Restart VS Code to apply changes.",
+          "default": 0
+        },
         "cody.autocomplete.languages": {
           "order": 5,
           "type": "object",

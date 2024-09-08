@@ -121,6 +121,7 @@ function getInlineCompletionProvider(
 ): InlineCompletionItemProvider {
     return new InlineCompletionItemProvider({
         completeSuggestWidgetSelection: true,
+        triggerDelay: 0,
         statusBar: { addError: () => {}, hasError: () => {}, startLoading: () => {} } as any,
         provider: createProvider({
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
