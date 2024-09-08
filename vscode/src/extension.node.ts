@@ -80,7 +80,7 @@ export function activate(
 export async function deactivate(): Promise<void> {
     const config = localStorage.getConfig() ?? (await getFullConfig())
     const authStatus = authProvider.instance?.status
-    const { anonymousUserID } = await localStorage.anonymousUserID()
+    const anonymousUserID = localStorage.anonymousUserID()
     serializeConfigSnapshot({
         config,
         authStatus,

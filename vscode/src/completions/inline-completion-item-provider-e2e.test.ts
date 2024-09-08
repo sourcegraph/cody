@@ -24,15 +24,18 @@ import { documentAndPosition } from './test-helpers'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { sleep } from './utils'
 
-vi.mock('vscode', () => ({
-    ...vsCodeMocks,
-    workspace: {
-        ...vsCodeMocks.workspace,
-        onDidChangeTextDocument() {
-            return null
+vi.mock('vscode', async () => {
+    const vscodeMocks = (await import('../testutils/mocks')).vsCodeMocks
+    return {
+        ...vscodeMocks,
+        workspace: {
+            ...vsCodeMocks.workspace,
+            onDidChangeTextDocument() {
+                return null
+            },
         },
-    },
-}))
+    }
+})
 
 const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     selectedCompletionInfo: undefined,

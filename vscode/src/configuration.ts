@@ -217,11 +217,13 @@ export function getConfigWithEndpoint(): Omit<ClientConfigurationWithAccessToken
 }
 
 export const getFullConfig = async (): Promise<ClientConfigurationWithAccessToken> => {
-    const accessToken =
-        vscode.workspace.getConfiguration().get<string>('cody.accessToken') ||
-        (await getAccessToken()) ||
-        null
-    return { ...getConfigWithEndpoint(), accessToken }
+    return {
+        ...getConfigWithEndpoint(),
+        accessToken:
+            vscode.workspace.getConfiguration().get<string>('cody.accessToken') ||
+            (await getAccessToken()) ||
+            null,
+    }
 }
 
 function checkValidEnumValues(configName: string, value: string | null): void {

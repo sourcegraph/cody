@@ -2,16 +2,22 @@ import _ from 'lodash'
 import * as uuid from 'uuid'
 import type { Memento } from 'vscode'
 
-import type {
-    AccountKeyedChatHistory,
-    AuthStatus,
-    AuthenticatedAuthStatus,
-    ChatHistoryKey,
-    ClientConfigurationWithAccessToken,
-    UserLocalHistory,
+import {
+    type AccountKeyedChatHistory,
+    type AuthStatus,
+    type AuthenticatedAuthStatus,
+    type ChatHistoryKey,
+    type ClientConfigurationWithAccessToken,
+    type ClientState,
+    type UserLocalHistory,
+    distinctUntilChanged,
+    fromVSCodeEvent,
+    startWith,
 } from '@sourcegraph/cody-shared'
 
+import { type Observable, map } from 'observable-fns'
 import { isSourcegraphToken } from '../chat/protocol'
+import { EventEmitter } from '../testutils/mocks'
 
 export type ChatLocation = 'editor' | 'sidebar'
 
@@ -44,6 +50,23 @@ class LocalStorage {
 
     public setStorage(storage: Memento): void {
         this._storage = storage
+    }
+
+    public getClientState(): ClientState {
+        return {
+            lastUsedEndpoint: this.getEndpoint(),
+            anonymousUserID: this.anonymousUserID(),
+            lastUsedChatModality: this.getLastUsedChatModality(),
+        }
+    }
+
+    private onChange = new EventEmitter<void>()
+    public get clientStateChanges(): Observable<ClientState> {
+        return fromVSCodeEvent(this.onChange.event).pipe(
+            startWith(undefined),
+            map(() => this.getClientState()),
+            distinctUntilChanged()
+        )
     }
 
     public getEndpoint(): string | null {
@@ -201,17 +224,26 @@ class LocalStorage {
 
     /**
      * Return the anonymous user ID stored in local storage or create one if none exists (which
-     * occurs on a fresh installation).
+     * occurs on a fresh installation). Callers can check
+     * {@link LocalStorage.checkIfCreatedAnonymousUserID} to see if a new anonymous ID was created.
      */
-    public anonymousUserID(): { anonymousUserID: string; created: boolean } {
+    public anonymousUserID(): string {
         let id = this.storage.get<string>(this.ANONYMOUS_USER_ID_KEY)
-        let created = false
         if (!id) {
-            created = true
+            this.createdAnonymousUserID = true
             id = uuid.v4()
             this.set(this.ANONYMOUS_USER_ID_KEY, id).catch(error => console.error(error))
         }
-        return { anonymousUserID: id, created }
+        return id
+    }
+
+    private createdAnonymousUserID = false
+    public checkIfCreatedAnonymousUserID(): boolean {
+        if (this.createdAnonymousUserID) {
+            this.createdAnonymousUserID = false
+            return true
+        }
+        return false
     }
 
     public async setConfig(config: ClientConfigurationWithAccessToken): Promise<void> {
@@ -237,6 +269,7 @@ class LocalStorage {
     public async set<T>(key: string, value: T): Promise<void> {
         try {
             await this.storage.update(key, value)
+            this.onChange.fire()
         } catch (error) {
             console.error(error)
         }
@@ -244,6 +277,7 @@ class LocalStorage {
 
     public async delete(key: string): Promise<void> {
         await this.storage.update(key, undefined)
+        this.onChange.fire()
     }
 }
 

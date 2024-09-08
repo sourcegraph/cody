@@ -1,14 +1,14 @@
 import {
     type AuthStatus,
-    type ClientConfiguration,
     DOTCOM_URL,
     GIT_OPENCTX_PROVIDER_URI,
     WEB_PROVIDER_URI,
     featureFlagProvider,
     firstValueFrom,
+    mockResolvedConfig,
 } from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
-import { describe, expect, test, vi } from 'vitest'
+import { beforeAll, describe, expect, test, vi } from 'vitest'
 import { getOpenCtxProviders } from './openctx'
 import RemoteDirectoryProvider from './openctx/remoteDirectorySearch'
 import RemoteFileProvider from './openctx/remoteFileSearch'
@@ -17,9 +17,9 @@ import RemoteRepositorySearch from './openctx/remoteRepositorySearch'
 vi.mock('../../../lib/shared/src/experimentation')
 
 describe('getOpenCtxProviders', () => {
-    const mockConfig = (experimentalNoodle: boolean): Observable<ClientConfiguration> => {
-        return Observable.of({ experimentalNoodle } as ClientConfiguration)
-    }
+    beforeAll(() => {
+        mockResolvedConfig({ configuration: { experimentalNoodle: false } })
+    })
 
     const mockAuthStatus = (isDotCom: boolean): Observable<Pick<AuthStatus, 'endpoint'>> => {
         return Observable.of({ endpoint: isDotCom ? DOTCOM_URL.toString() : 'https://example.com' })
@@ -28,9 +28,7 @@ describe('getOpenCtxProviders', () => {
     test('dotcom user', async () => {
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
 
-        const providers = await firstValueFrom(
-            getOpenCtxProviders(mockConfig(false), mockAuthStatus(true), true)
-        )
+        const providers = await firstValueFrom(getOpenCtxProviders(mockAuthStatus(true), true))
 
         expect(providers.map(p => p.providerUri)).toEqual([WEB_PROVIDER_URI])
     })
@@ -38,9 +36,7 @@ describe('getOpenCtxProviders', () => {
     test('enterprise user', async () => {
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
 
-        const providers = await firstValueFrom(
-            getOpenCtxProviders(mockConfig(false), mockAuthStatus(false), true)
-        )
+        const providers = await firstValueFrom(getOpenCtxProviders(mockAuthStatus(false), true))
 
         expect(providers.map(p => p.providerUri)).toEqual([
             WEB_PROVIDER_URI,
@@ -53,9 +49,7 @@ describe('getOpenCtxProviders', () => {
     test('should include gitMentionsProvider when feature flag is true', async () => {
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
 
-        const providers = await firstValueFrom(
-            getOpenCtxProviders(mockConfig(false), mockAuthStatus(false), true)
-        )
+        const providers = await firstValueFrom(getOpenCtxProviders(mockAuthStatus(false), true))
 
         expect(providers.map(p => p.providerUri)).toContain(GIT_OPENCTX_PROVIDER_URI)
     })
