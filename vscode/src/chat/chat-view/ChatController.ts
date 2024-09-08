@@ -10,9 +10,7 @@ import {
     type ChatClient,
     type ChatMessage,
     ClientConfigSingleton,
-    type ClientConfigurationWithAccessToken,
     CodyIDE,
-    type ConfigWatcher,
     type ContextItem,
     type ContextItemOpenCtx,
     ContextItemSource,
@@ -44,6 +42,7 @@ import {
     parseMentionQuery,
     recordErrorToSpan,
     reformatBotMessageForChat,
+    resolvedConfig,
     serializeChatMessage,
     startWith,
     telemetryRecorder,
@@ -132,8 +131,6 @@ interface ChatControllerOptions {
     editor: VSCodeEditor
     guardrails: Guardrails
     startTokenReceiver?: typeof startTokenReceiver
-
-    configWatcher: ConfigWatcher<ClientConfigurationWithAccessToken>
 }
 
 export interface ChatSession {
@@ -210,7 +207,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
     private readonly contextAPIClient: ContextAPIClient | null
-    private configWatcher: ConfigWatcher<ClientConfigurationWithAccessToken>
 
     private disposables: vscode.Disposable[] = []
 
@@ -229,7 +225,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         contextAPIClient,
         contextRetriever,
         extensionClient,
-        configWatcher,
     }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.chatClient = chatClient
@@ -237,7 +232,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.editor = editor
         this.extensionClient = extensionClient
         this.contextRetriever = contextRetriever
-        this.configWatcher = configWatcher
 
         this.chatModel = new ChatModel(getDefaultModelID())
 
@@ -1486,7 +1480,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         ),
                     models: () =>
                         combineLatest([
-                            this.configWatcher.changes,
+                            resolvedConfig,
                             modelsService.instance!.selectedOrDefaultModelChanges.pipe(
                                 startWith(undefined)
                             ),
