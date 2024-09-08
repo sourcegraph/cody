@@ -92,7 +92,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
         const authStatus = authProvider.instance!.status
         if (!authStatus.authenticated || !isDotCom(authStatus)) return
 
-        const useSscForCodySubscription = await featureFlagProvider.instance!.evaluateFeatureFlag(
+        const useSscForCodySubscription = await featureFlagProvider.evaluateFeatureFlag(
             FeatureFlag.UseSscForCodySubscription
         )
         if (this.shouldSuppressNotifications()) return // Status may have changed during await
@@ -121,7 +121,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
     }
 
     private async showNotification(): Promise<void> {
-        const codyProTrialEnded = await featureFlagProvider.instance!.evaluateFeatureFlag(
+        const codyProTrialEnded = await featureFlagProvider.evaluateFeatureFlag(
             FeatureFlag.CodyProTrialEnded
         )
         if (this.shouldSuppressNotifications()) return // Status may have changed during await

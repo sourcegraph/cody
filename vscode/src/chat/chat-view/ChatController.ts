@@ -1479,8 +1479,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }),
                 {
                     mentionMenuData: query => getMentionMenuData(query, this.chatModel),
-                    evaluatedFeatureFlag: flag =>
-                        featureFlagProvider.instance!.evaluatedFeatureFlag(flag),
+                    evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
                     prompts: query =>
                         promiseFactoryToObservable(signal =>
                             mergedPromptsAndLegacyCommands(query, signal)

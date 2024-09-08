@@ -6,7 +6,6 @@ import {
     type AuthStatus,
     DOTCOM_URL,
     FeatureFlag,
-    type FeatureFlagProvider,
     type GraphQLAPIClientConfig,
     type SourcegraphGraphQLAPIClient,
     featureFlagProvider,
@@ -14,6 +13,8 @@ import {
 } from '@sourcegraph/cody-shared'
 import { type AuthProvider, authProvider } from '../services/AuthProvider'
 import { CodyProExpirationNotifications } from './cody-pro-expiration'
+
+vi.mock('../../../lib/shared/src/experimentation/FeatureFlagProvider')
 
 describe('Cody Pro expiration notifications', () => {
     let notifier: CodyProExpirationNotifications
@@ -45,10 +46,10 @@ describe('Cody Pro expiration notifications', () => {
         enabledFeatureFlags.clear()
         enabledFeatureFlags.add(FeatureFlag.UseSscForCodySubscription)
         enabledFeatureFlags.add(FeatureFlag.CodyProTrialEnded)
-        featureFlagProvider.instance = {
-            evaluateFeatureFlag: (flag: FeatureFlag) => Promise.resolve(enabledFeatureFlags.has(flag)),
-            refresh: () => {},
-        } as FeatureFlagProvider
+        vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockImplementation((flag: FeatureFlag) =>
+            Promise.resolve(enabledFeatureFlags.has(flag))
+        )
+        vi.spyOn(featureFlagProvider, 'refresh').mockImplementation(() => Promise.resolve())
         graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
         apiClient = {
             getCurrentUserCodySubscription: () => ({
@@ -79,7 +80,6 @@ describe('Cody Pro expiration notifications', () => {
     afterEach(() => {
         vi.restoreAllMocks()
         authProvider.instance = null
-        featureFlagProvider.instance = null
         notifier?.dispose()
     })
 
@@ -203,7 +203,7 @@ describe('Cody Pro expiration notifications', () => {
         // For testing, our poll period is set to 10ms, so enable the flag and then wait
         // to allow that to trigger
         enabledFeatureFlags.add(FeatureFlag.UseSscForCodySubscription)
-        featureFlagProvider.instance!.refresh() // Force clear cache of feature flags
+        featureFlagProvider.refresh() // Force clear cache of feature flags
         await new Promise(resolve => setTimeout(resolve, 20))
 
         // Should have been called by the timer.
