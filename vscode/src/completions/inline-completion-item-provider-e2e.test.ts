@@ -129,7 +129,6 @@ function getInlineCompletionProvider(
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         } as any),
         config: {} as any,
-        authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         firstCompletionTimeout:
             args?.firstCompletionTimeout ?? DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
         ...args,

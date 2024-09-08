@@ -142,7 +142,6 @@ export async function createInlineCompletionItemFromMultipleProviders({
 
         if (provider) {
             const completionsProvider = new InlineCompletionItemProvider({
-                authStatus,
                 provider,
                 config: newConfig,
                 firstCompletionTimeout: config.autocompleteFirstCompletionTimeout,
