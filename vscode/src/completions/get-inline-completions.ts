@@ -2,7 +2,6 @@ import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
 import {
-    type AuthStatus,
     type AutocompleteContextSnippet,
     type ClientConfigurationWithAccessToken,
     type DocumentContext,
@@ -20,6 +19,7 @@ import {
     gitMetadataForCurrentEditor,
 } from '../repository/git-metadata-for-editor'
 import { GitHubDotComRepoMetadata } from '../repository/repo-metadata-from-git-api'
+import { authProvider } from '../services/AuthProvider'
 import type { ContextMixer } from './context/context-mixer'
 import { insertIntoDocContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
@@ -47,7 +47,6 @@ export interface InlineCompletionsParams {
     completionIntent?: CompletionIntent
     lastAcceptedCompletionItem?: Pick<AutocompleteItem, 'requestParams' | 'analyticsItem'>
     provider: Provider
-    authStatus: AuthStatus
     config: ClientConfigurationWithAccessToken
 
     // Shared
@@ -245,7 +244,6 @@ async function doGetInlineCompletions(
         lastAcceptedCompletionItem,
         isDotComUser,
         stageRecorder,
-        authStatus,
         config,
         numberOfCompletionsToGenerate,
     } = params
@@ -488,7 +486,7 @@ async function doGetInlineCompletions(
         firstCompletionTimeout,
         completionLogId: logId,
         gitContext,
-        authStatus,
+        authStatus: authProvider.instance!.statusAuthed,
         config,
         numberOfCompletionsToGenerate: numberOfCompletionsToGenerate ?? n,
         multiline: !!docContext.multilineTrigger,

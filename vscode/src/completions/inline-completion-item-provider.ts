@@ -113,8 +113,6 @@ export class InlineCompletionItemProvider
 
     private disposables: vscode.Disposable[] = []
 
-    private isProbablyNewInstall = true
-
     private firstCompletionDecoration = new FirstCompletionDecorationHandler()
 
     /**
@@ -193,9 +191,6 @@ export class InlineCompletionItemProvider
 
         this.smartThrottleService = new SmartThrottleService()
         this.disposables.push(this.smartThrottleService)
-
-        const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
-        this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
 
         logDebug(
             'CodyCompletionProvider:initialized',
@@ -471,7 +466,6 @@ export class InlineCompletionItemProvider
                     docContext,
                     config: this.config.config,
                     provider: this.config.provider,
-                    authStatus: this.config.authStatus,
                     contextMixer: this.contextMixer,
                     smartThrottleService: this.smartThrottleService,
                     requestManager: this.requestManager,
@@ -723,13 +717,6 @@ export class InlineCompletionItemProvider
 
         if (isInTutorial(request.document)) {
             // Do nothing, the user is already working through the tutorial
-            return
-        }
-
-        if (!this.isProbablyNewInstall) {
-            // Only trigger for new installs for now, to avoid existing users from
-            // seeing this. Consider removing this check in future, because existing
-            // users would have had the key set above.
             return
         }
 

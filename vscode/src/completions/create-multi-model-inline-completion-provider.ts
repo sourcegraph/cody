@@ -145,7 +145,6 @@ export async function createInlineCompletionItemFromMultipleProviders({
             .get<number>('cody.autocomplete.triggerDelay')
         if (provider) {
             const completionsProvider = new InlineCompletionItemProvider({
-                authStatus,
                 provider,
                 config: newConfig,
                 triggerDelay: triggerDelay ?? 0,
