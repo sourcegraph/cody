@@ -18,7 +18,10 @@ vi.mock('../../../lib/shared/src/experimentation')
 
 describe('getOpenCtxProviders', () => {
     beforeAll(() => {
-        mockResolvedConfig({ configuration: { experimentalNoodle: false } })
+        mockResolvedConfig({
+            configuration: { experimentalNoodle: false },
+            auth: { serverEndpoint: 'https://example.com' },
+        })
     })
 
     const mockAuthStatus = (isDotCom: boolean): Observable<Pick<AuthStatus, 'endpoint'>> => {

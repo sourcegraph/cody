@@ -329,7 +329,7 @@ export class InlineCompletionItemProvider
                 return null
             }
 
-            if (await contextFiltersProvider.instance!.isUriIgnored(document.uri)) {
+            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
                 logIgnored(document.uri, 'context-filter', isManualCompletion)
                 return null
             }

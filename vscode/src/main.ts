@@ -79,7 +79,6 @@ import { CodyProExpirationNotifications } from './notifications/cody-pro-expirat
 import { showSetupNotification } from './notifications/setup-notification'
 import { initVSCodeGitApi } from './repository/git-extension-api'
 import { initWorkspaceReposMonitor } from './repository/repo-metadata-from-git-api'
-import { repoNameResolver } from './repository/repo-name-resolver'
 import { AuthProvider, authProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
@@ -309,9 +308,8 @@ async function initializeSingletons(
     // Allow the VS Code app's instance of ModelsService to use local storage to persist
     // user's model choices
     modelsService.instance!.setStorage(localStorage)
-    disposables.push(upstreamHealthProvider.instance!, contextFiltersProvider.instance!)
+    disposables.push(upstreamHealthProvider.instance!, contextFiltersProvider)
     commandControllerInit(platform.createCommandsProvider?.(), platform.extensionClient.capabilities)
-    repoNameResolver.init()
     disposables.push(
         subscriptionDisposable(
             resolvedConfigWithAccessToken.subscribe({
@@ -319,10 +317,6 @@ async function initializeSingletons(
                     void localStorage.setConfig(config)
                     graphqlClient.setConfig(config)
                     void featureFlagProvider.refresh()
-                    contextFiltersProvider.instance!.init(
-                        repoNameResolver.getRepoNamesFromWorkspaceUri,
-                        authProvider.instance!
-                    )
                     void modelsService.instance!.onConfigChange(config)
                     upstreamHealthProvider.instance!.onConfigurationChange(config)
                     defaultCodeCompletionsClient.instance!.onConfigurationChange(config)
@@ -583,7 +577,7 @@ async function registerTestCommands(
             }
             try {
                 const policy = JSON.parse(raw)
-                contextFiltersProvider.instance!.setTestingContextFilters(policy)
+                contextFiltersProvider.setTestingContextFilters(policy)
             } catch (error) {
                 vscode.window.showErrorMessage(
                     'Failed to parse context filters policy. Please check your JSON syntax.'
