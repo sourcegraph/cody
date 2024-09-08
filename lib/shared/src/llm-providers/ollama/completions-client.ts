@@ -33,7 +33,7 @@ export function createOllamaClient(
         const { signal } = abortController
 
         try {
-            const prompt = await params.prompt.toFilteredString(contextFiltersProvider.instance!)
+            const prompt = await params.prompt.toFilteredString(contextFiltersProvider)
 
             const res = await ollama.generate({
                 model,

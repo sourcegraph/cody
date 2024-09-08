@@ -75,9 +75,7 @@ export function createFastPathClient(
         }
 
         // Convert the SG instance messages array back to the original prompt
-        const prompt = await requestParams.messages[0]!.text!.toFilteredString(
-            contextFiltersProvider.instance!
-        )
+        const prompt = await requestParams.messages[0]!.text!.toFilteredString(contextFiltersProvider)
 
         // c.f. https://readme.fireworks.ai/reference/createcompletion
         const fireworksRequest = {
