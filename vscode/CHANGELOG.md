@@ -8,6 +8,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+Chat: Fixed feedback buttons not working in chat. [pull/5509](https://github.com/sourcegraph/cody/pull/5509)
+
 ### Changed
 
 ## 1.34.1
