@@ -27,6 +27,25 @@ class CompletionProviderConfig {
      */
     public async init(config: ClientConfiguration): Promise<void> {
         this._config = config
+
+        // Pre-fetch the feature flags we need so they are cached and immediately available when the
+        // user performs their first autocomplete, and so that our performance metrics are not
+        // skewed by the 1st autocomplete's feature flag evaluation time.
+        const featureFlagsUsed: FeatureFlag[] = [
+            FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag,
+            FeatureFlag.CodyAutocompleteContextExperimentVariant1,
+            FeatureFlag.CodyAutocompleteContextExperimentVariant2,
+            FeatureFlag.CodyAutocompleteContextExperimentVariant3,
+            FeatureFlag.CodyAutocompleteContextExperimentVariant4,
+            FeatureFlag.CodyAutocompleteContextExperimentControl,
+            FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag,
+            FeatureFlag.CodyAutocompletePreloadingExperimentVariant1,
+            FeatureFlag.CodyAutocompletePreloadingExperimentVariant2,
+            FeatureFlag.CodyAutocompletePreloadingExperimentVariant3,
+        ]
+        await Promise.all(
+            featureFlagsUsed.map(flag => featureFlagProvider.instance!.evaluateFeatureFlag(flag))
+        )
     }
 
     public setConfig(config: ClientConfiguration) {
