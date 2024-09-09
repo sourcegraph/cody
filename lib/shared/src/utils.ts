@@ -40,12 +40,11 @@ export function convertGitCloneURLToCodebaseNameOrError(cloneURL: string): strin
     }
     try {
         // Handle common Git SSH URL format
-        const match = cloneURL.match(/^[\w-]+@([^:]+):([\w-]+)\/([\w-\.]+)$/)
+        const match = cloneURL.match(/^[\w-]+@([^:]+):([\w-\/\.]+)$/)
+
         if (match) {
-            const host = match[1]
-            const owner = match[2]
-            const repo = match[3].replace(/\.git$/, '')
-            return `${host}/${owner}/${repo}`
+            const [, host, path] = match
+            return `${host}/${path.replace(/\.git$/, '')}`
         }
         const uri = new URL(cloneURL)
         // Handle Azure DevOps URLs
