@@ -56,7 +56,7 @@ import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/ex
 import type { QuickPickInput } from '../../vscode/src/edit/input/get-input'
 import { getModelOptionItems } from '../../vscode/src/edit/input/get-items/model'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
-import type { ExtensionClient, ExtensionObjects } from '../../vscode/src/extension-client'
+import type { ExtensionClient } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
@@ -1302,14 +1302,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return []
         })
 
-        this.registerAuthenticatedRequest('chat/remoteRepos', async ({ id }) => {
-            const panel = this.webPanels.getPanelOrError(id)
-            await this.receiveWebviewMessage(id, {
-                command: 'context/get-remote-search-repos',
-            })
-            return { remoteRepos: panel.remoteRepos }
-        })
-
         this.registerAuthenticatedRequest('chat/setModel', async ({ id, model }) => {
             const panel = this.webPanels.getPanelOrError(id)
             await waitUntilComplete(panel.extensionAPI.setChatModel(model))
@@ -1409,29 +1401,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
-        this.registerAuthenticatedRequest('remoteRepo/has', async ({ repoName }, cancelToken) => {
-            return {
-                result: await this.extension.enterpriseContextFactory.repoSearcher.has(repoName),
-            }
-        })
-
-        this.registerAuthenticatedRequest('remoteRepo/list', async ({ query, first, afterId }) => {
-            const result = await this.extension.enterpriseContextFactory.repoSearcher.list(
-                query ?? undefined,
-                first,
-                afterId ?? undefined
-            )
-            return {
-                repos: result.repos,
-                startIndex: result.startIndex,
-                count: result.count,
-                state: {
-                    state: result.state,
-                    error: errorToCodyError(result.lastError),
-                },
-            }
-        })
-
         this.registerAuthenticatedRequest('ignore/test', async ({ uri: uriString }) => {
             const uri = vscode.Uri.parse(uriString)
             const isIgnored = await contextFiltersProvider.instance!.isUriIgnored(uri)
@@ -1499,34 +1468,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
         return result ? vscode_shim.workspace.openTextDocument(result.uri) : undefined
     }
 
-    private maybeExtension: ExtensionObjects | undefined
-
-    public async provide(extension: ExtensionObjects): Promise<vscode.Disposable> {
-        this.maybeExtension = extension
-
-        const disposables: vscode.Disposable[] = []
-
-        const repoSearcher = this.extension.enterpriseContextFactory.repoSearcher
-        disposables.push(
-            repoSearcher.onFetchStateChanged(({ state, error }) => {
-                this.notify('remoteRepo/didChangeState', {
-                    state,
-                    error: errorToCodyError(error),
-                })
-            }),
-            repoSearcher.onRepoListChanged(() => {
-                this.notify('remoteRepo/didChange', null)
-            }),
-            {
-                dispose: () => {
-                    this.maybeExtension = undefined
-                },
-            }
-        )
-
-        return vscode.Disposable.from(...disposables)
-    }
-
     get clientName(): string {
         return this.clientInfo?.name.toLowerCase() || 'uninitialized-agent'
     }
@@ -1541,17 +1482,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
     get capabilities(): agent_protocol.ClientCapabilities | undefined {
         return this.clientInfo?.capabilities ?? undefined
-    }
-
-    /**
-     * Gets provided extension objects. This may only be called after
-     * registration is complete.
-     */
-    private get extension(): ExtensionObjects {
-        if (!this.maybeExtension) {
-            throw new Error('Extension registration not yet complete')
-        }
-        return this.maybeExtension
     }
 
     private codeLensToken = new vscode.CancellationTokenSource()
@@ -1725,8 +1655,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         panel.isMessageInProgress = message.isMessageInProgress
                         panel.messageInProgressChange.fire(message)
                     }
-                } else if (message.type === 'context/remote-repos') {
-                    panel.remoteRepos = message.repos
                 } else if (message.type === 'errors') {
                     panel.messageInProgressChange.fire(message)
                 } else if (message.type === 'attribution') {

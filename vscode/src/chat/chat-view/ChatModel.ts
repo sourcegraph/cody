@@ -15,7 +15,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import type { Repo } from '../../context/repo-fetcher'
+import type { Repo } from '../../context/remote-repo'
 import { getChatPanelTitle } from './chat-helpers'
 
 export class ChatModel {

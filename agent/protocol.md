@@ -77,13 +77,6 @@ shutdown: [null, null]
 
 
 ```ts
-'chat/remoteRepos': [{ id: string; }, { remoteRepos?: Repo[] | undefined; }]
-```
-<h2 id="chat_submitMessage"><a href="#chat_submitMessage" name="chat_submitMessage"><code>chat/submitMessage</code> (<img class="emoji" title=":arrow_right:" alt=":arrow_right:" src="https://github.githubassets.com/images/icons/emoji/unicode/27a1.png" height="20" width="20">)</a></h2>
-<p>Request sent from the client to client server.</p>
-
-
-```ts
 'chat/submitMessage': [{ id: string; message: WebviewMessage; }, ExtensionMessage]
 ```
 <h2 id="chat_editMessage"><a href="#chat_editMessage" name="chat_editMessage"><code>chat/editMessage</code> (<img class="emoji" title=":arrow_right:" alt=":arrow_right:" src="https://github.githubassets.com/images/icons/emoji/unicode/27a1.png" height="20" width="20">)</a></h2>
@@ -499,7 +492,3 @@ exit: [null]
 ```ts
 'progress/end': [{ id: string; }]
 ```
-
-## Remote Repositories
-
-See `remoteRepo/*` in [agent-protocol.ts](../vscode/src/jsonrpc/agent-protocol.ts)
