@@ -79,7 +79,7 @@ interface InlineContextItemsParams {
     commit: string | undefined
 }
 
-interface InlineCompletionItemContext {
+export interface InlineCompletionItemContext {
     gitUrl: string
     commit?: string
     filePath?: string
@@ -1004,32 +1004,32 @@ export function flushActiveSuggestionRequests(isDotComUser: boolean): void {
     logSuggestionEvents(isDotComUser)
 }
 
-function getInlineContextItemToLog(
-    inlineCompletionItemContext: InlineCompletionItemContext | undefined
+export function getInlineContextItemToLog(
+    inlineCompletionItemContext?: InlineCompletionItemContext
 ): InlineCompletionItemContext | undefined {
-    if (!inlineCompletionItemContext) {
+    if (!inlineCompletionItemContext?.prefix || !inlineCompletionItemContext?.suffix) {
         return undefined
     }
+
     const MAX_PAYLOAD_SIZE_BYTES = 1024 * 1024
-    let currentPayloadSizeBytes = 0
-    const result: Partial<InlineCompletionItemContext> = {}
-    function addToPayload(key: 'prefix' | 'suffix', value: string | undefined): void {
-        if (
-            value &&
-            currentPayloadSizeBytes + Buffer.byteLength(value, 'utf8') <= MAX_PAYLOAD_SIZE_BYTES
-        ) {
-            result[key] = value
-            currentPayloadSizeBytes += Buffer.byteLength(value, 'utf8')
-        }
+    const prefixSize = Buffer.byteLength(inlineCompletionItemContext.prefix, 'utf8')
+    const suffixSize = Buffer.byteLength(inlineCompletionItemContext.suffix, 'utf8')
+    // If the prefix and suffix are too large, we don't log the context as the data is not useful for offline analysis.
+    if (prefixSize + suffixSize > MAX_PAYLOAD_SIZE_BYTES) {
+        return undefined
     }
-    addToPayload('prefix', inlineCompletionItemContext.prefix)
-    addToPayload('suffix', inlineCompletionItemContext.suffix)
+
+    const result: Partial<InlineCompletionItemContext> = {
+        prefix: inlineCompletionItemContext.prefix,
+        suffix: inlineCompletionItemContext.suffix,
+    }
+
+    let currentPayloadSizeBytes = prefixSize + suffixSize
+
     result.context = inlineCompletionItemContext.context?.filter(item => {
-        if (
-            currentPayloadSizeBytes + Buffer.byteLength(item.content, 'utf8') <=
-            MAX_PAYLOAD_SIZE_BYTES
-        ) {
-            currentPayloadSizeBytes += Buffer.byteLength(item.content, 'utf8')
+        const itemSize = Buffer.byteLength(item.content, 'utf8')
+        if (currentPayloadSizeBytes + itemSize <= MAX_PAYLOAD_SIZE_BYTES) {
+            currentPayloadSizeBytes += itemSize
             return true
         }
         return false
@@ -1037,7 +1037,6 @@ function getInlineContextItemToLog(
 
     return { ...inlineCompletionItemContext, ...result }
 }
-
 export function logSuggestionEvents(isDotComUser: boolean): void {
     const now = performance.now()
     // biome-ignore lint/complexity/noForEach: LRUCache#forEach has different typing than #entries, so just keeping it for now
