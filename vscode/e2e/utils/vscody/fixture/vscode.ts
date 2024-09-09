@@ -364,7 +364,7 @@ async function installExtensions({
                 ...process.env,
             },
             cwd: versionedServerExecutableDir,
-            stdio: ['inherit', 'ignore', 'inherit'],
+            stdio: ['inherit', 'ignore', 'ignore'],
         })
     }
 
@@ -406,7 +406,7 @@ async function installExtensions({
                 ...process.env,
             },
             cwd: versionedServerExecutableDir,
-            stdio: ['inherit', 'ignore', 'inherit'],
+            stdio: ['inherit', 'ignore', 'ignore'],
         }
     )
 }

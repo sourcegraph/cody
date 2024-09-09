@@ -18,7 +18,8 @@ import { getFirstOrValue } from './util'
 export const pollyFixture = _test.extend<TestContext, WorkerContext>({
     polly: [
         async ({ validOptions }, use, testInfo) => {
-            const polly = new Polly(testInfo.titlePath.join('/'), {
+            const id = `${testInfo.title.slice(0, 200).replaceAll(/[\\/]/g, '_').toLowerCase()}`
+            const polly = new Polly(id, {
                 flushRequestsOnStop: true,
                 recordIfMissing: validOptions.recordIfMissing ?? validOptions.recordingMode === 'record',
                 mode: validOptions.recordingMode,
@@ -88,13 +89,17 @@ export const pollyFixture = _test.extend<TestContext, WorkerContext>({
                     fs: {
                         recordingsDir: path.resolve(
                             CODY_VSCODE_ROOT_DIR,
-                            validOptions.recordingDir
-                            // testInfo.project.name,
+                            validOptions.recordingDir,
+                            testInfo.project.name,
                             // path.dirname(
-                            //     path.relative(
-                            //         path.resolve(CODY_VSCODE_ROOT_DIR, testInfo.project.testDir),
-                            //         testInfo.titlePath.join('/')
-                            //     )
+                            path.relative(
+                                path.resolve(CODY_VSCODE_ROOT_DIR, testInfo.project.testDir),
+                                path.resolve(
+                                    testInfo.file,
+                                    '..',
+                                    path.basename(testInfo.file).replace('.test.ts', '')
+                                )
+                            )
                             // )
                         ),
                     },

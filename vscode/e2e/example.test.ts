@@ -20,7 +20,12 @@ test.describe('Demonstrations', () => {
                 })
         })
         await uix.workspace.modifySettings(
-            existing => ({ ...existing, 'workbench.colorTheme': 'Default Light Modern' }),
+            existing => ({
+                ...existing,
+                'workbench.colorTheme': 'Default Light Modern',
+                // 'cody.accessToken': MITM_AUTH_TOKEN_PLACEHOLDER,
+                // 'cody.serverEndpoint': mitmProxy.sourcegraph.dotcom.endpoint,
+            }),
             { workspaceDir }
         )
 
