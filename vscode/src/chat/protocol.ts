@@ -257,7 +257,7 @@ interface WebviewEditMessage extends WebviewContextMessage {
 
 interface WebviewContextMessage {
     addEnhancedContext?: boolean | undefined | null
-    contextFiles?: ContextItem[] | undefined | null
+    contextItems?: ContextItem[] | undefined | null
 }
 
 export interface ExtensionTranscriptMessage {

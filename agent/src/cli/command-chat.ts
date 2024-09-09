@@ -23,7 +23,6 @@ import {
     endpointOption,
 } from './command-auth/command-login'
 import { errorSpinner, notAuthenticated } from './command-auth/messages'
-import { isNonEmptyArray } from './isNonEmptyArray'
 import { legacyCodyClientName } from './legacyCodyClientName'
 
 declare const process: { pkg: { entrypoint: string } } & NodeJS.Process
@@ -192,6 +191,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         client.request('chat/setModel', { id, model: options.model })
     }
 
+    const contextItems: ContextItem[] = []
     if (options.contextRepo && options.contextRepo.length > 0) {
         if (isDotCom(serverInfo.authStatus)) {
             spinner.fail(
@@ -225,11 +225,22 @@ export async function chatAction(options: ChatOptions): Promise<number> {
             )
             return 1
         }
+        for (const repo of repos) {
+            const repoUri = vscode.Uri.parse(`https://${endpoint}/${repo.name}`)
+            console.log('repoUri', repoUri.toString())
+            contextItems.push({
+                type: 'repository',
+                // TODO: confirm syntax for repo
+                uri: repoUri,
+                repoName: repo.name,
+                repoID: repo.id,
+                content: null,
+            })
+        }
     }
 
-    const contextFiles: ContextItem[] = []
     for (const relativeOrAbsolutePath of options.contextFile ?? []) {
-        contextFiles.push({
+        contextItems.push({
             type: 'file',
             uri: toUri(options.dir, relativeOrAbsolutePath),
         })
@@ -242,7 +253,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         )
         return 1
     }
-    const addEnhancedContext = isNonEmptyArray(options.contextRepo)
+
     const response = await client.request(
         'chat/submitMessage',
         {
@@ -251,8 +262,8 @@ export async function chatAction(options: ChatOptions): Promise<number> {
                 command: 'submit',
                 submitType: 'user',
                 text: messageText,
-                contextFiles,
-                addEnhancedContext,
+                addEnhancedContext: false,
+                contextItems,
             },
         },
         { token: tokenSource.token }

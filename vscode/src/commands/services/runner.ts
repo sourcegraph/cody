@@ -116,7 +116,7 @@ export class CommandRunner implements vscode.Disposable {
         const prompt = PromptString.unsafe_fromUserQuery(this.command.prompt)
 
         // Fetch context for the command
-        const contextFiles = await this.getContextFiles()
+        const contextItems = await this.getContextFiles()
 
         // NOTE: (bee) codebase context is not supported for custom commands
         return {
@@ -124,7 +124,7 @@ export class CommandRunner implements vscode.Disposable {
             session: await executeChat({
                 text: prompt,
                 submitType: 'user',
-                contextFiles,
+                contextItems,
                 addEnhancedContext: this.command.context?.codebase ?? false,
                 source: 'custom-commands',
                 command: DefaultChatCommands.Custom,

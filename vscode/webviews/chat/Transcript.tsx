@@ -278,7 +278,7 @@ export function editHumanMessage(
         index: messageIndexInTranscript,
         text: editorValue.text,
         editorState: editorValue.editorState,
-        contextFiles: editorValue.contextItems.map(deserializeContextItem),
+        contextItems: editorValue.contextItems.map(deserializeContextItem),
     })
     focusLastHumanMessageEditor()
 }
@@ -289,7 +289,7 @@ function onFollowupSubmit(editorValue: SerializedPromptEditorValue): void {
         submitType: 'user',
         text: editorValue.text,
         editorState: editorValue.editorState,
-        contextFiles: editorValue.contextItems.map(deserializeContextItem),
+        contextItems: editorValue.contextItems.map(deserializeContextItem),
     })
     focusLastHumanMessageEditor()
 }

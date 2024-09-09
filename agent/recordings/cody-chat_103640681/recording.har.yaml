@@ -88,229 +88,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 709c04331ef053b321decb3b9eb8e0f0
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 518
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_964f5256e709a8c5c151a63d8696d5c7ac81604d179405864d88ff48a9232364
-          - name: user-agent
-            value: jetbrains / 6.0.0-SNAPSHOT
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.sourcegraph.com
-        headersSize: 371
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: respond with "hello" and nothing else
-              - speaker: assistant
-            model: gpt-4o
-            temperature: 0.2
-            topK: -1
-            topP: -1
-        queryString:
-          - name: client-name
-            value: jetbrains
-          - name: client-version
-            value: 6.0.0-SNAPSHOT
-        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?client-name=jetbrains&client-version=6.0.0-SNAPSHOT
-      response:
-        bodySize: 213
-        content:
-          mimeType: text/event-stream
-          size: 213
-          text: |+
-            event: completion
-            data: {"completion":"hello","stopReason":"stop"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 02 Sep 2024 11:25:27 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1215
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-02T11:25:26.416Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 21d3252242deef34d2d38e9b0eff82c6
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 801
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_964f5256e709a8c5c151a63d8696d5c7ac81604d179405864d88ff48a9232364
-          - name: user-agent
-            value: jetbrains / 6.0.0-SNAPSHOT
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.sourcegraph.com
-        headersSize: 371
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: |-
-                  Codebase context from file animal.ts:
-                  ```typescript:animal.ts
-                  interface StrangeAnimal {
-                      makesSound(): 'coo' | 'moo'
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  You have access to the provided codebase context. 
-
-
-                  Question: implement a cow. Only print the code without any explanation.
-              - speaker: assistant
-            model: gpt-4o
-            temperature: 0.2
-            topK: -1
-            topP: -1
-        queryString:
-          - name: client-name
-            value: jetbrains
-          - name: client-version
-            value: 6.0.0-SNAPSHOT
-        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?client-name=jetbrains&client-version=6.0.0-SNAPSHOT
-      response:
-        bodySize: 4847
-        content:
-          mimeType: text/event-stream
-          size: 4847
-          text: >+
-            event: completion
-
-            data: {"completion":"```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 02 Sep 2024 11:25:30 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1215
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-02T11:25:29.989Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: 204d8b5f0f47e53e25b515318b0b5aa6
       _order: 0
       cache: {}
@@ -833,6 +610,107 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-09-02T11:25:24.533Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: b4499992cdf92807c09248d1e216cbdb
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 253
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_964f5256e709a8c5c151a63d8696d5c7ac81604d179405864d88ff48a9232364
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: cody-cli / 6.0.0-SNAPSHOT
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "253"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 349
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              query Repositories($names: [String!]!, $first: Int!) {
+                  repositories(names: $names, first: $first) {
+                    nodes {
+                      name
+                      id
+                    }
+                  }
+                }
+            variables:
+              first: 1
+              names:
+                - github.com/sourcegraph/sourcegraph
+        queryString:
+          - name: Repositories
+            value: null
+        url: https://sourcegraph.sourcegraph.com/.api/graphql?Repositories
+      response:
+        bodySize: 38
+        content:
+          mimeType: application/json
+          size: 38
+          text: "{\"data\":{\"repositories\":{\"nodes\":[]}}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 09 Sep 2024 18:51:41 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "38"
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1217
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-09T18:51:41.537Z
       time: 0
       timings:
         blocked: -1
