@@ -1,0 +1,1227 @@
+log:
+  _recordingName: e2e/features/enterprise/cody-ignore.test.ts/cody ignore/it works
+  creator:
+    comment: persister:fs
+    name: Polly.JS
+    version: 6.0.6
+  entries:
+    - _id: 4b648596e5a6153bcc004b28c9b7d018
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 0
+        cookies: []
+        headers:
+          - name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+          - name: accept-encoding
+            value: identity
+          - name: user-agent
+            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
+          - name: accept
+            value: "*/*"
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: authorization
+            value: token
+              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
+          - name: x-mitm-proxy-name
+            value: sourcegraph.enterprise
+          - name: x-mitm-auth-token-name
+            value: sourcegraph.enterprise
+        headersSize: 597
+        httpVersion: HTTP/1.1
+        method: GET
+        queryString: []
+        url: https://demo.sourcegraph.com/.api/client-config
+      response:
+        bodySize: 222
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 222
+          text: |
+            {
+                "codyEnabled": true,
+                "chatEnabled": true,
+                "autoCompleteEnabled": true,
+                "customCommandsEnabled": true,
+                "attributionEnabled": true,
+                "smartContextWindowEnabled": true,
+                "modelsAPIEnabled": true
+            }
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 09 Sep 2024 11:11:46 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "222"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1221
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-09T11:11:46.058Z
+      time: 302
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 302
+    - _id: fa5b795606a9596f1b7383979e00bde6
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 318
+        cookies: []
+        headers:
+          - name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+          - name: accept-encoding
+            value: identity
+          - name: user-agent
+            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
+          - name: content-length
+            value: "318"
+          - name: accept
+            value: "*/*"
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: authorization
+            value: token
+              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
+          - name: x-mitm-proxy-name
+            value: sourcegraph.enterprise
+          - name: x-mitm-auth-token-name
+            value: sourcegraph.enterprise
+        headersSize: 572
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query CurrentSiteCodyLlmConfiguration {
+                  site {
+                      codyLLMConfiguration {
+                          chatModel
+                          chatModelMaxTokens
+                          fastChatModel
+                          fastChatModelMaxTokens
+                          completionModel
+                          completionModelMaxTokens
+                      }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: CurrentSiteCodyLlmConfiguration
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
+      response:
+        bodySize: 266
+        content:
+          mimeType: application/json
+          size: 266
+          text: "{\"data\":{\"site\":{\"codyLLMConfiguration\":{\"chatModel\":\"sourcegra\
+            ph/claude-3.5-sonnet\",\"chatModelMaxTokens\":30000,\"fastChatModel\
+            \":\"sourcegraph/claude-3-sonnet\",\"fastChatModelMaxTokens\":30000,\
+            \"completionModel\":\"sourcegraph/starcoder\",\"completionModelMaxT\
+            okens\":2048}}}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 09 Sep 2024 11:11:45 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "266"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1212
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-09T11:11:45.050Z
+      time: 255
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 255
+    - _id: 1567a774f8955f42799016aceb946e19
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 165
+        cookies: []
+        headers:
+          - name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+          - name: accept-encoding
+            value: identity
+          - name: user-agent
+            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
+          - name: content-length
+            value: "165"
+          - name: accept
+            value: "*/*"
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: authorization
+            value: token
+              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
+          - name: x-mitm-proxy-name
+            value: sourcegraph.enterprise
+          - name: x-mitm-auth-token-name
+            value: sourcegraph.enterprise
+        headersSize: 572
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query CurrentSiteCodyLlmConfiguration {
+                  site {
+                      codyLLMConfiguration {
+                          smartContextWindow
+                      }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: CurrentSiteCodyLlmConfiguration
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
+      response:
+        bodySize: 76
+        content:
+          mimeType: application/json
+          size: 76
+          text: "{\"data\":{\"site\":{\"codyLLMConfiguration\":{\"smartContextWindow\":\"\
+            disabled\"}}}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 09 Sep 2024 11:11:45 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "76"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1211
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-09T11:11:45.054Z
+      time: 261
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 261
+    - _id: cf3c3975c58a7fd1491c89c4bdda15e9
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 150
+        cookies: []
+        headers:
+          - name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+          - name: accept-encoding
+            value: identity
+          - name: user-agent
+            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
+          - name: content-length
+            value: "150"
+          - name: accept
+            value: "*/*"
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: authorization
+            value: token
+              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
+          - name: x-mitm-proxy-name
+            value: sourcegraph.enterprise
+          - name: x-mitm-auth-token-name
+            value: sourcegraph.enterprise
+        headersSize: 567
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query CurrentSiteCodyLlmProvider {
+                  site {
+                      codyLLMConfiguration {
+                          provider
+                      }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: CurrentSiteCodyLlmProvider
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?CurrentSiteCodyLlmProvider
+      response:
+        bodySize: 69
+        content:
+          mimeType: application/json
+          size: 69
+          text: "{\"data\":{\"site\":{\"codyLLMConfiguration\":{\"provider\":\"sourcegraph\
+            \"}}}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 09 Sep 2024 11:11:45 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "69"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1211
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-09T11:11:45.052Z
+      time: 258
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 258
+    - _id: c7a96a6928009c667645b21de5a28adf
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 341
+        cookies: []
+        headers:
+          - name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+          - name: accept-encoding
+            value: identity
+          - name: user-agent
+            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
+          - name: content-length
+            value: "341"
+          - name: accept
+            value: "*/*"
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: authorization
+            value: token
+              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
+          - name: x-mitm-proxy-name
+            value: sourcegraph.enterprise
+          - name: x-mitm-auth-token-name
+            value: sourcegraph.enterprise
+        headersSize: 552
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query CurrentUser {
+                  currentUser {
+                      id
+                      hasVerifiedEmail
+                      displayName
+                      username
+                      avatarURL
+                      primaryEmail {
+                          email
+                      }
+                      organizations {
+                          nodes {
+                              id
+                              name
+                          }
+                      }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: CurrentUser
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?CurrentUser
+      response:
+        bodySize: 225
+        content:
+          mimeType: application/json
+          size: 225
+          text: "{\"data\":{\"currentUser\":{\"id\":\"VXNlcjozNTM=\",\"hasVerifiedEmail\"\
+            :false,\"displayName\":null,\"username\":\"codytesting\",\"avatarURL\
+            \":null,\"primaryEmail\":null,\"organizations\":{\"nodes\":[{\"id\":\
+            \"T3JnOjU=\",\"name\":\"insights-examples\"}]}}}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 09 Sep 2024 11:11:45 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "225"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1212
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-09T11:11:45.056Z
+      time: 258
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 258
+    - _id: 85cb984331d834b6e1e8e4db7901f8ec
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 151
+        cookies: []
+        headers:
+          - name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+          - name: accept-encoding
+            value: identity
+          - name: user-agent
+            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
+          - name: content-length
+            value: "151"
+          - name: accept
+            value: "*/*"
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: authorization
+            value: token
+              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
+          - name: x-mitm-proxy-name
+            value: sourcegraph.enterprise
+          - name: x-mitm-auth-token-name
+            value: sourcegraph.enterprise
+        headersSize: 624
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query Repository($name: String!) {
+              	repository(name: $name) {
+              		id
+              	}
+              }
+            variables:
+              name: github.com/sourcegraph/sourcegraph
+        queryString:
+          - name: Repository
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?Repository
+      response:
+        bodySize: 28
+        content:
+          mimeType: application/json
+          size: 28
+          text: "{\"data\":{\"repository\":null}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 09 Sep 2024 14:07:00 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "28"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1211
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-09T14:07:00.141Z
+      time: 298
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 298
+    - _id: 9728647a0e86ec73fd5a9a0f09e986be
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 141
+        cookies: []
+        headers:
+          - name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+          - name: accept-encoding
+            value: identity
+          - name: user-agent
+            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
+          - name: content-length
+            value: "141"
+          - name: accept
+            value: "*/*"
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: authorization
+            value: token
+              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
+          - name: x-mitm-proxy-name
+            value: sourcegraph.enterprise
+          - name: x-mitm-auth-token-name
+            value: sourcegraph.enterprise
+        headersSize: 558
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query SiteGraphQLFields {
+                  __type(name: "Site") {
+                      fields {
+                          name
+                      }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: SiteGraphQLFields
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?SiteGraphQLFields
+      response:
+        bodySize: 1099
+        content:
+          mimeType: application/json
+          size: 1099
+          text: "{\"data\":{\"__type\":{\"fields\":[{\"name\":\"id\"},{\"name\":\"siteID\
+            \"},{\"name\":\"configuration\"},{\"name\":\"latestSettings\"},{\"n\
+            ame\":\"settingsCascade\"},{\"name\":\"settingsURL\"},{\"name\":\"c\
+            anReloadSite\"},{\"name\":\"viewerCanAdminister\"},{\"name\":\"acce\
+            ssTokens\"},{\"name\":\"authProviders\"},{\"name\":\"externalAccoun\
+            ts\"},{\"name\":\"buildVersion\"},{\"name\":\"productVersion\"},{\"\
+            name\":\"updateCheck\"},{\"name\":\"needsRepositoryConfiguration\"}\
+            ,{\"name\":\"externalServicesFromFile\"},{\"name\":\"allowEditExter\
+            nalServicesWithFile\"},{\"name\":\"freeUsersExceeded\"},{\"name\":\
+            \"alerts\"},{\"name\":\"hasCodeIntelligence\"},{\"name\":\"sendsEma\
+            ilVerificationEmails\"},{\"name\":\"productSubscription\"},{\"name\
+            \":\"usageStatistics\"},{\"name\":\"analytics\"},{\"name\":\"users\
+            \"},{\"name\":\"monitoringStatistics\"},{\"name\":\"allowSiteSettin\
+            gsEdits\"},{\"name\":\"upgradeReadiness\"},{\"name\":\"autoUpgradeE\
+            nabled\"},{\"name\":\"perUserCompletionsQuota\"},{\"name\":\"perUse\
+            rCodeCompletionsQuota\"},{\"name\":\"requiresVerifiedEmailForCody\"\
+            },{\"name\":\"isCodyEnabled\"},{\"name\":\"codyLLMConfiguration\"},{\
+            \"name\":\"codyConfigFeatures\"},{\"name\":\"codyGatewayRateLimitSt\
+            atus\"},{\"name\":\"codyContextFilters\"}]}}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 09 Sep 2024 11:11:45 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "1099"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1213
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-09T11:11:45.327Z
+      time: 200
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 211
+    - _id: b4d9e57bfe6799353e03a2a096234165
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 100
+        cookies: []
+        headers:
+          - name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+          - name: accept-encoding
+            value: identity
+          - name: user-agent
+            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
+          - name: content-length
+            value: "100"
+          - name: accept
+            value: "*/*"
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: authorization
+            value: token
+              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
+          - name: x-mitm-proxy-name
+            value: sourcegraph.enterprise
+          - name: x-mitm-auth-token-name
+            value: sourcegraph.enterprise
+        headersSize: 559
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query SiteHasCodyEnabled {
+                  site {
+                      isCodyEnabled
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: SiteHasCodyEnabled
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?SiteHasCodyEnabled
+      response:
+        bodySize: 40
+        content:
+          mimeType: application/json
+          size: 40
+          text: "{\"data\":{\"site\":{\"isCodyEnabled\":true}}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 09 Sep 2024 11:11:45 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "40"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1211
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-09T11:11:45.533Z
+      time: 199
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 199
+    - _id: 322e0aeead43ccccbd57ad162a64fde3
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 101
+        cookies: []
+        headers:
+          - name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+          - name: accept-encoding
+            value: identity
+          - name: user-agent
+            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
+          - name: content-length
+            value: "101"
+          - name: accept
+            value: "*/*"
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: authorization
+            value: token
+              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
+          - name: x-mitm-proxy-name
+            value: sourcegraph.enterprise
+          - name: x-mitm-auth-token-name
+            value: sourcegraph.enterprise
+        headersSize: 559
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query SiteProductVersion {
+                  site {
+                      productVersion
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: SiteProductVersion
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?SiteProductVersion
+      response:
+        bodySize: 44
+        content:
+          mimeType: application/json
+          size: 44
+          text: "{\"data\":{\"site\":{\"productVersion\":\"5.7.0\"}}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 09 Sep 2024 11:11:45 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "44"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1211
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-09T11:11:45.049Z
+      time: 263
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 263
+    - _id: 49bed0d771a2067eccdc72b3a59f37ba
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 0
+        cookies: []
+        headers:
+          - name: connection
+            value: close
+          - name: host
+            value: demo.sourcegraph.com
+          - name: accept-encoding
+            value: identity
+          - name: user-agent
+            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
+          - name: accept
+            value: "*/*"
+          - name: authorization
+            value: token
+              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
+          - name: x-mitm-proxy-name
+            value: sourcegraph.enterprise
+          - name: x-mitm-auth-token-name
+            value: sourcegraph.enterprise
+        headersSize: 497
+        httpVersion: HTTP/1.1
+        method: GET
+        queryString: []
+        url: https://demo.sourcegraph.com/.api/modelconfig/supported-models.json
+      response:
+        bodySize: 7213
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 7213
+          text: >
+            {
+                "schemaVersion": "1.0",
+                "revision": "0.0.0+dev",
+                "providers": [
+                    {
+                        "id": "anthropic",
+                        "displayName": "Anthropic"
+                    },
+                    {
+                        "id": "fireworks",
+                        "displayName": "Fireworks"
+                    },
+                    {
+                        "id": "google",
+                        "displayName": "Google"
+                    },
+                    {
+                        "id": "openai",
+                        "displayName": "OpenAI"
+                    },
+                    {
+                        "id": "mistral",
+                        "displayName": "Mistral"
+                    }
+                ],
+                "models": [
+                    {
+                        "modelRef": "anthropic::2023-06-01::claude-3-sonnet",
+                        "displayName": "Claude 3 Sonnet",
+                        "modelName": "claude-3-sonnet-20240229",
+                        "capabilities": [
+                            "autocomplete",
+                            "chat"
+                        ],
+                        "category": "balanced",
+                        "status": "stable",
+                        "tier": "free",
+                        "contextWindow": {
+                            "maxInputTokens": 30000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "anthropic::2023-06-01::claude-3.5-sonnet",
+                        "displayName": "Claude 3.5 Sonnet",
+                        "modelName": "claude-3-5-sonnet-20240620",
+                        "capabilities": [
+                            "autocomplete",
+                            "chat"
+                        ],
+                        "category": "accuracy",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 30000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "anthropic::2023-06-01::claude-3-opus",
+                        "displayName": "Claude 3 Opus",
+                        "modelName": "claude-3-opus-20240229",
+                        "capabilities": [
+                            "autocomplete",
+                            "chat"
+                        ],
+                        "category": "accuracy",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 30000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "anthropic::2023-06-01::claude-3-haiku",
+                        "displayName": "Claude 3 Haiku",
+                        "modelName": "claude-3-haiku-20240307",
+                        "capabilities": [
+                            "autocomplete",
+                            "chat"
+                        ],
+                        "category": "speed",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 7000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "fireworks::v1::starcoder",
+                        "displayName": "StarCoder",
+                        "modelName": "starcoder",
+                        "capabilities": [
+                            "autocomplete"
+                        ],
+                        "category": "speed",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 2048,
+                            "maxOutputTokens": 256
+                        }
+                    },
+                    {
+                        "modelRef": "fireworks::v1::deepseek-coder-v2-lite-base",
+                        "displayName": "DeepSeek V2 Lite Base",
+                        "modelName": "accounts/sourcegraph/models/deepseek-coder-v2-lite-base",
+                        "capabilities": [
+                            "autocomplete"
+                        ],
+                        "category": "speed",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 2048,
+                            "maxOutputTokens": 256
+                        }
+                    },
+                    {
+                        "modelRef": "google::v1::gemini-1.5-pro-latest",
+                        "displayName": "Gemini 1.5 Pro",
+                        "modelName": "gemini-1.5-pro-latest",
+                        "capabilities": [
+                            "autocomplete",
+                            "chat"
+                        ],
+                        "category": "accuracy",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 30000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "google::v1::gemini-1.5-flash-latest",
+                        "displayName": "Gemini 1.5 Flash",
+                        "modelName": "gemini-1.5-flash-latest",
+                        "capabilities": [
+                            "autocomplete",
+                            "chat"
+                        ],
+                        "category": "speed",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 30000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "mistral::v1::mixtral-8x7b-instruct",
+                        "displayName": "Mixtral 8x7B",
+                        "modelName": "accounts/fireworks/models/mixtral-8x7b-instruct",
+                        "capabilities": [
+                            "autocomplete",
+                            "chat"
+                        ],
+                        "category": "speed",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 7000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "mistral::v1::mixtral-8x22b-instruct",
+                        "displayName": "Mixtral 8x22B",
+                        "modelName": "accounts/fireworks/models/mixtral-8x22b-instruct",
+                        "capabilities": [
+                            "autocomplete",
+                            "chat"
+                        ],
+                        "category": "accuracy",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 7000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "openai::2024-02-01::gpt-4o",
+                        "displayName": "GPT-4o",
+                        "modelName": "gpt-4o",
+                        "capabilities": [
+                            "autocomplete",
+                            "chat"
+                        ],
+                        "category": "accuracy",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 30000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "openai::2024-02-01::gpt-4-turbo",
+                        "displayName": "GPT-4 Turbo",
+                        "modelName": "gpt-4-turbo",
+                        "capabilities": [
+                            "autocomplete",
+                            "chat"
+                        ],
+                        "category": "balanced",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 7000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "openai::2024-02-01::gpt-3.5-turbo",
+                        "displayName": "GPT-3.5 Turbo",
+                        "modelName": "gpt-3.5-turbo",
+                        "capabilities": [
+                            "autocomplete",
+                            "chat"
+                        ],
+                        "category": "speed",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 7000,
+                            "maxOutputTokens": 4000
+                        }
+                    }
+                ],
+                "defaultModels": {
+                    "chat": "anthropic::2023-06-01::claude-3.5-sonnet",
+                    "fastChat": "anthropic::2023-06-01::claude-3-sonnet",
+                    "codeCompletion": "fireworks::v1::starcoder"
+                }
+            }
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 09 Sep 2024 11:11:46 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1228
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-09T11:11:46.376Z
+      time: 203
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 203
+  pages: []
+  version: "1.2"
