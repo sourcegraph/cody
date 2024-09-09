@@ -43,6 +43,7 @@ test.describe('Webview Selector', () => {
 
         await session.runCommand('workbench.view.extension.cody')
         const [sidebarChat] = await uix.cody.WebView.all(session, { atLeast: 1 })
+        await sidebarChat.waitUntilReady()
 
         await session.runCommand('cody.chat.newEditorPanel')
         const allWebviews = await uix.cody.WebView.all(session, { atLeast: 2 })

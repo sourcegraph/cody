@@ -70,7 +70,7 @@ export class Extension {
     }
 
     async waitUntilReady() {
-        return t.step('Extension.waitUntilReady', async () => {
+        return await t.step('Extension.waitUntilReady', async () => {
             await expect(this.statusBar).toBeVisible({ visible: true })
             // await this.ctx.page.waitForSelector(this.statusBar, {
             //     state: 'visible',
