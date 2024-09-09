@@ -227,7 +227,6 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         }
         for (const repo of repos) {
             const repoUri = vscode.Uri.parse(`https://${endpoint}/${repo.name}`)
-            console.log('repoUri', repoUri.toString())
             contextItems.push({
                 type: 'repository',
                 // TODO: confirm syntax for repo
