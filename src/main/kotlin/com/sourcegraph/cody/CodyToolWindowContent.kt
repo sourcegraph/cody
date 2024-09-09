@@ -10,7 +10,7 @@ import com.sourcegraph.cody.chat.ui.CodyOnboardingGuidancePanel
 import com.sourcegraph.cody.config.CodyAccount
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.CodyAuthenticationManager
-import com.sourcegraph.cody.ui.WebviewViewService
+import com.sourcegraph.cody.ui.web.WebUIService
 import java.awt.CardLayout
 import javax.swing.JPanel
 
@@ -28,7 +28,7 @@ class CodyToolWindowContent(private val project: Project) {
     }
     allContentPanel.add(codyOnboardingGuidancePanel, ONBOARDING_PANEL, ONBOARDING_PANEL_INDEX)
 
-    WebviewViewService.getInstance(project).provideCodyToolWindowContent(this)
+    WebUIService.getInstance(project).views.provideCodyToolWindowContent(this)
 
     allContentLayout.show(allContentPanel, MAIN_PANEL)
 

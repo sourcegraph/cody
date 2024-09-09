@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.ui
+package com.sourcegraph.cody.ui.web
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditor
@@ -18,7 +18,8 @@ import javax.swing.JComponent
 import javax.swing.JLabel
 import org.jetbrains.annotations.NonNls
 
-class WebPanelEditor(private val file: VirtualFile) : FileEditor {
+/// A FileEditor which presents a WebUIProxy. This editor implements Webview panels for JetBrains.
+internal class WebPanelEditor(private val file: VirtualFile) : FileEditor {
   companion object {
     val WEB_UI_PROXY_KEY = Key.create<WebUIProxy>("WebUIProxy")
 
@@ -64,6 +65,7 @@ class WebPanelEditor(private val file: VirtualFile) : FileEditor {
   override fun getCurrentLocation(): FileEditorLocation? = null
 }
 
+/// The editor provider for WebPanelEditors.
 class WebPanelProvider : FileEditorProvider, DumbAware {
   @Volatile private var scheduledForDisposal: VirtualFile? = null
 

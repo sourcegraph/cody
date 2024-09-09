@@ -97,6 +97,7 @@ dependencies {
 }
 
 spotless {
+  lineEndings = com.diffplug.spotless.LineEnding.UNIX
   java {
     target("src/*/java/**/*.java")
     importOrder()

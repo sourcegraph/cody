@@ -1,7 +1,7 @@
 package com.sourcegraph.cody.agent
 
 import com.sourcegraph.cody.agent.protocol.WebviewCreateWebviewPanelParams
-import com.sourcegraph.cody.ui.NativeWebviewProvider
+import com.sourcegraph.cody.ui.web.NativeWebviewProvider
 
 // A NativeWebviewProvider where every operation is a no-op.
 class StubWebviewProvider : NativeWebviewProvider {

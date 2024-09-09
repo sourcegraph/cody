@@ -1,76 +1,36 @@
-package com.sourcegraph.cody.ui
+package com.sourcegraph.cody.ui.web
 
-import com.google.gson.Gson
-import com.google.gson.JsonArray
+import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
-import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.components.Service
-import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.ide.CopyPasteManager
-import com.intellij.openapi.options.ShowSettingsUtil
-import com.intellij.openapi.project.Project
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefBrowserBuilder
 import com.intellij.ui.jcef.JBCefJSQuery
 import com.intellij.util.io.isAncestor
-import com.jetbrains.rd.util.ConcurrentHashMap
 import com.sourcegraph.cody.agent.CodyAgent
-import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.CommandExecuteParams
-import com.sourcegraph.cody.agent.ConfigFeatures
-import com.sourcegraph.cody.agent.CurrentConfigFeatures
-import com.sourcegraph.cody.agent.WebviewDidDisposeParams
-import com.sourcegraph.cody.agent.WebviewPostMessageStringEncodedParams
-import com.sourcegraph.cody.agent.WebviewReceiveMessageStringEncodedParams
-import com.sourcegraph.cody.agent.WebviewRegisterWebviewViewProviderParams
-import com.sourcegraph.cody.agent.WebviewSetHtmlParams
-import com.sourcegraph.cody.agent.WebviewSetOptionsParams
-import com.sourcegraph.cody.agent.WebviewSetTitleParams
-import com.sourcegraph.cody.agent.protocol.WebviewCreateWebviewPanelParams
 import com.sourcegraph.cody.agent.protocol.WebviewOptions
-import com.sourcegraph.cody.chat.actions.ExportChatsAction.Companion.gson
 import com.sourcegraph.cody.config.CodyApplicationSettings
-import com.sourcegraph.cody.config.CodyAuthenticationManager
-import com.sourcegraph.cody.config.ui.AccountConfigurable
-import com.sourcegraph.cody.config.ui.CodyConfigurable
 import com.sourcegraph.cody.sidebar.WebTheme
-import com.sourcegraph.cody.sidebar.WebThemeController
 import com.sourcegraph.common.BrowserOpener
 import java.awt.Component
 import java.awt.datatransfer.StringSelection
 import java.io.IOException
 import java.net.URI
-import java.net.URLDecoder
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
 import java.nio.channels.CompletionHandler
 import java.nio.charset.StandardCharsets
 import java.nio.file.StandardOpenOption
-import java.util.concurrent.locks.Condition
-import java.util.concurrent.locks.ReentrantLock
 import javax.swing.JComponent
-import kotlin.concurrent.withLock
 import kotlin.io.path.Path
 import kotlin.math.min
 import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
 import org.cef.callback.CefAuthCallback
 import org.cef.callback.CefCallback
-import org.cef.handler.CefCookieAccessFilter
-import org.cef.handler.CefFocusHandler
-import org.cef.handler.CefFocusHandlerAdapter
-import org.cef.handler.CefLifeSpanHandler
-import org.cef.handler.CefLoadHandler
-import org.cef.handler.CefRequestHandler
-import org.cef.handler.CefResourceHandler
-import org.cef.handler.CefResourceRequestHandler
+import org.cef.handler.*
 import org.cef.misc.BoolRef
 import org.cef.misc.IntRef
 import org.cef.misc.StringRef
@@ -80,304 +40,13 @@ import org.cef.network.CefResponse
 import org.cef.network.CefURLRequest
 import org.cef.security.CefSSLInfo
 
-/** The subset of the Agent client interface that relates to webviews. */
-interface NativeWebviewProvider {
-  fun createPanel(params: WebviewCreateWebviewPanelParams)
-
-  fun receivedPostMessage(params: WebviewPostMessageStringEncodedParams)
-
-  fun registerViewProvider(params: WebviewRegisterWebviewViewProviderParams)
-
-  fun setHtml(params: WebviewSetHtmlParams)
-
-  fun setOptions(params: WebviewSetOptionsParams)
-
-  fun setTitle(params: WebviewSetTitleParams)
-}
-
-/** A NativeWebviewProvider that thanks to WebUIService. */
-class WebUIServiceWebviewProvider(val project: Project) : NativeWebviewProvider {
-  override fun createPanel(params: WebviewCreateWebviewPanelParams) =
-      WebUIService.getInstance(project).createWebviewPanel(params)
-
-  override fun receivedPostMessage(params: WebviewPostMessageStringEncodedParams) =
-      WebUIService.getInstance(project)
-          .postMessageHostToWebview(params.id, params.stringEncodedMessage)
-
-  override fun registerViewProvider(params: WebviewRegisterWebviewViewProviderParams) =
-      WebviewViewService.getInstance(project)
-          .registerProvider(params.viewId, params.retainContextWhenHidden)
-
-  override fun setHtml(params: WebviewSetHtmlParams) =
-      WebUIService.getInstance(project).setHtml(params.handle, params.html)
-
-  override fun setOptions(params: WebviewSetOptionsParams) =
-      WebUIService.getInstance(project).setOptions(params.handle, params.options)
-
-  override fun setTitle(params: WebviewSetTitleParams) =
-      WebUIService.getInstance(project).setTitle(params.handle, params.title)
-}
-
-data class WebUIProxyCreationGate(
-    val lock: ReentrantLock,
-    val createdCondition: Condition,
-    var proxy: WebUIProxy?
-)
-
-// Responsibilities:
-// - Creates, tracks all WebUI instances.
-// - Pushes theme updates into WebUI instances.
-// - Routes messages from host to WebUI instances.
-@Service(Service.Level.PROJECT)
-class WebUIService(private val project: Project) {
-  companion object {
-    // TODO: If not disposed, etc.
-    @JvmStatic fun getInstance(project: Project): WebUIService = project.service<WebUIService>()
-  }
-
-  private val logger = Logger.getInstance(WebUIService::class.java)
-  private val proxies: ConcurrentHashMap<String, WebUIProxyCreationGate> = ConcurrentHashMap()
-
-  private fun <T> withCreationGate(name: String, action: (gate: WebUIProxyCreationGate) -> T): T {
-    val gate =
-        proxies.computeIfAbsent(name) {
-          val lock = ReentrantLock()
-          WebUIProxyCreationGate(lock, lock.newCondition(), null)
-        }
-    return gate.lock.withLock {
-      return@withLock action(gate)
-    }
-  }
-
-  private fun <T> withProxy(name: String, action: (proxy: WebUIProxy) -> T): T =
-      withCreationGate(name) { gate ->
-        gate.lock.withLock {
-          var proxy = gate.proxy
-          if (proxy == null) {
-            logger.info(
-                "parking thread ${Thread.currentThread().name} waiting for Webview proxy $name to be created")
-            do {
-              gate.createdCondition.await()
-              proxy = gate.proxy
-            } while (proxy == null)
-            logger.info(
-                "unparked thread ${Thread.currentThread().name}, Webview proxy $name has been created")
-          }
-          return@withLock action(proxy)
-        }
-      }
-
-  private var themeController =
-      WebThemeController().apply { setThemeChangeListener { updateTheme(it) } }
-
-  private fun updateTheme(theme: WebTheme) {
-    synchronized(proxies) {
-      proxies.values.forEach { it.lock.withLock { it.proxy?.updateTheme(theme) } }
-    }
-  }
-
-  fun postMessageHostToWebview(handle: String, stringEncodedJsonMessage: String) {
-    // Handle the config message
-    val decodedJson = JsonParser.parseString(stringEncodedJsonMessage).asJsonObject
-    if (decodedJson.get("type")?.asString == "config") {
-      val configFeatures = decodedJson.getAsJsonObject("configFeatures")
-      val serverSentModels = configFeatures?.get("serverSentModels")?.asBoolean ?: false
-      val currentConfigFeatures = project.service<CurrentConfigFeatures>()
-      currentConfigFeatures.update(ConfigFeatures(serverSentModels = serverSentModels))
-    }
-
-    withProxy(handle) { it.postMessageHostToWebview(stringEncodedJsonMessage) }
-  }
-
-  fun createWebviewView(handle: String, createView: (proxy: WebUIProxy) -> WebviewViewDelegate) {
-    val delegate =
-        WebUIHostImpl(
-            project,
-            handle,
-            WebviewOptions(
-                enableScripts = false,
-                enableForms = false,
-                enableCommandUris = false,
-                localResourceRoots = emptyList(),
-                portMapping = emptyList(),
-                enableFindWidget = false,
-                retainContextWhenHidden = false))
-    val proxy = WebUIProxy.create(delegate)
-    delegate.view = createView(proxy)
-    proxy.updateTheme(themeController.getTheme())
-    withCreationGate(handle) {
-      assert(it.proxy == null) { "Webview Views should be created at most once by the client" }
-      it.proxy = proxy
-      it.createdCondition.signalAll()
-    }
-  }
-
-  fun createWebviewPanel(params: WebviewCreateWebviewPanelParams) {
-    runInEdt {
-      val delegate = WebUIHostImpl(project, params.handle, params.options)
-      val proxy = WebUIProxy.create(delegate)
-      delegate.view = WebviewViewService.getInstance(project).createPanel(proxy, params)
-      proxy.updateTheme(themeController.getTheme())
-      withCreationGate(params.handle) {
-        assert(it.proxy == null) {
-          "Webview Panels should have unique names, have already created ${params.handle}"
-        }
-        it.proxy = proxy
-        it.createdCondition.signalAll()
-      }
-    }
-  }
-
-  fun setHtml(handle: String, html: String) {
-    withProxy(handle) { it.html = html }
-  }
-
-  fun setOptions(handle: String, options: WebviewOptions) {
-    withProxy(handle) { it.setOptions(options) }
-  }
-
-  fun setTitle(handle: String, title: String) {
-    withProxy(handle) { it.title = title }
-  }
-}
-
-const val COMMAND_PREFIX = "command:"
+private const val COMMAND_PREFIX = "command:"
 
 // We make up a host name and serve the static resources into the webview apparently from this host.
-const val PSEUDO_HOST = "file+.sourcegraphstatic.com"
-const val PSEUDO_ORIGIN = "https://$PSEUDO_HOST"
-const val PSEUDO_HOST_URL_PREFIX = "$PSEUDO_ORIGIN/"
-const val MAIN_RESOURCE_URL = "${PSEUDO_HOST_URL_PREFIX}main-resource-nonce"
+private const val PSEUDO_HOST_URL_PREFIX = "https://file+.sourcegraphstatic.com/"
+private const val MAIN_RESOURCE_URL = "${PSEUDO_HOST_URL_PREFIX}main-resource-nonce"
 
-// TODO:
-// - Use UiNotifyConnector to hook up visibility and push changes to
-// WebviewPanel.visible/WebviewView.visible and fire onDidChangeViewState (panels) or
-// onDidChangeVisibility (views)
-// - Use ??? to hook up focus and push changes to WebviewPanel.active and fire onDidChangeViewState
-// - Hook up webview/didDispose, etc.
-// - Implement registerWebviewPanelSerializer and wire it to JetBrains panel saving to restore chats
-// when JetBrains is reopened.
-// - Implement enableFindDialog/ctrl-f find in page.
-
-interface WebUIHost {
-  // Provides, sinks Webview state from VSCode webview setState, getState API.
-  abstract var stateAsJSONString: String
-
-  fun setOptions(options: WebviewOptions)
-
-  fun setTitle(value: String)
-
-  fun postMessageWebviewToHost(stringEncodedJsonMessage: String)
-
-  fun onCommand(command: String)
-
-  fun dispose()
-}
-
-class WebUIHostImpl(
-    val project: Project,
-    val handle: String,
-    private var _options: WebviewOptions
-) : WebUIHost {
-  var view: WebviewViewDelegate? = null
-
-  override var stateAsJSONString = "null"
-
-  override fun postMessageWebviewToHost(stringEncodedJsonMessage: String) {
-    // Some commands can be handled by the client and do not need to round-trip client -> Agent ->
-    // client.
-    val stringsOfInterest = listOf("auth", "command")
-    val decodedJson =
-        if (stringsOfInterest.any { stringEncodedJsonMessage.contains(it) }) {
-          JsonParser.parseString(stringEncodedJsonMessage).asJsonObject
-        } else {
-          null
-        }
-
-    val command = decodedJson?.get("command")?.asString
-    val isCommand = command == "command"
-    val id = decodedJson?.get("id")?.asString
-    val arg = decodedJson?.get("arg")?.asString
-
-    if ((command == "auth" && decodedJson.get("authKind")?.asString == "signout") ||
-        (isCommand && id == "cody.auth.signout")) {
-      CodyAuthenticationManager.getInstance().setActiveAccount(null)
-    } else if (isCommand && id == "cody.auth.switchAccount") {
-      runInEdt {
-        ShowSettingsUtil.getInstance().showSettingsDialog(project, AccountConfigurable::class.java)
-      }
-    } else if (isCommand && id == "cody.status-bar.interacted") {
-      runInEdt {
-        ShowSettingsUtil.getInstance().showSettingsDialog(project, CodyConfigurable::class.java)
-      }
-    } else if (isCommand && id == "cody.action.command" && arg == "edit") {
-      // TODO: Delete this intercept when Cody edits UI is abstracted so JetBrains' native UI can be
-      // invoked from the extension TypeScript side through Agent.
-      runInEdt {
-        // Invoke the Cody "edit" action in JetBrains directly.
-        val actionManager = ActionManager.getInstance()
-        val action = actionManager.getAction("cody.editCodeAction")
-        val dataContext =
-            FileEditorManager.getInstance(project).selectedTextEditor?.let { editor ->
-              SimpleDataContext.getSimpleContext(CommonDataKeys.EDITOR, editor)
-            } ?: SimpleDataContext.EMPTY_CONTEXT
-
-        action?.actionPerformed(AnActionEvent.createFromAnAction(action, null, "", dataContext))
-      }
-    } else {
-      CodyAgentService.withAgent(project) {
-        it.server.webviewReceiveMessageStringEncoded(
-            WebviewReceiveMessageStringEncodedParams(handle, stringEncodedJsonMessage))
-      }
-    }
-  }
-
-  override fun setOptions(options: WebviewOptions) {
-    // TODO:
-    // When TypeScript uses these WebView options, implement them:
-    // - retainContextWhenHidden: false and dispose the browser when hidden.
-    // - localResourceRoots beyond just the extension distribution path.
-    // - Non-empty portMapping.
-    // - enableScripts: false, enableForms: false
-    _options = options
-  }
-
-  override fun setTitle(value: String) {
-    view?.setTitle(value)
-  }
-
-  override fun onCommand(command: String) {
-    val regex = """^command:([^?]+)(?:\?(.+))?$""".toRegex()
-    val matchResult = regex.find(command) ?: return
-    val (commandName, encodedArguments) = matchResult.destructured
-    val arguments =
-        encodedArguments
-            .takeIf { it.isNotEmpty() }
-            ?.let { encoded ->
-              val decoded = URLDecoder.decode(encoded, "UTF-8")
-              try {
-                Gson().fromJson(decoded, JsonArray::class.java).toList()
-              } catch (e: Exception) {
-                null
-              }
-            } ?: emptyList()
-    if (_options.enableCommandUris == true ||
-        (_options.enableCommandUris as List<*>).contains(commandName)) {
-      CodyAgentService.withAgent(project) {
-        it.server.commandExecute(CommandExecuteParams(commandName, arguments))
-      }
-    }
-  }
-
-  override fun dispose() {
-    // TODO: Consider cleaning up the view.
-    CodyAgentService.withAgent(project) {
-      it.server.webviewDidDisposeNative(WebviewDidDisposeParams(handle))
-    }
-  }
-}
-
-class WebUIProxy(private val host: WebUIHost, private val browser: JBCefBrowserBase) {
+internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCefBrowserBase) {
   companion object {
 
     /**
@@ -592,6 +261,7 @@ class WebUIProxy(private val host: WebUIHost, private val browser: JBCefBrowserB
   }
 
   fun updateTheme(theme: WebTheme) {
+    val gson = GsonBuilder().create()
     this.theme = theme
     if (!this.isDOMContentLoaded) {
       logger.info("not updating WebView theme before DOMContentLoaded")
@@ -621,8 +291,10 @@ class WebUIProxy(private val host: WebUIHost, private val browser: JBCefBrowserB
   }
 }
 
-class ExtensionRequestHandler(private val proxy: WebUIProxy, private val apiScript: String) :
-    CefRequestHandler {
+private class ExtensionRequestHandler(
+    private val proxy: WebUIProxy,
+    private val apiScript: String
+) : CefRequestHandler {
   override fun onBeforeBrowse(
       browser: CefBrowser?,
       frame: CefFrame?,
@@ -705,7 +377,7 @@ class ExtensionRequestHandler(private val proxy: WebUIProxy, private val apiScri
   }
 }
 
-class ExtensionResourceRequestHandler(
+private class ExtensionResourceRequestHandler(
     private val proxy: WebUIProxy,
     private val apiScript: String
 ) : CefResourceRequestHandler {
@@ -800,7 +472,7 @@ class ExtensionResourceRequestHandler(
   }
 }
 
-class ExtensionResourceHandler() : CefResourceHandler {
+class ExtensionResourceHandler : CefResourceHandler {
   private val logger = Logger.getInstance(ExtensionResourceHandler::class.java)
   var status = 0
   var bytesReadFromResource = 0L
@@ -994,4 +666,10 @@ class MainResourceHandler(content: String) : CefResourceHandler {
   }
 
   override fun cancel() {}
+}
+
+/// Handles webview features a WebUIProxy can't implement with a JBCEF browser and agent alone.
+interface WebviewViewDelegate {
+  fun setTitle(newTitle: String)
+  // TODO: Implement icons.
 }

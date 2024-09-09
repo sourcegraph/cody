@@ -89,12 +89,12 @@
                         implementation="com.sourcegraph.cody.autocomplete.action.CodyActionPromoter"/>
 
         <!-- File type, editor for WebUI-based panels. -->
-        <fileEditorProvider implementation="com.sourcegraph.cody.ui.WebPanelProvider"/>
+        <fileEditorProvider implementation="com.sourcegraph.cody.ui.web.WebPanelProvider"/>
         <fileType
                 name="SourcegraphWebPanel"
-                implementationClass="com.sourcegraph.cody.ui.WebPanelFileType"
+                implementationClass="com.sourcegraph.cody.ui.web.WebPanelFileType"
                 fieldName="INSTANCE"/>
-        <editorTabTitleProvider implementation="com.sourcegraph.cody.ui.WebPanelTabTitleProvider"/>
+        <editorTabTitleProvider implementation="com.sourcegraph.cody.ui.web.WebPanelTabTitleProvider"/>
 
         <keymapExtension implementation="com.sourcegraph.cody.config.CodyKeymapExtension"/>
 
@@ -104,14 +104,6 @@
              (or a subtype.) For now, VSCode view "when" conditions need to be manually ported to
              ToolWindow.isAvailable updates.
          -->
-        <!-- TODO: Uncomment this when login and onboarding are ported from CodyToolWindowContent to Web UI.
-        <toolWindow
-                id="cody.chat"
-                icon="/icons/codyLogoMonochromatic.svg"
-                anchor="right"
-                secondary="false"
-                factoryClass="com.sourcegraph.cody.ui.WebUIToolWindowFactory" />
-        -->
     </extensions>
 
     <applicationListeners>

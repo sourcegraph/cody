@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.ui
+package com.sourcegraph.cody.ui.web
 
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.util.NlsContexts
@@ -6,6 +6,8 @@ import com.intellij.openapi.util.NlsSafe
 import javax.swing.Icon
 import org.jetbrains.annotations.NonNls
 
+/// A file type which causes a WebPanelEditor to be created to 'edit' the file and present a Webview
+// panel.
 class WebPanelFileType : FileType {
   companion object {
     @JvmStatic val INSTANCE = WebPanelFileType()

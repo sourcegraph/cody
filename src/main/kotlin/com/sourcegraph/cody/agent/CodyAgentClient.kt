@@ -25,7 +25,7 @@ import com.sourcegraph.cody.edit.EditService
 import com.sourcegraph.cody.edit.LensesService
 import com.sourcegraph.cody.error.CodyConsole
 import com.sourcegraph.cody.ignore.IgnoreOracle
-import com.sourcegraph.cody.ui.NativeWebviewProvider
+import com.sourcegraph.cody.ui.web.NativeWebviewProvider
 import com.sourcegraph.common.BrowserOpener
 import com.sourcegraph.utils.CodyEditorUtil
 import java.nio.file.Paths

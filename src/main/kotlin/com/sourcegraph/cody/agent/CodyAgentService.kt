@@ -13,6 +13,7 @@ import com.intellij.util.net.HttpConfigurable
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.listeners.CodyFileEditorListener
 import com.sourcegraph.cody.statusbar.CodyStatusService
+import com.sourcegraph.cody.ui.web.WebUIService
 import com.sourcegraph.common.CodyBundle
 import java.util.Timer
 import java.util.TimerTask
@@ -119,9 +120,12 @@ class CodyAgentService(private val project: Project) : Disposable {
     return codyAgent
   }
 
-  fun stopAgent(project: Project?): CompletableFuture<Unit>? {
+  fun stopAgent(project: Project?): CompletableFuture<Void>? {
     try {
-      return codyAgent.getNow(null)?.shutdown()
+      val shutdownFuture = codyAgent.getNow(null)?.shutdown()
+      return (shutdownFuture ?: CompletableFuture.completedFuture(null)).thenCompose {
+        project?.let { WebUIService.getInstance(it).reset() }
+      }
     } catch (e: Exception) {
       logger.warn("Failed to stop Cody agent gracefully", e)
       return CompletableFuture.failedFuture(e)

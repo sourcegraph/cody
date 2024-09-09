@@ -13,7 +13,7 @@ import com.sourcegraph.cody.agent.protocol_generated.ClientCapabilities
 import com.sourcegraph.cody.agent.protocol_generated.ClientInfo
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolTypeAdapters
 import com.sourcegraph.cody.agent.protocol_generated.WebviewNativeConfigParams
-import com.sourcegraph.cody.ui.WebUIServiceWebviewProvider
+import com.sourcegraph.cody.ui.web.WebUIServiceWebviewProvider
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.config.ConfigUtil
 import java.io.*
