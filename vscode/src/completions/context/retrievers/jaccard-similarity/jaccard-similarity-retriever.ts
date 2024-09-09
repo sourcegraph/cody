@@ -5,8 +5,7 @@ import { getContextRange } from '../../../doc-context-getters'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { type DocumentHistory, VSCodeDocumentHistory } from './history'
 
-import { FeatureFlag, isDefined } from '@sourcegraph/cody-shared'
-import { completionProviderConfig } from '../../../completion-provider-config'
+import { FeatureFlag, featureFlagProvider, isDefined } from '@sourcegraph/cody-shared'
 import { lastNLines } from '../../../text-processing'
 import { type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 import { type CachedRerieverOptions, CachedRetriever } from '../cached-retriever'
@@ -127,15 +126,19 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
 
         const curLang = currentDocument.languageId
 
+        const enableExtendedLanguagePool = Boolean(
+            await featureFlagProvider.instance!.evaluateFeatureFlag(
+                FeatureFlag.CodyAutocompleteContextExtendLanguagePool
+            )
+        )
+
         function addDocument(document: vscode.TextDocument): void {
             // Only add files and VSCode user settings.
             if (!['file', 'vscode-userdata'].includes(document.uri.scheme)) {
                 return
             }
             const params: ShouldUseContextParams = {
-                enableExtendedLanguagePool: completionProviderConfig.getPrefetchedFlag(
-                    FeatureFlag.CodyAutocompleteContextExtendLanguagePool
-                ),
+                enableExtendedLanguagePool,
                 baseLanguageId: curLang,
                 languageId: document.languageId,
             }
@@ -226,19 +229,18 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
             addDocument(document)
         }
 
+        const lastN = await history.lastN(10, curLang, [currentDocument.uri, ...files.map(f => f.uri)])
         await Promise.all(
-            history
-                .lastN(10, curLang, [currentDocument.uri, ...files.map(f => f.uri)])
-                .map(async item => {
-                    try {
-                        const document = await this.openTextDocument(item.document.uri)
-                        if (document) {
-                            addDocument(document)
-                        }
-                    } catch (error) {
-                        console.error(error)
+            lastN.map(async item => {
+                try {
+                    const document = await this.openTextDocument(item.document.uri)
+                    if (document) {
+                        addDocument(document)
                     }
-                })
+                } catch (error) {
+                    console.error(error)
+                }
+            })
         )
         return files
     }

@@ -74,7 +74,7 @@ describe('logger', () => {
             isFuzzyMatch: false,
             isDotComUser: false,
         })
-        const suggestionEvent = CompletionLogger.prepareSuggestionEvent(id)
+        const suggestionEvent = CompletionLogger.prepareSuggestionEvent({ id })
         suggestionEvent?.markAsRead({ document, position })
         CompletionLogger.accepted(id, document, item, range(0, 0, 0, 0), false)
 
@@ -107,7 +107,7 @@ describe('logger', () => {
             isFuzzyMatch: false,
             isDotComUser: false,
         })
-        const firstSuggestionEvent = CompletionLogger.prepareSuggestionEvent(id1)
+        const firstSuggestionEvent = CompletionLogger.prepareSuggestionEvent({ id: id1 })
         firstSuggestionEvent?.markAsRead({ document, position })
 
         const loggerItem = CompletionLogger.getCompletionEvent(id1)
@@ -125,7 +125,7 @@ describe('logger', () => {
             isFuzzyMatch: false,
             isDotComUser: false,
         })
-        const secondSuggestionEvent = CompletionLogger.prepareSuggestionEvent(id2)
+        const secondSuggestionEvent = CompletionLogger.prepareSuggestionEvent({ id: id2 })
         secondSuggestionEvent?.markAsRead({ document, position })
         CompletionLogger.accepted(id2, document, item, range(0, 0, 0, 0), false)
 
@@ -150,7 +150,7 @@ describe('logger', () => {
             isFuzzyMatch: false,
             isDotComUser: false,
         })
-        const thirdSuggestionEvent = CompletionLogger.prepareSuggestionEvent(id3)
+        const thirdSuggestionEvent = CompletionLogger.prepareSuggestionEvent({ id: id3 })
         thirdSuggestionEvent?.markAsRead({ document, position })
 
         const loggerItem3 = CompletionLogger.getCompletionEvent(id3)

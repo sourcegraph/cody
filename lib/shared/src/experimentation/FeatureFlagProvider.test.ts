@@ -116,189 +116,121 @@ describe('FeatureFlagProvider', () => {
     })
 
     describe('evaluatedFeatureFlag', () => {
-        function promiseResolveOnNextTick<T>(value: T): Promise<T> {
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    resolve(value)
-                }, 0)
-            })
+        async function testEvaluatedFeatureFlag({
+            apiClient,
+            expectInitialValues,
+            update,
+            expectFinalValues,
+        }: {
+            apiClient: Pick<
+                SourcegraphGraphQLAPIClient,
+                'getEvaluatedFeatureFlags' | 'evaluateFeatureFlag'
+            >
+            expectInitialValues: (boolean | undefined)[]
+            update?: (
+                mockAPIClient: { [K in keyof typeof apiClient]: ReturnType<typeof vitest.fn> }
+            ) => void
+            expectFinalValues?: (boolean | undefined)[]
+        }): Promise<void> {
+            vitest.useFakeTimers()
+            const provider = new FeatureFlagProvider({
+                ...apiClient,
+                endpoint: 'http://example.com',
+            } as SourcegraphGraphQLAPIClient)
+
+            const flag$ = provider.evaluatedFeatureFlag(FeatureFlag.TestFlagDoNotUse)
+
+            const { values, done, unsubscribe } = readValuesFrom(flag$)
+            vitest.runAllTimers()
+
+            // Test the initial emissions.
+            await nextTick()
+            expect(values).toEqual<typeof values>(expectInitialValues)
+            values.length = 0
+
+            if (!update) {
+                return
+            }
+
+            // Test that the observable emits updated values when flags change.
+            update(apiClient as any)
+            provider.refresh()
+            await nextTick()
+            expect(values).toEqual<typeof values>(expectFinalValues!)
+            values.length = 0
+
+            // Ensure there are no emissions after unsubscribing.
+            unsubscribe()
+            await done
+            expect(values).toEqual<typeof values>([])
         }
 
-        it(
-            'should yield feature flags from evaluatedFeatureFlag generator',
-            { timeout: 1000 },
-            async () => {
-                vitest.useFakeTimers()
-                const apiClient = {
-                    getEvaluatedFeatureFlags: vitest.fn().mockReturnValue(
-                        promiseResolveOnNextTick({
-                            [FeatureFlag.TestFlagDoNotUse]: true,
-                        })
-                    ),
-                    evaluateFeatureFlag: vitest.fn().mockResolvedValue(true),
-                    endpoint: 'http://example.com',
-                }
-
-                const provider = new FeatureFlagProvider(
-                    apiClient as unknown as SourcegraphGraphQLAPIClient
-                )
-
-                const generator = provider.evaluatedFeatureFlag(FeatureFlag.TestFlagDoNotUse)
-
-                const { values, done, unsubscribe } = readValuesFrom(generator)
-                vitest.runAllTimers()
-
-                await nextTick()
-                expect(values).toEqual<typeof values>([true, true])
-                values.pop()
-                values.pop()
-
-                // Test that the generator yields updated values when flags change.
-                apiClient.getEvaluatedFeatureFlags.mockResolvedValue({
-                    [FeatureFlag.TestFlagDoNotUse]: false,
-                })
-                provider.refresh()
-                await nextTick()
-                expect(values).toEqual<typeof values>([false])
-                values.pop()
-
-                unsubscribe()
-                await done
-                expect(values).toEqual<typeof values>([])
-            }
+        it('should emit when a new flag is evaluated', { timeout: 1000 }, () =>
+            testEvaluatedFeatureFlag({
+                apiClient: {
+                    getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({}),
+                    evaluateFeatureFlag: vitest.fn().mockResolvedValue(false),
+                },
+                expectInitialValues: [undefined, false],
+            })
         )
-    })
 
-    describe('onFeatureFlagChanged', () => {
-        it('should call the callback when a feature flag changes from true to false', async () => {
-            vitest.useFakeTimers()
-            const apiClient = {
-                getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({
-                    [FeatureFlag.TestFlagDoNotUse]: true,
-                }),
-                evaluateFeatureFlag: vitest.fn().mockResolvedValue(true),
-            }
-            const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
-
-            // Evaluate a flag so we know that this one is being tracked
-            await provider.evaluateFeatureFlag(FeatureFlag.TestFlagDoNotUse)
-
-            const callback = vitest.fn()
-            provider.onFeatureFlagChanged('test', callback)
-
-            apiClient.getEvaluatedFeatureFlags.mockResolvedValue({
-                [FeatureFlag.TestFlagDoNotUse]: false,
+        it('should emit when value changes from true to false', { timeout: 1000 }, () =>
+            testEvaluatedFeatureFlag({
+                apiClient: {
+                    getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({
+                        [FeatureFlag.TestFlagDoNotUse]: true,
+                    }),
+                    evaluateFeatureFlag: vitest.fn().mockResolvedValue(true),
+                },
+                expectInitialValues: [true],
+                update: apiClient => {
+                    apiClient.getEvaluatedFeatureFlags.mockResolvedValue({
+                        [FeatureFlag.TestFlagDoNotUse]: false,
+                    })
+                    apiClient.evaluateFeatureFlag.mockResolvedValue(false)
+                },
+                expectFinalValues: [false],
             })
-            vitest.runAllTimers()
-            // The feature flags are being refreshed asynchronous, so we need to wait for the next
-            // micro queue flush.
-            vitest.useRealTimers()
-            await nextTick()
+        )
 
-            expect(callback).toHaveBeenCalled()
-        })
-
-        it('should call the callback when a feature flag changes from false to true', async () => {
-            vitest.useFakeTimers()
-            const apiClient = {
-                getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({
-                    [FeatureFlag.TestFlagDoNotUse]: false,
-                }),
-                evaluateFeatureFlag: vitest.fn().mockResolvedValue(false),
-            }
-            const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
-
-            // Evaluate a flag so we know that this one is being tracked
-            await provider.evaluateFeatureFlag(FeatureFlag.TestFlagDoNotUse)
-
-            const callback = vitest.fn()
-            provider.onFeatureFlagChanged('test', callback)
-
-            apiClient.getEvaluatedFeatureFlags.mockResolvedValue({
-                [FeatureFlag.TestFlagDoNotUse]: true,
+        it('should emit when value changes from false to true', { timeout: 1000 }, () =>
+            testEvaluatedFeatureFlag({
+                apiClient: {
+                    getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({
+                        [FeatureFlag.TestFlagDoNotUse]: false,
+                    }),
+                    evaluateFeatureFlag: vitest.fn().mockResolvedValue(false),
+                },
+                expectInitialValues: [false],
+                update: apiClient => {
+                    apiClient.getEvaluatedFeatureFlags.mockResolvedValue({
+                        [FeatureFlag.TestFlagDoNotUse]: true,
+                    })
+                    apiClient.evaluateFeatureFlag.mockResolvedValue(true)
+                },
+                expectFinalValues: [true],
             })
-            vitest.runAllTimers()
-            // The feature flags are being refreshed asynchronous, so we need to wait for the next
-            // micro queue flush.
-            vitest.useRealTimers()
-            await nextTick()
+        )
 
-            expect(callback).toHaveBeenCalled()
-        })
-
-        it('should call the callback when a new flag is evaluated', async () => {
-            vitest.useFakeTimers()
-            const apiClient = {
-                getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({}),
-                evaluateFeatureFlag: vitest.fn().mockResolvedValue(true),
-            }
-            const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
-
-            const callback = vitest.fn()
-            provider.onFeatureFlagChanged('test', callback)
-
-            // Evaluate a flag so we know that this one is being tracked
-            await provider.evaluateFeatureFlag(FeatureFlag.TestFlagDoNotUse)
-
-            vitest.runAllTimers()
-            // The feature flags are being refreshed asynchronous, so we need to wait for the next
-            // micro queue flush.
-            vitest.useRealTimers()
-            await nextTick()
-
-            expect(callback).toHaveBeenCalled()
-        })
-
-        it('should not call the callback when a new flag is evaluated when not subscribed', async () => {
-            vitest.useFakeTimers()
-            const apiClient = {
-                getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({
-                    [FeatureFlag.TestFlagDoNotUse]: true,
-                }),
-                evaluateFeatureFlag: vitest.fn().mockResolvedValue(true),
-            }
-            const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
-
-            // Evaluate a flag so we know that this one is being tracked
-            await provider.evaluateFeatureFlag(FeatureFlag.TestFlagDoNotUse)
-
-            const callback = vitest.fn()
-            const unsubscribe = provider.onFeatureFlagChanged('test', callback)
-            unsubscribe()
-
-            apiClient.getEvaluatedFeatureFlags.mockResolvedValue({
-                [FeatureFlag.TestFlagDoNotUse]: false,
-            })
-            vitest.runAllTimers()
-            // The feature flags are being refreshed asynchronous, so we need to wait for the next
-            // micro queue flush.
-            vitest.useRealTimers()
-            await nextTick()
-
-            expect(callback).not.toHaveBeenCalled()
-        })
-
-        it('should not call the callback if a previously false feature flag is no longer set in the new evaluatedFeatureFlag list. This flag is likely not defined upstream', async () => {
-            vitest.useFakeTimers()
-            const apiClient = {
-                getEvaluatedFeatureFlags: () => Promise.resolve({}),
-                evaluateFeatureFlag: vitest.fn().mockResolvedValue(null),
-            }
-            const provider = new FeatureFlagProvider(apiClient as unknown as SourcegraphGraphQLAPIClient)
-
-            // Evaluate a flag so we know that this one is being tracked
-            await provider.evaluateFeatureFlag(FeatureFlag.TestFlagDoNotUse)
-
-            const callback = vitest.fn()
-            provider.onFeatureFlagChanged('test', callback)
-
-            vitest.runAllTimers()
-            // The feature flags are being refreshed asynchronous, so we need to wait for the next
-            // micro queue flush.
-            vitest.useRealTimers()
-            await nextTick()
-
-            expect(callback).not.toHaveBeenCalled()
-        })
+        it(
+            'should emit undefined when a previously false flag is no longer in the exposed list',
+            { timeout: 1000 },
+            () =>
+                testEvaluatedFeatureFlag({
+                    apiClient: {
+                        getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({
+                            [FeatureFlag.TestFlagDoNotUse]: false,
+                        }),
+                        evaluateFeatureFlag: vitest.fn().mockResolvedValue(false),
+                    },
+                    expectInitialValues: [false],
+                    update: apiClient => {
+                        apiClient.getEvaluatedFeatureFlags.mockResolvedValue({})
+                        apiClient.evaluateFeatureFlag.mockResolvedValue(null)
+                    },
+                    expectFinalValues: [undefined],
+                })
+        )
     })
 })

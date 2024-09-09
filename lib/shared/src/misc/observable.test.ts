@@ -5,8 +5,10 @@ import {
     type ObservableValue,
     allValuesFrom,
     combineLatest,
+    createDisposables,
     distinctUntilChanged,
     firstValueFrom,
+    fromLateSetSource,
     fromVSCodeEvent,
     memoizeLastValue,
     observableOfSequence,
@@ -14,6 +16,7 @@ import {
     promiseFactoryToObservable,
     readValuesFrom,
     shareReplay,
+    take,
 } from './observable'
 
 describe('firstValueFrom', () => {
@@ -54,6 +57,48 @@ describe('promiseFactoryToObservable', () => {
         await done
         expect(values).toEqual([])
         vi.useRealTimers()
+    })
+})
+
+describe('fromLateSetSource', () => {
+    test('emits values after source is set', async () => {
+        const { observable, setSource } = fromLateSetSource<number>()
+        const { values, done } = readValuesFrom(observable)
+
+        setSource(observableOfSequence(1, 2, 3))
+
+        await done
+        expect(values).toEqual([1, 2, 3])
+    })
+
+    test('handles multiple observers', async () => {
+        const { observable, setSource } = fromLateSetSource<string>()
+        const observer1 = readValuesFrom(observable)
+        const observer2 = readValuesFrom(observable)
+
+        setSource(observableOfSequence('a', 'b', 'c'))
+
+        await observer1.done
+        await observer2.done
+        expect(observer1.values).toEqual(['a', 'b', 'c'])
+        expect(observer2.values).toEqual(['a', 'b', 'c'])
+    })
+
+    test('throws error when trying to set source multiple times', () => {
+        const { setSource } = fromLateSetSource<number>()
+        setSource(observableOfSequence(1, 2, 3))
+        expect(() => setSource(observableOfSequence(4, 5, 6))).toThrow('source is already set')
+    })
+
+    test('unsubscribes correctly', async () => {
+        const { observable, setSource } = fromLateSetSource<number>()
+        const { values, done, unsubscribe } = readValuesFrom(observable)
+
+        unsubscribe()
+        setSource(observableOfSequence(1, 2, 3))
+
+        await done
+        expect(values).toEqual([])
     })
 })
 
@@ -300,5 +345,102 @@ describe('shareReplay', () => {
         expect.soft(reader1.values).toEqual(WANT)
         expect.soft(reader2.values).toEqual(WANT) // reader2 got the previous value
         expect(called).toBe(1) // but the observable was only heated up once
+    })
+})
+
+describe('createDisposables', () => {
+    interface VSCodeDisposable {
+        dispose(): void
+    }
+
+    test('creates', async () => {
+        const create = vi.fn()
+        const values = await allValuesFrom(
+            observableOfSequence('a', 'b').pipe(createDisposables(create), take(2))
+        )
+        expect(create).toHaveBeenCalledTimes(2)
+        expect(values).toStrictEqual<typeof values>(['a', 'b'])
+    })
+
+    test('handles errors in create', async () => {
+        vi.useFakeTimers()
+        const create = vi.fn().mockImplementation(() => {
+            throw new Error('foo')
+        })
+        const { values, done } = readValuesFrom(
+            observableOfSequence('a', 'b').pipe(createDisposables(create))
+        )
+        done.catch(() => {})
+        await vi.runOnlyPendingTimersAsync()
+        expect(create).toHaveBeenCalledTimes(1)
+        expect(done).rejects.toThrow('foo')
+        expect(values).toStrictEqual<typeof values>([])
+    })
+
+    test('disposes previous disposable when new value arrives', async () => {
+        vi.useFakeTimers()
+
+        const disposableA: VSCodeDisposable = { dispose: vi.fn() }
+        const disposableB: VSCodeDisposable = { dispose: vi.fn() }
+        const { values, done, unsubscribe } = readValuesFrom(
+            observableOfTimedSequence(10, 'a', 10, 'b', 10).pipe(
+                createDisposables((value: string): VSCodeDisposable | undefined => {
+                    if (value === 'a') {
+                        return disposableA
+                    }
+                    if (value === 'b') {
+                        return disposableB
+                    }
+                    return undefined
+                })
+            )
+        )
+
+        await vi.advanceTimersByTimeAsync(10)
+        expect(values).toStrictEqual<typeof values>(['a'])
+        expect(disposableA.dispose).not.toHaveBeenCalled()
+        expect(disposableB.dispose).not.toHaveBeenCalled()
+
+        await vi.advanceTimersByTimeAsync(10)
+        expect(values).toStrictEqual<typeof values>(['a', 'b'])
+        expect(disposableA.dispose).toHaveBeenCalledTimes(1)
+        expect(disposableB.dispose).toHaveBeenCalledTimes(0)
+
+        await vi.advanceTimersByTimeAsync(10)
+        expect(values).toStrictEqual<typeof values>(['a', 'b'])
+        expect(disposableA.dispose).toHaveBeenCalledTimes(1)
+        expect(disposableB.dispose).toHaveBeenCalledTimes(0)
+
+        unsubscribe()
+        await done
+        expect(disposableB.dispose).toHaveBeenCalledTimes(1)
+    })
+
+    test('disposes upon unsubscription but not completion', async () => {
+        vi.useFakeTimers()
+
+        const disposable: VSCodeDisposable = { dispose: vi.fn() }
+        const create = vi.fn().mockReturnValue(disposable)
+
+        const { values, done, unsubscribe, status } = readValuesFrom(
+            observableOfTimedSequence(10, 'a', 10).pipe(createDisposables(create))
+        )
+
+        await vi.advanceTimersByTimeAsync(10)
+        expect(create).toHaveBeenCalledTimes(1)
+        expect(disposable.dispose).toHaveBeenCalledTimes(0)
+        expect(status()).toBe<ReturnType<typeof status>>('pending')
+        expect(values).toStrictEqual<typeof values>(['a'])
+
+        await vi.advanceTimersByTimeAsync(10)
+        expect(create).toHaveBeenCalledTimes(1)
+        expect(disposable.dispose).toHaveBeenCalledTimes(0)
+        expect(status()).toBe<ReturnType<typeof status>>('pending')
+        expect(values).toStrictEqual<typeof values>(['a'])
+
+        unsubscribe()
+        await done
+        expect(disposable.dispose).toHaveBeenCalledTimes(1)
+        expect(status()).toBe<ReturnType<typeof status>>('unsubscribed')
     })
 })

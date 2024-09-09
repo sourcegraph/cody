@@ -1,10 +1,19 @@
-import { type ClientConfigurationWithAccessToken, isDotCom } from '@sourcegraph/cody-shared'
+import {
+    type ClientConfigurationWithAccessToken,
+    NEVER,
+    createDisposables,
+    isDotCom,
+    mergeMap,
+    promiseFactoryToObservable,
+    vscodeResource,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
 import { logDebug } from '../log'
 import { authProvider } from '../services/AuthProvider'
 import type { CodyStatusBar } from '../services/StatusBar'
 
+import { type Observable, map } from 'observable-fns'
 import { completionProviderConfig } from './completion-provider-config'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
@@ -33,11 +42,11 @@ class NoopCompletionItemProvider implements vscode.InlineCompletionItemProvider 
     }
 }
 
-export async function createInlineCompletionItemProvider({
+export function createInlineCompletionItemProvider({
     config,
     statusBar,
     createBfgRetriever,
-}: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
+}: InlineCompletionItemProviderArgs): Observable<void> {
     const authStatus = authProvider.instance!.status
     if (!authStatus.authenticated) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
@@ -46,72 +55,68 @@ export async function createInlineCompletionItemProvider({
             // Register an empty completion provider when running inside the
             // agent to avoid timeouts because it awaits for an
             // `InlineCompletionItemProvider` to be registered.
-            return vscode.languages.registerInlineCompletionItemProvider(
-                '*',
-                new NoopCompletionItemProvider()
+            return vscodeResource(() =>
+                vscode.languages.registerInlineCompletionItemProvider(
+                    '*',
+                    new NoopCompletionItemProvider()
+                )
             )
         }
 
-        return {
-            dispose: () => {},
-        }
+        return NEVER
     }
 
-    const disposables: vscode.Disposable[] = []
+    return promiseFactoryToObservable(async () => {
+        await completionProviderConfig.init(config)
+        return await getInlineCompletionItemProviderFilters(config.autocompleteLanguages)
+    }).pipe(
+        mergeMap(documentFilters =>
+            createProvider(config, authStatus).pipe(
+                createDisposables(provider => {
+                    if (provider) {
+                        const authStatus = authProvider.instance!.statusAuthed
+                        const completionsProvider = new InlineCompletionItemProvider({
+                            authStatus,
+                            provider,
+                            config,
+                            firstCompletionTimeout: config.autocompleteFirstCompletionTimeout,
+                            statusBar,
+                            completeSuggestWidgetSelection:
+                                config.autocompleteCompleteSuggestWidgetSelection,
+                            formatOnAccept: config.autocompleteFormatOnAccept,
+                            disableInsideComments: config.autocompleteDisableInsideComments,
+                            isRunningInsideAgent: config.isRunningInsideAgent,
+                            createBfgRetriever,
+                            isDotComUser: isDotCom(authStatus.endpoint || ''),
+                        })
 
-    const [provider] = await Promise.all([
-        createProvider(config, authStatus),
-        completionProviderConfig.init(config),
-    ])
-
-    if (provider) {
-        const authStatus = authProvider.instance!.statusAuthed
-        const completionsProvider = new InlineCompletionItemProvider({
-            authStatus,
-            provider,
-            config,
-            firstCompletionTimeout: config.autocompleteFirstCompletionTimeout,
-            statusBar,
-            completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
-            formatOnAccept: config.autocompleteFormatOnAccept,
-            disableInsideComments: config.autocompleteDisableInsideComments,
-            isRunningInsideAgent: config.isRunningInsideAgent,
-            createBfgRetriever,
-            isDotComUser: isDotCom(authStatus.endpoint || ''),
-        })
-
-        const documentFilters = await getInlineCompletionItemProviderFilters(
-            config.autocompleteLanguages
-        )
-
-        disposables.push(
-            vscode.commands.registerCommand('cody.autocomplete.manual-trigger', () =>
-                completionsProvider.manuallyTriggerCompletion()
-            ),
-            vscode.languages.registerInlineCompletionItemProvider(
-                [{ notebookType: '*' }, ...documentFilters],
-                completionsProvider
-            ),
-            registerAutocompleteTraceView(completionsProvider),
-            completionsProvider
-        )
-    } else if (config.isRunningInsideAgent) {
-        throw new Error(
-            `Can't register completion provider because \`providerConfig\` evaluated to \`null\`. To fix this problem, debug why createProvider returned null instead of ProviderConfig. To further debug this problem, here is the configuration:\n${JSON.stringify(
-                config,
-                null,
-                2
-            )}`
-        )
-    }
-
-    return {
-        dispose: () => {
-            for (const disposable of disposables) {
-                disposable.dispose()
-            }
-        },
-    }
+                        return [
+                            vscode.commands.registerCommand('cody.autocomplete.manual-trigger', () =>
+                                completionsProvider.manuallyTriggerCompletion()
+                            ),
+                            vscode.languages.registerInlineCompletionItemProvider(
+                                [{ notebookType: '*' }, ...documentFilters],
+                                completionsProvider
+                            ),
+                            registerAutocompleteTraceView(completionsProvider),
+                            completionsProvider,
+                        ]
+                    }
+                    if (config.isRunningInsideAgent) {
+                        throw new Error(
+                            `Can't register completion provider because \`providerConfig\` evaluated to \`null\`. To fix this problem, debug why createProvider returned null instead of ProviderConfig. To further debug this problem, here is the configuration:\n${JSON.stringify(
+                                config,
+                                null,
+                                2
+                            )}`
+                        )
+                    }
+                    return []
+                })
+            )
+        ),
+        map(() => undefined)
+    )
 }
 
 // Languages which should be disabled, but they are not present in

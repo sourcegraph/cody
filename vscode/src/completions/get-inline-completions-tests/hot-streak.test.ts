@@ -4,6 +4,7 @@ import { resetParsersCache } from '../../tree-sitter/parser'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { initTreeSitterParser } from '../test-helpers'
 
+import { nextTick } from '@sourcegraph/cody-shared'
 import { getInlineCompletionsWithInlinedChunks } from './helpers'
 
 describe('[getInlineCompletions] hot streak', () => {
@@ -110,6 +111,7 @@ describe('[getInlineCompletions] hot streak', () => {
             expect(request.items[0].insertText).toEqual('console.log(3)')
             expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
 
+            await nextTick()
             request = await request.acceptFirstCompletionAndPressEnter()
             expect(request.items[0].insertText).toEqual('console.log(4)')
             expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
@@ -139,6 +141,7 @@ describe('[getInlineCompletions] hot streak', () => {
             expect(request.items[0].insertText).toEqual('console.log(4)')
             expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
 
+            await nextTick()
             request = await request.acceptFirstCompletionAndPressEnter()
             expect(request.items[0].insertText).toEqual('return foo')
             expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)

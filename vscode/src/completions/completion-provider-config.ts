@@ -1,25 +1,17 @@
-import { type ClientConfiguration, FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
+import {
+    type ClientConfiguration,
+    FeatureFlag,
+    combineLatest,
+    distinctUntilChanged,
+    featureFlagProvider,
+    mergeMap,
+} from '@sourcegraph/cody-shared'
+import { Observable, map } from 'observable-fns'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { ContextStrategy } from './context/context-strategy'
 
 class CompletionProviderConfig {
     private _config?: ClientConfiguration
-
-    private flagsToResolve = [
-        FeatureFlag.CodyAutocompleteUserLatency,
-        FeatureFlag.CodyAutocompleteTracing,
-        FeatureFlag.CodyAutocompleteContextExtendLanguagePool,
-        FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag,
-        FeatureFlag.CodyAutocompletePreloadingExperimentVariant1,
-        FeatureFlag.CodyAutocompletePreloadingExperimentVariant2,
-        FeatureFlag.CodyAutocompletePreloadingExperimentVariant3,
-        FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag,
-        FeatureFlag.CodyAutocompleteContextExperimentVariant1,
-        FeatureFlag.CodyAutocompleteContextExperimentVariant2,
-        FeatureFlag.CodyAutocompleteContextExperimentVariant3,
-        FeatureFlag.CodyAutocompleteContextExperimentVariant4,
-        FeatureFlag.CodyAutocompleteContextExperimentControl,
-    ] as const
 
     private get config() {
         if (!this._config) {
@@ -36,8 +28,23 @@ class CompletionProviderConfig {
     public async init(config: ClientConfiguration): Promise<void> {
         this._config = config
 
+        // Pre-fetch the feature flags we need so they are cached and immediately available when the
+        // user performs their first autocomplete, and so that our performance metrics are not
+        // skewed by the 1st autocomplete's feature flag evaluation time.
+        const featureFlagsUsed: FeatureFlag[] = [
+            FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag,
+            FeatureFlag.CodyAutocompleteContextExperimentVariant1,
+            FeatureFlag.CodyAutocompleteContextExperimentVariant2,
+            FeatureFlag.CodyAutocompleteContextExperimentVariant3,
+            FeatureFlag.CodyAutocompleteContextExperimentVariant4,
+            FeatureFlag.CodyAutocompleteContextExperimentControl,
+            FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag,
+            FeatureFlag.CodyAutocompletePreloadingExperimentVariant1,
+            FeatureFlag.CodyAutocompletePreloadingExperimentVariant2,
+            FeatureFlag.CodyAutocompletePreloadingExperimentVariant3,
+        ]
         await Promise.all(
-            this.flagsToResolve.map(flag => featureFlagProvider.instance!.evaluateFeatureFlag(flag))
+            featureFlagsUsed.map(flag => featureFlagProvider.instance!.evaluateFeatureFlag(flag))
         )
     }
 
@@ -45,75 +52,81 @@ class CompletionProviderConfig {
         this._config = config
     }
 
-    public getPrefetchedFlag(flag: (typeof this.flagsToResolve)[number]): boolean {
-        return Boolean(featureFlagProvider.instance!.getFromCache(flag as FeatureFlag))
-    }
-
-    public get contextStrategy(): ContextStrategy {
-        switch (this.config.autocompleteExperimentalGraphContext as string) {
-            case 'lsp-light':
-                return 'lsp-light'
-            case 'tsc-mixed':
-                return 'tsc-mixed'
-            case 'tsc':
-                return 'tsc'
-            case 'bfg':
-                return 'bfg'
-            case 'bfg-mixed':
-                return 'bfg-mixed'
-            case 'jaccard-similarity':
-                return 'jaccard-similarity'
-            case 'new-jaccard-similarity':
-                return 'new-jaccard-similarity'
-            case 'recent-edits':
-                return 'recent-edits'
-            case 'recent-edits-1m':
-                return 'recent-edits-1m'
-            case 'recent-edits-5m':
-                return 'recent-edits-5m'
-            case 'recent-edits-mixed':
-                return 'recent-edits-mixed'
-            default:
-                return this.experimentBasedContextStrategy()
+    public get contextStrategy(): Observable<ContextStrategy> {
+        const knownValues = [
+            'lsp-light',
+            'tsc-mixed',
+            'tsc',
+            'bfg',
+            'bfg-mixed',
+            'jaccard-similarity',
+            'new-jaccard-similarity',
+            'recent-edits',
+            'recent-edits-1m',
+            'recent-edits-5m',
+            'recent-edits-mixed',
+        ]
+        if (knownValues.includes(this.config.autocompleteExperimentalGraphContext as string)) {
+            return Observable.of(this.config.autocompleteExperimentalGraphContext as ContextStrategy)
         }
+        return this.experimentBasedContextStrategy()
     }
 
-    public experimentBasedContextStrategy(): ContextStrategy {
+    private experimentBasedContextStrategy(): Observable<ContextStrategy> {
         const defaultContextStrategy = 'jaccard-similarity'
 
-        const isContextExperimentFlagEnabled = this.getPrefetchedFlag(
-            FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag
-        )
-        if (isRunningInsideAgent() || !isContextExperimentFlagEnabled) {
-            return defaultContextStrategy
-        }
+        return featureFlagProvider
+            .instance!.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag)
+            .pipe(
+                mergeMap(isContextExperimentFlagEnabled => {
+                    if (isRunningInsideAgent() || !isContextExperimentFlagEnabled) {
+                        return Observable.of(defaultContextStrategy)
+                    }
 
-        const [variant1, variant2, variant3, variant4, control] = [
-            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextExperimentVariant1),
-            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextExperimentVariant2),
-            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextExperimentVariant3),
-            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextExperimentVariant4),
-            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextExperimentControl),
-        ]
-        if (variant1) {
-            return 'recent-edits-1m'
-        }
-        if (variant2) {
-            return 'recent-edits-5m'
-        }
-        if (variant3) {
-            return 'recent-edits-mixed'
-        }
-        if (variant4) {
-            return 'none'
-        }
-        if (control) {
-            return defaultContextStrategy
-        }
-        return defaultContextStrategy
+                    return combineLatest([
+                        featureFlagProvider.instance!.evaluatedFeatureFlag(
+                            FeatureFlag.CodyAutocompleteContextExperimentVariant1
+                        ),
+                        featureFlagProvider.instance!.evaluatedFeatureFlag(
+                            FeatureFlag.CodyAutocompleteContextExperimentVariant2
+                        ),
+                        featureFlagProvider.instance!.evaluatedFeatureFlag(
+                            FeatureFlag.CodyAutocompleteContextExperimentVariant3
+                        ),
+                        featureFlagProvider.instance!.evaluatedFeatureFlag(
+                            FeatureFlag.CodyAutocompleteContextExperimentVariant4
+                        ),
+                        featureFlagProvider.instance!.evaluatedFeatureFlag(
+                            FeatureFlag.CodyAutocompleteContextExperimentControl
+                        ),
+                    ]).pipe(
+                        map(([variant1, variant2, variant3, variant4, control]) => {
+                            if (variant1) {
+                                return 'recent-edits-1m'
+                            }
+                            if (variant2) {
+                                return 'recent-edits-5m'
+                            }
+                            if (variant3) {
+                                return 'recent-edits-mixed'
+                            }
+                            if (variant4) {
+                                return 'none'
+                            }
+                            if (control) {
+                                return defaultContextStrategy
+                            }
+                            return defaultContextStrategy
+                        })
+                    )
+                }),
+                distinctUntilChanged<ContextStrategy>()
+            )
     }
 
-    private getPreloadingExperimentGroup(): 'variant1' | 'variant2' | 'variant3' | 'control' {
+    private getPreloadingExperimentGroup(): Observable<
+        'variant1' | 'variant2' | 'variant3' | 'control'
+    > {
         // The desired distribution:
         // - Variant-1 25%
         // - Variant-2 25%
@@ -125,41 +138,62 @@ class CompletionProviderConfig {
         // - CodyAutocompleteVariant1 33%
         // - CodyAutocompleteVariant2 100%
         // - CodyAutocompleteVariant3 50%
-        if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag)) {
-            if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompletePreloadingExperimentVariant1)) {
-                return 'variant1'
-            }
+        return combineLatest([
+            featureFlagProvider.instance!.evaluatedFeatureFlag(
+                FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag
+            ),
+            featureFlagProvider.instance!.evaluatedFeatureFlag(
+                FeatureFlag.CodyAutocompletePreloadingExperimentVariant1
+            ),
+            featureFlagProvider.instance!.evaluatedFeatureFlag(
+                FeatureFlag.CodyAutocompletePreloadingExperimentVariant2
+            ),
+            featureFlagProvider.instance!.evaluatedFeatureFlag(
+                FeatureFlag.CodyAutocompletePreloadingExperimentVariant3
+            ),
+        ]).pipe(
+            map(([isContextExperimentFlagEnabled, variant1, variant2, variant3]) => {
+                if (isContextExperimentFlagEnabled) {
+                    if (variant1) {
+                        return 'variant1'
+                    }
 
-            if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompletePreloadingExperimentVariant2)) {
-                if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompletePreloadingExperimentVariant3)) {
-                    return 'variant2'
+                    if (variant2) {
+                        if (variant3) {
+                            return 'variant2'
+                        }
+                        return 'variant3'
+                    }
                 }
-                return 'variant3'
-            }
-        }
 
-        return 'control'
+                return 'control'
+            }),
+            distinctUntilChanged()
+        )
     }
 
-    public get autocompletePreloadDebounceInterval(): number {
+    public get autocompletePreloadDebounceInterval(): Observable<number> {
         const localInterval = this.config.autocompleteExperimentalPreloadDebounceInterval
 
         if (localInterval !== undefined && localInterval > 0) {
-            return localInterval
+            return Observable.of(localInterval)
         }
 
-        const preloadingExperimentGroup = this.getPreloadingExperimentGroup()
-
-        switch (preloadingExperimentGroup) {
-            case 'variant1':
-                return 150
-            case 'variant2':
-                return 250
-            case 'variant3':
-                return 350
-            default:
-                return 0
-        }
+        return this.getPreloadingExperimentGroup().pipe(
+            map(preloadingExperimentGroup => {
+                switch (preloadingExperimentGroup) {
+                    case 'variant1':
+                        return 150
+                    case 'variant2':
+                        return 250
+                    case 'variant3':
+                        return 350
+                    default:
+                        return 0
+                }
+            }),
+            distinctUntilChanged()
+        )
     }
 }
 

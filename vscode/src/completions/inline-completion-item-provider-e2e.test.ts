@@ -4,6 +4,7 @@ import {
     type GraphQLAPIClientConfig,
     contextFiltersProvider,
     graphqlClient,
+    nextTick,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { type MockInstance, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -387,6 +388,10 @@ describe('InlineCompletionItemProvider preloading', () => {
 
     const onDidChangeTextEditorSelection = vi.spyOn(vsCodeMocks.window, 'onDidChangeTextEditorSelection')
 
+    beforeEach(() => {
+        onDidChangeTextEditorSelection.mockClear()
+    })
+
     beforeAll(async () => {
         vi.useFakeTimers()
 
@@ -405,9 +410,11 @@ describe('InlineCompletionItemProvider preloading', () => {
 
         const { document, position } = autocompleteParams
         const provider = getInlineCompletionProvider(autocompleteParams)
+        await vi.runOnlyPendingTimersAsync()
         const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
+        await nextTick()
 
-        const [handler] = onDidChangeTextEditorSelection.mock.lastCall as any
+        const [handler] = onDidChangeTextEditorSelection.mock.calls[0] as any
 
         // Simulate a cursor movement event
         await handler({
@@ -437,6 +444,7 @@ describe('InlineCompletionItemProvider preloading', () => {
 
         const { document, position } = autocompleteParams
         const provider = getInlineCompletionProvider(autocompleteParams)
+        await vi.runOnlyPendingTimersAsync()
         const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
         const [handler] = onDidChangeTextEditorSelection.mock.lastCall as any
 
@@ -459,8 +467,9 @@ describe('InlineCompletionItemProvider preloading', () => {
 
         const { document, position } = autocompleteParams
         const provider = getInlineCompletionProvider(autocompleteParams)
+        await vi.runOnlyPendingTimersAsync()
         const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
-        const [handler] = onDidChangeTextEditorSelection.mock.lastCall as any
+        const [handler] = onDidChangeTextEditorSelection.mock.calls[0] as any
 
         await handler({
             textEditor: { document },
@@ -484,6 +493,7 @@ describe('InlineCompletionItemProvider preloading', () => {
 
         const { document, position } = autocompleteParams
         const provider = getInlineCompletionProvider(autocompleteParams)
+        await vi.runOnlyPendingTimersAsync()
         const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
         const [handler] = onDidChangeTextEditorSelection.mock.lastCall as any
 

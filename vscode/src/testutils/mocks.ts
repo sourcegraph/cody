@@ -879,10 +879,6 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
         return Promise.resolve(this.enabledFlags.has(flag))
     }
 
-    public getFromCache(flag: FeatureFlag): boolean {
-        return this.enabledFlags.has(flag)
-    }
-
     public refresh(): Promise<void> {
         return Promise.resolve()
     }

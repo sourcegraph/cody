@@ -4,6 +4,7 @@ import {
     type ObservableLike,
     Subject,
     type Subscription,
+    type SubscriptionObserver,
     map,
     unsubscribe,
 } from 'observable-fns'
@@ -126,22 +127,33 @@ export function readValuesFrom<T>(observable: Observable<T>): {
     values: T[]
     done: Promise<void>
     unsubscribe(): void
+    status: () => 'pending' | 'complete' | 'error' | 'unsubscribed'
 } {
     const values: T[] = []
     const { promise, resolve, reject } = promiseWithResolvers<void>()
+    let status: ReturnType<ReturnType<typeof readValuesFrom<T>>['status']> = 'pending'
     const subscription = observable.subscribe({
         next: value => values.push(value),
-        error: reject,
-        complete: resolve,
+        error: err => {
+            reject(err)
+            status = 'error'
+        },
+        complete: () => {
+            resolve()
+            status = 'complete'
+        },
     })
-    return {
+    const result: ReturnType<typeof readValuesFrom<T>> = {
         values,
         done: promise,
         unsubscribe: () => {
             subscription.unsubscribe()
             resolve()
+            status = 'unsubscribed'
         },
+        status: () => status,
     }
+    return result
 }
 
 /**
@@ -202,11 +214,61 @@ export function promiseFactoryToObservable<T>(
 }
 
 /**
+ * Create an {@link Observable} that initially does not emit, but after {@link setSource} is called
+ * with a source, all subscribers subscribe to that source observable.
+ */
+export function fromLateSetSource<T>(): {
+    observable: Observable<T>
+    setSource: (input: Observable<T>, throwErrorIfAlreadySet?: boolean) => void
+} {
+    let source: Observable<T> | null = null
+    const pendingObservers: {
+        observer: SubscriptionObserver<T> | null
+        subscription: Unsubscribable | null
+    }[] = []
+
+    const observable = new Observable<T>(observer => {
+        if (source) {
+            return source.subscribe(observer)
+        }
+
+        const entry: (typeof pendingObservers)[number] = { observer, subscription: null }
+        pendingObservers.push(entry)
+        return () => {
+            entry.subscription?.unsubscribe()
+            const index = pendingObservers.indexOf(entry)
+            if (index !== -1) {
+                pendingObservers.splice(index, 1)
+            }
+        }
+    })
+
+    const setSource = (input: Observable<T>, throwErrorIfAlreadySet = true) => {
+        if (source && throwErrorIfAlreadySet) {
+            throw new Error('source is already set')
+        }
+        source = input
+        for (const entry of pendingObservers) {
+            if (!entry.subscription) {
+                entry.subscription = source.subscribe(entry.observer!)
+                entry.observer = null
+            }
+        }
+    }
+
+    return { observable, setSource }
+}
+/**
  * An empty {@link Observable}, which emits no values and completes immediately.
  */
 export const EMPTY = new Observable<never>(observer => {
     observer.complete()
 })
+
+/**
+ * An observable that never emits, errors, nor completes.
+ */
+export const NEVER: Observable<never> = new Observable<never>(() => {})
 
 /**
  * Combine the latest values from multiple {@link Observable}s into a single {@link Observable} that
@@ -368,6 +430,82 @@ export function fromVSCodeEvent<T>(
     })
 }
 
+/**
+ * Create a VS Code resource while the observable is subscribed, and dispose of it when the
+ * subscription is unsubscribed. The returned {@link Observable} never emits.
+ */
+export function vscodeResource(create: () => VSCodeDisposable): Observable<void> {
+    return new Observable(() => {
+        const disposable = create()
+        return () => {
+            disposable.dispose()
+        }
+    })
+}
+
+/**
+ * Dispose of the given VS Code disposables when the returned {@link Observable} is unsubscribed.
+ * The observable never emits.
+ */
+export function disposeOnUnsubscribe(...disposables: VSCodeDisposable[]): Observable<void> {
+    return new Observable(() => {
+        return () => {
+            for (const disposable of disposables) {
+                disposable.dispose()
+            }
+        }
+    })
+}
+
+/**
+ * Create VS Code disposables for each emission, and dispose them upon the next emission or error or
+ * when the returned observable is unsubscribed. The returned observable never completes.
+ */
+export function createDisposables<T>(
+    create: (value: T) => VSCodeDisposable | VSCodeDisposable[] | undefined
+): (input: ObservableLike<T>) => Observable<T> {
+    let disposables: VSCodeDisposable | VSCodeDisposable[] | undefined
+    function disposeAll(): void {
+        if (disposables) {
+            if (Array.isArray(disposables)) {
+                for (const d of disposables) {
+                    try {
+                        d.dispose()
+                    } catch {}
+                }
+            } else {
+                try {
+                    disposables.dispose()
+                } catch {}
+            }
+        }
+        disposables = undefined
+    }
+    return (observable: ObservableLike<T>): Observable<T> =>
+        new Observable<T>(observer => {
+            const subscription = observable.subscribe({
+                next: value => {
+                    disposeAll()
+                    try {
+                        disposables = create(value)
+                        observer.next(value)
+                    } catch (error) {
+                        observer.error(error)
+                    }
+                },
+                error: (error: any) => {
+                    disposeAll()
+                    observer.error(error)
+                },
+                complete: () => {},
+            })
+            return () => {
+                unsubscribe(subscription)
+                disposeAll()
+            }
+        })
+}
+
 export function pluck<T, K extends keyof T>(key: K): (input: ObservableLike<T>) => Observable<T[K]>
 export function pluck<T, K1 extends keyof T, K2 extends keyof T[K1]>(
     key1: K1,
@@ -527,4 +665,86 @@ export function startWith<T, R>(value: R): (source: ObservableLike<T>) => Observ
                 }
             }
         })
+}
+
+export function take<T>(count: number): (source: ObservableLike<T>) => Observable<T> {
+    return (source: ObservableLike<T>) =>
+        new Observable<T>(observer => {
+            let taken = 0
+            const sourceSubscription = source.subscribe({
+                next(value) {
+                    if (taken < count) {
+                        observer.next(value)
+                        taken++
+                        if (taken === count) {
+                            observer.complete()
+                            unsubscribe(sourceSubscription)
+                        }
+                    }
+                },
+                error(err) {
+                    observer.error(err)
+                },
+                complete() {
+                    observer.complete()
+                },
+            })
+
+            return () => {
+                unsubscribe(sourceSubscription)
+            }
+        })
+}
+
+export function mergeMap<T, R>(
+    project: (value: T, index: number) => ObservableLike<R>
+): (observable: ObservableLike<T>) => Observable<R> {
+    return (observable: ObservableLike<T>): Observable<R> => {
+        return new Observable<R>(observer => {
+            let index = 0
+            const innerSubscriptions = new Set<UnsubscribableLike>()
+            let outerCompleted = false
+
+            const checkComplete = () => {
+                if (outerCompleted && innerSubscriptions.size === 0) {
+                    observer.complete()
+                }
+            }
+
+            const outerSubscription = observable.subscribe({
+                next(value) {
+                    const innerObservable = project(value, index++)
+                    const innerSubscription = innerObservable.subscribe({
+                        next(innerValue) {
+                            observer.next(innerValue)
+                        },
+                        error(err) {
+                            observer.error(err)
+                        },
+                        complete() {
+                            innerSubscriptions.delete(innerSubscription)
+                            checkComplete()
+                        },
+                    })
+                    innerSubscriptions.add(innerSubscription)
+                },
+                error(err) {
+                    observer.error(err)
+                },
+                complete() {
+                    outerCompleted = true
+                    checkComplete()
+                },
+            })
+
+            return () => {
+                unsubscribe(outerSubscription)
+                for (const innerSubscription of innerSubscriptions) {
+                    if (innerSubscription) {
+                        unsubscribe(innerSubscription)
+                    }
+                }
+            }
+        })
+    }
 }

@@ -35,7 +35,7 @@ function createMockStrategy(resultSets: AutocompleteContextSnippet[][]): Context
     }
 
     const mockStrategyFactory = {
-        getStrategy: vi.fn().mockReturnValue({
+        getStrategy: vi.fn().mockResolvedValue({
             name: retrievers.length > 0 ? 'jaccard-similarity' : 'none',
             retrievers,
         }),

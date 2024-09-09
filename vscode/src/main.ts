@@ -644,20 +644,14 @@ function registerAutocomplete(
                 // completion provider.
                 disposeAutocomplete()
 
-                const autocompleteFeatureFlagChangeSubscriber =
-                    featureFlagProvider.instance!.onFeatureFlagChanged(
-                        'cody-autocomplete',
-                        setupAutocomplete
-                    )
-                autocompleteDisposables.push({
-                    dispose: autocompleteFeatureFlagChangeSubscriber,
-                })
                 autocompleteDisposables.push(
-                    await createInlineCompletionItemProvider({
-                        config,
-                        statusBar,
-                        createBfgRetriever: platform.createBfgRetriever,
-                    })
+                    subscriptionDisposable(
+                        createInlineCompletionItemProvider({
+                            config,
+                            statusBar,
+                            createBfgRetriever: platform.createBfgRetriever,
+                        }).subscribe({})
+                    )
                 )
                 autocompleteDisposables.push(
                     await createInlineCompletionItemFromMultipleProviders({

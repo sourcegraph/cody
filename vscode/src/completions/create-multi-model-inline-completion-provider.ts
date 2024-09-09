@@ -133,7 +133,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
 
         // Use the experimental config to get the context provider
         completionProviderConfig.setConfig(newConfig)
-        const provider = await createProviderHelper({
+        const provider = createProviderHelper({
             authStatus,
             legacyModel: currentProviderConfig.model,
             provider: currentProviderConfig.provider,

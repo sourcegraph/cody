@@ -6,6 +6,8 @@ import {
     type CodyLLMSiteConfiguration,
     DOTCOM_URL,
     type GraphQLAPIClientConfig,
+    type ObservableValue,
+    firstValueFrom,
     graphqlClient,
 } from '@sourcegraph/cody-shared'
 import { beforeAll, describe, expect, it } from 'vitest'
@@ -43,9 +45,15 @@ describe('createProvider', () => {
         } as any as vscode.Memento)
     })
 
+    function createProviderForTest(
+        ...args: Parameters<typeof createProvider>
+    ): Promise<ObservableValue<ReturnType<typeof createProvider>>> {
+        return firstValueFrom(createProvider(...args))
+    }
+
     describe('if completions provider fields are defined in VSCode settings', () => {
         it('returns null if completions provider is not supported', async () => {
-            const provider = await createProvider(
+            const provider = await createProviderForTest(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider:
                         'nasa-ai' as ClientConfiguration['autocompleteAdvancedProvider'],
@@ -58,7 +66,7 @@ describe('createProvider', () => {
 
     describe('if completions provider field is not defined in VSCode settings', () => {
         it('returns `null` if completions provider is not configured', async () => {
-            const provider = await createProvider(
+            const provider = await createProviderForTest(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider:
                         null as ClientConfiguration['autocompleteAdvancedProvider'],
@@ -69,7 +77,7 @@ describe('createProvider', () => {
         })
 
         it('returns "fireworks" provider config and corresponding model if specified', async () => {
-            const provider = await createProvider(
+            const provider = await createProviderForTest(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'fireworks',
                     autocompleteAdvancedModel: 'starcoder-7b',
@@ -81,7 +89,7 @@ describe('createProvider', () => {
         })
 
         it('returns "fireworks" provider config if specified in settings and default model', async () => {
-            const provider = await createProvider(
+            const provider = await createProviderForTest(
                 getVSCodeConfigurationWithAccessToken({ autocompleteAdvancedProvider: 'fireworks' }),
                 dummyAuthStatus
             )
@@ -90,7 +98,7 @@ describe('createProvider', () => {
         })
 
         it('returns "experimental-openaicompatible" provider config and corresponding model if specified', async () => {
-            const provider = await createProvider(
+            const provider = await createProviderForTest(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'experimental-openaicompatible',
                     autocompleteAdvancedModel: 'starchat-16b-beta',
@@ -102,7 +110,7 @@ describe('createProvider', () => {
         })
 
         it('returns "experimental-openaicompatible" provider config if specified in settings and default model', async () => {
-            const provider = await createProvider(
+            const provider = await createProviderForTest(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'experimental-openaicompatible',
                 }),
@@ -115,7 +123,7 @@ describe('createProvider', () => {
         })
 
         it('returns "unstable-openai" provider config if specified in VSCode settings; model is ignored', async () => {
-            const provider = await createProvider(
+            const provider = await createProviderForTest(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'unstable-openai',
                     autocompleteAdvancedModel: 'hello-world',
@@ -127,7 +135,7 @@ describe('createProvider', () => {
         })
 
         it('returns "anthropic" provider config if specified in VSCode settings', async () => {
-            const provider = await createProvider(
+            const provider = await createProviderForTest(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'anthropic',
                 }),
@@ -138,7 +146,7 @@ describe('createProvider', () => {
         })
 
         it('provider specified in VSCode settings takes precedence over the one defined in the site config', async () => {
-            const provider = await createProvider(
+            const provider = await createProviderForTest(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'unstable-openai',
                 }),
@@ -266,10 +274,13 @@ describe('createProvider', () => {
                 it(`returns ${JSON.stringify(expected)} when cody LLM config is ${JSON.stringify(
                     configOverwrites
                 )}`, async () => {
-                    const provider = await createProvider(getVSCodeConfigurationWithAccessToken(), {
-                        ...dummyAuthStatus,
-                        configOverwrites,
-                    })
+                    const provider = await createProviderForTest(
+                        getVSCodeConfigurationWithAccessToken(),
+                        {
+                            ...dummyAuthStatus,
+                            configOverwrites,
+                        }
+                    )
                     if (expected === null) {
                         expect(provider).toBeNull()
                     } else {
