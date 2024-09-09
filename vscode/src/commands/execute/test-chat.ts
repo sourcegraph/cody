@@ -28,7 +28,7 @@ async function unitTestCommand(
 
     const editor = getEditor()?.active
     const document = editor?.document
-    const contextFiles: ContextItem[] = []
+    const contextItems: ContextItem[] = []
 
     if (document) {
         try {
@@ -38,9 +38,9 @@ async function unitTestCommand(
                     'Selection content is empty. Please select some code to generate tests for.'
                 )
             }
-            contextFiles.push(cursorContext)
+            contextItems.push(cursorContext)
 
-            contextFiles.push(...(await getContextFilesForTestCommand(document.uri)))
+            contextItems.push(...(await getContextFilesForTestCommand(document.uri)))
         } catch (error) {
             logError('testCommand', 'failed to fetch context', { verbose: error })
         }
@@ -48,7 +48,7 @@ async function unitTestCommand(
 
     return {
         text: prompt,
-        contextFiles,
+        contextItems,
         addEnhancedContext: false,
         source: args?.source,
         submitType: 'user-newchat',

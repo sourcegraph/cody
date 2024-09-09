@@ -10,6 +10,13 @@ This is a log of all notable changes to the Cody command-line tool. [Unreleased]
 
 ### Changed
 
+## 5.5.15
+
+### Fixed
+
+- `cody chat --context-repo` now works again as expected. The version 5.5.14 had
+  a regression where `--context-repo` did not work at all.
+
 ## 5.5.14
 
 ### Fixed

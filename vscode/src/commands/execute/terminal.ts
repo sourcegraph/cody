@@ -57,7 +57,7 @@ export async function executeExplainOutput(
             session: await executeChat({
                 text: prompt,
                 submitType: 'user-newchat',
-                contextFiles: [],
+                contextItems: [],
                 addEnhancedContext,
                 source,
             }),

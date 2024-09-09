@@ -316,7 +316,7 @@ export class ChatsController implements vscode.Disposable {
     private async submitChat({
         text,
         submitType,
-        contextFiles,
+        contextItems,
         addEnhancedContext,
         source = DEFAULT_EVENT_SOURCE,
         command,
@@ -334,7 +334,7 @@ export class ChatsController implements vscode.Disposable {
             uuid.v4(),
             text,
             submitType,
-            contextFiles ?? [],
+            contextItems ?? [],
             editorState,
             addEnhancedContext ?? true,
             abortSignal,

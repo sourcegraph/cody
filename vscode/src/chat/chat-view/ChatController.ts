@@ -287,7 +287,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     uuid.v4(),
                     PromptString.unsafe_fromUserQuery(message.text),
                     message.submitType,
-                    message.contextFiles ?? [],
+                    message.contextItems ?? [],
                     message.editorState as SerializedPromptEditorState,
                     message.addEnhancedContext ?? false,
                     this.startNewSubmitOrEditOperation(),
@@ -300,7 +300,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     uuid.v4(),
                     PromptString.unsafe_fromUserQuery(message.text),
                     message.index ?? undefined,
-                    message.contextFiles ?? [],
+                    message.contextItems ?? [],
                     message.editorState as SerializedPromptEditorState,
                     message.addEnhancedContext || false
                 )
