@@ -5,6 +5,7 @@ import szip from '7zip-min'
 import pspawn from '@npmcli/promise-spawn'
 import { test as _test } from '@playwright/test'
 import { isWindows } from '@sourcegraph/cody-shared'
+import { move } from 'fs-extra'
 import 'node:http'
 import 'node:https'
 import os from 'node:os'
@@ -285,10 +286,9 @@ async function downloadVSCodeServer(
                         ok(void 0)
                     })
                 )
-                await fs.rename(
-                    path.join(unpackedPath, `vscode-${directoryName}`),
-                    versionedExecutableDir
-                )
+                await move(path.join(unpackedPath, `vscode-${directoryName}`), versionedExecutableDir, {
+                    overwrite: true,
+                })
                 await fs.writeFile(path.join(versionedExecutableDir, 'ok'), 'ok')
             })
         }
