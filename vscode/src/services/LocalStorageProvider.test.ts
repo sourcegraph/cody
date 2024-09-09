@@ -1,11 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import {
-    type AuthenticatedAuthStatus,
-    DOTCOM_URL,
-    type UserLocalHistory,
-} from '@sourcegraph/cody-shared'
+import { AUTH_STATUS_FIXTURE_AUTHED, type UserLocalHistory } from '@sourcegraph/cody-shared'
 
 import { localStorage } from './LocalStorageProvider'
 
@@ -25,25 +21,13 @@ describe('LocalStorageProvider', () => {
     })
 
     it('sets and gets chat history', async () => {
-        await localStorage.setChatHistory(DUMMY_AUTH_STATUS, {
+        await localStorage.setChatHistory(AUTH_STATUS_FIXTURE_AUTHED, {
             chat: { a: { id: 'a', lastInteractionTimestamp: '123', interactions: [] } },
         })
 
-        const loadedHistory = localStorage.getChatHistory(DUMMY_AUTH_STATUS)
+        const loadedHistory = localStorage.getChatHistory(AUTH_STATUS_FIXTURE_AUTHED)
         expect(loadedHistory).toEqual<UserLocalHistory>({
             chat: { a: { id: 'a', lastInteractionTimestamp: '123', interactions: [] } },
         })
     })
 })
-
-const DUMMY_AUTH_STATUS: AuthenticatedAuthStatus = {
-    endpoint: DOTCOM_URL.toString(),
-    isFireworksTracingEnabled: false,
-    authenticated: true,
-    hasVerifiedEmail: true,
-    requiresVerifiedEmail: true,
-    siteVersion: '1234',
-    username: 'uwu',
-    userCanUpgrade: false,
-    codyApiVersion: 0,
-}
