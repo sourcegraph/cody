@@ -1,5 +1,8 @@
 import { expect } from '@playwright/test'
 import { fixture as test, uix } from './vscody'
+import { MITM_AUTH_TOKEN_PLACEHOLDER } from './vscody/constants'
+import { Extension } from './vscody/uix/cody'
+import { modifySettings } from './vscody/uix/workspace'
 
 test.describe('Sidebar selectors', () => {
     //TODO: We don't use sidebars like this anymore so it's unclear if this helper still will bring value
@@ -25,10 +28,18 @@ test.describe('Webview Selector', () => {
         templateWorkspaceDir: 'test/fixtures/workspace',
     })
 
-    test('It can handle multiple webviews', async ({ page, vscodeUI, workspaceDir }) => {
-        await uix.cody.preAuthenticate({ workspaceDir })
+    test('It can handle multiple webviews', async ({ page, vscodeUI, workspaceDir, mitmProxy }) => {
+        await modifySettings(
+            s => ({
+                ...s,
+                'cody.accessToken': MITM_AUTH_TOKEN_PLACEHOLDER,
+                'cody.serverEndpoint': mitmProxy.sourcegraph.dotcom.endpoint,
+            }),
+            { workspaceDir }
+        )
         const session = await uix.vscode.Session.pending({ page, vscodeUI, workspaceDir }).start()
-        await uix.cody.waitForStartup({ page })
+        const cody = Extension.with({ page, workspaceDir })
+        await cody.waitUntilReady()
 
         await session.runCommand('workbench.view.extension.cody')
         const [sidebarChat] = await uix.cody.WebView.all(session, { atLeast: 1 })

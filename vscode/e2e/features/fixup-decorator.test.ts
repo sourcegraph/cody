@@ -1,6 +1,8 @@
 import { type TestDetails, expect } from '@playwright/test'
 import { Annotations } from '../utils/test-info'
 import { fixture as test, uix } from '../utils/vscody'
+import { MITM_AUTH_TOKEN_PLACEHOLDER } from '../utils/vscody/constants'
+import { modifySettings } from '../utils/vscody/uix/workspace'
 
 const DECORATION_SELECTOR =
     'div.view-overlays[role="presentation"] div[class*="TextEditorDecorationType"]'
@@ -21,10 +23,19 @@ test.describe('fixup decorator', testDetails, () => {
         mitmProxy,
     }) => {
         const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
+        const cody = uix.cody.Extension.with({ page, workspaceDir })
+
         await test.step('setup', async () => {
-            await uix.cody.preAuthenticate({ workspaceDir })
+            await modifySettings(
+                s => ({
+                    ...s,
+                    'cody.accessToken': MITM_AUTH_TOKEN_PLACEHOLDER,
+                    'cody.serverEndpoint': mitmProxy.sourcegraph.dotcom.endpoint,
+                }),
+                { workspaceDir }
+            )
             await session.start()
-            await uix.cody.waitForStartup({ page })
+            await cody.waitUntilReady()
             await session.editor.openFile({ workspaceFile: 'index.html' })
         })
 
