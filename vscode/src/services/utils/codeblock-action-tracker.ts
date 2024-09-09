@@ -56,6 +56,10 @@ function setLastStoredCode(
     lastStoredCode = codeCount
 
     let operation: string
+
+    // 🚨 [Telemetry] if any new event names/types are added, check that those actions qualify as core events
+    //(https://sourcegraph.notion.site/Cody-analytics-6b77a2cb2373466fae4797b6529a0e3d#2ca9035287854de48877a7cef2b3d4b4).
+    // If not, the event recorded below this switch statement needs to be updated.
     switch (eventName) {
         case 'copyButton':
         case 'keyDown.Copy':
