@@ -1,34 +1,20 @@
-import fspromises from 'node:fs/promises'
-import os from 'node:os'
 import path from 'node:path'
 import {
-    ChatClient,
-    type GraphQLAPIClientConfig,
     contextFiltersProvider,
-    defaultAuthStatus,
     getDotComDefaultModels,
-    graphqlClient,
     modelsService,
     ps,
 } from '@sourcegraph/cody-shared'
 import { afterAll, beforeAll } from 'vitest'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import * as vscode from 'vscode'
-import { GhostHintDecorator } from '../../vscode/src/commands/GhostHintDecorator'
-import { SourcegraphNodeCompletionsClient } from '../../vscode/src/completions/nodeClient'
-import { EditManager } from '../../vscode/src/edit/manager'
-import type { SmartApplyArguments } from '../../vscode/src/edit/smart-apply'
-import { VSCodeEditor } from '../../vscode/src/editor/vscode-editor'
-import { defaultVSCodeExtensionClient } from '../../vscode/src/extension-client'
-import type { AuthProvider } from '../../vscode/src/services/AuthProvider'
+import type * as vscode from 'vscode'
+import { executeSmartApply } from '../../vscode/src/edit/smart-apply'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { AgentFixupControls } from './AgentFixupControls'
-import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 import { explainPollyError } from './explainPollyError'
 import { trimEndOfLine } from './trimEndOfLine'
-import { setWorkspaceDocuments, workspaceFolders } from './vscode-shim'
 
 describe('Edit', () => {
     const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'edit-code'))
@@ -77,70 +63,25 @@ describe('Edit', () => {
     })
 
     it('editCommands/code (having one file active apply to the other file)', async () => {
-        graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
-        const testFolderPath = await fspromises.mkdtemp(path.join(os.tmpdir(), 'smart-apply-test'))
-        const tmpdir = vscode.Uri.file(testFolderPath)
-        const workspaceDocuments = new AgentWorkspaceDocuments()
-
-        while (workspaceFolders.pop()) {
-            // clear
-            // vscode.workspaceFolders will be reset by setWorkspaceDocuments.
-        }
-        workspaceDocuments.workspaceRootUri = tmpdir
-        setWorkspaceDocuments(workspaceDocuments)
-
         const initiallyActiveFileUri = workspace.file('src', 'sum.ts')
         await client.openFile(initiallyActiveFileUri)
 
-        const fileToEditUri = workspace.file('src', 'trickyLogic.ts')
+        const fileToEditUri = workspace.file('src', 'a-new-file.ts')
         const newDocument = { uri: fileToEditUri } as vscode.TextDocument
 
-        const args: SmartApplyArguments = {
+        const fixupTask = await executeSmartApply({
             configuration: {
                 id: 'test-task-id',
                 instruction: ps`Add a simple function`,
-                replacement: 'function greet() { return "Hello"; }',
+                replacement: '',
                 document: newDocument,
+                model: undefined,
+                isNewFile: true,
             },
-        }
-        const authStatus = { ...defaultAuthStatus, isLoggedIn: true, isDotCom: true }
-        let authChangeListener = () => {}
-        const authProvider = {
-            changes: {
-                subscribe: (f: () => void) => {
-                    authChangeListener = f
-                    // (return an object that simulates the unsubscribe
-                    return {
-                        unsubscribe: () => {
-                            authChangeListener = () => {}
-                        },
-                    }
-                },
-            },
-            getAuthStatus: () => authStatus,
-        } as AuthProvider
-        authChangeListener()
-        await modelsService.setAuthStatus(authStatus)
-
-        const completionsClient = new SourcegraphNodeCompletionsClient({
-            accessToken: TESTING_CREDENTIALS.dotcom.token ?? TESTING_CREDENTIALS.dotcom.redactedToken,
-            serverEndpoint: TESTING_CREDENTIALS.dotcom.serverEndpoint,
-            customHeaders: {},
+            source: 'chat',
         })
-        const chatClient = new ChatClient(completionsClient, () => authProvider.getAuthStatus())
-        const editor = new VSCodeEditor()
-        const ghostHintDecorator = new GhostHintDecorator(authProvider)
-        const editorManager = new EditManager({
-            chat: chatClient,
-            editor,
-            ghostHintDecorator,
-            authProvider,
-            extensionClient: defaultVSCodeExtensionClient(),
-        })
-        const fixupTask = await editorManager.smartApplyEdit(args)
         const task = AgentFixupControls.serialize(fixupTask!)
 
-        await client.taskHasReachedAppliedPhase(task)
         const initiallyActiveFileLenses = client.codeLenses.get(initiallyActiveFileUri.toString()) ?? []
         const fileToEditLenses = client.codeLenses.get(fileToEditUri.toString()) ?? []
         expect(initiallyActiveFileLenses).toHaveLength(0)
