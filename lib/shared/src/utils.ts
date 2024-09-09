@@ -42,7 +42,6 @@ export function convertGitCloneURLToCodebaseNameOrError(cloneURL: string): strin
     }
     try {
         // Handle common Git SSH URL formats
-        // const match = cloneURL.match(/^[\w-]+@([^:]+):([\w-\/\.]+)$/)
         const match = cloneURL.match(/^[\w-]+@([^:]+):(?:(\d+)\/)?([\w-\/\.]+)$/)
 
         if (match) {
