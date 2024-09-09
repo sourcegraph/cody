@@ -3,20 +3,23 @@ import os from 'node:os'
 import path from 'node:path'
 import {
     ChatClient,
+    type GraphQLAPIClientConfig,
+    contextFiltersProvider,
     defaultAuthStatus,
     getDotComDefaultModels,
+    graphqlClient,
     modelsService,
     ps,
 } from '@sourcegraph/cody-shared'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { GhostHintDecorator } from '../../vscode/src/commands/GhostHintDecorator'
 import { SourcegraphNodeCompletionsClient } from '../../vscode/src/completions/nodeClient'
-import { EditProvider } from '../../vscode/src/edit/provider'
+import { EditManager } from '../../vscode/src/edit/manager'
 import type { SmartApplyArguments } from '../../vscode/src/edit/smart-apply'
 import { VSCodeEditor } from '../../vscode/src/editor/vscode-editor'
 import { defaultVSCodeExtensionClient } from '../../vscode/src/extension-client'
-import { FixupController } from '../../vscode/src/non-stop/FixupController'
 import type { AuthProvider } from '../../vscode/src/services/AuthProvider'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { AgentFixupControls } from './AgentFixupControls'
@@ -40,6 +43,10 @@ describe('Edit', () => {
         await workspace.beforeAll()
         await client.beforeAll()
         await client.request('command/execute', { command: 'cody.search.index-update' })
+    })
+
+    beforeEach(() => {
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
     })
 
     afterAll(async () => {
@@ -70,7 +77,7 @@ describe('Edit', () => {
     })
 
     it('editCommands/code (having one file active apply to the other file)', async () => {
-
+        graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
         const testFolderPath = await fspromises.mkdtemp(path.join(os.tmpdir(), 'smart-apply-test'))
         const tmpdir = vscode.Uri.file(testFolderPath)
         const workspaceDocuments = new AgentWorkspaceDocuments()
@@ -114,61 +121,33 @@ describe('Edit', () => {
         } as AuthProvider
         authChangeListener()
         await modelsService.setAuthStatus(authStatus)
-        // await vscode.window.showTextDocument(newDocument.uri)
 
-        const controller = new FixupController(authProvider, defaultVSCodeExtensionClient())
-        const fixupTask = await controller.createTask(
-            newDocument,
-            args.configuration?.instruction!,
-            [],
-            new vscode.Range(0, 0, 0, 0),
-            'add',
-            'insert',
-            modelsService.getDefaultEditModel()!,
-            'chat',
-            args.configuration?.document.uri,
-            undefined,
-            {},
-            args.configuration?.id
-        )
-        const task = AgentFixupControls.serialize(fixupTask)
-        const ghostHintDecorator = new GhostHintDecorator(authProvider)
-        const editor = new VSCodeEditor()
         const completionsClient = new SourcegraphNodeCompletionsClient({
             accessToken: TESTING_CREDENTIALS.dotcom.token ?? TESTING_CREDENTIALS.dotcom.redactedToken,
             serverEndpoint: TESTING_CREDENTIALS.dotcom.serverEndpoint,
             customHeaders: {},
         })
         const chatClient = new ChatClient(completionsClient, () => authProvider.getAuthStatus())
-
-        const provider = new EditProvider({
-            task: fixupTask,
-            controller: controller,
+        const editor = new VSCodeEditor()
+        const ghostHintDecorator = new GhostHintDecorator(authProvider)
+        const editorManager = new EditManager({
             chat: chatClient,
-            editor: editor,
-            ghostHintDecorator: ghostHintDecorator,
-            authProvider: authProvider,
+            editor,
+            ghostHintDecorator,
+            authProvider,
             extensionClient: defaultVSCodeExtensionClient(),
         })
+        const fixupTask = await editorManager.smartApplyEdit(args)
+        const task = AgentFixupControls.serialize(fixupTask!)
 
-        await provider.applyEdit(args.configuration!.replacement)
-        console.log('taskHasReachedAppliedPhase')
         await client.taskHasReachedAppliedPhase(task)
-        console.log('get')
         const initiallyActiveFileLenses = client.codeLenses.get(initiallyActiveFileUri.toString()) ?? []
-        console.log('get')
         const fileToEditLenses = client.codeLenses.get(fileToEditUri.toString()) ?? []
-        console.log('toHaveLength')
         expect(initiallyActiveFileLenses).toHaveLength(0)
-        console.log('toHaveLength')
         expect(fileToEditLenses).toHaveLength(4)
-        console.log('toBe')
         expect(fileToEditLenses[0].command?.command).toBe('cody.fixup.codelens.accept')
-        console.log('request')
         await client.request('editTask/accept', { id: task.id })
-        console.log('getDocument')
         const newContent = client.workspace.getDocument(fileToEditUri)?.content
-        console.log('toMatchInlineSnapshot')
         expect(trimEndOfLine(newContent)).toMatchInlineSnapshot(
             `
                     "export function sum(c: number, b: number): number {
