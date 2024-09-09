@@ -166,15 +166,13 @@ describe('FeatureFlagProvider', () => {
         }
 
         it('should emit when a new flag is evaluated', { timeout: 1000 }, () =>
-            testEvaluatedFeatureFlag(
-                {
-                    apiClient: {
-                        getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({}),
-                        evaluateFeatureFlag: vitest.fn().mockResolvedValue(false),
-                    },
-                    expectInitialValues: [undefined, false],
-                }
-            )
+            testEvaluatedFeatureFlag({
+                apiClient: {
+                    getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({}),
+                    evaluateFeatureFlag: vitest.fn().mockResolvedValue(false),
+                },
+                expectInitialValues: [undefined, false],
+            })
         )
 
         it('should emit when value changes from true to false', { timeout: 1000 }, () =>
