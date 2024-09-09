@@ -2,12 +2,14 @@ import { logError } from './logger'
 
 export const isError = (value: unknown): value is Error => value instanceof Error
 
-// Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
+// Converts a git clone URL in either ssh or https format to the codebase name
 // This should captures:
 // - "github:sourcegraph/sourcegraph" a common SSH host alias
 // - "https://github.com/sourcegraph/deploy-sourcegraph-k8s.git"
 // - "git@github.com:sourcegraph/sourcegraph.git"
 // - "https://dev.azure.com/organization/project/_git/repository"
+// - "git@gitlab-my-company.net:20022/path/with/subfolders/repo.git"
+// - "otheruser@gitlab-my-company.net:20022/monorepo.git"
 
 export function convertGitCloneURLToCodebaseName(cloneURL: string): string | null {
     const result = convertGitCloneURLToCodebaseNameOrError(cloneURL)
@@ -39,12 +41,13 @@ export function convertGitCloneURLToCodebaseNameOrError(cloneURL: string): strin
         )
     }
     try {
-        // Handle common Git SSH URL format
-        const match = cloneURL.match(/^[\w-]+@([^:]+):([\w-\/\.]+)$/)
+        // Handle common Git SSH URL formats
+        // const match = cloneURL.match(/^[\w-]+@([^:]+):([\w-\/\.]+)$/)
+        const match = cloneURL.match(/^[\w-]+@([^:]+):(?:(\d+)\/)?([\w-\/\.]+)$/)
 
         if (match) {
-            const [, host, path] = match
-            return `${host}/${path.replace(/\.git$/, '')}`
+            const [, host, port, path] = match
+            return `${host}${port ? `:${port}` : ''}/${path.replace(/\.git$/, '')}`
         }
         const uri = new URL(cloneURL)
         // Handle Azure DevOps URLs

@@ -91,6 +91,12 @@ describe('convertGitCloneURLToCodebaseName', () => {
         ).toEqual('my-custom-host.com.internal/mono-repo')
     })
 
+    it('converts custom hosts with a port', () => {
+        expect(
+            convertGitCloneURLToCodebaseName('some-user@my-custom-host.com.internal:2022/owner/repo.git')
+        ).toEqual('my-custom-host.com.internal:2022/owner/repo')
+    })
+
     it('converts GitHub SSH URL with Git', () => {
         expect(convertGitCloneURLToCodebaseName('git@github.com:sourcegraph/sourcegraph.git')).toEqual(
             'github.com/sourcegraph/sourcegraph'
