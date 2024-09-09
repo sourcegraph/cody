@@ -2,9 +2,9 @@ import { graphqlClient, isError, logDebug } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { vscodeGitAPI } from '../repository/git-extension-api'
 import { repoNameResolver } from '../repository/repo-name-resolver'
-import type { CodebaseRepoIdMapper } from './enterprise-context-factory'
+import type { CodebaseRepoIdMapper } from './remote-repo'
+import type { Repo } from './remote-repo'
 import { RemoteSearch } from './remote-search'
-import type { Repo } from './repo-fetcher'
 
 // TODO(dpc): The vscode.git extension has an delay before we can fetch a
 // workspace folder's remote. Switch to cody-engine instead of depending on
