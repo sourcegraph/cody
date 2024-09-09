@@ -596,7 +596,7 @@ html[data-ide='VisualStudio'] {
     --vscode-widget-shadow: var(--visualstudio-buttonshadow);
 
     /* Mimic rules injected by VSCode */
-    scrollbar-color: var(--vscode-editor-background) var(--vscode-scrollbarSlider-background);
+    scrollbar-color: var(--visualstudio-scrollbarthumbbackground) var(--visualstudio-toolwindowbackground);
 
 }
 
