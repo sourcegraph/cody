@@ -88,12 +88,14 @@ describe('ContextMixer', () => {
                 createMockStrategy([
                     [
                         {
+                            identifier: 'jaccard-similarity',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo() {}',
                             startLine: 0,
                             endLine: 0,
                         },
                         {
+                            identifier: 'jaccard-similarity',
                             uri: testFileUri('bar.ts'),
                             content: 'function bar() {}',
                             startLine: 0,
@@ -107,12 +109,14 @@ describe('ContextMixer', () => {
                 {
                     fileName: 'foo.ts',
                     content: 'function foo() {}',
+                    identifier: 'jaccard-similarity',
                     startLine: 0,
                     endLine: 0,
                 },
                 {
                     fileName: 'bar.ts',
                     content: 'function bar() {}',
+                    identifier: 'jaccard-similarity',
                     startLine: 0,
                     endLine: 0,
                 },
@@ -142,12 +146,14 @@ describe('ContextMixer', () => {
                 createMockStrategy([
                     [
                         {
+                            identifier: 'jaccard-similarity',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo1() {}',
                             startLine: 0,
                             endLine: 0,
                         },
                         {
+                            identifier: 'jaccard-similarity',
                             uri: testFileUri('bar.ts'),
                             content: 'function bar1() {}',
                             startLine: 0,
@@ -157,18 +163,21 @@ describe('ContextMixer', () => {
 
                     [
                         {
+                            identifier: 'jaccard-similarity',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo3() {}',
                             startLine: 10,
                             endLine: 10,
                         },
                         {
+                            identifier: 'jaccard-similarity',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo1() {}\nfunction foo2() {}',
                             startLine: 0,
                             endLine: 1,
                         },
                         {
+                            identifier: 'jaccard-similarity',
                             uri: testFileUri('bar.ts'),
                             content: 'function bar1() {}\nfunction bar2() {}',
                             startLine: 0,
@@ -188,6 +197,7 @@ describe('ContextMixer', () => {
                   "content": "function foo1() {}",
                   "endLine": 0,
                   "fileName": "foo.ts",
+                  "identifier": "jaccard-similarity",
                   "startLine": 0,
                 },
                 {
@@ -195,12 +205,14 @@ describe('ContextMixer', () => {
               function foo2() {}",
                   "endLine": 1,
                   "fileName": "foo.ts",
+                  "identifier": "jaccard-similarity",
                   "startLine": 0,
                 },
                 {
                   "content": "function bar1() {}",
                   "endLine": 0,
                   "fileName": "bar.ts",
+                  "identifier": "jaccard-similarity",
                   "startLine": 0,
                 },
                 {
@@ -208,12 +220,14 @@ describe('ContextMixer', () => {
               function bar2() {}",
                   "endLine": 1,
                   "fileName": "bar.ts",
+                  "identifier": "jaccard-similarity",
                   "startLine": 0,
                 },
                 {
                   "content": "function foo3() {}",
                   "endLine": 10,
                   "fileName": "foo.ts",
+                  "identifier": "jaccard-similarity",
                   "startLine": 10,
                 },
               ]
@@ -260,12 +274,14 @@ describe('ContextMixer', () => {
                     createMockStrategy([
                         [
                             {
+                                identifier: 'jaccard-similarity',
                                 uri: testFileUri('foo.ts'),
                                 content: 'function foo1() {}',
                                 startLine: 0,
                                 endLine: 0,
                             },
                             {
+                                identifier: 'jaccard-similarity',
                                 uri: testFileUri('foo/bar.ts'),
                                 content: 'function bar1() {}',
                                 startLine: 0,
@@ -274,18 +290,21 @@ describe('ContextMixer', () => {
                         ],
                         [
                             {
+                                identifier: 'jaccard-similarity',
                                 uri: testFileUri('test/foo.ts'),
                                 content: 'function foo3() {}',
                                 startLine: 10,
                                 endLine: 10,
                             },
                             {
+                                identifier: 'jaccard-similarity',
                                 uri: testFileUri('foo.ts'),
                                 content: 'function foo1() {}\nfunction foo2() {}',
                                 startLine: 0,
                                 endLine: 1,
                             },
                             {
+                                identifier: 'jaccard-similarity',
                                 uri: testFileUri('example/bar.ts'),
                                 content: 'function bar1() {}\nfunction bar2() {}',
                                 startLine: 0,
@@ -322,12 +341,14 @@ describe('ContextMixer', () => {
                     createMockStrategy([
                         [
                             {
+                                identifier: 'jaccard-similarity',
                                 uri: testFileUri('foo.ts'),
                                 content: 'function foo1() {}',
                                 startLine: 0,
                                 endLine: 0,
                             },
                             {
+                                identifier: 'jaccard-similarity',
                                 uri: testFileUri('foo/bar.ts'),
                                 content: 'function bar1() {}',
                                 startLine: 0,
@@ -336,18 +357,21 @@ describe('ContextMixer', () => {
                         ],
                         [
                             {
+                                identifier: 'jaccard-similarity',
                                 uri: testFileUri('test/foo.ts'),
                                 content: 'function foo3() {}',
                                 startLine: 10,
                                 endLine: 10,
                             },
                             {
+                                identifier: 'jaccard-similarity',
                                 uri: testFileUri('foo.ts'),
                                 content: 'function foo1() {}\nfunction foo2() {}',
                                 startLine: 0,
                                 endLine: 1,
                             },
                             {
+                                identifier: 'jaccard-similarity',
                                 uri: testFileUri('example/bar.ts'),
                                 content: 'function bar1() {}\nfunction bar2() {}',
                                 startLine: 0,

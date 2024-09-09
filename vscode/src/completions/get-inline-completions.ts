@@ -526,7 +526,7 @@ async function doGetInlineCompletions(
         requestParams,
         isDotComUser,
         stale,
-        context: contextResult?.context ?? [],
+        rankedContextCandidates: contextResult?.rankedContextCandidates ?? [],
     })
 }
 
@@ -537,7 +537,7 @@ interface ProcessRequestManagerResultParams {
     requestParams: RequestParams
     isDotComUser: boolean
     stale: boolean | undefined
-    context?: AutocompleteContextSnippet[]
+    rankedContextCandidates?: AutocompleteContextSnippet[]
 }
 
 function processRequestManagerResult(
@@ -549,7 +549,7 @@ function processRequestManagerResult(
         requestParams,
         isDotComUser,
         stale,
-        context,
+        rankedContextCandidates,
     } = params
 
     let { logId } = params
@@ -563,7 +563,7 @@ function processRequestManagerResult(
     }
 
     const inlineContextParams = {
-        context: context ?? [],
+        context: rankedContextCandidates ?? [],
         filePath: gitIdentifiersForFile?.filePath,
         gitUrl: gitIdentifiersForFile?.gitUrl,
         commit: gitIdentifiersForFile?.commit,

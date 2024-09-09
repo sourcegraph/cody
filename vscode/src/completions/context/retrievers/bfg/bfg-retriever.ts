@@ -9,6 +9,7 @@ import { captureException } from '../../../../services/sentry/sentry'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
+import { RetrieverIdentifier } from '../../utils'
 import {
     getLastNGraphContextIdentifiersFromDocument,
     getLastNGraphContextIdentifiersFromString,
@@ -16,7 +17,7 @@ import {
 import { type SimpleRepository, inferGitRepository } from './simple-git'
 
 export class BfgRetriever implements ContextRetriever {
-    public identifier = 'bfg'
+    public identifier = RetrieverIdentifier.BfgRetriever
     private loadedBFG: Promise<MessageHandler>
     private bfgIndexingPromise = Promise.resolve<void>(undefined)
     private awaitIndexing: boolean
@@ -235,6 +236,7 @@ export class BfgRetriever implements ContextRetriever {
             // Convert BFG snippets to match the format expected on the client.
             const symbols = (response.symbols || []).map(contextSnippet => ({
                 ...contextSnippet,
+                identifier: RetrieverIdentifier.BfgRetriever,
                 uri: vscode.Uri.from({ scheme: 'file', path: contextSnippet.fileName }),
             })) satisfies Omit<AutocompleteContextSnippet, 'startLine' | 'endLine'>[]
 

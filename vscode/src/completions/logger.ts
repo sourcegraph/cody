@@ -65,6 +65,7 @@ export type CompletionItemID = string & { _opaque: typeof CompletionItemID }
 declare const CompletionItemID: unique symbol
 
 interface InlineCompletionItemRetrievedContext {
+    identifier: string
     content: string
     filePath: string
     startLine: number
@@ -738,6 +739,7 @@ export function loaded(params: LoadedParams): void {
             triggerLine: requestParams.position.line,
             triggerCharacter: requestParams.position.character,
             context: inlineContextParams.context.map(snippet => ({
+                identifier: snippet.identifier,
                 content: snippet.content,
                 startLine: snippet.startLine,
                 endLine: snippet.endLine,
@@ -1005,20 +1007,35 @@ export function flushActiveSuggestionRequests(isDotComUser: boolean): void {
 function getInlineContextItemToLog(
     inlineCompletionItemContext: InlineCompletionItemContext | undefined
 ): InlineCompletionItemContext | undefined {
-    if (inlineCompletionItemContext === undefined) {
+    if (!inlineCompletionItemContext) {
         return undefined
     }
-    const MAX_CONTEXT_ITEMS = 15
-    const MAX_CHARACTERS = 20_000
-    return {
-        ...inlineCompletionItemContext,
-        prefix: inlineCompletionItemContext.prefix?.slice(-MAX_CHARACTERS),
-        suffix: inlineCompletionItemContext.suffix?.slice(0, MAX_CHARACTERS),
-        context: inlineCompletionItemContext.context?.slice(0, MAX_CONTEXT_ITEMS).map(c => ({
-            ...c,
-            content: c.content.slice(0, MAX_CHARACTERS),
-        })),
+    const MAX_PAYLOAD_SIZE_BYTES = 1024 * 1024
+    let currentPayloadSizeBytes = 0
+    const result: Partial<InlineCompletionItemContext> = {}
+    function addToPayload(key: 'prefix' | 'suffix', value: string | undefined): void {
+        if (
+            value &&
+            currentPayloadSizeBytes + Buffer.byteLength(value, 'utf8') <= MAX_PAYLOAD_SIZE_BYTES
+        ) {
+            result[key] = value
+            currentPayloadSizeBytes += Buffer.byteLength(value, 'utf8')
+        }
     }
+    addToPayload('prefix', inlineCompletionItemContext.prefix)
+    addToPayload('suffix', inlineCompletionItemContext.suffix)
+    result.context = inlineCompletionItemContext.context?.filter(item => {
+        if (
+            currentPayloadSizeBytes + Buffer.byteLength(item.content, 'utf8') <=
+            MAX_PAYLOAD_SIZE_BYTES
+        ) {
+            currentPayloadSizeBytes += Buffer.byteLength(item.content, 'utf8')
+            return true
+        }
+        return false
+    })
+
+    return { ...inlineCompletionItemContext, ...result }
 }
 
 export function logSuggestionEvents(isDotComUser: boolean): void {
