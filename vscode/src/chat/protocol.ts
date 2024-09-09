@@ -165,9 +165,6 @@ export type WebviewMessage =
           query: MentionQuery
       }
     | {
-          command: 'reset'
-      }
-    | {
           command: 'attribution-search'
           snippet: string
       }
@@ -175,6 +172,7 @@ export type WebviewMessage =
           command: 'troubleshoot/reloadAuth'
       }
     | { command: 'rpc/request'; message: RequestMessage }
+    | { command: 'chatSession'; action: 'duplicate' | 'new'; sessionID?: string | undefined | null }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID

@@ -73,13 +73,13 @@ export const ContextFocusActions: FunctionComponent<{
                         : null,
                     longResponseTime
                         ? {
-                              // TODO: Question: use 'Try again with a different model' instead?
-                              label: 'Start a new chat',
-                              tooltip: 'New Chat',
+                              label: 'Try again with a different model',
+                              tooltip:
+                                  'A new window will open with a copy of the current conversation where you can resubmit your request with a different model',
                               onClick: () => {
                                   getVSCodeAPI().postMessage({
-                                      command: 'command',
-                                      id: 'cody.chat.newEditorPanel',
+                                      command: 'chatSession',
+                                      action: 'duplicate',
                                   })
                               },
                           }
