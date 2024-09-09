@@ -382,9 +382,6 @@ export class TestClient extends MessageHandler {
             this.webviewMessages.push(params)
             this.webviewMessagesEmitter.fire(params)
         })
-        this.registerNotification('remoteRepo/didChange', () => {
-            // Do nothing
-        })
     }
 
     private async editDocument(params: TextDocumentEditParams): Promise<ProtocolTextDocumentWithUri> {

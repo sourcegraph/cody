@@ -73,7 +73,6 @@ import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
 import { getConfigWithEndpoint } from '../../configuration'
-import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
@@ -145,8 +144,7 @@ export interface ChatSession {
 export class AuthDependentRetrievers {
     constructor(
         private _localEmbeddings: LocalEmbeddingsController | null,
-        private _symf: SymfRunner | null,
-        private _enterpriseContext: EnterpriseContextFactory | null
+        private _symf: SymfRunner | null
     ) {}
 
     private isCodyWeb(): boolean {
@@ -157,7 +155,7 @@ export class AuthDependentRetrievers {
         return isDotCom(authProvider.instance!.status)
     }
 
-    private allowRemoteContext(): boolean {
+    public get allowRemoteContext(): boolean {
         return this.isCodyWeb() || !this.isConsumer()
     }
 
@@ -167,10 +165,6 @@ export class AuthDependentRetrievers {
 
     get symf(): SymfRunner | null {
         return this.isConsumer() ? this._symf : null
-    }
-
-    get enterpriseContext(): EnterpriseContextFactory | null {
-        return this.allowRemoteContext() ? this._enterpriseContext : null
     }
 }
 
@@ -267,7 +261,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.disposables.push(
             startClientStateBroadcaster({
-                useRemoteSearch: this.retrievers.enterpriseContext !== null,
+                useRemoteSearch: this.retrievers.allowRemoteContext,
                 postMessage: (message: ExtensionMessage) => this.postMessage(message),
                 chatModel: this.chatModel,
             })
@@ -383,13 +377,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'newFile':
                 await handleCodeFromSaveToNewFile(message.text, this.editor)
                 break
-            case 'context/get-remote-search-repos': {
-                await this.postMessage({
-                    type: 'context/remote-repos',
-                    repos: this.chatModel.getSelectedRepos() ?? [],
-                })
-                break
-            }
             case 'embeddings/index':
                 void this.retrievers.localEmbeddings?.index()
                 break
@@ -688,7 +675,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // mention and a mention of the current selection to match the old behavior.
                 if (legacyAddEnhancedContext) {
                     const corpusMentions = await getCorpusContextItemsForEditorState(
-                        this.retrievers.enterpriseContext !== null
+                        this.retrievers.allowRemoteContext
                     )
                     mentions = mentions.concat(corpusMentions)
 

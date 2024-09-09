@@ -55,7 +55,6 @@ import { createInlineCompletionItemFromMultipleProviders } from './completions/c
 import { defaultCodeCompletionsClient } from './completions/default-client'
 import { getFullConfig } from './configuration'
 import { BaseConfigWatcher } from './configwatcher'
-import { EnterpriseContextFactory } from './context/enterprise-context-factory'
 import { exposeOpenCtxClient } from './context/openctx'
 import { EditManager } from './edit/manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
@@ -205,19 +204,6 @@ const register = async (
         disposables.push(symfRunner)
     }
 
-    // Initialize enterprise context
-    const enterpriseContextFactory = new EnterpriseContextFactory(completionsClient)
-    disposables.push(enterpriseContextFactory)
-    disposables.push(
-        subscriptionDisposable(
-            configWatcher.changes.subscribe({
-                next: () => {
-                    enterpriseContextFactory.clientConfigurationDidChange()
-                },
-            })
-        )
-    )
-
     const editor = new VSCodeEditor()
     const contextRetriever = new ContextRetriever(editor, symfRunner, localEmbeddings, completionsClient)
 
@@ -228,7 +214,6 @@ const register = async (
             chatClient,
             guardrails,
             editor,
-            enterpriseContextFactory,
             localEmbeddings,
             symfRunner,
             contextAPIClient,
@@ -277,14 +262,12 @@ const register = async (
     // extension timeout during activation.
     void showSetupNotification(configWatcher.get())
 
-    const [extensionClientDispose] = await Promise.all([
-        platform.extensionClient.provide({ enterpriseContextFactory }),
+    await Promise.all([
         autocompleteSetup,
         openCtxSetup,
         tutorialSetup,
         registerMinion(context, configWatcher, symfRunner, disposables),
     ])
-    disposables.push(extensionClientDispose)
 
     return vscode.Disposable.from(...disposables)
 }
@@ -723,7 +706,6 @@ interface RegisterChatOptions {
     chatClient: ChatClient
     guardrails: Guardrails
     editor: VSCodeEditor
-    enterpriseContextFactory: EnterpriseContextFactory
     localEmbeddings?: LocalEmbeddingsController
     symfRunner?: SymfRunner
     contextAPIClient?: ContextAPIClient
@@ -738,7 +720,6 @@ function registerChat(
         chatClient,
         guardrails,
         editor,
-        enterpriseContextFactory,
         localEmbeddings,
         symfRunner,
         contextAPIClient,
@@ -762,7 +743,6 @@ function registerChat(
             startTokenReceiver: platform.startTokenReceiver,
         },
         chatClient,
-        enterpriseContextFactory,
         localEmbeddings || null,
         symfRunner || null,
         contextRetriever,
