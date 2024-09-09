@@ -8,6 +8,8 @@ test.describe('Demonstrations', () => {
     })
     test('Show off v2 features', async ({ page, mitmProxy, vscodeUI, polly, workspaceDir }) => {
         const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
+        const cody = uix.cody.Extension.with({ page, workspaceDir })
+
         polly.server.host(mitmProxy.sourcegraph.dotcom.proxyTarget, () => {
             polly.server
                 .post('/.api/graphql')
@@ -23,7 +25,7 @@ test.describe('Demonstrations', () => {
         )
 
         await session.start()
-        await uix.cody.waitForStartup({ page })
+        await cody.waitUntilReady()
 
         await session.runCommand('workbench.action.closeAllEditors')
         await session.runCommand('workbench.explorer.fileView.focus')

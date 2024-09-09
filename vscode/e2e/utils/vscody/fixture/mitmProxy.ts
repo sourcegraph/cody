@@ -84,7 +84,7 @@ export const mitmProxyFixture = _test.extend<TestContext, WorkerContext>({
                         set authName(value: MitMProxy['sourcegraph']['dotcom']['authName']) {
                             state.authName.dotcom = value
                         },
-                        endpoint: `http://127.0.0.1:${sgEnterprisePort}`,
+                        endpoint: `http://127.0.0.1:${sgDotComPort}`,
                         get proxyTarget() {
                             return TESTING_CREDENTIALS[state.authName.dotcom].serverEndpoint
                         },
@@ -96,7 +96,7 @@ export const mitmProxyFixture = _test.extend<TestContext, WorkerContext>({
                         set authName(value: MitMProxy['sourcegraph']['enterprise']['authName']) {
                             state.authName.enterprise = value
                         },
-                        endpoint: `http://127.0.0.1:${sgDotComPort}`,
+                        endpoint: `http://127.0.0.1:${sgEnterprisePort}`,
                         get proxyTarget() {
                             return TESTING_CREDENTIALS[state.authName.enterprise].serverEndpoint
                         },

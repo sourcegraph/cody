@@ -1,6 +1,8 @@
 import { expect } from '@playwright/test'
 import { stretchTimeout } from '../utils/helpers'
 import { fixture as test, uix } from '../utils/vscody'
+import { MITM_AUTH_TOKEN_PLACEHOLDER } from '../utils/vscody/constants'
+import { modifySettings } from '../utils/vscody/uix/workspace'
 
 test.use({
     templateWorkspaceDir: 'test/fixtures/workspace',
@@ -9,12 +11,21 @@ test.use({
 const DEFAULT_EDIT_MODEL = 'Claude 3.5 Sonnet'
 
 test.describe('edit command', {}, () => {
-    test('can be started from sidebar', async ({ workspaceDir, page, vscodeUI }) => {
+    test('can be started from sidebar', async ({ workspaceDir, page, vscodeUI, mitmProxy }) => {
         const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
+        const cody = uix.cody.Extension.with({ page, workspaceDir })
+
         await test.step('setup', async () => {
-            await uix.cody.preAuthenticate({ workspaceDir })
+            await modifySettings(
+                s => ({
+                    ...s,
+                    'cody.accessToken': MITM_AUTH_TOKEN_PLACEHOLDER,
+                    'cody.serverEndpoint': mitmProxy.sourcegraph.dotcom.endpoint,
+                }),
+                { workspaceDir }
+            )
             await session.start()
-            await uix.cody.waitForStartup({ page })
+            await cody.waitUntilReady()
             await session.editor.openFile({ workspaceFile: 'type.ts', selection: { line: 2, col: 9 } })
         })
 
@@ -39,10 +50,18 @@ test.describe('edit command', {}, () => {
 
     test('can be rejected', async ({ workspaceDir, page, vscodeUI, mitmProxy }, testInfo) => {
         const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
+        const cody = uix.cody.Extension.with({ page, workspaceDir })
         await test.step('setup', async () => {
-            await uix.cody.preAuthenticate({ workspaceDir })
+            await modifySettings(
+                s => ({
+                    ...s,
+                    'cody.accessToken': MITM_AUTH_TOKEN_PLACEHOLDER,
+                    'cody.serverEndpoint': mitmProxy.sourcegraph.dotcom.endpoint,
+                }),
+                { workspaceDir }
+            )
             await session.start()
-            await uix.cody.waitForStartup({ page })
+            await cody.waitUntilReady()
             await session.editor.openFile({ workspaceFile: 'type.ts', selection: { line: 2, col: 9 } })
         })
 
@@ -85,10 +104,18 @@ test.describe('edit command', {}, () => {
 
     test('can be accepted', async ({ workspaceDir, page, vscodeUI, mitmProxy }, testInfo) => {
         const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
+        const cody = uix.cody.Extension.with({ page, workspaceDir })
         await test.step('setup', async () => {
-            await uix.cody.preAuthenticate({ workspaceDir })
+            await modifySettings(
+                s => ({
+                    ...s,
+                    'cody.accessToken': MITM_AUTH_TOKEN_PLACEHOLDER,
+                    'cody.serverEndpoint': mitmProxy.sourcegraph.dotcom.endpoint,
+                }),
+                { workspaceDir }
+            )
             await session.start()
-            await uix.cody.waitForStartup({ page })
+            await cody.waitUntilReady()
             await session.editor.openFile({ workspaceFile: 'type.ts', selection: { line: 2, col: 9 } })
         })
 
@@ -129,10 +156,19 @@ test.describe('edit command', {}, () => {
 
     test('can change edit ranges', async ({ workspaceDir, page, vscodeUI, mitmProxy }, testInfo) => {
         const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
+        const cody = uix.cody.Extension.with({ page, workspaceDir })
+
         await test.step('setup', async () => {
-            await uix.cody.preAuthenticate({ workspaceDir })
+            await modifySettings(
+                s => ({
+                    ...s,
+                    'cody.accessToken': MITM_AUTH_TOKEN_PLACEHOLDER,
+                    'cody.serverEndpoint': mitmProxy.sourcegraph.dotcom.endpoint,
+                }),
+                { workspaceDir }
+            )
             await session.start()
-            await uix.cody.waitForStartup({ page })
+            await cody.waitUntilReady()
             await session.editor.openFile({
                 workspaceFile: 'type.ts',
                 selection: { start: { line: 2 }, end: { line: 3 } },
@@ -178,12 +214,20 @@ test.describe('edit command', {}, () => {
         })
     })
 
-    test('can switch models', async ({ workspaceDir, page, vscodeUI }) => {
+    test('can switch models', async ({ workspaceDir, page, vscodeUI, mitmProxy }) => {
         const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
+        const cody = uix.cody.Extension.with({ page, workspaceDir })
         await test.step('setup', async () => {
-            await uix.cody.preAuthenticate({ workspaceDir })
+            await modifySettings(
+                s => ({
+                    ...s,
+                    'cody.accessToken': MITM_AUTH_TOKEN_PLACEHOLDER,
+                    'cody.serverEndpoint': mitmProxy.sourcegraph.dotcom.endpoint,
+                }),
+                { workspaceDir }
+            )
             await session.start()
-            await uix.cody.waitForStartup({ page })
+            await cody.waitUntilReady()
             await session.editor.openFile({
                 workspaceFile: 'type.ts',
                 selection: { line: 2, col: 9 },
