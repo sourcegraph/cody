@@ -796,11 +796,11 @@ export type SuggestionMarkReadParam = {
 //
 // For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
 // suggested completion count as soon as we count it as such.
-export function prepareSuggestionEvent(
-    id: CompletionLogID,
-    span: Span | undefined,
-    shouldSample?: boolean
-): {
+export function prepareSuggestionEvent({
+    id,
+    span,
+    shouldSample,
+}: { id: CompletionLogID; span?: Span; shouldSample?: boolean }): {
     getEvent: () => CompletionBookkeepingEvent | undefined
     markAsRead: (param: SuggestionMarkReadParam) => void
 } | null {

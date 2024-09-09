@@ -116,17 +116,22 @@ describe('FeatureFlagProvider', () => {
     })
 
     describe('evaluatedFeatureFlag', () => {
-        async function testEvaluatedFeatureFlag(
+        async function testEvaluatedFeatureFlag({
+            apiClient,
+            expectInitialValues,
+            update,
+            expectFinalValues,
+        }: {
             apiClient: Pick<
                 SourcegraphGraphQLAPIClient,
                 'getEvaluatedFeatureFlags' | 'evaluateFeatureFlag'
-            >,
-            expectInitialValues: (boolean | undefined)[],
+            >
+            expectInitialValues: (boolean | undefined)[]
             update?: (
                 mockAPIClient: { [K in keyof typeof apiClient]: ReturnType<typeof vitest.fn> }
-            ) => void,
+            ) => void
             expectFinalValues?: (boolean | undefined)[]
-        ): Promise<void> {
+        }): Promise<void> {
             vitest.useFakeTimers()
             const provider = new FeatureFlagProvider({
                 ...apiClient,
@@ -163,69 +168,71 @@ describe('FeatureFlagProvider', () => {
         it('should emit when a new flag is evaluated', { timeout: 1000 }, () =>
             testEvaluatedFeatureFlag(
                 {
-                    getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({}),
-                    evaluateFeatureFlag: vitest.fn().mockResolvedValue(false),
-                },
-                [undefined, false]
+                    apiClient: {
+                        getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({}),
+                        evaluateFeatureFlag: vitest.fn().mockResolvedValue(false),
+                    },
+                    expectInitialValues: [undefined, false],
+                }
             )
         )
 
         it('should emit when value changes from true to false', { timeout: 1000 }, () =>
-            testEvaluatedFeatureFlag(
-                {
+            testEvaluatedFeatureFlag({
+                apiClient: {
                     getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({
                         [FeatureFlag.TestFlagDoNotUse]: true,
                     }),
                     evaluateFeatureFlag: vitest.fn().mockResolvedValue(true),
                 },
-                [true],
-                apiClient => {
+                expectInitialValues: [true],
+                update: apiClient => {
                     apiClient.getEvaluatedFeatureFlags.mockResolvedValue({
                         [FeatureFlag.TestFlagDoNotUse]: false,
                     })
                     apiClient.evaluateFeatureFlag.mockResolvedValue(false)
                 },
-                [false]
-            )
+                expectFinalValues: [false],
+            })
         )
 
         it('should emit when value changes from false to true', { timeout: 1000 }, () =>
-            testEvaluatedFeatureFlag(
-                {
+            testEvaluatedFeatureFlag({
+                apiClient: {
                     getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({
                         [FeatureFlag.TestFlagDoNotUse]: false,
                     }),
                     evaluateFeatureFlag: vitest.fn().mockResolvedValue(false),
                 },
-                [false],
-                apiClient => {
+                expectInitialValues: [false],
+                update: apiClient => {
                     apiClient.getEvaluatedFeatureFlags.mockResolvedValue({
                         [FeatureFlag.TestFlagDoNotUse]: true,
                     })
                     apiClient.evaluateFeatureFlag.mockResolvedValue(true)
                 },
-                [true]
-            )
+                expectFinalValues: [true],
+            })
         )
 
         it(
             'should emit undefined when a previously false flag is no longer in the exposed list',
             { timeout: 1000 },
             () =>
-                testEvaluatedFeatureFlag(
-                    {
+                testEvaluatedFeatureFlag({
+                    apiClient: {
                         getEvaluatedFeatureFlags: vitest.fn().mockResolvedValue({
                             [FeatureFlag.TestFlagDoNotUse]: false,
                         }),
                         evaluateFeatureFlag: vitest.fn().mockResolvedValue(false),
                     },
-                    [false],
-                    apiClient => {
+                    expectInitialValues: [false],
+                    update: apiClient => {
                         apiClient.getEvaluatedFeatureFlags.mockResolvedValue({})
                         apiClient.evaluateFeatureFlag.mockResolvedValue(null)
                     },
-                    [undefined]
-                )
+                    expectFinalValues: [undefined],
+                })
         )
     })
 })

@@ -752,11 +752,11 @@ export class InlineCompletionItemProvider
      * Will confirm that the completion is _still_ visible before firing the event.
      */
     public markCompletionAsSuggestedAfterDelay(completion: AutocompleteItem): void {
-        const suggestionEvent = CompletionLogger.prepareSuggestionEvent(
-            completion.logId,
-            completion.span,
-            this.shouldSample
-        )
+        const suggestionEvent = CompletionLogger.prepareSuggestionEvent({
+            id: completion.logId,
+            span: completion.span,
+            shouldSample: this.shouldSample,
+        })
         if (!suggestionEvent) {
             return
         }
