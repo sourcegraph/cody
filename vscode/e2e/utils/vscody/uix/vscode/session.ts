@@ -4,7 +4,7 @@ import type path from 'node:path'
 import { test } from '@playwright/test'
 import type * as vscode from 'vscode'
 import type { UIXContextFnContext } from '..'
-import { Editor, QuickPick, Sidebar, start } from './internal'
+import { Editor, Notifications, QuickPick, Sidebar, start } from './internal'
 
 export class Session {
     private started = false
@@ -114,6 +114,15 @@ export class Session {
             writable: false,
         })
         return this.Sidebar
+    }
+
+    get Notifications(): Notifications {
+        //memoization
+        Object.defineProperty(this, 'Notifications', {
+            value: Notifications.for(this),
+            writable: false,
+        })
+        return this.Notifications
     }
 
     get editor() {

@@ -60,7 +60,10 @@ interface StatusBarItem extends vscode.QuickPickItem {
 const STATUS_BAR_INTERACTION_COMMAND = 'cody.status-bar.interacted'
 
 export function createStatusBar(): CodyStatusBar {
-    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
+    const statusBarItem = vscode.window.createStatusBarItem(
+        'extension-status',
+        vscode.StatusBarAlignment.Right
+    )
     statusBarItem.text = DEFAULT_TEXT
     statusBarItem.tooltip = DEFAULT_TOOLTIP
     statusBarItem.command = STATUS_BAR_INTERACTION_COMMAND

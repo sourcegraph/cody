@@ -165,15 +165,17 @@ async function testUtilsInitScript() {
         //@ts-ignore
         window.__testUtils = {
             cody: {
-                getGlobalState: async () => {
-                    return JSON.parse(
-                        //@ts-ignore
-                        await window.__testUtils.vscode.indexDB.get(
-                            'vscode-web-state-db-global',
-                            'ItemTable',
-                            'sourcegraph.cody-ai'
+                globalState: {
+                    get: async () => {
+                        return JSON.parse(
+                            //@ts-ignore
+                            await window.__testUtils.vscode.indexDB.get(
+                                'vscode-web-state-db-global',
+                                'ItemTable',
+                                'sourcegraph.cody-ai'
+                            )
                         )
-                    )
+                    },
                 },
             },
             vscode: {
