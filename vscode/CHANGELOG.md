@@ -6,6 +6,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Chat: The new `Gemini 1.5 Pro Latest` and `Gemini 1.5 Flash Latest` models are now available for Cody Pro users. [pull/5508](https://github.com/sourcegraph/cody/pull/5508)
+
 ### Fixed
 
 ### Changed
