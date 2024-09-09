@@ -56,12 +56,20 @@ export function getMentionMenuData(
                     source: atMentionSourceTelemetryMetadataMapping[source],
                 },
                 privateMetadata: { source },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'core',
+                },
             })
         },
         withProvider: (provider, providerMetadata) => {
             telemetryRecorder.recordEvent(`cody.at-mention.${provider}`, 'executed', {
                 metadata: { source: atMentionSourceTelemetryMetadataMapping[source] },
                 privateMetadata: { source, providerMetadata },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'core',
+                },
             })
         },
     }

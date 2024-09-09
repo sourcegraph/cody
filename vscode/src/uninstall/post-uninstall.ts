@@ -30,7 +30,12 @@ async function main() {
                 'connected-instance-only'
             )
             const recorder = provider.getRecorder()
-            recorder.recordEvent('cody.extension', 'uninstalled')
+            recorder.recordEvent('cody.extension', 'uninstalled', {
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
 
             // cleanup the uninstaller config
             deleteUninstallerDirectory()

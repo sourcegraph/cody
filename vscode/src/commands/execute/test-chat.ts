@@ -86,6 +86,10 @@ export async function executeTestChatCommand(
                 source: args?.source,
                 traceId: span.spanContext().traceId,
             },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
+            },
         })
 
         return {

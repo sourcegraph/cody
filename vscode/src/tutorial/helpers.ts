@@ -26,7 +26,12 @@ export const isInTutorial = (document: vscode.TextDocument): boolean => {
 // and then trigger the tutorial.
 // This will either noop or open the tutorial depending on the feature flag.
 export const maybeStartInteractiveTutorial = async () => {
-    telemetryRecorder.recordEvent('cody.interactiveTutorial', 'attemptingStart')
+    telemetryRecorder.recordEvent('cody.interactiveTutorial', 'attemptingStart', {
+        billingMetadata: {
+            product: 'cody',
+            category: 'billable',
+        },
+    })
     await featureFlagProvider.instance!.refresh()
     const enabled = await featureFlagProvider.instance!.evaluateFeatureFlag(
         FeatureFlag.CodyInteractiveTutorial

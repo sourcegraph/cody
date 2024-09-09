@@ -28,6 +28,10 @@ export const ContextFocusActions: FunctionComponent<{
                     rerunWithInitialContextRepositories: rerunWith.repositories ? 1 : 0,
                     rerunWithInitialContextFiles: rerunWith.files ? 1 : 0,
                 },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
             })
         },
         [telemetryRecorder, initialContextEventMetadata]
@@ -71,6 +75,10 @@ export const ContextFocusActions: FunctionComponent<{
                         onClick: () => {
                             telemetryRecorder.recordEvent('cody.contextSelection', 'addFile', {
                                 metadata: initialContextEventMetadata,
+                                billingMetadata: {
+                                    product: 'cody',
+                                    category: 'core',
+                                },
                             })
                             humanMessage.appendAtMention()
                         },

@@ -101,6 +101,10 @@ export function createStatusBar(): CodyStatusBar {
     const command = vscode.commands.registerCommand(STATUS_BAR_INTERACTION_COMMAND, async () => {
         telemetryRecorder.recordEvent('cody.statusbarIcon', 'clicked', {
             privateMetadata: { loggedIn: Boolean(authStatus?.authenticated) },
+            billingMetadata: {
+                category: 'billable',
+                product: 'cody',
+            },
         })
 
         if (!authStatus?.authenticated) {

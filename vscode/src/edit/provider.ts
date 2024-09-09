@@ -228,6 +228,10 @@ export class EditProvider {
                     // the condition below is an aditional safegaurd measure
                     responseText: endpoint && isDotCom(endpoint) ? response : undefined,
                 },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
             })
         }
 

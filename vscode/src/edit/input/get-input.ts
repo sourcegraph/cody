@@ -188,7 +188,12 @@ export const getInput = async (
                 if (!acceptedItem) {
                     return
                 }
-                telemetryRecorder.recordEvent('cody.fixup.input.model', 'selected')
+                telemetryRecorder.recordEvent('cody.fixup.input.model', 'selected', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'billable',
+                    },
+                })
 
                 if (acceptedItem.codyProOnly && !isCodyPro) {
                     const option = await vscode.window.showInformationMessage(
@@ -238,7 +243,12 @@ export const getInput = async (
                 if (!acceptedItem) {
                     return
                 }
-                telemetryRecorder.recordEvent('cody.fixup.input.rangeSymbol', 'selected')
+                telemetryRecorder.recordEvent('cody.fixup.input.rangeSymbol', 'selected', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'billable',
+                    },
+                })
 
                 activeRangeItem = acceptedItem
                 const range =
@@ -282,7 +292,12 @@ export const getInput = async (
                     return
                 }
 
-                telemetryRecorder.recordEvent('cody.fixup.input.range', 'selected')
+                telemetryRecorder.recordEvent('cody.fixup.input.range', 'selected', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'billable',
+                    },
+                })
 
                 activeRangeItem = acceptedItem
                 const range =

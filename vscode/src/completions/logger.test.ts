@@ -83,6 +83,7 @@ describe('logger', () => {
             interactionID: expect.any(String),
             metadata: expect.anything(),
             privateMetadata: expect.anything(),
+            billingMetadata: expect.anything(),
         })
 
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'accepted', {
@@ -90,6 +91,7 @@ describe('logger', () => {
             interactionID: expect.any(String),
             metadata: expect.anything(),
             privateMetadata: expect.anything(),
+            billingMetadata: expect.anything(),
         })
     })
 

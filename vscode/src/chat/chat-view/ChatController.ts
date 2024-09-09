@@ -440,6 +440,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                     metadata: {
                                         success: authStatus?.authenticated ? 1 : 0,
                                     },
+                                    billingMetadata: {
+                                        product: 'cody',
+                                        category: 'billable',
+                                    },
                                 }
                             )
                             if (!authStatus?.authenticated) {
@@ -781,6 +785,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 promptText:
                     isDotCom(authStatus) && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
             },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
+            },
         })
     }
 
@@ -902,7 +910,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     ): Promise<void> {
         const abortSignal = this.startNewSubmitOrEditOperation()
 
-        telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
+        telemetryRecorder.recordEvent('cody.editChatButton', 'clicked', {
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
+            },
+        })
 
         try {
             const humanMessage = index ?? this.chatModel.getLastSpeakerMessageIndex('human')
@@ -929,7 +942,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.cancelSubmitOrEditOperation()
         // Notify the webview there is no message in progress.
         this.postViewTranscript()
-        telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
+        telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked', {
+            billingMetadata: {
+                category: 'billable',
+                product: 'cody',
+            },
+        })
     }
 
     public async handleGetUserEditorContext(uri?: URI): Promise<void> {
@@ -1282,6 +1300,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     isDotCom(authStatus) && truncatePromptString(messageText, CHAT_OUTPUT_TOKEN_BUDGET),
                 chatModel: this.chatModel.modelID,
             },
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
+            },
         })
     }
 
@@ -1592,6 +1614,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 promptText:
                     isDotCom(authStatus) && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
                 gitMetadata,
+            },
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
             },
         })
     }

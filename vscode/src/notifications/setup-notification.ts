@@ -44,7 +44,12 @@ export const showSetupNotification = async (
                 label: 'Do not show again',
                 onClick: async () => {
                     localStorage.set('notification.setupDismissed', 'true')
-                    telemetryRecorder.recordEvent('cody.signInNotification.doNotShow', 'clicked')
+                    telemetryRecorder.recordEvent('cody.signInNotification.doNotShow', 'clicked', {
+                        billingMetadata: {
+                            category: 'billable',
+                            product: 'cody',
+                        },
+                    })
                 },
             },
         ],
