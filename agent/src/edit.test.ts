@@ -1,12 +1,7 @@
 import path from 'node:path'
-import {
-    contextFiltersProvider,
-    getDotComDefaultModels,
-    modelsService,
-    ps,
-} from '@sourcegraph/cody-shared'
+import { getDotComDefaultModels, modelsService, ps } from '@sourcegraph/cody-shared'
 import { afterAll, beforeAll } from 'vitest'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 import { executeSmartApply } from '../../vscode/src/edit/smart-apply'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
@@ -29,10 +24,6 @@ describe('Edit', () => {
         await workspace.beforeAll()
         await client.beforeAll()
         await client.request('command/execute', { command: 'cody.search.index-update' })
-    })
-
-    beforeEach(() => {
-        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
     })
 
     afterAll(async () => {
