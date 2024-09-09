@@ -1,10 +1,10 @@
 import {
-    type AuthenticatedAuthStatus,
+    AUTH_STATUS_FIXTURE_AUTHED,
     type ClientConfiguration,
-    DOTCOM_URL,
     type GraphQLAPIClientConfig,
     contextFiltersProvider,
     graphqlClient,
+    nextTick,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { type MockInstance, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -37,18 +37,6 @@ vi.mock('vscode', () => ({
 const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     selectedCompletionInfo: undefined,
     triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
-}
-
-const DUMMY_AUTH_STATUS: AuthenticatedAuthStatus = {
-    endpoint: DOTCOM_URL.toString(),
-    isFireworksTracingEnabled: false,
-    authenticated: true,
-    hasVerifiedEmail: true,
-    requiresVerifiedEmail: true,
-    siteVersion: '1234',
-    username: 'uwu',
-    userCanUpgrade: false,
-    codyApiVersion: 0,
 }
 
 graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
@@ -135,10 +123,10 @@ function getInlineCompletionProvider(
         completeSuggestWidgetSelection: true,
         statusBar: { addError: () => {}, hasError: () => {}, startLoading: () => {} } as any,
         provider: createProvider({
-            authStatus: DUMMY_AUTH_STATUS,
+            authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         } as any),
         config: {} as any,
-        authStatus: DUMMY_AUTH_STATUS,
+        authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         firstCompletionTimeout:
             args?.firstCompletionTimeout ?? DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
         ...args,
@@ -155,7 +143,7 @@ function createNetworkProvider(params: RequestParams): MockRequestProvider {
         firstCompletionTimeout: 1500,
         triggerKind: TriggerKind.Automatic,
         completionLogId: 'mock-log-id' as CompletionLogger.CompletionLogID,
-        authStatus: DUMMY_AUTH_STATUS,
+        authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         config: {} as any,
     }
 
@@ -400,6 +388,10 @@ describe('InlineCompletionItemProvider preloading', () => {
 
     const onDidChangeTextEditorSelection = vi.spyOn(vsCodeMocks.window, 'onDidChangeTextEditorSelection')
 
+    beforeEach(() => {
+        onDidChangeTextEditorSelection.mockClear()
+    })
+
     beforeAll(async () => {
         vi.useFakeTimers()
 
@@ -418,9 +410,11 @@ describe('InlineCompletionItemProvider preloading', () => {
 
         const { document, position } = autocompleteParams
         const provider = getInlineCompletionProvider(autocompleteParams)
+        await vi.runOnlyPendingTimersAsync()
         const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
+        await nextTick()
 
-        const [handler] = onDidChangeTextEditorSelection.mock.lastCall as any
+        const [handler] = onDidChangeTextEditorSelection.mock.calls[0] as any
 
         // Simulate a cursor movement event
         await handler({
@@ -450,6 +444,7 @@ describe('InlineCompletionItemProvider preloading', () => {
 
         const { document, position } = autocompleteParams
         const provider = getInlineCompletionProvider(autocompleteParams)
+        await vi.runOnlyPendingTimersAsync()
         const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
         const [handler] = onDidChangeTextEditorSelection.mock.lastCall as any
 
@@ -472,8 +467,9 @@ describe('InlineCompletionItemProvider preloading', () => {
 
         const { document, position } = autocompleteParams
         const provider = getInlineCompletionProvider(autocompleteParams)
+        await vi.runOnlyPendingTimersAsync()
         const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
-        const [handler] = onDidChangeTextEditorSelection.mock.lastCall as any
+        const [handler] = onDidChangeTextEditorSelection.mock.calls[0] as any
 
         await handler({
             textEditor: { document },
@@ -497,6 +493,7 @@ describe('InlineCompletionItemProvider preloading', () => {
 
         const { document, position } = autocompleteParams
         const provider = getInlineCompletionProvider(autocompleteParams)
+        await vi.runOnlyPendingTimersAsync()
         const provideCompletionSpy = vi.spyOn(provider, 'provideInlineCompletionItems')
         const [handler] = onDidChangeTextEditorSelection.mock.lastCall as any
 

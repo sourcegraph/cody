@@ -4,7 +4,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
-import type { Requests } from './protocol-alias'
 
 const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
 
@@ -64,50 +63,6 @@ describe('Enterprise', () => {
             `
         )
     }, 20_000)
-
-    it('remoteRepo/list', async () => {
-        // List a repo without a query
-        let repos: Requests['remoteRepo/list'][1]
-        do {
-            repos = await demoEnterpriseClient.request('remoteRepo/list', {
-                query: undefined,
-                first: 10,
-            })
-        } while (repos.state.state === 'fetching')
-        expect(repos.repos).toHaveLength(10)
-
-        // Make a paginated query.
-        const secondLastRepo = repos.repos.at(-2)
-        const moreRepos = await demoEnterpriseClient.request('remoteRepo/list', {
-            query: undefined,
-            first: 2,
-            afterId: secondLastRepo?.id,
-        })
-        expect(moreRepos.repos[0].id).toBe(repos.repos.at(-1)?.id)
-
-        // Make a query.
-        const filteredRepos = await demoEnterpriseClient.request('remoteRepo/list', {
-            query: 'sourceco',
-            first: 1000,
-        })
-        expect(
-            filteredRepos.repos.find(repo => repo.name === 'github.com/sourcegraph/cody')
-        ).toBeDefined()
-    })
-
-    it('remoteRepo/has', async () => {
-        // Query a repo that does exist.
-        const codyRepoExists = await demoEnterpriseClient.request('remoteRepo/has', {
-            repoName: 'github.com/sourcegraph/cody',
-        })
-        expect(codyRepoExists.result).toBe(true)
-
-        // Query a repo that does not exist.
-        const codyForDos = await demoEnterpriseClient.request('remoteRepo/has', {
-            repoName: 'github.com/sourcegraph/cody-edlin',
-        })
-        expect(codyForDos.result).toBe(false)
-    })
 
     afterAll(async () => {
         const { requests } = await demoEnterpriseClient.request('testing/networkRequests', null)

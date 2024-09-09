@@ -30,8 +30,6 @@ interface CodyAgentServer {
   fun chat_export(params: Chat_ExportParams?): CompletableFuture<List<ChatExportResult>>
   @JsonRequest("chat/import")
   fun chat_import(params: Chat_ImportParams): CompletableFuture<Null?>
-  @JsonRequest("chat/remoteRepos")
-  fun chat_remoteRepos(params: Chat_RemoteReposParams): CompletableFuture<Chat_RemoteReposResult>
   @JsonRequest("chat/setModel")
   fun chat_setModel(params: Chat_SetModelParams): CompletableFuture<Null?>
   @JsonRequest("commands/explain")
@@ -136,10 +134,6 @@ interface CodyAgentServer {
   fun ignore_test(params: Ignore_TestParams): CompletableFuture<Ignore_TestResult>
   @JsonRequest("testing/ignore/overridePolicy")
   fun testing_ignore_overridePolicy(params: ContextFilters?): CompletableFuture<Null?>
-  @JsonRequest("remoteRepo/has")
-  fun remoteRepo_has(params: RemoteRepo_HasParams): CompletableFuture<RemoteRepo_HasResult>
-  @JsonRequest("remoteRepo/list")
-  fun remoteRepo_list(params: RemoteRepo_ListParams): CompletableFuture<RemoteRepo_ListResult>
 
   // =============
   // Notifications

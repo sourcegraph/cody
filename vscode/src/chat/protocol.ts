@@ -8,7 +8,6 @@ import type {
     ContextItem,
     ContextItemSource,
     MentionQuery,
-    Prompt,
     RangeData,
     RequestMessage,
     ResponseMessage,
@@ -22,7 +21,6 @@ import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import type { Uri } from 'vscode'
 import type { View } from '../../webviews/tabs/types'
-import type { Repo } from '../context/repo-fetcher'
 import type { FixupTaskID } from '../non-stop/FixupTask'
 import type { CodyTaskState } from '../non-stop/state'
 
@@ -122,7 +120,6 @@ export type WebviewMessage =
           range?: RangeData | undefined | null
       }
     | ({ command: 'edit' } & WebviewEditMessage)
-    | { command: 'context/get-remote-search-repos' }
     | { command: 'embeddings/index' }
     | { command: 'insert'; text: string }
     | { command: 'newFile'; text: string }
@@ -177,10 +174,6 @@ export type WebviewMessage =
     | {
           command: 'troubleshoot/reloadAuth'
       }
-    | {
-          command: 'queryPrompts'
-          query: string
-      }
     | { command: 'rpc/request'; message: RequestMessage }
 
 export interface SmartApplyResult {
@@ -225,12 +218,6 @@ export type ExtensionMessage =
           smartApplyResult?: SmartApplyResult | undefined | null
       }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
-    | { type: 'context/remote-repos'; repos: Repo[] }
-    | {
-          type: 'queryPrompts/response'
-          result?: Prompt[] | null | undefined
-          error?: string | null | undefined
-      }
     | { type: 'rpc/response'; message: ResponseMessage }
 
 interface ExtensionAttributionMessage {

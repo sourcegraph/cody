@@ -32,6 +32,10 @@ export async function executeExplainOutput(
                 source,
                 traceId: span.spanContext().traceId,
             },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
+            },
         })
 
         const promptArgs = PromptString.fromTerminalOutputArguments(args)

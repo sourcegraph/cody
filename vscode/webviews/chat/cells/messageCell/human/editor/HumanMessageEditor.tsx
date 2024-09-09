@@ -131,6 +131,10 @@ export const HumanMessageEditor: FunctionComponent<{
                 messageLength: value.text.length,
                 contextItems: value.contextItems.length,
             },
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
+            },
         })
     }, [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent])
 
@@ -223,6 +227,10 @@ export const HumanMessageEditor: FunctionComponent<{
                 isEdit: isSent ? 1 : 0,
                 messageLength: value.text.length,
                 contextItems: value.contextItems.length,
+            },
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
             },
         })
     }, [telemetryRecorder.recordEvent, isFirstMessage, isSent])

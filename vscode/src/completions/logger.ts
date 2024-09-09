@@ -6,7 +6,6 @@ import {
     type AutocompleteContextSnippet,
     type BillingCategory,
     type BillingProduct,
-    FeatureFlag,
     isDotCom,
     isNetworkError,
     telemetryRecorder,
@@ -32,7 +31,6 @@ import {
     autocompleteStageCounterLogger,
 } from '../services/autocomplete-stage-counter-logger'
 import { type CompletionIntent, CompletionIntentTelemetryMetadataMapping } from '../tree-sitter/queries'
-import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
 import {
     InlineCompletionsResultSource,
@@ -506,6 +504,16 @@ function writeCompletionEvent<SubFeature extends string, Action extends string, 
     if (subfeature) {
         telemetryRecorder.recordEvent(`cody.completion.${subfeature}`, action, params)
     } else {
+        // Add billing metadata to completion event params.
+        params = {
+            ...params,
+            billingMetadata: {
+                product: 'cody',
+                // Only acceptance events qualify as "core" usage.
+                category: action === 'partiallyAccepted' || action === 'accepted' ? 'core' : 'billable',
+            },
+        }
+
         telemetryRecorder.recordEvent('cody.completion', action, params)
     }
 }
@@ -798,10 +806,11 @@ export type SuggestionMarkReadParam = {
 //
 // For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
 // suggested completion count as soon as we count it as such.
-export function prepareSuggestionEvent(
-    id: CompletionLogID,
-    span?: Span
-): {
+export function prepareSuggestionEvent({
+    id,
+    span,
+    shouldSample,
+}: { id: CompletionLogID; span?: Span; shouldSample?: boolean }): {
     getEvent: () => CompletionBookkeepingEvent | undefined
     markAsRead: (param: SuggestionMarkReadParam) => void
 } | null {
@@ -822,10 +831,6 @@ export function prepareSuggestionEvent(
         span?.addEvent('suggested')
 
         // Mark the completion as sampled if tracing is enable for this user
-        const shouldSample = completionProviderConfig.getPrefetchedFlag(
-            FeatureFlag.CodyAutocompleteTracing
-        )
-
         if (shouldSample && span) {
             span.setAttribute('sampled', true)
         }

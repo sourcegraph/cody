@@ -27,6 +27,10 @@ export async function showCommandMenu(
     const source = args?.source
     telemetryRecorder.recordEvent(`cody.menu.command.${type}`, 'clicked', {
         privateMetadata: { source },
+        billingMetadata: {
+            product: 'cody',
+            category: 'billable',
+        },
     })
 
     // Add items to menus accordingly:
@@ -219,7 +223,12 @@ function normalize(input: string): string {
 export async function showNewCustomCommandMenu(
     commands: string[]
 ): Promise<CustomCommandsBuilder | null> {
-    telemetryRecorder.recordEvent('cody.menu.custom.build', 'clicked')
+    telemetryRecorder.recordEvent('cody.menu.custom.build', 'clicked', {
+        billingMetadata: {
+            product: 'cody',
+            category: 'billable',
+        },
+    })
     const builder = new CustomCommandsBuilderMenu()
     return builder.start(commands)
 }

@@ -7,7 +7,7 @@ import {
 
 import { isError } from 'lodash'
 import { rewriteKeywordQuery } from '../local-context/rewrite-keyword-query'
-import type * as repofetcher from './repo-fetcher'
+import type * as repofetcher from './remote-repo'
 
 export enum RepoInclusion {
     Automatic = 'auto',

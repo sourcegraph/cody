@@ -217,6 +217,10 @@ export class EditManager implements vscode.Disposable {
                 ...privateMetadata,
                 model: task.model,
             },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
+            },
         })
         /**
          * Updates the editor's selection and view for 'doc' or 'test' intents, causing the cursor to
@@ -256,7 +260,12 @@ export class EditManager implements vscode.Disposable {
             throw new Error('No default edit model found. Please set one.')
         }
 
-        telemetryRecorder.recordEvent('cody.command.smart-apply', 'executed')
+        telemetryRecorder.recordEvent('cody.command.smart-apply', 'executed', {
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
+            },
+        })
 
         const editor = await vscode.window.showTextDocument(document.uri)
 
@@ -289,6 +298,10 @@ export class EditManager implements vscode.Disposable {
                 privateMetadata: {
                     ...privateMetadata,
                     model: task.model,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'core',
                 },
             })
 
@@ -389,6 +402,10 @@ export class EditManager implements vscode.Disposable {
                 privateMetadata: {
                     ...privateMetadata,
                     model: task.model,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'core',
                 },
             })
 

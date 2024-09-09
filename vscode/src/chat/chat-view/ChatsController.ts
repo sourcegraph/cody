@@ -23,7 +23,6 @@ import type { URI } from 'vscode-uri'
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import { getConfiguration } from '../../configuration'
-import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ExtensionClient } from '../../extension-client'
 import { authProvider } from '../../services/AuthProvider'
 import { type ChatLocation, localStorage } from '../../services/LocalStorageProvider'
@@ -71,7 +70,6 @@ export class ChatsController implements vscode.Disposable {
         private options: Options,
         private chatClient: ChatClient,
 
-        private readonly enterpriseContext: EnterpriseContextFactory,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
         private readonly symf: SymfRunner | null,
 
@@ -250,7 +248,12 @@ export class ChatsController implements vscode.Disposable {
     }
 
     private async sendEditorContextToChat(uri?: URI): Promise<void> {
-        telemetryRecorder.recordEvent('cody.addChatContext', 'clicked')
+        telemetryRecorder.recordEvent('cody.addChatContext', 'clicked', {
+            billingMetadata: {
+                category: 'billable',
+                product: 'cody',
+            },
+        })
         const provider = await this.getActiveChatController()
         if (provider === this.panel) {
             await vscode.commands.executeCommand('cody.chat.focus')
@@ -345,7 +348,12 @@ export class ChatsController implements vscode.Disposable {
      * Export chat history to file system
      */
     private async exportHistory(): Promise<void> {
-        telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
+        telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked', {
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
+            },
+        })
         const authStatus = authProvider.instance!.status
         if (authStatus.authenticated) {
             try {
@@ -475,11 +483,7 @@ export class ChatsController implements vscode.Disposable {
         return new ChatController({
             ...this.options,
             chatClient: this.chatClient,
-            retrievers: new AuthDependentRetrievers(
-                this.localEmbeddings,
-                this.symf,
-                this.enterpriseContext
-            ),
+            retrievers: new AuthDependentRetrievers(this.localEmbeddings, this.symf),
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,
             contextAPIClient: this.contextAPIClient,

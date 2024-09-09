@@ -82,6 +82,10 @@ export async function executeExplainHistoryCommand(
                 source: args?.source,
                 traceId: span.spanContext().traceId,
             },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
+            },
         })
 
         const sessionArgs = await explainHistoryCommand(span, commandsProvider, args)
