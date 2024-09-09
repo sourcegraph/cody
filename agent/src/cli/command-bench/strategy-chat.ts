@@ -75,7 +75,7 @@ export async function evaluateChatStrategy(
                     range,
                     chatReply: reply.text,
                     chatQuestion: task.question,
-                    contextItems: contextItems,
+                    contextItems,
                     questionClass: task.class,
                     llmJudgeScore: score.scoreNumeric,
                     concisenessScore: concisenessScore.scoreNumeric,

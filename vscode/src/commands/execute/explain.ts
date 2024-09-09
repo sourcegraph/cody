@@ -51,7 +51,7 @@ export async function explainCommand(
     return {
         text: prompt,
         submitType: 'user-newchat',
-        contextItems: contextItems,
+        contextItems,
         addEnhancedContext: false,
         source: args?.source,
         command: DefaultChatCommands.Explain,
