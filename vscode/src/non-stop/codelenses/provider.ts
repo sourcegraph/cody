@@ -157,8 +157,14 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
             this.removeLensesFor(task)
             return
         }
+<<<<<<< Updated upstream
         this.taskLenses.set(task, getLensesForTask(task))
         this.notifyCodeLensesChanged()
+=======
+        const lenses = getLensesForTask(task)
+        this.taskLenses.set(task, lenses)
+        this.notifyCodeLensesChanged(task.currentlyEditedFile, lenses)
+>>>>>>> Stashed changes
     }
 
     public didDeleteTask(task: FixupTask): void {
@@ -170,7 +176,11 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
     private removeLensesFor(task: FixupTask): void {
         if (this.taskLenses.delete(task)) {
             // TODO: Clean up the fixup file when there are no remaining code lenses
+<<<<<<< Updated upstream
             this.notifyCodeLensesChanged()
+=======
+            this.notifyCodeLensesChanged(task.currentlyEditedFile, [])
+>>>>>>> Stashed changes
         }
     }
 

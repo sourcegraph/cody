@@ -94,6 +94,10 @@ export class FixupTask {
         this.stateChanges.fire(state)
     }
 
+    public get currentlyEditedFile(): vscode.Uri {
+        return this.destinationFile ?? this.fixupFile.uri
+    }
+
     /**
      * Gets the state of the fixup task.
      *
