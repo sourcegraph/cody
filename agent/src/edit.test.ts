@@ -1,17 +1,31 @@
+import fspromises from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
-import { defaultAuthStatus, getDotComDefaultModels, modelsService, ps } from '@sourcegraph/cody-shared'
+import {
+    ChatClient,
+    defaultAuthStatus,
+    getDotComDefaultModels,
+    modelsService,
+    ps,
+} from '@sourcegraph/cody-shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
+import { GhostHintDecorator } from '../../vscode/src/commands/GhostHintDecorator'
+import { SourcegraphNodeCompletionsClient } from '../../vscode/src/completions/nodeClient'
+import { EditProvider } from '../../vscode/src/edit/provider'
 import type { SmartApplyArguments } from '../../vscode/src/edit/smart-apply'
+import { VSCodeEditor } from '../../vscode/src/editor/vscode-editor'
 import { defaultVSCodeExtensionClient } from '../../vscode/src/extension-client'
 import { FixupController } from '../../vscode/src/non-stop/FixupController'
 import type { AuthProvider } from '../../vscode/src/services/AuthProvider'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { AgentFixupControls } from './AgentFixupControls'
+import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 import { explainPollyError } from './explainPollyError'
 import { trimEndOfLine } from './trimEndOfLine'
+import { setWorkspaceDocuments, workspaceFolders } from './vscode-shim'
 
 describe('Edit', () => {
     const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'edit-code'))
@@ -56,10 +70,22 @@ describe('Edit', () => {
     })
 
     it('editCommands/code (having one file active apply to the other file)', async () => {
+
+        const testFolderPath = await fspromises.mkdtemp(path.join(os.tmpdir(), 'smart-apply-test'))
+        const tmpdir = vscode.Uri.file(testFolderPath)
+        const workspaceDocuments = new AgentWorkspaceDocuments()
+
+        while (workspaceFolders.pop()) {
+            // clear
+            // vscode.workspaceFolders will be reset by setWorkspaceDocuments.
+        }
+        workspaceDocuments.workspaceRootUri = tmpdir
+        setWorkspaceDocuments(workspaceDocuments)
+
         const initiallyActiveFileUri = workspace.file('src', 'sum.ts')
         await client.openFile(initiallyActiveFileUri)
 
-        const fileToEditUri = workspace.file('src', 'newFile.ts')
+        const fileToEditUri = workspace.file('src', 'trickyLogic.ts')
         const newDocument = { uri: fileToEditUri } as vscode.TextDocument
 
         const args: SmartApplyArguments = {
@@ -71,9 +97,25 @@ describe('Edit', () => {
             },
         }
         const authStatus = { ...defaultAuthStatus, isLoggedIn: true, isDotCom: true }
+        let authChangeListener = () => {}
         const authProvider = {
+            changes: {
+                subscribe: (f: () => void) => {
+                    authChangeListener = f
+                    // (return an object that simulates the unsubscribe
+                    return {
+                        unsubscribe: () => {
+                            authChangeListener = () => {}
+                        },
+                    }
+                },
+            },
             getAuthStatus: () => authStatus,
         } as AuthProvider
+        authChangeListener()
+        await modelsService.setAuthStatus(authStatus)
+        // await vscode.window.showTextDocument(newDocument.uri)
+
         const controller = new FixupController(authProvider, defaultVSCodeExtensionClient())
         const fixupTask = await controller.createTask(
             newDocument,
@@ -82,7 +124,7 @@ describe('Edit', () => {
             new vscode.Range(0, 0, 0, 0),
             'add',
             'insert',
-            modelsService.getDefaultChatModel()!,
+            modelsService.getDefaultEditModel()!,
             'chat',
             args.configuration?.document.uri,
             undefined,
@@ -90,14 +132,43 @@ describe('Edit', () => {
             args.configuration?.id
         )
         const task = AgentFixupControls.serialize(fixupTask)
+        const ghostHintDecorator = new GhostHintDecorator(authProvider)
+        const editor = new VSCodeEditor()
+        const completionsClient = new SourcegraphNodeCompletionsClient({
+            accessToken: TESTING_CREDENTIALS.dotcom.token ?? TESTING_CREDENTIALS.dotcom.redactedToken,
+            serverEndpoint: TESTING_CREDENTIALS.dotcom.serverEndpoint,
+            customHeaders: {},
+        })
+        const chatClient = new ChatClient(completionsClient, () => authProvider.getAuthStatus())
+
+        const provider = new EditProvider({
+            task: fixupTask,
+            controller: controller,
+            chat: chatClient,
+            editor: editor,
+            ghostHintDecorator: ghostHintDecorator,
+            authProvider: authProvider,
+            extensionClient: defaultVSCodeExtensionClient(),
+        })
+
+        await provider.applyEdit(args.configuration!.replacement)
+        console.log('taskHasReachedAppliedPhase')
         await client.taskHasReachedAppliedPhase(task)
+        console.log('get')
         const initiallyActiveFileLenses = client.codeLenses.get(initiallyActiveFileUri.toString()) ?? []
+        console.log('get')
         const fileToEditLenses = client.codeLenses.get(fileToEditUri.toString()) ?? []
+        console.log('toHaveLength')
         expect(initiallyActiveFileLenses).toHaveLength(0)
+        console.log('toHaveLength')
         expect(fileToEditLenses).toHaveLength(4)
+        console.log('toBe')
         expect(fileToEditLenses[0].command?.command).toBe('cody.fixup.codelens.accept')
+        console.log('request')
         await client.request('editTask/accept', { id: task.id })
+        console.log('getDocument')
         const newContent = client.workspace.getDocument(fileToEditUri)?.content
+        console.log('toMatchInlineSnapshot')
         expect(trimEndOfLine(newContent)).toMatchInlineSnapshot(
             `
                     "export function sum(c: number, b: number): number {
@@ -107,7 +178,7 @@ describe('Edit', () => {
                     `,
             explainPollyError
         )
-    })
+    }, 10000)
 
     it('editCommand/code (add prop types)', async () => {
         const uri = workspace.file('src', 'ChatColumn.tsx')
