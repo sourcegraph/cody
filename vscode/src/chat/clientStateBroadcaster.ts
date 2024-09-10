@@ -5,12 +5,14 @@ import {
     type ContextItemTree,
     REMOTE_REPOSITORY_PROVIDER_URI,
     authStatus,
+    combineLatest,
     contextFiltersProvider,
     displayLineRange,
     displayPathBasename,
     expandToLineRange,
     logDebug,
     openCtx,
+    resolvedConfig,
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -99,8 +101,11 @@ export function startClientStateBroadcaster({
             void sendClientState('immediate')
         }),
         vscode.window.onDidChangeTextEditorSelection(e => {
-            // Frequent action, so debounce.
-            void sendClientState('debounce')
+            // Don't trigger for output channel logs.
+            if (e.textEditor.document.uri.scheme !== 'output') {
+                // Frequent action, so debounce.
+                void sendClientState('debounce')
+            }
         }),
         vscode.workspace.onDidChangeWorkspaceFolders(() => {
             // Infrequent action, so don't debounce and show immediately in the UI.
@@ -109,10 +114,12 @@ export function startClientStateBroadcaster({
     )
     disposables.push(
         subscriptionDisposable(
-            authStatus.subscribe(async () => {
-                // Infrequent action, so don't debounce and show immediately in the UI.
-                void sendClientState('immediate')
-            })
+            combineLatest([resolvedConfig, authStatus, contextFiltersProvider.changes]).subscribe(
+                async () => {
+                    // Infrequent action, so don't debounce and show immediately in the UI.
+                    void sendClientState('immediate')
+                }
+            )
         )
     )
 
@@ -139,7 +146,7 @@ export async function getCorpusContextItemsForEditorState(useRemote: boolean): P
             }
             items.push({
                 ...contextItemMentionFromOpenCtxItem(
-                    createRepositoryMention(
+                    await createRepositoryMention(
                         {
                             id: repo.remoteID,
                             name: repo.repoName,

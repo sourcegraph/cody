@@ -1,12 +1,12 @@
 import { isEqual } from 'lodash'
 import { LRUCache } from 'lru-cache'
-import { map } from 'observable-fns'
+import { type Observable, map } from 'observable-fns'
 import { RE2JS as RE2 } from 're2js'
 import type * as vscode from 'vscode'
 import { isFileURI } from '../common/uri'
 import { resolvedConfig } from '../configuration/resolver'
 import { logDebug, logError } from '../logger'
-import type { Unsubscribable } from '../misc/observable'
+import { type Unsubscribable, fromVSCodeEvent } from '../misc/observable'
 import { isDotCom } from '../sourcegraph-api/environments'
 import { graphqlClient } from '../sourcegraph-api/graphql'
 import {
@@ -131,6 +131,13 @@ export class ContextFiltersProvider implements vscode.Disposable {
             })
             return 'ephemeral'
         }
+    }
+
+    public get changes(): Observable<ContextFilters> {
+        return fromVSCodeEvent(listener => {
+            const dispose = this.onContextFiltersChanged(listener)
+            return { dispose }
+        })
     }
 
     private setContextFilters(contextFilters: ContextFilters): void {
