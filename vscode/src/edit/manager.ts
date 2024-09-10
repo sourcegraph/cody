@@ -4,7 +4,6 @@ import {
     type ChatClient,
     ClientConfigSingleton,
     PromptString,
-    isCodyIgnoredFile,
     modelsService,
     ps,
     telemetryRecorder,
@@ -18,7 +17,6 @@ import type { FixupTask } from '../non-stop/FixupTask'
 
 import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
 import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/context-filter'
-import { showCodyIgnoreNotification } from '../cody-ignore/notification'
 import type { ExtensionClient } from '../extension-client'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import { authProvider } from '../services/AuthProvider'
@@ -107,11 +105,6 @@ export class EditManager implements vscode.Disposable {
         }
 
         const editor = getEditor()
-        if (editor.ignored) {
-            showCodyIgnoreNotification('edit', 'cody-ignore')
-            return
-        }
-
         const document = configuration.document || editor.active?.document
         if (!document) {
             void vscode.window.showErrorMessage('Please open a file before running a command.')
@@ -247,10 +240,6 @@ export class EditManager implements vscode.Disposable {
         }
 
         const document = configuration.document
-        if (isCodyIgnoredFile(document.uri)) {
-            showCodyIgnoreNotification('edit', 'cody-ignore')
-        }
-
         if (await isUriIgnoredByContextFilterWithNotification(document.uri, 'edit')) {
             return
         }

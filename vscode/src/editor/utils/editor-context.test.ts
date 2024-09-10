@@ -8,7 +8,6 @@ import {
     EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
     type Editor,
     contextFiltersProvider,
-    ignores,
     ps,
     testFileUri,
     uriBasename,
@@ -108,23 +107,6 @@ describe('getFileContextFiles', () => {
 
         expect(await runSearch('large', 5)).toMatchInlineSnapshot(`
           []
-        `)
-
-        expect(vscode.workspace.findFiles).toBeCalledTimes(1)
-    })
-
-    it('filters out ignored files', async () => {
-        ignores.setActiveState(true)
-        ignores.setIgnoreFiles(testFileUri(''), [
-            { uri: testFileUri('.cody/ignore'), content: '*.ignore' },
-        ])
-        setFiles(['foo.txt', 'foo.ignore'])
-
-        // Match the .txt but not the .ignore
-        expect(await runSearch('foo', 5)).toMatchInlineSnapshot(`
-          [
-            "foo.txt",
-          ]
         `)
 
         expect(vscode.workspace.findFiles).toBeCalledTimes(1)

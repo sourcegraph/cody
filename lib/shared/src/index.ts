@@ -19,13 +19,6 @@ export {
 } from './models/utils'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
-export { ignores, isCodyIgnoredFile } from './cody-ignore/context-filter'
-export {
-    IgnoreHelper,
-    CODY_IGNORE_POSIX_GLOB,
-    type IgnoreFileContent,
-    CODY_IGNORE_URI_PATH,
-} from './cody-ignore/ignore-helper'
 export { getSimplePreamble } from './chat/preamble'
 export type {
     SerializedChatInteraction,

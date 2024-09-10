@@ -9,7 +9,6 @@ import {
     type Editor,
     type RangeData,
     SURROUNDING_LINES,
-    isCodyIgnoredFile,
 } from '@sourcegraph/cody-shared'
 
 import { CommandCodeLenses } from '../commands/services/code-lenses'
@@ -49,7 +48,6 @@ export class VSCodeEditor implements Editor {
             content: documentText,
             fileUri: documentUri,
             selectionRange: documentSelection.isEmpty ? undefined : documentSelection,
-            ignored: isCodyIgnoredFile(activeEditor.document.uri),
         }
     }
 

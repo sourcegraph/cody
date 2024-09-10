@@ -9,7 +9,6 @@ import {
     contextFiltersProvider,
     createDisposables,
     featureFlagProvider,
-    isCodyIgnoredFile,
     subscriptionDisposable,
     telemetryRecorder,
     wrapInActiveSpan,
@@ -326,12 +325,6 @@ export class InlineCompletionItemProvider
                 this.lastManualCompletionTimestamp &&
                     this.lastManualCompletionTimestamp > Date.now() - 500
             )
-
-            // Do not create item for files that are on the cody ignore list
-            if (isCodyIgnoredFile(document.uri)) {
-                logIgnored(document.uri, 'cody-ignore', isManualCompletion)
-                return null
-            }
 
             if (await contextFiltersProvider.isUriIgnored(document.uri)) {
                 logIgnored(document.uri, 'context-filter', isManualCompletion)
