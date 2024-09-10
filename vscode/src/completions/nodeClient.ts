@@ -46,6 +46,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
         addClientInfoParams(url.searchParams)
 
         return tracer.startActiveSpan(`POST ${url.toString()}`, async span => {
+            console.log('stream with callbacks', { Authorization: `token ${this.config.accessToken}` })
             span.setAttributes({
                 fast: params.fast,
                 maxTokensToSample: params.maxTokensToSample,

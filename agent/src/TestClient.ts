@@ -897,6 +897,7 @@ ${patch}`
 
     public async beforeAll(additionalConfig?: Partial<ExtensionConfiguration>) {
         const info = await this.initialize(additionalConfig)
+        console.log('before all info', info)
         if (!info.authStatus?.authenticated) {
             throw new Error('Could not log in')
         }

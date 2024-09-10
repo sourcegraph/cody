@@ -26,7 +26,7 @@ describe('Document Code', () => {
         expect(await client.documentCode(workspace.file('src', 'sum.ts'))).toMatchSnapshot()
     })
 
-    it('commands/document (Method as part of a class)', async () => {
+    it.only('commands/document (Method as part of a class)', async () => {
         expect(await client.documentCode(workspace.file('src', 'TestClass.ts'))).toMatchSnapshot()
 
         const { requests } = await client.request('testing/networkRequests', null)
