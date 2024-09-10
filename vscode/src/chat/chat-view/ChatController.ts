@@ -990,6 +990,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
     }
 
+    public async handleTextToUserInput(text: string): Promise<void> {
+        void this.postMessage({
+            type: 'clientAction',
+            appendTextToLastPromptEditor: text,
+        })
+    }
+
     public async handleSmartApplyResult(result: SmartApplyResult): Promise<void> {
         void this.postMessage({
             type: 'clientAction',

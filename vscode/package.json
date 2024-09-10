@@ -537,7 +537,7 @@
         "group": "Chat",
         "title": "Add Selection to Cody Chat",
         "icon": "$(mention)",
-        "enablement": "cody.activated && editorHasSelection"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.mention.file",
@@ -957,6 +957,11 @@
           "command": "cody.command.explain-output",
           "group": "0_cody",
           "when": "cody.activated"
+        },
+        {
+          "command": "cody.mention.selection",
+          "group": "0_cody",
+          "when": "cody.activated && terminalTabsSingularSelection"
         }
       ],
       "scm/title": [

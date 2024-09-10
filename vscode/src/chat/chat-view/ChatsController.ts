@@ -200,8 +200,8 @@ export class ChatsController implements vscode.Disposable {
             ),
 
             // Mention selection/file commands
-            vscode.commands.registerCommand('cody.mention.selection', uri =>
-                this.sendEditorContextToChat(uri)
+            vscode.commands.registerCommand('cody.mention.selection', args =>
+                this.sendEditorContextToChat(args?.selection ?? args)
             ),
             vscode.commands.registerCommand('cody.mention.file', uri =>
                 this.sendEditorContextToChat(uri)
@@ -243,18 +243,27 @@ export class ChatsController implements vscode.Disposable {
         await vscode.commands.executeCommand('cody.chat.focus')
     }
 
-    private async sendEditorContextToChat(uri?: URI): Promise<void> {
-        telemetryRecorder.recordEvent('cody.addChatContext', 'clicked', {
+    private async sendEditorContextToChat(payload?: URI | string): Promise<void> {
+        const isText = typeof payload === 'string'
+        const eventName = isText ? 'cody.addChatContext' : 'cody.addTextInput'
+
+        telemetryRecorder.recordEvent(eventName, 'clicked', {
             billingMetadata: {
                 category: 'billable',
                 product: 'cody',
             },
         })
+
         const provider = await this.getActiveChatController()
         if (provider === this.panel) {
             await vscode.commands.executeCommand('cody.chat.focus')
         }
-        await provider.handleGetUserEditorContext(uri)
+
+        if (isText) {
+            await provider.handleTextToUserInput(payload as string)
+        } else {
+            await provider.handleGetUserEditorContext(payload as URI)
+        }
     }
 
     private async sendSmartApplyResultToChat(result: SmartApplyResult): Promise<void> {
