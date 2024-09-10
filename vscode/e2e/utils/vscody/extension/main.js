@@ -28,7 +28,7 @@ function activate(context) {
     context.subscriptions.push(disposable)
 }
 
-function deactivate() { }
+function deactivate() {}
 
 function flushEventStack() {
     // this is a sleep timer for 0 seconds, which sounds dumb The reason it's
