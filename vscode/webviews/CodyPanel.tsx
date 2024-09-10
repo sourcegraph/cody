@@ -56,9 +56,11 @@ export const CodyPanel: FunctionComponent<
         const json = JSON.stringify(userHistory, null, 2)
         const blob = new Blob([json], { type: 'application/json' })
         const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5) // Format: YYYY-MM-DDTHH-mm
+        const a = document.createElement('a') // a temporary anchor element
         a.href = url
-        a.download = 'cody-chat-history.json'
+        a.download = `cody-chat-history-${timestamp}.json`
+        a.target = '_blank'
         a.click()
     }, [userHistory])
 
