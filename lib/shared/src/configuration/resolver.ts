@@ -76,6 +76,8 @@ async function resolveConfiguration(input: ConfigurationInput): Promise<Resolved
             return null
         })) ?? null
 
+    console.log('resolveConfiguration', { accessToken })
+
     return {
         configuration: input.clientConfiguration,
         clientState: input.clientState,
@@ -92,6 +94,7 @@ let hasSetResolvedConfigurationObservable = false
  * set exactly once.
  */
 export function setResolvedConfigurationObservable(input: Observable<ConfigurationInput>): void {
+    console.log('setResolvedConfigurationObservable')
     if (hasSetResolvedConfigurationObservable) {
         throw new Error(
             'setResolvedConfigurationObservable and setStaticResolvedConfigurationValue must be called exactly once total'
@@ -140,13 +143,20 @@ export const resolvedConfig: Observable<ResolvedConfiguration> = _resolvedConfig
  */
 export const resolvedConfigWithAccessToken: Observable<ClientConfigurationWithAccessToken> =
     resolvedConfig.pipe(
-        map(
-            config =>
-                ({
+        map(config => {
+            console.log(
+                'config update',
+                JSON.stringify({
                     ...config.configuration,
                     ...config.auth,
-                }) satisfies ClientConfigurationWithAccessToken
-        )
+                })
+            )
+
+            return {
+                ...config.configuration,
+                ...config.auth,
+            } satisfies ClientConfigurationWithAccessToken
+        })
     )
 
 /**
