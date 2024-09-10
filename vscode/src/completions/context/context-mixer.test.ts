@@ -309,7 +309,13 @@ describe('ContextMixer', () => {
                 )
                 const { context } = await mixer.getContext(defaultOptions)
                 const contextFiles = normalize(context)
-                expect(contextFiles.map(c => c.fileName)).toEqual(['bar.ts', 'bar.ts'])
+                expect(contextFiles.map(c => c.fileName)).toEqual([
+                    'foo.ts',
+                    'foo.ts',
+                    'foo.ts',
+                    'bar.ts',
+                    'bar.ts',
+                ])
             })
         })
     })
