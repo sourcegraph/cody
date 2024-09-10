@@ -1360,8 +1360,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.20.8",
-    "@openctx/provider-linear-issues": "^0.0.7",
-    "@openctx/vscode-lib": "^0.0.22",
+    "@openctx/provider-linear-issues": "^0.0.9",
+    "@openctx/vscode-lib": "^0.0.24",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/core": "^1.18.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",

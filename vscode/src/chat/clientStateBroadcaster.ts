@@ -190,13 +190,18 @@ export async function getCorpusContextItemsForEditorState(useRemote: boolean): P
         await Promise.all(
             providers.map(async (provider): Promise<ContextItemOpenCtx[]> => {
                 const mentions =
-                    (await openCtx?.controller?.mentions(activeEditorContext, provider)) || []
+                    (await openCtx?.controller?.mentions(
+                        { ...activeEditorContext, autoInclude: true },
+                        provider
+                    )) || []
 
                 return mentions.map(mention => ({
                     ...mention,
                     provider: 'openctx',
                     type: 'openctx',
                     uri: URI.parse(mention.uri),
+                    source: ContextItemSource.Initial,
+                    mention, // include the original mention to pass to `items` later
                 }))
             })
         )
