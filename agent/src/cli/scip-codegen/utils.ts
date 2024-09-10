@@ -22,6 +22,17 @@ export function typescriptKeywordSyntax(language: TargetLanguage, symbol: string
     }
 }
 
+export function isBooleanTypeRef(symbol: string): boolean {
+    switch (symbol) {
+        case 'scip-typescript npm typescript . false#':
+        case 'scip-typescript npm typescript . true#':
+        case 'scip-typescript npm typescript . boolean#':
+            return true
+        default:
+            return false
+    }
+}
+
 export function capitalize(text: string): string {
     if (text.length === 0) {
         return text
