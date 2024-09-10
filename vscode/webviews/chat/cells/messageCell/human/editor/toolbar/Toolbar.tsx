@@ -1,4 +1,3 @@
-import type { Model } from '@sourcegraph/cody-shared'
 import type { ChatMessage, Model } from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'

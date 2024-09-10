@@ -1,5 +1,4 @@
 import {
-    type ChatIntentResult,
     type ContextItem,
     FeatureFlag,
     type InputContextItem,
