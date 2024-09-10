@@ -1,0 +1,80 @@
+import * as React from 'react'
+import { useEffect, useRef } from 'react'
+
+import { highlightNode } from '../utils'
+import type { Range } from '../types'
+
+interface Props {
+    repoName: string
+    repoURL: string
+    filePath: string
+    pathMatchRanges?: Range[]
+    fileURL: string
+    repoDisplayName?: string
+    className?: string
+    isKeyboardSelectable?: boolean
+}
+
+/**
+ * A link to a repository or a file within a repository, formatted as "repo" or "repo > file". Unless you
+ * absolutely need breadcrumb-like behavior, use this instead of FilePathBreadcrumb.
+ */
+export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+    const {
+        repoDisplayName,
+        repoName,
+        repoURL,
+        filePath,
+        pathMatchRanges,
+        fileURL,
+        className,
+        isKeyboardSelectable,
+    } = props
+
+    const [fileBase, fileName] = splitPath(filePath)
+    const containerElement = useRef<HTMLAnchorElement>(null)
+
+    useEffect((): void => {
+        if (containerElement.current && pathMatchRanges && fileName) {
+            for (const range of pathMatchRanges) {
+                highlightNode(
+                    containerElement.current as HTMLElement,
+                    range.start.column,
+                    range.end.column - range.start.column
+                )
+            }
+        }
+    }, [pathMatchRanges, fileName, containerElement])
+
+    return (
+        <span className={className}>
+            <span>
+                <a href={repoURL}>{repoDisplayName || displayRepoName(repoName)}</a>
+                <span aria-hidden={true}> ›</span>{' '}
+                <a href={fileURL} ref={containerElement} data-selectable-search-result={isKeyboardSelectable}>
+                    {fileBase ? `${fileBase}/` : null}
+                    <strong>{fileName}</strong>
+                </a>
+            </span>
+        </span>
+    )
+}
+
+/**
+ * Returns the friendly display form of the repository name (e.g., removing "github.com/").
+ */
+function displayRepoName(repoName: string): string {
+    let parts = repoName.split('/')
+    if (parts.length > 1 && parts[0].includes('.')) {
+        parts = parts.slice(1) // remove hostname from repo name (reduce visual noise)
+    }
+    return parts.join('/')
+}
+
+/**
+ * Splits the repository name into the dir and base components.
+ */
+function splitPath(path: string): [string, string] {
+    const components = path.split('/')
+    return [components.slice(0, -1).join('/'), components.at(-1)!]
+}

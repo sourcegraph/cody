@@ -1,0 +1,13 @@
+.chunk {
+    position: relative;
+    overflow-x: auto;
+    background-color: var(--code-bg);
+
+    padding: 0.25rem 0.5rem;
+    &:first-child {
+        padding-top: 0.5rem;
+    }
+    &:last-child {
+        padding-bottom: 0.5rem;
+    }
+}
