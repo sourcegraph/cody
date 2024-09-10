@@ -153,7 +153,7 @@ test.extend<ExpectedV2Events>({
 
     // Show the current file numbers used as context
     const contextCell = getContextCell(chatPanel)
-    await expectContextCellCounts(contextCell, { files: 6 })
+    await expectContextCellCounts(contextCell, { files: 7 })
     await openContextCell(contextCell)
     // Display the context files to confirm no hidden files are included
     await expect(chatPanel.getByRole('button', { name: '.mydotfile:1-2' })).not.toBeVisible()
