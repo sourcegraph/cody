@@ -202,6 +202,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         uiKindIsWeb={config.config.uiKindIsWeb}
                         vscodeAPI={vscodeAPI}
                         codyIDE={config.config.agentIDE ?? CodyIDE.VSCode}
+                        endpointHistory={config.config.endpointHistory ?? []}
                     />
                 </div>
             ) : (

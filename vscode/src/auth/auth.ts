@@ -63,24 +63,31 @@ export async function showSignInMenu(
         default: {
             // Auto log user if token for the selected instance was found in secret
             const selectedEndpoint = item.uri
-            const token = await secretStorage.get(selectedEndpoint)
-            let authStatus = await authProvider.instance!.auth({
-                endpoint: selectedEndpoint,
-                token: token || null,
-            })
-            if (!authStatus?.authenticated) {
-                const newToken = await showAccessTokenInputBox(item.uri)
-                if (!newToken) {
-                    return
-                }
-                authStatus = await authProvider.instance!.auth({
-                    endpoint: selectedEndpoint,
-                    token: newToken || null,
-                })
-            }
+            await handleEndpointAuthRequest(selectedEndpoint)
             await showAuthResultMessage(selectedEndpoint, authStatus)
             logDebug('AuthProvider:signinMenu', mode, selectedEndpoint)
         }
+    }
+}
+
+export async function handleEndpointAuthRequest(endpointURI: string): Promise<void> {
+    if (!endpointURI) {
+        return
+    }
+    const token = await secretStorage.get(endpointURI)
+    let authStatus = await authProvider.instance!.auth({
+        endpoint: endpointURI,
+        token: token || null,
+    })
+    if (!authStatus?.authenticated) {
+        const newToken = await showAccessTokenInputBox(endpointURI)
+        if (!newToken) {
+            return
+        }
+        authStatus = await authProvider.instance!.auth({
+            endpoint: endpointURI,
+            token: newToken || null,
+        })
     }
 }
 
@@ -102,8 +109,12 @@ function getItemLabel(uri: string, current: boolean): string {
     return `${icon}${uri}`
 }
 
+export function getEndpointHistory(): string[] {
+    return localStorage.getEndpointHistory()?.reverse() ?? []
+}
+
 async function showAuthMenu(type: AuthMenuType): Promise<LoginMenuItem | null> {
-    const endpointHistory = localStorage.getEndpointHistory() ?? []
+    const endpointHistory = getEndpointHistory()
 
     // Create option items
     const historySize = endpointHistory?.length

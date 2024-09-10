@@ -10,8 +10,17 @@ import signInLogoGitLab from './sign-in-logo-gitlab.svg'
 import signInLogoGoogle from './sign-in-logo-google.svg'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
+import { useState } from 'react'
 import styles from './OnboardingExperiment.module.css'
 import { ClientSignInForm } from './components/ClientSignInForm'
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from './components/shadcn/ui/select'
 import { useTelemetryRecorder } from './utils/telemetry'
 import { useConfig } from './utils/useConfig'
 
@@ -20,6 +29,7 @@ interface LoginProps {
     uiKindIsWeb: boolean
     vscodeAPI: VSCodeWrapper
     codyIDE: CodyIDE
+    endpointHistory?: string[]
 }
 
 const WebLogin: React.FunctionComponent<
@@ -70,14 +80,71 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
     uiKindIsWeb,
     vscodeAPI,
     codyIDE,
+    endpointHistory,
 }) => {
     const authStatus = useConfig().authStatus
     const telemetryRecorder = useTelemetryRecorder()
-    const otherSignInClick = (): void => {
-        vscodeAPI.postMessage({ command: 'auth', authKind: 'signin' })
+    const otherSignInClick = (endpoint?: string): void => {
+        vscodeAPI.postMessage({ command: 'auth', authKind: 'signin', endpoint })
     }
     const isNonVSCodeIDE = codyIDE !== CodyIDE.Web && codyIDE !== CodyIDE.VSCode
     const isCodyWebUI = (uiKindIsWeb || codyIDE === CodyIDE.Web) && !isNonVSCodeIDE
+
+    const [selectedEndpoint, setSelectedEndpoint] = useState(endpointHistory?.[0])
+    const [onboardingView, setOnboardingView] = useState<boolean>(!selectedEndpoint)
+
+    if (isNonVSCodeIDE && endpointHistory?.length && selectedEndpoint && !onboardingView) {
+        return (
+            <div className={styles.container}>
+                <div className={styles.sectionsContainer}>
+                    <img src={onboardingSplashImage} alt="Hi, I'm Cody" className={styles.logo} />
+                    <div className={styles.section}>
+                        <h1>Select a Sourcegraph Instance</h1>
+                        <div className={styles.buttonWidthSizer}>
+                            <div className={styles.buttonStack}>
+                                <Select onValueChange={v => setSelectedEndpoint(v)} value="">
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={selectedEndpoint} />
+                                    </SelectTrigger>
+                                    <SelectContent position="item-aligned" className="tw-w-full">
+                                        <SelectGroup key="instancesx">
+                                            {endpointHistory.map(endpoint => (
+                                                <SelectItem
+                                                    key={endpoint}
+                                                    value={endpoint}
+                                                    className="tw-w-full tw-bg-muted"
+                                                >
+                                                    {endpoint}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                                <VSCodeButton
+                                    className={styles.button}
+                                    type="button"
+                                    onClick={() => otherSignInClick()}
+                                >
+                                    Sign In
+                                </VSCodeButton>
+                            </div>
+                        </div>
+                    </div>
+                    <div className={styles.section}>
+                        <h1>Instance not on the list?</h1>
+                        <VSCodeButton
+                            className={styles.button}
+                            type="button"
+                            onClick={() => setOnboardingView(true)}
+                        >
+                            Add New Account
+                        </VSCodeButton>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className={styles.container}>
             <div className={styles.sectionsContainer}>
@@ -149,7 +216,7 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                                 <VSCodeButton
                                     className={styles.button}
                                     type="button"
-                                    onClick={otherSignInClick}
+                                    onClick={() => otherSignInClick()}
                                 >
                                     Sign In to Your Enterprise&nbsp;Instance
                                 </VSCodeButton>

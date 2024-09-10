@@ -66,7 +66,12 @@ import { map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { version as VSCEVersion } from '../../../package.json'
 import { View } from '../../../webviews/tabs/types'
-import { redirectToEndpointLogin, showSignOutMenu } from '../../auth/auth'
+import {
+    getEndpointHistory,
+    handleEndpointAuthRequest,
+    redirectToEndpointLogin,
+    showSignOutMenu,
+} from '../../auth/auth'
 import {
     closeAuthProgressIndicator,
     startAuthProgressIndicator,
@@ -471,11 +476,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     }
                     break
                 }
-                if (message.authKind === 'signin' && message.endpoint && message.value) {
-                    await authProvider.instance!.auth({
-                        endpoint: message.endpoint,
-                        token: message.value,
-                    })
+                if (message.authKind === 'signin' && message.endpoint) {
+                    // Login with token provided by the user in webview.
+                    if (message.value) {
+                        await authProvider.instance!.auth({
+                            endpoint: message.endpoint,
+                            token: message.value,
+                        })
+                    } else {
+                        handleEndpointAuthRequest(message.endpoint)
+                    }
                     break
                 }
                 if (message.authKind === 'signout') {
@@ -531,7 +541,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
-
+        const endpointHistory = getEndpointHistory()
         return {
             agentIDE: config.agentIDE ?? CodyIDE.VSCode,
             agentExtensionVersion: config.isRunningInsideAgent
@@ -544,6 +554,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             webviewType,
             multipleWebviewsEnabled: !sidebarViewOnly,
             internalDebugContext: config.internalDebugContext,
+            endpointHistory,
         }
     }
 
