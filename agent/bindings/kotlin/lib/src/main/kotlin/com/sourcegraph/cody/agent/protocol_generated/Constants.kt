@@ -60,7 +60,7 @@ object Constants {
   const val openctx = "openctx"
   const val power = "power"
   const val pro = "pro"
-  const val `recently used` = "recently used"
+  const val `recently-used` = "recently used"
   const val recommended = "recommended"
   const val `rename-file` = "rename-file"
   const val replace = "replace"

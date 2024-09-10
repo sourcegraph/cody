@@ -265,10 +265,13 @@ export class Formatter {
         if (this.language === TargetLanguage.Kotlin) {
             const isKeyword = this.kotlinKeywords.has(escaped)
             const needsBacktick = isKeyword || !/^[a-zA-Z0-9_]+$/.test(escaped)
-            return needsBacktick ? `\`${escaped}\`` : escaped
+            // Replace all non-alphanumeric characters with underscores
+            const fieldName = getEscapedValue(escaped, '-')
+            return needsBacktick ? `\`${fieldName}\`` : fieldName
         }
+        // CSharp
         if (this.language === TargetLanguage.CSharp) {
-            return escaped
+            return getEscapedValue(escaped)
                 .split('_')
                 .map(part => part.charAt(0).toUpperCase() + part.slice(1))
                 .join('')
@@ -296,4 +299,15 @@ export class Formatter {
     public formatEnumType(name: string): string {
         return `${capitalize(name)}Enum`
     }
+}
+
+function getEscapedValue(name: string, replacer: '_' | '-' = '_'): string {
+    const nonAlphanumericRegex = replacer === '-' ? /[^a-zA-Z0-9]+/g : /[^a-zA-Z0-9]/g
+    const repeatedReplacerRegex = new RegExp(`${replacer}+`, 'g')
+    const trimReplacerRegex = new RegExp(`^${replacer}|${replacer}$`, 'g')
+
+    return name
+        .replace(nonAlphanumericRegex, replacer)
+        .replace(repeatedReplacerRegex, replacer)
+        .replace(trimReplacerRegex, '')
 }
