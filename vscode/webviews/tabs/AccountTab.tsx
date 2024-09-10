@@ -23,11 +23,7 @@ export const AccountTab: React.FC = () => {
 
     actions.push({
         text: 'Switch Account...',
-        onClick: useCallback(() => {
-            if (userInfo.user.username) {
-                getVSCodeAPI().postMessage({ command: 'command', id: 'cody.auth.switchAccount' })
-            }
-        }, [userInfo]),
+        onClick: () => getVSCodeAPI().postMessage({ command: 'command', id: 'cody.auth.switchAccount' }),
     })
     if (isDotComUser) {
         actions.push({
