@@ -65,7 +65,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
         <div className="tw-px-8 tw-pt-6 tw-pb-12 tw-flex tw-flex-col tw-gap-10">
             {chats.map(([period, chats]) => (
                 <CollapsiblePanel
-                    id={period.replaceAll(' ', '-').toLowerCase()}
+                    id={`history-${period}`.replaceAll(' ', '-').toLowerCase()}
                     key={period}
                     storageKey={`history.${period}`}
                     title={period}

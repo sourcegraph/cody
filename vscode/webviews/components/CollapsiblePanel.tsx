@@ -30,7 +30,7 @@ export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
 
     return (
         <Collapsible
-            id={`chat-${id}`}
+            id={id}
             open={isOpen}
             onOpenChange={setIsOpen}
             className={clsx('tw-w-full tw-flex tw-flex-col tw-gap-3', className)}
@@ -49,7 +49,7 @@ export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
             </div>
             <CollapsibleContent>
                 <div
-                    id={`history-${id}`}
+                    id={`${id}-content`}
                     className={clsx(
                         'tw-px-2 tw-py-2 tw-flex tw-flex-col tw-bg-popover tw-border tw-border-border tw-rounded-lg',
                         contentClassName
