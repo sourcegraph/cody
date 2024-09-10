@@ -24,15 +24,18 @@ import { documentAndPosition } from './test-helpers'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { sleep } from './utils'
 
-vi.mock('vscode', () => ({
-    ...vsCodeMocks,
-    workspace: {
-        ...vsCodeMocks.workspace,
-        onDidChangeTextDocument() {
-            return null
+vi.mock('vscode', async () => {
+    const vscodeMocks = (await import('../testutils/mocks')).vsCodeMocks
+    return {
+        ...vscodeMocks,
+        workspace: {
+            ...vsCodeMocks.workspace,
+            onDidChangeTextDocument() {
+                return null
+            },
         },
-    },
-}))
+    }
+})
 
 const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     selectedCompletionInfo: undefined,
@@ -127,7 +130,6 @@ function getInlineCompletionProvider(
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         } as any),
         config: {} as any,
-        authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         firstCompletionTimeout:
             args?.firstCompletionTimeout ?? DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
         ...args,
@@ -194,7 +196,7 @@ function createCompletion(textWithCursor: string, provider: InlineCompletionItem
 describe.skip('InlineCompletionItemProvider E2E', () => {
     describe('smart throttle in-flight requests', () => {
         beforeAll(async () => {
-            await initCompletionProviderConfig({})
+            await initCompletionProviderConfig({ configuration: {} })
             localStorage.setStorage({
                 get: () => null,
                 update: () => {},
@@ -202,7 +204,7 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
         })
 
         beforeEach(() => {
-            vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValue(false)
+            vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
         })
 
         /**
@@ -396,7 +398,7 @@ describe('InlineCompletionItemProvider preloading', () => {
     beforeAll(async () => {
         vi.useFakeTimers()
 
-        await initCompletionProviderConfig(autocompleteConfig)
+        await initCompletionProviderConfig({ configuration: autocompleteConfig })
 
         localStorage.setStorage({
             get: () => null,

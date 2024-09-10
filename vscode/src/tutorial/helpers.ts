@@ -32,10 +32,8 @@ export const maybeStartInteractiveTutorial = async () => {
             category: 'billable',
         },
     })
-    await featureFlagProvider.instance!.refresh()
-    const enabled = await featureFlagProvider.instance!.evaluateFeatureFlag(
-        FeatureFlag.CodyInteractiveTutorial
-    )
+    await featureFlagProvider.refresh()
+    const enabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyInteractiveTutorial)
     logFirstEnrollmentEvent(FeatureFlag.CodyInteractiveTutorial, enabled)
     if (!enabled) {
         return

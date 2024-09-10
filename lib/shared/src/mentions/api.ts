@@ -1,7 +1,7 @@
-import type { EachWithProviderUri, MetaResult } from '@openctx/client'
-import { Observable } from 'observable-fns'
+import type { MetaResult } from '@openctx/client'
+import { Observable, map } from 'observable-fns'
 import { openCtx } from '../context/openctx/api'
-import { fromRxJSObservable } from '../misc/observable'
+import { distinctUntilChanged } from '../misc/observable'
 
 /**
  * A unique identifier for a {@link ContextMentionProvider}.
@@ -83,11 +83,13 @@ function openCtxMentionProviders(): Observable<ContextMentionProviderMetadata[]>
         return Observable.of([])
     }
 
-    return fromRxJSObservable<EachWithProviderUri<MetaResult[]>>(controller.metaChanges({}, {})).map(
-        providers =>
+    return controller.metaChanges({}, {}).pipe(
+        map(providers =>
             providers
                 .filter(provider => !!provider.mentions)
                 .map(openCtxProviderMetadata)
                 .sort((a, b) => (a.title > b.title ? 1 : -1))
+        ),
+        distinctUntilChanged()
     )
 }

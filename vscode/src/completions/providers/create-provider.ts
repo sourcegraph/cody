@@ -78,7 +78,7 @@ interface CreateConfigHelperParams {
 
 export function createProviderHelper(params: CreateConfigHelperParams): Provider | null {
     const { authStatus, legacyModel, model, provider, config } = params
-    const { anonymousUserID } = localStorage.anonymousUserID()
+    const anonymousUserID = localStorage.anonymousUserID()
 
     const providerCreator = getProviderCreator({
         provider: provider as AutocompleteProviderID,

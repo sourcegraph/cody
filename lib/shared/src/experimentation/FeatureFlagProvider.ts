@@ -2,8 +2,7 @@ import { Observable } from 'observable-fns'
 import type { Event } from 'vscode'
 import { logDebug } from '../logger'
 import { distinctUntilChanged, fromVSCodeEvent } from '../misc/observable'
-import { setSingleton, singletonNotYetSet } from '../singletons'
-import { type SourcegraphGraphQLAPIClient, graphqlClient } from '../sourcegraph-api/graphql'
+import { graphqlClient } from '../sourcegraph-api/graphql/client'
 import { wrapInActiveSpan } from '../tracing'
 import { isError } from '../utils'
 
@@ -93,8 +92,6 @@ export class FeatureFlagProvider {
     // When we have at least one subscription, ensure that we also periodically refresh the flags
     private nextRefreshTimeout: NodeJS.Timeout | number | undefined = undefined
 
-    constructor(private apiClient: SourcegraphGraphQLAPIClient) {}
-
     /**
      * Get a flag's value from the cache. The returned value could be stale. You must have
      * previously called {@link FeatureFlagProvider.evaluateFeatureFlag} or
@@ -105,7 +102,7 @@ export class FeatureFlagProvider {
     private getFromCache(flagName: FeatureFlag): boolean | undefined {
         void this.refreshIfStale()
 
-        const endpoint = this.apiClient.endpoint
+        const endpoint = graphqlClient.endpoint
 
         const exposedValue = this.exposedFeatureFlags[endpoint]?.[flagName]
         if (exposedValue !== undefined) {
@@ -120,12 +117,12 @@ export class FeatureFlagProvider {
     }
 
     public getExposedExperiments(): Record<string, boolean> {
-        const endpoint = this.apiClient.endpoint
+        const endpoint = graphqlClient.endpoint
         return this.exposedFeatureFlags[endpoint] || {}
     }
 
     public async evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
-        const endpoint = this.apiClient.endpoint
+        const endpoint = graphqlClient.endpoint
         return wrapInActiveSpan(`FeatureFlagProvider.evaluateFeatureFlag.${flagName}`, async () => {
             if (process.env.DISABLE_FEATURE_FLAGS) {
                 return false
@@ -136,7 +133,7 @@ export class FeatureFlagProvider {
                 return cachedValue
             }
 
-            const value = await this.apiClient.evaluateFeatureFlag(flagName)
+            const value = await graphqlClient.evaluateFeatureFlag(flagName)
 
             if (value === null || typeof value === 'undefined' || isError(value)) {
                 // The backend does not know about this feature flag, so we can't know if the user
@@ -191,10 +188,10 @@ export class FeatureFlagProvider {
 
     private async refreshFeatureFlags(): Promise<void> {
         return wrapInActiveSpan('FeatureFlagProvider.refreshFeatureFlags', async () => {
-            const endpoint = this.apiClient.endpoint
+            const endpoint = graphqlClient.endpoint
             const data = process.env.DISABLE_FEATURE_FLAGS
                 ? {}
-                : await this.apiClient.getEvaluatedFeatureFlags()
+                : await graphqlClient.getEvaluatedFeatureFlags()
 
             this.exposedFeatureFlags[endpoint] = isError(data) ? {} : data
 
@@ -221,7 +218,7 @@ export class FeatureFlagProvider {
      * {@link FeatureFlagProvider.evaluatedFeatureFlag} to be picked up.
      */
     private onFeatureFlagChanged(callback: () => void): () => void {
-        const endpoint = this.apiClient.endpoint
+        const endpoint = graphqlClient.endpoint
         const subscription = this.subscriptionsForEndpoint.get(endpoint)
         if (subscription) {
             subscription.callbacks.add(callback)
@@ -287,8 +284,7 @@ export class FeatureFlagProvider {
 
 const NO_FLAGS: Record<string, never> = {}
 
-export const featureFlagProvider = singletonNotYetSet<FeatureFlagProvider>()
-setSingleton(featureFlagProvider, new FeatureFlagProvider(graphqlClient))
+export const featureFlagProvider = new FeatureFlagProvider()
 
 function computeIfExistingFlagChanged(
     oldFlags: Record<string, boolean>,

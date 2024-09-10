@@ -1,5 +1,6 @@
 import {
     type AuthStatus,
+    authStatus,
     contextFiltersProvider,
     getEditorInsertSpaces,
     getEditorTabSize,
@@ -203,9 +204,7 @@ export class GhostHintDecorator implements vscode.Disposable {
 
         // Listen to authentication changes
         this.permanentDisposables.push(
-            subscriptionDisposable(
-                authProvider.instance!.changes.subscribe(authStatus => this.updateEnablement(authStatus))
-            )
+            subscriptionDisposable(authStatus.subscribe(authStatus => this.updateEnablement(authStatus)))
         )
 
         // Listen to configuration changes (e.g. if the setting is disabled)
@@ -358,7 +357,7 @@ export class GhostHintDecorator implements vscode.Disposable {
         variant: GhostVariant,
         textPadding = 0
     ): Promise<void> {
-        if (await contextFiltersProvider.instance!.isUriIgnored(editor.document.uri)) {
+        if (await contextFiltersProvider.isUriIgnored(editor.document.uri)) {
             // The current file is ignored, so do nothing
             return
         }

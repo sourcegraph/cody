@@ -50,7 +50,6 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
                 authStatus: AUTH_STATUS_FIXTURE_AUTHED,
             } as any),
             config: {} as any,
-            authStatus: AUTH_STATUS_FIXTURE_AUTHED,
             firstCompletionTimeout:
                 superArgs?.firstCompletionTimeout ??
                 DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
@@ -73,7 +72,7 @@ describe('InlineCompletionItemProvider', () => {
         } as any as vscode.Memento)
     })
     beforeEach(() => {
-        vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValue(false)
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
         CompletionLogger.reset_testOnly()
     })
 
@@ -280,7 +279,7 @@ describe('InlineCompletionItemProvider', () => {
     })
 
     it('no-ops on files that are ignored by the context filter policy', async () => {
-        vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValueOnce('repo:foo')
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValueOnce('repo:foo')
         const completionParams = params('const foo = █', [completion`bar`])
         const fn = vi.fn()
         const provider = new MockableInlineCompletionItemProvider(fn)

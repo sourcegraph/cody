@@ -2,12 +2,13 @@ import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
 import {
-    type AuthStatus,
     type AutocompleteContextSnippet,
     type ClientConfigurationWithAccessToken,
     type DocumentContext,
+    currentAuthStatus,
     getActiveTraceAndSpanId,
     isAbortError,
+    isDotCom,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -47,8 +48,7 @@ export interface InlineCompletionsParams {
     completionIntent?: CompletionIntent
     lastAcceptedCompletionItem?: Pick<AutocompleteItem, 'requestParams' | 'analyticsItem'>
     provider: Provider
-    authStatus: AuthStatus
-    config: ClientConfigurationWithAccessToken
+    configuration: ClientConfigurationWithAccessToken
 
     // Shared
     requestManager: RequestManager
@@ -57,7 +57,6 @@ export interface InlineCompletionsParams {
     stageRecorder: CompletionLogger.AutocompleteStageRecorder
 
     // UI state
-    isDotComUser: boolean
     lastCandidate?: LastInlineCompletionCandidate
     debounceInterval?: { singleLine: number; multiLine: number }
     setIsLoading?: (isLoading: boolean) => void
@@ -243,15 +242,16 @@ async function doGetInlineCompletions(
         firstCompletionTimeout,
         completionIntent,
         lastAcceptedCompletionItem,
-        isDotComUser,
         stageRecorder,
-        authStatus,
-        config,
+        configuration: config,
         numberOfCompletionsToGenerate,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
 
+    const authStatus = await currentAuthStatus()
+
+    const isDotComUser = isDotCom(authStatus.endpoint)
     const gitIdentifiersForFile =
         isDotComUser === true ? gitMetadataForCurrentEditor.getGitIdentifiersForFile() : undefined
     if (gitIdentifiersForFile?.gitUrl) {

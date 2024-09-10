@@ -113,8 +113,6 @@ export class InlineCompletionItemProvider
 
     private disposables: vscode.Disposable[] = []
 
-    private isProbablyNewInstall = true
-
     private firstCompletionDecoration = new FirstCompletionDecorationHandler()
 
     /**
@@ -155,7 +153,7 @@ export class InlineCompletionItemProvider
         this.disposables.push(
             subscriptionDisposable(
                 featureFlagProvider
-                    .instance!.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
+                    .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
                     .subscribe(shouldSample => {
                         this.shouldSample = Boolean(shouldSample)
                     })
@@ -193,9 +191,6 @@ export class InlineCompletionItemProvider
 
         this.smartThrottleService = new SmartThrottleService()
         this.disposables.push(this.smartThrottleService)
-
-        const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
-        this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
 
         logDebug(
             'CodyCompletionProvider:initialized',
@@ -338,7 +333,7 @@ export class InlineCompletionItemProvider
                 return null
             }
 
-            if (await contextFiltersProvider.instance!.isUriIgnored(document.uri)) {
+            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
                 logIgnored(document.uri, 'context-filter', isManualCompletion)
                 return null
             }
@@ -443,7 +438,7 @@ export class InlineCompletionItemProvider
             }
 
             const latencyFeatureFlags: LatencyFeatureFlags = {
-                user: await featureFlagProvider.instance!.evaluateFeatureFlag(
+                user: await featureFlagProvider.evaluateFeatureFlag(
                     FeatureFlag.CodyAutocompleteUserLatency
                 ),
             }
@@ -469,9 +464,8 @@ export class InlineCompletionItemProvider
                     triggerKind,
                     selectedCompletionInfo: context.selectedCompletionInfo,
                     docContext,
-                    config: this.config.config,
+                    configuration: this.config.config,
                     provider: this.config.provider,
-                    authStatus: this.config.authStatus,
                     contextMixer: this.contextMixer,
                     smartThrottleService: this.smartThrottleService,
                     requestManager: this.requestManager,
@@ -492,7 +486,6 @@ export class InlineCompletionItemProvider
                     firstCompletionTimeout: this.config.firstCompletionTimeout,
                     completionIntent,
                     lastAcceptedCompletionItem: this.lastAcceptedCompletionItem,
-                    isDotComUser: this.config.isDotComUser,
                     stageRecorder,
                 })
 
@@ -723,13 +716,6 @@ export class InlineCompletionItemProvider
 
         if (isInTutorial(request.document)) {
             // Do nothing, the user is already working through the tutorial
-            return
-        }
-
-        if (!this.isProbablyNewInstall) {
-            // Only trigger for new installs for now, to avoid existing users from
-            // seeing this. Consider removing this check in future, because existing
-            // users would have had the key set above.
             return
         }
 

@@ -361,24 +361,6 @@ export function memoizeLastValue<P extends unknown[], T>(
     }
 }
 
-/**
- * Convert an RxJS Observable to one of our Observables. This is just a type helper for
- * {@link Observable.from}.
- */
-export function fromRxJSObservable<T>(rxjsObservable: RxJSSubscribable<T>): Observable<T> {
-    return Observable.from(rxjsObservable as Observable<T>)
-}
-
-interface RxJSSubscribable<T> {
-    subscribe(observer: Partial<Observer<T>>): { unsubscribe(): void }
-}
-
-interface Observer<T> {
-    next: (value: T) => void
-    error: (err: any) => void
-    complete: () => void
-}
-
 interface VSCodeDisposable {
     dispose(): void
 }

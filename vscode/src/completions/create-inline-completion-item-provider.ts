@@ -80,7 +80,6 @@ export function createInlineCompletionItemProvider({
                                 .getConfiguration()
                                 .get<number>('cody.autocomplete.triggerDelay') ?? 0
                         const completionsProvider = new InlineCompletionItemProvider({
-                            authStatus,
                             triggerDelay,
                             provider,
                             config,

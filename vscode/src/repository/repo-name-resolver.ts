@@ -2,6 +2,9 @@ import { LRUCache } from 'lru-cache'
 import type * as vscode from 'vscode'
 
 import {
+    ContextFiltersProvider,
+    type Unsubscribable,
+    authStatus,
     convertGitCloneURLToCodebaseName,
     graphqlClient,
     isDefined,
@@ -23,9 +26,10 @@ export class RepoNameResolver {
     private fsPathToRepoNameCache = new LRUCache<UriFsPath, RepoName[]>({ max: 1000 })
     private remoteUrlToRepoNameCache = new LRUCache<RemoteUrl, Promise<RepoName | null>>({ max: 1000 })
 
-    public init(): void {
-        // TODO(beyang): handle disposable
-        authProvider.instance!.changes.subscribe(() => {
+    private authStatusSubscription: Unsubscribable
+
+    public constructor() {
+        this.authStatusSubscription = authStatus.subscribe(() => {
             this.fsPathToRepoNameCache.clear()
             this.remoteUrlToRepoNameCache.clear()
         })
@@ -41,10 +45,7 @@ export class RepoNameResolver {
      * If found, gets repo names from the repository.
      * if not found, walks the file system upwards until it finds a `.git` folder.
      */
-    public getRepoNamesFromWorkspaceUri = async (
-        uri: vscode.Uri,
-        signal?: AbortSignal
-    ): Promise<string[]> => {
+    public async getRepoNamesFromWorkspaceUri(uri: vscode.Uri, signal?: AbortSignal): Promise<string[]> {
         if (!isFileURI(uri)) {
             return []
         }
@@ -123,10 +124,15 @@ export class RepoNameResolver {
 
         return repoNameRequest
     }
+
+    public dispose(): void {
+        this.authStatusSubscription.unsubscribe()
+    }
 }
 
 /**
  * A a singleton instance of the `RepoNameResolver` class.
- * `RepoNameResolver.init` is called on extension activation to set platform specific remote url getters.
  */
 export const repoNameResolver = new RepoNameResolver()
+
+ContextFiltersProvider.repoNameResolver = repoNameResolver

@@ -10,9 +10,7 @@ import {
     type ChatClient,
     type ChatMessage,
     ClientConfigSingleton,
-    type ClientConfigurationWithAccessToken,
     CodyIDE,
-    type ConfigWatcher,
     type ContextItem,
     type ContextItemOpenCtx,
     ContextItemSource,
@@ -29,6 +27,7 @@ import {
     type SerializedPromptEditorState,
     Typewriter,
     addMessageListenersForExtensionAPI,
+    authStatus,
     createMessageAPIForExtension,
     featureFlagProvider,
     getContextForChatMessage,
@@ -44,6 +43,7 @@ import {
     parseMentionQuery,
     recordErrorToSpan,
     reformatBotMessageForChat,
+    resolvedConfig,
     serializeChatMessage,
     startWith,
     telemetryRecorder,
@@ -55,8 +55,10 @@ import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import {
     combineLatest,
+    createDisposables,
     promiseFactoryToObservable,
     promiseToObservable,
+    subscriptionDisposable,
 } from '@sourcegraph/cody-shared/src/misc/observable'
 import { TokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
@@ -132,8 +134,6 @@ interface ChatControllerOptions {
     editor: VSCodeEditor
     guardrails: Guardrails
     startTokenReceiver?: typeof startTokenReceiver
-
-    configWatcher: ConfigWatcher<ClientConfigurationWithAccessToken>
 }
 
 export interface ChatSession {
@@ -210,7 +210,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
     private readonly contextAPIClient: ContextAPIClient | null
-    private configWatcher: ConfigWatcher<ClientConfigurationWithAccessToken>
 
     private disposables: vscode.Disposable[] = []
 
@@ -229,7 +228,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         contextAPIClient,
         contextRetriever,
         extensionClient,
-        configWatcher,
     }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.chatClient = chatClient
@@ -237,7 +235,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.editor = editor
         this.extensionClient = extensionClient
         this.contextRetriever = contextRetriever
-        this.configWatcher = configWatcher
 
         this.chatModel = new ChatModel(getDefaultModelID())
 
@@ -253,11 +250,19 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         void this.retrievers.localEmbeddings?.start()
 
         this.disposables.push(
-            startClientStateBroadcaster({
-                useRemoteSearch: this.retrievers.allowRemoteContext,
-                postMessage: (message: ExtensionMessage) => this.postMessage(message),
-                chatModel: this.chatModel,
-            })
+            subscriptionDisposable(
+                authStatus
+                    .pipe(
+                        createDisposables(() =>
+                            startClientStateBroadcaster({
+                                useRemoteSearch: this.retrievers.allowRemoteContext,
+                                postMessage: (message: ExtensionMessage) => this.postMessage(message),
+                                chatModel: this.chatModel,
+                            })
+                        )
+                    )
+                    .subscribe({})
+            )
         )
 
         // Observe any changes in chat history and send client notifications to
@@ -1479,15 +1484,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }),
                 {
                     mentionMenuData: query => getMentionMenuData(query, this.chatModel),
-                    evaluatedFeatureFlag: flag =>
-                        featureFlagProvider.instance!.evaluatedFeatureFlag(flag),
+                    evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
                     prompts: query =>
                         promiseFactoryToObservable(signal =>
                             mergedPromptsAndLegacyCommands(query, signal)
                         ),
                     models: () =>
                         combineLatest([
-                            this.configWatcher.changes,
+                            resolvedConfig,
                             modelsService.instance!.selectedOrDefaultModelChanges.pipe(
                                 startWith(undefined)
                             ),

@@ -2,16 +2,20 @@ import {
     type AuthStatus,
     type ClientConfiguration,
     CodyIDE,
-    type ConfigWatcher,
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
     WEB_PROVIDER_URI,
+    authStatus,
     combineLatest,
+    currentResolvedConfig,
+    distinctUntilChanged,
     featureFlagProvider,
     graphqlClient,
     isDotCom,
     isError,
     logError,
+    pluck,
+    resolvedConfig,
     setOpenCtx,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -23,7 +27,6 @@ import type {
 import type { createController } from '@openctx/vscode-lib'
 import { Observable } from 'observable-fns'
 import { logDebug, outputChannel } from '../log'
-import { authProvider } from '../services/AuthProvider'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openctx/remoteDirectorySearch'
@@ -33,17 +36,17 @@ import { createWebProvider } from './openctx/web'
 
 export async function exposeOpenCtxClient(
     context: Pick<vscode.ExtensionContext, 'extension' | 'secrets'>,
-    config: ConfigWatcher<ClientConfiguration>,
     createOpenCtxController: typeof createController | undefined
 ): Promise<void> {
     await warnIfOpenCtxExtensionConflict()
     try {
-        const isCodyWeb = config.get().agentIDE === CodyIDE.Web
+        const config = await currentResolvedConfig()
+        const isCodyWeb = config.configuration.agentIDE === CodyIDE.Web
         const createController =
             createOpenCtxController ?? (await import('@openctx/vscode-lib')).createController
 
         // Enable fetching of openctx configuration from Sourcegraph instance
-        const mergeConfiguration = config.get().experimentalNoodle
+        const mergeConfiguration = config.configuration.experimentalNoodle
             ? getMergeConfigurationFunction()
             : undefined
 
@@ -56,11 +59,7 @@ export async function exposeOpenCtxClient(
             features: isCodyWeb ? {} : { annotations: true, statusBar: true },
             providers: isCodyWeb
                 ? Observable.of(getCodyWebOpenCtxProviders())
-                : getOpenCtxProviders(
-                      config.changes,
-                      authProvider.instance!.changes,
-                      isValidSiteVersion
-                  ),
+                : getOpenCtxProviders(authStatus, isValidSiteVersion),
             mergeConfiguration,
         })
         setOpenCtx({
@@ -73,14 +72,13 @@ export async function exposeOpenCtxClient(
 }
 
 export function getOpenCtxProviders(
-    configChanges: Observable<ClientConfiguration>,
     authStatusChanges: Observable<Pick<AuthStatus, 'endpoint'>>,
     isValidSiteVersion: boolean
 ): Observable<ImportedProviderConfiguration[]> {
     return combineLatest([
-        configChanges,
+        resolvedConfig.pipe(pluck('configuration'), distinctUntilChanged()),
         authStatusChanges,
-        featureFlagProvider.instance!.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider),
     ]).map(
         ([config, authStatus, gitMentionProvider]: [
             ClientConfiguration,
