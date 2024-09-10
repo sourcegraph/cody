@@ -1,11 +1,8 @@
 import {
     type AutocompleteContextSnippet,
-    CODY_IGNORE_URI_PATH,
     type GraphQLAPIClientConfig,
     contextFiltersProvider,
     graphqlClient,
-    ignores,
-    isCodyIgnoredFile,
     testFileUri,
     uriBasename,
 } from '@sourcegraph/cody-shared'
@@ -14,8 +11,6 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import { documentAndPosition } from '../test-helpers'
 import type { ContextRetriever } from '../types'
-
-import { Utils } from 'vscode-uri'
 import { ContextMixer } from './context-mixer'
 import type { ContextStrategyFactory } from './context-strategy'
 
@@ -254,74 +249,6 @@ describe('ContextMixer', () => {
                 totalChars: 136,
                 prefixChars: 8,
                 suffixChars: 0,
-            })
-        })
-
-        describe('retrieved context is filtered by .cody/ignore', () => {
-            const workspaceRoot = testFileUri('')
-            beforeAll(() => {
-                ignores.setActiveState(true)
-                // all foo.ts files will be ignored
-                ignores.setIgnoreFiles(workspaceRoot, [
-                    {
-                        uri: Utils.joinPath(workspaceRoot, '.', CODY_IGNORE_URI_PATH),
-                        content: '**/foo.ts',
-                    },
-                ])
-            })
-            it('mixes results are filtered', async () => {
-                const mixer = new ContextMixer(
-                    createMockStrategy([
-                        [
-                            {
-                                identifier: 'jaccard-similarity',
-                                uri: testFileUri('foo.ts'),
-                                content: 'function foo1() {}',
-                                startLine: 0,
-                                endLine: 0,
-                            },
-                            {
-                                identifier: 'jaccard-similarity',
-                                uri: testFileUri('foo/bar.ts'),
-                                content: 'function bar1() {}',
-                                startLine: 0,
-                                endLine: 0,
-                            },
-                        ],
-                        [
-                            {
-                                identifier: 'jaccard-similarity',
-                                uri: testFileUri('test/foo.ts'),
-                                content: 'function foo3() {}',
-                                startLine: 10,
-                                endLine: 10,
-                            },
-                            {
-                                identifier: 'jaccard-similarity',
-                                uri: testFileUri('foo.ts'),
-                                content: 'function foo1() {}\nfunction foo2() {}',
-                                startLine: 0,
-                                endLine: 1,
-                            },
-                            {
-                                identifier: 'jaccard-similarity',
-                                uri: testFileUri('example/bar.ts'),
-                                content: 'function bar1() {}\nfunction bar2() {}',
-                                startLine: 0,
-                                endLine: 1,
-                            },
-                        ],
-                    ])
-                )
-                const { context } = await mixer.getContext(defaultOptions)
-                const contextFiles = normalize(context)
-                // returns 2 bar.ts context
-                expect(contextFiles?.length).toEqual(2)
-                for (const context of contextFiles) {
-                    expect(
-                        isCodyIgnoredFile(Utils.joinPath(workspaceRoot, context.fileName))
-                    ).toBeFalsy()
-                }
             })
         })
 

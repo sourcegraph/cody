@@ -18,7 +18,6 @@ import {
     displayPath,
     graphqlClient,
     isAbortError,
-    isCodyIgnoredFile,
     isDefined,
     isErrorLike,
     isWindows,
@@ -284,9 +283,9 @@ export async function getOpenTabsContextFile(): Promise<ContextItemFile[]> {
     return await filterContextItemFiles(
         (
             await Promise.all(
-                getOpenTabsUris()
-                    .filter(uri => !isCodyIgnoredFile(uri))
-                    .map(uri => createContextFileFromUri(uri, ContextItemSource.User, 'file'))
+                getOpenTabsUris().map(uri =>
+                    createContextFileFromUri(uri, ContextItemSource.User, 'file')
+                )
             )
         ).flat()
     )
@@ -314,10 +313,6 @@ async function createContextFileFromUri(
     kind?: SymbolKind,
     symbolName?: string
 ): Promise<ContextItem[]> {
-    if (isCodyIgnoredFile(uri)) {
-        return []
-    }
-
     const range = toRangeData(selectionRange)
     return [
         type === 'file'

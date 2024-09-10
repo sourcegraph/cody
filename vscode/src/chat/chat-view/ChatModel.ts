@@ -8,7 +8,6 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     errorToChatError,
-    isCodyIgnoredFile,
     modelsService,
     serializeChatMessage,
     toRangeData,
@@ -51,10 +50,10 @@ export class ChatModel {
             throw new Error('Cannot set new context used for bot message')
         }
 
-        lastMessage.contextFiles = newContextUsed.filter(c => !isCodyIgnoredFile(c.uri))
+        lastMessage.contextFiles = newContextUsed
         lastMessage.contextAlternatives = contextAlternatives?.map(({ items, strategy }) => {
             return {
-                items: items.filter(c => !isCodyIgnoredFile(c.uri)),
+                items: items,
                 strategy,
             }
         })

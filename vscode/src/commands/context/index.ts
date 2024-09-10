@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type CodyCommandContext, type ContextItem, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
+import type { CodyCommandContext, ContextItem } from '@sourcegraph/cody-shared'
 
 import { Utils } from 'vscode-uri'
 import { logDebug } from '../../log'
@@ -68,7 +68,7 @@ export const getCommandContextFiles = async (config: CodyCommandContext): Promis
             contextFiles.push(...(await getContextFileFromTabs()))
         }
 
-        return contextFiles.filter(file => !isCodyIgnoredFile(file.uri))
+        return contextFiles
     } catch (error) {
         logDebug('getCommandContextFiles', 'Error getting command context files', error)
         return []

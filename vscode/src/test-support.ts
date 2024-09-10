@@ -1,4 +1,4 @@
-import { type ChatMessage, type IgnoreHelper, ps } from '@sourcegraph/cody-shared'
+import { type ChatMessage, ps } from '@sourcegraph/cody-shared'
 import type { ChatController } from './chat/chat-view/ChatController'
 
 // A one-slot channel which lets readers block on a value being
@@ -35,7 +35,6 @@ class Rendezvous<T> {
 export class TestSupport {
     public static instance: TestSupport | undefined
     public chatPanelProvider = new Rendezvous<ChatController>()
-    public ignoreHelper = new Rendezvous<IgnoreHelper>()
 
     public ps = ps
 

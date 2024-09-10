@@ -16,3 +16,4 @@ playwright-report
 test-results
 .vscode-test/
 .envrc
+bindings/kotlin/lib/bin/

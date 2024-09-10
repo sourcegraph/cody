@@ -2,7 +2,6 @@ import {
     type ContextItem,
     TokenCounterUtils,
     contextFiltersProvider,
-    isCodyIgnoredFile,
     logError,
     toRangeData,
     wrapInActiveSpan,
@@ -136,5 +135,5 @@ export async function getSelectionOrFileContext(): Promise<ContextItem[]> {
 }
 
 async function shouldIgnore(uri: URI): Promise<boolean> {
-    return Boolean((await contextFiltersProvider.isUriIgnored(uri)) || isCodyIgnoredFile(uri))
+    return Boolean(await contextFiltersProvider.isUriIgnored(uri))
 }

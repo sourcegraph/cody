@@ -89,7 +89,6 @@ import { registerSidebarCommands } from './services/SidebarCommands'
 import { type CodyStatusBar, createStatusBar } from './services/StatusBar'
 import { upstreamHealthProvider } from './services/UpstreamHealthProvider'
 import { autocompleteStageCounterLogger } from './services/autocomplete-stage-counter-logger'
-import { setUpCodyIgnore } from './services/cody-ignore'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
@@ -273,7 +272,6 @@ const register = async (
     registerChatCommands(disposables)
     disposables.push(...registerSidebarCommands())
     const config = await firstValueFrom(resolvedConfigWithAccessToken)
-    disposables.push(...setUpCodyIgnore(config))
     registerOtherCommands(disposables)
     if (isExtensionModeDevOrTest) {
         await registerTestCommands(context, disposables)

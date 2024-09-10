@@ -5,7 +5,6 @@ import {
     type ModelContextWindow,
     TokenCounter,
     contextFiltersProvider,
-    isCodyIgnoredFile,
     ps,
 } from '@sourcegraph/cody-shared'
 import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
@@ -125,7 +124,7 @@ export class PromptBuilder {
 
         for (const item of contextItems) {
             // Skip context items that are in the Cody ignore list
-            if (isCodyIgnoredFile(item.uri) || (await contextFiltersProvider.isUriIgnored(item.uri))) {
+            if (await contextFiltersProvider.isUriIgnored(item.uri)) {
                 result.ignored.push(item)
                 continue
             }
