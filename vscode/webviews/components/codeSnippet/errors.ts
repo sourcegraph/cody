@@ -1,4 +1,3 @@
-
 export interface ErrorLike {
     message: string
     name?: string
@@ -16,4 +15,7 @@ export function tryCatch<T>(function_: () => T): T | undefined {
 }
 
 export const isErrorLike = (value: unknown): value is ErrorLike =>
-    typeof value === 'object' && value !== null && ('stack' in value || 'message' in value) && !('__typename' in value)
+    typeof value === 'object' &&
+    value !== null &&
+    ('stack' in value || 'message' in value) &&
+    !('__typename' in value)

@@ -1,9 +1,8 @@
-
-import { useLayoutEffect, useMemo, useState } from 'react'
+import { type FC, useLayoutEffect, useMemo, useState } from 'react'
 
 import { clsx } from 'clsx'
 
-import { highlightNodeMultiline } from '../utils'
+import { highlightNodeMultiline } from '../highlights'
 import { Code } from './Code'
 
 import styles from './CodeExcerpt.module.css'
@@ -17,10 +16,8 @@ interface Props {
     /** The 0-based (exclusive) line number that this code excerpt ends at */
     endLine: number
     className?: string
-
     plaintextLines: string[]
     highlightedLines?: string[]
-
     onCopy?: () => void
 }
 
@@ -46,41 +43,34 @@ export interface HighlightRange {
 /**
  * A code excerpt that displays syntax highlighting and match range highlighting.
  */
-export const CodeExcerpt: React.FunctionComponent<Props> = props => {
-    const {
-        plaintextLines,
-        highlightedLines,
-        startLine,
-        endLine,
-        highlightRanges,
-        className,
-        onCopy,
-    } = props
+export const CodeExcerpt: FC<Props> = props => {
+    const { plaintextLines, highlightedLines, startLine, endLine, highlightRanges, className, onCopy } =
+        props
+
+    const [tableContainerElement, setTableContainerElement] = useState<HTMLElement | null>(null)
 
     const table = useMemo(
         () =>
             highlightedLines ? (
+                // biome-ignore lint/security/noDangerouslySetInnerHtml:
                 <table dangerouslySetInnerHTML={{ __html: highlightedLines.join('') }} />
             ) : (
                 <table>
                     <tbody>
-                    {plaintextLines.map((line, i) => (
-                        // eslint-disable-next-line react/no-array-index-key
-                        <tr key={startLine + i}>
-                            <td className="line" data-line={startLine + i + 1} />
-                            <td className="code">
-                                <span className="hl-text hl-plain">{line}</span>
-                            </td>
-                        </tr>
-                    ))}
+                        {plaintextLines.map((line, i) => (
+                            // biome-ignore lint/suspicious/noArrayIndexKey:
+                            <tr key={startLine + i}>
+                                <td className="line" data-line={startLine + i + 1} />
+                                <td className="code">
+                                    <span className="hl-text hl-plain">{line}</span>
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             ),
         [plaintextLines, highlightedLines, startLine]
     )
-
-
-    const [tableContainerElement, setTableContainerElement] = useState<HTMLElement | null>(null)
 
     // Highlight the search matches
     useLayoutEffect(() => {
@@ -110,10 +100,10 @@ export const CodeExcerpt: React.FunctionComponent<Props> = props => {
                 }
             }
         }
-    }, [highlightRanges, startLine, endLine, tableContainerElement, table])
+    }, [highlightRanges, startLine, tableContainerElement])
 
     return (
-        <Code data-testid="code-excerpt" onCopy={onCopy} className={clsx(styles.codeExcerpt, className)}>
+        <Code className={clsx(styles.codeExcerpt, className)}>
             <div ref={setTableContainerElement}>{table}</div>
         </Code>
     )

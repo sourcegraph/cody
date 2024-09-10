@@ -1,4 +1,4 @@
-import { forwardRef } from 'react'
+import { type HTMLAttributes, forwardRef } from 'react'
 
 import { clsx } from 'clsx'
 import { upperFirst } from 'lodash'
@@ -10,13 +10,13 @@ import styles from './Code.module.css'
 export enum TYPOGRAPHY_WEIGHTS {
     regular = 'regular',
     medium = 'medium',
-    bold = 'bold'
+    bold = 'bold',
 }
 
 const getFontWeightStyle = (weight: TYPOGRAPHY_WEIGHTS | `${TYPOGRAPHY_WEIGHTS}`): string =>
     clsx(styles[`fontWeight${upperFirst(weight)}` as keyof typeof styles])
 
-interface CodeProps extends React.HTMLAttributes<HTMLElement> {
+interface CodeProps extends HTMLAttributes<HTMLElement> {
     size?: 'small' | 'base'
     weight?: TYPOGRAPHY_WEIGHTS | `${TYPOGRAPHY_WEIGHTS}`
 }

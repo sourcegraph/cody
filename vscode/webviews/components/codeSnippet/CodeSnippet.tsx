@@ -1,35 +1,39 @@
 import {
-    type FC,
-    type ReactElement,
     type ElementType,
+    type FC,
     type PropsWithChildren,
-    useState,
+    type ReactElement,
+    forwardRef,
     useCallback,
     useEffect,
     useMemo,
-    forwardRef,
-    useRef
+    useRef,
+    useState,
 } from 'react'
 
 import { clsx } from 'clsx'
 
 import {
-    type SearchMatch,
-    type MatchGroup,
-    type ContentMatch,
     type ChunkMatch,
+    type ContentMatch,
+    type HighlightLineRange,
+    HighlightResponseFormat,
     type LineMatch,
-    HighlightLineRange,
-    HighlightResponseFormat
+    type MatchGroup,
+    type SearchMatch,
 } from './types'
 
+import { FileMatchChildren } from './components/FileMatchChildren'
 import { RepoFileLink } from './components/RepoLink'
-import { FileMatchChildren } from './components/FileMatchChildren';
-import { formatRepositoryStarCount, type ForwardReferenceExoticComponent, getFileMatchUrl, getRevision } from './utils'
+import {
+    type ForwardReferenceExoticComponent,
+    formatRepositoryStarCount,
+    getFileMatchUrl,
+    getRevision,
+    pluralize,
+} from './utils'
 
 import styles from './CodeSnippet.module.css'
-
-console.log(styles)
 
 export interface FetchFileParameters {
     repoName: string
@@ -41,7 +45,6 @@ export interface FetchFileParameters {
 }
 
 interface FileContentSearchResultProps {
-
     /** The file match search result. */
     result: ContentMatch
 
@@ -51,7 +54,10 @@ interface FileContentSearchResultProps {
     /** Whether this file should be rendered as expanded by default. */
     defaultExpanded: boolean
 
-    fetchHighlightedFileLineRanges?: (parameters: FetchFileParameters, force?: boolean) => Promise<string[][]>
+    fetchHighlightedFileLineRanges?: (
+        parameters: FetchFileParameters,
+        force?: boolean
+    ) => Promise<string[][]>
 
     /**
      * Formatted repository name to be displayed in repository link. If not
@@ -62,7 +68,7 @@ interface FileContentSearchResultProps {
     allExpanded?: boolean
 
     /** CSS class name to be applied to the ResultContainer Component. */
-    containerClassName?: string
+    className?: string
 
     /** Called when the file's search result is selected. */
     onSelect: () => void
@@ -70,7 +76,7 @@ interface FileContentSearchResultProps {
 
 export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResultProps>> = props => {
     const {
-        containerClassName,
+        className,
         result,
         repoDisplayName,
         defaultExpanded,
@@ -125,15 +131,14 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
                 ranges: unhighlightedGroups.map(({ startLine, endLine }) => ({ startLine, endLine })),
             },
             false
-        )
-            .then(res => {
-                setExpandedGroups(
-                    unhighlightedGroups.map((group, i) => ({
-                        ...group,
-                        highlightedHTMLRows: res[i],
-                    }))
-                )
-            })
+        ).then(res => {
+            setExpandedGroups(
+                unhighlightedGroups.map((group, i) => ({
+                    ...group,
+                    highlightedHTMLRows: res[i],
+                }))
+            )
+        })
     }, [result, fetchHighlightedFileLineRanges, unhighlightedGroups])
 
     const toggle = useCallback((): void => {
@@ -144,8 +149,12 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
         // Scroll back to top of result when collapsing
         if (expanded) {
             setTimeout(() => {
-                const reducedMotion = !window.matchMedia('(prefers-reduced-motion: no-preference)').matches
-                rootRef.current?.scrollIntoView({ block: 'nearest', behavior: reducedMotion ? 'auto' : 'smooth' })
+                const reducedMotion = !window.matchMedia('(prefers-reduced-motion: no-preference)')
+                    .matches
+                rootRef.current?.scrollIntoView({
+                    block: 'nearest',
+                    behavior: reducedMotion ? 'auto' : 'smooth',
+                })
             }, 0)
         }
     }, [collapsible, expanded])
@@ -172,14 +181,16 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
             title={title}
             resultType={result.type}
             onResultClicked={onSelect}
-            repoName={result.repository}
             repoStars={result.repoStars}
-            className={clsx(styles.copyButtonContainer, containerClassName)}
+            className={className}
             rankingDebug={result.debug}
             repoLastFetched={result.repoLastFetched}
         >
             <div data-testid="file-search-result" data-expanded={expanded}>
-                <FileMatchChildren result={result} grouped={expanded ? expandedGroups : collapsedGroups} />
+                <FileMatchChildren
+                    result={result}
+                    grouped={expanded ? expandedGroups : collapsedGroups}
+                />
                 {collapsible && (
                     <button
                         type="button"
@@ -187,19 +198,19 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
                             styles.toggleMatchesButton,
                             styles.focusableBlock,
                             styles.clickable,
-                            {[styles.toggleMatchesButtonExpanded]: expanded}
+                            { [styles.toggleMatchesButtonExpanded]: expanded }
                         )}
                         onClick={toggle}
                     >
                         <span className={styles.toggleMatchesButtonText}>
-                                {expanded
-                                    ? 'Show less'
-                                    : `Show ${hiddenMatchesCount} more ${pluralize(
-                                        'match',
-                                        hiddenMatchesCount,
-                                        'matches'
-                                    )}`}
-                            </span>
+                            {expanded
+                                ? 'Show less'
+                                : `Show ${hiddenMatchesCount} more ${pluralize(
+                                      'match',
+                                      hiddenMatchesCount,
+                                      'matches'
+                                  )}`}
+                        </span>
                     </button>
                 )}
             </div>
@@ -213,7 +224,6 @@ export interface ResultContainerProps {
     resultClassName?: string
     repoStars?: number
     resultType?: SearchMatch['type']
-    repoName?: string
     className?: string
     rankingDebug?: string
     actions?: ReactElement | boolean
@@ -235,7 +245,6 @@ const ResultContainer: ForwardReferenceExoticComponent<
         resultClassName,
         repoStars,
         resultType,
-        repoName,
         className,
         rankingDebug,
         actions,
@@ -245,25 +254,20 @@ const ResultContainer: ForwardReferenceExoticComponent<
 
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
 
-    const trackReferencePanelClick = (): void => onResultClicked?.()
-
     return (
         <Component
             ref={reference}
             className={clsx(className, styles.resultContainer)}
-            onClick={trackReferencePanelClick}
+            onClick={onResultClicked}
         >
             <article>
                 <header className={styles.header} data-result-header={true}>
                     {/* Add a result type to be read out to screen readers only, so that screen reader users can
                     easily scan the search results list (for example, by navigating by landmarks). */}
-                    <span className="sr-only">{resultType ? accessibleResultType[resultType] : 'search'} result,</span>
-                    <div
-                        className={clsx(styles.headerTitle, titleClassName)}
-                        data-testid="result-container-header"
-                    >
-                        {title}
-                    </div>
+                    <span className="sr-only">
+                        {resultType ? accessibleResultType[resultType] : 'search'} result,
+                    </span>
+                    <div className={clsx(styles.headerTitle, titleClassName)}>{title}</div>
 
                     {actions}
                     {formattedRepositoryStarCount && (
@@ -288,11 +292,6 @@ function getRepositoryUrl(repository: string, branches?: string[]): string {
 
 function countHighlightRanges(groups: MatchGroup[]): number {
     return groups.reduce((count, group) => count + group.matches.length, 0)
-}
-
-function pluralize(string: string, count: number | bigint, plural = string + 's'): string {
-    // @ts-ignore
-    return count === 1 || count === 1n ? string : plural
 }
 
 function matchesToMatchGroups(result: ContentMatch): MatchGroup[] {
@@ -341,10 +340,13 @@ function truncateGroups(groups: MatchGroup[], maxMatches: number, contextLines: 
     for (const group of groups) {
         if (remainingMatches === 0) {
             break
-        } else if (group.matches.length > remainingMatches) {
+        }
+
+        if (group.matches.length > remainingMatches) {
             visibleGroups.push(truncateGroup(group, remainingMatches, contextLines))
             break
         }
+
         visibleGroups.push(group)
         remainingMatches -= group.matches.length
     }
@@ -358,13 +360,19 @@ function truncateGroup(group: MatchGroup, maxMatches: number, contextLines: numb
         Math.min(...keepMatches.map(match => match.startLine)) - contextLines,
         group.startLine
     )
-    const newEndLine = Math.min(Math.max(...keepMatches.map(match => match.endLine)) + contextLines, group.endLine)
+    const newEndLine = Math.min(
+        Math.max(...keepMatches.map(match => match.endLine)) + contextLines,
+        group.endLine
+    )
     const matchesInKeepContext = group.matches
         .slice(maxMatches)
         .filter(match => match.startLine >= newStartLine && match.endLine <= newEndLine)
     return {
         ...group,
-        plaintextLines: group.plaintextLines.slice(newStartLine - group.startLine, newEndLine - group.startLine + 1),
+        plaintextLines: group.plaintextLines.slice(
+            newStartLine - group.startLine,
+            newEndLine - group.startLine + 1
+        ),
         highlightedHTMLRows: group.highlightedHTMLRows?.slice(
             newStartLine - group.startLine,
             newEndLine - group.startLine + 1
@@ -374,4 +382,3 @@ function truncateGroup(group: MatchGroup, maxMatches: number, contextLines: numb
         endLine: newEndLine,
     }
 }
-

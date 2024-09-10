@@ -1,7 +1,7 @@
-import * as React from 'react'
+import type * as React from 'react'
 import { useEffect, useRef } from 'react'
 
-import { highlightNode } from '../utils'
+import { highlightNode } from '../highlights'
 import type { Range } from '../types'
 
 interface Props {
@@ -44,14 +44,18 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
                 )
             }
         }
-    }, [pathMatchRanges, fileName, containerElement])
+    }, [pathMatchRanges, fileName])
 
     return (
         <span className={className}>
             <span>
                 <a href={repoURL}>{repoDisplayName || displayRepoName(repoName)}</a>
                 <span aria-hidden={true}> ›</span>{' '}
-                <a href={fileURL} ref={containerElement} data-selectable-search-result={isKeyboardSelectable}>
+                <a
+                    href={fileURL}
+                    ref={containerElement}
+                    data-selectable-search-result={isKeyboardSelectable}
+                >
                     {fileBase ? `${fileBase}/` : null}
                     <strong>{fileName}</strong>
                 </a>

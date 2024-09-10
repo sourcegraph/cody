@@ -33,13 +33,13 @@ function parseLineOrPosition(
         lineOrPosition = lineOrPosition.slice(1)
     }
     const parts = lineOrPosition.split(':', 2)
-    const line = parts.length >= 1 ? parseInt(parts[0], 10) : undefined
-    const character = parts.length === 2 ? parseInt(parts[1], 10) : undefined
+    const line = parts.length >= 1 ? Number.parseInt(parts[0], 10) : undefined
+    const character = parts.length === 2 ? Number.parseInt(parts[1], 10) : undefined
 
-    if (line === undefined || isNaN(line) || line <= 0) {
+    if (line === undefined || Number.isNaN(line) || line <= 0) {
         return {}
     }
-    if (character === undefined || isNaN(character) || character <= 0) {
+    if (character === undefined || Number.isNaN(character) || character <= 0) {
         return { line }
     }
     return { line, character }
@@ -153,7 +153,10 @@ function formatLineOrPositionOrRange(lpr: LineOrPositionOrRange): string {
  * @param lpr the line or position range to add or update
  * @returns the updated search parameters
  */
-function addOrUpdateLineRange(inputParams: URLSearchParams, lpr: LineOrPositionOrRange | null): URLSearchParams {
+function addOrUpdateLineRange(
+    inputParams: URLSearchParams,
+    lpr: LineOrPositionOrRange | null
+): URLSearchParams {
     const params = new URLSearchParams(inputParams)
     const range = lpr ? formatLineOrPositionOrRange(lpr) : ''
 
@@ -163,7 +166,7 @@ function addOrUpdateLineRange(inputParams: URLSearchParams, lpr: LineOrPositionO
         params.delete(existingLineRangeKey)
     }
 
-    return range !== '' ? new URLSearchParams([[range, ''], ...params]) : params
+    return range !== '' ? new URLSearchParams([[range, ''], ...Array.from(params)]) : params
 }
 
 /**
@@ -221,7 +224,9 @@ function parseHash<V extends string>(hash: string): LineOrPositionOrRange & { vi
         return {}
     }
     const lineCharModalInfo = hash.split('$', 2) // e.g. "L17:19-21:23$references"
-    const lpr: LineOrPositionOrRange & { viewState?: V } = parseLineOrPositionOrRange(lineCharModalInfo[0])
+    const lpr: LineOrPositionOrRange & { viewState?: V } = parseLineOrPositionOrRange(
+        lineCharModalInfo[0]
+    )
     if (lineCharModalInfo[1]) {
         lpr.viewState = lineCharModalInfo[1] as V
     }
@@ -232,7 +237,7 @@ function parseHash<V extends string>(hash: string): LineOrPositionOrRange & { vi
  * Finds an existing line range search parameter like "L1-2:3"
  */
 function findLineKeyInSearchParameters(searchParameters: URLSearchParams): string | undefined {
-    for (const key of searchParameters.keys()) {
+    for (const key of Array.from(searchParameters.keys())) {
         if (key.startsWith('L')) {
             return key
         }
@@ -248,7 +253,14 @@ function findLineKeyInSearchParameters(searchParameters: URLSearchParams): strin
  * E.g. L1%3A2 => L1:2
  */
 function formatSearchParameters(searchParameters: string): string {
-    return searchParameters.replaceAll('%2F', '/').replaceAll('%3A', ':').replaceAll('=&', '&').replace(/=$/, '')
+    return (
+        searchParameters
+            // @ts-ignore
+            .replaceAll('%2F', '/')
+            .replaceAll('%3A', ':')
+            .replaceAll('=&', '&')
+            .replace(/=$/, '')
+    )
 }
 
 /**
@@ -284,7 +296,11 @@ export class SourcegraphURL {
      * This should make the output fairly predictable.
      */
     public static from(
-        url: string | URL | URLSearchParams | { pathname?: string; search?: string | URLSearchParams; hash?: string }
+        url:
+            | string
+            | URL
+            | URLSearchParams
+            | { pathname?: string; search?: string | URLSearchParams; hash?: string }
     ): SourcegraphURL {
         if (typeof url === 'string' || url instanceof URL) {
             return new SourcegraphURL(url)

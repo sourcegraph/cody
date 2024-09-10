@@ -1,21 +1,18 @@
-
 export type SearchMatch = ContentMatch
 
 export interface ContentMatch {
     type: 'content'
     path: string
-    pathMatches?: Range[]
     repository: string
+    pathMatches?: Range[]
     repoStars?: number
     repoLastFetched?: string
     branches?: string[]
     commit?: string
     lineMatches?: LineMatch[]
     chunkMatches?: ChunkMatch[]
-    hunks?: DecoratedHunk[]
     language?: string
     debug?: string
-    externalServiceType: string
 }
 
 export interface LineMatch {
@@ -46,18 +43,6 @@ export interface Location {
 export interface Range {
     start: Location
     end: Location
-}
-
-export interface DecoratedHunk {
-    content: DecoratedContent
-    lineStart: number
-    lineCount: number
-    matches: Range[]
-}
-
-export interface DecoratedContent {
-    plaintext?: string
-    html?: string
 }
 
 /**
@@ -94,7 +79,7 @@ export enum HighlightResponseFormat {
     /** HTML formatted file content without syntax highlighting. */
     HTML_PLAINTEXT = 'HTML_PLAINTEXT',
     /** SCIP highlighting information as JSON. */
-    JSON_SCIP = 'JSON_SCIP'
+    JSON_SCIP = 'JSON_SCIP',
 }
 
 /** A specific highlighted line range to fetch. */
@@ -103,10 +88,10 @@ export interface HighlightLineRange {
      * The last line to fetch (0-indexed, inclusive). Values outside the bounds of the file will
      * automatically be clamped within the valid range.
      */
-    endLine: number;
+    endLine: number
     /**
      * The first line to fetch (0-indexed, inclusive). Values outside the bounds of the file will
      * automatically be clamped within the valid range.
      */
-    startLine: number;
+    startLine: number
 }
