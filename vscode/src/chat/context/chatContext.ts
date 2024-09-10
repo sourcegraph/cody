@@ -4,10 +4,10 @@ import {
     type ContextItem,
     type ContextItemOpenCtx,
     type ContextItemRepository,
+    type ContextMentionProviderID,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionMenuData,
     type MentionQuery,
-    type OptionalProviderId,
     REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     combineLatest,
@@ -38,11 +38,11 @@ interface GetContextItemsTelemetry {
     withProvider: (type: MentionQuery['provider'], metadata?: { id: string }) => void
 }
 
-export function getMentionMenuData(
-    disabledMentionsProviders: OptionalProviderId[] | undefined | null,
-    query: MentionQuery,
+export function getMentionMenuData(options: {
+    disableProviders: ContextMentionProviderID[]
+    query: MentionQuery
     chatModel: ChatModel
-): Observable<MentionMenuData> {
+}): Observable<MentionMenuData> {
     const source = 'chat'
 
     // Use numerical mapping to send source values to metadata, making this data available on all instances.
@@ -77,13 +77,13 @@ export function getMentionMenuData(
 
     const isCodyWeb = getConfiguration().agentIDE === CodyIDE.Web
 
-    const { input, context } = chatModel.contextWindow
+    const { input, context } = options.chatModel.contextWindow
 
     try {
         const items = promiseFactoryToObservable(signal =>
             getChatContextItemsForMention(
                 {
-                    mentionQuery: query,
+                    mentionQuery: options.query,
                     telemetryRecorder: scopedTelemetryRecorder,
                     rangeFilter: !isCodyWeb,
                 },
@@ -96,14 +96,13 @@ export function getMentionMenuData(
             )
         )
 
-        const queryLower = query.text.toLowerCase()
+        const queryLower = options.query.text.toLowerCase()
 
         const providers = (
-            query.provider === null
-                ? mentionProvidersMetadata(disabledMentionsProviders)
+            options.query.provider === null
+                ? mentionProvidersMetadata({ disableProviders: options.disableProviders })
                 : Observable.of([])
         ).pipe(map(providers => providers.filter(p => p.title.toLowerCase().includes(queryLower))))
-
         return combineLatest([providers, items]).map(([providers, items]) => ({
             providers,
             items,

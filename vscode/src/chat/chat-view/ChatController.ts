@@ -1484,11 +1484,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }),
                 {
                     mentionMenuData: query =>
-                        getMentionMenuData(
-                            this.extensionClient.capabilities?.disabledMentionsProviders,
-                            query,
-                            this.chatModel
-                        ),
+                        getMentionMenuData({
+                            disableProviders:
+                                this.extensionClient.capabilities?.disabledMentionsProviders || [],
+                            query: query,
+                            chatModel: this.chatModel,
+                        }),
                     evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
                     prompts: query =>
                         promiseFactoryToObservable(signal =>

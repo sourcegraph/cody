@@ -4,11 +4,6 @@ import { openCtx } from '../context/openctx/api'
 import { distinctUntilChanged } from '../misc/observable'
 
 /**
- * A unique identifier for a {@link ContextMentionProvider}.
- */
-export type ContextMentionProviderID = string
-
-/**
  * Props required by context item providers to return possible context items.
  */
 export interface ContextItemProps {
@@ -37,6 +32,11 @@ export interface ContextMentionProviderMetadata {
     emptyLabel: string
 }
 
+/**
+ * A unique identifier for a {@link ContextMentionProvider}.
+ */
+export type ContextMentionProviderID = ContextMentionProviderMetadata['id']
+
 export const FILE_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata & { id: 'file' } = {
     id: 'file',
     title: 'Files',
@@ -51,18 +51,14 @@ export const SYMBOL_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata & {
     emptyLabel: 'No symbols found',
 }
 
-const availableMentionProviders = [FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER]
-export type OptionalProviderId = (typeof availableMentionProviders)[number]['id']
-
 export function mentionProvidersMetadata(
-    disabledMentionsProviders?: OptionalProviderId[] | undefined | null
+    options?: { disableProviders: ContextMentionProviderID[] } | undefined | null
 ): Observable<ContextMentionProviderMetadata[]> {
-    return openCtxMentionProviders().map(providers => [
-        ...availableMentionProviders.filter(
-            provider => !disabledMentionsProviders?.includes(provider.id)
-        ),
-        ...providers,
-    ])
+    return openCtxMentionProviders().map(providers =>
+        [...[FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER], ...providers].filter(
+            provider => !options?.disableProviders.includes(provider.id)
+        )
+    )
 }
 
 export function openCtxProviderMetadata(
