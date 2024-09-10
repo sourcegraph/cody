@@ -5,7 +5,7 @@ import { MITM_AUTH_TOKEN_PLACEHOLDER } from '../utils/vscody/constants'
 import { modifySettings } from '../utils/vscody/uix/workspace'
 
 test.use({
-    templateWorkspaceDir: 'test/fixtures/workspace',
+    templateWorkspaceDir: 'test/fixtures/legacy-polyglot-template',
 })
 
 const DEFAULT_EDIT_MODEL = 'Claude 3.5 Sonnet'

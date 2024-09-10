@@ -4,9 +4,15 @@ import { fixture as test, uix } from './utils/vscody'
 test.describe('Demonstrations', () => {
     // test.skip(true, "This isn't an actual working test. Just here to show what the API looks like")
     test.use({
-        templateWorkspaceDir: 'test/fixtures/workspace',
+        templateWorkspaceDir: 'test/fixtures/legacy-polyglot-template',
     })
-    test('Show off v2 features', async ({ page, mitmProxy, vscodeUI, polly, workspaceDir }) => {
+    test('Show off v2 features', async ({
+        page,
+        mitmProxy,
+        vscodeUI,
+        polly,
+        workspaceDir,
+    }, testInof) => {
         const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
         const cody = uix.cody.Extension.with({ page, workspaceDir })
 

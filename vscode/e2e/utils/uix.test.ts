@@ -7,7 +7,7 @@ import { modifySettings } from './vscody/uix/workspace'
 test.describe('Sidebar selectors', () => {
     //TODO: We don't use sidebars like this anymore so it's unclear if this helper still will bring value
     test.use({
-        templateWorkspaceDir: 'test/fixtures/workspace',
+        templateWorkspaceDir: 'test/fixtures/legacy-polyglot-template',
     })
     test('It works', async ({ page, vscodeUI, workspaceDir }) => {
         const session = await uix.vscode.Session.pending({ page, vscodeUI, workspaceDir }).start()
@@ -25,7 +25,7 @@ test.describe('Sidebar selectors', () => {
 
 test.describe('Webview Selector', () => {
     test.use({
-        templateWorkspaceDir: 'test/fixtures/workspace',
+        templateWorkspaceDir: 'test/fixtures/legacy-polyglot-template',
     })
 
     test('It can handle multiple webviews', async ({ page, vscodeUI, workspaceDir, mitmProxy }) => {
@@ -58,7 +58,7 @@ test.describe('Webview Selector', () => {
 
 test.describe('Workspace', () => {
     test.use({
-        templateWorkspaceDir: 'test/fixtures/workspace',
+        templateWorkspaceDir: 'test/fixtures/legacy-polyglot-template',
     })
 
     test('It can initialize a git repository', async ({ workspaceDir }) => {
