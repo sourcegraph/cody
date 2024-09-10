@@ -61,6 +61,7 @@ export interface ContextSummary {
 export interface GetContextResult {
     context: AutocompleteContextSnippet[]
     logSummary: ContextSummary
+    rankedContextCandidates: AutocompleteContextSnippet[]
 }
 
 /**
@@ -90,6 +91,7 @@ export class ContextMixer implements vscode.Disposable {
                     duration: 0,
                     retrieverStats: {},
                 },
+                rankedContextCandidates: [],
             }
         }
 
@@ -172,6 +174,7 @@ export class ContextMixer implements vscode.Disposable {
         return {
             context: mixedContext,
             logSummary,
+            rankedContextCandidates: Array.from(fusedResults),
         }
     }
 

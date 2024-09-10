@@ -8,7 +8,7 @@ import { type DocumentHistory, VSCodeDocumentHistory } from './history'
 import { FeatureFlag, isDefined } from '@sourcegraph/cody-shared'
 import { completionProviderConfig } from '../../../completion-provider-config'
 import { lastNLines } from '../../../text-processing'
-import { type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
+import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 import { type CachedRerieverOptions, CachedRetriever } from '../cached-retriever'
 import { type JaccardMatch, bestJaccardMatches } from './bestJaccardMatch'
 
@@ -47,7 +47,7 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
         this.maxMatchesPerFile = options.maxMatchesPerFile ?? MAX_MATCHES_PER_FILE
     }
 
-    public identifier = 'jaccard-similarity'
+    public identifier = RetrieverIdentifier.JaccardSimilarityRetriever
     private history = new VSCodeDocumentHistory()
 
     public async doRetrieval({

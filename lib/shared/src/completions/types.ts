@@ -2,6 +2,7 @@ import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
 export interface AutocompleteFileContextSnippet {
+    identifier: string
     uri: URI
     startLine: number
     endLine: number

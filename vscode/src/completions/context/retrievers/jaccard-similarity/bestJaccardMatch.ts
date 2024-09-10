@@ -1,9 +1,11 @@
 import { LRUCache } from 'lru-cache'
 import winkUtils from 'wink-nlp-utils'
+import { RetrieverIdentifier } from '../../utils'
 
 const MAX_STEM_CACHE_SIZE = 30000
 
 export interface JaccardMatch {
+    identifier: string
     score: number
     content: string
     startLine: number
@@ -67,6 +69,7 @@ export function bestJaccardMatches(
     // Initialize the result set with the first window
     const windows: JaccardMatch[] = [
         {
+            identifier: RetrieverIdentifier.JaccardSimilarityRetriever,
             score: jaccardSimilarity(targetWordCounts, windowWordCounts, intersectionWordCounts),
             content: lines.slice(firstWindowStart, firstWindowEnd + 1).join('\n'),
             startLine: firstWindowStart,
@@ -118,6 +121,7 @@ export function bestJaccardMatches(
         const startLine = i
         const endLine = i + windowSize - 1
         windows.push({
+            identifier: RetrieverIdentifier.JaccardSimilarityRetriever,
             score,
             content: lines.slice(startLine, endLine + 1).join('\n'),
             startLine,

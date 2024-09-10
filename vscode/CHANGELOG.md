@@ -10,6 +10,17 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+
+## 1.34.2
+
+### Added
+
+### Fixed
+
+- Autocomplete Logging: The PR fixes the contextCandidates logged in the inlineCompletionItemContext. [pull/5507](https://github.com/sourcegraph/cody/pull/5507)
+
+### Changed
+
 ## 1.34.1
 
 ### Added
