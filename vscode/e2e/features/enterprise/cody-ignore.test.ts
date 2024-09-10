@@ -8,7 +8,7 @@ import { MITM_AUTH_TOKEN_PLACEHOLDER } from '../../utils/vscody/constants'
 import { gitInit, modifySettings } from '../../utils/vscody/uix/workspace'
 
 test.use({
-    templateWorkspaceDir: 'test/fixtures/workspace',
+    templateWorkspaceDir: 'test/fixtures/legacy-polyglot-template',
 })
 
 test.describe('cody ignore', {}, () => {

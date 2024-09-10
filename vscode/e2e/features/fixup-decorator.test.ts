@@ -12,7 +12,7 @@ const testDetails: TestDetails = {
 }
 
 test.use({
-    templateWorkspaceDir: 'test/fixtures/workspace',
+    templateWorkspaceDir: 'test/fixtures/legacy-polyglot-template',
 })
 
 test.describe('fixup decorator', testDetails, () => {
