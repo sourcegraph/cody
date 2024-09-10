@@ -15,7 +15,7 @@
         &::before {
             /* draw line number with css so it cannot be copied to clipboard */
             content: attr(data-line);
-            color: var(--text-muted);
+            color: var(--cody-chat-code-text-muted);
         }
     }
 
@@ -31,5 +31,9 @@
     &-alert {
         margin-bottom: 0;
         color: #c92a2a;
+    }
+
+    :global(.hl-text) {
+        color: #657b83;
     }
 }

@@ -73,6 +73,7 @@ export const CodeExcerpt: FC<Props> = props => {
     )
 
     // Highlight the search matches
+    // biome-ignore lint/correctness/useExhaustiveDependencies:
     useLayoutEffect(() => {
         if (tableContainerElement) {
             const visibleRows = tableContainerElement.querySelectorAll<HTMLTableRowElement>('table tr')
@@ -100,7 +101,7 @@ export const CodeExcerpt: FC<Props> = props => {
                 }
             }
         }
-    }, [highlightRanges, startLine, tableContainerElement])
+    }, [highlightRanges, startLine, endLine, tableContainerElement, table])
 
     return (
         <Code className={clsx(styles.codeExcerpt, className)}>

@@ -2,7 +2,7 @@
     position: relative;
     overflow-x: auto;
     padding: 0.25rem 0.5rem;
-    background-color: var(--code-bg);
+    background-color: var(--cody-chat-code-background);
 
     &:first-child {
         padding-top: 0.5rem;

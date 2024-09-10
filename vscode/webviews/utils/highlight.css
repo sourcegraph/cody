@@ -283,6 +283,10 @@
 	color: var(--hl-green-2);
 }
 
+.hl-typed-Keyword {
+    color: #569cd6;
+}
+
 .hl-typed-Comment {
 	color: var(--hl-dark-green);
 }
