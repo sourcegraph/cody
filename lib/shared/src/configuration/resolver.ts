@@ -13,7 +13,7 @@ import type { PartialDeep, ReadonlyDeep } from '../utils'
  * The input from various sources that is needed to compute the {@link ResolvedConfiguration}.
  */
 export interface ConfigurationInput {
-    clientConfiguration: ClientConfiguration
+    clientConfiguration: ClientConfigurationWithAccessToken
     clientSecrets: ClientSecrets
     clientState: ClientState
 }
@@ -68,16 +68,21 @@ async function resolveConfiguration(input: ConfigurationInput): Promise<Resolved
     // We must not throw here, because that would result in the `resolvedConfig` observable
     // terminating and all callers receiving no further config updates.
     const accessToken =
-        (await input.clientSecrets.getToken(serverEndpoint).catch(error => {
-            logError(
-                'resolveConfiguration',
-                `Failed to get access token for endpoint ${serverEndpoint}: ${error}`
-            )
-            return null
-        })) ?? null
+        (input.clientConfiguration.accessToken ||
+            (await input.clientSecrets.getToken(serverEndpoint).catch(error => {
+                logError(
+                    'resolveConfiguration',
+                    `Failed to get access token for endpoint ${serverEndpoint}: ${error}`
+                )
+                return null
+            }))) ??
+        null
 
-    console.log('resolveConfiguration', { accessToken })
-
+    console.log('resolveConfiguration', {
+        accessToken,
+        serverEndpoint,
+        getToken: input.clientSecrets.getToken,
+    })
     return {
         configuration: input.clientConfiguration,
         clientState: input.clientState,

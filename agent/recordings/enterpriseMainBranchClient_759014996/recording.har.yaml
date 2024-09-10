@@ -620,13 +620,17 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 3b1b5f59d45319c7ea64d97ad93384aa
+    - _id: cf047e30b920d608ba01782a33eae015
       _order: 0
       cache: {}
       request:
         bodySize: 144
         cookies: []
         headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_964f5256e709a8c5c151a63d8696d5c7ac81604d179405864d88ff48a9232364
           - _fromType: array
             name: content-type
             value: application/json; charset=utf-8
@@ -644,7 +648,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.sourcegraph.com
-        headersSize: 269
+        headersSize: 353
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -665,20 +669,25 @@ log:
             value: null
         url: https://sourcegraph.sourcegraph.com/.api/graphql?Repository
       response:
-        bodySize: 38
+        bodySize: 112
         content:
-          mimeType: text/plain; charset=utf-8
-          size: 38
-          text: |
-            Private mode requires authentication.
+          encoding: base64
+          mimeType: application/json
+          size: 112
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8\
+            iv9qkJN/QNtbZVqa2sBAAAA//8DADXVPNo5AAAA\"]"
+          textDecoded:
+            data:
+              repository:
+                id: UmVwb3NpdG9yeToyNzU5OQ==
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 02:42:29 GMT
+            value: Tue, 10 Sep 2024 03:46:14 GMT
           - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "38"
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
@@ -688,7 +697,8 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -697,12 +707,14 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1218
+          - name: content-encoding
+            value: gzip
+        headersSize: 1249
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 401
-        statusText: Unauthorized
-      startedDateTime: 2024-09-10T02:42:29.144Z
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-10T03:46:13.946Z
       time: 0
       timings:
         blocked: -1
@@ -803,97 +815,6 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-05-01T10:58:18.315Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 418afe625570889cafad386e94df6d32
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 101
-        cookies: []
-        headers:
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: enterpriseMainBranchClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "101"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.sourcegraph.com
-        headersSize: 277
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-              
-              query SiteProductVersion {
-                  site {
-                      productVersion
-                  }
-              }
-            variables: {}
-        queryString:
-          - name: SiteProductVersion
-            value: null
-        url: https://sourcegraph.sourcegraph.com/.api/graphql?SiteProductVersion
-      response:
-        bodySize: 38
-        content:
-          mimeType: text/plain; charset=utf-8
-          size: 38
-          text: |
-            Private mode requires authentication.
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 10 Sep 2024 02:42:29 GMT
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "38"
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1218
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 401
-        statusText: Unauthorized
-      startedDateTime: 2024-09-10T02:42:29.637Z
       time: 0
       timings:
         blocked: -1

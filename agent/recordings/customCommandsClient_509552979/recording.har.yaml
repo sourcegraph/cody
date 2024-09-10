@@ -90,7 +90,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: cbbbf1d3b416a3120366211d86e2ab02
+    - _id: ad4b1317824c457ab152b1b64ce6e34f
       _order: 0
       cache: {}
       request:
@@ -101,15 +101,18 @@ log:
             value: application/json
           - name: accept-encoding
             value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-28198f601aceeb45b522db0facf23606-de253b4bea2ce8c5-01
+            value: 00-56eb07fb6d09a8604d51a4edaac38d15-95497e42ef7301f1-01
           - name: connection
             value: keep-alive
           - name: host
             value: sourcegraph.com
-        headersSize: 345
+        headersSize: 429
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -166,20 +169,28 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 18
+        bodySize: 1692
         content:
-          mimeType: text/plain; charset=utf-8
-          size: 18
-          text: |
-            not authenticated
+          mimeType: text/event-stream
+          size: 1692
+          text: >+
+            event: completion
+
+            data: {"completion":"Here's a bulleted list of the filenames you've shared with me so far:\n\n• example3.ts\n• example2.ts\n• example1.ts","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 02:42:34 GMT
+            value: Tue, 10 Sep 2024 03:46:20 GMT
           - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "18"
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
@@ -187,7 +198,7 @@ log:
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache, max-age=0
+            value: no-cache
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -199,12 +210,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1310
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 403
-        statusText: Forbidden
-      startedDateTime: 2024-09-10T02:42:34.105Z
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-10T03:46:18.948Z
       time: 0
       timings:
         blocked: -1
@@ -214,7 +225,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: f4f2ad765fdbcb093443be80034b18da
+    - _id: da71c8a0da3f31bb105c9f8a27143ec3
       _order: 0
       cache: {}
       request:
@@ -225,15 +236,18 @@ log:
             value: application/json
           - name: accept-encoding
             value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-4753a24b6c9c560e8bc2e740e917e41c-adaed0dc8c70f74b-01
+            value: 00-47a81c1706b176efaf4509dc06fcf55e-d86d9b38e1ec9047-01
           - name: connection
             value: keep-alive
           - name: host
             value: sourcegraph.com
-        headersSize: 345
+        headersSize: 429
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -263,20 +277,25 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 18
+        bodySize: 152
         content:
-          mimeType: text/plain; charset=utf-8
-          size: 18
-          text: |
-            not authenticated
+          mimeType: text/event-stream
+          size: 152
+          text: |+
+            event: completion
+            data: {"completion":"no","stopReason":"end_turn"}
+
+            event: done
+            data: {}
+
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 02:42:34 GMT
+            value: Tue, 10 Sep 2024 03:46:22 GMT
           - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "18"
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
@@ -284,7 +303,7 @@ log:
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache, max-age=0
+            value: no-cache
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -296,12 +315,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1310
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 403
-        statusText: Forbidden
-      startedDateTime: 2024-09-10T02:42:34.563Z
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-10T03:46:20.850Z
       time: 0
       timings:
         blocked: -1
@@ -311,7 +330,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 3e319df51d3fa80ec0cf2d4fb26dc73f
+    - _id: 66f6fc3c9243d46bdae4cda141086218
       _order: 0
       cache: {}
       request:
@@ -322,15 +341,18 @@ log:
             value: application/json
           - name: accept-encoding
             value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-0e9b6ae8d0c65bf8310a97de18df13f2-114db5a1753f12ed-01
+            value: 00-f22a489233802ba6629e73463b4b7ed4-0d6e5aff20f48395-01
           - name: connection
             value: keep-alive
           - name: host
             value: sourcegraph.com
-        headersSize: 345
+        headersSize: 429
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -427,20 +449,25 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 18
+        bodySize: 150
         content:
-          mimeType: text/plain; charset=utf-8
-          size: 18
-          text: |
-            not authenticated
+          mimeType: text/event-stream
+          size: 150
+          text: |+
+            event: completion
+            data: {"completion":"6","stopReason":"end_turn"}
+
+            event: done
+            data: {}
+
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 02:42:35 GMT
+            value: Tue, 10 Sep 2024 03:46:23 GMT
           - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "18"
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
@@ -448,7 +475,7 @@ log:
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache, max-age=0
+            value: no-cache
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -460,12 +487,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1310
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 403
-        statusText: Forbidden
-      startedDateTime: 2024-09-10T02:42:34.856Z
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-10T03:46:22.251Z
       time: 0
       timings:
         blocked: -1
@@ -475,7 +502,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: dc55381a356084622ad2033a79ff04bb
+    - _id: d2f9e05ab39654f0807a620e2a156be4
       _order: 0
       cache: {}
       request:
@@ -486,15 +513,18 @@ log:
             value: application/json
           - name: accept-encoding
             value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-88a25716fef9e7680db03cf733e92981-09994df4e0383064-01
+            value: 00-e9e1584539da8cef6f92377f939d9d8b-4ea364888f42bbcd-01
           - name: connection
             value: keep-alive
           - name: host
             value: sourcegraph.com
-        headersSize: 345
+        headersSize: 429
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -575,20 +605,25 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 18
+        bodySize: 301
         content:
-          mimeType: text/plain; charset=utf-8
-          size: 18
-          text: |
-            not authenticated
+          mimeType: text/event-stream
+          size: 301
+          text: |+
+            event: completion
+            data: {"completion":"// hello\n","stopReason":"stop_sequence"}
+
+            event: done
+            data: {}
+
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 02:42:35 GMT
+            value: Tue, 10 Sep 2024 03:46:25 GMT
           - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "18"
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
@@ -596,7 +631,7 @@ log:
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache, max-age=0
+            value: no-cache
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -608,12 +643,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1310
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 403
-        statusText: Forbidden
-      startedDateTime: 2024-09-10T02:42:35.147Z
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-10T03:46:23.449Z
       time: 0
       timings:
         blocked: -1
@@ -623,7 +658,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b9aec5abb5b758896603c9208d292623
+    - _id: 23ce2b8d90eb5500a650dfb839f976d8
       _order: 0
       cache: {}
       request:
@@ -634,15 +669,18 @@ log:
             value: application/json
           - name: accept-encoding
             value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-817f3ad71bf2b148b10644571408297d-ffaec23c00cb8204-01
+            value: 00-e2ea14a63502b009036baba92705bc22-ee5615fa37cf7e71-01
           - name: connection
             value: keep-alive
           - name: host
             value: sourcegraph.com
-        headersSize: 345
+        headersSize: 429
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -733,20 +771,28 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 18
+        bodySize: 1423
         content:
-          mimeType: text/plain; charset=utf-8
-          size: 18
-          text: |
-            not authenticated
+          mimeType: text/event-stream
+          size: 1423
+          text: >+
+            event: completion
+
+            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void\n}\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 02:42:35 GMT
+            value: Tue, 10 Sep 2024 03:46:26 GMT
           - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "18"
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
@@ -754,7 +800,7 @@ log:
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache, max-age=0
+            value: no-cache
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -766,12 +812,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1310
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 403
-        statusText: Forbidden
-      startedDateTime: 2024-09-10T02:42:35.493Z
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-10T03:46:25.066Z
       time: 0
       timings:
         blocked: -1
@@ -1332,13 +1378,17 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ea3ddfc16f0b52a2180a9bd21c87dc08
+    - _id: 6a51b119e57625053c2be57eece7c6cb
       _order: 0
       cache: {}
       request:
         bodySize: 144
         cookies: []
         headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
           - _fromType: array
             name: content-type
             value: application/json; charset=utf-8
@@ -1356,7 +1406,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 239
+        headersSize: 323
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1377,21 +1427,17 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?Repository
       response:
-        bodySize: 120
+        bodySize: 126
         content:
           encoding: base64
           mimeType: application/json
-          size: 120
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8\
-            o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//AwDHAhygPQAAAA==\"]"
-          textDecoded:
-            data:
-              repository:
-                id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
+          size: 126
+          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwt\
+            K1ND8o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//\",\"AwDHAhygPQAAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 02:42:33 GMT
+            value: Tue, 10 Sep 2024 03:46:18 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1422,7 +1468,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-10T02:42:32.853Z
+      startedDateTime: 2024-09-10T03:46:18.065Z
       time: 0
       timings:
         blocked: -1
@@ -1526,102 +1572,6 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-05-28T11:58:19.673Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 203c1896021c3a09dfe619120ea1b725
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 101
-        cookies: []
-        headers:
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: customCommandsClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "101"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 247
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-              
-              query SiteProductVersion {
-                  site {
-                      productVersion
-                  }
-              }
-            variables: {}
-        queryString:
-          - name: SiteProductVersion
-            value: null
-        url: https://sourcegraph.com/.api/graphql?SiteProductVersion
-      response:
-        bodySize: 139
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 139
-          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkaWBqYW\
-            hvFGBkYmugaWugaW8aZ65rpmhkmpFhaGicZmyaZKtbW1AAAAAP//AwA7wjFpSQAAAA==\
-            \"]"
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 10 Sep 2024 02:42:33 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1333
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-10T02:42:33.356Z
       time: 0
       timings:
         blocked: -1

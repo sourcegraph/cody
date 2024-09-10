@@ -217,10 +217,11 @@ export function getConfigWithEndpoint(): Omit<ClientConfigurationWithAccessToken
 }
 
 export const getFullConfig = async (): Promise<ClientConfigurationWithAccessToken> => {
-    const accessToken =
-        vscode.workspace.getConfiguration().get<string>('cody.accessToken') ||
-        (await getAccessToken()) ||
-        null
+    const fromSettings = vscode.workspace.getConfiguration().get<string>('cody.accessToken')
+    const fromStorage = await getAccessToken()
+    console.log({ fromSettings, fromStorage })
+    const accessToken = fromSettings || fromStorage || null
+    console.log('getFullConfig', { accessToken })
     return { ...getConfigWithEndpoint(), accessToken }
 }
 

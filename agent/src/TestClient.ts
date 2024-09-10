@@ -954,6 +954,7 @@ ${patch}`
             ...clientInfo.extensionConfiguration,
             ...additionalConfig,
         }
+        // console.log(JSON.stringify(this.extensionConfigurationDuringInitialization, null, 2))
         return new Promise((resolve, reject) => {
             setTimeout(
                 () =>

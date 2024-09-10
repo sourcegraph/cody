@@ -360,6 +360,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         super(params.conn)
         vscode_shim.setAgent(this)
         this.registerRequest('initialize', async clientInfo => {
+            console.log('initialize start', clientInfo.extensionConfiguration?.accessToken)
             vscode.languages.registerFoldingRangeProvider(
                 '*',
                 new IndentationBasedFoldingRangeProvider()
@@ -430,6 +431,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     clientInfo.capabilities?.secrets === 'client-managed'
                         ? new AgentClientManagedSecretStorage(this, this.secretsDidChange.event)
                         : new AgentStatelessSecretStorage()
+
+                console.log('agent initialize', clientInfo.extensionConfiguration?.accessToken)
 
                 await initializeVscodeExtension(
                     this.workspace.workspaceRootUri,

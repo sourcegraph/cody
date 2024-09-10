@@ -5,6 +5,7 @@ import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 
 describe('Document Code', () => {
+    console.log('start')
     const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'document-code'))
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
@@ -26,7 +27,7 @@ describe('Document Code', () => {
         expect(await client.documentCode(workspace.file('src', 'sum.ts'))).toMatchSnapshot()
     })
 
-    it.only('commands/document (Method as part of a class)', async () => {
+    it('commands/document (Method as part of a class)', async () => {
         expect(await client.documentCode(workspace.file('src', 'TestClass.ts'))).toMatchSnapshot()
 
         const { requests } = await client.request('testing/networkRequests', null)
