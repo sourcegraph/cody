@@ -17,6 +17,7 @@ import type {
     ProtocolRelatedInformationDiagnostic,
 } from '../../../../jsonrpc/agent-protocol'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
+import { RetrieverIdentifier } from '../../utils'
 import { SymbolFormatter, isStdLibNode } from './SymbolFormatter'
 import { getTSSymbolAtLocation } from './getTSSymbolAtLocation'
 import { type NodeMatchKind, relevantTypeIdentifiers } from './relevantTypeIdentifiers'
@@ -112,7 +113,7 @@ interface DocumentSnapshot {
  * information about the autocomplete request location.
  */
 export class TscRetriever implements ContextRetriever {
-    public identifier = 'tsc'
+    public identifier = RetrieverIdentifier.TscRetriever
 
     constructor(private options: TscRetrieverOptions = defaultTscRetrieverOptions()) {
         this.disposables.push(
@@ -535,6 +536,7 @@ class SymbolCollector {
                 // Skip module declarations because they can be too large.
                 // We still format them to queue the referenced types.
                 const snippet: AutocompleteContextSnippet = {
+                    identifier: RetrieverIdentifier.TscRetriever,
                     symbol: sym.name,
                     content,
                     startLine: start.line,
