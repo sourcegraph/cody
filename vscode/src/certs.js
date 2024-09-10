@@ -52,7 +52,7 @@ function addLinuxCerts() {
     if (process.platform !== 'linux') {
         return
     }
-    const originalCA = [...globalAgent.options.ca, ...tls.rootCertificates]
+    const originalCA = [...(globalAgent.options.ca ?? []), ...tls.rootCertificates]
     /** @type {string[]} */
     let cas
     if (!Array.isArray(originalCA)) {
