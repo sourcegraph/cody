@@ -5,7 +5,7 @@ import { modifySettings } from '../utils/vscody/uix/workspace'
 
 test.describe('Auth', () => {
     test.use({
-        templateWorkspaceDir: 'test/fixtures/workspace',
+        templateWorkspaceDir: 'test/fixtures/legacy-polyglot-template',
     })
     test('Pre-Authenticated', async ({ page, vscodeUI, workspaceDir, mitmProxy }) => {
         const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })

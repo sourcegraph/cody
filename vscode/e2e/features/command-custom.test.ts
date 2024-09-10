@@ -1,7 +1,7 @@
 import { fixture as test } from '../utils/vscody'
 
 test.use({
-    templateWorkspaceDir: 'test/fixtures/workspace',
+    templateWorkspaceDir: 'test/fixtures/legacy-polyglot-template',
 })
 
 test.describe('custom command', {}, () => {
