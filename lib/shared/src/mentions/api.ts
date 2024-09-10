@@ -51,9 +51,9 @@ export const SYMBOL_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata & {
     emptyLabel: 'No symbols found',
 }
 
-export function mentionProvidersMetadata(
-    options?: { disableProviders: ContextMentionProviderID[] } | undefined | null
-): Observable<ContextMentionProviderMetadata[]> {
+export function mentionProvidersMetadata(options?: {
+    disableProviders: ContextMentionProviderID[]
+}): Observable<ContextMentionProviderMetadata[]> {
     return openCtxMentionProviders().map(providers =>
         [...[FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER], ...providers].filter(
             provider => !options?.disableProviders.includes(provider.id)
