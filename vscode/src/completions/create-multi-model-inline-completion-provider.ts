@@ -140,11 +140,15 @@ export async function createInlineCompletionItemFromMultipleProviders({
             config: newConfig,
         })
 
+        const triggerDelay = vscode.workspace
+            .getConfiguration()
+            .get<number>('cody.autocomplete.triggerDelay')
         if (provider) {
             const completionsProvider = new InlineCompletionItemProvider({
                 authStatus,
                 provider,
                 config: newConfig,
+                triggerDelay: triggerDelay ?? 0,
                 firstCompletionTimeout: config.autocompleteFirstCompletionTimeout,
                 statusBar,
                 completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,

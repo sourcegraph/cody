@@ -75,8 +75,13 @@ export function createInlineCompletionItemProvider({
                 createDisposables(provider => {
                     if (provider) {
                         const authStatus = authProvider.instance!.statusAuthed
+                        const triggerDelay =
+                            vscode.workspace
+                                .getConfiguration()
+                                .get<number>('cody.autocomplete.triggerDelay') ?? 0
                         const completionsProvider = new InlineCompletionItemProvider({
                             authStatus,
+                            triggerDelay,
                             provider,
                             config,
                             firstCompletionTimeout: config.autocompleteFirstCompletionTimeout,

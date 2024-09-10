@@ -129,6 +129,7 @@ export class InlineCompletionItemProvider
 
     constructor({
         completeSuggestWidgetSelection = true,
+        triggerDelay = 0,
         formatOnAccept = true,
         disableInsideComments = false,
         tracer = null,
@@ -140,6 +141,7 @@ export class InlineCompletionItemProvider
         InlineCompletionItemProviderConfigSingleton.set({
             ...config,
             completeSuggestWidgetSelection,
+            triggerDelay,
             formatOnAccept,
             disableInsideComments,
             tracer,
@@ -319,6 +321,8 @@ export class InlineCompletionItemProvider
     ): Promise<AutocompleteResult | null> {
         const isPreloadRequest = 'isPreload' in invokedContext
         const spanNamePrefix = isPreloadRequest ? 'preload' : 'provide'
+        const startTime = Date.now()
+        const triggerDelay = this.config.triggerDelay
 
         return wrapInActiveSpan(`autocomplete.${spanNamePrefix}InlineCompletionItems`, async span => {
             const stageRecorder = new CompletionLogger.AutocompleteStageRecorder({ isPreloadRequest })
@@ -394,7 +398,6 @@ export class InlineCompletionItemProvider
                 }
                 cancellationListener = token.onCancellationRequested(() => abortController.abort())
             }
-
             stageRecorder.record('preContentPopupCheck')
             // When the user has the completions popup open and an item is selected that does not match
             // the text that is already in the editor, VS Code will never render the completion.
@@ -460,7 +463,6 @@ export class InlineCompletionItemProvider
                 // completed, so we support reassinging them later.
                 let position: vscode.Position = invokedPosition
                 let context: vscode.InlineCompletionContext | undefined = invokedContext
-
                 const result = await this.getInlineCompletions({
                     document,
                     position,
@@ -640,6 +642,21 @@ export class InlineCompletionItemProvider
 
                 recordExposedExperimentsToSpan(span)
 
+                // Trigger delay ensures a minimum time before showing autocomplete results.
+                // Benefits include:
+                // 1. Throttling requests to optimize resource usage
+                // 2. Allowing user input to stabilize for more relevant suggestions
+                // 3. Creating a consistent, natural-feeling autocomplete experience
+                // If the completion response arrives before the delay expires, we wait for the remaining time.
+                // If it arrives after, we show the result immediately without additional delay.
+                const elapsedTime = Date.now() - startTime
+                if (elapsedTime < triggerDelay) {
+                    // Wait for the remaining time
+                    await new Promise(resolve => setTimeout(resolve, triggerDelay - elapsedTime))
+                    if (abortController.signal.aborted) {
+                        return null // Exit early if the request has been aborted
+                    }
+                }
                 return autocompleteResult
             } catch (error) {
                 this.onError(error as Error)

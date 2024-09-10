@@ -23,6 +23,7 @@ export interface CodyCompletionItemProviderConfig {
     // Settings
     formatOnAccept?: boolean
     disableInsideComments?: boolean
+    triggerDelay: number
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean

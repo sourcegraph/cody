@@ -1025,6 +1025,12 @@
           "markdownDescription": "Enables code autocompletions.",
           "default": true
         },
+        "cody.autocomplete.triggerDelay": {
+          "order": 5,
+          "type": "number",
+          "markdownDescription": "The trigger delay ensures a minimum wait time before showing autocomplete suggestions to avoid accidental autocomplete triggers.",
+          "default": 0
+        },
         "cody.autocomplete.languages": {
           "order": 5,
           "type": "object",
