@@ -12,6 +12,8 @@ Chat: Fixed feedback buttons not working in chat. [pull/5509](https://github.com
 
 ### Changed
 
+Enterprise: Remote Repository items in the mention menu now display only the org/repo part of the title, omitting the code host name to prevent repository names from being truncated in the UI. [pull/5518](https://github.com/sourcegraph/cody/pull/5518)
+
 ## 1.34.1
 
 ### Added
