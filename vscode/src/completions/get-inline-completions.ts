@@ -252,8 +252,9 @@ async function doGetInlineCompletions(
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
 
-    const gitIdentifiersForFile =
-        isDotComUser === true ? gitMetadataForCurrentEditor.getGitIdentifiersForFile() : undefined
+    const gitIdentifiersForFile = isDotComUser
+        ? gitMetadataForCurrentEditor.getGitIdentifiersForFile()
+        : undefined
     if (gitIdentifiersForFile?.gitUrl) {
         const repoMetadataInstance = GitHubDotComRepoMetadata.getInstance()
         // Calling this so that it precomputes the `gitRepoUrl` and store in its cache for query later.
