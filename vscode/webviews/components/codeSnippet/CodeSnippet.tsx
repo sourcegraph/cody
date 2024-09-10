@@ -12,6 +12,7 @@ import {
 } from 'react'
 
 import { clsx } from 'clsx'
+import VisibilitySensor from 'react-visibility-sensor'
 
 import {
     type ChunkMatch,
@@ -34,6 +35,8 @@ import {
 } from './utils'
 
 import styles from './CodeSnippet.module.css'
+
+const DEFAULT_VISIBILITY_OFFSET = { bottom: -500 }
 
 export interface FetchFileParameters {
     repoName: string
@@ -141,6 +144,40 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
         })
     }, [result, fetchHighlightedFileLineRanges, unhighlightedGroups])
 
+    const handleVisibility = useCallback(() => {
+        if (hasBeenVisible || !fetchHighlightedFileLineRanges) {
+            return
+        }
+
+        setHasBeenVisible(true)
+
+        // This file contains some large lines, avoid stressing
+        // syntax-highlighter and the browser.
+        if (result.chunkMatches?.some(chunk => chunk.contentTruncated)) {
+            return
+        }
+
+        fetchHighlightedFileLineRanges(
+            {
+                repoName: result.repository,
+                commitID: result.commit || '',
+                filePath: result.path,
+                disableTimeout: false,
+                format: HighlightResponseFormat.HTML_HIGHLIGHT,
+                // Explicitly narrow the object otherwise we'll send a bunch of extra data in the request.
+                ranges: unhighlightedGroups.map(({ startLine, endLine }) => ({ startLine, endLine })),
+            },
+            false
+        ).then(res => {
+            setExpandedGroups(
+                unhighlightedGroups.map((group, i) => ({
+                    ...group,
+                    highlightedHTMLRows: res[i],
+                }))
+            )
+        })
+    }, [fetchHighlightedFileLineRanges, hasBeenVisible, unhighlightedGroups, result])
+
     const toggle = useCallback((): void => {
         if (collapsible) {
             setExpanded(expanded => !expanded)
@@ -186,34 +223,40 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
             rankingDebug={result.debug}
             repoLastFetched={result.repoLastFetched}
         >
-            <div data-testid="file-search-result" data-expanded={expanded}>
-                <FileMatchChildren
-                    result={result}
-                    grouped={expanded ? expandedGroups : collapsedGroups}
-                />
-                {collapsible && (
-                    <button
-                        type="button"
-                        className={clsx(
-                            styles.toggleMatchesButton,
-                            styles.focusableBlock,
-                            styles.clickable,
-                            { [styles.toggleMatchesButtonExpanded]: expanded }
-                        )}
-                        onClick={toggle}
-                    >
-                        <span className={styles.toggleMatchesButtonText}>
-                            {expanded
-                                ? 'Show less'
-                                : `Show ${hiddenMatchesCount} more ${pluralize(
-                                      'match',
-                                      hiddenMatchesCount,
-                                      'matches'
-                                  )}`}
-                        </span>
-                    </button>
-                )}
-            </div>
+            <VisibilitySensor
+                partialVisibility={true}
+                offset={DEFAULT_VISIBILITY_OFFSET}
+                onChange={(visible: boolean) => visible && handleVisibility()}
+            >
+                <div data-expanded={expanded}>
+                    <FileMatchChildren
+                        result={result}
+                        grouped={expanded ? expandedGroups : collapsedGroups}
+                    />
+                    {collapsible && (
+                        <button
+                            type="button"
+                            className={clsx(
+                                styles.toggleMatchesButton,
+                                styles.focusableBlock,
+                                styles.clickable,
+                                { [styles.toggleMatchesButtonExpanded]: expanded }
+                            )}
+                            onClick={toggle}
+                        >
+                            <span className={styles.toggleMatchesButtonText}>
+                                {expanded
+                                    ? 'Show less'
+                                    : `Show ${hiddenMatchesCount} more ${pluralize(
+                                          'match',
+                                          hiddenMatchesCount,
+                                          'matches'
+                                      )}`}
+                            </span>
+                        </button>
+                    )}
+                </div>
+            </VisibilitySensor>
         </ResultContainer>
     )
 }
