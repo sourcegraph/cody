@@ -27,6 +27,7 @@ import {
     type SerializedPromptEditorState,
     Typewriter,
     addMessageListenersForExtensionAPI,
+    authStatus,
     createMessageAPIForExtension,
     featureFlagProvider,
     getContextForChatMessage,
@@ -54,8 +55,10 @@ import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import {
     combineLatest,
+    createDisposables,
     promiseFactoryToObservable,
     promiseToObservable,
+    subscriptionDisposable,
 } from '@sourcegraph/cody-shared/src/misc/observable'
 import { TokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
@@ -247,11 +250,19 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         void this.retrievers.localEmbeddings?.start()
 
         this.disposables.push(
-            startClientStateBroadcaster({
-                useRemoteSearch: this.retrievers.allowRemoteContext,
-                postMessage: (message: ExtensionMessage) => this.postMessage(message),
-                chatModel: this.chatModel,
-            })
+            subscriptionDisposable(
+                authStatus
+                    .pipe(
+                        createDisposables(() =>
+                            startClientStateBroadcaster({
+                                useRemoteSearch: this.retrievers.allowRemoteContext,
+                                postMessage: (message: ExtensionMessage) => this.postMessage(message),
+                                chatModel: this.chatModel,
+                            })
+                        )
+                    )
+                    .subscribe({})
+            )
         )
 
         // Observe any changes in chat history and send client notifications to
