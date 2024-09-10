@@ -10,7 +10,6 @@ const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_U
 test.extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
-        'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
