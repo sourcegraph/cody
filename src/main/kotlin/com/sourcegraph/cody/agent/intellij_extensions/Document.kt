@@ -13,6 +13,14 @@ fun Document.codyPosition(offset: Int): Position {
 }
 
 fun Document.codyRange(startOffset: Int, endOffset: Int): Range {
+  if (startOffset < 0 ||
+      startOffset > this.textLength ||
+      endOffset > this.textLength ||
+      startOffset > endOffset) {
+    throw IllegalArgumentException(
+        "codyRange error - startOffset: $startOffset, endOffset: $endOffset, textLength: ${this.textLength}")
+  }
+
   val startLine = this.getLineNumber(startOffset)
   val lineStartOffset1 = this.getLineStartOffset(startLine)
   val startCharacter = startOffset - lineStartOffset1

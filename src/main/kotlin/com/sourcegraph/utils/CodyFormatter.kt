@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.codeStyle.CodeStyleManager
+import kotlin.math.max
 import kotlin.math.min
 
 class CodyFormatter {
@@ -35,9 +36,8 @@ class CodyFormatter {
                 .createFileFromText("TEMP", file.fileType, appendedString)
 
         val codeStyleManager = CodeStyleManager.getInstance(project)
-        // This will fail if cursor < range.startOffset + completionText.length
-        // TODO change the signature of this method or at least validate the arguments
-        codeStyleManager.reformatText(psiFile, cursor, range.startOffset + completionText.length)
+        val endOffset = max(cursor, range.startOffset + completionText.length)
+        codeStyleManager.reformatText(psiFile, cursor, endOffset)
 
         // Fix for the IJ formatting bug which removes spaces even before the given formatting
         // range.
