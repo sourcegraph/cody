@@ -1086,6 +1086,9 @@ export class FixupController
             throw new Error(`Cannot create file for the fixup: ${newFileUri.toString()}`)
         }
 
+        // Lenses from the currently used file need to be disposed as new file will replace it in a second
+        this.controlApplicator.removeLensesFor(task)
+
         const pos = new vscode.Position(Math.max(doc.lineCount - 1, 0), 0)
         const range = new vscode.Range(pos, pos)
         task.selectionRange = range
