@@ -44,8 +44,7 @@ export interface HighlightRange {
  * A code excerpt that displays syntax highlighting and match range highlighting.
  */
 export const CodeExcerpt: FC<Props> = props => {
-    const { plaintextLines, highlightedLines, startLine, endLine, highlightRanges, className } =
-        props
+    const { plaintextLines, highlightedLines, startLine, endLine, highlightRanges, className } = props
 
     const [tableContainerElement, setTableContainerElement] = useState<HTMLElement | null>(null)
 
