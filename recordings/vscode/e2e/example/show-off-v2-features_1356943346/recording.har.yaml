@@ -5,11 +5,11 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 6b179f7e96514dd2aba8fdc1249351e3
+    - _id: 8c2fecc53b8bf0331bcb7496e2833fe3
       _order: 0
       cache: {}
       request:
-        bodySize: 144
+        bodySize: 247
         cookies: []
         headers:
           - name: connection
@@ -21,52 +21,57 @@ log:
           - name: user-agent
             value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
           - name: content-length
-            value: "144"
+            value: "247"
           - name: accept
             value: "*/*"
           - name: content-type
             value: application/json; charset=utf-8
           - name: x-mitm-proxy-name
             value: sourcegraph.dotcom
-        headersSize: 489
+        headersSize: 487
         httpVersion: HTTP/1.1
         method: POST
         postData:
           mimeType: application/json; charset=utf-8
           params: []
           textJSON:
-            query: |-
+            query: |
               
-              query ContextFilters {
-                  site {
-                      codyContextFilters(version: V1) {
-                          raw
-                      }
+              query Repositories($names: [String!]!, $first: Int!) {
+                  repositories(names: $names, first: $first) {
+                    nodes {
+                      name
+                      id
+                    }
                   }
-              }
-            variables: {}
+                }
+            variables:
+              first: 10
+              names:
+                - github.com/sourcegraph/cody
         queryString:
-          - name: ContextFilters
+          - name: Repositories
             value: null
-        url: https://sourcegraph.com/.api/graphql?ContextFilters
+        url: https://sourcegraph.com/.api/graphql?Repositories
       response:
-        bodySize: 53
+        bodySize: 112
         content:
           mimeType: application/json
-          size: 53
-          text: "{\"data\":{\"site\":{\"codyContextFilters\":{\"raw\":null}}}}"
+          size: 112
+          text: "{\"data\":{\"repositories\":{\"nodes\":[{\"name\":\"github.com/sourcegra\
+            ph/cody\",\"id\":\"UmVwb3NpdG9yeTo2MTMyNTMyOA==\"}]}}}"
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 12:36:21 GMT
+            value: Tue, 10 Sep 2024 13:49:08 GMT
           - name: content-type
             value: application/json
           - name: content-length
-            value: "53"
+            value: "112"
           - name: connection
             value: close
           - name: retry-after
-            value: "234"
+            value: "155"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -84,13 +89,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1403
+        headersSize: 1404
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-10T12:36:21.087Z
-      time: 321
+      startedDateTime: 2024-09-10T13:49:08.595Z
+      time: 294
       timings:
         blocked: -1
         connect: -1
@@ -98,7 +103,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 321
+        wait: 294
     - _id: b73fd2a755e6422dc3e7196dc0a79adc
       _order: 0
       cache: {}
@@ -151,7 +156,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 12:36:21 GMT
+            value: Tue, 10 Sep 2024 13:49:08 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -159,7 +164,7 @@ log:
           - name: connection
             value: close
           - name: retry-after
-            value: "234"
+            value: "155"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -182,8 +187,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-10T12:36:21.187Z
-      time: 229
+      startedDateTime: 2024-09-10T13:49:08.716Z
+      time: 236
       timings:
         blocked: -1
         connect: -1
@@ -191,7 +196,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 229
+        wait: 236
     - _id: df9bbe44d51a47ebe6840a3b9fba1c29
       _order: 0
       cache: {}
@@ -244,7 +249,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 12:36:21 GMT
+            value: Tue, 10 Sep 2024 13:49:08 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -252,7 +257,7 @@ log:
           - name: connection
             value: close
           - name: retry-after
-            value: "234"
+            value: "155"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -275,8 +280,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-10T12:36:20.757Z
-      time: 310
+      startedDateTime: 2024-09-10T13:49:08.511Z
+      time: 225
       timings:
         blocked: -1
         connect: -1
@@ -284,6 +289,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 310
+        wait: 225
   pages: []
   version: "1.2"
