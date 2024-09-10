@@ -200,8 +200,17 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
                     console.error = () => {}
                     window.onerror = () => {}
                 })
-                await page.goto('about:blank')
-                await page.waitForLoadState('domcontentloaded')
+                if (mitmProxy.missingRecording) {
+                    await page.goto('about:blank')
+                    await page.setContent(
+                        errorPage(
+                            'Recording Missing',
+                            'Try enabeling CODY_RECORD_IF_MISSING=true in your .env file or setting the recordMissing playwright setting.'
+                        )
+                    )
+                }
+                //TODO: Add error / success overlay
+                //TODO: Add a way to keep the servers alive when debugging so that you can manually continue
             }
             if (serverProcess.pid) {
                 killChildrenSync(serverProcess.pid, 'SIGTERM')
@@ -482,3 +491,65 @@ function getVSCodeArtifactName(platform: NodeJS.Platform, arch: string): string 
             throw new Error(`Unsupported platform: ${platform}/${arch}`)
     }
 }
+
+const errorPage = (title: string, details: string) => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background: #fff;
+            color: #000;
+            height: 100vh;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .error {
+            max-width: 700px;
+            text-align: left;
+            padding: 0 20px;
+        }
+        h1 {
+            border-right: 1px solid rgba(0, 0, 0, .3);
+            display: inline-block;
+            margin: 0;
+            margin-right: 20px;
+            padding: 10px 23px 10px 0;
+            font-size: 24px;
+            font-weight: 500;
+            vertical-align: top;
+        }
+        .message {
+            display: inline-block;
+            text-align: left;
+            line-height: 49px;
+            height: 49px;
+            vertical-align: middle;
+        }
+        pre {
+            text-align: left;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background: #f6f8fa;
+            padding: 20px;
+            border-radius: 5px;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="error">
+        <h1>Error</h1>
+        <div class="message">${title}</div>
+    </div>
+    <pre id="errorDetails">${details}</pre>
+</body>
+</html>
+`

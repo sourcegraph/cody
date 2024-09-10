@@ -32,6 +32,7 @@ import { getFirstOrValue, rangeOffset } from './util'
 const DEFAULT_FLOOR_RESPONSE_TIME = 10 //ms
 
 export interface MitMProxy {
+    readonly missingRecording: boolean
     sourcegraph: {
         dotcom: {
             readonly endpoint: string
@@ -53,7 +54,7 @@ type ProxyReqHandler = (...args: Parameters<Exclude<OnProxyEvent['proxyReq'], un
 
 export const mitmProxyFixture = _test.extend<TestContext, WorkerContext>({
     mitmProxy: [
-        async ({ validWorkerOptions }, use, testInfo) => {
+        async ({ validWorkerOptions, page, browser }, use, testInfo) => {
             const app = express()
             //TODO: Credentials & Configuration TODO: I can see a use-case where
             //you can switch endpoints dynamically. For instance wanting to try
@@ -75,7 +76,11 @@ export const mitmProxyFixture = _test.extend<TestContext, WorkerContext>({
                 }
             } = { authName: { enterprise: 's2', dotcom: 'dotcom' } }
 
+            let missingRecordingTriggered = false
             const config: MitMProxy = {
+                get missingRecording() {
+                    return missingRecordingTriggered
+                },
                 sourcegraph: {
                     dotcom: {
                         get authName() {
@@ -115,6 +120,7 @@ export const mitmProxyFixture = _test.extend<TestContext, WorkerContext>({
             testFailureSignal.on('error', err => {
                 if (err.name === 'PollyError') {
                     if (err.message.includes('`recordIfMissing` is `false`')) {
+                        missingRecordingTriggered = true
                         console.error('Missing recording')
                     }
                 } else {
