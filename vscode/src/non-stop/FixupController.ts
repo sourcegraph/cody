@@ -5,6 +5,7 @@ import {
     type EditModel,
     type EventSource,
     type PromptString,
+    currentAuthStatus,
     displayPathBasename,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -32,7 +33,6 @@ import { isStreamedIntent } from '../edit/utils/edit-intent'
 import { getOverridenModelForIntent } from '../edit/utils/edit-models'
 import type { ExtensionClient } from '../extension-client'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
-import { authProvider } from '../services/AuthProvider'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
@@ -497,7 +497,7 @@ export class FixupController
         telemetryMetadata?: FixupTelemetryMetadata,
         taskId?: FixupTaskID
     ): Promise<FixupTask> {
-        const authStatus = authProvider.instance!.status
+        const authStatus = currentAuthStatus()
         const overridenModel = getOverridenModelForIntent(intent, model, authStatus)
         const fixupFile = this.files.forUri(document.uri)
         const task = new FixupTask(

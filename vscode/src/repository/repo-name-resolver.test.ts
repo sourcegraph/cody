@@ -1,26 +1,26 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-import { AUTH_STATUS_FIXTURE_AUTHED, DOTCOM_URL, graphqlClient } from '@sourcegraph/cody-shared'
-
-import { type AuthProvider, authProvider } from '../services/AuthProvider'
+import {
+    AUTH_STATUS_FIXTURE_AUTHED,
+    DOTCOM_URL,
+    graphqlClient,
+    mockAuthStatus,
+} from '@sourcegraph/cody-shared'
 
 import * as gitExtensionAPI from './git-extension-api'
 import { RepoNameResolver } from './repo-name-resolver'
 import { mockFsCalls } from './test-helpers'
 
+vi.mock('../services/AuthProvider')
+
 describe('getRepoNamesFromWorkspaceUri', () => {
-    afterEach(() => {
-        authProvider.instance = null
-    })
     it('resolves the repo name using graphql for enterprise accounts', async () => {
         const repoNameResolver = new RepoNameResolver()
-        authProvider.instance = {
-            status: {
-                ...AUTH_STATUS_FIXTURE_AUTHED,
-                authenticated: true,
-                endpoint: 'https://example.com',
-            },
-        } as Pick<AuthProvider, 'status'> as unknown as AuthProvider
+        mockAuthStatus({
+            ...AUTH_STATUS_FIXTURE_AUTHED,
+            authenticated: true,
+            endpoint: 'https://example.com',
+        })
 
         vi.spyOn(gitExtensionAPI, 'gitRemoteUrlsFromGitExtension').mockReturnValue([
             'git@github.com:sourcegraph/cody.git',
@@ -51,13 +51,11 @@ describe('getRepoNamesFromWorkspaceUri', () => {
 
     it('resolves the repo name using local conversion function for PLG accounts', async () => {
         const repoNameResolver = new RepoNameResolver()
-        authProvider.instance = {
-            status: {
-                ...AUTH_STATUS_FIXTURE_AUTHED,
-                authenticated: true,
-                endpoint: DOTCOM_URL.toString(),
-            },
-        } as Pick<AuthProvider, 'status'> as unknown as AuthProvider
+        mockAuthStatus({
+            ...AUTH_STATUS_FIXTURE_AUTHED,
+            authenticated: true,
+            endpoint: DOTCOM_URL.toString(),
+        })
 
         vi.spyOn(gitExtensionAPI, 'gitRemoteUrlsFromGitExtension').mockReturnValue([
             'git@github.com:sourcegraph/cody.git',

@@ -9,6 +9,8 @@ import {
     DEFAULT_EVENT_SOURCE,
     type Guardrails,
     authStatus,
+    currentAuthStatus,
+    currentAuthStatusAuthed,
     editorStateFromPromptString,
     subscriptionDisposable,
     telemetryRecorder,
@@ -23,7 +25,6 @@ import type { startTokenReceiver } from '../../auth/token-receiver'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import { getConfiguration } from '../../configuration'
 import type { ExtensionClient } from '../../extension-client'
-import { authProvider } from '../../services/AuthProvider'
 import { type ChatLocation, localStorage } from '../../services/LocalStorageProvider'
 import {
     handleCodeFromInsertAtCursor,
@@ -350,7 +351,7 @@ export class ChatsController implements vscode.Disposable {
                 category: 'billable',
             },
         })
-        const authStatus = authProvider.instance!.status
+        const authStatus = currentAuthStatus()
         if (authStatus.authenticated) {
             try {
                 const historyJson = chatHistory.getLocalHistory(authStatus)
@@ -380,7 +381,7 @@ export class ChatsController implements vscode.Disposable {
         // The chat ID for client to pass in to clear all chats without showing window pop-up for confirmation.
         const ClearWithoutConfirmID = 'clear-all-no-confirm'
         const isClearAll = !chatID || chatID === ClearWithoutConfirmID
-        const authStatus = authProvider.instance!.statusAuthed
+        const authStatus = currentAuthStatusAuthed()
 
         if (isClearAll) {
             if (chatID !== ClearWithoutConfirmID) {

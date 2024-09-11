@@ -2,6 +2,8 @@ import {
     type ClientConfigurationWithAccessToken,
     NEVER,
     createDisposables,
+    currentAuthStatus,
+    currentAuthStatusAuthed,
     isDotCom,
     mergeMap,
     promiseFactoryToObservable,
@@ -10,7 +12,6 @@ import {
 import * as vscode from 'vscode'
 
 import { logDebug } from '../log'
-import { authProvider } from '../services/AuthProvider'
 import type { CodyStatusBar } from '../services/StatusBar'
 
 import { type Observable, map } from 'observable-fns'
@@ -47,7 +48,7 @@ export function createInlineCompletionItemProvider({
     statusBar,
     createBfgRetriever,
 }: InlineCompletionItemProviderArgs): Observable<void> {
-    const authStatus = authProvider.instance!.status
+    const authStatus = currentAuthStatus()
     if (!authStatus.authenticated) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
 
@@ -74,7 +75,7 @@ export function createInlineCompletionItemProvider({
             createProvider(config, authStatus).pipe(
                 createDisposables(provider => {
                     if (provider) {
-                        const authStatus = authProvider.instance!.statusAuthed
+                        const authStatus = currentAuthStatusAuthed()
                         const triggerDelay =
                             vscode.workspace
                                 .getConfiguration()

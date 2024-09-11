@@ -1,16 +1,6 @@
-import {
-    type AuthStatus,
-    type AuthStatusProvider,
-    TelemetryRecorderProvider,
-} from '@sourcegraph/cody-shared'
+import { TelemetryRecorderProvider, nextTick, setAuthStatusObservable } from '@sourcegraph/cody-shared'
+import { Observable } from 'observable-fns'
 import { deleteUninstallerDirectory, readConfig } from './serializeConfig'
-
-class StaticAuthStatusProvider implements AuthStatusProvider {
-    constructor(private readonly authStatus: AuthStatus) {}
-    get status(): AuthStatus {
-        return this.authStatus
-    }
-}
 
 async function main() {
     // Do not record telemetry events during testing
@@ -22,10 +12,15 @@ async function main() {
     if (uninstaller) {
         const { config, extensionDetails, authStatus, anonymousUserID } = uninstaller
         if (config && authStatus) {
+            try {
+                setAuthStatusObservable(Observable.of(authStatus))
+            } catch {}
+            // Wait for `currentAuthStatusOrNotReadyYet` to have this value synchronously.
+            await nextTick()
+
             const provider = new TelemetryRecorderProvider(
                 extensionDetails,
                 config,
-                new StaticAuthStatusProvider(authStatus),
                 anonymousUserID,
                 'connected-instance-only'
             )

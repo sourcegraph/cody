@@ -222,23 +222,20 @@ export function fromLateSetSource<T>(): {
     setSource: (input: Observable<T>, throwErrorIfAlreadySet?: boolean) => void
 } {
     let source: Observable<T> | null = null
-    const pendingObservers: {
-        observer: SubscriptionObserver<T> | null
+    const observers: {
+        observer: SubscriptionObserver<T>
         subscription: Unsubscribable | null
     }[] = []
 
     const observable = new Observable<T>(observer => {
-        if (source) {
-            return source.subscribe(observer)
-        }
-
-        const entry: (typeof pendingObservers)[number] = { observer, subscription: null }
-        pendingObservers.push(entry)
+        const subscription = source ? source.subscribe(observer) : null
+        const entry: (typeof observers)[number] = { observer, subscription }
+        observers.push(entry)
         return () => {
             entry.subscription?.unsubscribe()
-            const index = pendingObservers.indexOf(entry)
+            const index = observers.indexOf(entry)
             if (index !== -1) {
-                pendingObservers.splice(index, 1)
+                observers.splice(index, 1)
             }
         }
     })
@@ -248,11 +245,9 @@ export function fromLateSetSource<T>(): {
             throw new Error('source is already set')
         }
         source = input
-        for (const entry of pendingObservers) {
-            if (!entry.subscription) {
-                entry.subscription = source.subscribe(entry.observer!)
-                entry.observer = null
-            }
+        for (const entry of observers) {
+            entry.subscription?.unsubscribe()
+            entry.subscription = source.subscribe(entry.observer)
         }
     }
 
@@ -729,4 +724,19 @@ export function mergeMap<T, R>(
             }
         })
     }
+}
+
+/**
+ * Store the last value emitted by an {@link Observable} so that it can be accessed synchronously.
+ * Callers must take care to not create a race condition when using this function.
+ */
+export function storeLastValue<T>(observable: Observable<T>): {
+    value: { last: undefined; isSet: false } | { last: T; isSet: true }
+    subscription: Unsubscribable
+} {
+    const value: ReturnType<typeof storeLastValue>['value'] = { last: undefined, isSet: false }
+    const subscription = observable.subscribe(v => {
+        Object.assign(value, { last: v, isSet: true })
+    })
+    return { value, subscription }
 }

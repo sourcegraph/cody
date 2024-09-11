@@ -11,6 +11,8 @@ import {
     authStatus,
     combineLatest,
     contextFiltersProvider,
+    currentAuthStatus,
+    currentAuthStatusOrNotReadyYet,
     distinctUntilChanged,
     featureFlagProvider,
     firstValueFrom,
@@ -23,7 +25,6 @@ import {
     setClientNameVersion,
     setLogger,
     setResolvedConfigurationObservable,
-    setSingleton,
     startWith,
     subscriptionDisposable,
     telemetryRecorder,
@@ -79,7 +80,7 @@ import { CodyProExpirationNotifications } from './notifications/cody-pro-expirat
 import { showSetupNotification } from './notifications/setup-notification'
 import { initVSCodeGitApi } from './repository/git-extension-api'
 import { initWorkspaceReposMonitor } from './repository/repo-metadata-from-git-api'
-import { AuthProvider, authProvider } from './services/AuthProvider'
+import { authProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { displayHistoryQuickPick } from './services/HistoryChat'
@@ -294,14 +295,13 @@ async function initializeSingletons(
     isExtensionModeDevOrTest: boolean,
     disposables: vscode.Disposable[]
 ): Promise<void> {
-    setSingleton(authProvider, new AuthProvider(await firstValueFrom(resolvedConfigWithAccessToken)))
     // The split between AuthProvider construction and initialization is
     // awkward, but exists so we can initialize the telemetry recorder
     // first, as it is used in AuthProvider before AuthProvider initialization
     // is complete. It is also important that AuthProvider inintialization
     // completes before initializeSingletons is called, because many of
     // those assume an initialized AuthProvider
-    await authProvider.instance!.init()
+    await authProvider.init()
 
     // Allow the VS Code app's instance of ModelsService to use local storage to persist
     // user's model choices
@@ -479,7 +479,7 @@ function registerChatCommands(disposables: vscode.Disposable[]): void {
             vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow')
         }),
         vscode.commands.registerCommand('cody.chat.history.panel', async () => {
-            await displayHistoryQuickPick(authProvider.instance!.status)
+            await displayHistoryQuickPick(currentAuthStatus())
         }),
         vscode.commands.registerCommand('cody.settings.extension.chat', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', {
@@ -500,7 +500,7 @@ function registerAuthCommands(disposables: vscode.Disposable[]): void {
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         vscode.commands.registerCommand(
             'cody.auth.status',
-            () => authProvider.instance?.statusOrNotReadyYet ?? null
+            () => currentAuthStatusOrNotReadyYet() ?? null
         ), // Used by the agent
         vscode.commands.registerCommand(
             'cody.agent.auth.authenticate',
@@ -511,7 +511,9 @@ function registerAuthCommands(disposables: vscode.Disposable[]): void {
                 if (typeof accessToken !== 'string') {
                     throw new TypeError('accessToken is required')
                 }
-                return await authProvider.instance!.auth({
+                await localStorage.saveEndpoint(serverEndpoint)
+                await secretStorage.storeToken(serverEndpoint, accessToken)
+                return await authProvider.auth({
                     endpoint: serverEndpoint,
                     token: accessToken,
                     customHeaders,
@@ -536,7 +538,7 @@ function registerUpgradeHandlers(disposables: vscode.Disposable[]): void {
 
         // Check if user has just moved back from a browser window to upgrade cody pro
         vscode.window.onDidChangeWindowState(async ws => {
-            const authStatus = authProvider.instance!.status
+            const authStatus = currentAuthStatus()
             if (ws.focused && isDotCom(authStatus) && authStatus.authenticated) {
                 const res = await graphqlClient.getCurrentUserCodyProEnabled()
                 if (res instanceof Error) {
@@ -546,7 +548,7 @@ function registerUpgradeHandlers(disposables: vscode.Disposable[]): void {
                 // Re-auth if user's cody pro status has changed
                 const isCurrentCodyProUser = !authStatus.userCanUpgrade
                 if (res && res.codyProEnabled !== isCurrentCodyProUser) {
-                    authProvider.instance!.reloadAuthStatus()
+                    authProvider.reloadAuthStatus()
                 }
             }
         }),
@@ -584,7 +586,7 @@ async function registerTestCommands(
         }),
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (endpoint, token) =>
-            authProvider.instance!.auth({ endpoint, token })
+            authProvider.auth({ endpoint, token })
         )
     )
 }
