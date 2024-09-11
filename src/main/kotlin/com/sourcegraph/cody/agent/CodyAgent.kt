@@ -122,6 +122,7 @@ private constructor(
                               edit = ClientCapabilities.EditEnum.Enabled,
                               editWorkspace = ClientCapabilities.EditWorkspaceEnum.Enabled,
                               codeLenses = ClientCapabilities.CodeLensesEnum.Enabled,
+                              disabledMentionsProviders = listOf("symbol"),
                               showDocument = ClientCapabilities.ShowDocumentEnum.Enabled,
                               ignore = ClientCapabilities.IgnoreEnum.Enabled,
                               untitledDocuments = ClientCapabilities.UntitledDocumentsEnum.Enabled,
