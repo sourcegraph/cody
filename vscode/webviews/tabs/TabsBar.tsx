@@ -335,7 +335,7 @@ function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabC
                                 title: 'Export',
                                 Icon: DownloadIcon,
                                 command: 'cody.chat.history.export',
-                                callback: IDE === CodyIDE.JetBrains ? undefined : onDownloadChatClick,
+                                callback: onDownloadChatClick,
                             },
                             {
                                 title: 'Delete all',
