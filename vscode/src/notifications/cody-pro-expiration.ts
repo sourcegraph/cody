@@ -3,12 +3,12 @@ import {
     type SourcegraphGraphQLAPIClient,
     type Unsubscribable,
     authStatus,
+    currentAuthStatus,
     featureFlagProvider,
     isDotCom,
 } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
-import { authProvider } from '../services/AuthProvider'
 import { localStorage } from '../services/LocalStorageProvider'
 
 export class CodyProExpirationNotifications implements vscode.Disposable {
@@ -90,7 +90,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
         }
 
         // Not logged in or not DotCom, don't show.
-        const authStatus_ = authProvider.instance!.status
+        const authStatus_ = currentAuthStatus()
         if (!authStatus_.authenticated || !isDotCom(authStatus_)) return
 
         const useSscForCodySubscription = await featureFlagProvider.evaluateFeatureFlag(

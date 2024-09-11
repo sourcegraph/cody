@@ -16,8 +16,6 @@ import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry/dist/process
 import { logDebug } from '../log'
 import { getOSArch } from '../os'
 import { version } from '../version'
-
-import { authProvider } from './AuthProvider'
 import { localStorage } from './LocalStorageProvider'
 
 const { platform, arch } = getOSArch()
@@ -85,7 +83,6 @@ export async function createOrUpdateTelemetryRecorderProvider(
             new MockServerTelemetryRecorderProvider(
                 extensionDetails,
                 config.configuration,
-                authProvider.instance!,
                 anonymousUserID
             )
         )
@@ -97,7 +94,6 @@ export async function createOrUpdateTelemetryRecorderProvider(
             new TelemetryRecorderProvider(
                 extensionDetails,
                 { ...config.configuration, ...config.auth },
-                authProvider.instance!,
                 anonymousUserID,
                 legacyBackcompatLogEventMode
             )

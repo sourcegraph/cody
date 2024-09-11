@@ -187,8 +187,11 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
             this.removeLensesFor(task)
             return
         }
-        this.taskLenses.set(task, getLensesForTask(task))
-        this.notifyCodeLensesChanged()
+
+        const lenses = getLensesForTask(task)
+        this.taskLenses.set(task, lenses)
+
+        this.notifyCodeLensesChanged(task.fixupFile.uri, lenses)
     }
 
     public didDeleteTask(task: FixupTask): void {
@@ -197,10 +200,10 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
         this.contentStore.delete(task.id)
     }
 
-    private removeLensesFor(task: FixupTask): void {
+    public removeLensesFor(task: FixupTask): void {
         if (this.taskLenses.delete(task)) {
             // TODO: Clean up the fixup file when there are no remaining code lenses
-            this.notifyCodeLensesChanged()
+            this.notifyCodeLensesChanged(task.fixupFile.uri, [])
         }
     }
 
@@ -224,7 +227,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
         void vscode.commands.executeCommand('setContext', 'cody.hasActionableEdit', hasActionableEdit)
     }
 
-    private notifyCodeLensesChanged(): void {
+    public notifyCodeLensesChanged(uri: vscode.Uri, codeLenses: vscode.CodeLens[]): void {
         this._onDidChangeCodeLenses.fire()
     }
 

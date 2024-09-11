@@ -5,6 +5,7 @@ import {
     type EditModel,
     type EventSource,
     type PromptString,
+    currentAuthStatus,
     displayPathBasename,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -32,7 +33,6 @@ import { isStreamedIntent } from '../edit/utils/edit-intent'
 import { getOverridenModelForIntent } from '../edit/utils/edit-models'
 import type { ExtensionClient } from '../extension-client'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
-import { authProvider } from '../services/AuthProvider'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
@@ -497,7 +497,7 @@ export class FixupController
         telemetryMetadata?: FixupTelemetryMetadata,
         taskId?: FixupTaskID
     ): Promise<FixupTask> {
-        const authStatus = authProvider.instance!.status
+        const authStatus = currentAuthStatus()
         const overridenModel = getOverridenModelForIntent(intent, model, authStatus)
         const fixupFile = this.files.forUri(document.uri)
         const task = new FixupTask(
@@ -1085,6 +1085,9 @@ export class FixupController
         if (!doc) {
             throw new Error(`Cannot create file for the fixup: ${newFileUri.toString()}`)
         }
+
+        // Lenses from the currently used file need to be disposed as new file will replace it in a second
+        this.controlApplicator.removeLensesFor(task)
 
         const pos = new vscode.Position(Math.max(doc.lineCount - 1, 0), 0)
         const range = new vscode.Range(pos, pos)

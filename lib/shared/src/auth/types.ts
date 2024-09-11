@@ -1,6 +1,5 @@
 import { isDotCom } from '../sourcegraph-api/environments'
 import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
-import type { ReadonlyDeep } from '../utils'
 
 /**
  * The authentication status, which includes representing the state when authentication failed or
@@ -54,10 +53,6 @@ export interface UnauthenticatedAuthStatus {
     authenticated: false
     showNetworkError?: boolean
     showInvalidAccessTokenError?: boolean
-}
-
-export interface AuthStatusProvider {
-    status: ReadonlyDeep<AuthStatus>
 }
 
 export const AUTH_STATUS_FIXTURE_AUTHED: AuthenticatedAuthStatus = {

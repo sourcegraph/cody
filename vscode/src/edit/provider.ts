@@ -3,6 +3,8 @@ import { Utils } from 'vscode-uri'
 import {
     BotResponseMultiplexer,
     Typewriter,
+    currentAuthStatus,
+    currentAuthStatusAuthed,
     isAbortError,
     isDotCom,
     isNetworkLikeError,
@@ -16,7 +18,6 @@ import {
 import { logError } from '../log'
 import type { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
-import { authProvider } from '../services/AuthProvider'
 
 import {
     DEFAULT_EVENT_SOURCE,
@@ -54,7 +55,7 @@ export class EditProvider {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
             const contextWindow = modelsService.instance!.getContextWindowByID(model)
-            const authStatus = authProvider.instance!.statusAuthed
+            const authStatus = currentAuthStatusAuthed()
             const {
                 messages,
                 stopSequences,
@@ -217,7 +218,7 @@ export class EditProvider {
                 ...countCode(response),
             }
             const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
-            const endpoint = authProvider.instance!.status.endpoint
+            const endpoint = currentAuthStatus().endpoint
             telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
                 metadata,
                 privateMetadata: {

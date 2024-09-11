@@ -1,6 +1,10 @@
 import * as vscode from 'vscode'
 
-export type CodyIgnoreType = 'cody-ignore' | 'context-filter'
+/**
+ * Enterprise only.
+ * Filtered context out by cody.contextFilters Enterprise configuration setting.
+ */
+export type CodyIgnoreType = 'context-filter'
 export type CodyIgnoreFeature = 'command' | 'edit' | 'test' | 'autocomplete'
 
 export async function showCodyIgnoreNotification(
@@ -16,10 +20,6 @@ export async function showCodyIgnoreNotification(
                   : feature === 'test'
                     ? 'Failed to generate test'
                     : 'Command failed to run'
-        }: file is ignored (${
-            type === 'context-filter'
-                ? 'due to cody.contextFilters Enterprise configuration setting'
-                : 'due to your cody ignore config'
-        })`
+        }: file is ignored (due to cody.contextFilters Enterprise configuration setting)`
     )
 }

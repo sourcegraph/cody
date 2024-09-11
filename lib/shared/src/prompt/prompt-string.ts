@@ -235,13 +235,19 @@ export class PromptString {
         return internal_createPromptString(indentString, [])
     }
 
+    // We need to sanitize paths used for prompts as they are often used in a markdown
+    //  in a way which does not support spaces in the file paths
+    private static sanitizeDisplayPath(path: string) {
+        return path.replaceAll(' ', '%20')
+    }
+
     public static fromDisplayPath(uri: vscode.Uri) {
-        return internal_createPromptString(displayPath(uri), [uri])
+        return internal_createPromptString(PromptString.sanitizeDisplayPath(displayPath(uri)), [uri])
     }
 
     public static fromDisplayPathLineRange(uri: vscode.Uri, range?: RangeData) {
         const pathToDisplay = range ? displayPathWithLines(uri, range) : displayPath(uri)
-        return internal_createPromptString(pathToDisplay, [uri])
+        return internal_createPromptString(PromptString.sanitizeDisplayPath(pathToDisplay), [uri])
     }
 
     public static fromDocumentText(document: vscode.TextDocument, range?: vscode.Range): PromptString {

@@ -7,6 +7,8 @@ import {
     type GuardrailsClientConfig,
     type SourcegraphCompletionsClient,
     SourcegraphGuardrailsClient,
+    currentAuthStatus,
+    currentAuthStatusAuthed,
     firstValueFrom,
     graphqlClient,
     isDotCom,
@@ -19,7 +21,6 @@ import type { PlatformContext } from './extension.common'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logger } from './log'
-import { authProvider } from './services/AuthProvider'
 
 interface ExternalServices {
     chatClient: ChatClient
@@ -73,11 +74,11 @@ export async function configureExternalServices(
 
     // Disable local embeddings for enterprise users.
     const localEmbeddings =
-        authProvider.instance!.status.authenticated && isDotCom(authProvider.instance!.status)
+        currentAuthStatus().authenticated && isDotCom(currentAuthStatus())
             ? await platform.createLocalEmbeddingsController?.(initialConfig)
             : undefined
 
-    const chatClient = new ChatClient(completionsClient, () => authProvider.instance!.statusAuthed)
+    const chatClient = new ChatClient(completionsClient, () => currentAuthStatusAuthed())
 
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient, initialConfig)
 

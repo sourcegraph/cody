@@ -4,7 +4,6 @@ import {
     type AutocompleteContextSnippet,
     type DocumentContext,
     contextFiltersProvider,
-    isCodyIgnoredFile,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -183,9 +182,6 @@ async function filter(snippets: AutocompleteContextSnippet[]): Promise<Autocompl
     return (
         await Promise.all(
             snippets.map(async snippet => {
-                if (isCodyIgnoredFile(snippet.uri)) {
-                    return null
-                }
                 if (await contextFiltersProvider.isUriIgnored(snippet.uri)) {
                     return null
                 }

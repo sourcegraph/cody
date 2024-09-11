@@ -5,7 +5,7 @@
     "rootDir": ".",
     "outDir": "dist/tsc",
     "jsx": "react-jsx",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable", "es2021"],
     "types": ["@testing-library/jest-dom"],
     "paths": {
       "@/*": ["./webviews/*"]
