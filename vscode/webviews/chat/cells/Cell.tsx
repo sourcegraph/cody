@@ -37,7 +37,7 @@ export const Cell = forwardRef<HTMLDivElement, PropsWithChildren<CellProps>>((pr
             <header className="tw-flex tw-gap-4 tw-items-center [&_>_*]:tw-flex-shrink-0">
                 {header}
             </header>
-            <div className={clsx('tw-flex-1 tw-overflow-hidden', contentClassName)}>{children}</div>
+            <div className={clsx('tw-flex-1', contentClassName)}>{children}</div>
         </div>
     )
 })

@@ -1,3 +1,6 @@
+## 0.8.0
+- Add support for Cody one-box search results
+
 ## 0.7.7 
 - Revert "prompts and commands" new UI 
 

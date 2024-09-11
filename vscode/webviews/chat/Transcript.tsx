@@ -289,7 +289,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 <InfoMessage>
                     {humanMessage.intent === 'search' ? (
                         <div className="tw-flex tw-justify-between tw-gap-4">
-                            <p>Intent detection selected a code search response.</p>
+                            <span>Intent detection selected a code search response.</span>
                             <div>
                                 <Button
                                     size="sm"
@@ -304,7 +304,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         </div>
                     ) : (
                         <div className="tw-flex tw-justify-between tw-gap-4">
-                            <p>Intent detection selected an LLM response.</p>
+                            <span>Intent detection selected an LLM response.</span>
                             <div>
                                 <Button
                                     size="sm"
@@ -328,8 +328,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     contextAlternatives={humanMessage.contextAlternatives}
                     model={assistantMessage?.model}
                     isForFirstMessage={humanMessage.index === 0}
+                    showSnippets={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
                     defaultOpen={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
-                    showSnippets={experimentalOneBoxEnabled}
                 />
             )}
             {assistantMessage && !isContextLoading && (

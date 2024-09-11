@@ -103,7 +103,7 @@ export const CodeExcerpt: FC<Props> = props => {
     }, [highlightRanges, startLine, endLine, tableContainerElement, table])
 
     return (
-        <Code className={clsx(styles.codeExcerpt, className)}>
+        <Code className={clsx(styles.codeExcerpt, className)} data-code-excerpt={true}>
             <div ref={setTableContainerElement}>{table}</div>
         </Code>
     )
