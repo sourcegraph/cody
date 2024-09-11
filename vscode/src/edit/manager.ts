@@ -308,7 +308,7 @@ export class EditManager implements vscode.Disposable {
         // queries to ask the LLM to generate a selection, and then ultimately apply the edit.
         const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
 
-        const authStatus = authProvider.instance!.statusAuthed
+        const authStatus = authProvider.statusAuthed
         const selection = await getSmartApplySelection(
             configuration.id,
             configuration.instruction,

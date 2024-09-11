@@ -90,7 +90,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
         }
 
         // Not logged in or not DotCom, don't show.
-        const authStatus_ = authProvider.instance!.status
+        const authStatus_ = authProvider.status
         if (!authStatus_.authenticated || !isDotCom(authStatus_)) return
 
         const useSscForCodySubscription = await featureFlagProvider.evaluateFeatureFlag(

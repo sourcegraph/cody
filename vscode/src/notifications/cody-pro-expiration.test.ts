@@ -12,10 +12,11 @@ import {
     featureFlagProvider,
     graphqlClient,
 } from '@sourcegraph/cody-shared'
-import { type AuthProvider, authProvider } from '../services/AuthProvider'
+import { authProvider } from '../services/AuthProvider'
 import { CodyProExpirationNotifications } from './cody-pro-expiration'
 
 vi.mock('../../../lib/shared/src/experimentation/FeatureFlagProvider')
+vi.mock('../services/AuthProvider')
 
 describe('Cody Pro expiration notifications', () => {
     let notifier: CodyProExpirationNotifications
@@ -67,18 +68,13 @@ describe('Cody Pro expiration notifications', () => {
                 },
             }
         })
-        authProvider.instance = {
-            get status() {
-                return authStatus_
-            },
-        } as AuthProvider
         authStatus_ = { ...AUTH_STATUS_FIXTURE_AUTHED, endpoint: DOTCOM_URL.toString() }
+        vi.spyOn(authProvider, 'status', 'get').mockReturnValue(authStatus_)
         localStorageData = {}
     })
 
     afterEach(() => {
         vi.restoreAllMocks()
-        authProvider.instance = null
         notifier?.dispose()
     })
 

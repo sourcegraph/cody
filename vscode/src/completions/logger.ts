@@ -849,7 +849,7 @@ export function prepareSuggestionEvent({
                 completionIdsMarkedAsSuggested.set(completionId, true)
                 event.suggestionAnalyticsLoggedAt = performance.now()
 
-                const authStatus = authProvider.instance?.statusAuthed
+                const authStatus = authProvider.statusAuthed
                 // 🚨 SECURITY: Track the diff in the document after suggestion is shown for DotCom users and public repos.
                 if (
                     event.params.id &&

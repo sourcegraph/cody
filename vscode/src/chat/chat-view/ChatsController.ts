@@ -350,7 +350,7 @@ export class ChatsController implements vscode.Disposable {
                 category: 'billable',
             },
         })
-        const authStatus = authProvider.instance!.status
+        const authStatus = authProvider.status
         if (authStatus.authenticated) {
             try {
                 const historyJson = chatHistory.getLocalHistory(authStatus)
@@ -380,7 +380,7 @@ export class ChatsController implements vscode.Disposable {
         // The chat ID for client to pass in to clear all chats without showing window pop-up for confirmation.
         const ClearWithoutConfirmID = 'clear-all-no-confirm'
         const isClearAll = !chatID || chatID === ClearWithoutConfirmID
-        const authStatus = authProvider.instance!.statusAuthed
+        const authStatus = authProvider.statusAuthed
 
         if (isClearAll) {
             if (chatID !== ClearWithoutConfirmID) {

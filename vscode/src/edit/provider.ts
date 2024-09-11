@@ -54,7 +54,7 @@ export class EditProvider {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
             const contextWindow = modelsService.instance!.getContextWindowByID(model)
-            const authStatus = authProvider.instance!.statusAuthed
+            const authStatus = authProvider.statusAuthed
             const {
                 messages,
                 stopSequences,
@@ -217,7 +217,7 @@ export class EditProvider {
                 ...countCode(response),
             }
             const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
-            const endpoint = authProvider.instance!.status.endpoint
+            const endpoint = authProvider.status.endpoint
             telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
                 metadata,
                 privateMetadata: {

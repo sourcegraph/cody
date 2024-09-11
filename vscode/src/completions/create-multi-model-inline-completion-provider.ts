@@ -78,7 +78,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
     // Creates multiple providers to get completions from.
     // The primary purpose of this method is to get the completions generated from multiple providers,
     // which helps judge the quality of code completions
-    const authStatus = authProvider.instance!.status
+    const authStatus = authProvider.status
     if (
         !authStatus.authenticated ||
         config.autocompleteExperimentalMultiModelCompletions === undefined

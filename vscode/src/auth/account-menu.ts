@@ -5,7 +5,7 @@ import { authProvider } from '../services/AuthProvider'
 import { showSignInMenu, showSignOutMenu } from './auth'
 
 export async function showAccountMenu(): Promise<void> {
-    const authStatus = authProvider.instance!.statusAuthed
+    const authStatus = authProvider.statusAuthed
     const selected = await openAccountMenuFirstStep(authStatus)
     if (selected === undefined) {
         return

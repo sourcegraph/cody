@@ -95,7 +95,7 @@ export const getInput = async (
               ? EXPANDED_RANGE_ITEM
               : SELECTION_RANGE_ITEM
 
-    const authStatus = authProvider.instance!.statusAuthed
+    const authStatus = authProvider.statusAuthed
     const isCodyPro = !authStatus.userCanUpgrade
     const modelOptions = modelsService.instance!.getModels(ModelUsage.Edit)
     const modelItems = getModelOptionItems(modelOptions, isCodyPro)

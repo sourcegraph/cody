@@ -94,14 +94,14 @@ export class RepoNameResolver {
     }
 
     private async getRepoNamesFromRemoteUrls(remoteUrls: string[]): Promise<string[]> {
-        if (!authProvider.instance) {
+        if (!authProvider) {
             throw new Error('RepoNameResolver not initialized')
         }
 
         const uniqueRemoteUrls = Array.from(new Set(remoteUrls))
 
         // Use local conversion function for non-enterprise accounts.
-        if (isDotCom(authProvider.instance.status)) {
+        if (isDotCom(authProvider.status)) {
             return uniqueRemoteUrls.map(convertGitCloneURLToCodebaseName).filter(isDefined)
         }
 

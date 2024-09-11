@@ -497,7 +497,7 @@ export class FixupController
         telemetryMetadata?: FixupTelemetryMetadata,
         taskId?: FixupTaskID
     ): Promise<FixupTask> {
-        const authStatus = authProvider.instance!.status
+        const authStatus = authProvider.status
         const overridenModel = getOverridenModelForIntent(intent, model, authStatus)
         const fixupFile = this.files.forUri(document.uri)
         const task = new FixupTask(

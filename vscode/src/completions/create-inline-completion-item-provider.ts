@@ -47,7 +47,7 @@ export function createInlineCompletionItemProvider({
     statusBar,
     createBfgRetriever,
 }: InlineCompletionItemProviderArgs): Observable<void> {
-    const authStatus = authProvider.instance!.status
+    const authStatus = authProvider.status
     if (!authStatus.authenticated) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
 
@@ -74,7 +74,7 @@ export function createInlineCompletionItemProvider({
             createProvider(config, authStatus).pipe(
                 createDisposables(provider => {
                     if (provider) {
-                        const authStatus = authProvider.instance!.statusAuthed
+                        const authStatus = authProvider.statusAuthed
                         const triggerDelay =
                             vscode.workspace
                                 .getConfiguration()
