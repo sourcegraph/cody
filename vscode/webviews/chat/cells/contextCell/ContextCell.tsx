@@ -1,12 +1,11 @@
 import type { ContextItem, Model } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { MENTION_CLASS_NAME } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
 import isEqual from 'lodash/isEqual'
 import { BrainIcon, MessagesSquareIcon } from 'lucide-react'
 import { type FunctionComponent, memo, useCallback, useState } from 'react'
-import { FileLink } from '../../../components/FileLink'
+import { FileContextItem } from '../../../components/FileContextItem'
 import {
     Accordion,
     AccordionContent,
@@ -32,6 +31,7 @@ export const ContextCell: FunctionComponent<{
     isForFirstMessage: boolean
     className?: string
     defaultOpen?: boolean
+    showSnippets?: boolean
 
     /** For use in storybooks only. */
     __storybook__initialOpen?: boolean
@@ -44,6 +44,7 @@ export const ContextCell: FunctionComponent<{
         className,
         defaultOpen,
         __storybook__initialOpen,
+        showSnippets = false,
     }) => {
         const [selectedAlternative, setSelectedAlternative] = useState<number | undefined>(undefined)
         const incrementSelectedAlternative = useCallback(
@@ -167,21 +168,10 @@ export const ContextCell: FunctionComponent<{
                                                 key={i}
                                                 data-testid="context-item"
                                             >
-                                                <FileLink
-                                                    uri={item.uri}
-                                                    repoName={item.repoName}
-                                                    revision={item.revision}
-                                                    source={item.source}
-                                                    range={item.range}
-                                                    title={item.title}
-                                                    isTooLarge={item.isTooLarge}
-                                                    isTooLargeReason={item.isTooLargeReason}
-                                                    isIgnored={item.isIgnored}
-                                                    className={clsx(
-                                                        styles.contextItem,
-                                                        MENTION_CLASS_NAME
-                                                    )}
-                                                    linkClassName={styles.contextItemLink}
+                                                <FileContextItem
+                                                    item={item}
+                                                    showSnippets={showSnippets}
+                                                    defaultOpen={defaultOpen}
                                                 />
                                                 {internalDebugContext &&
                                                     item.metadata &&

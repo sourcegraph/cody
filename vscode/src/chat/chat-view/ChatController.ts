@@ -34,6 +34,7 @@ import {
     currentAuthStatusAuthed,
     featureFlagProvider,
     getContextForChatMessage,
+    graphqlClient,
     hydrateAfterPostMessage,
     inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
@@ -1595,6 +1596,18 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                 startWith(undefined)
                             ),
                         ]).pipe(map(() => modelsService.instance!.getModels(ModelUsage.Chat))),
+                    highlights: parameters =>
+                        promiseFactoryToObservable(() =>
+                            graphqlClient.getHighlightedFileChunk(parameters)
+                        ).pipe(
+                            map(result => {
+                                if (isError(result)) {
+                                    return []
+                                }
+
+                                return result
+                            })
+                        ),
                     setChatModel: model => {
                         this.chatModel.updateModel(model)
 
