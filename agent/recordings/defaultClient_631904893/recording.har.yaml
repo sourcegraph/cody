@@ -88,7 +88,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 72e09632123f0e9e603b0469bc56c1dc
+    - _id: 9cd2c887e010b89722f3544784fb0752
       _order: 0
       cache: {}
       request:
@@ -105,7 +105,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-ee10dbb89edd7e0fd4802d4814368cbc-bef3de477f2d9df5-01
+            value: 00-a43b7716e00c10d389edc59b7518c039-120b000c66329a4d-01
           - name: connection
             value: keep-alive
           - name: host
@@ -132,21 +132,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "1"
+            value: "2"
           - name: client-name
             value: defaultclient
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 5126
+        bodySize: 1094
         content:
           mimeType: text/event-stream
-          size: 5126
+          size: 1094
           text: >+
             event: completion
 
-            data: {"completion":"Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding tasks today? Whether you need assistance with writing code, debugging, explaining concepts, or anything else related to programming, I'm here to help. What would you like to work on?","stopReason":"end_turn"}
+            data: {"deltaText":"Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding tasks today? Whether you need assistance with writing code, debugging, explaining concepts, or discussing best practices, I'm here to help. What would you like to work on?","stopReason":"end_turn"}
 
 
             event: done
@@ -156,7 +156,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 09:45:41 GMT
+            value: Thu, 12 Sep 2024 07:36:05 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -185,7 +185,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-23T09:45:40.128Z
+      startedDateTime: 2024-09-12T07:36:03.727Z
       time: 0
       timings:
         blocked: -1
@@ -195,7 +195,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b0173707b82ffca200bd947df77cce56
+    - _id: cc8ef0f3ec1880f7732e85c3c8e25e8a
       _order: 0
       cache: {}
       request:
@@ -212,7 +212,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-2c45f9a410fe0826a9254d2b1b7ceb45-037fa51f5e885b2e-01
+            value: 00-5f278cc8c59eaca7ea4d78e18ed0cd42-2681fe05ddfd1774-01
           - name: connection
             value: keep-alive
           - name: host
@@ -239,21 +239,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "1"
+            value: "2"
           - name: client-name
             value: defaultclient
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 38587
+        bodySize: 4488
         content:
           mimeType: text/event-stream
-          size: 38587
+          size: 4488
           text: >+
             event: completion
 
-            data: {"completion":"Certainly! Here's a simple \"Hello, World!\" function in Java:\n\n```java:HelloWorld.java\npublic class HelloWorld {\n    public static void main(String[] args) {\n        sayHello();\n    }\n\n    public static void sayHello() {\n        System.out.println(\"Hello, World!\");\n    }\n}\n```\n\nThis code does the following:\n\n1. We define a class called `HelloWorld`.\n2. Inside the class, we have the `main` method, which is the entry point of any Java program.\n3. We define a separate method called `sayHello()` that prints \"Hello, World!\" to the console.\n4. In the `main` method, we call the `sayHello()` function.\n\nTo run this program:\n\n1. Save the code in a file named `HelloWorld.java`.\n2. Compile the code using the Java compiler: `javac HelloWorld.java`\n3. Run the compiled program: `java HelloWorld`\n\nWhen you run this program, it will output:\n\n```\nHello, World!\n```\n\nThis simple example demonstrates how to create a function in Java and call it from the main method.","stopReason":"end_turn"}
+            data: {"deltaText":"Certainly! Here's a simple \"Hello World\" function in Java:\n\n```java:HelloWorld.java\npublic class HelloWorld {\n    public static void main(String[] args) {\n        sayHello();\n    }\n\n    public static void sayHello() {\n        System.out.println(\"Hello, World!\");\n    }\n}\n```\n\nThis code does the following:\n\n1. We define a class called `HelloWorld`.\n2. Inside the class, we have the `main` method, which is the entry point of any Java program.\n3. We also define a `sayHello` method that prints \"Hello, World!\" to the console.\n4. In the `main` method, we call the `sayHello` method.\n\nTo run this program:\n\n1. Save the code in a file named `HelloWorld.java`.\n2. Compile the code using the command: `javac HelloWorld.java`\n3. Run the compiled program using: `java HelloWorld`\n\nWhen you run this program, it will output:\n\n```\nHello, World!\n```\n\nThis is a basic example of a Java function that prints a greeting message. You can modify the `sayHello` method to print different messages or add more functionality as needed.","stopReason":"end_turn"}
 
 
             event: done
@@ -263,7 +263,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 09:45:43 GMT
+            value: Thu, 12 Sep 2024 07:36:08 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -292,7 +292,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-23T09:45:41.903Z
+      startedDateTime: 2024-09-12T07:36:05.585Z
       time: 0
       timings:
         blocked: -1
@@ -302,7 +302,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b09dce6680847a9fe96041bcae5f955a
+    - _id: cb5348cb23ad6875439d2122eebda885
       _order: 0
       cache: {}
       request:
@@ -319,7 +319,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-b3c7a87e55a259bdf7b3022356881be9-295da97119fd11a1-01
+            value: 00-2c76089f6f04e5f8e1381944ac0a3444-c1a480d3b886ea70-01
           - name: connection
             value: keep-alive
           - name: host
@@ -346,21 +346,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "1"
+            value: "2"
           - name: client-name
             value: defaultclient
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 3615
+        bodySize: 860
         content:
           mimeType: text/event-stream
-          size: 3615
+          size: 860
           text: >+
             event: completion
 
-            data: {"completion":"Hello Lars Monsen, it's nice to meet you. As an AI coding assistant, I'm here to help you with any programming or coding-related questions you may have. Is there a particular coding task or problem you'd like assistance with today?","stopReason":"end_turn"}
+            data: {"deltaText":"Hello Lars Monsen, it's nice to meet you. I'm Cody, an AI coding assistant created by Sourcegraph. How can I help you with coding or development tasks today?","stopReason":"end_turn"}
 
 
             event: done
@@ -370,7 +370,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 09:45:46 GMT
+            value: Thu, 12 Sep 2024 07:36:11 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -399,7 +399,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-23T09:45:45.379Z
+      startedDateTime: 2024-09-12T07:36:10.134Z
       time: 0
       timings:
         blocked: -1
@@ -409,11 +409,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 1800ddcdadc69262f895e5e186e78a37
+    - _id: 628fcc9de4f3223188bf0b680d146f63
       _order: 0
       cache: {}
       request:
-        bodySize: 733
+        bodySize: 659
         cookies: []
         headers:
           - name: content-type
@@ -426,7 +426,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-8f66d98fbc69a3ea237f2220910f901c-e32adcaa2ed6ca2e-01
+            value: 00-73a6e926619105feb90019560fda65ae-51795119ed2daa38-01
           - name: connection
             value: keep-alive
           - name: host
@@ -448,10 +448,9 @@ log:
               - speaker: human
                 text: My name is Lars Monsen.
               - speaker: assistant
-                text: Hello Lars Monsen, it's nice to meet you. As an AI coding assistant, I'm
-                  here to help you with any programming or coding-related
-                  questions you may have. Is there a particular coding task or
-                  problem you'd like assistance with today?
+                text: Hello Lars Monsen, it's nice to meet you. I'm Cody, an AI coding assistant
+                  created by Sourcegraph. How can I help you with coding or
+                  development tasks today?
               - speaker: human
                 text: What is my name?
             model: anthropic/claude-3-5-sonnet-20240620
@@ -460,21 +459,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "1"
+            value: "2"
           - name: client-name
             value: defaultclient
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 729
+        bodySize: 351
         content:
           mimeType: text/event-stream
-          size: 729
+          size: 351
           text: >+
             event: completion
 
-            data: {"completion":"Your name is Lars Monsen, as you mentioned in your previous message.","stopReason":"end_turn"}
+            data: {"deltaText":"Your name is Lars Monsen, as you mentioned in your previous message.","stopReason":"end_turn"}
 
 
             event: done
@@ -484,7 +483,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 09:45:47 GMT
+            value: Thu, 12 Sep 2024 07:36:12 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -513,7 +512,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-23T09:45:46.862Z
+      startedDateTime: 2024-09-12T07:36:11.499Z
       time: 0
       timings:
         blocked: -1
@@ -523,7 +522,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 12f1ca35aa29a4ceb07f5b65bdcd37b4
+    - _id: 8c52b4b956e8370973e87415af3e472c
       _order: 0
       cache: {}
       request:
@@ -540,7 +539,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-c9a8cca3d8e11832c7dc25ad1d6bc404-6d6d4e3e8eb5439f-01
+            value: 00-4582d8849af574f25e28a90283c5d28e-9bf1de04d5a22a48-01
           - name: connection
             value: keep-alive
           - name: host
@@ -567,21 +566,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "1"
+            value: "2"
           - name: client-name
             value: defaultclient
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 8893
+        bodySize: 1740
         content:
           mimeType: text/event-stream
-          size: 8893
+          size: 1740
           text: >+
             event: completion
 
-            data: {"completion":"I am an AI coding assistant called Cody, created by Sourcegraph. I don't have a specific model name or version number to share. My capabilities are based on natural language processing and code understanding, but I'm not certain about the exact details of my underlying architecture or training. How can I assist you with any coding or development tasks today?","stopReason":"end_turn"}
+            data: {"deltaText":"I am an AI coding assistant called Cody, created by Sourcegraph. I don't have a specific model name or version number. My purpose is to assist with coding-related tasks and questions. I'm not able to provide details about my exact architecture or training. How can I help you with any coding or development questions today?","stopReason":"end_turn"}
 
 
             event: done
@@ -591,7 +590,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 09:45:48 GMT
+            value: Thu, 12 Sep 2024 07:36:14 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -620,7 +619,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-23T09:45:47.884Z
+      startedDateTime: 2024-09-12T07:36:12.572Z
       time: 0
       timings:
         blocked: -1
@@ -630,11 +629,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 10fea51faab2d059ac7fe30188f826fe
+    - _id: 3ffdbcbca90cd7760889f4797666e005
       _order: 0
       cache: {}
       request:
-        bodySize: 861
+        bodySize: 824
         cookies: []
         headers:
           - name: content-type
@@ -647,7 +646,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-5c6cab35bd72f975c9a08a57257e7461-0c06f8f58f698fdb-01
+            value: 00-05190fe71829b611308d9a5b47cd80de-ae2f1d2e53f4a075-01
           - name: connection
             value: keep-alive
           - name: host
@@ -670,11 +669,11 @@ log:
                 text: What model are you?
               - speaker: assistant
                 text: I am an AI coding assistant called Cody, created by Sourcegraph. I don't
-                  have a specific model name or version number to share. My
-                  capabilities are based on natural language processing and code
-                  understanding, but I'm not certain about the exact details of
-                  my underlying architecture or training. How can I assist you
-                  with any coding or development tasks today?
+                  have a specific model name or version number. My purpose is to
+                  assist with coding-related tasks and questions. I'm not able
+                  to provide details about my exact architecture or training.
+                  How can I help you with any coding or development questions
+                  today?
               - speaker: human
                 text: What model are you?
             model: anthropic/claude-3-5-sonnet-20240620
@@ -683,21 +682,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "1"
+            value: "2"
           - name: client-name
             value: defaultclient
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 16792
+        bodySize: 2170
         content:
           mimeType: text/event-stream
-          size: 16792
+          size: 2170
           text: >+
             event: completion
 
-            data: {"completion":"I apologize for any confusion. To clarify, I am Cody, an AI coding assistant created by Sourcegraph. I don't have access to specific information about my underlying model architecture or version. My capabilities are based on natural language processing and code understanding, but the details of my implementation are not known to me.\n\nAs an AI assistant, my role is to help with coding and development tasks. If you have any questions related to programming, software development, or need assistance with code, I'd be happy to help. Is there a particular coding task or question you'd like assistance with?","stopReason":"end_turn"}
+            data: {"deltaText":"I apologize for any confusion, but I don't have specific information about what model I am beyond what I've already shared. I'm Cody, an AI coding assistant created by Sourcegraph, but I don't have details about my underlying model architecture or version. My purpose is to assist with coding tasks, so I'd be happy to help with any programming or development questions you might have. Is there a particular coding topic or problem you'd like assistance with?","stopReason":"end_turn"}
 
 
             event: done
@@ -707,7 +706,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 09:45:51 GMT
+            value: Thu, 12 Sep 2024 07:36:16 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -736,7 +735,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-23T09:45:49.974Z
+      startedDateTime: 2024-09-12T07:36:14.548Z
       time: 0
       timings:
         blocked: -1
@@ -746,7 +745,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 5fda62f9e09bef239a12dd889740871f
+    - _id: e12d67cb982c32a1b00ddd9a6876b002
       _order: 0
       cache: {}
       request:
@@ -763,7 +762,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-0ebb09134500a2f28a06f183622aa95a-cb43c36ec87a56c0-01
+            value: 00-96ed9c5af1c24b29385aa6be386525e3-4dd5796c81f58ada-01
           - name: connection
             value: keep-alive
           - name: host
@@ -881,21 +880,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "1"
+            value: "2"
           - name: client-name
             value: defaultclient
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 12456
+        bodySize: 1895
         content:
           mimeType: text/event-stream
-          size: 12456
+          size: 1895
           text: >+
             event: completion
 
-            data: {"completion":"Certainly! Here's a class `Dog` that implements the `Animal` interface based on the provided codebase context:\n\n```typescript:src/dog.ts\nimport { Animal } from './animal';\n\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis implementation fulfills all the requirements of the `Animal` interface defined in the `animal.ts` file.","stopReason":"end_turn"}
+            data: {"deltaText":"Certainly! Here's a class `Dog` that implements the `Animal` interface:\n\n```typescript:src/dog.ts\nimport { Animal } from './animal';\n\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis implementation satisfies all the requirements of the `Animal` interface defined in your workspace.","stopReason":"end_turn"}
 
 
             event: done
@@ -905,7 +904,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 09:45:54 GMT
+            value: Thu, 12 Sep 2024 07:36:19 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -934,7 +933,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-23T09:45:53.081Z
+      startedDateTime: 2024-09-12T07:36:17.416Z
       time: 0
       timings:
         blocked: -1
@@ -944,11 +943,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: c42a6a3aed5999e531101074b269bbb5
+    - _id: 1839a30d24af19dba7d8be49bcaebaab
       _order: 0
       cache: {}
       request:
-        bodySize: 2380
+        bodySize: 2411
         cookies: []
         headers:
           - name: content-type
@@ -961,7 +960,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-aaf154a44e2dc23f78dc23389844775d-58c4fccbc99c39ae-01
+            value: 00-68a1c993d605391d8a119a6993eb919f-ec9ed9b5ee964b5e-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1072,28 +1071,28 @@ log:
                   positively without apologizing. 
 
 
-                  Question: What is Squirrel?
+                  Question: What is Squirrel? Show me concrete code examples
             model: anthropic/claude-3-5-sonnet-20240620
             temperature: 0
             topK: -1
             topP: -1
         queryString:
           - name: api-version
-            value: "1"
+            value: "2"
           - name: client-name
             value: defaultclient
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 48861
+        bodySize: 5231
         content:
           mimeType: text/event-stream
-          size: 48861
+          size: 5231
           text: >+
             event: completion
 
-            data: {"completion":"Squirrel is an interface defined in the codebase, specifically in the file `src/squirrel.ts`. According to the code comments, it's not actually related to real squirrels, despite its name. Instead, it's an interface that mocks something completely unrelated to squirrels and is actually related to the implementation of precise code navigation in Sourcegraph.\n\nThe interface is currently empty, which means it doesn't define any properties or methods. This suggests it might be a placeholder or a marker interface used for type checking or future implementation.\n\nHere's the definition of the Squirrel interface:\n\n```typescript:src/squirrel.ts\nexport interface Squirrel {}\n```\n\nThis interface, despite its seemingly playful name, serves a specific purpose in the context of Sourcegraph's code navigation features. It's an excellent example of how naming in programming doesn't always directly reflect the real-world meaning of words, but rather serves as a memorable identifier for a specific concept within the codebase.","stopReason":"end_turn"}
+            data: {"deltaText":"Certainly! Based on the provided codebase context, Squirrel is an interface defined in the `src/squirrel.ts` file. Here's the concrete code example for the Squirrel interface:\n\n```typescript:src/squirrel.ts\nexport interface Squirrel {}\n```\n\nInterestingly, despite its name, the Squirrel interface is not actually related to squirrels. The code comment above the interface provides some context:\n\n```typescript:src/squirrel.ts\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels.\n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nAs we can see, this interface is used for mocking purposes and is related to the implementation of precise code navigation in Sourcegraph. The interface is currently empty, which suggests it might be a placeholder or used for type-checking purposes in other parts of the codebase.\n\nWhile we don't have more concrete implementations or usages of the Squirrel interface in the provided codebase context, it's likely that this interface is extended or implemented elsewhere in the Sourcegraph codebase to facilitate precise code navigation features.","stopReason":"end_turn"}
 
 
             event: done
@@ -1103,7 +1102,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 09:45:58 GMT
+            value: Thu, 12 Sep 2024 07:36:22 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1132,7 +1131,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-23T09:45:55.574Z
+      startedDateTime: 2024-09-12T07:36:19.976Z
       time: 0
       timings:
         blocked: -1
@@ -2760,7 +2759,7 @@ log:
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided code context, the codebase is written in TypeScript and uses the Vitest test framework. I will generate a set of unit tests for the `Animal` interface in `src/animal.ts`.\n\nImporting the necessary modules:\n```typescript\nimport { expect, describe, it } from 'vitest'\nimport { Animal } from './animal'\n```\nUnit tests for `src/animal.ts`:\n```typescript\ndescribe('Animal', () =\u003e {\n  let animal: Animal\n\n  // Define a base animal with required properties\n  beforeEach(() =\u003e {\n    animal = {\n      name: 'Cat',\n      makeAnimalSound: () =\u003e 'Meow',\n      isMammal: true,\n    }\n  })\n\n  it('should have a name property of string type', () =\u003e {\n    expect(animal.name).toBeTypeOf('string')\n  })\n\n  it('should have a makeAnimalSound function that returns a string', () =\u003e {\n    expect(typeof animal.makeAnimalSound()).toBe('string')\n  })\n\n  it('should have an isMammal property of boolean type', () =\u003e {\n    expect(animal.isMammal).toBeTypeOf('boolean')\n  })\n\n  it('should return correct animal sound', () =\u003e {\n    expect(animal.makeAnimalSound()).toBe('Meow')\n  })\n\n  it('should only return true for isMammal', () =\u003e {\n    expect(animal.isMammal).toBe(true)\n  })\n})\n```\nThese tests cover the expected functionality of the `Animal` interface by asserting the types and behavior of all its properties. The tests include `beforeEach` to set up a base animal for each test. There are no limitations to this test suite, as all required properties are defined in the `Animal` interface.\n\nFull completed code block:\n```typescript\n```typescript\nimport { expect, describe, it } from 'vitest'\nimport { Animal } from './animal'\n\ndescribe('Animal', () =\u003e {\n  let animal: Animal\n\n  // Define a base animal with required properties\n  beforeEach(() =\u003e {\n    animal = {\n      name: 'Cat',\n      makeAnimalSound: () =\u003e 'Meow',\n      isMammal: true,\n    }\n  })\n\n  it('should have a name property of string type', () =\u003e {\n    expect(animal.name).toBeTypeOf('string')\n  })\n\n  it('should have a makeAnimalSound function that returns a string', () =\u003e {\n    expect(typeof animal.makeAnimalSound()).toBe('string')\n  })\n\n  it('should have an isMammal property of boolean type', () =\u003e {\n    expect(animal.isMammal).toBeTypeOf('boolean')\n  })\n\n  it('should return correct animal sound', () =\u003e {\n    expect(animal.makeAnimalSound()).toBe('Meow')\n  })\n\n  it('should only return true for isMammal', () =\u003e {\n    expect(animal.isMammal).toBe(true)\n  })\n})\n```\n```sql\n\nThe given typescript file seems to have been truncated. Since the closing brace } is missing, the provided description of the file path might be incomplete. Please ensure that the code is complete.","stopReason":"stop"}
+            data: {"completion":"Based on the provided code context, the codebase is written in TypeScript and uses the Vitest test framework. I will generate a set of unit tests for the `Animal` interface in `src/animal.ts`.\n\nImporting the necessary modules:\n```typescript\nimport { expect, describe, it } from 'vitest'\nimport { Animal } from './animal'\n```\nUnit tests for `src/animal.ts`:\n```typescript\ndescribe('Animal', () => {\n  let animal: Animal\n\n  // Define a base animal with required properties\n  beforeEach(() => {\n    animal = {\n      name: 'Cat',\n      makeAnimalSound: () => 'Meow',\n      isMammal: true,\n    }\n  })\n\n  it('should have a name property of string type', () => {\n    expect(animal.name).toBeTypeOf('string')\n  })\n\n  it('should have a makeAnimalSound function that returns a string', () => {\n    expect(typeof animal.makeAnimalSound()).toBe('string')\n  })\n\n  it('should have an isMammal property of boolean type', () => {\n    expect(animal.isMammal).toBeTypeOf('boolean')\n  })\n\n  it('should return correct animal sound', () => {\n    expect(animal.makeAnimalSound()).toBe('Meow')\n  })\n\n  it('should only return true for isMammal', () => {\n    expect(animal.isMammal).toBe(true)\n  })\n})\n```\nThese tests cover the expected functionality of the `Animal` interface by asserting the types and behavior of all its properties. The tests include `beforeEach` to set up a base animal for each test. There are no limitations to this test suite, as all required properties are defined in the `Animal` interface.\n\nFull completed code block:\n```typescript\n```typescript\nimport { expect, describe, it } from 'vitest'\nimport { Animal } from './animal'\n\ndescribe('Animal', () => {\n  let animal: Animal\n\n  // Define a base animal with required properties\n  beforeEach(() => {\n    animal = {\n      name: 'Cat',\n      makeAnimalSound: () => 'Meow',\n      isMammal: true,\n    }\n  })\n\n  it('should have a name property of string type', () => {\n    expect(animal.name).toBeTypeOf('string')\n  })\n\n  it('should have a makeAnimalSound function that returns a string', () => {\n    expect(typeof animal.makeAnimalSound()).toBe('string')\n  })\n\n  it('should have an isMammal property of boolean type', () => {\n    expect(animal.isMammal).toBeTypeOf('boolean')\n  })\n\n  it('should return correct animal sound', () => {\n    expect(animal.makeAnimalSound()).toBe('Meow')\n  })\n\n  it('should only return true for isMammal', () => {\n    expect(animal.isMammal).toBe(true)\n  })\n})\n```\n```sql\n\nThe given typescript file seems to have been truncated. Since the closing brace } is missing, the provided description of the file path might be incomplete. Please ensure that the code is complete.","stopReason":"stop"}
 
 
             event: done
@@ -2945,107 +2944,6 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-08-23T09:46:27.703Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 9d0e130a38eaf9d3cd8d9512afc14b87
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 144
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "144"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 320
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-              
-              query ContextFilters {
-                  site {
-                      codyContextFilters(version: V1) {
-                          raw
-                      }
-                  }
-              }
-            variables: {}
-        queryString:
-          - name: ContextFilters
-            value: null
-        url: https://sourcegraph.com/.api/graphql?ContextFilters
-      response:
-        bodySize: 114
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 114
-          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLE\
-            ciWrvNKcnNra2loAAAAA//8=\",\"AwA2LshlNQAAAA==\"]"
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 23 Aug 2024 09:45:38 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1333
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-08-23T09:45:38.854Z
       time: 0
       timings:
         blocked: -1
@@ -4804,213 +4702,6 @@ log:
         status: 401
         statusText: Unauthorized
       startedDateTime: 2024-08-23T09:45:38.642Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: ea3ddfc16f0b52a2180a9bd21c87dc08
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 144
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: autocomplete / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "144"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 315
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-              
-              query Repository($name: String!) {
-              	repository(name: $name) {
-              		id
-              	}
-              }
-            variables:
-              name: github.com/sourcegraph/cody
-        queryString:
-          - name: Repository
-            value: null
-        url: https://sourcegraph.com/.api/graphql?Repository
-      response:
-        bodySize: 120
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 120
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8\
-            o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//AwDHAhygPQAAAA==\"]"
-          textDecoded:
-            data:
-              repository:
-                id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 15 Jul 2024 18:39:54 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1333
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-07-15T18:39:54.558Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 203c1896021c3a09dfe619120ea1b725
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 101
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: autocomplete / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "101"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 323
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-              
-              query SiteProductVersion {
-                  site {
-                      productVersion
-                  }
-              }
-            variables: {}
-        queryString:
-          - name: SiteProductVersion
-            value: null
-        url: https://sourcegraph.com/.api/graphql?SiteProductVersion
-      response:
-        bodySize: 136
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 136
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkYWRkYW5vFGB\
-            kYmugbmuoam8aZ6prop5ilJ5sZpBskpZolKtbW1AAAAAP//AwCl4fhmSQAAAA==\"]"
-          textDecoded:
-            data:
-              site:
-                productVersion: 282287_2024-07-15_5.5-d7db73f0cd6a
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 15 Jul 2024 18:39:53 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1333
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-07-15T18:39:53.352Z
       time: 0
       timings:
         blocked: -1
