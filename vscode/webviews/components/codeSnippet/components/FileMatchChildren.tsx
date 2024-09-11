@@ -14,25 +14,32 @@ import styles from './FileMatchChildren.module.css'
 interface FileMatchProps {
     result: ContentMatch
     grouped: MatchGroup[]
+    serverEndpoint: string
 }
 
 export const FileMatchChildren: FC<PropsWithChildren<FileMatchProps>> = props => {
-    const { result, grouped } = props
+    const { result, grouped, serverEndpoint } = props
 
     const createCodeExcerptLink = (group: MatchGroup): string => {
+        const urlBuilder = SourcegraphURL.from(getFileMatchUrl(serverEndpoint, result))
+
         const match = group.matches[0]
-        return SourcegraphURL.from(getFileMatchUrl(result))
-            .setLineRange({
+
+        if (match) {
+            urlBuilder.setLineRange({
                 line: match.startLine + 1,
                 character: match.startCharacter + 1,
                 endLine: match.endLine + 1,
                 endCharacter: match.endCharacter + 1,
             })
-            .toString()
+        }
+
+        return urlBuilder.toString()
     }
 
     const navigateToFile = useCallback(
         (event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void => {
+            // TODO: implement navigation by blob
             // navigateToCodeExcerpt(event, props.openInNewTab ?? false, navigate)
         },
         []
@@ -43,7 +50,9 @@ export const FileMatchChildren: FC<PropsWithChildren<FileMatchProps>> = props =>
             {grouped.length > 0 &&
                 grouped.map(group => (
                     <div
-                        key={`linematch:${getFileMatchUrl(result)}${group.startLine}:${group.endLine}`}
+                        key={`linematch:${getFileMatchUrl(serverEndpoint, result)}${group.startLine}:${
+                            group.endLine
+                        }`}
                         role="link"
                         tabIndex={0}
                         data-href={createCodeExcerptLink(group)}

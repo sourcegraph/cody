@@ -51,10 +51,10 @@ export const formatRepositoryStarCount = (repoStars?: number): string | undefine
     return undefined
 }
 
-export function getFileMatchUrl(fileMatch: ContentMatch): string {
+export function getFileMatchUrl(base: string, fileMatch: ContentMatch): string {
     const revision = getRevision(fileMatch.branches, fileMatch.commit)
     const encodedFilePath = fileMatch.path.split('/').map(encodeURIComponent).join('/')
-    return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${encodedFilePath}`
+    return `${base}${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${encodedFilePath}`
 }
 
 export function getRevision(branches?: string[], version?: string): string {

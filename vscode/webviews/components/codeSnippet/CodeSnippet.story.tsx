@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { Observable } from 'observable-fns'
 import { VSCodeStandaloneComponent } from '../../storybook/VSCodeStoryDecorator'
 import { FileContentSearchResult } from './CodeSnippet'
 
@@ -16,19 +17,16 @@ const meta: Meta<typeof FileContentSearchResult> = {
                 {
                     content: '\nclass SnippetBodyInsights {\n\n',
                     contentStart: {
-                        offset: 1492,
                         line: 19,
                         column: 0,
                     },
                     ranges: [
                         {
                             start: {
-                                offset: 1510,
                                 line: 20,
                                 column: 17,
                             },
                             end: {
-                                offset: 1517,
                                 line: 20,
                                 column: 24,
                             },
@@ -39,31 +37,26 @@ const meta: Meta<typeof FileContentSearchResult> = {
                     content:
                         '\n\tprivate readonly _bodyInsights: WindowIdleValue<SnippetBodyInsights>;\n\n',
                     contentStart: {
-                        offset: 3909,
                         line: 101,
                         column: 0,
                     },
                     ranges: [
                         {
                             start: {
-                                offset: 3933,
                                 line: 102,
                                 column: 23,
                             },
                             end: {
-                                offset: 3940,
                                 line: 102,
                                 column: 30,
                             },
                         },
                         {
                             start: {
-                                offset: 3970,
                                 line: 102,
                                 column: 60,
                             },
                             end: {
-                                offset: 3977,
                                 line: 102,
                                 column: 67,
                             },
@@ -74,31 +67,26 @@ const meta: Meta<typeof FileContentSearchResult> = {
                     content:
                         '\t\tthis.prefixLow = prefix.toLowerCase();\n\t\tthis._bodyInsights = new WindowIdleValue(getActiveWindow(), () => new SnippetBodyInsights(this.body));\n\t}\n',
                     contentStart: {
-                        offset: 4357,
                         line: 118,
                         column: 0,
                     },
                     ranges: [
                         {
                             start: {
-                                offset: 4410,
                                 line: 119,
                                 column: 12,
                             },
                             end: {
-                                offset: 4417,
                                 line: 119,
                                 column: 19,
                             },
                         },
                         {
                             start: {
-                                offset: 4481,
                                 line: 119,
                                 column: 83,
                             },
                             end: {
-                                offset: 4488,
                                 line: 119,
                                 column: 90,
                             },
@@ -109,19 +97,16 @@ const meta: Meta<typeof FileContentSearchResult> = {
                     content:
                         '\tget codeSnippet(): string {\n\t\treturn this._bodyInsights.value.codeSnippet;\n\t}\n',
                     contentStart: {
-                        offset: 4507,
                         line: 122,
                         column: 0,
                     },
                     ranges: [
                         {
                             start: {
-                                offset: 4555,
                                 line: 123,
                                 column: 19,
                             },
                             end: {
-                                offset: 4562,
                                 line: 123,
                                 column: 26,
                             },
@@ -132,19 +117,16 @@ const meta: Meta<typeof FileContentSearchResult> = {
                     content:
                         '\tget isBogous(): boolean {\n\t\treturn this._bodyInsights.value.isBogous;\n\t}\n',
                     contentStart: {
-                        offset: 4587,
                         line: 126,
                         column: 0,
                     },
                     ranges: [
                         {
                             start: {
-                                offset: 4633,
                                 line: 127,
                                 column: 19,
                             },
                             end: {
-                                offset: 4640,
                                 line: 127,
                                 column: 26,
                             },
@@ -155,19 +137,16 @@ const meta: Meta<typeof FileContentSearchResult> = {
                     content:
                         '\tget isTrivial(): boolean {\n\t\treturn this._bodyInsights.value.isTrivial;\n\t}\n',
                     contentStart: {
-                        offset: 4662,
                         line: 130,
                         column: 0,
                     },
                     ranges: [
                         {
                             start: {
-                                offset: 4709,
                                 line: 131,
                                 column: 19,
                             },
                             end: {
-                                offset: 4716,
                                 line: 131,
                                 column: 26,
                             },
@@ -178,19 +157,16 @@ const meta: Meta<typeof FileContentSearchResult> = {
                     content:
                         '\tget needsClipboard(): boolean {\n\t\treturn this._bodyInsights.value.usesClipboardVariable;\n\t}\n',
                     contentStart: {
-                        offset: 4739,
                         line: 134,
                         column: 0,
                     },
                     ranges: [
                         {
                             start: {
-                                offset: 4791,
                                 line: 135,
                                 column: 19,
                             },
                             end: {
-                                offset: 4798,
                                 line: 135,
                                 column: 26,
                             },
@@ -201,19 +177,16 @@ const meta: Meta<typeof FileContentSearchResult> = {
                     content:
                         '\tget usesSelection(): boolean {\n\t\treturn this._bodyInsights.value.usesSelectionVariable;\n\t}\n',
                     contentStart: {
-                        offset: 4833,
                         line: 138,
                         column: 0,
                     },
                     ranges: [
                         {
                             start: {
-                                offset: 4884,
                                 line: 139,
                                 column: 19,
                             },
                             end: {
-                                offset: 4891,
                                 line: 139,
                                 column: 26,
                             },
@@ -245,7 +218,7 @@ export const PlainText: Story = {
 export const Highlighted: Story = {
     args: {
         fetchHighlightedFileLineRanges: () =>
-            Promise.resolve([
+            Observable.of([
                 [
                     '<tr><td class="line" data-line="20"></td><td class="code"><span>\n</span></td></tr>',
                     '<tr><td class="line" data-line="21"></td><td class="code"><span class="hl-typed-Keyword">class</span><span> </span><span class="hl-typed-IdentifierType">SnippetBodyInsights</span><span> {</span></td></tr>',

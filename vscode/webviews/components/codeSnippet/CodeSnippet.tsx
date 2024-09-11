@@ -14,14 +14,13 @@ import {
 import { clsx } from 'clsx'
 import VisibilitySensor from 'react-visibility-sensor'
 
-import {
-    type ChunkMatch,
-    type ContentMatch,
-    type HighlightLineRange,
-    HighlightResponseFormat,
-    type LineMatch,
-    type MatchGroup,
-    type SearchMatch,
+import type {
+    ChunkMatch,
+    ContentMatch,
+    HighlightLineRange,
+    LineMatch,
+    MatchGroup,
+    SearchMatch,
 } from './types'
 
 import { FileMatchChildren } from './components/FileMatchChildren'
@@ -34,6 +33,7 @@ import {
     pluralize,
 } from './utils'
 
+import type { Observable } from 'observable-fns'
 import styles from './CodeSnippet.module.css'
 
 const DEFAULT_VISIBILITY_OFFSET = { bottom: -500 }
@@ -42,9 +42,8 @@ export interface FetchFileParameters {
     repoName: string
     commitID: string
     filePath: string
-    disableTimeout?: boolean
+    disableTimeout: boolean
     ranges: HighlightLineRange[]
-    format?: HighlightResponseFormat
 }
 
 interface FileContentSearchResultProps {
@@ -57,10 +56,13 @@ interface FileContentSearchResultProps {
     /** Whether this file should be rendered as expanded by default. */
     defaultExpanded: boolean
 
+    /** The server endpoint URL base for building proper absulute link paths for blob snippets */
+    serverEndpoint: string
+
     fetchHighlightedFileLineRanges?: (
         parameters: FetchFileParameters,
         force?: boolean
-    ) => Promise<string[][]>
+    ) => Observable<string[][]>
 
     /**
      * Formatted repository name to be displayed in repository link. If not
@@ -85,6 +87,7 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
         defaultExpanded,
         allExpanded,
         showAllMatches,
+        serverEndpoint,
         fetchHighlightedFileLineRanges,
         onSelect,
     } = props
@@ -101,7 +104,8 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
 
     // Calculated state
     const revisionDisplayName = getRevision(result.branches, result.commit)
-    const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
+    const repoAtRevisionURL = getRepositoryUrl(serverEndpoint, result.repository, result.branches)
+    const fileURL = getFileMatchUrl(serverEndpoint, result)
     const collapsedGroups = truncateGroups(expandedGroups, 5, 1)
     const expandedHighlightCount = countHighlightRanges(expandedGroups)
     const collapsedHighlightCount = countHighlightRanges(collapsedGroups)
@@ -109,40 +113,6 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
     const collapsible = !showAllMatches && expandedHighlightCount > collapsedHighlightCount
 
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
-
-    useEffect(() => {
-        const hasHighlighting = unhighlightedGroups.some(group => group.highlightedHTMLRows)
-
-        if (hasHighlighting || !fetchHighlightedFileLineRanges) {
-            return
-        }
-
-        // This file contains some large lines, avoid stressing
-        // syntax-highlighter and the browser.
-        if (result.chunkMatches?.some(chunk => chunk.contentTruncated)) {
-            return
-        }
-
-        fetchHighlightedFileLineRanges(
-            {
-                repoName: result.repository,
-                commitID: result.commit || '',
-                filePath: result.path,
-                disableTimeout: false,
-                format: HighlightResponseFormat.HTML_HIGHLIGHT,
-                // Explicitly narrow the object otherwise we'll send a bunch of extra data in the request.
-                ranges: unhighlightedGroups.map(({ startLine, endLine }) => ({ startLine, endLine })),
-            },
-            false
-        ).then(res => {
-            setExpandedGroups(
-                unhighlightedGroups.map((group, i) => ({
-                    ...group,
-                    highlightedHTMLRows: res[i],
-                }))
-            )
-        })
-    }, [result, fetchHighlightedFileLineRanges, unhighlightedGroups])
 
     const handleVisibility = useCallback(() => {
         if (hasBeenVisible || !fetchHighlightedFileLineRanges) {
@@ -163,12 +133,11 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
                 commitID: result.commit || '',
                 filePath: result.path,
                 disableTimeout: false,
-                format: HighlightResponseFormat.HTML_HIGHLIGHT,
                 // Explicitly narrow the object otherwise we'll send a bunch of extra data in the request.
                 ranges: unhighlightedGroups.map(({ startLine, endLine }) => ({ startLine, endLine })),
             },
             false
-        ).then(res => {
+        ).subscribe(res => {
             setExpandedGroups(
                 unhighlightedGroups.map((group, i) => ({
                     ...group,
@@ -202,7 +171,7 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
             repoURL={repoAtRevisionURL}
             filePath={result.path}
             pathMatchRanges={result.pathMatches ?? []}
-            fileURL={getFileMatchUrl(result)}
+            fileURL={fileURL}
             repoDisplayName={
                 repoDisplayName
                     ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
@@ -230,6 +199,7 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
             >
                 <div data-expanded={expanded}>
                     <FileMatchChildren
+                        serverEndpoint={serverEndpoint}
                         result={result}
                         grouped={expanded ? expandedGroups : collapsedGroups}
                     />
@@ -326,11 +296,11 @@ const ResultContainer: ForwardReferenceExoticComponent<
     )
 })
 
-function getRepositoryUrl(repository: string, branches?: string[]): string {
+function getRepositoryUrl(base: string, repository: string, branches?: string[]): string {
     const branch = branches?.[0]
     const revision = branch ? `@${branch}` : ''
     const label = repository + revision
-    return '/' + encodeURI(label)
+    return base + encodeURI(label)
 }
 
 function countHighlightRanges(groups: MatchGroup[]): number {
@@ -357,7 +327,7 @@ function chunkToMatchGroup(chunk: ChunkMatch): MatchGroup {
         highlightedHTMLRows: undefined, // populated lazily
         matches,
         startLine: chunk.contentStart.line,
-        endLine: chunk.contentStart.line + plaintextLines.length,
+        endLine: chunk.contentStart.line + Math.max(plaintextLines.length, 1),
     }
 }
 

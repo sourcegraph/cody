@@ -38,6 +38,7 @@ import {
     GET_FEATURE_FLAGS_QUERY,
     GET_REMOTE_FILE_QUERY,
     GET_URL_CONTENT_QUERY,
+    HIGHLIGHTED_FILE_QUERY,
     LEGACY_CONTEXT_SEARCH_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
@@ -128,6 +129,26 @@ interface RemoteFileContentReponse {
             }
         }
     }
+}
+
+interface HighlitedFileResponse {
+    __typename?: 'Query'
+    repository: {
+        __typename?: 'Repository'
+        commit: {
+            __typename?: 'GitCommit'
+            file: {
+                __typename?: 'GitBlob'
+                isDirectory: boolean
+                richHTML: string
+                highlight: {
+                    __typename?: 'HighlightedFile'
+                    aborted: boolean
+                    lineRanges: Array<Array<string>>
+                }
+            } | null
+        } | null
+    } | null
 }
 
 interface GetURLContentResponse {
@@ -544,6 +565,28 @@ export interface event {
     hashedLicenseKey?: string
 }
 
+export interface FetchHighlightFileParameters {
+    repoName: string
+    commitID: string
+    filePath: string
+    disableTimeout: boolean
+    ranges: HighlightLineRange[]
+}
+
+/** A specific highlighted line range to fetch. */
+export interface HighlightLineRange {
+    /**
+     * The last line to fetch (0-indexed, inclusive). Values outside the bounds of the file will
+     * automatically be clamped within the valid range.
+     */
+    endLine: number
+    /**
+     * The first line to fetch (0-indexed, inclusive). Values outside the bounds of the file will
+     * automatically be clamped within the valid range.
+     */
+    startLine: number
+}
+
 export type GraphQLAPIClientConfig = Pick<
     ClientConfigurationWithAccessToken,
     'serverEndpoint' | 'accessToken' | 'customHeaders'
@@ -649,6 +692,29 @@ export class SourcegraphGraphQLAPIClient {
                 response,
                 data => data.search?.results.results ?? new Error('no symbols found')
             )
+        )
+    }
+
+    public async getHighlightedFileChunk(
+        parameters: FetchHighlightFileParameters
+    ): Promise<string[][] | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<HighlitedFileResponse>>(HIGHLIGHTED_FILE_QUERY, {
+            ...parameters,
+            format: 'HTML_HIGHLIGHT',
+        }).then(response =>
+            extractDataOrError(response, data => {
+                if (!data?.repository?.commit?.file?.highlight) {
+                    return []
+                }
+
+                const file = data.repository.commit.file
+
+                if (file.isDirectory) {
+                    return []
+                }
+
+                return file.highlight.lineRanges
+            })
         )
     }
 

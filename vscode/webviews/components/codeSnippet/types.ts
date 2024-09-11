@@ -35,7 +35,6 @@ export interface ChunkMatch {
 }
 
 export interface Location {
-    offset: number
     line: number
     column: number
 }

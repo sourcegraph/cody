@@ -49,11 +49,15 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
     return (
         <span className={className}>
             <span>
-                <a href={repoURL}>{repoDisplayName || displayRepoName(repoName)}</a>
+                <a href={repoURL} target="_blank" rel="noreferrer">
+                    {repoDisplayName || displayRepoName(repoName)}
+                </a>
                 <span aria-hidden={true}> ›</span>{' '}
                 <a
                     href={fileURL}
                     ref={containerElement}
+                    target="_blank"
+                    rel="noreferrer"
                     data-selectable-search-result={isKeyboardSelectable}
                 >
                     {fileBase ? `${fileBase}/` : null}

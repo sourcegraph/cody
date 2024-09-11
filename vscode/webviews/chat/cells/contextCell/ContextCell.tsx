@@ -1,12 +1,11 @@
 import type { ContextItem, Model } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { MENTION_CLASS_NAME } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
 import isEqual from 'lodash/isEqual'
 import { BrainIcon, MessagesSquareIcon } from 'lucide-react'
 import { type FunctionComponent, memo, useCallback, useState } from 'react'
-import { FileLink } from '../../../components/FileLink'
+import { FileContextItem } from '../../../components/FileContextItem'
 import {
     Accordion,
     AccordionContent,
@@ -167,22 +166,7 @@ export const ContextCell: FunctionComponent<{
                                                 key={i}
                                                 data-testid="context-item"
                                             >
-                                                <FileLink
-                                                    uri={item.uri}
-                                                    repoName={item.repoName}
-                                                    revision={item.revision}
-                                                    source={item.source}
-                                                    range={item.range}
-                                                    title={item.title}
-                                                    isTooLarge={item.isTooLarge}
-                                                    isTooLargeReason={item.isTooLargeReason}
-                                                    isIgnored={item.isIgnored}
-                                                    className={clsx(
-                                                        styles.contextItem,
-                                                        MENTION_CLASS_NAME
-                                                    )}
-                                                    linkClassName={styles.contextItemLink}
-                                                />
+                                                <FileContextItem item={item} />
                                                 {internalDebugContext &&
                                                     item.metadata &&
                                                     item.metadata.length > 0 && (
