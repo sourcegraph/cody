@@ -76,6 +76,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         prompts: { type: 'results', results: FIXTURE_PROMPTS },
                         commands: FIXTURE_COMMANDS,
                     }),
+                    highlights: () => Observable.of([]),
                     models: () => Observable.of(getDotComDefaultModels()),
                     setChatModel: () => EMPTY,
                     detectIntent: () => Observable.of(),
