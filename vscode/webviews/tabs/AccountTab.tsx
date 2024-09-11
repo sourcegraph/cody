@@ -68,7 +68,9 @@ export const AccountTab: React.FC<AccountTabProps> = ({ setView }) => {
             // automatically redirected to the Chat tab, rather than the accounts tab.
             // This is only for JB as the signout call is captured by the extension and not
             // passed through to the agent.
-            setView(View.Chat)
+            if (ide === CodyIDE.JetBrains) {
+                setView(View.Chat)
+            }
         },
     })
 
