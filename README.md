@@ -41,7 +41,7 @@ See [cody.dev](https://about.sourcegraph.com/cody?utm_source=github.com&utm_medi
 - **Swappable LLMs:** Support for Anthropic Claude 3.5 Sonnet, OpenAI GPT-4o, Mixtral, Gemini 1.5, and more.
   - **Free LLM usage included** Cody Free gives you access to Anthropic Claude 3.5 Sonnet and other models. It's available for individual devs on both personal and work code, subject to reasonable per-user rate limits ([more info](#usage)).
 
-## Demos
+## Demo
 
 Cody comes with a variety of AI-for-coding features, such as autocomplete, chat, Smart Apply, generating unit tests, and more.
 
