@@ -397,13 +397,6 @@
         "enablement": "cody.activated"
       },
       {
-        "command": "cody.show-rate-limit-modal",
-        "category": "Cody",
-        "title": "Show Rate Limit Modal",
-        "group": "Cody",
-        "enablement": "cody.activated"
-      },
-      {
         "command": "cody.menu.commands",
         "category": "Cody Menu",
         "title": "Cody Commands",
@@ -795,10 +788,6 @@
         },
         {
           "command": "cody.show-page",
-          "when": "false"
-        },
-        {
-          "command": "cody.show-rate-limit-modal",
           "when": "false"
         },
         {
