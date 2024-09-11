@@ -51,6 +51,7 @@ export const HumanMessageEditor: FunctionComponent<{
 
     disabled?: boolean
 
+    onEditorFocusChange?: (focused: boolean) => void
     onChange?: (editorState: SerializedPromptEditorValue) => void
     onSubmit: (editorValue: SerializedPromptEditorValue, intent?: ChatMessage['intent']) => void
     onStop: () => void
@@ -84,6 +85,7 @@ export const HumanMessageEditor: FunctionComponent<{
     editorRef: parentEditorRef,
     __storybook__focus,
     experimentalOneBoxEnabled,
+    onEditorFocusChange: parentOnEditorFocusChange,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -172,9 +174,13 @@ export const HumanMessageEditor: FunctionComponent<{
     )
 
     const [isEditorFocused, setIsEditorFocused] = useState(false)
-    const onEditorFocusChange = useCallback((focused: boolean): void => {
-        setIsEditorFocused(focused)
-    }, [])
+    const onEditorFocusChange = useCallback(
+        (focused: boolean): void => {
+            setIsEditorFocused(focused)
+            parentOnEditorFocusChange?.(focused)
+        },
+        [parentOnEditorFocusChange]
+    )
 
     const [isFocusWithin, setIsFocusWithin] = useState(false)
     const onFocus = useCallback(() => {

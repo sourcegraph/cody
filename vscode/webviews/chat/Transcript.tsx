@@ -186,6 +186,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     } = props
 
     const [intent, setIntent] = useState<ChatMessage['intent']>()
+
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
 
     const onEditSubmit = useCallback(
@@ -206,10 +207,11 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const onChange = useMemo(() => {
         return debounce(async (editorValue: SerializedPromptEditorValue) => {
+            setIntent(undefined)
+
             if (!experimentalOneBoxEnabled) {
                 return
             }
-            setIntent(undefined)
 
             // Only detect intent if a repository is mentioned
             if (
@@ -279,6 +281,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 editorRef={humanEditorRef}
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
                 experimentalOneBoxEnabled={experimentalOneBoxEnabled}
+                onEditorFocusChange={() => setIntent(undefined)}
             />
             {experimentalOneBoxEnabled && humanMessage.intent && (
                 <InfoMessage>

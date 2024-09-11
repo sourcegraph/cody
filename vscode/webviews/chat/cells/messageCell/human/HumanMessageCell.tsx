@@ -33,6 +33,7 @@ export const HumanMessageCell: FunctionComponent<{
     /** Whether this editor is for a followup message to a still-in-progress assistant response. */
     isPendingPriorResponse: boolean
 
+    onEditorFocusChange?: (focused: boolean) => void
     onChange?: (editorState: SerializedPromptEditorValue) => void
     onSubmit: (editorValue: SerializedPromptEditorValue) => void
     onStop: () => void
@@ -66,6 +67,7 @@ export const HumanMessageCell: FunctionComponent<{
         editorRef,
         __storybook__focus,
         experimentalOneBoxEnabled,
+        onEditorFocusChange,
     }) => {
         const messageJSON = JSON.stringify(message)
         const initialEditorState = useMemo(
@@ -102,6 +104,7 @@ export const HumanMessageCell: FunctionComponent<{
                         editorRef={editorRef}
                         __storybook__focus={__storybook__focus}
                         experimentalOneBoxEnabled={experimentalOneBoxEnabled}
+                        onEditorFocusChange={onEditorFocusChange}
                     />
                 }
                 className={className}
