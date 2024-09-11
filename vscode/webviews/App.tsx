@@ -57,7 +57,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         })
     }, [vscodeAPI])
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally refresh on `view`
     useEffect(
         () =>
             vscodeAPI.onMessage(message => {
