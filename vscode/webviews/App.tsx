@@ -89,6 +89,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'config':
                         setConfig(message)
                         updateDisplayPathEnvInfoForWebview(message.workspaceFolderUris)
+                        // Reset to the default view (Chat) for unauthenticated users.
+                        if (view && view !== View.Chat && !message.authStatus?.authenticated) {
+                            setView(View.Chat)
+                        }
                         break
                     case 'history':
                         setUserHistory(Object.values(message.localHistory?.chat ?? {}))

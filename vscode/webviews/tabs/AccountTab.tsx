@@ -63,8 +63,11 @@ export const AccountTab: React.FC<AccountTabProps> = ({ setView }) => {
         text: 'Sign Out',
         onClick: () => {
             getVSCodeAPI().postMessage({ command: 'auth', authKind: 'signout' })
+            // TODO: Remove when JB moves to agent based auth
             // Set the view to the Chat tab so that if the user signs back in, they will be
             // automatically redirected to the Chat tab, rather than the accounts tab.
+            // This is only for JB as the signout call is captured by the extension and not
+            // passed through to the agent.
             setView(View.Chat)
         },
     })
