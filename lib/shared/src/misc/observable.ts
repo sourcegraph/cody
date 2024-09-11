@@ -734,14 +734,16 @@ export function mergeMap<T, R>(
     }
 }
 
+export interface StoredLastValue<T> {
+    value: { last: undefined; isSet: false } | { last: T; isSet: true }
+    subscription: Unsubscribable
+}
+
 /**
  * Store the last value emitted by an {@link Observable} so that it can be accessed synchronously.
  * Callers must take care to not create a race condition when using this function.
  */
-export function storeLastValue<T>(observable: Observable<T>): {
-    value: { last: undefined; isSet: false } | { last: T; isSet: true }
-    subscription: Unsubscribable
-} {
+export function storeLastValue<T>(observable: Observable<T>): StoredLastValue<T> {
     const value: ReturnType<typeof storeLastValue>['value'] = { last: undefined, isSet: false }
     const subscription = observable.subscribe(v => {
         Object.assign(value, { last: v, isSet: true })

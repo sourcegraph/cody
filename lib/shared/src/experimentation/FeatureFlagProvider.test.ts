@@ -1,21 +1,27 @@
-import { beforeEach, describe, expect, it, vi, vitest } from 'vitest'
+import { beforeAll, describe, expect, it, vi, vitest } from 'vitest'
 
 import { graphqlClient } from '../sourcegraph-api/graphql'
 
+import { mockResolvedConfig } from '../configuration/resolver'
 import { readValuesFrom } from '../misc/observable'
-import type { GraphQLAPIClientConfig } from '../sourcegraph-api/graphql/client'
 import { nextTick } from '../utils'
 import { FeatureFlag, FeatureFlagProvider } from './FeatureFlagProvider'
 
 vi.mock('../sourcegraph-api/graphql/client')
 
 describe('FeatureFlagProvider', () => {
-    beforeEach(() => {
-        // @ts-ignore
-        graphqlClient._config = {
-            serverEndpoint: 'https://example.com',
-        } as Partial<GraphQLAPIClientConfig> as GraphQLAPIClientConfig
+    beforeAll(() => {
+        vi.useFakeTimers()
+        mockResolvedConfig({
+            auth: { accessToken: null, serverEndpoint: 'https://example.com' },
+        })
     })
+
+    async function newFeatureFlagProvider(): Promise<FeatureFlagProvider> {
+        const provider = new FeatureFlagProvider()
+        await vi.runOnlyPendingTimersAsync() // wait for `this.cachedServerEndpoint` to be set asynchronously
+        return provider
+    }
 
     it('evaluates the feature flag on dotcom', async () => {
         vi.spyOn(graphqlClient, 'getEvaluatedFeatureFlags').mockResolvedValue({})
@@ -34,11 +40,8 @@ describe('FeatureFlagProvider', () => {
             })
         const evaluateFeatureFlagMock = vi.spyOn(graphqlClient, 'evaluateFeatureFlag')
 
-        const provider = new FeatureFlagProvider()
+        const provider = await newFeatureFlagProvider()
         await provider.refresh()
-
-        // Wait for the async initialization
-        await nextTick()
 
         expect(await provider.evaluateFeatureFlag(FeatureFlag.TestFlagDoNotUse)).toBe(true)
         expect(getEvaluatedFeatureFlagsMock).toHaveBeenCalled()
@@ -49,7 +52,7 @@ describe('FeatureFlagProvider', () => {
         vi.spyOn(graphqlClient, 'getEvaluatedFeatureFlags').mockResolvedValue(new Error('API error'))
         vi.spyOn(graphqlClient, 'evaluateFeatureFlag').mockResolvedValue(new Error('API error'))
 
-        const provider = new FeatureFlagProvider()
+        const provider = await newFeatureFlagProvider()
 
         expect(await provider.evaluateFeatureFlag(FeatureFlag.TestFlagDoNotUse)).toBe(false)
     })
@@ -62,10 +65,7 @@ describe('FeatureFlagProvider', () => {
             })
         vi.spyOn(graphqlClient, 'evaluateFeatureFlag')
 
-        const provider = new FeatureFlagProvider()
-
-        // Wait for the async initialization
-        await nextTick()
+        const provider = await newFeatureFlagProvider()
 
         getEvaluatedFeatureFlagsMock.mockResolvedValue({
             [FeatureFlag.TestFlagDoNotUse]: false,
@@ -90,7 +90,7 @@ describe('FeatureFlagProvider', () => {
                 })
             const evaluateFeatureFlagMock = vi.spyOn(graphqlClient, 'evaluateFeatureFlag')
 
-            const provider = new FeatureFlagProvider()
+            const provider = await newFeatureFlagProvider()
             await provider.refresh()
 
             // Wait for the async initialization
@@ -132,7 +132,7 @@ describe('FeatureFlagProvider', () => {
             expectFinalValues?: (boolean | undefined)[]
         }): Promise<void> {
             vitest.useFakeTimers()
-            const provider = new FeatureFlagProvider()
+            const provider = await newFeatureFlagProvider()
 
             const flag$ = provider.evaluatedFeatureFlag(FeatureFlag.TestFlagDoNotUse)
 
@@ -164,7 +164,7 @@ describe('FeatureFlagProvider', () => {
         it('should emit when a new flag is evaluated', async () => {
             vi.spyOn(graphqlClient, 'getEvaluatedFeatureFlags').mockResolvedValue({})
             vi.spyOn(graphqlClient, 'evaluateFeatureFlag').mockResolvedValue(false)
-            await testEvaluatedFeatureFlag({ expectInitialValues: [undefined, false] })
+            await testEvaluatedFeatureFlag({ expectInitialValues: [false] })
         })
 
         it('should emit when value changes from true to false', async () => {

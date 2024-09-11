@@ -327,6 +327,5 @@ function parseContextFilterItem(item: CodyContextFilterItem): ParsedContextFilte
 
 /**
  * A singleton instance of the `ContextFiltersProvider` class.
- * `contextFiltersProvider.init` should be called and awaited on extension activation.
  */
 export const contextFiltersProvider = new ContextFiltersProvider()

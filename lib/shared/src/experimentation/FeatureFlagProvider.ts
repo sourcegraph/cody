@@ -1,8 +1,9 @@
 import { Observable } from 'observable-fns'
 import type { Event } from 'vscode'
+import { currentResolvedConfig, resolvedConfig } from '../configuration/resolver'
 import { logDebug } from '../logger'
-import { distinctUntilChanged, fromVSCodeEvent } from '../misc/observable'
-import { graphqlClient } from '../sourcegraph-api/graphql/client'
+import { type Unsubscribable, distinctUntilChanged, fromVSCodeEvent, pluck } from '../misc/observable'
+import { graphqlClient } from '../sourcegraph-api/graphql'
 import { wrapInActiveSpan } from '../tracing'
 import { isError } from '../utils'
 
@@ -101,6 +102,20 @@ export class FeatureFlagProvider {
     // When we have at least one subscription, ensure that we also periodically refresh the flags
     private nextRefreshTimeout: NodeJS.Timeout | number | undefined = undefined
 
+    private cachedServerEndpoint: string | null = null
+
+    private configSubscription: Unsubscribable
+
+    constructor() {
+        // Refresh when auth (endpoint or token) changes.
+        this.configSubscription = resolvedConfig
+            .pipe(pluck('auth'), distinctUntilChanged())
+            .subscribe(auth => {
+                this.cachedServerEndpoint = auth.serverEndpoint
+                this.refresh()
+            })
+    }
+
     /**
      * Get a flag's value from the cache. The returned value could be stale. You must have
      * previously called {@link FeatureFlagProvider.evaluateFeatureFlag} or
@@ -111,14 +126,16 @@ export class FeatureFlagProvider {
     private getFromCache(flagName: FeatureFlag): boolean | undefined {
         void this.refreshIfStale()
 
-        const endpoint = graphqlClient.endpoint
+        if (!this.cachedServerEndpoint) {
+            return undefined
+        }
 
-        const exposedValue = this.exposedFeatureFlags[endpoint]?.[flagName]
+        const exposedValue = this.exposedFeatureFlags[this.cachedServerEndpoint]?.[flagName]
         if (exposedValue !== undefined) {
             return exposedValue
         }
 
-        if (this.unexposedFeatureFlags[endpoint]?.has(flagName)) {
+        if (this.unexposedFeatureFlags[this.cachedServerEndpoint]?.has(flagName)) {
             return false
         }
 
@@ -126,16 +143,21 @@ export class FeatureFlagProvider {
     }
 
     public getExposedExperiments(): Record<string, boolean> {
-        const endpoint = graphqlClient.endpoint
-        return this.exposedFeatureFlags[endpoint] || {}
+        if (!this.cachedServerEndpoint) {
+            return {}
+        }
+        return this.exposedFeatureFlags[this.cachedServerEndpoint] || {}
     }
 
     public async evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
-        const endpoint = graphqlClient.endpoint
         return wrapInActiveSpan(`FeatureFlagProvider.evaluateFeatureFlag.${flagName}`, async () => {
             if (process.env.DISABLE_FEATURE_FLAGS) {
                 return false
             }
+
+            const {
+                auth: { serverEndpoint: endpoint },
+            } = await currentResolvedConfig()
 
             const cachedValue = this.getFromCache(flagName)
             if (cachedValue !== undefined) {
@@ -197,7 +219,9 @@ export class FeatureFlagProvider {
 
     private async refreshFeatureFlags(): Promise<void> {
         return wrapInActiveSpan('FeatureFlagProvider.refreshFeatureFlags', async () => {
-            const endpoint = graphqlClient.endpoint
+            const {
+                auth: { serverEndpoint: endpoint },
+            } = await currentResolvedConfig()
             const data = process.env.DISABLE_FEATURE_FLAGS
                 ? {}
                 : await graphqlClient.getEvaluatedFeatureFlags()
@@ -227,7 +251,13 @@ export class FeatureFlagProvider {
      * {@link FeatureFlagProvider.evaluatedFeatureFlag} to be picked up.
      */
     private onFeatureFlagChanged(callback: () => void): () => void {
-        const endpoint = graphqlClient.endpoint
+        const endpoint = this.cachedServerEndpoint
+        if (!endpoint) {
+            throw new Error(
+                'FeatureFlagProvider.onFeatureFlagChanged called before server endpoint is set'
+            )
+        }
+
         const subscription = this.subscriptionsForEndpoint.get(endpoint)
         if (subscription) {
             subscription.callbacks.add(callback)
@@ -288,6 +318,14 @@ export class FeatureFlagProvider {
 
     private computeFeatureFlagSnapshot(endpoint: string): Record<string, boolean> {
         return this.exposedFeatureFlags[endpoint] ?? NO_FLAGS
+    }
+
+    public dispose(): void {
+        if (this.nextRefreshTimeout) {
+            clearTimeout(this.nextRefreshTimeout)
+            this.nextRefreshTimeout = undefined
+        }
+        this.configSubscription.unsubscribe()
     }
 }
 

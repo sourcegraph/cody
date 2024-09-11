@@ -5,14 +5,16 @@ import {
     type LogEventMode,
     MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
-    type ResolvedConfiguration,
     TelemetryRecorderProvider,
+    resolvedConfig,
+    subscriptionDisposable,
     telemetryRecorder,
     telemetryRecorderProvider,
     updateGlobalTelemetryInstances,
 } from '@sourcegraph/cody-shared'
 import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry/dist/processors/timestamp'
 
+import type { Disposable } from 'vscode'
 import { logDebug } from '../log'
 import { getOSArch } from '../os'
 import { version } from '../version'
@@ -53,81 +55,85 @@ const debugLogLabel = 'telemetry-v2'
  * new telemetry framework:
  * https://sourcegraph.com/docs/dev/background-information/telemetry
  */
-export async function createOrUpdateTelemetryRecorderProvider(
-    config: ResolvedConfiguration,
+export function createOrUpdateTelemetryRecorderProvider(
     /**
      * Hardcode isExtensionModeDevOrTest to false to test real exports - when
      * true, exports are logged to extension output instead.
      */
     isExtensionModeDevOrTest: boolean
-): Promise<void> {
-    const extensionDetails = getExtensionDetails(config.configuration)
+): Disposable {
+    return subscriptionDisposable(
+        resolvedConfig.subscribe(({ configuration, auth, clientState }) => {
+            const extensionDetails = getExtensionDetails(configuration)
 
-    // Add timestamp processor for realistic data in output for dev or no-op scenarios
-    const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([new TimestampTelemetryProcessor()])
+            // Add timestamp processor for realistic data in output for dev or no-op scenarios
+            const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([
+                new TimestampTelemetryProcessor(),
+            ])
 
-    if (config.configuration.telemetryLevel === 'off' || !extensionDetails.ide) {
-        updateGlobalTelemetryInstances(defaultNoOpProvider)
-        return
-    }
+            if (configuration.telemetryLevel === 'off' || !extensionDetails.ide) {
+                updateGlobalTelemetryInstances(defaultNoOpProvider)
+                return
+            }
 
-    const anonymousUserID = localStorage.anonymousUserID()
-    const initialize = telemetryRecorderProvider === undefined
+            const initialize = telemetryRecorderProvider === undefined
 
-    /**
-     * In testing, send events to the mock server.
-     */
-    if (process.env.CODY_TESTING === 'true') {
-        logDebug(debugLogLabel, 'using mock exporter')
-        updateGlobalTelemetryInstances(
-            new MockServerTelemetryRecorderProvider(
-                extensionDetails,
-                config.configuration,
-                anonymousUserID
-            )
-        )
-    } else if (isExtensionModeDevOrTest) {
-        logDebug(debugLogLabel, 'using no-op exports')
-        updateGlobalTelemetryInstances(defaultNoOpProvider)
-    } else {
-        updateGlobalTelemetryInstances(
-            new TelemetryRecorderProvider(
-                extensionDetails,
-                { ...config.configuration, ...config.auth },
-                anonymousUserID,
-                legacyBackcompatLogEventMode
-            )
-        )
-    }
-
-    const isCodyWeb = config.configuration.agentIDE === CodyIDE.Web
-
-    /**
-     * On first initialization, also record some initial events.
-     * Skip any init events for Cody Web use case.
-     */
-    const newAnonymousUser = localStorage.checkIfCreatedAnonymousUserID()
-    if (initialize && !isCodyWeb) {
-        if (newAnonymousUser) {
             /**
-             * New user
+             * In testing, send events to the mock server.
              */
-            telemetryRecorder.recordEvent('cody.extension', 'installed', {
-                billingMetadata: {
-                    product: 'cody',
-                    category: 'billable',
-                },
-            })
-        } else if (
-            !config.configuration.isRunningInsideAgent ||
-            config.configuration.agentHasPersistentStorage
-        ) {
+            if (process.env.CODY_TESTING === 'true') {
+                logDebug(debugLogLabel, 'using mock exporter')
+                updateGlobalTelemetryInstances(
+                    new MockServerTelemetryRecorderProvider(
+                        extensionDetails,
+                        configuration,
+                        clientState.anonymousUserID
+                    )
+                )
+            } else if (isExtensionModeDevOrTest) {
+                logDebug(debugLogLabel, 'using no-op exports')
+                updateGlobalTelemetryInstances(defaultNoOpProvider)
+            } else {
+                updateGlobalTelemetryInstances(
+                    new TelemetryRecorderProvider(
+                        extensionDetails,
+                        { ...configuration, ...auth },
+                        clientState.anonymousUserID,
+                        legacyBackcompatLogEventMode
+                    )
+                )
+            }
+
+            const isCodyWeb = configuration.agentIDE === CodyIDE.Web
+
             /**
-             * Repeat user
+             * On first initialization, also record some initial events.
+             * Skip any init events for Cody Web use case.
              */
-            telemetryRecorder.recordEvent('cody.extension', 'savedLogin')
-        }
-    }
+            const newAnonymousUser = localStorage.checkIfCreatedAnonymousUserID()
+            if (initialize && !isCodyWeb) {
+                if (newAnonymousUser) {
+                    /**
+                     * New user
+                     */
+                    telemetryRecorder.recordEvent('cody.extension', 'installed', {
+                        billingMetadata: {
+                            product: 'cody',
+                            category: 'billable',
+                        },
+                    })
+                } else if (
+                    !configuration.isRunningInsideAgent ||
+                    configuration.agentHasPersistentStorage
+                ) {
+                    /**
+                     * Repeat user
+                     */
+                    telemetryRecorder.recordEvent('cody.extension', 'savedLogin')
+                }
+            }
+        })
+    )
 }
 
 /**

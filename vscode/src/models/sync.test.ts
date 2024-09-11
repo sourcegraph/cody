@@ -11,6 +11,7 @@ import {
     RestClient,
     type ServerModel,
     type ServerModelConfiguration,
+    featureFlagProvider,
     getDotComDefaultModels,
     graphqlClient,
     mockAuthStatus,
@@ -31,6 +32,8 @@ describe('syncModels', () => {
     beforeEach(() => {
         setModelsSpy.mockClear()
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
+
+        vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockResolvedValue(false)
 
         // Mock the /.api/client-config for these tests so that modelsAPIEnabled == false
         vi.spyOn(ClientConfigSingleton.prototype, 'getConfig').mockResolvedValue({

@@ -7,14 +7,12 @@ import {
     type DefaultCodyCommands,
     type Guardrails,
     PromptString,
-    type ResolvedConfiguration,
     authStatus,
     combineLatest,
     contextFiltersProvider,
     currentAuthStatus,
     currentAuthStatusOrNotReadyYet,
     distinctUntilChanged,
-    featureFlagProvider,
     firstValueFrom,
     fromVSCodeEvent,
     graphqlClient,
@@ -153,13 +151,7 @@ export async function start(
         )
     )
 
-    disposables.push(
-        subscriptionDisposable(
-            resolvedConfig.subscribe({
-                next: config => configureEventsInfra(config, isExtensionModeDevOrTest),
-            })
-        )
-    )
+    disposables.push(createOrUpdateTelemetryRecorderProvider(isExtensionModeDevOrTest))
 
     disposables.push(
         subscriptionDisposable(
@@ -313,8 +305,6 @@ async function initializeSingletons(
                 next: config => {
                     void localStorage.setConfig(config)
                     graphqlClient.setConfig(config)
-                    void featureFlagProvider.refresh()
-                    upstreamHealthProvider.instance!.onConfigurationChange(config)
                     defaultCodeCompletionsClient.instance!.onConfigurationChange(config)
                 },
             })
@@ -793,14 +783,4 @@ function registerChat(
     }
 
     return { chatsController }
-}
-
-/**
- * Create or update events infrastructure, using the new telemetryRecorder.
- */
-async function configureEventsInfra(
-    config: ResolvedConfiguration,
-    isExtensionModeDevOrTest: boolean
-): Promise<void> {
-    await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest)
 }
