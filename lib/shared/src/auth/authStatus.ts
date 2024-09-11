@@ -1,7 +1,7 @@
 import { Observable } from 'observable-fns'
-import { distinctUntilChanged, firstValueFrom, fromLateSetSource, shareReplay } from '../misc/observable'
+import { distinctUntilChanged, fromLateSetSource, shareReplay, storeLastValue } from '../misc/observable'
 import type { PartialDeep } from '../utils'
-import type { AuthStatus } from './types'
+import type { AuthStatus, AuthenticatedAuthStatus } from './types'
 
 const _authStatus = fromLateSetSource<AuthStatus>()
 
@@ -29,13 +29,40 @@ export function setAuthStatusObservable(input: Observable<AuthStatus>): void {
  */
 export const authStatus: Observable<AuthStatus> = _authStatus.observable.pipe(shareReplay())
 
+const { value: syncValue, subscription: syncValueSubscription } = storeLastValue(authStatus)
+
 /**
- * The current auth status. Callers should use {@link authStatus} instead so that
- * they react to changes. This function is provided for old call sites that
- * haven't been updated to use an Observable.
+ * The current auth status. Callers should use {@link authStatus} instead so that they react to
+ * changes. This function is provided for old call sites that haven't been updated to use an
+ * Observable.
+ *
+ * Callers should take care to avoid race conditions and prefer observing {@link authStatus}.
+ *
+ * Throws if the auth status is not yet ready; see {@link statusOrNotReadyYet}.
  */
-export function currentAuthStatus(): Promise<AuthStatus> {
-    return firstValueFrom(authStatus)
+export function currentAuthStatus(): AuthStatus {
+    if (!syncValue.isSet) {
+        throw new Error('AuthStatus is not initialized')
+    }
+    return syncValue.last
+}
+
+/**
+ * Like {@link currentAuthStatus}, but throws if unauthenticated.
+ *
+ * Callers should take care to avoid race conditions and prefer observing {@link authStatus}.
+ */
+export function currentAuthStatusAuthed(): AuthenticatedAuthStatus {
+    const authStatus = currentAuthStatus()
+    if (!authStatus.authenticated) {
+        throw new Error('Not authenticated')
+    }
+    return authStatus
+}
+
+/** Like {@link currentAuthStatus}, but does NOT throw if not ready. */
+export function currentAuthStatusOrNotReadyYet(): AuthStatus | undefined {
+    return syncValue.last
 }
 
 /**
@@ -45,4 +72,6 @@ export function currentAuthStatus(): Promise<AuthStatus> {
  */
 export function mockAuthStatus(value: PartialDeep<AuthStatus>): void {
     _authStatus.setSource(Observable.of(value as AuthStatus), false)
+    Object.assign(syncValue, { last: value, isSet: true })
+    syncValueSubscription.unsubscribe()
 }

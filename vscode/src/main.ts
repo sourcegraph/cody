@@ -11,6 +11,8 @@ import {
     authStatus,
     combineLatest,
     contextFiltersProvider,
+    currentAuthStatus,
+    currentAuthStatusOrNotReadyYet,
     distinctUntilChanged,
     featureFlagProvider,
     firstValueFrom,
@@ -477,7 +479,7 @@ function registerChatCommands(disposables: vscode.Disposable[]): void {
             vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow')
         }),
         vscode.commands.registerCommand('cody.chat.history.panel', async () => {
-            await displayHistoryQuickPick(authProvider.status)
+            await displayHistoryQuickPick(currentAuthStatus())
         }),
         vscode.commands.registerCommand('cody.settings.extension.chat', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', {
@@ -498,7 +500,7 @@ function registerAuthCommands(disposables: vscode.Disposable[]): void {
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         vscode.commands.registerCommand(
             'cody.auth.status',
-            () => authProvider.statusOrNotReadyYet ?? null
+            () => currentAuthStatusOrNotReadyYet() ?? null
         ), // Used by the agent
         vscode.commands.registerCommand(
             'cody.agent.auth.authenticate',
@@ -536,7 +538,7 @@ function registerUpgradeHandlers(disposables: vscode.Disposable[]): void {
 
         // Check if user has just moved back from a browser window to upgrade cody pro
         vscode.window.onDidChangeWindowState(async ws => {
-            const authStatus = authProvider.status
+            const authStatus = currentAuthStatus()
             if (ws.focused && isDotCom(authStatus) && authStatus.authenticated) {
                 const res = await graphqlClient.getCurrentUserCodyProEnabled()
                 if (res instanceof Error) {

@@ -11,8 +11,8 @@ import {
     authStatus,
     featureFlagProvider,
     graphqlClient,
+    mockAuthStatus,
 } from '@sourcegraph/cody-shared'
-import { authProvider } from '../services/AuthProvider'
 import { CodyProExpirationNotifications } from './cody-pro-expiration'
 
 vi.mock('../../../lib/shared/src/experimentation/FeatureFlagProvider')
@@ -69,7 +69,7 @@ describe('Cody Pro expiration notifications', () => {
             }
         })
         authStatus_ = { ...AUTH_STATUS_FIXTURE_AUTHED, endpoint: DOTCOM_URL.toString() }
-        vi.spyOn(authProvider, 'status', 'get').mockReturnValue(authStatus_)
+        mockAuthStatus(authStatus_)
         localStorageData = {}
     })
 
@@ -161,12 +161,14 @@ describe('Cody Pro expiration notifications', () => {
 
     it('does not show if not authenticated', async () => {
         authStatus_.authenticated = false
+        mockAuthStatus(authStatus_)
         await createNotifier().triggerExpirationCheck()
         expectNoNotification()
     })
 
     it('does not show if not DotCom', async () => {
         authStatus_.endpoint = 'https://example.com' // non-dotcom
+        mockAuthStatus(authStatus_)
         await createNotifier().triggerExpirationCheck()
         expectNoNotification()
     })
@@ -208,11 +210,13 @@ describe('Cody Pro expiration notifications', () => {
     it('shows later if auth status changes', async () => {
         // Not shown initially because not logged in
         authStatus_.authenticated = false
+        mockAuthStatus(authStatus_)
         await createNotifier().triggerExpirationCheck()
         expectNoNotification()
 
         // Simulate login status change.
         authStatus_.authenticated = true
+        mockAuthStatus(authStatus_)
         authChangeListener()
 
         // Allow time async operations (checking feature flags) to run as part of the check

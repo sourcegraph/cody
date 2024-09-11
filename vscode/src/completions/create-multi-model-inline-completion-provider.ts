@@ -1,8 +1,7 @@
-import { type MultimodelSingleModelConfig, isDotCom } from '@sourcegraph/cody-shared'
+import { type MultimodelSingleModelConfig, currentAuthStatus, isDotCom } from '@sourcegraph/cody-shared'
 import { cloneDeep } from 'lodash'
 import * as vscode from 'vscode'
 import { logDebug } from '../log'
-import { authProvider } from '../services/AuthProvider'
 import { completionProviderConfig } from './completion-provider-config'
 import type { InlineCompletionItemProviderArgs } from './create-inline-completion-item-provider'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
@@ -78,7 +77,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
     // Creates multiple providers to get completions from.
     // The primary purpose of this method is to get the completions generated from multiple providers,
     // which helps judge the quality of code completions
-    const authStatus = authProvider.status
+    const authStatus = currentAuthStatus()
     if (
         !authStatus.authenticated ||
         config.autocompleteExperimentalMultiModelCompletions === undefined

@@ -2,6 +2,7 @@ import {
     type AuthStatus,
     authStatus,
     contextFiltersProvider,
+    currentAuthStatus,
     getEditorInsertSpaces,
     getEditorTabSize,
     isMacOS,
@@ -11,7 +12,6 @@ import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { type DebouncedFunc, throttle } from 'lodash'
 import * as vscode from 'vscode'
 import type { SyntaxNode } from 'web-tree-sitter'
-import { authProvider } from '../services/AuthProvider'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
 
 const EDIT_SHORTCUT_LABEL = isMacOS() ? 'Opt+K' : 'Alt+K'
@@ -199,7 +199,7 @@ export class GhostHintDecorator implements vscode.Disposable {
         )
 
         // Set initial state, based on the configuration and authentication status
-        const initialAuth = authProvider.status
+        const initialAuth = currentAuthStatus()
         this.updateEnablement(initialAuth)
 
         // Listen to authentication changes
@@ -211,7 +211,7 @@ export class GhostHintDecorator implements vscode.Disposable {
         this.permanentDisposables.push(
             vscode.workspace.onDidChangeConfiguration(e => {
                 if (e.affectsConfiguration('cody')) {
-                    this.updateEnablement(authProvider.status)
+                    this.updateEnablement(currentAuthStatus())
                 }
             }),
             vscode.workspace.onDidChangeTextDocument(event => {

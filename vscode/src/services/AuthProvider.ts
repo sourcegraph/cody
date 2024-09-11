@@ -2,16 +2,11 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
-    type AuthStatusProvider,
-    type AuthenticatedAuthStatus,
     ClientConfigSingleton,
     type ClientConfigurationWithAccessToken,
     CodyIDE,
-    NO_INITIAL_VALUE,
-    type ReadonlyDeep,
     SourcegraphGraphQLAPIClient,
     currentResolvedConfig,
-    fromVSCodeEvent,
     graphqlClient,
     isDotCom,
     isError,
@@ -20,6 +15,7 @@ import {
     setAuthStatusObservable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
+import { Subject } from 'observable-fns'
 import { formatURL } from '../auth/auth'
 import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
@@ -31,25 +27,15 @@ import { secretStorage } from './SecretStorageProvider'
 
 const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
 
-export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
+export class AuthProvider implements vscode.Disposable {
     private client: SourcegraphGraphQLAPIClient | null = null
-    private _status: AuthStatus | null = null
-    private readonly didChangeEvent: vscode.EventEmitter<AuthStatus> =
-        new vscode.EventEmitter<AuthStatus>()
-    private disposables: vscode.Disposable[] = [this.didChangeEvent]
+    private status = new Subject<AuthStatus>()
 
     constructor() {
-        setAuthStatusObservable(
-            fromVSCodeEvent(this.didChangeEvent.event, () => this._status ?? NO_INITIAL_VALUE)
-        )
+        setAuthStatusObservable(this.status)
     }
 
-    public dispose(): void {
-        for (const d of this.disposables) {
-            d.dispose()
-        }
-        this.disposables = []
-    }
+    public dispose(): void {}
 
     // Sign into the last endpoint the user was signed into, if any
     public async init(): Promise<void> {
@@ -166,29 +152,6 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         })
     }
 
-    public get status(): ReadonlyDeep<AuthStatus> {
-        if (!this._status) {
-            throw new Error('AuthStatus is not initialized')
-        }
-        return this._status
-    }
-
-    /** Like {@link AuthProvider.status} but throws if not authed. */
-    public get statusAuthed(): ReadonlyDeep<AuthenticatedAuthStatus> {
-        if (!this._status) {
-            throw new Error('AuthStatus is not initialized')
-        }
-        if (!this._status.authenticated) {
-            throw new Error('Not authenticated')
-        }
-        return this._status satisfies AuthenticatedAuthStatus
-    }
-
-    /** Like {@link AuthProvider.status} but returns null instead of throwing if not ready. */
-    public get statusOrNotReadyYet(): AuthStatus | null {
-        return this._status
-    }
-
     // It processes the authentication steps and stores the login info before sharing the auth status with chatview
     public async auth({
         endpoint,
@@ -228,7 +191,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
                 authStatus.authenticated
             )
 
-            await this.setAuthStatus(authStatus)
+            await this.updateAuthStatus(authStatus)
 
             // If the extension is authenticated on startup, it can't be a user's first
             // ever authentication. We store this to prevent logging first-ever events
@@ -263,16 +226,6 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         })
     }
 
-    // Set auth status and share it with chatview
-    private async setAuthStatus(authStatus: AuthStatus): Promise<void> {
-        if (this._status === authStatus) {
-            return
-        }
-        this._status = authStatus
-
-        await this.updateAuthStatus(authStatus)
-    }
-
     private async updateAuthStatus(authStatus: AuthStatus): Promise<void> {
         try {
             // We update the graphqlClient and ModelsService first
@@ -283,7 +236,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
         } catch (error) {
             logDebug('AuthProvider', 'updateAuthStatus error', error)
         } finally {
-            this.didChangeEvent.fire(this.status)
+            this.status.next(authStatus)
             let eventValue: 'disconnected' | 'connected' | 'failed'
             if (authStatus.authenticated) {
                 eventValue = 'connected'
@@ -316,8 +269,7 @@ export class AuthProvider implements AuthStatusProvider, vscode.Disposable {
     }
 
     public setAuthPendingToEndpoint(endpoint: string): void {
-        this._status = { authenticated: false, endpoint }
-        this.didChangeEvent.fire(this._status)
+        this.status.next({ authenticated: false, endpoint })
     }
 
     // Logs a telemetry event if the user has never authenticated to Sourcegraph.

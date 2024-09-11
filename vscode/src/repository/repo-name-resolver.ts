@@ -6,6 +6,7 @@ import {
     type Unsubscribable,
     authStatus,
     convertGitCloneURLToCodebaseName,
+    currentAuthStatus,
     graphqlClient,
     isDefined,
     isDotCom,
@@ -101,7 +102,7 @@ export class RepoNameResolver {
         const uniqueRemoteUrls = Array.from(new Set(remoteUrls))
 
         // Use local conversion function for non-enterprise accounts.
-        if (isDotCom(authProvider.status)) {
+        if (isDotCom(currentAuthStatus())) {
             return uniqueRemoteUrls.map(convertGitCloneURLToCodebaseName).filter(isDefined)
         }
 

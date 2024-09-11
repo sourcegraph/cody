@@ -6,11 +6,11 @@ import {
     type AutocompleteContextSnippet,
     type BillingCategory,
     type BillingProduct,
+    currentAuthStatusAuthed,
     isDotCom,
     isNetworkError,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import { authProvider } from '../services/AuthProvider'
 
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
@@ -849,7 +849,7 @@ export function prepareSuggestionEvent({
                 completionIdsMarkedAsSuggested.set(completionId, true)
                 event.suggestionAnalyticsLoggedAt = performance.now()
 
-                const authStatus = authProvider.statusAuthed
+                const authStatus = currentAuthStatusAuthed()
                 // 🚨 SECURITY: Track the diff in the document after suggestion is shown for DotCom users and public repos.
                 if (
                     event.params.id &&

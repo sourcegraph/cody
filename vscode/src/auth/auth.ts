@@ -4,6 +4,7 @@ import {
     type AuthStatus,
     CodyIDE,
     DOTCOM_URL,
+    currentAuthStatus,
     getCodyAuthReferralCode,
     isDotCom,
     telemetryRecorder,
@@ -23,7 +24,7 @@ export async function showSignInMenu(
     uri?: string,
     agentIDE: CodyIDE = CodyIDE.VSCode
 ): Promise<void> {
-    const authStatus = authProvider.status
+    const authStatus = currentAuthStatus()
     const mode = authStatus.authenticated ? 'switch' : 'signin'
     logDebug('AuthProvider:signinMenu', mode)
     telemetryRecorder.recordEvent('cody.auth.login', 'clicked')
@@ -291,7 +292,7 @@ export async function tokenCallbackHandler(
 
     const params = new URLSearchParams(uri.query)
     const token = params.get('code') || params.get('token')
-    const endpoint = authProvider.status.endpoint
+    const endpoint = currentAuthStatus().endpoint
     if (!token || !endpoint) {
         return
     }
@@ -344,7 +345,7 @@ export async function showSignOutMenu(): Promise<void> {
             category: 'billable',
         },
     })
-    const { endpoint } = authProvider.status
+    const { endpoint } = currentAuthStatus()
 
     if (endpoint) {
         await signOut(endpoint)
