@@ -1,10 +1,4 @@
-import {
-    type CodyCommand,
-    CodyIDE,
-    type ContextItem,
-    CustomCommandType,
-    isFileURI,
-} from '@sourcegraph/cody-shared'
+import { type CodyCommand, CodyIDE, type ContextItem, isFileURI } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
 import { CodyCommandMenuItems } from '..'
@@ -66,19 +60,17 @@ export class CommandsProvider implements vscode.Disposable {
     }
 
     private async menu(type: 'custom' | 'config' | 'default', args?: CodyCommandArgs): Promise<void> {
-        const commandArray = this.list().filter(
-            c =>
-                type !== 'custom' ||
-                c.type === CustomCommandType.User ||
-                c.type === CustomCommandType.Workspace
-        )
-        if (type === 'custom' && !commandArray.length) {
-            return showCommandMenu('config', commandArray, args)
+        const customCommands = [...this.customCommandsStore.commands.values()]
+        // Display the configuration menu if there is no custom command.
+        if (type === 'custom' && !customCommands.length) {
+            return showCommandMenu('config', customCommands, args)
         }
-
-        await showCommandMenu(type, commandArray, args)
+        await showCommandMenu(type, customCommands, args)
     }
 
+    /**
+     * A list of all available commands.
+     */
     public list(): CodyCommand[] {
         return [...this.customCommandsStore.commands.values(), ...this.commands.values()]
     }
