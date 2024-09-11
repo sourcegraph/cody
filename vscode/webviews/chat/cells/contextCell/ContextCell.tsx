@@ -171,7 +171,6 @@ export const ContextCell: FunctionComponent<{
                                                 <FileContextItem
                                                     item={item}
                                                     showSnippets={showSnippets}
-                                                    defaultOpen={defaultOpen}
                                                 />
                                                 {internalDebugContext &&
                                                     item.metadata &&

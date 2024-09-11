@@ -328,8 +328,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     contextAlternatives={humanMessage.contextAlternatives}
                     model={assistantMessage?.model}
                     isForFirstMessage={humanMessage.index === 0}
+                    showSnippets={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
                     defaultOpen={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
-                    showSnippets={experimentalOneBoxEnabled}
                 />
             )}
             {assistantMessage && !isContextLoading && (

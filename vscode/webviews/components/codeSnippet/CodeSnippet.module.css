@@ -46,7 +46,7 @@
     z-index: 1;
 
     border-bottom: 1px solid var(--cody-chat-code-border-color);
-    background-color: var(--vscode-titleBar-inactiveBackground);
+    background-color: var(--cody-chat-code-header-background);
 
     &-title {
         flex: 1 1 auto;
