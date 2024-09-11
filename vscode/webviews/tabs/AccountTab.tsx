@@ -7,9 +7,18 @@ import { UserAvatar } from '../components/UserAvatar'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useUserAccountInfo } from '../utils/useConfig'
+import { View } from './types'
+
+interface AccountAction {
+    text: string
+    onClick: () => void
+}
+interface AccountTabProps {
+    setView: (view: View) => void
+}
 
 // TODO: Implement the AccountTab component once the design is ready.
-export const AccountTab: React.FC = () => {
+export const AccountTab: React.FC<AccountTabProps> = ({ setView }) => {
     const userInfo = useUserAccountInfo()
     const { user, isCodyProUser, isDotComUser, ide } = userInfo
     const { displayName, username, primaryEmail, endpoint } = user
@@ -19,7 +28,7 @@ export const AccountTab: React.FC = () => {
         return null
     }
 
-    const actions: any[] = []
+    const actions: AccountAction[] = []
 
     if (isDotComUser && !isCodyProUser) {
         actions.push({
@@ -52,7 +61,12 @@ export const AccountTab: React.FC = () => {
     })
     actions.push({
         text: 'Sign Out',
-        onClick: () => getVSCodeAPI().postMessage({ command: 'auth', authKind: 'signout' }),
+        onClick: () => {
+            getVSCodeAPI().postMessage({ command: 'auth', authKind: 'signout' })
+            // Set the view to the Chat tab so that if the user signs back in, they will be
+            // automatically redirected to the Chat tab, rather than the accounts tab.
+            setView(View.Chat)
+        },
     })
 
     return (

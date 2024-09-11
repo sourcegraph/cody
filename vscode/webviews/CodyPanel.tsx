@@ -105,7 +105,7 @@ export const CodyPanel: FunctionComponent<
                     />
                 )}
                 {view === View.Prompts && <PromptsTab setView={setView} />}
-                {view === View.Account && <AccountTab />}
+                {view === View.Account && <AccountTab setView={setView} />}
                 {view === View.Settings && <SettingsTab />}
             </TabContainer>
         </TabRoot>
