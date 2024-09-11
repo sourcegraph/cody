@@ -67,7 +67,13 @@ export enum FeatureFlag {
     /** Whether to use server-side Context API. */
     CodyServerSideContextAPI = 'cody-server-side-context-api-enabled',
 
+    /** Whether to use intent detection API. */
+    CodyIntentDetectionAPI = 'cody-intent-detection-api',
+
     GitMentionProvider = 'git-mention-provider',
+
+    /** Enable experimental One Box feature in Cody */
+    CodyExperimentalOneBox = 'cody-experimental-one-box',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

@@ -6,7 +6,6 @@ test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
     expectedV2Events: [
         'cody.extension:installed',
-        'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
