@@ -530,11 +530,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async isOneBoxEnabled(): Promise<boolean> {
-        if (this.authProvider.getAuthStatus().isDotCom) {
-            // Only supported on Sourcegraph enterprise instances right now.
-            return false
-        }
-
         return (
             vscode.workspace.getConfiguration().get<boolean>('cody.internal.onebox') ||
             (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalOneBox))

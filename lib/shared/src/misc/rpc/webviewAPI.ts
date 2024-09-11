@@ -1,4 +1,5 @@
 import type { Observable } from 'observable-fns'
+import type { ChatMessage } from '../../chat/transcript/messages'
 import type { ContextItem } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
@@ -36,6 +37,8 @@ export interface WebviewToExtensionAPI {
      * Set the chat model.
      */
     setChatModel(model: Model['id']): Observable<void>
+
+    detectIntent(text: string): Observable<ChatMessage['intent']>
 }
 
 export function createExtensionAPI(
@@ -47,6 +50,7 @@ export function createExtensionAPI(
         prompts: proxyExtensionAPI(messageAPI, 'prompts'),
         models: proxyExtensionAPI(messageAPI, 'models'),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
+        detectIntent: proxyExtensionAPI(messageAPI, 'detectIntent'),
     }
 }
 

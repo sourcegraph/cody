@@ -67,6 +67,6 @@ export class ContextAPIClient {
             return true
         }
 
-        return await this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyIntentDetectionAPI)
+        return await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyIntentDetectionAPI)
     }
 }
