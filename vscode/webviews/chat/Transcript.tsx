@@ -262,6 +262,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [reSubmitWithIntent]
     )
 
+    const resetIntent = useCallback(() => setIntent(undefined), [])
+
     return (
         <>
             <HumanMessageCell
@@ -281,7 +283,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 editorRef={humanEditorRef}
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
                 experimentalOneBoxEnabled={experimentalOneBoxEnabled}
-                onEditorFocusChange={() => setIntent(undefined)}
+                onEditorFocusChange={resetIntent}
             />
             {experimentalOneBoxEnabled && humanMessage.intent && (
                 <InfoMessage>
