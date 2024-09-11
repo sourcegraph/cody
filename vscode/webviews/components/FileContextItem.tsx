@@ -12,14 +12,19 @@ import styles from './FileContextItem.module.css'
 
 interface FileContextItemProps {
     item: ContextItem
+    showSnippets: boolean
+    defaultOpen?: boolean
 }
 
-export const FileContextItem: FC<FileContextItemProps> = props => {
-    const { item } = props
-    const [isOpen, setOpen] = useState(false)
+export const FileContextItem: FC<FileContextItemProps> = ({
+    item,
+    showSnippets,
+    defaultOpen = false,
+}) => {
+    const [isOpen, setOpen] = useState(defaultOpen)
 
     // Fallback on link for any non file context items (like openctx items)
-    if (item.type !== 'file') {
+    if (item.type !== 'file' || !showSnippets) {
         return (
             <FileLink
                 uri={item.uri}
@@ -53,7 +58,6 @@ export const FileContextItem: FC<FileContextItemProps> = props => {
                     linkClassName={styles.contextItemLink}
                     className={clsx(styles.linkContainer, MENTION_CLASS_NAME)}
                 />
-
                 <Button variant="secondary" size="sm" onClick={() => setOpen(!isOpen)}>
                     {!isOpen ? (
                         <>

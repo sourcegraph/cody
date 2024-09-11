@@ -31,6 +31,7 @@ export const ContextCell: FunctionComponent<{
     isForFirstMessage: boolean
     className?: string
     defaultOpen?: boolean
+    showSnippets?: boolean
 
     /** For use in storybooks only. */
     __storybook__initialOpen?: boolean
@@ -43,6 +44,7 @@ export const ContextCell: FunctionComponent<{
         className,
         defaultOpen,
         __storybook__initialOpen,
+        showSnippets = false,
     }) => {
         const [selectedAlternative, setSelectedAlternative] = useState<number | undefined>(undefined)
         const incrementSelectedAlternative = useCallback(
@@ -166,7 +168,11 @@ export const ContextCell: FunctionComponent<{
                                                 key={i}
                                                 data-testid="context-item"
                                             >
-                                                <FileContextItem item={item} />
+                                                <FileContextItem
+                                                    item={item}
+                                                    showSnippets={showSnippets}
+                                                    defaultOpen={defaultOpen}
+                                                />
                                                 {internalDebugContext &&
                                                     item.metadata &&
                                                     item.metadata.length > 0 && (
