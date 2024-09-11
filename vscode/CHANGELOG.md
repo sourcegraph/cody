@@ -15,6 +15,12 @@ Chat: Fixed feedback buttons not working in chat. [pull/5509](https://github.com
 Enterprise: Remote Repository items in the mention menu now display only the org/repo part of the title, omitting the code host name to prevent repository names from being truncated in the UI. [pull/5518](https://github.com/sourcegraph/cody/pull/5518)
 Cody Ignore: This internal experimental feature is now deprecated and the use of `.cody/ignore` file is no longer supported. [pull/5537](https://github.com/sourcegraph/cody/pull/5537)
 
+## 1.34.2
+
+### Fixed
+
+- Autocomplete Logging: The PR fixes the contextCandidates logged in the inlineCompletionItemContext. [pull/5507](https://github.com/sourcegraph/cody/pull/5507)
+
 ## 1.34.1
 
 ### Added
