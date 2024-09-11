@@ -17,6 +17,7 @@ data class ClientCapabilities(
   val showWindowMessage: ShowWindowMessageEnum? = null, // Oneof: notification, request
   val ignore: IgnoreEnum? = null, // Oneof: none, enabled
   val codeActions: CodeActionsEnum? = null, // Oneof: none, enabled
+  val disabledMentionsProviders: List<ContextMentionProviderID>? = null,
   val webviewMessages: WebviewMessagesEnum? = null, // Oneof: object-encoded, string-encoded
   val globalState: GlobalStateEnum? = null, // Oneof: stateless, server-managed, client-managed
   val secrets: SecretsEnum? = null, // Oneof: stateless, client-managed

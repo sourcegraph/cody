@@ -277,11 +277,11 @@ export {
 } from './mentions/query'
 export {
     type ContextItemProps,
-    allMentionProvidersMetadata,
-    webMentionProvidersMetadata,
+    mentionProvidersMetadata,
     openCtxProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    type ContextMentionProviderID,
     type ContextMentionProviderMetadata,
 } from './mentions/api'
 export { TokenCounter, getTokenCounterUtils, TokenCounterUtils } from './token/counter'
