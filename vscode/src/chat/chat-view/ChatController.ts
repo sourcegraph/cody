@@ -43,6 +43,7 @@ import {
     isDotCom,
     isError,
     isRateLimitError,
+    logError,
     modelsService,
     parseMentionQuery,
     recordErrorToSpan,
@@ -289,7 +290,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             case 'initialized':
                 await this.handleInitialized()
-                this.setWebviewView(View.Chat)
+                this.setWebviewToChat()
                 break
             case 'submit': {
                 await this.handleUserMessageSubmission({
@@ -392,7 +393,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             case 'restoreHistory':
                 await this.restoreSession(message.chatID)
-                this.setWebviewView(View.Chat)
+                this.setWebviewToChat()
                 break
             case 'reset':
                 await this.clearAndRestartSession()
@@ -486,7 +487,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }
                 if (message.authKind === 'signout') {
                     await showSignOutMenu()
-                    this.setWebviewView(View.Login)
                     break
                 }
                 // cody.auth.signin or cody.auth.signout
@@ -523,6 +523,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         success: nextAuth.authenticated ? 1 : 0,
                     },
                 })
+                break
+            }
+            case 'log': {
+                const logger = message.level === 'debug' ? logDebug : logError
+                logger(message.filterLabel, message.message)
                 break
             }
         }
@@ -1634,15 +1639,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return viewOrPanel
     }
 
-    private async setWebviewView(view: View): Promise<void> {
-        if (view !== 'chat') {
-            // Only chat view is supported in the webview panel.
-            // When a different view is requested,
-            // Set context to notify the webview panel to close.
-            // This should close the webview panel and open the login view in the sidebar.
-            await vscode.commands.executeCommand('setContext', 'cody.activated', false)
-            return
-        }
+    private async setWebviewToChat(): Promise<void> {
         const viewOrPanel = this._webviewPanelOrView ?? (await this.createWebviewViewOrPanel())
 
         this._webviewPanelOrView = viewOrPanel
@@ -1651,7 +1648,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         await this.postMessage({
             type: 'view',
-            view: view,
+            view: View.Chat,
         })
     }
 

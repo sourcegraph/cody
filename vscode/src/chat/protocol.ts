@@ -176,6 +176,7 @@ export type WebviewMessage =
           command: 'troubleshoot/reloadAuth'
       }
     | { command: 'rpc/request'; message: RequestMessage }
+    | { command: 'log'; level: 'debug' | 'error'; filterLabel: string; message: string }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID
