@@ -135,7 +135,7 @@ export const ContextCell: FunctionComponent<{
                             </AccordionTrigger>
                         }
                         containerClassName={className}
-                        contentClassName="tw-flex tw-flex-col tw-gap-4 tw-overflow-hidden tw-max-w-full"
+                        contentClassName="tw-flex tw-flex-col tw-gap-4 tw-max-w-full"
                         data-testid="context"
                     >
                         {contextItems === undefined ? (
