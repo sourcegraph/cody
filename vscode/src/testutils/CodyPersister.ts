@@ -4,6 +4,7 @@ import type { Har, HarEntry } from '@pollyjs/persister'
 import FSPersister from '@pollyjs/persister-fs'
 
 import { isError, parseEvents } from '@sourcegraph/cody-shared'
+import { CompletionsResponseBuilder } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/CompletionsResponseBuilder'
 import { PollyYamlWriter } from './PollyYamlWriter'
 import { decodeCompressedBase64 } from './base64'
 
@@ -178,10 +179,12 @@ function postProcessResponseText(entry: HarEntry): string | undefined {
     ) {
         return text
     }
-    const parseResult = parseEvents(text)
+    const builder = CompletionsResponseBuilder.fromUrl(entry.request.url)
+    const parseResult = parseEvents(builder, text)
     if (isError(parseResult)) {
         return text
     }
+    console.log('events', parseResult.events)
     const hasError = parseResult.events.some(event => event.type === 'error')
     if (hasError) {
         return text
@@ -192,11 +195,13 @@ function postProcessResponseText(entry: HarEntry): string | undefined {
         return text
     }
 
-    const lines = text.split('\n')
-    const lastCompletionEvent = lines.lastIndexOf('event: completion')
-    if (lastCompletionEvent >= 0) {
-        return lines.slice(lastCompletionEvent).join('\n')
-    }
+    const result = `event: completion
+data: ${JSON.stringify(completionEvent)}
 
-    return text
+event: done
+data: {}
+
+`
+    console.log({ result, text })
+    return result
 }

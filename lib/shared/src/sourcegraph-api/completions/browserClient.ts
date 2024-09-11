@@ -3,8 +3,11 @@ import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { dependentAbortController } from '../../common/abortController'
 import { addCustomUserAgent } from '../graphql/client'
 
+import { isError } from '../../utils'
 import { addClientInfoParams } from '../client-name-version'
+import { CompletionsResponseBuilder } from './CompletionsResponseBuilder'
 import { type CompletionRequestParameters, SourcegraphCompletionsClient } from './client'
+import { parseCompletionJSON } from './parse'
 import type { CompletionCallbacks, CompletionParameters, Event } from './types'
 import { getSerializedParams } from './utils'
 
@@ -43,6 +46,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         if (trace) {
             headersInstance.set('X-Sourcegraph-Should-Trace', 'true')
         }
+        const builder = new CompletionsResponseBuilder(apiVersion)
         // Disable gzip compression since the sg instance will start to batch
         // responses afterwards.
         headersInstance.set('Accept-Encoding', 'gzip;q=0')
@@ -73,8 +77,22 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             },
             onmessage: message => {
                 try {
-                    const data: Event = { ...JSON.parse(message.data), type: message.event }
-                    this.sendEvents([data], cb)
+                    const events: Event[] = []
+                    if (message.event === 'completion') {
+                        const data = parseCompletionJSON(message.data)
+                        if (isError(data)) {
+                            throw data
+                        }
+                        events.push({
+                            type: 'completion',
+                            // concatenate deltas when using api-version>=2
+                            completion: builder.nextCompletion(data.completion, data.deltaText),
+                            stopReason: data.stopReason,
+                        })
+                    } else {
+                        events.push({ type: message.event, ...JSON.parse(message.data) })
+                    }
+                    this.sendEvents(events, cb)
                 } catch (error: any) {
                     cb.onError(error.message)
                     abort.abort()

@@ -1,4 +1,5 @@
 import semver from 'semver'
+import * as vscode from 'vscode'
 
 import { type AuthStatus, type AuthenticatedAuthStatus, isDotCom } from '@sourcegraph/cody-shared'
 import type { CurrentUserInfo } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
@@ -89,16 +90,31 @@ export const countGeneratedCode = (text: string): { lineCount: number; charCount
     return count
 }
 
-function inferCodyApiVersion(version: string, isDotCom: boolean): 0 | 1 {
+// This is an advanced developer setting so it's OK to only read this once and
+// require users to reload their windows to debug a problem.
+const overridenApiVersion = vscode.workspace
+    .getConfiguration()
+    .get<0 | 1 | 2 | undefined>('cody.advanced.api-version', undefined)
+
+function inferCodyApiVersion(version: string, isDotCom: boolean): 0 | 1 | 2 {
+    if (overridenApiVersion !== undefined) {
+        // No need to validate the config, just let it crash. This is a developer setting.
+        return overridenApiVersion
+    }
+    const mostRecentVersion = 2
     const parsedVersion = semver.valid(version)
     // DotCom is always recent
     if (isDotCom) {
-        return 1
+        return mostRecentVersion
     }
     // On Cloud deployments from main, the version identifier will not parse as SemVer. Assume these
     // are recent
     if (parsedVersion == null) {
-        return 1
+        return mostRecentVersion
+    }
+    // 5.8.0+ will include the API changes.
+    if (semver.gte(parsedVersion, '5.8.0')) {
+        return 2
     }
     // 5.4.0+ will include the API changes.
     if (semver.gte(parsedVersion, '5.4.0')) {
@@ -106,7 +122,7 @@ function inferCodyApiVersion(version: string, isDotCom: boolean): 0 | 1 {
     }
     // Dev instances report as 0.0.0
     if (parsedVersion === '0.0.0') {
-        return 1
+        return mostRecentVersion
     }
 
     return 0 // zero refers to the legacy, unversioned, Cody API

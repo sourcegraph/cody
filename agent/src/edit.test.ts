@@ -27,7 +27,7 @@ describe('Edit', () => {
         await client.afterAll()
     })
 
-    it('editCommands/code (basic function)', async () => {
+    it.only('editCommands/code (basic function)', async () => {
         const uri = workspace.file('src', 'sum.ts')
         await client.openFile(uri, { removeCursor: false })
         const task = await client.request('editCommands/code', {

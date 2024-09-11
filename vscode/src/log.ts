@@ -6,7 +6,6 @@ import type {
     CompletionResponse,
     Event,
 } from '@sourcegraph/cody-shared'
-
 import { getConfiguration } from './configuration'
 
 export const CODY_OUTPUT_CHANNEL = 'Cody by Sourcegraph'
