@@ -106,14 +106,19 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
 // List of lenses
 function getErrorLens(codeLensRange: vscode.Range, task: FixupTask): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
-    if (isAuthError(task.error)) {
+    console.log(task.error, 'task.error')
+    console.log(task.error, task.error?.message, 'task.error')
+    if (task.error?.message.includes('network error')) {
+        lens.command = {
+            title: '$(warning) Network Disconnected',
+            command: 'cody.chat.signIn',
+        }
+    } else if (isAuthError(task.error)) {
         lens.command = {
             title: '$(warning) Authentication Failed',
             command: 'cody.chat.signIn',
         }
-        return lens
-    }
-    if (isRateLimitError(task.error)) {
+    } else if (isRateLimitError(task.error)) {
         if (task.error.upgradeIsAvailable) {
             lens.command = {
                 title: '⚡️ Upgrade to Cody Pro',
