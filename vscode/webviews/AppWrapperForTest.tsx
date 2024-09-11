@@ -78,6 +78,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                     }),
                     models: () => Observable.of(getDotComDefaultModels()),
                     setChatModel: () => EMPTY,
+                    detectIntent: () => Observable.of(),
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
             {

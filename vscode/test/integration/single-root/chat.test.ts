@@ -32,15 +32,15 @@ suite('Chat', function () {
     test('sends and receives a message', async () => {
         await vscode.commands.executeCommand('cody.chat.newEditorPanel')
         const chatView = await getChatViewProvider()
-        await chatView.handleUserMessageSubmission(
-            'test',
-            getPs()`hello from the human`,
-            'user',
-            [],
-            null,
-            false,
-            new AbortController().signal
-        )
+        await chatView.handleUserMessageSubmission({
+            requestID: 'test',
+            inputText: getPs()`hello from the human`,
+            submitType: 'user',
+            mentions: [],
+            editorState: null,
+            legacyAddEnhancedContext: false,
+            signal: new AbortController().signal,
+        })
 
         assert.match((await getTranscript(0)).text?.toString() || '', /^hello from the human$/)
         await waitUntil(async () =>
@@ -53,15 +53,15 @@ suite('Chat', function () {
         await getTextEditorWithSelection()
         await vscode.commands.executeCommand('cody.chat.newEditorPanel')
         const chatView = await getChatViewProvider()
-        await chatView.handleUserMessageSubmission(
-            'test',
-            getPs()`hello from the human`,
-            'user',
-            [],
-            null,
-            false,
-            new AbortController().signal
-        )
+        await chatView.handleUserMessageSubmission({
+            requestID: 'test',
+            inputText: getPs()`hello from the human`,
+            submitType: 'user',
+            mentions: [],
+            editorState: null,
+            legacyAddEnhancedContext: false,
+            signal: new AbortController().signal,
+        })
 
         // Display text should include file link at the end of message
         assert.match((await getTranscript(0)).text?.toString() || '', /^hello from the human$/)
