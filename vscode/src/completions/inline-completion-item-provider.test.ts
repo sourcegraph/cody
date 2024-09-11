@@ -11,7 +11,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import { localStorage } from '../services/LocalStorageProvider'
+import { mockLocalStorage } from '../services/LocalStorageProvider'
 import { DEFAULT_VSCODE_SETTINGS } from '../testutils/mocks'
 import { withPosixPaths } from '../testutils/textDocument'
 import { SupportedLanguage } from '../tree-sitter/grammars'
@@ -64,13 +64,9 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
 describe('InlineCompletionItemProvider', () => {
     beforeAll(async () => {
         await initCompletionProviderConfig({})
-
-        // Dummy noop implementation of localStorage.
-        localStorage.setStorage({
-            get: () => null,
-            update: () => {},
-        } as any as vscode.Memento)
+        mockLocalStorage()
     })
+
     beforeEach(() => {
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
         CompletionLogger.reset_testOnly()

@@ -4,7 +4,6 @@ import { expect, vi } from 'vitest'
 import type { URI } from 'vscode-uri'
 
 import {
-    AUTH_STATUS_FIXTURE_AUTHED,
     AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
     type AuthenticatedAuthStatus,
     type ClientConfiguration,
@@ -79,7 +78,7 @@ type Params = Partial<
         params: CompletionParameters
     ) => Generator<CompletionResponse> | AsyncGenerator<CompletionResponse>
     configuration?: Partial<ClientConfiguration>
-    authStatus?: Partial<AuthenticatedAuthStatus>
+    authStatus?: AuthenticatedAuthStatus
     documentUri?: URI
 }
 
@@ -91,7 +90,7 @@ export interface ParamsResult extends Omit<InlineCompletionsParams, 'configurati
      */
     completionResponseGeneratorPromise: Promise<unknown>
     configuration?: Partial<ClientConfigurationWithAccessToken>
-    authStatus: Partial<AuthenticatedAuthStatus>
+    authStatus: AuthenticatedAuthStatus
 }
 
 /**
@@ -113,8 +112,11 @@ export function params(
         takeSuggestWidgetSelectionIntoAccount,
         configuration,
         documentUri = testFileUri('test.ts'),
+        authStatus = AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
         ...restParams
     } = params
+
+    mockAuthStatus(authStatus)
 
     let requestCounter = 0
     let resolveCompletionResponseGenerator: (value?: unknown) => void
@@ -170,7 +172,6 @@ export function params(
 
     const configWithAccessToken = getVSCodeConfigurationWithAccessToken(configuration)
     const provider = createProvider({
-        authStatus: AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
         legacyModel: configuration?.autocompleteAdvancedModel!,
         config: configWithAccessToken,
         anonymousUserID: 'anonymousUserID',
@@ -204,7 +205,7 @@ export function params(
     }
 
     return {
-        authStatus: AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
+        authStatus,
         configuration,
         document,
         position,
@@ -424,7 +425,7 @@ export function initCompletionProviderConfig({
 }: Partial<Pick<ParamsResult, 'configuration' | 'authStatus'>>): Promise<void> {
     graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
     vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockResolvedValue(false)
-    mockAuthStatus(authStatus ?? AUTH_STATUS_FIXTURE_AUTHED)
+    mockAuthStatus(authStatus)
     return completionProviderConfig.init((configuration ?? {}) as ClientConfiguration)
 }
 

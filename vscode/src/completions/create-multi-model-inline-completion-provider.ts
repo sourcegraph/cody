@@ -133,7 +133,6 @@ export async function createInlineCompletionItemFromMultipleProviders({
         // Use the experimental config to get the context provider
         completionProviderConfig.setConfig(newConfig)
         const provider = createProviderHelper({
-            authStatus,
             legacyModel: currentProviderConfig.model,
             provider: currentProviderConfig.provider,
             config: newConfig,
@@ -142,6 +141,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
         const triggerDelay = vscode.workspace
             .getConfiguration()
             .get<number>('cody.autocomplete.triggerDelay')
+
         if (provider) {
             const completionsProvider = new InlineCompletionItemProvider({
                 provider,
@@ -154,7 +154,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
                 disableInsideComments: config.autocompleteDisableInsideComments,
                 isRunningInsideAgent: config.isRunningInsideAgent,
                 createBfgRetriever,
-                isDotComUser: isDotCom(authStatus.endpoint || ''),
+                isDotComUser: isDotCom(authStatus),
                 noInlineAccept: true,
             })
             allCompletionsProviders.push({

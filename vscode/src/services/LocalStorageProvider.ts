@@ -290,3 +290,12 @@ export const localStorage = new LocalStorage()
 function getKeyForAuthStatus(authStatus: AuthenticatedAuthStatus): ChatHistoryKey {
     return `${authStatus.endpoint}-${authStatus.username}`
 }
+
+const noopLocalStorage = {
+    get: () => null,
+    update: () => Promise.resolve(undefined),
+} as any as Memento
+
+export function mockLocalStorage(storage: Memento = noopLocalStorage) {
+    localStorage.setStorage(storage)
+}

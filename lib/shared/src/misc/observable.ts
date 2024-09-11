@@ -82,6 +82,14 @@ export async function firstValueFrom<T>(observable: Observable<T>): Promise<T> {
     })
 }
 
+/**
+ * Converts the observable factory to an async function that returns the first value emitted by the
+ * created observable.
+ */
+export function toFirstValueGetter<T, U extends unknown[]>(fn: (...args: U) => Observable<T>) {
+    return (...args: U): Promise<T> => firstValueFrom(fn(...args))
+}
+
 export async function waitUntilComplete(observable: Observable<unknown>): Promise<void> {
     return new Promise<void>((resolve, reject) => {
         observable.subscribe({

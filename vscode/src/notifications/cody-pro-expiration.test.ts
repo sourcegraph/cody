@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi, vitest } from 'vitest'
-import { localStorage } from '../services/LocalStorageProvider'
+import { mockLocalStorage } from '../services/LocalStorageProvider'
 
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
@@ -33,7 +33,7 @@ describe('Cody Pro expiration notifications', () => {
 
     // Set up local storage backed by an object.
     let localStorageData: { [key: string]: unknown } = {}
-    localStorage.setStorage({
+    mockLocalStorage({
         get: (key: string) => localStorageData[key],
         update: (key: string, value: unknown) => {
             localStorageData[key] = value

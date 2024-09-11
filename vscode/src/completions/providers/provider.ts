@@ -89,8 +89,6 @@ export type ProviderFactoryParams = {
     model?: Model
     legacyModel?: string
     config: ClientConfigurationWithAccessToken
-    // TODO: eliminate by using a singleton instead.
-    authStatus: AuthenticatedAuthStatus
     anonymousUserID: string
     mayUseOnDeviceInference?: boolean
     provider: string

@@ -11,6 +11,7 @@ import type {
 
 import {
     type ClientConfiguration,
+    type ClientConfigurationWithAccessToken,
     type FeatureFlag,
     FeatureFlagProvider,
     OLLAMA_DEFAULT_URL,
@@ -929,3 +930,14 @@ export const DEFAULT_VSCODE_SETTINGS = {
     testingModelConfig: undefined,
     experimentalGuardrailsTimeoutSeconds: undefined,
 } satisfies ClientConfiguration
+
+export function getVSCodeConfigurationWithAccessToken(
+    config: Partial<ClientConfiguration> = {}
+): ClientConfigurationWithAccessToken {
+    return {
+        ...DEFAULT_VSCODE_SETTINGS,
+        serverEndpoint: 'https://sourcegraph.com',
+        accessToken: 'test_access_token',
+        ...config,
+    }
+}
