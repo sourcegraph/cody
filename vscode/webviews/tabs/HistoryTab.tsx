@@ -59,10 +59,107 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
         setView(View.Chat)
     }
 
+    const historyDataUrl = useMemo(() => {
+        const json = JSON.stringify(userHistory, null, 2)
+        return `data:application/json;charset=utf-8,${encodeURIComponent(json)}`
+    }, [userHistory])
+    const historyBlobUrl = useMemo(() => {
+        const json = JSON.stringify(userHistory, null, 2)
+        const blob = new Blob([json], { type: 'application/json' })
+        // Create a temporary URL for the Blob
+        return window.URL.createObjectURL(blob)
+    }, [userHistory])
+
+    const handleDownloadData = () => {
+        const json = JSON.stringify(userHistory, null, 2)
+        const blob = new Blob([json], { type: 'application/json' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'cody-history-data.json'
+        link.click()
+        window.URL.revokeObjectURL(url)
+    }
+    const handleDownloadBlob = () => {
+        const json = JSON.stringify(userHistory, null, 2)
+        const blob = new Blob([json], { type: 'application/json' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'cody-history-blob.json'
+        link.click()
+        window.URL.revokeObjectURL(url)
+    }
+
+    const getDownloadDataUri = (): string => {
+        const json = JSON.stringify(userHistory, null, 2)
+        const blob = new Blob([json], { type: 'application/json' })
+        const url = window.URL.createObjectURL(blob)
+        return url
+    }
+    const getDownloadBlobUri = (): string => {
+        const json = JSON.stringify(userHistory, null, 2)
+        const blob = new Blob([json], { type: 'application/json' })
+        const url = window.URL.createObjectURL(blob)
+        return url
+    }
+
     const chats = Array.from(chatByPeriod)
 
     return (
         <div className="tw-px-8 tw-pt-6 tw-pb-12 tw-flex tw-flex-col tw-gap-10">
+            <div>
+                <a
+                    className="tw-p-2"
+                    href={historyDataUrl}
+                    download="cody-history-data-test.json"
+                    target="_blank"
+                    rel="noreferrer"
+                >
+                    Example 1: Chat History Data Link
+                </a>
+                <a
+                    className="tw-p-2"
+                    href={historyBlobUrl}
+                    download="cody-history-blob-test.json"
+                    target="_blank"
+                    rel="noreferrer"
+                >
+                    Example 2: Chat History Blob Link
+                </a>
+                <button className="tw-p-2" onClick={handleDownloadData} type="button">
+                    Example 3: Chat History Data Button
+                </button>
+                <button className="tw-p-2" onClick={handleDownloadBlob} type="button">
+                    Example 4: Chat History Blob Button
+                </button>
+                <a
+                    className="tw-p-2"
+                    href={getDownloadDataUri()}
+                    download="cody-history-data.json"
+                    onClick={event => {
+                        event.preventDefault()
+                        window.URL.revokeObjectURL(event.currentTarget.href)
+                    }}
+                    target="_blank"
+                    rel="noreferrer"
+                >
+                    Example 5: Chat History Data Link
+                </a>
+                <a
+                    className="tw-p-2"
+                    href={getDownloadBlobUri()}
+                    download="cody-history-blob.json"
+                    onClick={event => {
+                        event.preventDefault()
+                        window.URL.revokeObjectURL(event.currentTarget.href)
+                    }}
+                    target="_blank"
+                    rel="noreferrer"
+                >
+                    Example 6: Chat History Blob Link
+                </a>
+            </div>
             {chats.map(([period, chats]) => (
                 <CollapsiblePanel
                     id={`history-${period}`.replaceAll(' ', '-').toLowerCase()}
