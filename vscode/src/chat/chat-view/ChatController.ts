@@ -361,7 +361,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 let link = message.value
                 if (message.value === 'waitlist') {
                     link = CODY_LLM_WAITLIST_URL.href
-                    joinModelWaitlist(authProvider.instance!.status)
+                    joinModelWaitlist(currentAuthStatusAuthed())
                 }
                 void openExternalLinks(link)
                 break
@@ -1492,7 +1492,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private async duplicateSession(sessionID: string): Promise<void> {
         this.cancelSubmitOrEditOperation()
-        const transcript = chatHistory.getChat(authProvider.instance!.statusAuthed, sessionID)
+        const transcript = chatHistory.getChat(currentAuthStatusAuthed(), sessionID)
         if (!transcript) {
             return
         }

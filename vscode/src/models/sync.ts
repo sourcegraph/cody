@@ -71,9 +71,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // (Only some of them may not be available if you are on the Cody Free plan.)
     if (isDotCom(authStatus)) {
         let defaultModels = getDotComDefaultModels()
-        const hasEarlyAccess = await featureFlagProvider.instance!.evaluateFeatureFlag(
-            FeatureFlag.CodyEarlyAccess
-        )
+        const hasEarlyAccess = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEarlyAccess)
         const isOnWaitlist = localStorage.get(modelWaitlistKey)
         if (hasEarlyAccess || isOnWaitlist) {
             defaultModels = defaultModels.map(model => {

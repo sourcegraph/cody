@@ -280,7 +280,7 @@ export const ModelSelectField: React.FunctionComponent<{
 const ENTERPRISE_MODEL_DOCS_PAGE =
     'https://sourcegraph.com/docs/cody/clients/enable-cody-enterprise?utm_source=cody.modelSelector'
 
-type ModelAvailability = 'available' | 'needs-cody-pro' | 'not-selectable-on-enterprise' | 'on-waitlist'
+type ModelAvailability = 'available' | 'needs-cody-pro' | 'not-selectable-on-enterprise'
 
 function modelAvailability(
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>,
@@ -293,20 +293,18 @@ function modelAvailability(
     if (isCodyProModel(model) && userInfo.isDotComUser && !userInfo.isCodyProUser) {
         return 'needs-cody-pro'
     }
-    if (model.tags.includes(ModelTag.OnWaitlist)) {
-        return 'on-waitlist'
-    }
     return 'available'
 }
 
 function getTooltip(model: Model, availability: string): string {
-    if (isWaitlistModel(model)) {
+    if (model.tags.includes(ModelTag.Waitlist)) {
         return 'Request access to this new model'
+    }
+    if (model.tags.includes(ModelTag.OnWaitlist)) {
+        return 'Request received, we will reach out with next steps'
     }
 
     switch (availability) {
-        case 'on-waitlist':
-            return 'Request received, we will reach out with next steps'
         case 'not-selectable-on-enterprise':
             return 'Chat model set by your Sourcegraph Enterprise admin'
         case 'needs-cody-pro':
