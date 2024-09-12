@@ -1,7 +1,4 @@
-import type {
-    AuthenticatedAuthStatus,
-    ClientConfigurationWithAccessToken,
-} from '@sourcegraph/cody-shared'
+import type { ClientConfigurationWithAccessToken } from '@sourcegraph/cody-shared'
 import type { CodyStatusBar } from '../services/StatusBar'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import type { Provider } from './providers/provider'
@@ -15,7 +12,6 @@ export interface CodyCompletionItemProviderConfig {
     isRunningInsideAgent?: boolean
     config: ClientConfigurationWithAccessToken
 
-    authStatus: AuthenticatedAuthStatus
     isDotComUser?: boolean
 
     createBfgRetriever?: () => BfgRetriever
@@ -23,6 +19,7 @@ export interface CodyCompletionItemProviderConfig {
     // Settings
     formatOnAccept?: boolean
     disableInsideComments?: boolean
+    triggerDelay: number
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean

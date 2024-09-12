@@ -19,13 +19,6 @@ export {
 } from './models/utils'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
-export { ignores, isCodyIgnoredFile } from './cody-ignore/context-filter'
-export {
-    IgnoreHelper,
-    CODY_IGNORE_POSIX_GLOB,
-    type IgnoreFileContent,
-    CODY_IGNORE_URI_PATH,
-} from './cody-ignore/ignore-helper'
 export { getSimplePreamble } from './chat/preamble'
 export type {
     SerializedChatInteraction,
@@ -284,11 +277,11 @@ export {
 } from './mentions/query'
 export {
     type ContextItemProps,
-    allMentionProvidersMetadata,
-    webMentionProvidersMetadata,
+    mentionProvidersMetadata,
     openCtxProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    type ContextMentionProviderID,
     type ContextMentionProviderMetadata,
 } from './mentions/api'
 export { TokenCounter, getTokenCounterUtils, TokenCounterUtils } from './token/counter'
@@ -337,4 +330,6 @@ export {
     createMessageAPIForExtension,
 } from './misc/rpc/rpc'
 export * from './misc/observable'
+export * from './configuration/resolver'
 export * from './singletons'
+export * from './auth/authStatus'

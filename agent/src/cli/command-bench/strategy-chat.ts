@@ -39,10 +39,10 @@ export async function evaluateChatStrategy(
         const task: ChatTask = YAML.parse(params.content)
         const id = await client.request('chat/new', null)
         client.request('chat/setModel', { id, model: chatModel })
-        const contextFiles: ContextItem[] = []
+        const contextItems: ContextItem[] = []
         for (const relativePath of task.files ?? []) {
             const uri = vscode.Uri.file(path.join(path.dirname(params.uri.fsPath), relativePath))
-            contextFiles.push({
+            contextItems.push({
                 type: 'file',
                 uri,
             })
@@ -53,7 +53,7 @@ export async function evaluateChatStrategy(
                 command: 'submit',
                 submitType: 'user',
                 text: task.question,
-                contextFiles,
+                contextItems,
                 addEnhancedContext: isDefined(options.context),
             },
         })
@@ -75,7 +75,7 @@ export async function evaluateChatStrategy(
                     range,
                     chatReply: reply.text,
                     chatQuestion: task.question,
-                    contextItems: contextItems,
+                    contextItems,
                     questionClass: task.class,
                     llmJudgeScore: score.scoreNumeric,
                     concisenessScore: concisenessScore.scoreNumeric,

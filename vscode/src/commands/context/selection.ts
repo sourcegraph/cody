@@ -2,7 +2,6 @@ import {
     type ContextItem,
     TokenCounterUtils,
     contextFiltersProvider,
-    isCodyIgnoredFile,
     logError,
     toRangeData,
     wrapInActiveSpan,
@@ -32,7 +31,7 @@ export async function getContextFileFromCursor(
                 throw new Error('No active editor')
             }
 
-            if (await contextFiltersProvider.instance!.isUriIgnored(document.uri)) {
+            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
                 return null
             }
 
@@ -136,5 +135,5 @@ export async function getSelectionOrFileContext(): Promise<ContextItem[]> {
 }
 
 async function shouldIgnore(uri: URI): Promise<boolean> {
-    return Boolean((await contextFiltersProvider.instance!.isUriIgnored(uri)) || isCodyIgnoredFile(uri))
+    return Boolean(await contextFiltersProvider.isUriIgnored(uri))
 }

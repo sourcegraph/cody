@@ -11,7 +11,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import { localStorage } from '../services/LocalStorageProvider'
+import { mockLocalStorage } from '../services/LocalStorageProvider'
 import { DEFAULT_VSCODE_SETTINGS } from '../testutils/mocks'
 import { withPosixPaths } from '../testutils/textDocument'
 import { SupportedLanguage } from '../tree-sitter/grammars'
@@ -42,6 +42,7 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
     ) {
         super({
             completeSuggestWidgetSelection: true,
+            triggerDelay: 0,
             // Most of these are just passed directly to `getInlineCompletions`, which we've mocked, so
             // we can just make them `null`.
             statusBar: null as any,
@@ -49,7 +50,6 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
                 authStatus: AUTH_STATUS_FIXTURE_AUTHED,
             } as any),
             config: {} as any,
-            authStatus: AUTH_STATUS_FIXTURE_AUTHED,
             firstCompletionTimeout:
                 superArgs?.firstCompletionTimeout ??
                 DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
@@ -64,15 +64,11 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
 describe('InlineCompletionItemProvider', () => {
     beforeAll(async () => {
         await initCompletionProviderConfig({})
-
-        // Dummy noop implementation of localStorage.
-        localStorage.setStorage({
-            get: () => null,
-            update: () => {},
-        } as any as vscode.Memento)
+        mockLocalStorage()
     })
+
     beforeEach(() => {
-        vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValue(false)
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
         CompletionLogger.reset_testOnly()
     })
 
@@ -105,6 +101,56 @@ describe('InlineCompletionItemProvider', () => {
             },
           ]
         `)
+    })
+
+    it('should record telemetry event after completion is visible and respects the trigger delay', async () => {
+        vi.useRealTimers()
+        const spy = vi.spyOn(telemetryRecorder, 'recordEvent')
+        const startTime = Date.now()
+        const triggerDelay = 30
+
+        const completionParams = params('const foo = █', [completion`bar`])
+        vi.spyOn(vscode.window, 'activeTextEditor', 'get').mockReturnValue({
+            ...vscode.window.activeTextEditor,
+            document: completionParams.document,
+            selection: { active: completionParams.position },
+        } as any)
+
+        const provider = new MockableInlineCompletionItemProvider(
+            () => getInlineCompletionsFullResponse(completionParams),
+            { triggerDelay }
+        )
+
+        // Provide completion items
+        await provider.provideInlineCompletionItems(
+            completionParams.document,
+            completionParams.position,
+            DUMMY_CONTEXT
+        )
+
+        // Check if the trigger delay is respected
+        const elapsedTime = Date.now() - startTime
+        expect(elapsedTime).toBeGreaterThanOrEqual(triggerDelay)
+        // We only check for greater than because a less than would vary depending on the CI machine
+
+        // Switch to fake timers for precise control
+        vi.useFakeTimers()
+
+        // Advance time, but not enough for the completion to be considered visible
+        vi.advanceTimersByTime(500)
+        expect(spy).toHaveBeenCalledTimes(0)
+
+        // Advance time to make the completion visible (total 750ms)
+        vi.advanceTimersByTime(250)
+
+        // Check if telemetry event is recorded
+        CompletionLogger.logSuggestionEvents(true)
+        expect(spy).toHaveBeenCalledTimes(1)
+        expect(spy).toHaveBeenCalledWith(
+            'cody.completion',
+            'suggested',
+            expect.objectContaining({ metadata: expect.objectContaining({ read: 0 }) })
+        )
     })
 
     it('prevents completions inside comments', async () => {
@@ -229,7 +275,7 @@ describe('InlineCompletionItemProvider', () => {
     })
 
     it('no-ops on files that are ignored by the context filter policy', async () => {
-        vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValueOnce('repo:foo')
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValueOnce('repo:foo')
         const completionParams = params('const foo = █', [completion`bar`])
         const fn = vi.fn()
         const provider = new MockableInlineCompletionItemProvider(fn)

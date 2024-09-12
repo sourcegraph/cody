@@ -76,13 +76,14 @@ describe('Enterprise - S2 (close main branch)', () => {
             s2EnterpriseClient.registerNotification('ignore/didChange', onChangeCallback)
 
             expect(await ignoreTest()).toStrictEqual({ policy: 'use' })
+            expect(onChangeCallback).toBeCalledTimes(1)
 
             await s2EnterpriseClient.request('testing/ignore/overridePolicy', {
                 include: [{ repoNamePattern: '' }],
                 exclude: [{ repoNamePattern: '.*sourcegraph/cody.*' }],
             })
 
-            expect(onChangeCallback).toBeCalledTimes(1)
+            expect(onChangeCallback).toBeCalledTimes(2)
             expect(await ignoreTest()).toStrictEqual({ policy: 'ignore' })
 
             await s2EnterpriseClient.request('testing/ignore/overridePolicy', {
@@ -90,7 +91,7 @@ describe('Enterprise - S2 (close main branch)', () => {
                 exclude: [{ repoNamePattern: '.*sourcegraph/sourcegraph.*' }],
             })
 
-            expect(onChangeCallback).toBeCalledTimes(2)
+            expect(onChangeCallback).toBeCalledTimes(3)
             expect(await ignoreTest()).toStrictEqual({ policy: 'use' })
 
             await s2EnterpriseClient.request('testing/ignore/overridePolicy', {
@@ -99,7 +100,7 @@ describe('Enterprise - S2 (close main branch)', () => {
             })
 
             // onChangeCallback is not called again because filters are the same
-            expect(onChangeCallback).toBeCalledTimes(2)
+            expect(onChangeCallback).toBeCalledTimes(3)
         })
 
         // The site config `cody.contextFilters` value on sourcegraph.sourcegraph.com instance

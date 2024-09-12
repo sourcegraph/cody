@@ -16,7 +16,7 @@ import { DefaultPrompter } from './prompt'
 
 describe('DefaultPrompter', () => {
     beforeEach(() => {
-        vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValue(false)
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
     })
     afterEach(() => {
         vi.restoreAllMocks()

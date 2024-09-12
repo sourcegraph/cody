@@ -2,6 +2,7 @@ import type { URI } from 'vscode-uri'
 
 import type {
     AuthStatus,
+    ChatMessage,
     ClientConfigurationWithEndpoint,
     ClientStateForWebview,
     CodyIDE,
@@ -173,6 +174,7 @@ export type WebviewMessage =
       }
     | { command: 'rpc/request'; message: RequestMessage }
     | { command: 'chatSession'; action: 'duplicate' | 'new'; sessionID?: string | undefined | null }
+    | { command: 'log'; level: 'debug' | 'error'; filterLabel: string; message: string }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID
@@ -243,6 +245,7 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
+    intent?: ChatMessage['intent'] | undefined | null
 }
 
 interface WebviewEditMessage extends WebviewContextMessage {
@@ -251,11 +254,12 @@ interface WebviewEditMessage extends WebviewContextMessage {
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
+    intent?: ChatMessage['intent'] | undefined | null
 }
 
 interface WebviewContextMessage {
     addEnhancedContext?: boolean | undefined | null
-    contextFiles?: ContextItem[] | undefined | null
+    contextItems?: ContextItem[] | undefined | null
 }
 
 export interface ExtensionTranscriptMessage {
@@ -277,6 +281,7 @@ export interface ConfigurationSubsetForWebview
         | 'internalDebugContext'
     > {
     smartApply: boolean
+    experimentalOneBox: boolean
     // Type/location of the current webview.
     webviewType?: WebviewType | undefined | null
     // Whether support running multiple webviews (e.g. sidebar w/ multiple editor panels).

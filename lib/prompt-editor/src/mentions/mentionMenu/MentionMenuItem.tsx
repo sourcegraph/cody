@@ -61,6 +61,20 @@ function getDescription(item: ContextItem, query: MentionQuery): string {
     }
 }
 
+export function getMentionItemTitleAndDisplayName(item: ContextItem): {
+    title: string
+    displayName: string
+} {
+    const isSymbol = item.type === 'symbol'
+    const isRepo = item.type === 'repository'
+    const title = item.title ?? (isSymbol ? item.symbolName : displayPathBasename(item.uri))
+    // For repository items, display only the org/repo part of the title
+    // to prevent long hostnames from causing repo names to be truncated in the UI.
+    const displayName = isRepo ? title?.split('/')?.slice(1)?.join('/') || title : title
+
+    return { title, displayName }
+}
+
 export const MentionMenuContextItemContent: FunctionComponent<{
     query: MentionQuery
     item: ContextItem
@@ -68,9 +82,10 @@ export const MentionMenuContextItemContent: FunctionComponent<{
     const isOpenCtx = item.type === 'openctx'
     const isFileType = item.type === 'file'
     const isSymbol = item.type === 'symbol'
-    const icon =
-        item.icon || (isSymbol ? (item.kind === 'class' ? 'symbol-structure' : 'symbol-method') : null)
-    const title = item.title ?? (isSymbol ? item.symbolName : displayPathBasename(item.uri))
+    const isClassSymbol = isSymbol && item.kind === 'class'
+
+    const icon = item.icon || (isSymbol ? (isClassSymbol ? 'symbol-structure' : 'symbol-method') : null)
+    const { title, displayName } = getMentionItemTitleAndDisplayName(item)
     const description = getDescription(item, query)
 
     const isIgnored = (isFileType || isOpenCtx) && item.isIgnored
@@ -89,7 +104,7 @@ export const MentionMenuContextItemContent: FunctionComponent<{
             <div className={styles.row}>
                 {icon && <i className={`codicon codicon-${icon}`} title={isSymbol ? item.kind : ''} />}
                 <span className={clsx(styles.title, warning && styles.titleWithWarning)} title={title}>
-                    {title}
+                    {displayName}
                 </span>
                 {description && (
                     <span className={styles.description} title={description}>

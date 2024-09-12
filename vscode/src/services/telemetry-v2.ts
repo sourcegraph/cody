@@ -1,11 +1,11 @@
 import {
     type ClientConfiguration,
-    type ClientConfigurationWithAccessToken,
     CodyIDE,
     type ExtensionDetails,
     type LogEventMode,
     MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
+    type ResolvedConfiguration,
     TelemetryRecorderProvider,
     telemetryRecorder,
     telemetryRecorderProvider,
@@ -16,8 +16,6 @@ import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry/dist/process
 import { logDebug } from '../log'
 import { getOSArch } from '../os'
 import { version } from '../version'
-
-import { authProvider } from './AuthProvider'
 import { localStorage } from './LocalStorageProvider'
 
 const { platform, arch } = getOSArch()
@@ -56,24 +54,24 @@ const debugLogLabel = 'telemetry-v2'
  * https://sourcegraph.com/docs/dev/background-information/telemetry
  */
 export async function createOrUpdateTelemetryRecorderProvider(
-    config: ClientConfigurationWithAccessToken,
+    config: ResolvedConfiguration,
     /**
      * Hardcode isExtensionModeDevOrTest to false to test real exports - when
      * true, exports are logged to extension output instead.
      */
     isExtensionModeDevOrTest: boolean
 ): Promise<void> {
-    const extensionDetails = getExtensionDetails(config)
+    const extensionDetails = getExtensionDetails(config.configuration)
 
     // Add timestamp processor for realistic data in output for dev or no-op scenarios
     const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([new TimestampTelemetryProcessor()])
 
-    if (config.telemetryLevel === 'off' || !extensionDetails.ide) {
+    if (config.configuration.telemetryLevel === 'off' || !extensionDetails.ide) {
         updateGlobalTelemetryInstances(defaultNoOpProvider)
         return
     }
 
-    const { anonymousUserID, created: newAnonymousUser } = localStorage.anonymousUserID()
+    const anonymousUserID = localStorage.anonymousUserID()
     const initialize = telemetryRecorderProvider === undefined
 
     /**
@@ -84,8 +82,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
         updateGlobalTelemetryInstances(
             new MockServerTelemetryRecorderProvider(
                 extensionDetails,
-                config,
-                authProvider.instance!,
+                config.configuration,
                 anonymousUserID
             )
         )
@@ -96,20 +93,20 @@ export async function createOrUpdateTelemetryRecorderProvider(
         updateGlobalTelemetryInstances(
             new TelemetryRecorderProvider(
                 extensionDetails,
-                config,
-                authProvider.instance!,
+                { ...config.configuration, ...config.auth },
                 anonymousUserID,
                 legacyBackcompatLogEventMode
             )
         )
     }
 
-    const isCodyWeb = config.agentIDE === CodyIDE.Web
+    const isCodyWeb = config.configuration.agentIDE === CodyIDE.Web
 
     /**
      * On first initialization, also record some initial events.
      * Skip any init events for Cody Web use case.
      */
+    const newAnonymousUser = localStorage.checkIfCreatedAnonymousUserID()
     if (initialize && !isCodyWeb) {
         if (newAnonymousUser) {
             /**
@@ -121,7 +118,10 @@ export async function createOrUpdateTelemetryRecorderProvider(
                     category: 'billable',
                 },
             })
-        } else if (!config.isRunningInsideAgent || config.agentHasPersistentStorage) {
+        } else if (
+            !config.configuration.isRunningInsideAgent ||
+            config.configuration.agentHasPersistentStorage
+        ) {
             /**
              * Repeat user
              */

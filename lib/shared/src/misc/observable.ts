@@ -82,6 +82,14 @@ export async function firstValueFrom<T>(observable: Observable<T>): Promise<T> {
     })
 }
 
+/**
+ * Converts the observable factory to an async function that returns the first value emitted by the
+ * created observable.
+ */
+export function toFirstValueGetter<T, U extends unknown[]>(fn: (...args: U) => Observable<T>) {
+    return (...args: U): Promise<T> => firstValueFrom(fn(...args))
+}
+
 export async function waitUntilComplete(observable: Observable<unknown>): Promise<void> {
     return new Promise<void>((resolve, reject) => {
         observable.subscribe({
@@ -222,23 +230,20 @@ export function fromLateSetSource<T>(): {
     setSource: (input: Observable<T>, throwErrorIfAlreadySet?: boolean) => void
 } {
     let source: Observable<T> | null = null
-    const pendingObservers: {
-        observer: SubscriptionObserver<T> | null
+    const observers: {
+        observer: SubscriptionObserver<T>
         subscription: Unsubscribable | null
     }[] = []
 
     const observable = new Observable<T>(observer => {
-        if (source) {
-            return source.subscribe(observer)
-        }
-
-        const entry: (typeof pendingObservers)[number] = { observer, subscription: null }
-        pendingObservers.push(entry)
+        const subscription = source ? source.subscribe(observer) : null
+        const entry: (typeof observers)[number] = { observer, subscription }
+        observers.push(entry)
         return () => {
             entry.subscription?.unsubscribe()
-            const index = pendingObservers.indexOf(entry)
+            const index = observers.indexOf(entry)
             if (index !== -1) {
-                pendingObservers.splice(index, 1)
+                observers.splice(index, 1)
             }
         }
     })
@@ -248,11 +253,9 @@ export function fromLateSetSource<T>(): {
             throw new Error('source is already set')
         }
         source = input
-        for (const entry of pendingObservers) {
-            if (!entry.subscription) {
-                entry.subscription = source.subscribe(entry.observer!)
-                entry.observer = null
-            }
+        for (const entry of observers) {
+            entry.subscription?.unsubscribe()
+            entry.subscription = source.subscribe(entry.observer)
         }
     }
 
@@ -359,24 +362,6 @@ export function memoizeLastValue<P extends unknown[], T>(
             }
         })
     }
-}
-
-/**
- * Convert an RxJS Observable to one of our Observables. This is just a type helper for
- * {@link Observable.from}.
- */
-export function fromRxJSObservable<T>(rxjsObservable: RxJSSubscribable<T>): Observable<T> {
-    return Observable.from(rxjsObservable as Observable<T>)
-}
-
-interface RxJSSubscribable<T> {
-    subscribe(observer: Partial<Observer<T>>): { unsubscribe(): void }
-}
-
-interface Observer<T> {
-    next: (value: T) => void
-    error: (err: any) => void
-    complete: () => void
 }
 
 interface VSCodeDisposable {
@@ -747,4 +732,19 @@ export function mergeMap<T, R>(
             }
         })
     }
+}
+
+/**
+ * Store the last value emitted by an {@link Observable} so that it can be accessed synchronously.
+ * Callers must take care to not create a race condition when using this function.
+ */
+export function storeLastValue<T>(observable: Observable<T>): {
+    value: { last: undefined; isSet: false } | { last: T; isSet: true }
+    subscription: Unsubscribable
+} {
+    const value: ReturnType<typeof storeLastValue>['value'] = { last: undefined, isSet: false }
+    const subscription = observable.subscribe(v => {
+        Object.assign(value, { last: v, isSet: true })
+    })
+    return { value, subscription }
 }

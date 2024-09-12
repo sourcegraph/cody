@@ -6,10 +6,11 @@ import {
     type AuthenticatedAuthStatus,
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
     type ChatClient,
-    type ClientConfigurationWithAccessToken,
-    type ConfigWatcher,
     DEFAULT_EVENT_SOURCE,
     type Guardrails,
+    authStatus,
+    currentAuthStatus,
+    currentAuthStatusAuthed,
     editorStateFromPromptString,
     subscriptionDisposable,
     telemetryRecorder,
@@ -24,7 +25,6 @@ import type { startTokenReceiver } from '../../auth/token-receiver'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import { getConfiguration } from '../../configuration'
 import type { ExtensionClient } from '../../extension-client'
-import { authProvider } from '../../services/AuthProvider'
 import { type ChatLocation, localStorage } from '../../services/LocalStorageProvider'
 import {
     handleCodeFromInsertAtCursor,
@@ -77,16 +77,13 @@ export class ChatsController implements vscode.Disposable {
 
         private readonly guardrails: Guardrails,
         private readonly contextAPIClient: ContextAPIClient | null,
-        private readonly extensionClient: ExtensionClient,
-        private readonly configWatcher: ConfigWatcher<ClientConfigurationWithAccessToken>
+        private readonly extensionClient: ExtensionClient
     ) {
         logDebug('ChatsController:constructor', 'init')
         this.panel = this.createChatController()
 
         this.disposables.push(
-            subscriptionDisposable(
-                authProvider.instance!.changes.subscribe(authStatus => this.setAuthStatus(authStatus))
-            )
+            subscriptionDisposable(authStatus.subscribe(authStatus => this.setAuthStatus(authStatus)))
         )
     }
 
@@ -316,7 +313,7 @@ export class ChatsController implements vscode.Disposable {
     private async submitChat({
         text,
         submitType,
-        contextFiles,
+        contextItems,
         addEnhancedContext,
         source = DEFAULT_EVENT_SOURCE,
         command,
@@ -330,17 +327,17 @@ export class ChatsController implements vscode.Disposable {
         }
         const abortSignal = provider.startNewSubmitOrEditOperation()
         const editorState = editorStateFromPromptString(text)
-        await provider.handleUserMessageSubmission(
-            uuid.v4(),
-            text,
+        await provider.handleUserMessageSubmission({
+            requestID: uuid.v4(),
+            inputText: text,
             submitType,
-            contextFiles ?? [],
+            mentions: contextItems ?? [],
             editorState,
-            addEnhancedContext ?? true,
-            abortSignal,
+            legacyAddEnhancedContext: addEnhancedContext ?? true,
+            signal: abortSignal,
             source,
-            command
-        )
+            command,
+        })
         return provider
     }
 
@@ -354,7 +351,7 @@ export class ChatsController implements vscode.Disposable {
                 category: 'billable',
             },
         })
-        const authStatus = authProvider.instance!.status
+        const authStatus = currentAuthStatus()
         if (authStatus.authenticated) {
             try {
                 const historyJson = chatHistory.getLocalHistory(authStatus)
@@ -384,7 +381,7 @@ export class ChatsController implements vscode.Disposable {
         // The chat ID for client to pass in to clear all chats without showing window pop-up for confirmation.
         const ClearWithoutConfirmID = 'clear-all-no-confirm'
         const isClearAll = !chatID || chatID === ClearWithoutConfirmID
-        const authStatus = authProvider.instance!.statusAuthed
+        const authStatus = currentAuthStatusAuthed()
 
         if (isClearAll) {
             if (chatID !== ClearWithoutConfirmID) {
@@ -489,7 +486,6 @@ export class ChatsController implements vscode.Disposable {
             contextAPIClient: this.contextAPIClient,
             contextRetriever: this.contextRetriever,
             extensionClient: this.extensionClient,
-            configWatcher: this.configWatcher,
         })
     }
 

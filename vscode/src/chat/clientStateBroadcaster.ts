@@ -4,11 +4,15 @@ import {
     ContextItemSource,
     type ContextItemTree,
     REMOTE_REPOSITORY_PROVIDER_URI,
+    authStatus,
+    combineLatest,
     contextFiltersProvider,
     displayLineRange,
     displayPathBasename,
     expandToLineRange,
+    logDebug,
     openCtx,
+    resolvedConfig,
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -16,7 +20,6 @@ import { URI } from 'vscode-uri'
 import { getSelectionOrFileContext } from '../commands/context/selection'
 import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
 import { workspaceReposMonitor } from '../repository/repo-metadata-from-git-api'
-import { authProvider } from '../services/AuthProvider'
 import type { ChatModel } from './chat-view/ChatModel'
 import {
     contextItemMentionFromOpenCtxItem,
@@ -78,6 +81,7 @@ export function startClientStateBroadcaster({
             }
         }
         const corpusItems = getCorpusContextItemsForEditorState(useRemoteSearch)
+        logDebug('corpusItems', JSON.stringify(await corpusItems, null, 2))
         items.push(...(await corpusItems))
 
         postMessage({ type: 'clientState', value: { initialContext: items } })
@@ -97,8 +101,11 @@ export function startClientStateBroadcaster({
             void sendClientState('immediate')
         }),
         vscode.window.onDidChangeTextEditorSelection(e => {
-            // Frequent action, so debounce.
-            void sendClientState('debounce')
+            // Don't trigger for output channel logs.
+            if (e.textEditor.document.uri.scheme !== 'output') {
+                // Frequent action, so debounce.
+                void sendClientState('debounce')
+            }
         }),
         vscode.workspace.onDidChangeWorkspaceFolders(() => {
             // Infrequent action, so don't debounce and show immediately in the UI.
@@ -107,10 +114,12 @@ export function startClientStateBroadcaster({
     )
     disposables.push(
         subscriptionDisposable(
-            authProvider.instance!.changes.subscribe(async () => {
-                // Infrequent action, so don't debounce and show immediately in the UI.
-                void sendClientState('immediate')
-            })
+            combineLatest([resolvedConfig, authStatus, contextFiltersProvider.changes]).subscribe(
+                async () => {
+                    // Infrequent action, so don't debounce and show immediately in the UI.
+                    void sendClientState('immediate')
+                }
+            )
         )
     )
 
@@ -129,7 +138,7 @@ export async function getCorpusContextItemsForEditorState(useRemote: boolean): P
     if (useRemote && workspaceReposMonitor) {
         const repoMetadata = await workspaceReposMonitor.getRepoMetadata()
         for (const repo of repoMetadata) {
-            if (contextFiltersProvider.instance!.isRepoNameIgnored(repo.repoName)) {
+            if (await contextFiltersProvider.isRepoNameIgnored(repo.repoName)) {
                 continue
             }
             if (repo.remoteID === undefined) {
@@ -137,7 +146,7 @@ export async function getCorpusContextItemsForEditorState(useRemote: boolean): P
             }
             items.push({
                 ...contextItemMentionFromOpenCtxItem(
-                    createRepositoryMention(
+                    await createRepositoryMention(
                         {
                             id: repo.remoteID,
                             name: repo.repoName,
@@ -181,13 +190,18 @@ export async function getCorpusContextItemsForEditorState(useRemote: boolean): P
         await Promise.all(
             providers.map(async (provider): Promise<ContextItemOpenCtx[]> => {
                 const mentions =
-                    (await openCtx?.controller?.mentions(activeEditorContext, provider)) || []
+                    (await openCtx?.controller?.mentions(
+                        { ...activeEditorContext, autoInclude: true },
+                        provider
+                    )) || []
 
                 return mentions.map(mention => ({
                     ...mention,
                     provider: 'openctx',
                     type: 'openctx',
                     uri: URI.parse(mention.uri),
+                    source: ContextItemSource.Initial,
+                    mention, // include the original mention to pass to `items` later
                 }))
             })
         )

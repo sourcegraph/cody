@@ -9,7 +9,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { type MockInstance, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
-import { localStorage } from '../services/LocalStorageProvider'
+import { mockLocalStorage } from '../services/LocalStorageProvider'
 import { DEFAULT_VSCODE_SETTINGS, vsCodeMocks } from '../testutils/mocks'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { TriggerKind } from './get-inline-completions'
@@ -24,15 +24,18 @@ import { documentAndPosition } from './test-helpers'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { sleep } from './utils'
 
-vi.mock('vscode', () => ({
-    ...vsCodeMocks,
-    workspace: {
-        ...vsCodeMocks.workspace,
-        onDidChangeTextDocument() {
-            return null
+vi.mock('vscode', async () => {
+    const vscodeMocks = (await import('../testutils/mocks')).vsCodeMocks
+    return {
+        ...vscodeMocks,
+        workspace: {
+            ...vsCodeMocks.workspace,
+            onDidChangeTextDocument() {
+                return null
+            },
         },
-    },
-}))
+    }
+})
 
 const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     selectedCompletionInfo: undefined,
@@ -121,12 +124,12 @@ function getInlineCompletionProvider(
 ): InlineCompletionItemProvider {
     return new InlineCompletionItemProvider({
         completeSuggestWidgetSelection: true,
+        triggerDelay: 0,
         statusBar: { addError: () => {}, hasError: () => {}, startLoading: () => {} } as any,
         provider: createProvider({
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         } as any),
         config: {} as any,
-        authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         firstCompletionTimeout:
             args?.firstCompletionTimeout ?? DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
         ...args,
@@ -193,15 +196,12 @@ function createCompletion(textWithCursor: string, provider: InlineCompletionItem
 describe.skip('InlineCompletionItemProvider E2E', () => {
     describe('smart throttle in-flight requests', () => {
         beforeAll(async () => {
-            await initCompletionProviderConfig({})
-            localStorage.setStorage({
-                get: () => null,
-                update: () => {},
-            } as any as vscode.Memento)
+            await initCompletionProviderConfig({ configuration: {} })
+            mockLocalStorage()
         })
 
         beforeEach(() => {
-            vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValue(false)
+            vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
         })
 
         /**
@@ -395,12 +395,8 @@ describe('InlineCompletionItemProvider preloading', () => {
     beforeAll(async () => {
         vi.useFakeTimers()
 
-        await initCompletionProviderConfig(autocompleteConfig)
-
-        localStorage.setStorage({
-            get: () => null,
-            update: () => {},
-        } as any as vscode.Memento)
+        await initCompletionProviderConfig({ configuration: autocompleteConfig })
+        mockLocalStorage()
     })
 
     it('triggers preload request on cursor movement if cursor is at the end of a line', async () => {

@@ -12,6 +12,7 @@ import { getLastNGraphContextIdentifiersFromString } from '../../completions/con
 import { lines } from '../../completions/text-processing'
 import { SupportedLanguage } from '../../tree-sitter/grammars'
 
+import { RetrieverIdentifier } from '../../completions/context/utils'
 import {
     IS_LSP_LIGHT_LOGGING_ENABLED,
     debugSymbol,
@@ -126,6 +127,7 @@ async function getSnippetForLocationGetter(
     }
 
     const symbolContextSnippet = {
+        identifier: RetrieverIdentifier.LspLightRetriever,
         key: `${definitionUri}::${definitionRange.start.line}:${definitionRange.start.character}`,
         uri: definitionUri,
         startLine: definitionRange.start.line,

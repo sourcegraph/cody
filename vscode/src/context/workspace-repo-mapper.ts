@@ -1,4 +1,12 @@
-import { graphqlClient, isError, logDebug } from '@sourcegraph/cody-shared'
+import {
+    authStatus,
+    graphqlClient,
+    isError,
+    logDebug,
+    startWith,
+    subscriptionDisposable,
+} from '@sourcegraph/cody-shared'
+import { type Observable, Subject } from 'observable-fns'
 import * as vscode from 'vscode'
 import { vscodeGitAPI } from '../repository/git-extension-api'
 import { repoNameResolver } from '../repository/repo-name-resolver'
@@ -15,8 +23,7 @@ const GIT_REFRESH_DELAY = 2000
 // IDs. This depends on the vscode.git extension for mapping git repositories
 // to their remotes.
 export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMapper {
-    private changeEmitter = new vscode.EventEmitter<Repo[]>()
-    private disposables: vscode.Disposable[] = [this.changeEmitter]
+    private disposables: vscode.Disposable[] = []
     // The workspace repos.
     private repos: Repo[] = []
     // A cache of results for non-workspace repos. This caches repos that are
@@ -24,15 +31,26 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
     private nonWorkspaceRepos = new Map<string, string | undefined>()
     private started: Promise<void> | undefined
 
+    private changesSubject = new Subject<void>()
+
+    constructor() {
+        this.disposables.push(
+            subscriptionDisposable(
+                authStatus.subscribe(() => {
+                    this.updateRepos()
+                    this.start()
+                })
+            )
+        )
+    }
+
+    public get changes(): Observable<void> {
+        return this.changesSubject.pipe(startWith(undefined))
+    }
+
     public dispose(): void {
         vscode.Disposable.from(...this.disposables).dispose()
         this.disposables = []
-    }
-
-    public clientConfigurationDidChange(): void {
-        if (this.started) {
-            this.started.then(() => this.updateRepos())
-        }
     }
 
     // CodebaseRepoIdMapper implementation.
@@ -74,7 +92,7 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
     // Fetches the set of repo IDs and starts listening for workspace changes.
     // After this Promise resolves, `workspaceRepoIds` contains the set of
     // repo IDs for the workspace (if any.)
-    public async start(): Promise<void> {
+    private async start(): Promise<void> {
         // If are already starting/started, then join that.
         if (this.started) {
             return this.started
@@ -111,14 +129,6 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
         return this.started
     }
 
-    public get workspaceRepos(): Repo[] {
-        return [...this.repos]
-    }
-
-    public get onChange(): vscode.Event<Repo[]> {
-        return this.changeEmitter.event
-    }
-
     // Updates the `workspaceRepos` property and fires the change event.
     private async updateRepos(): Promise<void> {
         try {
@@ -138,7 +148,7 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
             logDebug('WorkspaceRepoMapper', `Error mapping workspace folders to repo IDs: ${error}`)
             throw error
         }
-        this.changeEmitter.fire(this.workspaceRepos)
+        this.changesSubject.next()
     }
 
     // Given a set of workspace folders, looks up their git remotes and finds the related repo IDs,

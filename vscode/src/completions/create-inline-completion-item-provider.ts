@@ -2,6 +2,8 @@ import {
     type ClientConfigurationWithAccessToken,
     NEVER,
     createDisposables,
+    currentAuthStatus,
+    currentAuthStatusAuthed,
     isDotCom,
     mergeMap,
     promiseFactoryToObservable,
@@ -10,7 +12,6 @@ import {
 import * as vscode from 'vscode'
 
 import { logDebug } from '../log'
-import { authProvider } from '../services/AuthProvider'
 import type { CodyStatusBar } from '../services/StatusBar'
 
 import { type Observable, map } from 'observable-fns'
@@ -47,7 +48,7 @@ export function createInlineCompletionItemProvider({
     statusBar,
     createBfgRetriever,
 }: InlineCompletionItemProviderArgs): Observable<void> {
-    const authStatus = authProvider.instance!.status
+    const authStatus = currentAuthStatus()
     if (!authStatus.authenticated) {
         logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
 
@@ -71,12 +72,16 @@ export function createInlineCompletionItemProvider({
         return await getInlineCompletionItemProviderFilters(config.autocompleteLanguages)
     }).pipe(
         mergeMap(documentFilters =>
-            createProvider(config, authStatus).pipe(
+            createProvider(config).pipe(
                 createDisposables(provider => {
                     if (provider) {
-                        const authStatus = authProvider.instance!.statusAuthed
+                        const authStatus = currentAuthStatusAuthed()
+                        const triggerDelay =
+                            vscode.workspace
+                                .getConfiguration()
+                                .get<number>('cody.autocomplete.triggerDelay') ?? 0
                         const completionsProvider = new InlineCompletionItemProvider({
-                            authStatus,
+                            triggerDelay,
                             provider,
                             config,
                             firstCompletionTimeout: config.autocompleteFirstCompletionTimeout,
@@ -87,7 +92,7 @@ export function createInlineCompletionItemProvider({
                             disableInsideComments: config.autocompleteDisableInsideComments,
                             isRunningInsideAgent: config.isRunningInsideAgent,
                             createBfgRetriever,
-                            isDotComUser: isDotCom(authStatus.endpoint || ''),
+                            isDotComUser: isDotCom(authStatus),
                         })
 
                         return [

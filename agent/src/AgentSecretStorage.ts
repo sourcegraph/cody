@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode'
-import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import type { MessageHandler } from './jsonrpc-alias'
+import { EventEmitter } from './vscode-shim'
 
 export class AgentStatelessSecretStorage implements vscode.SecretStorage {
     private readonly inMemorySecretStorageMap = new Map<string, string>()
@@ -9,13 +9,16 @@ export class AgentStatelessSecretStorage implements vscode.SecretStorage {
     }
     public store(key: string, value: string): Thenable<void> {
         this.inMemorySecretStorageMap.set(key, value)
+        this.onDidChangeEvent.fire({ key })
         return Promise.resolve()
     }
     public delete(key: string): Thenable<void> {
         this.inMemorySecretStorageMap.delete(key)
+        this.onDidChangeEvent.fire({ key })
         return Promise.resolve()
     }
-    onDidChange: vscode.Event<vscode.SecretStorageChangeEvent> = emptyEvent()
+    private onDidChangeEvent = new EventEmitter<vscode.SecretStorageChangeEvent>()
+    onDidChange: vscode.Event<vscode.SecretStorageChangeEvent> = this.onDidChangeEvent.event
 }
 
 export class AgentClientManagedSecretStorage implements vscode.SecretStorage {

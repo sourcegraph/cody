@@ -499,3 +499,27 @@ query ViewerSettings {
   }
 }
 `
+
+export const HIGHLIGHTED_FILE_QUERY = `
+   query HighlightedFile(
+        $repoName: String!
+        $commitID: String!
+        $filePath: String!
+        $disableTimeout: Boolean!
+        $ranges: [HighlightLineRange!]!
+        $format: HighlightResponseFormat!
+    ) {
+        repository(name: $repoName) {
+            commit(rev: $commitID) {
+                file(path: $filePath) {
+                    isDirectory
+                    richHTML
+                    highlight(disableTimeout: $disableTimeout, format: $format) {
+                        aborted
+                        lineRanges(ranges: $ranges)
+                    }
+                }
+            }
+        }
+    }
+`

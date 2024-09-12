@@ -376,7 +376,7 @@ html[data-ide='JetBrains'] {
     --vscode-profileBadge-background: var(--jetbrains-ProgressBar-background);
     --vscode-profileBadge-foreground: var(--jetbrains-ProgressBar-foreground);
     --vscode-progressBar-background: var(--jetbrains-ProgressBar-background);
-    --vscode-quickInput-background: var(--jetbrains-MainToolbar-Icon-pressedBackground);
+    --vscode-quickInput-background: var(--jetbrains-CheckBox-background);
     --vscode-quickInput-foreground: var(--jetbrains-ToolBar-foreground);
     --vscode-quickInputTitle-background: var(--jetbrains-ToolBar-background);
     --vscode-remoteHub-decorations-addedForegroundColor: var(--jetbrains-ActionButton-hoverBackground);
@@ -636,6 +636,7 @@ html[data-ide='JetBrains'] pre code {
     padding: 0;
 }
 
+
 html[data-ide='JetBrains'] blockquote {
     background: var(--vscode-textBlockQuote-background);
     border-color: var(--vscode-textBlockQuote-border);
@@ -659,4 +660,36 @@ html[data-ide='JetBrains'] .container {
 
 html[data-ide='JetBrains'] .tw-bg-muted-transparent:hover {
     background-color: var(--jetbrains-ActionButton-hoverBackground);
+}
+
+/* Custom rule for cmdk heading:
+ * VSCode uses input background for headings.
+ * JetBrains needs different styling to distinguish headings because input background are the same as pane background. */
+
+html[data-ide='JetBrains'] [cmdk-group-heading] {
+    background: var(--jetbrains-EditorPane-inactiveBackground);
+}
+
+html[data-ide='JetBrains'] body *::-webkit-scrollbar {
+    width: 14px;
+    height: 8px;
+    background-color: transparent;
+}
+
+html[data-ide='JetBrains'] body *::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-slider-active-background);
+    border-radius: 100px;
+    border: 3px solid var(--jetbrains-Desktop-background);
+}
+
+html[data-ide='JetBrains'] pre::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+    background-color: transparent;
+}
+
+html[data-ide='JetBrains'] pre::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 100px;
+    border: 3px solid var(--code-background);
 }

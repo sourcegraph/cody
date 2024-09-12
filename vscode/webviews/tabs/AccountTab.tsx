@@ -1,15 +1,24 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import { useCallback } from 'react'
 import { URI } from 'vscode-uri'
-import { ACCOUNT_USAGE_URL } from '../../src/chat/protocol'
+import { ACCOUNT_UPGRADE_URL, ACCOUNT_USAGE_URL } from '../../src/chat/protocol'
 import { MESSAGE_CELL_AVATAR_SIZE } from '../chat/cells/messageCell/BaseMessageCell'
 import { UserAvatar } from '../components/UserAvatar'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useUserAccountInfo } from '../utils/useConfig'
+import { View } from './types'
+
+interface AccountAction {
+    text: string
+    onClick: () => void
+}
+interface AccountTabProps {
+    setView: (view: View) => void
+}
 
 // TODO: Implement the AccountTab component once the design is ready.
-export const AccountTab: React.FC = () => {
+export const AccountTab: React.FC<AccountTabProps> = ({ setView }) => {
     const userInfo = useUserAccountInfo()
     const { user, isCodyProUser, isDotComUser, ide } = userInfo
     const { displayName, username, primaryEmail, endpoint } = user
@@ -19,15 +28,18 @@ export const AccountTab: React.FC = () => {
         return null
     }
 
-    const actions: any[] = []
+    const actions: AccountAction[] = []
 
+    if (isDotComUser && !isCodyProUser) {
+        actions.push({
+            text: 'Upgrade',
+            onClick: () =>
+                getVSCodeAPI().postMessage({ command: 'links', value: ACCOUNT_UPGRADE_URL.toString() }),
+        })
+    }
     actions.push({
         text: 'Switch Account...',
-        onClick: useCallback(() => {
-            if (userInfo.user.username) {
-                getVSCodeAPI().postMessage({ command: 'command', id: 'cody.auth.switchAccount' })
-            }
-        }, [userInfo]),
+        onClick: () => getVSCodeAPI().postMessage({ command: 'command', id: 'cody.auth.switchAccount' }),
     })
     if (isDotComUser) {
         actions.push({
@@ -49,7 +61,17 @@ export const AccountTab: React.FC = () => {
     })
     actions.push({
         text: 'Sign Out',
-        onClick: () => getVSCodeAPI().postMessage({ command: 'auth', authKind: 'signout' }),
+        onClick: () => {
+            getVSCodeAPI().postMessage({ command: 'auth', authKind: 'signout' })
+            // TODO: Remove when JB moves to agent based auth
+            // Set the view to the Chat tab so that if the user signs back in, they will be
+            // automatically redirected to the Chat tab, rather than the accounts tab.
+            // This is only for JB as the signout call is captured by the extension and not
+            // passed through to the agent.
+            if (ide === CodyIDE.JetBrains) {
+                setView(View.Chat)
+            }
+        },
     })
 
     return (

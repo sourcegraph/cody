@@ -107,7 +107,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-fab6adaf26052b0b829356bc86e66244-126d1491a98d2851-01
+            value: 00-9c4ce0f27225faccdd2072669e850863-f17dbfb939a22d9a-01
           - name: connection
             value: keep-alive
           - name: host
@@ -184,14 +184,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 2852
+        bodySize: 2910
         content:
           mimeType: text/event-stream
-          size: 2852
+          size: 2910
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Calculates the sum of two numbers.\n *\n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of the two input numbers.\n */\n","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Adds two numbers and returns the result.\n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of the two numbers.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -201,7 +201,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 08:08:27 GMT
+            value: Tue, 10 Sep 2024 03:46:32 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -230,7 +230,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-23T08:08:26.576Z
+      startedDateTime: 2024-09-10T03:46:30.655Z
       time: 0
       timings:
         blocked: -1
@@ -257,7 +257,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-da68bd2fc1926555e97b9be54881e4c0-757abcf0eebaebe9-01
+            value: 00-2f7866df27f26aeb4973c48346620a51-8340b069d2d5da91-01
           - name: connection
             value: keep-alive
           - name: host
@@ -381,14 +381,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 886
+        bodySize: 955
         content:
           mimeType: text/event-stream
-          size: 886
+          size: 955
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Greets the user if the `shouldGreet` flag is true.\n */","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Prints a greeting message if the `shouldGreet` flag is true.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -398,7 +398,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 08:08:28 GMT
+            value: Tue, 10 Sep 2024 03:46:33 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -427,7 +427,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-23T08:08:27.739Z
+      startedDateTime: 2024-09-10T03:46:32.151Z
       time: 0
       timings:
         blocked: -1
@@ -454,7 +454,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-d3220f2fb9c7ea23328c40b0fc8cf6ef-4402c67882e3326c-01
+            value: 00-6a4d4c07d58b1886cdbb06e48e3f9b2c-b6780115ff52f1bb-01
           - name: connection
             value: keep-alive
           - name: host
@@ -553,10 +553,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 524
+        bodySize: 448
         content:
           mimeType: text/event-stream
-          size: 524
+          size: 448
           text: >+
             event: completion
 
@@ -570,7 +570,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 08:08:29 GMT
+            value: Tue, 10 Sep 2024 03:46:34 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -599,7 +599,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-23T08:08:28.752Z
+      startedDateTime: 2024-09-10T03:46:33.206Z
       time: 0
       timings:
         blocked: -1
@@ -626,7 +626,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-68a1a272f2837dab708885d5dd36bebe-6468b41b786085c9-01
+            value: 00-15f1ee4f8c68193966bedffe392b31a7-f56a04ffd6efb176-01
           - name: connection
             value: keep-alive
           - name: host
@@ -734,14 +734,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 2265
+        bodySize: 2501
         content:
           mimeType: text/event-stream
-          size: 2265
+          size: 2501
           text: >+
             event: completion
 
-            data: {"completion":"\n/**\n * Records the current time in milliseconds since the page was loaded.\n * This can be used to measure the duration of an operation.\n */\n","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Captures the current time in milliseconds since the page was loaded.\n * This can be used to measure the time taken for a specific operation.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -751,7 +751,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 08:08:30 GMT
+            value: Tue, 10 Sep 2024 03:46:35 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -780,7 +780,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-23T08:08:29.684Z
+      startedDateTime: 2024-09-10T03:46:34.648Z
       time: 0
       timings:
         blocked: -1
@@ -807,7 +807,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-27404c90cfe5d32cda608465ff9fd1d4-f039cba61b9bf73e-01
+            value: 00-f1a9609b373c67908d226497a763ae3a-22fa92c2f44ac2ff-01
           - name: connection
             value: keep-alive
           - name: host
@@ -886,14 +886,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 1171
+        bodySize: 561
         content:
           mimeType: text/event-stream
-          size: 1171
+          size: 561
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Represents a greeter that can provide a \"Hello, world!\" greeting.\n */","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Provides a greeting message.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -903,7 +903,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 23 Aug 2024 08:08:31 GMT
+            value: Tue, 10 Sep 2024 03:46:37 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -932,113 +932,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-08-23T08:08:30.751Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 9d0e130a38eaf9d3cd8d9512afc14b87
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 144
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: document-code / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "144"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 320
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-              
-              query ContextFilters {
-                  site {
-                      codyContextFilters(version: V1) {
-                          raw
-                      }
-                  }
-              }
-            variables: {}
-        queryString:
-          - name: ContextFilters
-            value: null
-        url: https://sourcegraph.com/.api/graphql?ContextFilters
-      response:
-        bodySize: 104
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 104
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLEciWrv\
-            NKcnNra2loAAAAA//8DADYuyGU1AAAA\"]"
-          textDecoded:
-            data:
-              site:
-                codyContextFilters:
-                  raw: null
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 28 May 2024 08:39:08 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1333
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-28T08:39:07.990Z
+      startedDateTime: 2024-09-10T03:46:35.949Z
       time: 0
       timings:
         blocked: -1
@@ -1670,17 +1564,21 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?Repository
       response:
-        bodySize: 123
+        bodySize: 120
         content:
           encoding: base64
           mimeType: application/json
-          size: 123
-          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwt\
-            K1ND8o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//AwDHAhygPQAAAA==\"]"
+          size: 120
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8\
+            o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//AwDHAhygPQAAAA==\"]"
+          textDecoded:
+            data:
+              repository:
+                id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
         cookies: []
         headers:
           - name: date
-            value: Wed, 03 Jul 2024 09:58:11 GMT
+            value: Tue, 10 Sep 2024 03:46:30 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1711,7 +1609,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-03T09:58:11.233Z
+      startedDateTime: 2024-09-10T03:46:29.893Z
       time: 0
       timings:
         blocked: -1

@@ -35,7 +35,8 @@ describe('Edit', () => {
         })
         await client.taskHasReachedAppliedPhase(task)
         const lenses = client.codeLenses.get(uri.toString()) ?? []
-        expect(lenses).toHaveLength(2)
+        expect(lenses).toHaveLength(4)
+        expect(lenses[0].command?.command).toBe('cody.fixup.codelens.accept')
         await client.request('editTask/accept', { id: task.id })
         const newContent = client.workspace.getDocument(uri)?.content
         expect(trimEndOfLine(newContent)).toMatchInlineSnapshot(
@@ -124,7 +125,6 @@ describe('Edit', () => {
 
           export const Heading: React.FC<HeadingProps> = ({ text, level = 1 }) => {
               const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements;
-
               return <HeadingTag>{text}</HeadingTag>;
           };
 

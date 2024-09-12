@@ -68,7 +68,7 @@ export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable
         ignoreUris?: vscode.Uri[]
     ): Promise<HistoryItem[]> {
         const enableExtendedLanguagePool = Boolean(
-            await featureFlagProvider.instance!.evaluateFeatureFlag(
+            await featureFlagProvider.evaluateFeatureFlag(
                 FeatureFlag.CodyAutocompleteContextExtendLanguagePool
             )
         )

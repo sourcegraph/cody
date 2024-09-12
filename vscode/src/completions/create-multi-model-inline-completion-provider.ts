@@ -1,8 +1,7 @@
-import { type MultimodelSingleModelConfig, isDotCom } from '@sourcegraph/cody-shared'
+import { type MultimodelSingleModelConfig, currentAuthStatus, isDotCom } from '@sourcegraph/cody-shared'
 import { cloneDeep } from 'lodash'
 import * as vscode from 'vscode'
 import { logDebug } from '../log'
-import { authProvider } from '../services/AuthProvider'
 import { completionProviderConfig } from './completion-provider-config'
 import type { InlineCompletionItemProviderArgs } from './create-inline-completion-item-provider'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
@@ -78,7 +77,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
     // Creates multiple providers to get completions from.
     // The primary purpose of this method is to get the completions generated from multiple providers,
     // which helps judge the quality of code completions
-    const authStatus = authProvider.instance!.status
+    const authStatus = currentAuthStatus()
     if (
         !authStatus.authenticated ||
         config.autocompleteExperimentalMultiModelCompletions === undefined
@@ -134,17 +133,20 @@ export async function createInlineCompletionItemFromMultipleProviders({
         // Use the experimental config to get the context provider
         completionProviderConfig.setConfig(newConfig)
         const provider = createProviderHelper({
-            authStatus,
             legacyModel: currentProviderConfig.model,
             provider: currentProviderConfig.provider,
             config: newConfig,
         })
 
+        const triggerDelay = vscode.workspace
+            .getConfiguration()
+            .get<number>('cody.autocomplete.triggerDelay')
+
         if (provider) {
             const completionsProvider = new InlineCompletionItemProvider({
-                authStatus,
                 provider,
                 config: newConfig,
+                triggerDelay: triggerDelay ?? 0,
                 firstCompletionTimeout: config.autocompleteFirstCompletionTimeout,
                 statusBar,
                 completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
@@ -152,7 +154,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
                 disableInsideComments: config.autocompleteDisableInsideComments,
                 isRunningInsideAgent: config.isRunningInsideAgent,
                 createBfgRetriever,
-                isDotComUser: isDotCom(authStatus.endpoint || ''),
+                isDotComUser: isDotCom(authStatus),
                 noInlineAccept: true,
             })
             allCompletionsProviders.push({

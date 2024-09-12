@@ -1,8 +1,7 @@
-import { subscriptionDisposable } from '@sourcegraph/cody-shared'
+import { authStatus, combineLatest, subscriptionDisposable } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { WorkspaceRepoMapper } from '../context/workspace-repo-mapper'
 import { logDebug } from '../log'
-import { authProvider } from '../services/AuthProvider'
 import { gitCommitIdFromGitExtension, vscodeGitAPI } from './git-extension-api'
 import { repoNameResolver } from './repo-name-resolver'
 
@@ -28,7 +27,7 @@ class WorkspaceReposMonitor implements vscode.Disposable {
 
         this.disposables.push(
             subscriptionDisposable(
-                authProvider.instance!.changes.subscribe(() => {
+                combineLatest([authStatus, this.workspaceRepoMapper.changes]).subscribe(() => {
                     for (const folderURI of this.getFolderURIs()) {
                         this.addWorkspaceFolder(folderURI)
                     }
@@ -75,7 +74,8 @@ class WorkspaceReposMonitor implements vscode.Disposable {
                     metadatas.map(async m => {
                         let remoteID = undefined
                         try {
-                            remoteID = (await this.workspaceRepoMapper.repoForCodebase(m.repoName))?.id
+                            const repo = await this.workspaceRepoMapper.repoForCodebase(m.repoName)
+                            remoteID = repo?.id
                         } catch (err) {
                             logDebug(
                                 'WorkspaceReposMonitor',

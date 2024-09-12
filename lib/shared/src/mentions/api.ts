@@ -1,12 +1,7 @@
-import type { EachWithProviderUri, MetaResult } from '@openctx/client'
-import { Observable } from 'observable-fns'
+import type { MetaResult } from '@openctx/client'
+import { Observable, map } from 'observable-fns'
 import { openCtx } from '../context/openctx/api'
-import { fromRxJSObservable } from '../misc/observable'
-
-/**
- * A unique identifier for a {@link ContextMentionProvider}.
- */
-export type ContextMentionProviderID = string
+import { distinctUntilChanged } from '../misc/observable'
 
 /**
  * Props required by context item providers to return possible context items.
@@ -37,6 +32,11 @@ export interface ContextMentionProviderMetadata {
     emptyLabel: string
 }
 
+/**
+ * A unique identifier for a {@link ContextMentionProvider}.
+ */
+export type ContextMentionProviderID = ContextMentionProviderMetadata['id']
+
 export const FILE_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata & { id: 'file' } = {
     id: 'file',
     title: 'Files',
@@ -51,19 +51,14 @@ export const SYMBOL_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata & {
     emptyLabel: 'No symbols found',
 }
 
-/** Metadata for all registered {@link ContextMentionProvider}s. */
-export function allMentionProvidersMetadata(): Observable<ContextMentionProviderMetadata[]> {
-    return openCtxMentionProviders().map(providers => [
-        FILE_CONTEXT_MENTION_PROVIDER,
-        SYMBOL_CONTEXT_MENTION_PROVIDER,
-        ...providers,
-    ])
-}
-
-// Cody Web providers don't include standard file provider since
-// it uses openctx remote file provider instead
-export function webMentionProvidersMetadata(): Observable<ContextMentionProviderMetadata[]> {
-    return openCtxMentionProviders().map(providers => [SYMBOL_CONTEXT_MENTION_PROVIDER, ...providers])
+export function mentionProvidersMetadata(options?: {
+    disableProviders: ContextMentionProviderID[]
+}): Observable<ContextMentionProviderMetadata[]> {
+    return openCtxMentionProviders().map(providers =>
+        [...[FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER], ...providers].filter(
+            provider => !options?.disableProviders.includes(provider.id)
+        )
+    )
 }
 
 export function openCtxProviderMetadata(
@@ -83,11 +78,13 @@ function openCtxMentionProviders(): Observable<ContextMentionProviderMetadata[]>
         return Observable.of([])
     }
 
-    return fromRxJSObservable<EachWithProviderUri<MetaResult[]>>(controller.metaChanges({}, {})).map(
-        providers =>
+    return controller.metaChanges({}, {}).pipe(
+        map(providers =>
             providers
                 .filter(provider => !!provider.mentions)
                 .map(openCtxProviderMetadata)
                 .sort((a, b) => (a.title > b.title ? 1 : -1))
+        ),
+        distinctUntilChanged()
     )
 }

@@ -9,7 +9,6 @@ import {
     contextFiltersProvider,
     createDisposables,
     featureFlagProvider,
-    isCodyIgnoredFile,
     subscriptionDisposable,
     telemetryRecorder,
     wrapInActiveSpan,
@@ -113,8 +112,6 @@ export class InlineCompletionItemProvider
 
     private disposables: vscode.Disposable[] = []
 
-    private isProbablyNewInstall = true
-
     private firstCompletionDecoration = new FirstCompletionDecorationHandler()
 
     /**
@@ -129,6 +126,7 @@ export class InlineCompletionItemProvider
 
     constructor({
         completeSuggestWidgetSelection = true,
+        triggerDelay = 0,
         formatOnAccept = true,
         disableInsideComments = false,
         tracer = null,
@@ -140,6 +138,7 @@ export class InlineCompletionItemProvider
         InlineCompletionItemProviderConfigSingleton.set({
             ...config,
             completeSuggestWidgetSelection,
+            triggerDelay,
             formatOnAccept,
             disableInsideComments,
             tracer,
@@ -153,7 +152,7 @@ export class InlineCompletionItemProvider
         this.disposables.push(
             subscriptionDisposable(
                 featureFlagProvider
-                    .instance!.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
+                    .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
                     .subscribe(shouldSample => {
                         this.shouldSample = Boolean(shouldSample)
                     })
@@ -191,9 +190,6 @@ export class InlineCompletionItemProvider
 
         this.smartThrottleService = new SmartThrottleService()
         this.disposables.push(this.smartThrottleService)
-
-        const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
-        this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
 
         logDebug(
             'CodyCompletionProvider:initialized',
@@ -319,6 +315,8 @@ export class InlineCompletionItemProvider
     ): Promise<AutocompleteResult | null> {
         const isPreloadRequest = 'isPreload' in invokedContext
         const spanNamePrefix = isPreloadRequest ? 'preload' : 'provide'
+        const startTime = Date.now()
+        const triggerDelay = this.config.triggerDelay
 
         return wrapInActiveSpan(`autocomplete.${spanNamePrefix}InlineCompletionItems`, async span => {
             const stageRecorder = new CompletionLogger.AutocompleteStageRecorder({ isPreloadRequest })
@@ -328,13 +326,7 @@ export class InlineCompletionItemProvider
                     this.lastManualCompletionTimestamp > Date.now() - 500
             )
 
-            // Do not create item for files that are on the cody ignore list
-            if (isCodyIgnoredFile(document.uri)) {
-                logIgnored(document.uri, 'cody-ignore', isManualCompletion)
-                return null
-            }
-
-            if (await contextFiltersProvider.instance!.isUriIgnored(document.uri)) {
+            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
                 logIgnored(document.uri, 'context-filter', isManualCompletion)
                 return null
             }
@@ -394,7 +386,6 @@ export class InlineCompletionItemProvider
                 }
                 cancellationListener = token.onCancellationRequested(() => abortController.abort())
             }
-
             stageRecorder.record('preContentPopupCheck')
             // When the user has the completions popup open and an item is selected that does not match
             // the text that is already in the editor, VS Code will never render the completion.
@@ -440,7 +431,7 @@ export class InlineCompletionItemProvider
             }
 
             const latencyFeatureFlags: LatencyFeatureFlags = {
-                user: await featureFlagProvider.instance!.evaluateFeatureFlag(
+                user: await featureFlagProvider.evaluateFeatureFlag(
                     FeatureFlag.CodyAutocompleteUserLatency
                 ),
             }
@@ -460,16 +451,14 @@ export class InlineCompletionItemProvider
                 // completed, so we support reassinging them later.
                 let position: vscode.Position = invokedPosition
                 let context: vscode.InlineCompletionContext | undefined = invokedContext
-
                 const result = await this.getInlineCompletions({
                     document,
                     position,
                     triggerKind,
                     selectedCompletionInfo: context.selectedCompletionInfo,
                     docContext,
-                    config: this.config.config,
+                    configuration: this.config.config,
                     provider: this.config.provider,
-                    authStatus: this.config.authStatus,
                     contextMixer: this.contextMixer,
                     smartThrottleService: this.smartThrottleService,
                     requestManager: this.requestManager,
@@ -490,7 +479,6 @@ export class InlineCompletionItemProvider
                     firstCompletionTimeout: this.config.firstCompletionTimeout,
                     completionIntent,
                     lastAcceptedCompletionItem: this.lastAcceptedCompletionItem,
-                    isDotComUser: this.config.isDotComUser,
                     stageRecorder,
                 })
 
@@ -640,6 +628,21 @@ export class InlineCompletionItemProvider
 
                 recordExposedExperimentsToSpan(span)
 
+                // Trigger delay ensures a minimum time before showing autocomplete results.
+                // Benefits include:
+                // 1. Throttling requests to optimize resource usage
+                // 2. Allowing user input to stabilize for more relevant suggestions
+                // 3. Creating a consistent, natural-feeling autocomplete experience
+                // If the completion response arrives before the delay expires, we wait for the remaining time.
+                // If it arrives after, we show the result immediately without additional delay.
+                const elapsedTime = Date.now() - startTime
+                if (elapsedTime < triggerDelay) {
+                    // Wait for the remaining time
+                    await new Promise(resolve => setTimeout(resolve, triggerDelay - elapsedTime))
+                    if (abortController.signal.aborted) {
+                        return null // Exit early if the request has been aborted
+                    }
+                }
                 return autocompleteResult
             } catch (error) {
                 this.onError(error as Error)
@@ -706,13 +709,6 @@ export class InlineCompletionItemProvider
 
         if (isInTutorial(request.document)) {
             // Do nothing, the user is already working through the tutorial
-            return
-        }
-
-        if (!this.isProbablyNewInstall) {
-            // Only trigger for new installs for now, to avoid existing users from
-            // seeing this. Consider removing this check in future, because existing
-            // users would have had the key set above.
             return
         }
 

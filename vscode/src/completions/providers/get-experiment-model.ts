@@ -3,6 +3,7 @@ import {
     combineLatest,
     distinctUntilChanged,
     featureFlagProvider,
+    isDotComAuthed,
     mergeMap,
 } from '@sourcegraph/cody-shared'
 
@@ -22,18 +23,19 @@ interface ProviderConfigFromFeatureFlags {
     model?: string
 }
 
-export function getExperimentModel(
-    isDotCom: boolean
-): Observable<ProviderConfigFromFeatureFlags | null> {
+export function getExperimentModel(): Observable<ProviderConfigFromFeatureFlags | null> {
+    // We run model experiments only on DotCom.
+    if (!isDotComAuthed()) {
+        return Observable.of(null)
+    }
+
     return combineLatest([
-        featureFlagProvider.instance!.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-        featureFlagProvider.instance!.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
-        featureFlagProvider.instance!.evaluatedFeatureFlag(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
+        featureFlagProvider.evaluatedFeatureFlag(
             FeatureFlag.CodyAutocompleteFIMModelExperimentBaseFeatureFlag
         ),
-        featureFlagProvider.instance!.evaluatedFeatureFlag(
-            FeatureFlag.CodyAutocompleteDeepseekV2LiteBase
-        ),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase),
     ]).pipe(
         mergeMap(([starCoderHybrid, claude3, fimModelExperimentFlag, deepseekV2LiteBase]) => {
             // We run fine tuning experiment for VSC client only.
@@ -42,12 +44,12 @@ export function getExperimentModel(
                 .getConfiguration()
                 .get<boolean>('cody.advanced.agent.running', false)
 
-            if (!isFinetuningExperimentDisabled && fimModelExperimentFlag && isDotCom) {
+            if (!isFinetuningExperimentDisabled && fimModelExperimentFlag) {
                 // The traffic in this feature flag is interpreted as a traffic allocated to the fine-tuned experiment.
                 return resolveFIMModelExperimentFromFeatureFlags()
             }
 
-            if (isDotCom && deepseekV2LiteBase) {
+            if (deepseekV2LiteBase) {
                 return Observable.of({ provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE })
             }
 
@@ -74,22 +76,12 @@ export function getExperimentModel(
  */
 function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<typeof getExperimentModel> {
     return combineLatest([
-        featureFlagProvider.instance!.evaluatedFeatureFlag(
-            FeatureFlag.CodyAutocompleteFIMModelExperimentControl
-        ),
-        featureFlagProvider.instance!.evaluatedFeatureFlag(
-            FeatureFlag.CodyAutocompleteFIMModelExperimentVariant1
-        ),
-        featureFlagProvider.instance!.evaluatedFeatureFlag(
-            FeatureFlag.CodyAutocompleteFIMModelExperimentVariant2
-        ),
-        featureFlagProvider.instance!.evaluatedFeatureFlag(
-            FeatureFlag.CodyAutocompleteFIMModelExperimentVariant3
-        ),
-        featureFlagProvider.instance!.evaluatedFeatureFlag(
-            FeatureFlag.CodyAutocompleteFIMModelExperimentVariant4
-        ),
-        featureFlagProvider.instance!.evaluatedFeatureFlag(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentControl),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant1),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant2),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant3),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant4),
+        featureFlagProvider.evaluatedFeatureFlag(
             FeatureFlag.CodyAutocompleteFIMModelExperimentCurrentBest
         ),
     ]).pipe(

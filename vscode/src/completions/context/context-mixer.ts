@@ -4,7 +4,6 @@ import {
     type AutocompleteContextSnippet,
     type DocumentContext,
     contextFiltersProvider,
-    isCodyIgnoredFile,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -61,6 +60,7 @@ export interface ContextSummary {
 export interface GetContextResult {
     context: AutocompleteContextSnippet[]
     logSummary: ContextSummary
+    rankedContextCandidates: AutocompleteContextSnippet[]
 }
 
 /**
@@ -90,6 +90,7 @@ export class ContextMixer {
                     duration: 0,
                     retrieverStats: {},
                 },
+                rankedContextCandidates: [],
             }
         }
 
@@ -172,6 +173,7 @@ export class ContextMixer {
         return {
             context: mixedContext,
             logSummary,
+            rankedContextCandidates: Array.from(fusedResults),
         }
     }
 }
@@ -180,10 +182,7 @@ async function filter(snippets: AutocompleteContextSnippet[]): Promise<Autocompl
     return (
         await Promise.all(
             snippets.map(async snippet => {
-                if (isCodyIgnoredFile(snippet.uri)) {
-                    return null
-                }
-                if (await contextFiltersProvider.instance!.isUriIgnored(snippet.uri)) {
+                if (await contextFiltersProvider.isUriIgnored(snippet.uri)) {
                     return null
                 }
                 return snippet

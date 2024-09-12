@@ -91,6 +91,7 @@ describe('useMentionMenuData', () => {
                 )
             )
             await waitForObservableInTest()
+            await waitForObservableInTest() // HACK(sqs): less flaky on node@18
             expect(result2.current).toEqual<typeof result2.current>({
                 providers: [],
                 items: [file1],

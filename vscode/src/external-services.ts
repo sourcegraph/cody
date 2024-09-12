@@ -3,14 +3,17 @@ import type * as vscode from 'vscode'
 import {
     ChatClient,
     type ClientConfigurationWithAccessToken,
-    type ConfigWatcher,
     type Guardrails,
     type GuardrailsClientConfig,
     type SourcegraphCompletionsClient,
     SourcegraphGuardrailsClient,
+    currentAuthStatus,
+    currentAuthStatusAuthed,
+    firstValueFrom,
     graphqlClient,
     isDotCom,
     isError,
+    resolvedConfigWithAccessToken,
 } from '@sourcegraph/cody-shared'
 
 import { ContextAPIClient } from './chat/context/contextAPIClient'
@@ -18,7 +21,6 @@ import type { PlatformContext } from './extension.common'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logger } from './log'
-import { authProvider } from './services/AuthProvider'
 
 interface ExternalServices {
     chatClient: ChatClient
@@ -47,7 +49,6 @@ type ExternalServicesConfiguration = Pick<
 
 export async function configureExternalServices(
     context: vscode.ExtensionContext,
-    config: ConfigWatcher<ExternalServicesConfiguration>,
     platform: Pick<
         PlatformContext,
         | 'createLocalEmbeddingsController'
@@ -57,7 +58,7 @@ export async function configureExternalServices(
         | 'createSymfRunner'
     >
 ): Promise<ExternalServices> {
-    const initialConfig = config.get()
+    const initialConfig = await firstValueFrom(resolvedConfigWithAccessToken)
     const sentryService = platform.createSentryService?.(initialConfig)
     const openTelemetryService = platform.createOpenTelemetryService?.(initialConfig)
     const completionsClient = platform.createCompletionsClient(initialConfig, logger)
@@ -73,11 +74,11 @@ export async function configureExternalServices(
 
     // Disable local embeddings for enterprise users.
     const localEmbeddings =
-        authProvider.instance!.status.authenticated && isDotCom(authProvider.instance!.status)
+        currentAuthStatus().authenticated && isDotCom(currentAuthStatus())
             ? await platform.createLocalEmbeddingsController?.(initialConfig)
             : undefined
 
-    const chatClient = new ChatClient(completionsClient, () => authProvider.instance!.statusAuthed)
+    const chatClient = new ChatClient(completionsClient, () => currentAuthStatusAuthed())
 
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient, initialConfig)
 

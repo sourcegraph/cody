@@ -87,13 +87,6 @@ describe('Agent', () => {
             item.content = item.content?.split('\n').slice(0, 20).join('\n')
             mockEnhancedContext.push(item)
         }
-
-        // Confirm .cody/ignore is active at start up
-        const ignore = await client.request('ignore/test', {
-            uri: URI.file(ignoredUri.fsPath).toString(),
-        })
-        // TODO(dpc): Integrate file-based .cody/ignore with ignore/test
-        expect(ignore.policy).toBe('use')
     }, 20_000)
 
     beforeEach(async () => {

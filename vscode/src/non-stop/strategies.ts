@@ -9,6 +9,7 @@ import type { FixupTask } from './FixupTask'
 export interface FixupControlApplicator extends vscode.Disposable {
     didUpdateTask(task: FixupTask): void
     didDeleteTask(task: FixupTask): void
+    removeLensesFor(task: FixupTask): void
     // Called when visible files changed.
     // TODO: This API design is gross: this is *not* called when a new task
     // is created in a file that is already visible. It *is* called every time

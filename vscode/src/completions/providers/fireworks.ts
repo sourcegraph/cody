@@ -3,7 +3,7 @@ import {
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
     dotcomTokenToGatewayToken,
-    isDotCom,
+    isDotComAuthed,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
@@ -225,7 +225,7 @@ class FireworksProvider extends Provider {
         let fastPathAccessToken =
             config.accessToken &&
             // Require the upstream to be dotcom
-            (isDotCom(authStatus) || isLocalInstance) &&
+            (isDotComAuthed() || isLocalInstance) &&
             process.env.CODY_DISABLE_FASTPATH !== 'true' && // Used for testing
             // The fast path client only supports Node.js style response streams
             isNode
@@ -261,9 +261,9 @@ class FireworksProvider extends Provider {
     }
 }
 
-function getClientModel(isDotCom: boolean, model?: string): FireworksModel {
+function getClientModel(model?: string): FireworksModel {
     if (model === undefined || model === '') {
-        return isDotCom ? DEEPSEEK_CODER_V2_LITE_BASE : 'starcoder-hybrid'
+        return isDotComAuthed() ? DEEPSEEK_CODER_V2_LITE_BASE : 'starcoder-hybrid'
     }
 
     if (model === 'starcoder-hybrid' || Object.prototype.hasOwnProperty.call(MODEL_MAP, model)) {
@@ -274,9 +274,9 @@ function getClientModel(isDotCom: boolean, model?: string): FireworksModel {
 }
 
 export function createProvider(params: ProviderFactoryParams): Provider {
-    const { legacyModel, authStatus, anonymousUserID } = params
+    const { legacyModel, anonymousUserID } = params
 
-    const clientModel = getClientModel(isDotCom(authStatus), legacyModel)
+    const clientModel = getClientModel(legacyModel)
 
     return new FireworksProvider({
         id: 'fireworks',

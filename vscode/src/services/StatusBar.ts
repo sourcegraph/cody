@@ -5,7 +5,6 @@ import {
     type ClientConfiguration,
     CodyIDE,
     contextFiltersProvider,
-    isCodyIgnoredFile,
 } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from '../configuration'
@@ -68,34 +67,19 @@ export function createStatusBar(): CodyStatusBar {
     statusBarItem.show()
 
     let isCodyIgnoredType: null | CodyIgnoreType = null
-    async function isCodyIgnored(uri: vscode.Uri): Promise<null | CodyIgnoreType> {
-        if (uri.scheme === 'file' && isCodyIgnoredFile(uri)) {
-            return 'cody-ignore'
-        }
-        if (await contextFiltersProvider.instance!.isUriIgnored(uri)) {
-            return 'context-filter'
-        }
-        return null
-    }
-    const onDocumentChange = vscode.window.onDidChangeActiveTextEditor(async editor => {
-        if (!editor) {
+    async function updateIgnoreStatus(uri: vscode.Uri | undefined): Promise<void> {
+        if (!uri) {
+            isCodyIgnoredType = null
             return
         }
-        isCodyIgnoredType = await isCodyIgnored(editor.document.uri)
-        if (isCodyIgnoredType !== 'cody-ignore') {
-            vscode.commands.executeCommand('setContext', 'cody.currentFileIgnored', !!isCodyIgnoredType)
-        }
+        isCodyIgnoredType = (await contextFiltersProvider.isUriIgnored(uri)) ? 'context-filter' : null
         rerender()
-    })
-    const currentUri = vscode.window.activeTextEditor?.document?.uri
-    if (currentUri) {
-        isCodyIgnored(currentUri).then(isIgnored => {
-            if (isCodyIgnoredType !== 'cody-ignore') {
-                vscode.commands.executeCommand('setContext', 'cody.currentFileIgnored', !!isIgnored)
-            }
-            isCodyIgnoredType = isIgnored
-        })
     }
+    const onDocumentChange = vscode.window.onDidChangeActiveTextEditor(editor =>
+        updateIgnoreStatus(editor?.document.uri)
+    )
+    // Initial check for the current active editor
+    updateIgnoreStatus(vscode.window.activeTextEditor?.document?.uri)
 
     let authStatus: AuthStatus | undefined
     const command = vscode.commands.registerCommand(STATUS_BAR_INTERACTION_COMMAND, async () => {

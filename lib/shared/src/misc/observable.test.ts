@@ -1,6 +1,7 @@
-import { Observable } from 'observable-fns'
+import { Observable, Subject } from 'observable-fns'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import {
+    NEVER,
     NO_INITIAL_VALUE,
     type ObservableValue,
     allValuesFrom,
@@ -16,6 +17,7 @@ import {
     promiseFactoryToObservable,
     readValuesFrom,
     shareReplay,
+    storeLastValue,
     take,
 } from './observable'
 
@@ -90,6 +92,31 @@ describe('fromLateSetSource', () => {
         expect(() => setSource(observableOfSequence(4, 5, 6))).toThrow('source is already set')
     })
 
+    test('subsequent setSource calls', { timeout: 500 }, async () => {
+        vi.useFakeTimers()
+        const { observable, setSource } = fromLateSetSource<string>()
+
+        setSource(observableOfTimedSequence(10, 'a', 10, 'b'))
+        const reader1 = readValuesFrom(observable)
+        await vi.advanceTimersByTimeAsync(10)
+        expect(reader1.values).toStrictEqual<typeof reader1.values>(['a'])
+
+        setSource(observableOfTimedSequence(5, 'x', 20, 'y'), false)
+        const reader2 = readValuesFrom(observable)
+        await vi.advanceTimersByTimeAsync(10)
+        expect(reader1.values).toStrictEqual<typeof reader1.values>(['a', 'x'])
+        expect(reader2.values).toStrictEqual<typeof reader2.values>(['x'])
+
+        await vi.advanceTimersByTimeAsync(20)
+        expect(reader1.values).toStrictEqual<typeof reader1.values>(['a', 'x', 'y'])
+        expect(reader2.values).toStrictEqual<typeof reader2.values>(['x', 'y'])
+
+        reader1.unsubscribe()
+        reader2.unsubscribe()
+        await reader1.done
+        await reader2.done
+    })
+
     test('unsubscribes correctly', async () => {
         const { observable, setSource } = fromLateSetSource<number>()
         const { values, done, unsubscribe } = readValuesFrom(observable)
@@ -99,6 +126,16 @@ describe('fromLateSetSource', () => {
 
         await done
         expect(values).toEqual([])
+    })
+
+    test('works with shareReplay', { timeout: 500 }, async () => {
+        const { observable, setSource } = fromLateSetSource<number>()
+        setSource(NEVER)
+        const derived = observable.pipe(shareReplay())
+        const subscription = derived.subscribe({})
+        setSource(observableOfSequence(1, 2, 3), false)
+        expect(await firstValueFrom(derived)).toBe(1)
+        subscription.unsubscribe()
     })
 })
 
@@ -442,5 +479,53 @@ describe('createDisposables', () => {
         await done
         expect(disposable.dispose).toHaveBeenCalledTimes(1)
         expect(status()).toBe<ReturnType<typeof status>>('unsubscribed')
+    })
+})
+
+describe('storeLastValue', () => {
+    test('stores the last value emitted by an observable', () => {
+        const subject = new Subject<number>()
+        const { value, subscription } = storeLastValue(subject)
+
+        expect(value.isSet).toBe(false)
+        expect(value.last).toBeUndefined()
+
+        subject.next(1)
+        expect(value.isSet).toBe(true)
+        expect(value.last).toBe(1)
+
+        subject.next(2)
+        expect(value.isSet).toBe(true)
+        expect(value.last).toBe(2)
+
+        subscription.unsubscribe()
+
+        subject.next(3)
+        expect(value.isSet).toBe(true)
+        expect(value.last).toBe(2)
+    })
+
+    test('handles empty observable', () => {
+        const subject = new Subject<number>()
+        const { value, subscription } = storeLastValue(subject)
+
+        expect(value.isSet).toBe(false)
+        expect(value.last).toBeUndefined()
+
+        subscription.unsubscribe()
+    })
+
+    test('handles observable that completes', () => {
+        const subject = new Subject<string>()
+        const { value, subscription } = storeLastValue(subject)
+
+        subject.next('a')
+        subject.next('b')
+        subject.complete()
+
+        expect(value.isSet).toBe(true)
+        expect(value.last).toBe('b')
+
+        subscription.unsubscribe()
     })
 })
