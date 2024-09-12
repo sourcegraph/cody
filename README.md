@@ -45,7 +45,7 @@ See [cody.dev](https://about.sourcegraph.com/cody?utm_source=github.com&utm_medi
 
 Cody comes with a variety of AI-for-coding features, such as autocomplete, chat, Smart Apply, generating unit tests, and more.
 
-Here's an example of how you can combine some of these features to use Cody to work on a large codebase... in this case Cody itself.
+Here's an example of how you can combine some of these features to use Cody to work on a large codebase.
 
 https://www.loom.com/share/ae710891c9044069a9017ee98ce657c5
 
