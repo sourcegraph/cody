@@ -6,7 +6,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
-- Chat: The new `Gemini 1.5 Pro Latest` and `Gemini 1.5 Flash Latest` models are now available for Cody Pro users. [pull/5508](https://github.com/sourcegraph/cody/pull/5508)
+- The [new OpenAI models (OpenAI O1 & OpenAI O1-mini)](https://sourcegraph.com/blog/openai-o1-for-cody) are now available to selected Cody Pro users for early access. [pull/5508](https://github.com/sourcegraph/cody/pull/5508)
+- Cody Pro users can join the waitlist for the new models by clicking the "Join Waitlist" button. [pull/5508](https://github.com/sourcegraph/cody/pull/5508)
 
 ### Fixed
 
