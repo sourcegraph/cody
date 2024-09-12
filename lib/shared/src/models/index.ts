@@ -542,7 +542,11 @@ export class ModelsService {
         // (But in reality, Sourcegraph.com wouldn't serve any Enterprise-only models to
         // Cody Pro users anyways.)
         if (isCodyProUser(status)) {
-            return tier !== 'enterprise'
+            return (
+                tier !== 'enterprise' &&
+                !resolved.tags.includes(ModelTag.Waitlist) &&
+                !resolved.tags.includes(ModelTag.OnWaitlist)
+            )
         }
 
         return tier === 'free'
