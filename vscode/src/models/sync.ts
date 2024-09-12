@@ -71,7 +71,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
         let defaultModels = getDotComDefaultModels()
         // For users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
         const hasEarlyAccess = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEarlyAccess)
-        const isOnWaitlist = localStorage.get(localStorage.keys.waitlist_09122024)
+        const isOnWaitlist = localStorage.get(localStorage.keys.waitlist_o1)
         if (hasEarlyAccess || isOnWaitlist) {
             defaultModels = defaultModels.map(model => {
                 if (model.tags.includes(ModelTag.Waitlist)) {
@@ -83,7 +83,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
             })
             // For users with early access, remove the waitlist key.
             if (hasEarlyAccess && isOnWaitlist) {
-                localStorage.delete(localStorage.keys.waitlist_09122024)
+                localStorage.delete(localStorage.keys.waitlist_o1)
             }
         }
         modelsService.instance!.setModels(defaultModels)
@@ -122,7 +122,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
 }
 
 export async function joinModelWaitlist(authStatus: AuthStatus): Promise<void> {
-    localStorage.set(localStorage.keys.waitlist_09122024, true)
+    localStorage.set(localStorage.keys.waitlist_o1, true)
     await syncModels(authStatus)
     telemetryRecorder.recordEvent('cody.joinLlmWaitlist', 'clicked')
 }

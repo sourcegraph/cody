@@ -110,7 +110,7 @@ import {
 import { getChatContextItemsForMention, getMentionMenuData } from '../context/chatContext'
 import type { ContextAPIClient } from '../context/contextAPIClient'
 import {
-    CODY_LLM_WAITLIST_URL,
+    CODY_BLOG_URL_o1_WAITLIST,
     type ChatSubmitType,
     type ConfigurationSubsetForWebview,
     type ExtensionMessage,
@@ -361,8 +361,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'links': {
                 let link = message.value
                 if (message.value === 'waitlist') {
-                    link = CODY_LLM_WAITLIST_URL.href
-                    joinModelWaitlist(currentAuthStatusAuthed())
+                    const authStatus = currentAuthStatusAuthed()
+                    const waitlistURI = CODY_BLOG_URL_o1_WAITLIST
+                    waitlistURI.searchParams.append('userId', authStatus?.username)
+                    link = waitlistURI.toString()
+                    void joinModelWaitlist(authStatus)
                 }
                 void openExternalLinks(link)
                 break

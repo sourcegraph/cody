@@ -309,7 +309,7 @@ export const ACCOUNT_LIMITS_INFO_URL = new URL(
     'https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits'
 )
 // TODO: Update this URL to the correct one when the Cody model waitlist is available
-export const CODY_LLM_WAITLIST_URL = new URL('https://sourcegraph.com/cody/waitlist')
+export const CODY_BLOG_URL_o1_WAITLIST = new URL('https://sourcegraph.com/blog/openai-o1-for-cody')
 
 /** The local environment of the editor. */
 export interface LocalEnv {

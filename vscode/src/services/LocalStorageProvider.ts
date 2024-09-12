@@ -34,7 +34,7 @@ class LocalStorage {
     public readonly LAST_USED_USERNAME = 'SOURCEGRAPH_CODY_USERNAME'
     public readonly keys = {
         // LLM waitlist for the 09/12/2024 openAI o1 models
-        waitlist_09122024: 'CODY_WAITLIST_LLM_09122024',
+        waitlist_o1: 'CODY_WAITLIST_LLM_09122024',
     }
 
     /**
