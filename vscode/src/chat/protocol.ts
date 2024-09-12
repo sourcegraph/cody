@@ -166,9 +166,6 @@ export type WebviewMessage =
           query: MentionQuery
       }
     | {
-          command: 'reset'
-      }
-    | {
           command: 'attribution-search'
           snippet: string
       }
@@ -176,6 +173,7 @@ export type WebviewMessage =
           command: 'troubleshoot/reloadAuth'
       }
     | { command: 'rpc/request'; message: RequestMessage }
+    | { command: 'chatSession'; action: 'duplicate' | 'new'; sessionID?: string | undefined | null }
     | { command: 'log'; level: 'debug' | 'error'; filterLabel: string; message: string }
 
 export interface SmartApplyResult {
@@ -310,6 +308,8 @@ export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
 export const ACCOUNT_LIMITS_INFO_URL = new URL(
     'https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits'
 )
+// TODO: Update this URL to the correct one when the Cody model waitlist is available
+export const CODY_BLOG_URL_o1_WAITLIST = new URL('https://sourcegraph.com/blog/openai-o1-for-cody')
 
 /** The local environment of the editor. */
 export interface LocalEnv {

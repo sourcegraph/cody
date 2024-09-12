@@ -3,18 +3,22 @@ import {
     type AuthStatus,
     CHAT_INPUT_TOKEN_BUDGET,
     ClientConfigSingleton,
+    FeatureFlag,
     Model,
     ModelUsage,
     RestClient,
+    featureFlagProvider,
     getDotComDefaultModels,
     isDotCom,
     modelsService,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { ServerModel, ServerModelConfiguration } from '@sourcegraph/cody-shared/src/models'
 import { ModelTag } from '@sourcegraph/cody-shared/src/models/tags'
 import * as vscode from 'vscode'
 import { getConfiguration } from '../configuration'
 import { logDebug } from '../log'
+import { localStorage } from '../services/LocalStorageProvider'
 import { secretStorage } from '../services/SecretStorageProvider'
 import { getEnterpriseContextWindow } from './utils'
 
@@ -64,7 +68,25 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // If you are connecting to Sourcegraph.com, we use the Cody Pro set of models.
     // (Only some of them may not be available if you are on the Cody Free plan.)
     if (isDotCom(authStatus)) {
-        modelsService.instance!.setModels(getDotComDefaultModels())
+        let defaultModels = getDotComDefaultModels()
+        // For users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
+        const hasEarlyAccess = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEarlyAccess)
+        const isOnWaitlist = localStorage.get(localStorage.keys.waitlist_o1)
+        if (hasEarlyAccess || isOnWaitlist) {
+            defaultModels = defaultModels.map(model => {
+                if (model.tags.includes(ModelTag.Waitlist)) {
+                    const newTags = model.tags.filter(tag => tag !== ModelTag.Waitlist)
+                    newTags.push(hasEarlyAccess ? ModelTag.EarlyAccess : ModelTag.OnWaitlist)
+                    return { ...model, tags: newTags }
+                }
+                return model
+            })
+            // For users with early access, remove the waitlist key.
+            if (hasEarlyAccess && isOnWaitlist) {
+                localStorage.delete(localStorage.keys.waitlist_o1)
+            }
+        }
+        modelsService.instance!.setModels(defaultModels)
         registerModelsFromVSCodeConfiguration()
         return
     }
@@ -97,6 +119,12 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
         // stale, defunct models available.
         modelsService.instance!.setModels([])
     }
+}
+
+export async function joinModelWaitlist(authStatus: AuthStatus): Promise<void> {
+    localStorage.set(localStorage.keys.waitlist_o1, true)
+    await syncModels(authStatus)
+    telemetryRecorder.recordEvent('cody.joinLlmWaitlist', 'clicked')
 }
 
 interface ChatModelProviderConfig {

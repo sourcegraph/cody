@@ -74,6 +74,9 @@ export enum FeatureFlag {
 
     /** Enable experimental One Box feature in Cody */
     CodyExperimentalOneBox = 'cody-experimental-one-box',
+
+    /** Whether user has access to early-acess models. */
+    CodyEarlyAccess = 'cody-early-access',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

@@ -63,7 +63,7 @@ export const DEFAULT_DOT_COM_MODELS = [
     },
     {
         title: 'Gemini 1.5 Pro',
-        id: 'google/gemini-1.5-pro-latest',
+        id: 'google/gemini-1.5-pro',
         provider: 'Google',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
@@ -71,11 +71,43 @@ export const DEFAULT_DOT_COM_MODELS = [
     },
 
     // --------------------------------
+    // Preview / Early Access
+    // --------------------------------
+    {
+        title: 'OpenAI o1',
+        id: 'openai/cody-chat-preview-001',
+        provider: 'OpenAI',
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: basicContextWindow,
+        tags: [
+            ModelTag.Gateway,
+            ModelTag.Power,
+            ModelTag.Pro,
+            ModelTag.Waitlist,
+            ModelTag.StreamDisabled,
+        ],
+    },
+    {
+        title: 'OpenAI o1-mini',
+        id: 'openai/cody-chat-preview-002',
+        provider: 'OpenAI',
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: expandedContextWindow,
+        tags: [
+            ModelTag.Gateway,
+            ModelTag.Power,
+            ModelTag.Pro,
+            ModelTag.Waitlist,
+            ModelTag.StreamDisabled,
+        ],
+    },
+
+    // --------------------------------
     // Faster models
     // --------------------------------
     {
         title: 'Gemini 1.5 Flash',
-        id: 'google/gemini-1.5-flash-latest',
+        id: 'google/gemini-1.5-flash',
         provider: 'Google',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,

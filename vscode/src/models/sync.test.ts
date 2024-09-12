@@ -4,6 +4,7 @@ import {
     type AuthenticatedAuthStatus,
     ClientConfigSingleton,
     DOTCOM_URL,
+    type GraphQLAPIClientConfig,
     Model,
     ModelTag,
     ModelUsage,
@@ -11,12 +12,17 @@ import {
     type ServerModel,
     type ServerModelConfiguration,
     getDotComDefaultModels,
+    graphqlClient,
     modelsService,
 } from '@sourcegraph/cody-shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { localStorage } from '../services/LocalStorageProvider'
 import { secretStorage } from '../services/SecretStorageProvider'
 import { maybeAdjustContextWindows, syncModels } from './sync'
 import { getEnterpriseContextWindow } from './utils'
+
+vi.mock('graphqlClient')
+vi.mock('../services/LocalStorageProvider')
 
 describe('syncModels', () => {
     const setModelsSpy = vi.spyOn(modelsService.instance!, 'setModels')
@@ -48,6 +54,11 @@ describe('syncModels', () => {
     })
 
     it('sets dotcom default models if on dotcom', async () => {
+        // @ts-ignore
+        graphqlClient._config = {
+            serverEndpoint: DOTCOM_URL.toString(),
+        } as Partial<GraphQLAPIClientConfig> as GraphQLAPIClientConfig
+        localStorage.set('mock', '1')
         await syncModels({ ...AUTH_STATUS_FIXTURE_AUTHED, endpoint: DOTCOM_URL.toString() })
         expect(setModelsSpy).toHaveBeenCalledWith(getDotComDefaultModels())
     })

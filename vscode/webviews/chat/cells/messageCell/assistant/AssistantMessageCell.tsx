@@ -3,6 +3,7 @@ import {
     ContextItemSource,
     type Guardrails,
     type Model,
+    ModelTag,
     type PromptString,
     contextItemsFromPromptEditorValue,
     filterContextItemsFromPromptEditorValue,
@@ -76,6 +77,8 @@ export const AssistantMessageCell: FunctionComponent<{
         const ModelIcon = chatModel ? chatModelIconComponent(chatModel.id) : null
         const isAborted = isAbortErrorOrSocketHangUp(message.error)
 
+        const hasLongerResponseTime = chatModel?.tags?.includes(ModelTag.StreamDisabled)
+
         return (
             <BaseMessageCell
                 speakerIcon={ModelIcon ? <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} /> : null}
@@ -112,7 +115,16 @@ export const AssistantMessageCell: FunctionComponent<{
                                 userInfo={userInfo}
                             />
                         ) : (
-                            isLoading && <LoadingDots />
+                            isLoading && (
+                                <div>
+                                    {hasLongerResponseTime && (
+                                        <p className="tw-m-4 tw-mt-0 tw-text-muted-foreground">
+                                            This model may take longer to response.
+                                        </p>
+                                    )}
+                                    <LoadingDots />
+                                </div>
+                            )
                         )}
                     </>
                 }
@@ -135,6 +147,7 @@ export const AssistantMessageCell: FunctionComponent<{
                                 {!isLoading && (!message.error || isAborted) && (
                                     <ContextFocusActions
                                         humanMessage={humanMessage}
+                                        longResponseTime={hasLongerResponseTime}
                                         className={
                                             showFeedbackButtons && feedbackButtonsOnSubmit
                                                 ? 'tw-pl-5'
@@ -218,7 +231,7 @@ export function makeHumanMessageInfo(
 
 function useChatModelByID(
     model: string | undefined
-): Pick<Model, 'id' | 'title' | 'provider'> | undefined {
+): Pick<Model, 'id' | 'title' | 'provider' | 'tags'> | undefined {
     const models = useExtensionAPI().models
     const chatModels = useObservable(useMemo(() => models(), [models])).value
     return (
@@ -228,6 +241,7 @@ function useChatModelByID(
                   id: model,
                   title: model,
                   provider: 'unknown',
+                  tags: [],
               }
             : undefined)
     )

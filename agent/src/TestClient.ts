@@ -728,7 +728,7 @@ export class TestClient extends MessageHandler {
     public async reset(id: string): Promise<void> {
         await this.request('webview/receiveMessage', {
             id,
-            message: { command: 'reset' },
+            message: { command: 'chatSession', action: 'new' },
         })
     }
 

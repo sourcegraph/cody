@@ -21,7 +21,13 @@ interface ModelRef {
 }
 
 export type ModelCategory = ModelTag.Power | ModelTag.Balanced | ModelTag.Speed
-type ModelStatus = ModelTag.Experimental | ModelTag.Experimental | 'stable' | ModelTag.Deprecated
+type ModelStatus =
+    | ModelTag.Experimental
+    | ModelTag.EarlyAccess
+    | ModelTag.OnWaitlist
+    | ModelTag.Waitlist
+    | 'stable'
+    | ModelTag.Deprecated
 export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise
 type ModelCapability = 'chat' | 'autocomplete'
 
@@ -536,7 +542,11 @@ export class ModelsService {
         // (But in reality, Sourcegraph.com wouldn't serve any Enterprise-only models to
         // Cody Pro users anyways.)
         if (isCodyProUser(status)) {
-            return tier !== 'enterprise'
+            return (
+                tier !== 'enterprise' &&
+                !resolved.tags.includes(ModelTag.Waitlist) &&
+                !resolved.tags.includes(ModelTag.OnWaitlist)
+            )
         }
 
         return tier === 'free'
@@ -553,7 +563,10 @@ export class ModelsService {
             return modelID
         }
 
-        return this.models.find(m => modelID.includes(m.id))
+        return (
+            this.models.find(m => modelID.endsWith(m.id)) ??
+            this.models.find(m => modelID.includes(m.id))
+        )
     }
 
     /**
@@ -581,6 +594,11 @@ export class ModelsService {
                 : `No models found for substring ${modelSubstring}.`
         const modelsList = this.models.map(m => m.id).join(', ')
         throw new Error(`${errorMessage} Available models: ${modelsList}`)
+    }
+
+    public isStreamDisabled(modelID: string): boolean {
+        const model = this.getModelByID(modelID)
+        return model?.tags.includes(ModelTag.StreamDisabled) ?? false
     }
 }
 

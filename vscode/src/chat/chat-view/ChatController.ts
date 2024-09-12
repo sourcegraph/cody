@@ -11,6 +11,7 @@ import {
     type ChatMessage,
     ClientConfigSingleton,
     CodyIDE,
+    type CompletionParameters,
     type ContextItem,
     type ContextItemOpenCtx,
     ContextItemSource,
@@ -87,6 +88,7 @@ import type { LocalEmbeddingsController } from '../../local-context/local-embedd
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
+import { joinModelWaitlist } from '../../models/sync'
 import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
 import { workspaceReposMonitor } from '../../repository/repo-metadata-from-git-api'
 import { authProvider } from '../../services/AuthProvider'
@@ -107,13 +109,14 @@ import {
 } from '../clientStateBroadcaster'
 import { getChatContextItemsForMention, getMentionMenuData } from '../context/chatContext'
 import type { ContextAPIClient } from '../context/contextAPIClient'
-import type {
-    ChatSubmitType,
-    ConfigurationSubsetForWebview,
-    ExtensionMessage,
-    LocalEnv,
-    SmartApplyResult,
-    WebviewMessage,
+import {
+    CODY_BLOG_URL_o1_WAITLIST,
+    type ChatSubmitType,
+    type ConfigurationSubsetForWebview,
+    type ExtensionMessage,
+    type LocalEnv,
+    type SmartApplyResult,
+    type WebviewMessage,
 } from '../protocol'
 import { countGeneratedCode } from '../utils'
 import { chatHistory } from './ChatHistoryManager'
@@ -355,9 +358,18 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'openURI':
                 vscode.commands.executeCommand('vscode.open', message.uri)
                 break
-            case 'links':
-                void openExternalLinks(message.value)
+            case 'links': {
+                let link = message.value
+                if (message.value === 'waitlist') {
+                    const authStatus = currentAuthStatusAuthed()
+                    const waitlistURI = CODY_BLOG_URL_o1_WAITLIST
+                    waitlistURI.searchParams.append('userId', authStatus?.username)
+                    link = waitlistURI.toString()
+                    void joinModelWaitlist(authStatus)
+                }
+                void openExternalLinks(link)
                 break
+            }
             case 'openFileLink':
                 vscode.commands.executeCommand('vscode.open', message.uri, {
                     selection: message.range,
@@ -395,8 +407,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await this.restoreSession(message.chatID)
                 this.setWebviewToChat()
                 break
-            case 'reset':
-                await this.clearAndRestartSession()
+            case 'chatSession':
+                switch (message.action) {
+                    case 'new':
+                        await this.clearAndRestartSession()
+                        break
+                    case 'duplicate':
+                        await this.duplicateSession(message.sessionID ?? this.chatModel.sessionID)
+                        break
+                }
                 break
             case 'command':
                 vscode.commands.executeCommand(message.id, message.arg)
@@ -1000,6 +1019,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             this.submitOrEditOperation.abort()
             this.submitOrEditOperation = undefined
         }
+        this.saveSession()
     }
 
     /**
@@ -1101,6 +1121,18 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // Reveal the webview panel if it is hidden
         if (this._webviewPanelOrView) {
             revealWebviewViewOrPanel(this._webviewPanelOrView)
+        }
+    }
+
+    public async handleResubmitLastUserInput(): Promise<void> {
+        const lastHumanMessage = this.chatModel.getLastHumanMessage()
+        const getLastHumanMessageText = lastHumanMessage?.text?.toString()
+        if (getLastHumanMessageText) {
+            await this.clearAndRestartSession()
+            void this.postMessage({
+                type: 'clientAction',
+                appendTextToLastPromptEditor: getLastHumanMessageText,
+            })
         }
     }
 
@@ -1356,15 +1388,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
 
         try {
-            const stream = this.chatClient.chat(
-                prompt,
-                {
-                    model: this.chatModel.modelID,
-                    maxTokensToSample: this.chatModel.contextWindow.output,
-                },
-                abortSignal
-            )
-
+            const params = {
+                model: this.chatModel.modelID,
+                maxTokensToSample: this.chatModel.contextWindow.output,
+            } as CompletionParameters
+            // Set stream param only when the model is disabled for streaming.
+            if (modelsService.instance!.isStreamDisabled(this.chatModel.modelID)) {
+                params.stream = false
+            }
+            const stream = this.chatClient.chat(prompt, params, abortSignal)
             for await (const message of stream) {
                 switch (message.type) {
                     case 'change': {
@@ -1468,6 +1500,28 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 })
             }
         }
+    }
+
+    private async duplicateSession(sessionID: string): Promise<void> {
+        this.cancelSubmitOrEditOperation()
+        const transcript = chatHistory.getChat(currentAuthStatusAuthed(), sessionID)
+        if (!transcript) {
+            return
+        }
+        // Assign a new session ID to the duplicated session
+        this.chatModel = newChatModelFromSerializedChatTranscript(
+            transcript,
+            this.chatModel.modelID,
+            new Date(Date.now()).toUTCString()
+        )
+        this.postViewTranscript()
+        await this.saveSession()
+        // Move the new session to the editor
+        await vscode.commands.executeCommand('cody.chat.moveToEditor')
+        // Restore the old session in the current window
+        await this.restoreSession(sessionID)
+
+        telemetryRecorder.recordEvent('cody.duplicateSession', 'clicked')
     }
 
     public async clearAndRestartSession(): Promise<void> {
@@ -1757,11 +1811,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
 function newChatModelFromSerializedChatTranscript(
     json: SerializedChatTranscript,
-    modelID: string
+    modelID: string,
+    newSessionID?: string
 ): ChatModel {
     return new ChatModel(
         migrateAndNotifyForOutdatedModels(modelID)!,
-        json.id,
+        newSessionID ?? json.id,
         json.interactions.flatMap((interaction: SerializedChatInteraction): ChatMessage[] =>
             [
                 PromptString.unsafe_deserializeChatMessage(interaction.humanMessage),

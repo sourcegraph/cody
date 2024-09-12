@@ -2,6 +2,7 @@ import {
     type ChatMessage,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
     type Model,
+    ModelTag,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     textContentFromSerializedLexicalNode,
@@ -304,15 +305,22 @@ export const HumanMessageEditor: FunctionComponent<{
         )
     )
 
-    const initialContext = useClientState().initialContext
+    const model = useCurrentChatModel()
+
+    let initialContext = useClientState().initialContext
     useEffect(() => {
         if (initialContext && !isSent && isFirstMessage) {
             const editor = editorRef.current
             if (editor) {
+                // Don't show the initial codebase context if the model doesn't support streaming
+                // as including context result in longer processing time.
+                if (model?.tags?.includes(ModelTag.StreamDisabled)) {
+                    initialContext = initialContext.filter(item => item.type !== 'tree')
+                }
                 editor.setInitialContextMentions(initialContext)
             }
         }
-    }, [initialContext, isSent, isFirstMessage])
+    }, [initialContext, isSent, isFirstMessage, model])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 
@@ -323,8 +331,6 @@ export const HumanMessageEditor: FunctionComponent<{
     }, [__storybook__focus, focusEditor])
 
     const focused = Boolean(isEditorFocused || isFocusWithin || __storybook__focus)
-
-    const model = useCurrentChatModel()
     const contextWindowSizeInTokens =
         model?.contextWindow?.context?.user ||
         model?.contextWindow?.input ||
