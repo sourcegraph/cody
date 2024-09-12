@@ -1,11 +1,12 @@
 import type { Observable } from 'observable-fns'
+import type { ChatMessage } from '../../chat/transcript/messages'
 import type { ContextItem } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
 import type { ContextMentionProviderMetadata } from '../../mentions/api'
 import type { MentionQuery } from '../../mentions/query'
 import type { Model } from '../../models'
-import type { Prompt } from '../../sourcegraph-api/graphql/client'
+import type { FetchHighlightFileParameters, Prompt } from '../../sourcegraph-api/graphql/client'
 import { type createMessageAPIForWebview, proxyExtensionAPI } from './rpc'
 
 export interface WebviewToExtensionAPI {
@@ -32,10 +33,14 @@ export interface WebviewToExtensionAPI {
      */
     models(): Observable<Model[]>
 
+    highlights(query: FetchHighlightFileParameters): Observable<string[][]>
+
     /**
      * Set the chat model.
      */
     setChatModel(model: Model['id']): Observable<void>
+
+    detectIntent(text: string): Observable<ChatMessage['intent']>
 }
 
 export function createExtensionAPI(
@@ -46,7 +51,9 @@ export function createExtensionAPI(
         evaluatedFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluatedFeatureFlag'),
         prompts: proxyExtensionAPI(messageAPI, 'prompts'),
         models: proxyExtensionAPI(messageAPI, 'models'),
+        highlights: proxyExtensionAPI(messageAPI, 'highlights'),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
+        detectIntent: proxyExtensionAPI(messageAPI, 'detectIntent'),
     }
 }
 

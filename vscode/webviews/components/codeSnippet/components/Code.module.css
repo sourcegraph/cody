@@ -1,0 +1,21 @@
+:root {
+    --code-font-size: #{(12/14)}em;
+    --code-font-family: sfmono-regular, consolas, menlo, dejavu sans mono, monospace;
+}
+
+.code {
+    white-space: pre;
+    line-height: 1rem;
+    font-size: var(--code-font-size);
+    font-family: var(--code-font-family);
+}
+
+.small {
+    font-size: 0.75rem;
+    line-height: 1rem;
+
+    /* Bootstrap applies `font-weight: 400;` to `small` element,
+       but we want to control `font-weight` only with `strong` or `.font-weight-medium`. */
+    font-weight: inherit;
+}
+

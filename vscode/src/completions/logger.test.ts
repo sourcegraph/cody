@@ -8,6 +8,7 @@ import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
 import * as CompletionLogger from './logger'
+import { type InlineCompletionItemContext, getInlineContextItemToLog } from './logger'
 import type { RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
 
@@ -74,7 +75,7 @@ describe('logger', () => {
             isFuzzyMatch: false,
             isDotComUser: false,
         })
-        const suggestionEvent = CompletionLogger.prepareSuggestionEvent(id)
+        const suggestionEvent = CompletionLogger.prepareSuggestionEvent({ id })
         suggestionEvent?.markAsRead({ document, position })
         CompletionLogger.accepted(id, document, item, range(0, 0, 0, 0), false)
 
@@ -83,6 +84,7 @@ describe('logger', () => {
             interactionID: expect.any(String),
             metadata: expect.anything(),
             privateMetadata: expect.anything(),
+            billingMetadata: expect.anything(),
         })
 
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'accepted', {
@@ -90,6 +92,7 @@ describe('logger', () => {
             interactionID: expect.any(String),
             metadata: expect.anything(),
             privateMetadata: expect.anything(),
+            billingMetadata: expect.anything(),
         })
     })
 
@@ -107,7 +110,7 @@ describe('logger', () => {
             isFuzzyMatch: false,
             isDotComUser: false,
         })
-        const firstSuggestionEvent = CompletionLogger.prepareSuggestionEvent(id1)
+        const firstSuggestionEvent = CompletionLogger.prepareSuggestionEvent({ id: id1 })
         firstSuggestionEvent?.markAsRead({ document, position })
 
         const loggerItem = CompletionLogger.getCompletionEvent(id1)
@@ -125,7 +128,7 @@ describe('logger', () => {
             isFuzzyMatch: false,
             isDotComUser: false,
         })
-        const secondSuggestionEvent = CompletionLogger.prepareSuggestionEvent(id2)
+        const secondSuggestionEvent = CompletionLogger.prepareSuggestionEvent({ id: id2 })
         secondSuggestionEvent?.markAsRead({ document, position })
         CompletionLogger.accepted(id2, document, item, range(0, 0, 0, 0), false)
 
@@ -150,7 +153,7 @@ describe('logger', () => {
             isFuzzyMatch: false,
             isDotComUser: false,
         })
-        const thirdSuggestionEvent = CompletionLogger.prepareSuggestionEvent(id3)
+        const thirdSuggestionEvent = CompletionLogger.prepareSuggestionEvent({ id: id3 })
         thirdSuggestionEvent?.markAsRead({ document, position })
 
         const loggerItem3 = CompletionLogger.getCompletionEvent(id3)
@@ -172,5 +175,97 @@ describe('logger', () => {
 
         CompletionLogger.partiallyAccept(id, item, 5, false)
         CompletionLogger.partiallyAccept(id, item, 8, false)
+    })
+
+    describe('getInlineContextItemToLog', () => {
+        it('filters context items based on payload size limit', () => {
+            const inlineCompletionItemContext: InlineCompletionItemContext = {
+                gitUrl: 'https://github.com/example/repo',
+                commit: 'abc123',
+                filePath: '/path/to/file.ts',
+                prefix: 'const foo = ',
+                suffix: ';',
+                triggerLine: 10,
+                triggerCharacter: 5,
+                isRepoPublic: true,
+                context: [
+                    {
+                        identifier: 'item1',
+                        content: 'a'.repeat(500 * 1024),
+                        startLine: 1,
+                        endLine: 10,
+                        filePath: '/path/to/file1.ts',
+                    },
+                    {
+                        identifier: 'item2',
+                        content: 'b'.repeat(300 * 1024),
+                        startLine: 11,
+                        endLine: 20,
+                        filePath: '/path/to/file2.ts',
+                    },
+                    {
+                        identifier: 'item3',
+                        content: 'c'.repeat(300 * 1024),
+                        startLine: 21,
+                        endLine: 30,
+                        filePath: '/path/to/file3.ts',
+                    },
+                ],
+            }
+
+            const result = getInlineContextItemToLog(inlineCompletionItemContext)
+
+            expect(result).toBeDefined()
+            expect(result?.prefix).toBe('const foo = ')
+            expect(result?.suffix).toBe(';')
+            expect(result?.context).toHaveLength(2)
+            expect(result?.context?.[0].identifier).toBe('item1')
+            expect(result?.context?.[1].identifier).toBe('item2')
+            expect(result?.context?.[2]).toBeUndefined()
+        })
+
+        it('filters when the prefix and suffix is too long', () => {
+            const inlineCompletionItemContext: InlineCompletionItemContext = {
+                gitUrl: 'https://github.com/example/repo',
+                commit: 'abc123',
+                filePath: '/path/to/file.ts',
+                prefix: 'a'.repeat(1024 * 1024),
+                suffix: ';',
+                triggerLine: 10,
+                triggerCharacter: 5,
+                isRepoPublic: true,
+                context: [
+                    {
+                        identifier: 'item1',
+                        content: 'a'.repeat(500 * 1024),
+                        startLine: 1,
+                        endLine: 10,
+                        filePath: '/path/to/file1.ts',
+                    },
+                    {
+                        identifier: 'item2',
+                        content: 'b'.repeat(300 * 1024),
+                        startLine: 11,
+                        endLine: 20,
+                        filePath: '/path/to/file2.ts',
+                    },
+                    {
+                        identifier: 'item3',
+                        content: 'c'.repeat(300 * 1024),
+                        startLine: 21,
+                        endLine: 30,
+                        filePath: '/path/to/file3.ts',
+                    },
+                ],
+            }
+
+            const result = getInlineContextItemToLog(inlineCompletionItemContext)
+            expect(result).toBeUndefined()
+        })
+
+        it('returns undefined for undefined input', () => {
+            const result = getInlineContextItemToLog(undefined)
+            expect(result).toBeUndefined()
+        })
     })
 })

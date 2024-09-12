@@ -32,6 +32,7 @@ interface ChatboxProps {
     showIDESnippetActions?: boolean
     setView: (view: View) => void
     smartApplyEnabled?: boolean
+    experimentalOneBoxEnabled?: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -46,6 +47,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showIDESnippetActions = true,
     setView,
     smartApplyEnabled,
+    experimentalOneBoxEnabled,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -79,6 +81,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     responseText: userInfo.isDotComUser
                         ? truncateTextStart(transcriptRef.current.toString(), CHAT_INPUT_TOKEN_BUDGET)
                         : '',
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
                 },
             })
         },
@@ -227,6 +233,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 postMessage={postMessage}
                 guardrails={guardrails}
                 smartApplyEnabled={smartApplyEnabled}
+                experimentalOneBoxEnabled={experimentalOneBoxEnabled}
             />
             {transcript.length === 0 && showWelcomeMessage && (
                 <WelcomeMessage IDE={userInfo.ide} setView={setView} />

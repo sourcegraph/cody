@@ -114,7 +114,8 @@ class LocalStorageDB implements DB {
     storage: LocalStorage
 
     constructor(ide: string, dir: string) {
-        this.storage = new LocalStorage(path.join(dir, `${ide}-globalState`))
+        const quota = 1024 * 1024 * 256 // 256 MB
+        this.storage = new LocalStorage(path.join(dir, `${ide}-globalState`), quota)
     }
 
     get(key: string): any {

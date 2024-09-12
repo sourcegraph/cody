@@ -1,11 +1,12 @@
 import { isEqual } from 'lodash'
 import { LRUCache } from 'lru-cache'
+import { type Observable, map } from 'observable-fns'
 import { RE2JS as RE2 } from 're2js'
 import type * as vscode from 'vscode'
-import type { AuthStatusProvider } from '../auth/types'
 import { isFileURI } from '../common/uri'
+import { resolvedConfig } from '../configuration/resolver'
 import { logDebug, logError } from '../logger'
-import { setSingleton, singletonNotYetSet } from '../singletons'
+import { type Unsubscribable, fromVSCodeEvent } from '../misc/observable'
 import { isDotCom } from '../sourcegraph-api/environments'
 import { graphqlClient } from '../sourcegraph-api/graphql'
 import {
@@ -53,7 +54,10 @@ export type IsIgnored =
     | 'no-repo-found'
     | `repo:${string}`
 
-export type GetRepoNamesFromWorkspaceUri = (uri: vscode.Uri) => Promise<string[] | null>
+export type GetRepoNamesFromWorkspaceUri = (
+    uri: vscode.Uri,
+    signal?: AbortSignal
+) => Promise<string[] | null>
 type RepoName = string
 type IsRepoNameIgnored = boolean
 
@@ -76,6 +80,10 @@ function canonicalizeContextFilters(filters: ContextFilters): ContextFilters {
 }
 
 export class ContextFiltersProvider implements vscode.Disposable {
+    static repoNameResolver: {
+        getRepoNamesFromWorkspaceUri: GetRepoNamesFromWorkspaceUri
+    }
+
     /**
      * `null` value means that we failed to fetch context filters.
      * In that case, we should exclude all the URIs.
@@ -84,13 +92,10 @@ export class ContextFiltersProvider implements vscode.Disposable {
     private parsedContextFilters: ParsedContextFilters | null = null
 
     private cache = new LRUCache<RepoName, IsRepoNameIgnored>({ max: 128 })
-    private getRepoNamesFromWorkspaceUri: GetRepoNamesFromWorkspaceUri | undefined = undefined
 
     private lastFetchDelay = 0
     private lastResultLifetime: ResultLifetime | undefined = undefined
     private fetchIntervalId: NodeJS.Timeout | undefined | number
-
-    private authStatusProvider: AuthStatusProvider | null = null
 
     // Visible for testing.
     public get timerStateForTest() {
@@ -100,14 +105,15 @@ export class ContextFiltersProvider implements vscode.Disposable {
     private readonly contextFiltersSubscriber = createSubscriber<ContextFilters>()
     public readonly onContextFiltersChanged = this.contextFiltersSubscriber.subscribe
 
-    async init(
-        getRepoNamesFromWorkspaceUri: GetRepoNamesFromWorkspaceUri,
-        authStatusProvider: AuthStatusProvider
-    ) {
-        this.getRepoNamesFromWorkspaceUri = getRepoNamesFromWorkspaceUri
-        this.authStatusProvider = authStatusProvider
-        this.reset()
-        this.startRefetchTimer(await this.fetchContextFilters())
+    private isDotCom = false
+    private configSubscription: Unsubscribable
+
+    constructor() {
+        this.configSubscription = resolvedConfig
+            .pipe(map(config => isDotCom(config.auth.serverEndpoint)))
+            .subscribe(isDotCom => {
+                this.isDotCom = isDotCom
+            })
     }
 
     // Fetches context filters and updates the cached filter results. Returns
@@ -125,6 +131,13 @@ export class ContextFiltersProvider implements vscode.Disposable {
             })
             return 'ephemeral'
         }
+    }
+
+    public get changes(): Observable<ContextFilters> {
+        return fromVSCodeEvent(listener => {
+            const dispose = this.onContextFiltersChanged(listener)
+            return { dispose }
+        })
     }
 
     private setContextFilters(contextFilters: ContextFilters): void {
@@ -150,14 +163,17 @@ export class ContextFiltersProvider implements vscode.Disposable {
         this.contextFiltersSubscriber.notify(contextFilters)
     }
 
+    private isTesting = false
+
     /**
      * Overrides context filters for testing.
      */
     public setTestingContextFilters(contextFilters: ContextFilters | null): void {
         if (contextFilters === null) {
-            // Reset context filters to the value from the Sourcegraph API.
-            this.init(this.getRepoNamesFromWorkspaceUri!, this.authStatusProvider!)
+            this.isTesting = false
+            this.reset() // reset context filters to the value from the Sourcegraph API
         } else {
+            this.isTesting = true
             this.setContextFilters(contextFilters)
         }
     }
@@ -174,7 +190,23 @@ export class ContextFiltersProvider implements vscode.Disposable {
         }, this.lastFetchDelay)
     }
 
-    public isRepoNameIgnored(repoName: string): boolean {
+    private async fetchIfNeeded(): Promise<void> {
+        if (!this.fetchIntervalId && !this.isTesting) {
+            const intervalHint = await this.fetchContextFilters()
+            this.startRefetchTimer(intervalHint)
+        }
+    }
+
+    public async isRepoNameIgnored(repoName: string): Promise<boolean> {
+        if (this.isDotCom) {
+            return false
+        }
+
+        await this.fetchIfNeeded()
+        return this.isRepoNameIgnored__noFetch(repoName)
+    }
+
+    private isRepoNameIgnored__noFetch(repoName: string): boolean {
         const cached = this.cache.get(repoName)
         if (cached !== undefined) {
             return cached
@@ -202,6 +234,11 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public async isUriIgnored(uri: vscode.Uri): Promise<IsIgnored> {
+        if (this.isDotCom) {
+            return false
+        }
+        await this.fetchIfNeeded()
+
         if (allowedSchemes.has(uri.scheme) || this.hasAllowEverythingFilters()) {
             return false
         }
@@ -215,11 +252,14 @@ export class ContextFiltersProvider implements vscode.Disposable {
             return 'non-file-uri'
         }
 
+        if (!ContextFiltersProvider.repoNameResolver) {
+            throw new Error('ContextFiltersProvider.repoNameResolver must be set statically')
+        }
         const repoNames = await wrapInActiveSpan(
             'repoNameResolver.getRepoNamesFromWorkspaceUri',
             span => {
                 span.setAttribute('sampled', true)
-                return this.getRepoNamesFromWorkspaceUri?.(uri)
+                return ContextFiltersProvider.repoNameResolver.getRepoNamesFromWorkspaceUri?.(uri)
             }
         )
 
@@ -227,7 +267,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
             return 'no-repo-found'
         }
 
-        const ignoredRepo = repoNames.find(repoName => this.isRepoNameIgnored(repoName))
+        const ignoredRepo = repoNames.find(repoName => this.isRepoNameIgnored__noFetch(repoName))
         if (ignoredRepo) {
             return `repo:${ignoredRepo}`
         }
@@ -245,22 +285,17 @@ export class ContextFiltersProvider implements vscode.Disposable {
 
         if (this.fetchIntervalId) {
             clearTimeout(this.fetchIntervalId)
+            this.fetchIntervalId = undefined
         }
     }
 
     public dispose(): void {
         this.reset()
+        this.configSubscription.unsubscribe()
     }
 
     private hasAllowEverythingFilters(): boolean {
-        return this.isDotCom() || this.lastContextFiltersResponse === INCLUDE_EVERYTHING_CONTEXT_FILTERS
-    }
-
-    private isDotCom(): boolean {
-        if (!this.authStatusProvider) {
-            throw new Error('authStatusProvider is not set, ContextFiltersProvider.init must be called')
-        }
-        return isDotCom(this.authStatusProvider.status)
+        return this.isDotCom || this.lastContextFiltersResponse === INCLUDE_EVERYTHING_CONTEXT_FILTERS
     }
 
     private hasIgnoreEverythingFilters() {
@@ -292,7 +327,6 @@ function parseContextFilterItem(item: CodyContextFilterItem): ParsedContextFilte
 
 /**
  * A singleton instance of the `ContextFiltersProvider` class.
- * `contextFiltersProvider.instance!.init` should be called and awaited on extension activation.
+ * `contextFiltersProvider.init` should be called and awaited on extension activation.
  */
-export const contextFiltersProvider = singletonNotYetSet<ContextFiltersProvider>()
-setSingleton(contextFiltersProvider, new ContextFiltersProvider())
+export const contextFiltersProvider = new ContextFiltersProvider()

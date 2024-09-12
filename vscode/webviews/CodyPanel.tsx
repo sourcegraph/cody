@@ -29,6 +29,7 @@ export const CodyPanel: FunctionComponent<
         | 'showWelcomeMessage'
         | 'showIDESnippetActions'
         | 'smartApplyEnabled'
+        | 'experimentalOneBoxEnabled'
     > &
         Pick<ComponentProps<typeof HistoryTab>, 'userHistory'>
 > = ({
@@ -48,6 +49,7 @@ export const CodyPanel: FunctionComponent<
     showWelcomeMessage,
     userHistory,
     smartApplyEnabled,
+    experimentalOneBoxEnabled,
 }) => {
     const tabContainerRef = useRef<HTMLDivElement>(null)
 
@@ -56,9 +58,11 @@ export const CodyPanel: FunctionComponent<
         const json = JSON.stringify(userHistory, null, 2)
         const blob = new Blob([json], { type: 'application/json' })
         const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5) // Format: YYYY-MM-DDTHH-mm
+        const a = document.createElement('a') // a temporary anchor element
         a.href = url
-        a.download = 'cody-chat-history.json'
+        a.download = `cody-chat-history-${timestamp}.json`
+        a.target = '_blank'
         a.click()
     }, [userHistory])
 
@@ -92,6 +96,7 @@ export const CodyPanel: FunctionComponent<
                         showWelcomeMessage={showWelcomeMessage}
                         scrollableParent={tabContainerRef.current}
                         smartApplyEnabled={smartApplyEnabled}
+                        experimentalOneBoxEnabled={experimentalOneBoxEnabled}
                         setView={setView}
                     />
                 )}
@@ -105,7 +110,7 @@ export const CodyPanel: FunctionComponent<
                     />
                 )}
                 {view === View.Prompts && <PromptsTab setView={setView} />}
-                {view === View.Account && <AccountTab />}
+                {view === View.Account && <AccountTab setView={setView} />}
                 {view === View.Settings && <SettingsTab />}
             </TabContainer>
         </TabRoot>

@@ -4,7 +4,7 @@ import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getLanguageConfig } from '../../../../tree-sitter/language'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
-import { type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
+import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 
 interface TrackedDocument {
     content: string
@@ -24,7 +24,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
     // We use a map from the document URI to the set of tracked completions inside that document to
     // improve performance of the `onDidChangeTextDocument` event handler.
     private trackedDocuments: Map<string, TrackedDocument> = new Map()
-    public identifier = 'recent-edits'
+    public identifier = RetrieverIdentifier.RecentEditsRetriever
     private disposables: vscode.Disposable[] = []
 
     constructor(
@@ -54,6 +54,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
             ).toString()
             const autocompleteSnippet = {
                 uri: diff.uri,
+                identifier: RetrieverIdentifier.RecentEditsRetriever,
                 content,
             } satisfies Omit<AutocompleteContextSnippet, 'startLine' | 'endLine'>
             autocompleteContextSnippets.push(autocompleteSnippet)
@@ -124,7 +125,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
     }
 
     public async getDiff(uri: vscode.Uri): Promise<PromptString | null> {
-        if (await contextFiltersProvider.instance!.isUriIgnored(uri)) {
+        if (await contextFiltersProvider.isUriIgnored(uri)) {
             return null
         }
 

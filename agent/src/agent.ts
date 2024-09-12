@@ -56,7 +56,7 @@ import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/ex
 import type { QuickPickInput } from '../../vscode/src/edit/input/get-input'
 import { getModelOptionItems } from '../../vscode/src/edit/input/get-items/model'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
-import type { ExtensionClient, ExtensionObjects } from '../../vscode/src/extension-client'
+import type { ExtensionClient } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
@@ -88,7 +88,6 @@ import type {
     GetDocumentsParams,
     GetDocumentsResult,
     GetFoldingRangeResult,
-    ProtocolCommand,
     ProtocolTextDocument,
     TextEdit,
 } from './protocol-alias'
@@ -396,18 +395,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
             if (clientInfo.capabilities?.codeLenses === 'enabled') {
                 vscode_shim.onDidRegisterNewCodeLensProvider(codeLensProvider => {
-                    this.codeLens.addProvider(
-                        codeLensProvider,
-                        codeLensProvider.onDidChangeCodeLenses?.(() => this.updateCodeLenses())
-                    )
-                    this.updateCodeLenses()
+                    this.codeLens.addProvider(codeLensProvider)
                 })
                 vscode_shim.onDidUnregisterNewCodeLensProvider(codeLensProvider =>
                     this.codeLens.removeProvider(codeLensProvider)
                 )
             }
             if (clientInfo.capabilities?.ignore === 'enabled') {
-                contextFiltersProvider.instance!.onContextFiltersChanged(() => {
+                contextFiltersProvider.onContextFiltersChanged(() => {
                     // Forward policy change notifications to the client.
                     this.notify('ignore/didChange', null)
                 })
@@ -1309,14 +1304,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return []
         })
 
-        this.registerAuthenticatedRequest('chat/remoteRepos', async ({ id }) => {
-            const panel = this.webPanels.getPanelOrError(id)
-            await this.receiveWebviewMessage(id, {
-                command: 'context/get-remote-search-repos',
-            })
-            return { remoteRepos: panel.remoteRepos }
-        })
-
         this.registerAuthenticatedRequest('chat/setModel', async ({ id, model }) => {
             const panel = this.webPanels.getPanelOrError(id)
             await waitUntilComplete(panel.extensionAPI.setChatModel(model))
@@ -1397,7 +1384,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
-            return featureFlagProvider.instance!.evaluateFeatureFlag(
+            return featureFlagProvider.evaluateFeatureFlag(
                 FeatureFlag[flagName as keyof typeof FeatureFlag]
             )
         })
@@ -1416,39 +1403,16 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
-        this.registerAuthenticatedRequest('remoteRepo/has', async ({ repoName }, cancelToken) => {
-            return {
-                result: await this.extension.enterpriseContextFactory.repoSearcher.has(repoName),
-            }
-        })
-
-        this.registerAuthenticatedRequest('remoteRepo/list', async ({ query, first, afterId }) => {
-            const result = await this.extension.enterpriseContextFactory.repoSearcher.list(
-                query ?? undefined,
-                first,
-                afterId ?? undefined
-            )
-            return {
-                repos: result.repos,
-                startIndex: result.startIndex,
-                count: result.count,
-                state: {
-                    state: result.state,
-                    error: errorToCodyError(result.lastError),
-                },
-            }
-        })
-
         this.registerAuthenticatedRequest('ignore/test', async ({ uri: uriString }) => {
             const uri = vscode.Uri.parse(uriString)
-            const isIgnored = await contextFiltersProvider.instance!.isUriIgnored(uri)
+            const isIgnored = await contextFiltersProvider.isUriIgnored(uri)
             return {
                 policy: isIgnored ? 'ignore' : 'use',
             } as const
         })
 
         this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async contextFilters => {
-            contextFiltersProvider.instance!.setTestingContextFilters(contextFilters)
+            contextFiltersProvider.setTestingContextFilters(contextFilters)
             return null
         })
     }
@@ -1506,34 +1470,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
         return result ? vscode_shim.workspace.openTextDocument(result.uri) : undefined
     }
 
-    private maybeExtension: ExtensionObjects | undefined
-
-    public async provide(extension: ExtensionObjects): Promise<vscode.Disposable> {
-        this.maybeExtension = extension
-
-        const disposables: vscode.Disposable[] = []
-
-        const repoSearcher = this.extension.enterpriseContextFactory.repoSearcher
-        disposables.push(
-            repoSearcher.onFetchStateChanged(({ state, error }) => {
-                this.notify('remoteRepo/didChangeState', {
-                    state,
-                    error: errorToCodyError(error),
-                })
-            }),
-            repoSearcher.onRepoListChanged(() => {
-                this.notify('remoteRepo/didChange', null)
-            }),
-            {
-                dispose: () => {
-                    this.maybeExtension = undefined
-                },
-            }
-        )
-
-        return vscode.Disposable.from(...disposables)
-    }
-
     get clientName(): string {
         return this.clientInfo?.name.toLowerCase() || 'uninitialized-agent'
     }
@@ -1548,89 +1484,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
     get capabilities(): agent_protocol.ClientCapabilities | undefined {
         return this.clientInfo?.capabilities ?? undefined
-    }
-
-    /**
-     * Gets provided extension objects. This may only be called after
-     * registration is complete.
-     */
-    private get extension(): ExtensionObjects {
-        if (!this.maybeExtension) {
-            throw new Error('Extension registration not yet complete')
-        }
-        return this.maybeExtension
-    }
-
-    private codeLensToken = new vscode.CancellationTokenSource()
-    /**
-     * Matches VS Code codicon syntax, e.g. $(cody-logo)
-     * Source: https://sourcegraph.com/github.com/microsoft/vscode@f34d4/-/blob/src/vs/base/browser/ui/iconLabel/iconLabels.ts?L9
-     */
-    private labelWithIconsRegex = /(\\)?\$\(([A-Za-z0-9-]+(?:~[A-Za-z]+)?)\)/g
-    /**
-     * Given a title, such as "$(cody-logo) Cody", returns the raw
-     * title without icons and the icons matched with their respective positions.
-     */
-    private splitIconsFromTitle(title: string): ProtocolCommand['title'] {
-        const icons: { value: string; position: number }[] = []
-        const matches = [...title.matchAll(this.labelWithIconsRegex)]
-
-        for (const match of matches) {
-            if (match.index !== undefined) {
-                icons.push({ value: match[0], position: match.index })
-            }
-        }
-
-        return { text: title.replace(this.labelWithIconsRegex, ''), icons }
-    }
-
-    private async updateCodeLenses(): Promise<void> {
-        const uri = this.workspace.activeDocumentFilePath
-        if (!uri) {
-            return
-        }
-        const document = this.workspace.getDocument(uri)
-        if (!document) {
-            return
-        }
-        this.codeLensToken.cancel()
-        this.codeLensToken = new vscode.CancellationTokenSource()
-        const promises: Promise<vscode.CodeLens[]>[] = []
-        for (const provider of this.codeLens.providers()) {
-            promises.push(this.provideCodeLenses(provider, document))
-        }
-        const lenses = (await Promise.all(promises)).flat()
-
-        // VS Code supports icons in code lenses, but we cannot render these through agent.
-        // We need to strip any icons from the title and provide those seperately, so the client can decide how to render them.
-        const agentLenses = lenses.map(lens => {
-            if (!lens.command) {
-                return {
-                    ...lens,
-                    command: undefined,
-                }
-            }
-
-            return {
-                ...lens,
-                command: {
-                    ...lens.command,
-                    title: this.splitIconsFromTitle(lens.command.title),
-                },
-            }
-        })
-
-        this.notify('codeLenses/display', {
-            uri: uri.toString(),
-            codeLenses: agentLenses,
-        })
-    }
-    private async provideCodeLenses(
-        provider: vscode.CodeLensProvider,
-        document: vscode.TextDocument
-    ): Promise<vscode.CodeLens[]> {
-        const result = await provider.provideCodeLenses(document, this.codeLensToken.token)
-        return result ?? []
     }
 
     private async handleConfigChanges(
@@ -1732,8 +1585,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         panel.isMessageInProgress = message.isMessageInProgress
                         panel.messageInProgressChange.fire(message)
                     }
-                } else if (message.type === 'context/remote-repos') {
-                    panel.remoteRepos = message.repos
                 } else if (message.type === 'errors') {
                     panel.messageInProgressChange.fire(message)
                 } else if (message.type === 'attribution') {

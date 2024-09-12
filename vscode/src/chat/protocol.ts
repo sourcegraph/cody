@@ -2,13 +2,13 @@ import type { URI } from 'vscode-uri'
 
 import type {
     AuthStatus,
+    ChatMessage,
     ClientConfigurationWithEndpoint,
     ClientStateForWebview,
     CodyIDE,
     ContextItem,
     ContextItemSource,
     MentionQuery,
-    Prompt,
     RangeData,
     RequestMessage,
     ResponseMessage,
@@ -22,7 +22,6 @@ import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import type { Uri } from 'vscode'
 import type { View } from '../../webviews/tabs/types'
-import type { Repo } from '../context/repo-fetcher'
 import type { FixupTaskID } from '../non-stop/FixupTask'
 import type { CodyTaskState } from '../non-stop/state'
 
@@ -122,7 +121,6 @@ export type WebviewMessage =
           range?: RangeData | undefined | null
       }
     | ({ command: 'edit' } & WebviewEditMessage)
-    | { command: 'context/get-remote-search-repos' }
     | { command: 'embeddings/index' }
     | { command: 'insert'; text: string }
     | { command: 'newFile'; text: string }
@@ -177,11 +175,8 @@ export type WebviewMessage =
     | {
           command: 'troubleshoot/reloadAuth'
       }
-    | {
-          command: 'queryPrompts'
-          query: string
-      }
     | { command: 'rpc/request'; message: RequestMessage }
+    | { command: 'log'; level: 'debug' | 'error'; filterLabel: string; message: string }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID
@@ -225,12 +220,6 @@ export type ExtensionMessage =
           smartApplyResult?: SmartApplyResult | undefined | null
       }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
-    | { type: 'context/remote-repos'; repos: Repo[] }
-    | {
-          type: 'queryPrompts/response'
-          result?: Prompt[] | null | undefined
-          error?: string | null | undefined
-      }
     | { type: 'rpc/response'; message: ResponseMessage }
 
 interface ExtensionAttributionMessage {
@@ -258,6 +247,7 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
+    intent?: ChatMessage['intent'] | undefined | null
 }
 
 interface WebviewEditMessage extends WebviewContextMessage {
@@ -266,11 +256,12 @@ interface WebviewEditMessage extends WebviewContextMessage {
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
+    intent?: ChatMessage['intent'] | undefined | null
 }
 
 interface WebviewContextMessage {
     addEnhancedContext?: boolean | undefined | null
-    contextFiles?: ContextItem[] | undefined | null
+    contextItems?: ContextItem[] | undefined | null
 }
 
 export interface ExtensionTranscriptMessage {
@@ -292,6 +283,7 @@ export interface ConfigurationSubsetForWebview
         | 'internalDebugContext'
     > {
     smartApply: boolean
+    experimentalOneBox: boolean
     // Type/location of the current webview.
     webviewType?: WebviewType | undefined | null
     // Whether support running multiple webviews (e.g. sidebar w/ multiple editor panels).

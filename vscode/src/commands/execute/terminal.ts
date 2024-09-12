@@ -32,6 +32,10 @@ export async function executeExplainOutput(
                 source,
                 traceId: span.spanContext().traceId,
             },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
+            },
         })
 
         const promptArgs = PromptString.fromTerminalOutputArguments(args)
@@ -53,7 +57,7 @@ export async function executeExplainOutput(
             session: await executeChat({
                 text: prompt,
                 submitType: 'user-newchat',
-                contextFiles: [],
+                contextItems: [],
                 addEnhancedContext,
                 source,
             }),

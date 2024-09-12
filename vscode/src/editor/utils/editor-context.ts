@@ -18,7 +18,6 @@ import {
     displayPath,
     graphqlClient,
     isAbortError,
-    isCodyIgnoredFile,
     isDefined,
     isErrorLike,
     isWindows,
@@ -77,6 +76,17 @@ export async function getFileContextFiles(options: FileContextItemsOptions): Pro
             return []
         }
 
+        const ignoredRepoNames = new Map<string, boolean>(
+            await Promise.all(
+                filesOrError
+                    .map(item => item.repository.name)
+                    .map(
+                        async repoName =>
+                            [repoName, await contextFiltersProvider.isRepoNameIgnored(repoName)] as const
+                    )
+            )
+        )
+
         return filesOrError.map<ContextItemFile>(item => ({
             range,
             type: 'file',
@@ -85,7 +95,7 @@ export async function getFileContextFiles(options: FileContextItemsOptions): Pro
             size: range ? 100 : item.file.byteSize,
             source: ContextItemSource.User,
             remoteRepositoryName: item.repository.name,
-            isIgnored: contextFiltersProvider.instance!.isRepoNameIgnored(item.repository.name),
+            isIgnored: ignoredRepoNames.get(item.repository.name),
             uri: URI.file(`${item.repository.name}/${item.file.path}`),
         }))
     }
@@ -188,12 +198,23 @@ export async function getSymbolContextFiles(
             return []
         }
 
+        const ignoredRepoNames = new Map<string, boolean>(
+            await Promise.all(
+                symbolsOrError
+                    .map(item => item.repository.name)
+                    .map(
+                        async repoName =>
+                            [repoName, await contextFiltersProvider.isRepoNameIgnored(repoName)] as const
+                    )
+            )
+        )
+
         return symbolsOrError.flatMap<ContextItemSymbol>(item =>
             item.symbols.map(symbol => ({
                 type: 'symbol',
                 remoteRepositoryName: item.repository.name,
                 uri: URI.file(`${item.repository.name}/${symbol.location.resource.path}`),
-                isIgnored: contextFiltersProvider.instance!.isRepoNameIgnored(item.repository.name),
+                isIgnored: ignoredRepoNames.get(item.repository.name),
                 source: ContextItemSource.User,
                 symbolName: symbol.name,
                 // TODO [VK] Support other symbols kind
@@ -262,9 +283,9 @@ export async function getOpenTabsContextFile(): Promise<ContextItemFile[]> {
     return await filterContextItemFiles(
         (
             await Promise.all(
-                getOpenTabsUris()
-                    .filter(uri => !isCodyIgnoredFile(uri))
-                    .map(uri => createContextFileFromUri(uri, ContextItemSource.User, 'file'))
+                getOpenTabsUris().map(uri =>
+                    createContextFileFromUri(uri, ContextItemSource.User, 'file')
+                )
             )
         ).flat()
     )
@@ -292,10 +313,6 @@ async function createContextFileFromUri(
     kind?: SymbolKind,
     symbolName?: string
 ): Promise<ContextItem[]> {
-    if (isCodyIgnoredFile(uri)) {
-        return []
-    }
-
     const range = toRangeData(selectionRange)
     return [
         type === 'file'
@@ -304,7 +321,7 @@ async function createContextFileFromUri(
                   uri,
                   range,
                   source,
-                  isIgnored: Boolean(await contextFiltersProvider.instance!.isUriIgnored(uri)),
+                  isIgnored: Boolean(await contextFiltersProvider.isUriIgnored(uri)),
               }
             : {
                   type,

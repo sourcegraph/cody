@@ -20,18 +20,21 @@ export const completionParams = paramsWithInlinedCompletion(
 
 export const contextSnippets = [
     {
+        identifier: 'jaccard-similarity',
         uri: testFileUri('codebase/context1.ts'),
         content: 'function contextSnippetOne() {}',
         startLine: 1,
         endLine: 2,
     },
     {
+        identifier: 'jaccard-similarity',
         uri: testFileUri('codebase/context2.ts'),
         content: 'const contextSnippet2 = {}',
         startLine: 1,
         endLine: 2,
     },
     {
+        identifier: 'jaccard-similarity',
         uri: testFileUri('codebase/context3.ts'),
         content: 'interface ContextParams {}',
         startLine: 1,

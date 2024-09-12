@@ -1,6 +1,5 @@
-import { FeatureFlag } from '@sourcegraph/cody-shared'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { completionProviderConfig } from '../../../completion-provider-config'
 import { type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 
 interface HistoryItem {
@@ -9,7 +8,7 @@ interface HistoryItem {
 
 export interface DocumentHistory {
     addItem(newItem: HistoryItem): void
-    lastN(n: number, languageId?: string, ignoreUris?: vscode.Uri[]): HistoryItem[]
+    lastN(n: number, languageId?: string, ignoreUris?: vscode.Uri[]): Promise<HistoryItem[]>
 }
 
 export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable {
@@ -63,7 +62,17 @@ export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable
     /**
      * Returns the last n items of history in reverse chronological order (latest item at the front)
      */
-    public lastN(n: number, baseLanguageId: string, ignoreUris?: vscode.Uri[]): HistoryItem[] {
+    public async lastN(
+        n: number,
+        baseLanguageId: string,
+        ignoreUris?: vscode.Uri[]
+    ): Promise<HistoryItem[]> {
+        const enableExtendedLanguagePool = Boolean(
+            await featureFlagProvider.evaluateFeatureFlag(
+                FeatureFlag.CodyAutocompleteContextExtendLanguagePool
+            )
+        )
+
         const ret: HistoryItem[] = []
         const ignoreSet = new Set(ignoreUris || [])
         for (let i = this.history.length - 1; i >= 0; i--) {
@@ -75,9 +84,7 @@ export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable
                 continue
             }
             const params: ShouldUseContextParams = {
-                enableExtendedLanguagePool: completionProviderConfig.getPrefetchedFlag(
-                    FeatureFlag.CodyAutocompleteContextExtendLanguagePool
-                ),
+                enableExtendedLanguagePool,
                 baseLanguageId: baseLanguageId,
                 languageId: item.document.languageId,
             }

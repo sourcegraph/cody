@@ -27,7 +27,7 @@ testGitWorkspace.extend<ExtraWorkspaceSettings>({
     // Open the Source Control View to confirm this is a git workspace
     const sourceControlView = page.getByLabel(/Source Control/).nth(2)
     await sourceControlView.click()
-    await expect(page.getByRole('heading', { name: 'Source Control' })).toBeVisible()
+    await expect(page.locator('h2').filter({ hasText: 'Source Control' })).toBeVisible()
     await expect(page.getByText('index.js')).toBeVisible()
 
     // Disable do-not-disturb
@@ -61,14 +61,10 @@ testGitWorkspace.extend<ExtraWorkspaceSettings>({
     // Commit the change so we empty the input box
     page.getByRole('button', { name: 'Commit' })
 
-    // await page.getByRole('heading', { name: 'Source Control' }).hover()
     await page.getByText('Changes3').click()
     await page.getByText('Changes3').getByLabel('Stage All Changes').click()
 
     await page.getByRole('button', { name: 'Generate Commit Message (Experimental)' }).click()
 
     await expect(scmInputBox.filter({ hasText: 'hello from the assistant' }).first()).toBeVisible()
-
-    // Verify notification is shown if items are ignored
-    await expect(page.getByLabel('Cody was forced to skip 1 file').first()).toBeVisible()
 })

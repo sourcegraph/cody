@@ -3,24 +3,33 @@ import * as vscode from 'vscode'
 import {
     type ChatClient,
     ClientConfigSingleton,
-    type ClientConfiguration,
-    type ClientConfigurationWithAccessToken,
-    type ClientConfigurationWithEndpoint,
-    type ConfigWatcher,
+    type ConfigurationInput,
     type DefaultCodyCommands,
     type Guardrails,
     PromptString,
+    type ResolvedConfiguration,
+    authStatus,
+    combineLatest,
     contextFiltersProvider,
+    currentAuthStatus,
+    currentAuthStatusOrNotReadyYet,
+    distinctUntilChanged,
     featureFlagProvider,
+    firstValueFrom,
+    fromVSCodeEvent,
     graphqlClient,
     isDotCom,
     modelsService,
+    resolvedConfig,
+    resolvedConfigWithAccessToken,
     setClientNameVersion,
     setLogger,
-    setSingleton,
+    setResolvedConfigurationObservable,
+    startWith,
     subscriptionDisposable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
+import { filter, map } from 'observable-fns'
 import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
@@ -53,9 +62,7 @@ import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { createInlineCompletionItemFromMultipleProviders } from './completions/create-multi-model-inline-completion-provider'
 import { defaultCodeCompletionsClient } from './completions/default-client'
-import { getFullConfig } from './configuration'
-import { BaseConfigWatcher } from './configwatcher'
-import { EnterpriseContextFactory } from './context/enterprise-context-factory'
+import { getConfiguration, getFullConfig } from './configuration'
 import { exposeOpenCtxClient } from './context/openctx'
 import { EditManager } from './edit/manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
@@ -73,8 +80,7 @@ import { CodyProExpirationNotifications } from './notifications/cody-pro-expirat
 import { showSetupNotification } from './notifications/setup-notification'
 import { initVSCodeGitApi } from './repository/git-extension-api'
 import { initWorkspaceReposMonitor } from './repository/repo-metadata-from-git-api'
-import { repoNameResolver } from './repository/repo-name-resolver'
-import { AuthProvider, authProvider } from './services/AuthProvider'
+import { authProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { displayHistoryQuickPick } from './services/HistoryChat'
@@ -84,7 +90,6 @@ import { registerSidebarCommands } from './services/SidebarCommands'
 import { type CodyStatusBar, createStatusBar } from './services/StatusBar'
 import { upstreamHealthProvider } from './services/UpstreamHealthProvider'
 import { autocompleteStageCounterLogger } from './services/autocomplete-stage-counter-logger'
-import { setUpCodyIgnore } from './services/cody-ignore'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
@@ -121,35 +126,53 @@ export async function start(
 
     const disposables: vscode.Disposable[] = []
 
-    setSingleton(authProvider, new AuthProvider(await getFullConfig()))
-    const configWatcher = await BaseConfigWatcher.create(disposables)
+    setResolvedConfigurationObservable(
+        combineLatest([
+            fromVSCodeEvent(vscode.workspace.onDidChangeConfiguration).pipe(
+                filter(
+                    event => event.affectsConfiguration('cody') || event.affectsConfiguration('openctx')
+                ),
+                startWith(undefined),
+                map(() => getFullConfig()),
+                distinctUntilChanged()
+            ),
+            fromVSCodeEvent(secretStorage.onDidChange.bind(secretStorage)).pipe(
+                startWith(undefined),
+                map(() => secretStorage)
+            ),
+            localStorage.clientStateChanges.pipe(distinctUntilChanged()),
+        ]).pipe(
+            map(
+                ([clientConfiguration, clientSecrets, clientState]) =>
+                    ({
+                        clientConfiguration,
+                        clientSecrets,
+                        clientState,
+                    }) satisfies ConfigurationInput
+            )
+        )
+    )
+
     disposables.push(
         subscriptionDisposable(
-            configWatcher.changes.subscribe({
+            resolvedConfig.subscribe({
                 next: config => configureEventsInfra(config, isExtensionModeDevOrTest),
             })
         )
     )
-    // The split between AuthProvider construction and initialization is
-    // awkward, but exists so we can initialize the telemetry recorder
-    // first, as it is used in AuthProvider before AuthProvider initialization
-    // is complete. It is also important that AuthProvider inintialization
-    // completes before initializeSingletons is called, because many of
-    // those assume an initialized AuthProvider
-    await authProvider.instance!.init()
 
     disposables.push(
         subscriptionDisposable(
-            configWatcher.changes.subscribe({
+            resolvedConfig.subscribe({
                 next: config => {
-                    platform.onConfigurationChange?.(config)
+                    platform.onConfigurationChange?.(config.configuration)
                     registerModelsFromVSCodeConfiguration()
                 },
             })
         )
     )
 
-    disposables.push(await register(context, configWatcher, platform, isExtensionModeDevOrTest))
+    disposables.push(await register(context, platform, isExtensionModeDevOrTest))
 
     return vscode.Disposable.from(...disposables)
 }
@@ -157,7 +180,6 @@ export async function start(
 // Registers commands and webview given the config.
 const register = async (
     context: vscode.ExtensionContext,
-    configWatcher: ConfigWatcher<ClientConfigurationWithAccessToken>,
     platform: PlatformContext,
     isExtensionModeDevOrTest: boolean
 ): Promise<vscode.Disposable> => {
@@ -172,7 +194,7 @@ const register = async (
     disposables.push(manageDisplayPathEnvInfoForExtension())
 
     // Initialize singletons
-    await initializeSingletons(platform, configWatcher, isExtensionModeDevOrTest, disposables)
+    await initializeSingletons(platform, isExtensionModeDevOrTest, disposables)
 
     // Ensure Git API is available
     disposables.push(await initVSCodeGitApi())
@@ -190,10 +212,10 @@ const register = async (
         onConfigurationChange: externalServicesOnDidConfigurationChange,
         symfRunner,
         contextAPIClient,
-    } = await configureExternalServices(context, configWatcher, platform)
+    } = await configureExternalServices(context, platform)
     disposables.push(
         subscriptionDisposable(
-            configWatcher.changes.subscribe({
+            resolvedConfigWithAccessToken.subscribe({
                 next: config => {
                     externalServicesOnDidConfigurationChange(config)
                     localEmbeddings?.setAccessToken(config.serverEndpoint, config.accessToken)
@@ -205,19 +227,6 @@ const register = async (
         disposables.push(symfRunner)
     }
 
-    // Initialize enterprise context
-    const enterpriseContextFactory = new EnterpriseContextFactory(completionsClient)
-    disposables.push(enterpriseContextFactory)
-    disposables.push(
-        subscriptionDisposable(
-            configWatcher.changes.subscribe({
-                next: () => {
-                    enterpriseContextFactory.clientConfigurationDidChange()
-                },
-            })
-        )
-    )
-
     const editor = new VSCodeEditor()
     const contextRetriever = new ContextRetriever(editor, symfRunner, localEmbeddings, completionsClient)
 
@@ -228,12 +237,10 @@ const register = async (
             chatClient,
             guardrails,
             editor,
-            enterpriseContextFactory,
             localEmbeddings,
             symfRunner,
             contextAPIClient,
             contextRetriever,
-            configWatcher,
         },
         disposables
     )
@@ -245,7 +252,7 @@ const register = async (
         statusBar,
         sourceControl,
         subscriptionDisposable(
-            authProvider.instance!.changes.subscribe({
+            authStatus.subscribe({
                 next: authStatus => {
                     sourceControl.setAuthStatus(authStatus)
                     statusBar.setAuthStatus(authStatus)
@@ -254,64 +261,60 @@ const register = async (
         )
     )
 
-    const autocompleteSetup = registerAutocomplete(configWatcher, platform, statusBar, disposables)
-    const tutorialSetup = tryRegisterTutorial(context, disposables)
-    const openCtxSetup = exposeOpenCtxClient(context, configWatcher, platform.createOpenCtxController)
+    await Promise.all([
+        registerAutocomplete(platform, statusBar, disposables),
+        tryRegisterTutorial(context, disposables),
+        exposeOpenCtxClient(context, platform.createOpenCtxController),
+        registerMinion(context, symfRunner, disposables),
+    ])
 
-    registerCodyCommands(configWatcher, statusBar, sourceControl, chatClient, disposables)
+    registerCodyCommands(statusBar, sourceControl, chatClient, disposables)
     registerAuthCommands(disposables)
     registerChatCommands(disposables)
     disposables.push(...registerSidebarCommands())
-    disposables.push(...setUpCodyIgnore(configWatcher.get()))
+    const config = await firstValueFrom(resolvedConfigWithAccessToken)
     registerOtherCommands(disposables)
     if (isExtensionModeDevOrTest) {
         await registerTestCommands(context, disposables)
     }
     registerDebugCommands(context, disposables)
-    registerUpgradeHandlers(configWatcher, disposables)
+    registerUpgradeHandlers(disposables)
     disposables.push(new CharactersLogger())
 
     // INC-267 do NOT await on this promise. This promise triggers
     // `vscode.window.showInformationMessage()`, which only resolves after the
     // user has clicked on "Setup". Awaiting on this promise will make the Cody
     // extension timeout during activation.
-    void showSetupNotification(configWatcher.get())
-
-    const [extensionClientDispose] = await Promise.all([
-        platform.extensionClient.provide({ enterpriseContextFactory }),
-        autocompleteSetup,
-        openCtxSetup,
-        tutorialSetup,
-        registerMinion(context, configWatcher, symfRunner, disposables),
-    ])
-    disposables.push(extensionClientDispose)
+    void showSetupNotification(config)
 
     return vscode.Disposable.from(...disposables)
 }
 
 async function initializeSingletons(
     platform: PlatformContext,
-    configWatcher: ConfigWatcher<ClientConfigurationWithAccessToken>,
     isExtensionModeDevOrTest: boolean,
     disposables: vscode.Disposable[]
 ): Promise<void> {
+    // The split between AuthProvider construction and initialization is
+    // awkward, but exists so we can initialize the telemetry recorder
+    // first, as it is used in AuthProvider before AuthProvider initialization
+    // is complete. It is also important that AuthProvider inintialization
+    // completes before initializeSingletons is called, because many of
+    // those assume an initialized AuthProvider
+    await authProvider.init()
+
     // Allow the VS Code app's instance of ModelsService to use local storage to persist
     // user's model choices
     modelsService.instance!.setStorage(localStorage)
-    disposables.push(upstreamHealthProvider.instance!, contextFiltersProvider.instance!)
+    disposables.push(upstreamHealthProvider.instance!, contextFiltersProvider)
     commandControllerInit(platform.createCommandsProvider?.(), platform.extensionClient.capabilities)
-    repoNameResolver.init()
     disposables.push(
         subscriptionDisposable(
-            configWatcher.changes.subscribe({
+            resolvedConfigWithAccessToken.subscribe({
                 next: config => {
                     void localStorage.setConfig(config)
                     graphqlClient.setConfig(config)
-                    void featureFlagProvider.instance!.refresh()
-                    contextFiltersProvider.instance!.init(
-                        repoNameResolver.getRepoNamesFromWorkspaceUri,
-                        authProvider.instance!
-                    )
+                    void featureFlagProvider.refresh()
                     void modelsService.instance!.onConfigChange(config)
                     upstreamHealthProvider.instance!.onConfigurationChange(config)
                     defaultCodeCompletionsClient.instance!.onConfigurationChange(config)
@@ -384,7 +387,12 @@ async function registerOtherCommands(disposables: vscode.Disposable[]) {
             vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
         ),
         vscode.commands.registerCommand('cody.welcome', async () => {
-            telemetryRecorder.recordEvent('cody.walkthrough', 'clicked')
+            telemetryRecorder.recordEvent('cody.walkthrough', 'clicked', {
+                billingMetadata: {
+                    category: 'billable',
+                    product: 'cody',
+                },
+            })
             // Hack: We have to run this twice to force VS Code to register the walkthrough
             // Open issue: https://github.com/microsoft/vscode/issues/186165
             await vscode.commands.executeCommand('workbench.action.openWalkthrough')
@@ -404,7 +412,6 @@ async function registerOtherCommands(disposables: vscode.Disposable[]) {
 }
 
 function registerCodyCommands(
-    config: ConfigWatcher<ClientConfiguration>,
     statusBar: CodyStatusBar,
     sourceControl: CodySourceControl,
     chatClient: ChatClient,
@@ -441,7 +448,7 @@ function registerCodyCommands(
     }
 
     // Initialize supercompletion provider if experimental feature is enabled
-    if (config.get().experimentalSupercompletions) {
+    if (getConfiguration().experimentalSupercompletions) {
         disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
     }
 
@@ -472,7 +479,7 @@ function registerChatCommands(disposables: vscode.Disposable[]): void {
             vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow')
         }),
         vscode.commands.registerCommand('cody.chat.history.panel', async () => {
-            await displayHistoryQuickPick(authProvider.instance!.status)
+            await displayHistoryQuickPick(currentAuthStatus())
         }),
         vscode.commands.registerCommand('cody.settings.extension.chat', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', {
@@ -493,7 +500,7 @@ function registerAuthCommands(disposables: vscode.Disposable[]): void {
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         vscode.commands.registerCommand(
             'cody.auth.status',
-            () => authProvider.instance?.statusOrNotReadyYet ?? null
+            () => currentAuthStatusOrNotReadyYet() ?? null
         ), // Used by the agent
         vscode.commands.registerCommand(
             'cody.agent.auth.authenticate',
@@ -504,7 +511,9 @@ function registerAuthCommands(disposables: vscode.Disposable[]): void {
                 if (typeof accessToken !== 'string') {
                     throw new TypeError('accessToken is required')
                 }
-                return await authProvider.instance!.auth({
+                await localStorage.saveEndpoint(serverEndpoint)
+                await secretStorage.storeToken(serverEndpoint, accessToken)
+                return await authProvider.auth({
                     endpoint: serverEndpoint,
                     token: accessToken,
                     customHeaders,
@@ -514,10 +523,7 @@ function registerAuthCommands(disposables: vscode.Disposable[]): void {
     )
 }
 
-function registerUpgradeHandlers(
-    configWatcher: ConfigWatcher<ClientConfiguration>,
-    disposables: vscode.Disposable[]
-): void {
+function registerUpgradeHandlers(disposables: vscode.Disposable[]): void {
     disposables.push(
         // Register URI Handler (e.g. vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
@@ -525,14 +531,14 @@ function registerUpgradeHandlers(
                 if (uri.path === '/app-done') {
                     // This is an old re-entrypoint from App that is a no-op now.
                 } else {
-                    tokenCallbackHandler(uri, configWatcher.get().customHeaders)
+                    tokenCallbackHandler(uri, getConfiguration().customHeaders)
                 }
             },
         }),
 
         // Check if user has just moved back from a browser window to upgrade cody pro
         vscode.window.onDidChangeWindowState(async ws => {
-            const authStatus = authProvider.instance!.status
+            const authStatus = currentAuthStatus()
             if (ws.focused && isDotCom(authStatus) && authStatus.authenticated) {
                 const res = await graphqlClient.getCurrentUserCodyProEnabled()
                 if (res instanceof Error) {
@@ -542,7 +548,7 @@ function registerUpgradeHandlers(
                 // Re-auth if user's cody pro status has changed
                 const isCurrentCodyProUser = !authStatus.userCanUpgrade
                 if (res && res.codyProEnabled !== isCurrentCodyProUser) {
-                    authProvider.instance!.reloadAuthStatus()
+                    authProvider.reloadAuthStatus()
                 }
             }
         }),
@@ -571,7 +577,7 @@ async function registerTestCommands(
             }
             try {
                 const policy = JSON.parse(raw)
-                contextFiltersProvider.instance!.setTestingContextFilters(policy)
+                contextFiltersProvider.setTestingContextFilters(policy)
             } catch (error) {
                 vscode.window.showErrorMessage(
                     'Failed to parse context filters policy. Please check your JSON syntax.'
@@ -580,7 +586,7 @@ async function registerTestCommands(
         }),
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (endpoint, token) =>
-            authProvider.instance!.auth({ endpoint, token })
+            authProvider.auth({ endpoint, token })
         )
     )
 }
@@ -619,7 +625,6 @@ async function tryRegisterTutorial(
  * the returned promise is awaited in parallel with other tasks.
  */
 function registerAutocomplete(
-    configWatcher: ConfigWatcher<ClientConfigurationWithEndpoint>,
     platform: PlatformContext,
     statusBar: CodyStatusBar,
     disposables: vscode.Disposable[]
@@ -661,20 +666,14 @@ function registerAutocomplete(
                 // completion provider.
                 disposeAutocomplete()
 
-                const autocompleteFeatureFlagChangeSubscriber =
-                    featureFlagProvider.instance!.onFeatureFlagChanged(
-                        'cody-autocomplete',
-                        setupAutocomplete
-                    )
-                autocompleteDisposables.push({
-                    dispose: autocompleteFeatureFlagChangeSubscriber,
-                })
                 autocompleteDisposables.push(
-                    await createInlineCompletionItemProvider({
-                        config,
-                        statusBar,
-                        createBfgRetriever: platform.createBfgRetriever,
-                    })
+                    subscriptionDisposable(
+                        createInlineCompletionItemProvider({
+                            config,
+                            statusBar,
+                            createBfgRetriever: platform.createBfgRetriever,
+                        }).subscribe({})
+                    )
                 )
                 autocompleteDisposables.push(
                     await createInlineCompletionItemFromMultipleProviders({
@@ -691,18 +690,20 @@ function registerAutocomplete(
         return setupAutocompleteQueue
     }
     disposables.push(
-        subscriptionDisposable(configWatcher.changes.subscribe({ next: setupAutocomplete }))
+        subscriptionDisposable(
+            combineLatest([resolvedConfig, authStatus]).subscribe({ next: setupAutocomplete })
+        )
     )
     return setupAutocomplete().catch(() => {})
 }
 
 async function registerMinion(
     context: vscode.ExtensionContext,
-    config: ConfigWatcher<ClientConfiguration>,
+
     symfRunner: SymfRunner | undefined,
     disposables: vscode.Disposable[]
 ): Promise<void> {
-    if (config.get().experimentalMinionAnthropicKey) {
+    if (getConfiguration().experimentalMinionAnthropicKey) {
         const minionOrchestrator = new MinionOrchestrator(context.extensionUri, symfRunner)
         disposables.push(minionOrchestrator)
         disposables.push(
@@ -723,12 +724,10 @@ interface RegisterChatOptions {
     chatClient: ChatClient
     guardrails: Guardrails
     editor: VSCodeEditor
-    enterpriseContextFactory: EnterpriseContextFactory
     localEmbeddings?: LocalEmbeddingsController
     symfRunner?: SymfRunner
     contextAPIClient?: ContextAPIClient
     contextRetriever: ContextRetriever
-    configWatcher: ConfigWatcher<ClientConfigurationWithAccessToken>
 }
 
 function registerChat(
@@ -738,12 +737,10 @@ function registerChat(
         chatClient,
         guardrails,
         editor,
-        enterpriseContextFactory,
         localEmbeddings,
         symfRunner,
         contextAPIClient,
         contextRetriever,
-        configWatcher,
     }: RegisterChatOptions,
     disposables: vscode.Disposable[]
 ): {
@@ -762,14 +759,12 @@ function registerChat(
             startTokenReceiver: platform.startTokenReceiver,
         },
         chatClient,
-        enterpriseContextFactory,
         localEmbeddings || null,
         symfRunner || null,
         contextRetriever,
         guardrails,
         contextAPIClient || null,
-        platform.extensionClient,
-        configWatcher
+        platform.extensionClient
     )
     chatsController.registerViewsAndCommands()
 
@@ -806,7 +801,7 @@ function registerChat(
  * Create or update events infrastructure, using the new telemetryRecorder.
  */
 async function configureEventsInfra(
-    config: ClientConfigurationWithAccessToken,
+    config: ResolvedConfiguration,
     isExtensionModeDevOrTest: boolean
 ): Promise<void> {
     await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest)

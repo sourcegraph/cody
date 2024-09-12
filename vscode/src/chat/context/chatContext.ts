@@ -4,18 +4,18 @@ import {
     type ContextItem,
     type ContextItemOpenCtx,
     type ContextItemRepository,
+    type ContextMentionProviderID,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionMenuData,
     type MentionQuery,
     REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
-    allMentionProvidersMetadata,
     combineLatest,
     isAbortError,
+    mentionProvidersMetadata,
     openCtx,
     promiseFactoryToObservable,
     telemetryRecorder,
-    webMentionProvidersMetadata,
 } from '@sourcegraph/cody-shared'
 import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
@@ -38,10 +38,11 @@ interface GetContextItemsTelemetry {
     withProvider: (type: MentionQuery['provider'], metadata?: { id: string }) => void
 }
 
-export function getMentionMenuData(
-    query: MentionQuery,
+export function getMentionMenuData(options: {
+    disableProviders: ContextMentionProviderID[]
+    query: MentionQuery
     chatModel: ChatModel
-): Observable<MentionMenuData> {
+}): Observable<MentionMenuData> {
     const source = 'chat'
 
     // Use numerical mapping to send source values to metadata, making this data available on all instances.
@@ -56,24 +57,33 @@ export function getMentionMenuData(
                     source: atMentionSourceTelemetryMetadataMapping[source],
                 },
                 privateMetadata: { source },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'core',
+                },
             })
         },
         withProvider: (provider, providerMetadata) => {
             telemetryRecorder.recordEvent(`cody.at-mention.${provider}`, 'executed', {
                 metadata: { source: atMentionSourceTelemetryMetadataMapping[source] },
                 privateMetadata: { source, providerMetadata },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'core',
+                },
             })
         },
     }
 
     const isCodyWeb = getConfiguration().agentIDE === CodyIDE.Web
-    const { input, context } = chatModel.contextWindow
+
+    const { input, context } = options.chatModel.contextWindow
 
     try {
         const items = promiseFactoryToObservable(signal =>
             getChatContextItemsForMention(
                 {
-                    mentionQuery: query,
+                    mentionQuery: options.query,
                     telemetryRecorder: scopedTelemetryRecorder,
                     rangeFilter: !isCodyWeb,
                 },
@@ -86,15 +96,13 @@ export function getMentionMenuData(
             )
         )
 
-        const queryLower = query.text.toLowerCase()
+        const queryLower = options.query.text.toLowerCase()
+
         const providers = (
-            query.provider === null
-                ? isCodyWeb
-                    ? webMentionProvidersMetadata()
-                    : allMentionProvidersMetadata()
+            options.query.provider === null
+                ? mentionProvidersMetadata({ disableProviders: options.disableProviders })
                 : Observable.of([])
         ).pipe(map(providers => providers.filter(p => p.title.toLowerCase().includes(queryLower))))
-
         return combineLatest([providers, items]).map(([providers, items]) => ({
             providers,
             items,

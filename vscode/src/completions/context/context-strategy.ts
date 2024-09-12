@@ -1,4 +1,11 @@
-import * as vscode from 'vscode'
+import {
+    type Unsubscribable,
+    createDisposables,
+    firstValueFrom,
+    isDefined,
+} from '@sourcegraph/cody-shared'
+import type { Observable } from 'observable-fns'
+import type * as vscode from 'vscode'
 import type { ContextRetriever } from '../types'
 import type { BfgRetriever } from './retrievers/bfg/bfg-retriever'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
@@ -21,79 +28,86 @@ export type ContextStrategy =
     | 'recent-edits-mixed'
 
 export interface ContextStrategyFactory extends vscode.Disposable {
-    getStrategy(document: vscode.TextDocument): { name: ContextStrategy; retrievers: ContextRetriever[] }
+    getStrategy(
+        document: vscode.TextDocument
+    ): Promise<{ name: ContextStrategy; retrievers: ContextRetriever[] }>
 }
 
 export class DefaultContextStrategyFactory implements ContextStrategyFactory {
-    private disposables: vscode.Disposable[] = []
+    private contextStrategySubscription: Unsubscribable
 
     private localRetriever: ContextRetriever | undefined
     private graphRetriever: ContextRetriever | undefined
 
     constructor(
-        private contextStrategy: ContextStrategy,
+        private contextStrategy: Observable<ContextStrategy>,
         createBfgRetriever?: () => BfgRetriever
     ) {
-        switch (contextStrategy) {
-            case 'none':
-                break
-            case 'recent-edits':
-                this.localRetriever = new RecentEditsRetriever(60 * 1000)
-                this.disposables.push(this.localRetriever)
-                break
-            case 'recent-edits-1m':
-                this.localRetriever = new RecentEditsRetriever(60 * 1000)
-                this.disposables.push(this.localRetriever)
-                break
-            case 'recent-edits-5m':
-                this.localRetriever = new RecentEditsRetriever(60 * 5 * 1000)
-                this.disposables.push(this.localRetriever)
-                break
-            case 'recent-edits-mixed':
-                this.localRetriever = new RecentEditsRetriever(60 * 1000)
-                this.graphRetriever = new JaccardSimilarityRetriever()
-                this.disposables.push(this.localRetriever)
-                this.disposables.push(this.graphRetriever)
-                break
-            case 'tsc-mixed':
-                this.localRetriever = new JaccardSimilarityRetriever()
-                this.disposables.push(this.localRetriever)
-                this.graphRetriever = loadTscRetriever()
-                if (this.graphRetriever) this.disposables.push(this.graphRetriever)
-                break
-            case 'tsc':
-                this.graphRetriever = loadTscRetriever()
-                if (this.graphRetriever) this.disposables.push(this.graphRetriever)
-                break
-            case 'bfg-mixed':
-            case 'bfg':
-                // The bfg strategy uses jaccard similarity as a fallback if no results are found or
-                // the language is not supported by BFG
-                this.localRetriever = new JaccardSimilarityRetriever()
-                this.disposables.push(this.localRetriever)
-                if (createBfgRetriever) {
-                    this.graphRetriever = createBfgRetriever()
-                    this.disposables.push(this.graphRetriever)
-                }
-                break
-            case 'lsp-light':
-                this.localRetriever = new JaccardSimilarityRetriever()
-                this.graphRetriever = new LspLightRetriever()
-                this.disposables.push(this.localRetriever, this.graphRetriever)
-                break
-            case 'jaccard-similarity':
-                this.localRetriever = new JaccardSimilarityRetriever()
-                this.disposables.push(this.localRetriever)
-        }
+        this.contextStrategySubscription = contextStrategy
+            .pipe(
+                createDisposables(contextStrategy => {
+                    switch (contextStrategy) {
+                        case 'none':
+                            break
+                        case 'recent-edits':
+                            this.localRetriever = new RecentEditsRetriever(60 * 1000)
+                            break
+                        case 'recent-edits-1m':
+                            this.localRetriever = new RecentEditsRetriever(60 * 1000)
+                            break
+                        case 'recent-edits-5m':
+                            this.localRetriever = new RecentEditsRetriever(60 * 5 * 1000)
+                            break
+                        case 'recent-edits-mixed':
+                            this.localRetriever = new RecentEditsRetriever(60 * 1000)
+                            this.graphRetriever = new JaccardSimilarityRetriever()
+                            break
+                        case 'tsc-mixed':
+                            this.localRetriever = new JaccardSimilarityRetriever()
+                            this.graphRetriever = loadTscRetriever()
+                            break
+                        case 'tsc':
+                            this.graphRetriever = loadTscRetriever()
+                            break
+                        case 'bfg-mixed':
+                        case 'bfg':
+                            // The bfg strategy uses jaccard similarity as a fallback if no results are found or
+                            // the language is not supported by BFG
+                            this.localRetriever = new JaccardSimilarityRetriever()
+                            if (createBfgRetriever) {
+                                this.graphRetriever = createBfgRetriever()
+                            }
+                            break
+                        case 'lsp-light':
+                            this.localRetriever = new JaccardSimilarityRetriever()
+                            this.graphRetriever = new LspLightRetriever()
+                            break
+                        case 'jaccard-similarity':
+                            this.localRetriever = new JaccardSimilarityRetriever()
+                            break
+                    }
+                    return [
+                        this.localRetriever,
+                        this.graphRetriever,
+                        {
+                            dispose: () => {
+                                this.localRetriever = undefined
+                                this.graphRetriever = undefined
+                            },
+                        },
+                    ].filter(isDefined)
+                })
+            )
+            .subscribe(() => {})
     }
 
-    public getStrategy(document: vscode.TextDocument): {
+    public async getStrategy(document: vscode.TextDocument): Promise<{
         name: ContextStrategy
         retrievers: ContextRetriever[]
-    } {
+    }> {
         const retrievers: ContextRetriever[] = []
-
-        switch (this.contextStrategy) {
+        const contextStrategy = await firstValueFrom(this.contextStrategy)
+        switch (contextStrategy) {
             case 'none': {
                 break
             }
@@ -150,10 +164,10 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                 break
             }
         }
-        return { name: this.contextStrategy, retrievers }
+        return { name: contextStrategy, retrievers }
     }
 
     public dispose(): void {
-        vscode.Disposable.from(...this.disposables).dispose()
+        this.contextStrategySubscription.unsubscribe()
     }
 }

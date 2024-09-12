@@ -382,9 +382,6 @@ export class TestClient extends MessageHandler {
             this.webviewMessages.push(params)
             this.webviewMessagesEmitter.fire(params)
         })
-        this.registerNotification('remoteRepo/didChange', () => {
-            // Do nothing
-        })
     }
 
     private async editDocument(params: TextDocumentEditParams): Promise<ProtocolTextDocumentWithUri> {
@@ -765,7 +762,7 @@ export class TestClient extends MessageHandler {
                     command: 'edit',
                     text,
                     index: params?.index,
-                    contextFiles: params?.contextFiles ?? [],
+                    contextItems: params?.contextFiles ?? [],
                     addEnhancedContext: params?.addEnhancedContext ?? false,
                 },
             })
@@ -821,7 +818,7 @@ export class TestClient extends MessageHandler {
                     text,
                     submitType: 'user',
                     addEnhancedContext: params?.addEnhancedContext ?? false,
-                    contextFiles: params?.contextFiles,
+                    contextItems: params?.contextFiles,
                 },
             })
         )

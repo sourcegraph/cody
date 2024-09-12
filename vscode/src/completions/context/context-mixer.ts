@@ -4,7 +4,6 @@ import {
     type AutocompleteContextSnippet,
     type DocumentContext,
     contextFiltersProvider,
-    isCodyIgnoredFile,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -61,6 +60,7 @@ export interface ContextSummary {
 export interface GetContextResult {
     context: AutocompleteContextSnippet[]
     logSummary: ContextSummary
+    rankedContextCandidates: AutocompleteContextSnippet[]
 }
 
 /**
@@ -72,13 +72,13 @@ export interface GetContextResult {
  * ranged for the top ranked document from all retrieval sources before we move on to the second
  * document).
  */
-export class ContextMixer implements vscode.Disposable {
+export class ContextMixer {
     constructor(private strategyFactory: ContextStrategyFactory) {}
 
     public async getContext(options: GetContextOptions): Promise<GetContextResult> {
         const start = performance.now()
 
-        const { name: strategy, retrievers } = this.strategyFactory.getStrategy(options.document)
+        const { name: strategy, retrievers } = await this.strategyFactory.getStrategy(options.document)
         if (retrievers.length === 0) {
             return {
                 context: [],
@@ -90,6 +90,7 @@ export class ContextMixer implements vscode.Disposable {
                     duration: 0,
                     retrieverStats: {},
                 },
+                rankedContextCandidates: [],
             }
         }
 
@@ -172,11 +173,8 @@ export class ContextMixer implements vscode.Disposable {
         return {
             context: mixedContext,
             logSummary,
+            rankedContextCandidates: Array.from(fusedResults),
         }
-    }
-
-    public dispose(): void {
-        this.strategyFactory.dispose()
     }
 }
 
@@ -184,10 +182,7 @@ async function filter(snippets: AutocompleteContextSnippet[]): Promise<Autocompl
     return (
         await Promise.all(
             snippets.map(async snippet => {
-                if (isCodyIgnoredFile(snippet.uri)) {
-                    return null
-                }
-                if (await contextFiltersProvider.instance!.isUriIgnored(snippet.uri)) {
+                if (await contextFiltersProvider.isUriIgnored(snippet.uri)) {
                     return null
                 }
                 return snippet

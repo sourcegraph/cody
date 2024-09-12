@@ -43,20 +43,25 @@ export async function getRepositoryMentions(
     const fzf = new Fzf(repositories, REPO_FZF_OPTIONS)
     const localRepos = (await workspaceReposMonitor?.getRepoMetadata()) || []
 
-    return fzf.find(cleanRegex(query)).map(repository =>
-        createRepositoryMention(
-            {
-                ...repository.item,
-                current: !!localRepos.find(({ repoName }) => repoName === repository.item.name),
-            },
-            providerId
+    return await Promise.all(
+        fzf.find(cleanRegex(query)).map(repository =>
+            createRepositoryMention(
+                {
+                    ...repository.item,
+                    current: !!localRepos.find(({ repoName }) => repoName === repository.item.name),
+                },
+                providerId
+            )
         )
     )
 }
 
 type MinimalRepoMention = Pick<SuggestionsRepo, 'id' | 'url' | 'name'> & { current?: boolean }
 
-export function createRepositoryMention(repo: MinimalRepoMention, providerId: string): ProviderMention {
+export async function createRepositoryMention(
+    repo: MinimalRepoMention,
+    providerId: string
+): Promise<ProviderMention> {
     return {
         title: repo.name,
         providerUri: providerId,
@@ -69,7 +74,7 @@ export function createRepositoryMention(repo: MinimalRepoMention, providerId: st
         data: {
             repoId: repo.id,
             repoName: repo.name,
-            isIgnored: contextFiltersProvider.instance!.isRepoNameIgnored(repo.name),
+            isIgnored: (await contextFiltersProvider.isRepoNameIgnored(repo.name)) satisfies boolean,
         },
     }
 }

@@ -12,9 +12,11 @@ interface CollapsiblePanelProps {
     className?: string
     contentClassName?: string
     initialOpen?: boolean
+    id?: string
 }
 
 export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
+    id,
     storageKey,
     title,
     children,
@@ -28,6 +30,7 @@ export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
 
     return (
         <Collapsible
+            id={id}
             open={isOpen}
             onOpenChange={setIsOpen}
             className={clsx('tw-w-full tw-flex tw-flex-col tw-gap-3', className)}
@@ -46,6 +49,7 @@ export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
             </div>
             <CollapsibleContent>
                 <div
+                    id={`${id}-content`}
                     className={clsx(
                         'tw-px-2 tw-py-2 tw-flex tw-flex-col tw-bg-popover tw-border tw-border-border tw-rounded-lg',
                         contentClassName

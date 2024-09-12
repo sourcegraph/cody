@@ -68,7 +68,7 @@ describe('Autocomplete', () => {
     }, 10_000)
 
     // TODO: use `vi.useFakeTimers()` instead of `sleep()` once it's supported by the agent tests.
-    it('autocomplete/execute multiline(non-empty result)', async () => {
+    it('autocomplete/execute multiline (non-empty result)', async () => {
         const uri = workspace.file('src', 'bubbleSort.ts')
         await client.openFile(uri)
 
@@ -96,9 +96,9 @@ describe('Autocomplete', () => {
             `
           [
             "    for (let i = 0; i < nums.length; i++) {
-                  for (let j = 0; j < nums.length; j++) {
-                      if (nums[i] < nums[j]) {
-                          [nums[i], nums[j]] = [nums[j], nums[i]];
+                  for (let j = 0; j < nums.length - i - 1; j++) {
+                      if (nums[j] > nums[j + 1]) {
+                          [nums[j], nums[j + 1]] = [nums[j + 1], nums[j]];
                       }
                   }
               }",

@@ -41,7 +41,7 @@ export async function getContextFilesFromGitApi(
  * @returns A promise that resolves to an array of ContextItem objects representing the git diff.
  * @throws If the git diff output is empty or if there is an error retrieving the git diff.
  */
-async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<ContextItem[]> {
+export async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<ContextItem[]> {
     try {
         // Get the list of files that currently have staged and unstaged changes.
         const [stagedFiles, unstagedFiles] = await Promise.all([
@@ -67,31 +67,33 @@ async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<ContextI
         }
 
         const diffs: ContextItem[] = []
-        for (const diff of diffOutputByFiles) {
-            if (!diff) {
+
+        for (const diffOutput of diffOutputByFiles) {
+            if (!diffOutput) {
                 continue // Skip this iteration if no file path is found
             }
 
+            const diffPath = diffOutput.split('\n')[0]
+            if (!diffPath) {
+                continue
+            }
+
+            const normalizePath = (path: string) => path.replace(/\\/g, '/')
+
             // Verify the file exists before adding it as context.
             // we do this by checking the reverse path because of how nested workspaces might add unknown prefixes
-            const uri = diffFiles.find(p => {
-                //todo: maybe better with a proper diff parser
-                const diffPath = diff.split('\n')?.[0]
-                return diffPath
-                    ? diffPath
-                          .split('')
-                          .reverse()
-                          .join('')
-                          .startsWith(displayPath(p.uri).split('').reverse().join(''))
-                    : p.uri
-            })?.uri
-            if (!uri || !(await doesFileExist(uri))) {
+            const normalizedDiffPath = normalizePath(diffPath)
+            const matchingFile = diffFiles.find(file => {
+                const filePath = normalizePath(displayPath(file.uri))
+                return filePath.endsWith(normalizedDiffPath)
+            })
+            if (!matchingFile || !(await doesFileExist(matchingFile.uri))) {
                 continue
             }
 
             const content = diffTemplate
                 .replace('{command}', command)
-                .replace('<output>', `<output file="${displayPath(uri)}">`)
+                .replace('<output>', `<output file="${displayPath(matchingFile.uri)}">`)
                 .replace('{output}', diffOutput.trim())
 
             diffs.push({
@@ -99,7 +101,7 @@ async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<ContextI
                 content,
                 title: command,
                 // Using the uri by file enables Cody Ignore checks during prompt-building step.
-                uri,
+                uri: matchingFile.uri,
                 source: ContextItemSource.Terminal,
                 size: await TokenCounterUtils.countTokens(content),
             })

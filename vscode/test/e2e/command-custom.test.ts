@@ -29,7 +29,6 @@ test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
     expectedV2Events: [
         'cody.extension:installed',
-        'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
@@ -120,7 +119,6 @@ test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
     expectedV2Events: [
         'cody.extension:installed',
-        'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
@@ -155,7 +153,7 @@ test.extend<ExpectedV2Events>({
 
     // Show the current file numbers used as context
     const contextCell = getContextCell(chatPanel)
-    await expectContextCellCounts(contextCell, { files: 6 })
+    await expectContextCellCounts(contextCell, { files: 7 })
     await openContextCell(contextCell)
     // Display the context files to confirm no hidden files are included
     await expect(chatPanel.getByRole('button', { name: '.mydotfile:1-2' })).not.toBeVisible()
@@ -211,7 +209,6 @@ test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
     expectedV2Events: [
         'cody.extension:installed',
-        'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
@@ -281,7 +278,7 @@ testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => 
     // Check the change is showing as a Git file in the sidebar
     const sourceControlView = page.getByLabel(/Source Control/).nth(2)
     await sourceControlView.click()
-    await page.getByRole('heading', { name: 'Source Control' }).hover()
+    await page.locator('h2').filter({ hasText: 'Source Control' }).hover()
     await page.getByText('index.js').hover()
     await page.locator('a').filter({ hasText: 'index.js' }).click()
 

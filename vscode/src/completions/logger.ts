@@ -6,12 +6,11 @@ import {
     type AutocompleteContextSnippet,
     type BillingCategory,
     type BillingProduct,
-    FeatureFlag,
+    currentAuthStatusAuthed,
     isDotCom,
     isNetworkError,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import { authProvider } from '../services/AuthProvider'
 
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
@@ -32,7 +31,6 @@ import {
     autocompleteStageCounterLogger,
 } from '../services/autocomplete-stage-counter-logger'
 import { type CompletionIntent, CompletionIntentTelemetryMetadataMapping } from '../tree-sitter/queries'
-import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
 import {
     InlineCompletionsResultSource,
@@ -67,6 +65,7 @@ export type CompletionItemID = string & { _opaque: typeof CompletionItemID }
 declare const CompletionItemID: unique symbol
 
 interface InlineCompletionItemRetrievedContext {
+    identifier: string
     content: string
     filePath: string
     startLine: number
@@ -80,7 +79,7 @@ interface InlineContextItemsParams {
     commit: string | undefined
 }
 
-interface InlineCompletionItemContext {
+export interface InlineCompletionItemContext {
     gitUrl: string
     commit?: string
     filePath?: string
@@ -506,6 +505,16 @@ function writeCompletionEvent<SubFeature extends string, Action extends string, 
     if (subfeature) {
         telemetryRecorder.recordEvent(`cody.completion.${subfeature}`, action, params)
     } else {
+        // Add billing metadata to completion event params.
+        params = {
+            ...params,
+            billingMetadata: {
+                product: 'cody',
+                // Only acceptance events qualify as "core" usage.
+                category: action === 'partiallyAccepted' || action === 'accepted' ? 'core' : 'billable',
+            },
+        }
+
         telemetryRecorder.recordEvent('cody.completion', action, params)
     }
 }
@@ -740,6 +749,7 @@ export function loaded(params: LoadedParams): void {
             triggerLine: requestParams.position.line,
             triggerCharacter: requestParams.position.character,
             context: inlineContextParams.context.map(snippet => ({
+                identifier: snippet.identifier,
                 content: snippet.content,
                 startLine: snippet.startLine,
                 endLine: snippet.endLine,
@@ -798,10 +808,11 @@ export type SuggestionMarkReadParam = {
 //
 // For statistics logging we start a timeout matching the READ_TIMEOUT_MS so we can increment the
 // suggested completion count as soon as we count it as such.
-export function prepareSuggestionEvent(
-    id: CompletionLogID,
-    span?: Span
-): {
+export function prepareSuggestionEvent({
+    id,
+    span,
+    shouldSample,
+}: { id: CompletionLogID; span?: Span; shouldSample?: boolean }): {
     getEvent: () => CompletionBookkeepingEvent | undefined
     markAsRead: (param: SuggestionMarkReadParam) => void
 } | null {
@@ -822,10 +833,6 @@ export function prepareSuggestionEvent(
         span?.addEvent('suggested')
 
         // Mark the completion as sampled if tracing is enable for this user
-        const shouldSample = completionProviderConfig.getPrefetchedFlag(
-            FeatureFlag.CodyAutocompleteTracing
-        )
-
         if (shouldSample && span) {
             span.setAttribute('sampled', true)
         }
@@ -842,7 +849,7 @@ export function prepareSuggestionEvent(
                 completionIdsMarkedAsSuggested.set(completionId, true)
                 event.suggestionAnalyticsLoggedAt = performance.now()
 
-                const authStatus = authProvider.instance?.statusAuthed
+                const authStatus = currentAuthStatusAuthed()
                 // 🚨 SECURITY: Track the diff in the document after suggestion is shown for DotCom users and public repos.
                 if (
                     event.params.id &&
@@ -1007,25 +1014,39 @@ export function flushActiveSuggestionRequests(isDotComUser: boolean): void {
     logSuggestionEvents(isDotComUser)
 }
 
-function getInlineContextItemToLog(
-    inlineCompletionItemContext: InlineCompletionItemContext | undefined
+export function getInlineContextItemToLog(
+    inlineCompletionItemContext?: InlineCompletionItemContext
 ): InlineCompletionItemContext | undefined {
-    if (inlineCompletionItemContext === undefined) {
+    if (!inlineCompletionItemContext?.prefix || !inlineCompletionItemContext?.suffix) {
         return undefined
     }
-    const MAX_CONTEXT_ITEMS = 15
-    const MAX_CHARACTERS = 20_000
-    return {
-        ...inlineCompletionItemContext,
-        prefix: inlineCompletionItemContext.prefix?.slice(-MAX_CHARACTERS),
-        suffix: inlineCompletionItemContext.suffix?.slice(0, MAX_CHARACTERS),
-        context: inlineCompletionItemContext.context?.slice(0, MAX_CONTEXT_ITEMS).map(c => ({
-            ...c,
-            content: c.content.slice(0, MAX_CHARACTERS),
-        })),
-    }
-}
 
+    const MAX_PAYLOAD_SIZE_BYTES = 1024 * 1024
+    const prefixSize = Buffer.byteLength(inlineCompletionItemContext.prefix, 'utf8')
+    const suffixSize = Buffer.byteLength(inlineCompletionItemContext.suffix, 'utf8')
+    // If the prefix and suffix are too large, we don't log the context as the data is not useful for offline analysis.
+    if (prefixSize + suffixSize > MAX_PAYLOAD_SIZE_BYTES) {
+        return undefined
+    }
+
+    const result: Partial<InlineCompletionItemContext> = {
+        prefix: inlineCompletionItemContext.prefix,
+        suffix: inlineCompletionItemContext.suffix,
+    }
+
+    let currentPayloadSizeBytes = prefixSize + suffixSize
+
+    result.context = inlineCompletionItemContext.context?.filter(item => {
+        const itemSize = Buffer.byteLength(item.content, 'utf8')
+        if (currentPayloadSizeBytes + itemSize <= MAX_PAYLOAD_SIZE_BYTES) {
+            currentPayloadSizeBytes += itemSize
+            return true
+        }
+        return false
+    })
+
+    return { ...inlineCompletionItemContext, ...result }
+}
 export function logSuggestionEvents(isDotComUser: boolean): void {
     const now = performance.now()
     // biome-ignore lint/complexity/noForEach: LRUCache#forEach has different typing than #entries, so just keeping it for now

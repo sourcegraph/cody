@@ -51,6 +51,10 @@ export const registerEditTutorialCommand = (
         async (_document: vscode.TextDocument, source: TutorialSource = 'editor') => {
             telemetryRecorder.recordEvent('cody.interactiveTutorial', 'edit', {
                 privateMetadata: { source },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
             })
 
             // Clear the existing decoration, the user has actioned this step,
@@ -88,6 +92,10 @@ export const registerChatTutorialCommand = (onComplete: () => void): vscode.Disp
         async (_document: vscode.TextDocument, source: TutorialSource = 'editor') => {
             telemetryRecorder.recordEvent('cody.interactiveTutorial', 'chat', {
                 privateMetadata: { source },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
             })
             await vscode.commands.executeCommand('cody.chat.newEditorPanel')
             onComplete()

@@ -1,3 +1,4 @@
+import { FILE_CONTEXT_MENTION_PROVIDER } from '@sourcegraph/cody-shared'
 import type { ClientInfo, ServerInfo } from 'cody-ai/src/jsonrpc/agent-protocol'
 import {
     BrowserMessageReader,
@@ -73,6 +74,7 @@ export async function createAgentClient({
         capabilities: {
             completions: 'none',
             webview: 'agentic',
+            disabledMentionsProviders: [FILE_CONTEXT_MENTION_PROVIDER.id],
         },
         extensionConfiguration: {
             accessToken,

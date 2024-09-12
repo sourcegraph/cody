@@ -33,7 +33,7 @@ describe('validateAuthStatus', () => {
             username: 'alice',
             hasVerifiedEmail: true,
             requiresVerifiedEmail: true,
-            codyApiVersion: 1,
+            codyApiVersion: 2,
             siteVersion: '999',
             isFireworksTracingEnabled: false,
             primaryEmail: 'alice@example.com',

@@ -51,7 +51,7 @@ export async function explainCommand(
     return {
         text: prompt,
         submitType: 'user-newchat',
-        contextFiles: contextItems,
+        contextItems,
         addEnhancedContext: false,
         source: args?.source,
         command: DefaultChatCommands.Explain,
@@ -85,6 +85,10 @@ export async function executeExplainCommand(
                 requestID: args?.requestID,
                 source: args?.source,
                 traceId: span.spanContext().traceId,
+            },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
             },
         })
 

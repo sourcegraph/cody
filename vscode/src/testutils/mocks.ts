@@ -11,6 +11,7 @@ import type {
 
 import {
     type ClientConfiguration,
+    type ClientConfigurationWithAccessToken,
     type FeatureFlag,
     FeatureFlagProvider,
     OLLAMA_DEFAULT_URL,
@@ -872,15 +873,11 @@ export const vsCodeMocks = {
 
 export class MockFeatureFlagProvider extends FeatureFlagProvider {
     constructor(private readonly enabledFlags: Set<FeatureFlag>) {
-        super(null as any)
+        super()
     }
 
     public evaluateFeatureFlag(flag: FeatureFlag): Promise<boolean> {
         return Promise.resolve(this.enabledFlags.has(flag))
-    }
-
-    public getFromCache(flag: FeatureFlag): boolean {
-        return this.enabledFlags.has(flag)
     }
 
     public refresh(): Promise<void> {
@@ -933,3 +930,14 @@ export const DEFAULT_VSCODE_SETTINGS = {
     testingModelConfig: undefined,
     experimentalGuardrailsTimeoutSeconds: undefined,
 } satisfies ClientConfiguration
+
+export function getVSCodeConfigurationWithAccessToken(
+    config: Partial<ClientConfiguration> = {}
+): ClientConfigurationWithAccessToken {
+    return {
+        ...DEFAULT_VSCODE_SETTINGS,
+        serverEndpoint: 'https://sourcegraph.com',
+        accessToken: 'test_access_token',
+        ...config,
+    }
+}

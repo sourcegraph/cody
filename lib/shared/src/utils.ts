@@ -138,3 +138,12 @@ export type ReadonlyDeep<T> = {
           ? ReadonlyDeep<T[P]>
           : T[P]
 }
+
+/** Make T partial (recursively). */
+export type PartialDeep<T> = {
+    [P in keyof T]?: T[P] extends (infer U)[]
+        ? Array<PartialDeep<U>>
+        : T[P] extends object
+          ? PartialDeep<T[P]>
+          : T[P]
+}

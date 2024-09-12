@@ -269,6 +269,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                                 transcript={transcript}
                                 vscodeAPI={vscodeAPI}
                                 isTranscriptError={isTranscriptError}
+                                experimentalOneBoxEnabled={config.config.experimentalOneBox}
                             />
                         </ComposedWrappers>
                     </ChatMentionContext.Provider>

@@ -9,7 +9,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 
-import { Utils } from 'vscode-uri'
+import path from 'node:path'
 import { doesFileExist } from '../../commands/utils/workspace-files'
 import { executeSmartApply } from '../../edit/smart-apply'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
@@ -56,6 +56,10 @@ function setLastStoredCode(
     lastStoredCode = codeCount
 
     let operation: string
+
+    // 🚨 [Telemetry] if any new event names/types are added, check that those actions qualify as core events
+    //(https://sourcegraph.notion.site/Cody-analytics-6b77a2cb2373466fae4797b6529a0e3d#2ca9035287854de48877a7cef2b3d4b4).
+    // If not, the event recorded below this switch statement needs to be updated.
     switch (eventName) {
         case 'copyButton':
         case 'keyDown.Copy':
@@ -82,6 +86,11 @@ function setLastStoredCode(
         privateMetadata: {
             source,
             op: operation,
+        },
+        billingMetadata: {
+            product: 'cody',
+            // 🚨 ensure that any new event names added qualify as core events, or update this parameter.
+            category: 'core',
         },
     })
 }
@@ -130,6 +139,25 @@ function getSmartApplyModel(authStatus: AuthStatus): EditModel | undefined {
     return 'anthropic/claude-3-5-sonnet-20240620'
 }
 
+function smartJoinPath(workspaceUri: vscode.Uri, fileUri: string): vscode.Uri {
+    const workspacePath = workspaceUri.fsPath.split(path.sep)
+    const filePath = fileUri.split(path.sep)
+
+    let commonIndex = 0
+    while (
+        commonIndex < workspacePath.length &&
+        commonIndex < filePath.length &&
+        workspacePath[workspacePath.length - 1 - commonIndex] === filePath[commonIndex]
+    ) {
+        commonIndex++
+    }
+
+    const uniqueFilePath = filePath.slice(commonIndex)
+    const resultPath = path.join(workspaceUri.fsPath, ...uniqueFilePath)
+
+    return vscode.Uri.file(resultPath)
+}
+
 export async function handleSmartApply(
     id: string,
     code: string,
@@ -139,8 +167,13 @@ export async function handleSmartApply(
 ): Promise<void> {
     const activeEditor = getEditor()?.active
     const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
+
     const uri =
-        fileUri && workspaceUri ? Utils.joinPath(workspaceUri, fileUri) : activeEditor?.document.uri
+        fileUri && workspaceUri
+            ? path.isAbsolute(fileUri)
+                ? vscode.Uri.file(fileUri)
+                : smartJoinPath(workspaceUri, fileUri)
+            : activeEditor?.document.uri
 
     const isNewFile = uri && !(await doesFileExist(uri))
     if (isNewFile) {
@@ -230,6 +263,10 @@ export async function onTextDocumentChange(newCode: string): Promise<void> {
             privateMetadata: {
                 source,
                 op,
+            },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
             },
         })
     }

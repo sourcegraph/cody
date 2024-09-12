@@ -1,6 +1,5 @@
 import { isDotCom } from '../sourcegraph-api/environments'
 import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
-import type { ReadonlyDeep } from '../utils'
 
 /**
  * The authentication status, which includes representing the state when authentication failed or
@@ -56,10 +55,6 @@ export interface UnauthenticatedAuthStatus {
     showInvalidAccessTokenError?: boolean
 }
 
-export interface AuthStatusProvider {
-    status: ReadonlyDeep<AuthStatus>
-}
-
 export const AUTH_STATUS_FIXTURE_AUTHED: AuthenticatedAuthStatus = {
     endpoint: 'https://example.com',
     authenticated: true,
@@ -76,6 +71,10 @@ export const AUTH_STATUS_FIXTURE_UNAUTHED: AuthStatus & { authenticated: false }
 export const AUTH_STATUS_FIXTURE_AUTHED_DOTCOM: AuthenticatedAuthStatus = {
     ...AUTH_STATUS_FIXTURE_AUTHED,
     endpoint: 'https://sourcegraph.com',
+    configOverwrites: {
+        provider: 'sourcegraph',
+        completionModel: 'fireworks/starcoder-hybrid',
+    },
 }
 
 export const AUTH_STATUS_FIXTURE_OFFLINE: Omit<AuthenticatedAuthStatus, 'isOfflineMode'> & {

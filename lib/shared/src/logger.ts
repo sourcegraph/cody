@@ -26,7 +26,13 @@ const consoleLogger: CodyLogger = {
     },
 }
 
-let _logger = consoleLogger
+const noopLogger: CodyLogger = {
+    logDebug() {},
+    logError() {},
+}
+
+// Disable logger in vitest tests by default to unclutter CI output.
+let _logger = process.env.VITEST ? noopLogger : consoleLogger
 export function setLogger(newLogger: CodyLogger): void {
     _logger = newLogger
 }

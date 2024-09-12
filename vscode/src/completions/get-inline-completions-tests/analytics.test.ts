@@ -7,6 +7,7 @@ import * as CompletionLogger from '../logger'
 import type { CompletionBookkeepingEvent } from '../logger'
 import { initTreeSitterParser } from '../test-helpers'
 
+import { AUTH_STATUS_FIXTURE_AUTHED, AUTH_STATUS_FIXTURE_AUTHED_DOTCOM } from '@sourcegraph/cody-shared'
 import { Response } from 'node-fetch'
 import { getInlineCompletions, params } from './helpers'
 
@@ -49,7 +50,11 @@ describe('[getInlineCompletions] completion event', () => {
                         },
                     },
                 ],
-                additionalParams
+                {
+                    authStatus: additionalParams.isDotComUser
+                        ? AUTH_STATUS_FIXTURE_AUTHED_DOTCOM
+                        : AUTH_STATUS_FIXTURE_AUTHED,
+                }
             )
         )
 
@@ -138,7 +143,7 @@ describe('[getInlineCompletions] completion event', () => {
                   "multiline": true,
                   "multilineMode": "block",
                   "providerIdentifier": "anthropic",
-                  "providerModel": "anthropic/claude-instant-1.2",
+                  "providerModel": "",
                   "resolvedModel": "sourcegraph/gateway-model",
                   "responseHeaders": {
                     "fireworks-speculation-matched-tokens": "100",
@@ -210,7 +215,7 @@ describe('[getInlineCompletions] completion event', () => {
                   "multiline": false,
                   "multilineMode": null,
                   "providerIdentifier": "anthropic",
-                  "providerModel": "anthropic/claude-instant-1.2",
+                  "providerModel": "",
                   "resolvedModel": "sourcegraph/gateway-model",
                   "responseHeaders": {
                     "fireworks-speculation-matched-tokens": "100",

@@ -8,14 +8,13 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     errorToChatError,
-    isCodyIgnoredFile,
     modelsService,
     serializeChatMessage,
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import type { Repo } from '../../context/repo-fetcher'
+import type { Repo } from '../../context/remote-repo'
 import { getChatPanelTitle } from './chat-helpers'
 
 export class ChatModel {
@@ -39,6 +38,18 @@ export class ChatModel {
         return this.messages.length === 0
     }
 
+    public setLastMessageIntent(intent: ChatMessage['intent']): void {
+        const lastMessage = this.messages.at(-1)
+        if (!lastMessage) {
+            throw new Error('no last message')
+        }
+        if (lastMessage.speaker !== 'human') {
+            throw new Error('Cannot set intent for bot message')
+        }
+
+        lastMessage.intent = intent
+    }
+
     public setLastMessageContext(
         newContextUsed: ContextItem[],
         contextAlternatives?: RankedContext[]
@@ -51,10 +62,10 @@ export class ChatModel {
             throw new Error('Cannot set new context used for bot message')
         }
 
-        lastMessage.contextFiles = newContextUsed.filter(c => !isCodyIgnoredFile(c.uri))
+        lastMessage.contextFiles = newContextUsed
         lastMessage.contextAlternatives = contextAlternatives?.map(({ items, strategy }) => {
             return {
-                items: items.filter(c => !isCodyIgnoredFile(c.uri)),
+                items: items,
                 strategy,
             }
         })

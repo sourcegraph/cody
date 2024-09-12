@@ -2,12 +2,13 @@ import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
 import {
-    type AuthStatus,
     type AutocompleteContextSnippet,
     type ClientConfigurationWithAccessToken,
     type DocumentContext,
+    currentAuthStatus,
     getActiveTraceAndSpanId,
     isAbortError,
+    isDotComAuthed,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -47,8 +48,7 @@ export interface InlineCompletionsParams {
     completionIntent?: CompletionIntent
     lastAcceptedCompletionItem?: Pick<AutocompleteItem, 'requestParams' | 'analyticsItem'>
     provider: Provider
-    authStatus: AuthStatus
-    config: ClientConfigurationWithAccessToken
+    configuration: ClientConfigurationWithAccessToken
 
     // Shared
     requestManager: RequestManager
@@ -57,7 +57,6 @@ export interface InlineCompletionsParams {
     stageRecorder: CompletionLogger.AutocompleteStageRecorder
 
     // UI state
-    isDotComUser: boolean
     lastCandidate?: LastInlineCompletionCandidate
     debounceInterval?: { singleLine: number; multiLine: number }
     setIsLoading?: (isLoading: boolean) => void
@@ -243,14 +242,14 @@ async function doGetInlineCompletions(
         firstCompletionTimeout,
         completionIntent,
         lastAcceptedCompletionItem,
-        isDotComUser,
         stageRecorder,
-        authStatus,
-        config,
+        configuration: config,
         numberOfCompletionsToGenerate,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
+
+    const isDotComUser = isDotComAuthed()
 
     const gitIdentifiersForFile =
         isDotComUser === true ? gitMetadataForCurrentEditor.getGitIdentifiersForFile() : undefined
@@ -488,7 +487,7 @@ async function doGetInlineCompletions(
         firstCompletionTimeout,
         completionLogId: logId,
         gitContext,
-        authStatus,
+        authStatus: currentAuthStatus(),
         config,
         numberOfCompletionsToGenerate: numberOfCompletionsToGenerate ?? n,
         multiline: !!docContext.multilineTrigger,
@@ -526,7 +525,7 @@ async function doGetInlineCompletions(
         requestParams,
         isDotComUser,
         stale,
-        context: contextResult?.context ?? [],
+        rankedContextCandidates: contextResult?.rankedContextCandidates ?? [],
     })
 }
 
@@ -537,7 +536,7 @@ interface ProcessRequestManagerResultParams {
     requestParams: RequestParams
     isDotComUser: boolean
     stale: boolean | undefined
-    context?: AutocompleteContextSnippet[]
+    rankedContextCandidates?: AutocompleteContextSnippet[]
 }
 
 function processRequestManagerResult(
@@ -549,7 +548,7 @@ function processRequestManagerResult(
         requestParams,
         isDotComUser,
         stale,
-        context,
+        rankedContextCandidates,
     } = params
 
     let { logId } = params
@@ -563,7 +562,7 @@ function processRequestManagerResult(
     }
 
     const inlineContextParams = {
-        context: context ?? [],
+        context: rankedContextCandidates ?? [],
         filePath: gitIdentifiersForFile?.filePath,
         gitUrl: gitIdentifiersForFile?.gitUrl,
         commit: gitIdentifiersForFile?.commit,

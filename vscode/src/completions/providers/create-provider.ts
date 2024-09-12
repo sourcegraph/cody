@@ -1,10 +1,10 @@
 import {
-    type AuthenticatedAuthStatus,
     type ClientConfigurationWithAccessToken,
     type Model,
-    isDotCom,
+    currentAuthStatusAuthed,
 } from '@sourcegraph/cody-shared'
 
+import { Observable, map } from 'observable-fns'
 import { logError } from '../../log'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { createProvider as createAnthropicProvider } from './anthropic'
@@ -18,53 +18,50 @@ import { createProvider as createOpenAICompatibleProviderConfig } from './openai
 import type { Provider, ProviderFactory } from './provider'
 import { createProvider as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
-export async function createProvider(
-    config: ClientConfigurationWithAccessToken,
-    authStatus: AuthenticatedAuthStatus
-): Promise<Provider | null> {
+export function createProvider(config: ClientConfigurationWithAccessToken): Observable<Provider | null> {
     // Resolve the provider config from the VS Code config.
     if (config.autocompleteAdvancedProvider) {
-        return createProviderHelper({
-            authStatus,
-            legacyModel: config.autocompleteAdvancedModel || undefined,
-            provider: config.autocompleteAdvancedProvider,
-            config,
+        return Observable.of(
+            createProviderHelper({
+                legacyModel: config.autocompleteAdvancedModel || undefined,
+                provider: config.autocompleteAdvancedProvider,
+                config,
+            })
+        )
+    }
+
+    return getExperimentModel().pipe(
+        map(configFromFeatureFlags => {
+            // Check if a user participates in autocomplete model experiments, and use the
+            // experiment model if available.
+            if (configFromFeatureFlags) {
+                return createProviderHelper({
+                    legacyModel: configFromFeatureFlags.model,
+                    provider: configFromFeatureFlags.provider,
+                    config,
+                })
+            }
+
+            const modelInfoOrError = getModelInfo()
+
+            if (modelInfoOrError instanceof Error) {
+                logError('createProvider', modelInfoOrError.message)
+                return null
+            }
+
+            const { provider, legacyModel, model } = modelInfoOrError
+
+            return createProviderHelper({
+                legacyModel,
+                model,
+                provider,
+                config,
+            })
         })
-    }
-
-    // Check if a user participates in autocomplete model experiments.
-    const configFromFeatureFlags = await getExperimentModel(isDotCom(authStatus))
-
-    // Use the experiment model if available.
-    if (configFromFeatureFlags) {
-        return createProviderHelper({
-            authStatus,
-            legacyModel: configFromFeatureFlags.model,
-            provider: configFromFeatureFlags.provider,
-            config,
-        })
-    }
-
-    const modelInfoOrError = getModelInfo(authStatus)
-
-    if (modelInfoOrError instanceof Error) {
-        logError('createProvider', modelInfoOrError.message)
-        return null
-    }
-
-    const { provider, legacyModel, model } = modelInfoOrError
-
-    return createProviderHelper({
-        authStatus,
-        legacyModel,
-        model,
-        provider,
-        config,
-    })
+    )
 }
 
 interface CreateConfigHelperParams {
-    authStatus: AuthenticatedAuthStatus
     legacyModel: string | undefined
     provider: string
     config: ClientConfigurationWithAccessToken
@@ -72,19 +69,17 @@ interface CreateConfigHelperParams {
 }
 
 export function createProviderHelper(params: CreateConfigHelperParams): Provider | null {
-    const { authStatus, legacyModel, model, provider, config } = params
-    const { anonymousUserID } = localStorage.anonymousUserID()
+    const { legacyModel, model, provider, config } = params
+    const anonymousUserID = localStorage.anonymousUserID()
 
     const providerCreator = getProviderCreator({
         provider: provider as AutocompleteProviderID,
-        authStatus,
     })
 
     if (providerCreator) {
         return providerCreator({
             model,
             legacyModel: legacyModel,
-            authStatus,
             config,
             anonymousUserID,
             provider,
@@ -96,11 +91,10 @@ export function createProviderHelper(params: CreateConfigHelperParams): Provider
 
 interface GetProviderCreatorParams {
     provider: AutocompleteProviderID
-    authStatus: AuthenticatedAuthStatus
 }
 
 function getProviderCreator(params: GetProviderCreatorParams): ProviderFactory | null {
-    const { provider, authStatus } = params
+    const { provider } = params
 
     if (provider === AUTOCOMPLETE_PROVIDER_ID.fireworks) {
         return createFireworksProvider
@@ -122,12 +116,14 @@ function getProviderCreator(params: GetProviderCreatorParams): ProviderFactory |
         return createExperimentalOpenAICompatibleProvider
     }
 
+    const { configOverwrites } = currentAuthStatusAuthed()
+
     if (
         provider === AUTOCOMPLETE_PROVIDER_ID.anthropic ||
         provider === AUTOCOMPLETE_PROVIDER_ID['aws-bedrock'] ||
         // An exception where we have to check the completion model string in addition to the provider ID.
         (provider === AUTOCOMPLETE_PROVIDER_ID.google &&
-            authStatus.configOverwrites?.completionModel?.includes('claude'))
+            configOverwrites?.completionModel?.includes('claude'))
     ) {
         return createAnthropicProvider
     }

@@ -1,4 +1,5 @@
 import { isError } from '../../utils'
+import type { CompletionsResponseBuilder } from './CompletionsResponseBuilder'
 
 import type { Event } from './types'
 
@@ -29,7 +30,21 @@ function parseJSON<T>(data: string): T | Error {
     }
 }
 
-function parseEventData(eventType: Event['type'], dataLine: string): Event | Error {
+export interface CompletionData {
+    completion?: string
+    deltaText?: string
+    stopReason?: string
+}
+
+export function parseCompletionJSON(jsonData: string): CompletionData | Error {
+    return parseJSON<CompletionData>(jsonData)
+}
+
+function parseEventData(
+    builder: CompletionsResponseBuilder,
+    eventType: Event['type'],
+    dataLine: string
+): Event | Error {
     if (!dataLine.startsWith(DATA_LINE_PREFIX)) {
         return new Error(`cannot parse event data: ${dataLine}`)
     }
@@ -37,14 +52,18 @@ function parseEventData(eventType: Event['type'], dataLine: string): Event | Err
     const jsonData = dataLine.slice(DATA_LINE_PREFIX.length)
     switch (eventType) {
         case 'completion': {
-            const data = parseJSON<{ completion: string; stopReason: string }>(jsonData)
+            const data = parseCompletionJSON(jsonData)
             if (isError(data)) {
                 return data
             }
-            if (typeof data.completion === 'undefined') {
-                return new Error('invalid completion event')
+            // Internally, don't handle delta text yet and there's limited value
+            // in passing around deltas anyways so we concatenate them here.
+            const completion = builder.nextCompletion(data.completion, data.deltaText)
+            return {
+                type: eventType,
+                completion,
+                stopReason: data.stopReason,
             }
-            return { type: eventType, completion: data.completion, stopReason: data.stopReason }
         }
         case 'error': {
             const data = parseJSON<{ error: string }>(jsonData)
@@ -61,13 +80,13 @@ function parseEventData(eventType: Event['type'], dataLine: string): Event | Err
     }
 }
 
-function parseEvent(eventBuffer: string): Event | Error {
+function parseEvent(builder: CompletionsResponseBuilder, eventBuffer: string): Event | Error {
     const [eventLine, dataLine] = eventBuffer.split('\n')
     const eventType = parseEventType(eventLine)
     if (isError(eventType)) {
         return eventType
     }
-    return parseEventData(eventType, dataLine)
+    return parseEventData(builder, eventType, dataLine)
 }
 
 interface EventsParseResult {
@@ -75,13 +94,17 @@ interface EventsParseResult {
     remainingBuffer: string
 }
 
-export function parseEvents(eventsBuffer: string): EventsParseResult | Error {
+export function parseEvents(
+    builder: CompletionsResponseBuilder,
+    eventsBuffer: string
+): EventsParseResult | Error {
     let eventStartIndex = 0
     let eventEndIndex = eventsBuffer.indexOf(EVENTS_SEPARATOR)
 
     const events: Event[] = []
     while (eventEndIndex >= 0) {
-        const event = parseEvent(eventsBuffer.slice(eventStartIndex, eventEndIndex))
+        const eventBuffer = eventsBuffer.slice(eventStartIndex, eventEndIndex)
+        const event = parseEvent(builder, eventBuffer)
         if (isError(event)) {
             return event
         }

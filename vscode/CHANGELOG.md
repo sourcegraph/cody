@@ -8,7 +8,28 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+Chat: Fixed feedback buttons not working in chat. [pull/5509](https://github.com/sourcegraph/cody/pull/5509)
+
+### Changed
+
+Enterprise: Remote Repository items in the mention menu now display only the org/repo part of the title, omitting the code host name to prevent repository names from being truncated in the UI. [pull/5518](https://github.com/sourcegraph/cody/pull/5518)
+Cody Ignore: This internal experimental feature is now deprecated and the use of `.cody/ignore` file is no longer supported. [pull/5537](https://github.com/sourcegraph/cody/pull/5537)
+
+## 1.34.2
+
+### Fixed
+
+- Autocomplete Logging: The PR fixes the contextCandidates logged in the inlineCompletionItemContext. [pull/5507](https://github.com/sourcegraph/cody/pull/5507)
+
+## 1.34.1
+
+### Added
+
+### Fixed
+
 - Cody Ignore: Fixed an issue where Cody would treat Notebook cells as ignored files when .cody/ignore is enabled. [pull/5473](https://github.com/sourcegraph/cody/pull/5473)
+- Command: Fixed the `Generate Commit Message` command on Windows caused by file path. [pull/5483](https://github.com/sourcegraph/cody/pull/5483)
+- Dev: Fixed an issue where incorrect request parameters caused stream requests to fail when using BYOK OpenAI-compatible models. [pull/5490](https://github.com/sourcegraph/cody/pull/5490)
 
 ### Changed
 
@@ -26,6 +47,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Edit: Implemented cursor feedback for Generate Tests and Document Code commands to improve user experience by indicating command execution. [pull/5341](https://github.com/sourcegraph/cody/pull/5341)
 - Dev: Added support for configurable "options" field in locally configured LLM providers, available behind the `cody.dev.models` setting. [pull/5467](https://github.com/sourcegraph/cody/pull/5467)
+- Autocomplete Trigger Delay: Introduced a configurable setting to add a delay before returning autocomplete results, enhancing user control over completion suggestion timing. [pull/5350](https://github.com/sourcegraph/cody/pull/5350)
 
 ## 1.32.5
 

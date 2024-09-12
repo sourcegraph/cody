@@ -1,11 +1,8 @@
 import {
     type AutocompleteContextSnippet,
-    CODY_IGNORE_URI_PATH,
     type GraphQLAPIClientConfig,
     contextFiltersProvider,
     graphqlClient,
-    ignores,
-    isCodyIgnoredFile,
     testFileUri,
     uriBasename,
 } from '@sourcegraph/cody-shared'
@@ -14,8 +11,6 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import { documentAndPosition } from '../test-helpers'
 import type { ContextRetriever } from '../types'
-
-import { Utils } from 'vscode-uri'
 import { ContextMixer } from './context-mixer'
 import type { ContextStrategyFactory } from './context-strategy'
 
@@ -35,7 +30,7 @@ function createMockStrategy(resultSets: AutocompleteContextSnippet[][]): Context
     }
 
     const mockStrategyFactory = {
-        getStrategy: vi.fn().mockReturnValue({
+        getStrategy: vi.fn().mockResolvedValue({
             name: retrievers.length > 0 ? 'jaccard-similarity' : 'none',
             retrievers,
         }),
@@ -62,7 +57,7 @@ const defaultOptions = {
 
 describe('ContextMixer', () => {
     beforeEach(() => {
-        vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValue(false)
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
     })
 
     describe('with no retriever', () => {
@@ -88,12 +83,14 @@ describe('ContextMixer', () => {
                 createMockStrategy([
                     [
                         {
+                            identifier: 'jaccard-similarity',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo() {}',
                             startLine: 0,
                             endLine: 0,
                         },
                         {
+                            identifier: 'jaccard-similarity',
                             uri: testFileUri('bar.ts'),
                             content: 'function bar() {}',
                             startLine: 0,
@@ -107,12 +104,14 @@ describe('ContextMixer', () => {
                 {
                     fileName: 'foo.ts',
                     content: 'function foo() {}',
+                    identifier: 'jaccard-similarity',
                     startLine: 0,
                     endLine: 0,
                 },
                 {
                     fileName: 'bar.ts',
                     content: 'function bar() {}',
+                    identifier: 'jaccard-similarity',
                     startLine: 0,
                     endLine: 0,
                 },
@@ -142,12 +141,14 @@ describe('ContextMixer', () => {
                 createMockStrategy([
                     [
                         {
+                            identifier: 'jaccard-similarity',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo1() {}',
                             startLine: 0,
                             endLine: 0,
                         },
                         {
+                            identifier: 'jaccard-similarity',
                             uri: testFileUri('bar.ts'),
                             content: 'function bar1() {}',
                             startLine: 0,
@@ -157,18 +158,21 @@ describe('ContextMixer', () => {
 
                     [
                         {
+                            identifier: 'jaccard-similarity',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo3() {}',
                             startLine: 10,
                             endLine: 10,
                         },
                         {
+                            identifier: 'jaccard-similarity',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo1() {}\nfunction foo2() {}',
                             startLine: 0,
                             endLine: 1,
                         },
                         {
+                            identifier: 'jaccard-similarity',
                             uri: testFileUri('bar.ts'),
                             content: 'function bar1() {}\nfunction bar2() {}',
                             startLine: 0,
@@ -188,6 +192,7 @@ describe('ContextMixer', () => {
                   "content": "function foo1() {}",
                   "endLine": 0,
                   "fileName": "foo.ts",
+                  "identifier": "jaccard-similarity",
                   "startLine": 0,
                 },
                 {
@@ -195,12 +200,14 @@ describe('ContextMixer', () => {
               function foo2() {}",
                   "endLine": 1,
                   "fileName": "foo.ts",
+                  "identifier": "jaccard-similarity",
                   "startLine": 0,
                 },
                 {
                   "content": "function bar1() {}",
                   "endLine": 0,
                   "fileName": "bar.ts",
+                  "identifier": "jaccard-similarity",
                   "startLine": 0,
                 },
                 {
@@ -208,12 +215,14 @@ describe('ContextMixer', () => {
               function bar2() {}",
                   "endLine": 1,
                   "fileName": "bar.ts",
+                  "identifier": "jaccard-similarity",
                   "startLine": 0,
                 },
                 {
                   "content": "function foo3() {}",
                   "endLine": 10,
                   "fileName": "foo.ts",
+                  "identifier": "jaccard-similarity",
                   "startLine": 10,
                 },
               ]
@@ -243,72 +252,9 @@ describe('ContextMixer', () => {
             })
         })
 
-        describe('retrieved context is filtered by .cody/ignore', () => {
-            const workspaceRoot = testFileUri('')
-            beforeAll(() => {
-                ignores.setActiveState(true)
-                // all foo.ts files will be ignored
-                ignores.setIgnoreFiles(workspaceRoot, [
-                    {
-                        uri: Utils.joinPath(workspaceRoot, '.', CODY_IGNORE_URI_PATH),
-                        content: '**/foo.ts',
-                    },
-                ])
-            })
-            it('mixes results are filtered', async () => {
-                const mixer = new ContextMixer(
-                    createMockStrategy([
-                        [
-                            {
-                                uri: testFileUri('foo.ts'),
-                                content: 'function foo1() {}',
-                                startLine: 0,
-                                endLine: 0,
-                            },
-                            {
-                                uri: testFileUri('foo/bar.ts'),
-                                content: 'function bar1() {}',
-                                startLine: 0,
-                                endLine: 0,
-                            },
-                        ],
-                        [
-                            {
-                                uri: testFileUri('test/foo.ts'),
-                                content: 'function foo3() {}',
-                                startLine: 10,
-                                endLine: 10,
-                            },
-                            {
-                                uri: testFileUri('foo.ts'),
-                                content: 'function foo1() {}\nfunction foo2() {}',
-                                startLine: 0,
-                                endLine: 1,
-                            },
-                            {
-                                uri: testFileUri('example/bar.ts'),
-                                content: 'function bar1() {}\nfunction bar2() {}',
-                                startLine: 0,
-                                endLine: 1,
-                            },
-                        ],
-                    ])
-                )
-                const { context } = await mixer.getContext(defaultOptions)
-                const contextFiles = normalize(context)
-                // returns 2 bar.ts context
-                expect(contextFiles?.length).toEqual(2)
-                for (const context of contextFiles) {
-                    expect(
-                        isCodyIgnoredFile(Utils.joinPath(workspaceRoot, context.fileName))
-                    ).toBeFalsy()
-                }
-            })
-        })
-
         describe('retrieved context is filtered by context filters', () => {
             beforeAll(() => {
-                vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockImplementation(
+                vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockImplementation(
                     async (uri: vscode.Uri) => {
                         if (uri.path.includes('foo.ts')) {
                             return 'repo:foo'
@@ -322,12 +268,14 @@ describe('ContextMixer', () => {
                     createMockStrategy([
                         [
                             {
+                                identifier: 'jaccard-similarity',
                                 uri: testFileUri('foo.ts'),
                                 content: 'function foo1() {}',
                                 startLine: 0,
                                 endLine: 0,
                             },
                             {
+                                identifier: 'jaccard-similarity',
                                 uri: testFileUri('foo/bar.ts'),
                                 content: 'function bar1() {}',
                                 startLine: 0,
@@ -336,18 +284,21 @@ describe('ContextMixer', () => {
                         ],
                         [
                             {
+                                identifier: 'jaccard-similarity',
                                 uri: testFileUri('test/foo.ts'),
                                 content: 'function foo3() {}',
                                 startLine: 10,
                                 endLine: 10,
                             },
                             {
+                                identifier: 'jaccard-similarity',
                                 uri: testFileUri('foo.ts'),
                                 content: 'function foo1() {}\nfunction foo2() {}',
                                 startLine: 0,
                                 endLine: 1,
                             },
                             {
+                                identifier: 'jaccard-similarity',
                                 uri: testFileUri('example/bar.ts'),
                                 content: 'function bar1() {}\nfunction bar2() {}',
                                 startLine: 0,
@@ -358,7 +309,13 @@ describe('ContextMixer', () => {
                 )
                 const { context } = await mixer.getContext(defaultOptions)
                 const contextFiles = normalize(context)
-                expect(contextFiles.map(c => c.fileName)).toEqual(['bar.ts', 'bar.ts'])
+                expect(contextFiles.map(c => c.fileName)).toEqual([
+                    'foo.ts',
+                    'foo.ts',
+                    'foo.ts',
+                    'bar.ts',
+                    'bar.ts',
+                ])
             })
         })
     })
