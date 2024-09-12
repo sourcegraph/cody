@@ -14,6 +14,7 @@ import {
     type ExpectedV2Events,
     test as baseTest,
     executeCommandInPalette,
+    openCodyCommandsQuickPick,
     openCustomCommandMenu,
     withPlatformSlashes,
 } from './helpers'
@@ -54,8 +55,15 @@ test.extend<ExpectedV2Events>({
 
     // Bring the cody sidebar to the foreground
     await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
+
+    // Verify the default commands are not showing up as custom commands in the menu.
+    // Meaning it should only shouw up once in the command menu.
+    await openCodyCommandsQuickPick(page)
+    await expect(page.getByText('Explain Code', { exact: true })).toBeVisible()
+
     // Click the Custom Commands button in the Sidebar to open the Custom Commands menu
     await openCustomCommandMenu(page)
+    await expect(page.getByText('Explain Code', { exact: true })).not.toBeVisible()
 
     const commandName = 'ATestCommand'
     const prompt = 'The test command has been created'
@@ -110,7 +118,7 @@ test.extend<ExpectedV2Events>({
 
     // The new command should show up
     await openCustomCommandMenu(page)
-    expect(await page.getByText(commandName)).toBeVisible({ timeout: 1000 })
+    await expect(page.getByText(commandName)).toBeVisible({ timeout: 1000 })
 })
 
 // NOTE: If no custom commands are showing up in the command menu, it might

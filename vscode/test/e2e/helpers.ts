@@ -512,8 +512,13 @@ export function getMetaKeyByOS(): 'Meta' | 'Control' {
     return isPlatform('darwin') ? 'Meta' : 'Control'
 }
 
+export const openCodyCommandsQuickPick = async (page: Page): Promise<void> => {
+    await executeCommandInPalette(page, 'Cody Menu: Cody Commands')
+    await expect(page.getByText('Cody Commands')).toBeVisible()
+}
+
 export const openCustomCommandMenu = async (page: Page): Promise<void> => {
-    await executeCommandInPalette(page, 'Custom Commands')
+    await executeCommandInPalette(page, 'Cody Menu: Custom Commands')
 }
 
 export const testWithGitRemote = test.extend<WorkspaceDirectory>({
