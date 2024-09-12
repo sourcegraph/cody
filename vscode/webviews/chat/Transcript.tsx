@@ -293,7 +293,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             {experimentalOneBoxEnabled && humanMessage.intent && (
                 <InfoMessage>
                     {humanMessage.intent === 'search' ? (
-                        <div className="tw-flex tw-justify-between tw-gap-4">
+                        <div className="tw-flex tw-justify-between tw-gap-4 tw-items-center">
                             <span>Intent detection selected a code search response.</span>
                             <div>
                                 <Button
@@ -308,7 +308,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                             </div>
                         </div>
                     ) : (
-                        <div className="tw-flex tw-justify-between tw-gap-4">
+                        <div className="tw-flex tw-justify-between tw-gap-4 tw-items-center">
                             <span>Intent detection selected an LLM response.</span>
                             <div>
                                 <Button
