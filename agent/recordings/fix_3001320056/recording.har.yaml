@@ -90,7 +90,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: a3437619d7c064df2285fbb36db46aa0
+    - _id: 68dd2225dd370515222d7f6a17da5161
       _order: 0
       cache: {}
       request:
@@ -107,7 +107,7 @@ log:
           - name: user-agent
             value: fix / v1
           - name: traceparent
-            value: 00-b807db0d9efbf3dfc1f385cef3b73d59-44117eec55f191c4-01
+            value: 00-a661d92551429ada3220118a9655afea-ffdebab71d691ce9-01
           - name: connection
             value: keep-alive
           - name: host
@@ -185,21 +185,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "1"
+            value: "2"
           - name: client-name
             value: fix
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=fix&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=fix&client-version=v1
       response:
-        bodySize: 684
+        bodySize: 396
         content:
           mimeType: text/event-stream
-          size: 684
+          size: 396
           text: >+
             event: completion
 
-            data: {"completion":"export function fixCommandExample(): number {\n    return 42;\n}\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"export function fixCommandExample(): number {\n    return 42;\n}\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -209,7 +209,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 03:46:29 GMT
+            value: Thu, 12 Sep 2024 07:36:17 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -238,7 +238,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-10T03:46:27.849Z
+      startedDateTime: 2024-09-12T07:36:15.825Z
       time: 0
       timings:
         blocked: -1

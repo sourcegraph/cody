@@ -90,7 +90,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: a8864b71b4c05dceb5fe0b4eebf56049
+    - _id: 4c382389689a0d52237ac8a2a25ab68e
       _order: 0
       cache: {}
       request:
@@ -107,7 +107,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-9c4ce0f27225faccdd2072669e850863-f17dbfb939a22d9a-01
+            value: 00-095d72e6038cef5106c12a189a2ef13e-baccb8fd49729bf8-01
           - name: connection
             value: keep-alive
           - name: host
@@ -177,21 +177,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "1"
+            value: "2"
           - name: client-name
             value: document-code
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=document-code&client-version=v1
       response:
-        bodySize: 2910
+        bodySize: 1045
         content:
           mimeType: text/event-stream
-          size: 2910
+          size: 1045
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Adds two numbers and returns the result.\n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of the two numbers.\n */\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"/**\n * Calculates the sum of two numbers.\n *\n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of `a` and `b`.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -201,7 +201,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 03:46:32 GMT
+            value: Thu, 12 Sep 2024 07:36:19 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -230,7 +230,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-10T03:46:30.655Z
+      startedDateTime: 2024-09-12T07:36:18.507Z
       time: 0
       timings:
         blocked: -1
@@ -240,7 +240,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ef680d2c51419a91a7f219698090d1ec
+    - _id: c9536eff4331977aa15bab54332364df
       _order: 0
       cache: {}
       request:
@@ -257,7 +257,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-2f7866df27f26aeb4973c48346620a51-8340b069d2d5da91-01
+            value: 00-704d7f41eb9c2f3eb1ee4454b78e2bdb-dee08277856dd251-01
           - name: connection
             value: keep-alive
           - name: host
@@ -374,21 +374,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "1"
+            value: "2"
           - name: client-name
             value: document-code
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=document-code&client-version=v1
       response:
-        bodySize: 955
+        bodySize: 682
         content:
           mimeType: text/event-stream
-          size: 955
+          size: 682
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Prints a greeting message if the `shouldGreet` flag is true.\n */","stopReason":"stop_sequence"}
+            data: {"deltaText":"\n/**\n * Logs a 'Hello World!' message to the console if the `shouldGreet` property is true.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -398,7 +398,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 03:46:33 GMT
+            value: Thu, 12 Sep 2024 07:36:20 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -427,7 +427,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-10T03:46:32.151Z
+      startedDateTime: 2024-09-12T07:36:19.718Z
       time: 0
       timings:
         blocked: -1
@@ -437,7 +437,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: fcbd60e238d7faf15a70613f36cb3411
+    - _id: ab83a469bf5972510c277183803aa6eb
       _order: 0
       cache: {}
       request:
@@ -454,7 +454,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-6a4d4c07d58b1886cdbb06e48e3f9b2c-b6780115ff52f1bb-01
+            value: 00-d4abeaf55070c15efd92d0f2f8e02caa-cd432ecc50954431-01
           - name: connection
             value: keep-alive
           - name: host
@@ -546,21 +546,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "1"
+            value: "2"
           - name: client-name
             value: document-code
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=document-code&client-version=v1
       response:
-        bodySize: 448
+        bodySize: 281
         content:
           mimeType: text/event-stream
-          size: 448
+          size: 281
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Records a log message.\n */","stopReason":"stop_sequence"}
+            data: {"deltaText":"/**\n * Records a log message.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -570,7 +570,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 03:46:34 GMT
+            value: Thu, 12 Sep 2024 07:36:21 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -599,7 +599,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-10T03:46:33.206Z
+      startedDateTime: 2024-09-12T07:36:20.829Z
       time: 0
       timings:
         blocked: -1
@@ -609,7 +609,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 9bef628c6c4aa6d7d63bff44d95d47e5
+    - _id: 61582c14b282964d6d55545a5f78294e
       _order: 0
       cache: {}
       request:
@@ -626,7 +626,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-15f1ee4f8c68193966bedffe392b31a7-f56a04ffd6efb176-01
+            value: 00-03d717a80d826c77d129afbeef515e67-4a9243459ac07032-01
           - name: connection
             value: keep-alive
           - name: host
@@ -727,21 +727,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "1"
+            value: "2"
           - name: client-name
             value: document-code
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=document-code&client-version=v1
       response:
-        bodySize: 2501
+        bodySize: 1178
         content:
           mimeType: text/event-stream
-          size: 2501
+          size: 1178
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Captures the current time in milliseconds since the page was loaded.\n * This can be used to measure the time taken for a specific operation.\n */","stopReason":"stop_sequence"}
+            data: {"deltaText":"/**\n * Retrieves the current timestamp in milliseconds from the high-resolution time source provided by the user's browser.\n * This value can be used to measure elapsed time between two points in an application.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -751,7 +751,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 03:46:35 GMT
+            value: Thu, 12 Sep 2024 07:36:23 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -780,7 +780,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-10T03:46:34.648Z
+      startedDateTime: 2024-09-12T07:36:21.750Z
       time: 0
       timings:
         blocked: -1
@@ -790,7 +790,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 10b7a25d1dc96a41e5ce68ca1d3aff28
+    - _id: a89687992c101527bd88e9fd343151d1
       _order: 0
       cache: {}
       request:
@@ -807,7 +807,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-f1a9609b373c67908d226497a763ae3a-22fa92c2f44ac2ff-01
+            value: 00-d14d130a572774b14e9c739118752e03-f111e7a1a92201ac-01
           - name: connection
             value: keep-alive
           - name: host
@@ -879,21 +879,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "1"
+            value: "2"
           - name: client-name
             value: document-code
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=document-code&client-version=v1
       response:
-        bodySize: 561
+        bodySize: 731
         content:
           mimeType: text/event-stream
-          size: 561
+          size: 731
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Provides a greeting message.\n */\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"/**\n * Represents a simple Hello class.\n *\n * This class provides a basic greeting functionality.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -903,7 +903,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 03:46:37 GMT
+            value: Thu, 12 Sep 2024 07:36:24 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -932,7 +932,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-10T03:46:35.949Z
+      startedDateTime: 2024-09-12T07:36:23.068Z
       time: 0
       timings:
         blocked: -1

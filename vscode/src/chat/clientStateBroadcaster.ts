@@ -10,7 +10,6 @@ import {
     displayLineRange,
     displayPathBasename,
     expandToLineRange,
-    logDebug,
     openCtx,
     resolvedConfig,
     subscriptionDisposable,
@@ -81,7 +80,6 @@ export function startClientStateBroadcaster({
             }
         }
         const corpusItems = getCorpusContextItemsForEditorState(useRemoteSearch)
-        logDebug('corpusItems', JSON.stringify(await corpusItems, null, 2))
         items.push(...(await corpusItems))
 
         postMessage({ type: 'clientState', value: { initialContext: items } })

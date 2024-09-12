@@ -27,6 +27,7 @@ import {
     toPartialUtf8String,
     tracer,
 } from '@sourcegraph/cody-shared'
+import { CompletionsResponseBuilder } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/CompletionsResponseBuilder'
 
 const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 
@@ -85,6 +86,8 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
             // Text which has not been decoded as a server-sent event (SSE)
             let bufferText = ''
+
+            const builder = new CompletionsResponseBuilder(apiVersion)
 
             const request = requestFn(
                 url,
@@ -200,7 +203,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         bufferText += str
                         bufferBin = buf
 
-                        const parseResult = parseEvents(bufferText)
+                        const parseResult = parseEvents(builder, bufferText)
                         if (isError(parseResult)) {
                             logError(
                                 'SourcegraphNodeCompletionsClient',
