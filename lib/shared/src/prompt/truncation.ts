@@ -3,16 +3,15 @@ import { getTokenCounterUtils } from '../token/counter'
 
 import type { PromptString } from './prompt-string'
 
-import { Tiktoken } from 'js-tiktoken/lite'
-import ranks from 'js-tiktoken/ranks/cl100k_base'
-
-export function truncatePromptString(text: PromptString, maxTokens: number): PromptString {
-    const encoder = new Tiktoken(ranks)
-    const encoded = encoder.encode(text.toString())
-
+export async function truncatePromptString(
+    text: PromptString,
+    maxTokens: number
+): Promise<PromptString> {
+    const tokenCounterUtils = await getTokenCounterUtils()
+    const encoded = tokenCounterUtils.encode(text.toString())
     return encoded.length <= maxTokens
         ? text
-        : text.slice(0, encoder.decode(encoded.slice(0, maxTokens))?.length).trim()
+        : text.slice(0, tokenCounterUtils.decode(encoded.slice(0, maxTokens))?.length).trim()
 }
 
 /**
