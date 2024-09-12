@@ -24,7 +24,7 @@ export interface Message {
 
 export interface CompletionResponse {
     completion: string
-    stopReason: string
+    stopReason?: string
 }
 
 export interface CompletionParameters {

@@ -3,7 +3,8 @@ import crypto from 'node:crypto'
 import type { Har, HarEntry } from '@pollyjs/persister'
 import FSPersister from '@pollyjs/persister-fs'
 
-import { isError, parseEvents } from '@sourcegraph/cody-shared'
+import { type CompletionData, isError, parseEvents } from '@sourcegraph/cody-shared'
+import { CompletionsResponseBuilder } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/CompletionsResponseBuilder'
 import { PollyYamlWriter } from './PollyYamlWriter'
 import { decodeCompressedBase64 } from './base64'
 
@@ -113,7 +114,7 @@ export class CodyPersister extends FSPersister {
             entry.response.content.text
             entry.request.cookies.length = 0
             entry.response.cookies.length = 0
-            entry.response.content.text = postProcessResponseText(entry)
+            entry.response.content.text = postProcessHarEntryResponse(entry)
 
             // And other misc fields.
             entry.time = 0
@@ -167,7 +168,8 @@ export class CodyPersister extends FSPersister {
         )
     }
 }
-function postProcessResponseText(entry: HarEntry): string | undefined {
+
+export function postProcessHarEntryResponse(entry: HarEntry): string | undefined {
     const { text } = entry.response.content
     if (text === undefined) {
         return undefined
@@ -178,7 +180,12 @@ function postProcessResponseText(entry: HarEntry): string | undefined {
     ) {
         return text
     }
-    const parseResult = parseEvents(text)
+    return postProcessCompletionsStreamText(entry.request.url, text)
+}
+
+export function postProcessCompletionsStreamText(url: string, text: string): string | undefined {
+    const builder = CompletionsResponseBuilder.fromUrl(url)
+    const parseResult = parseEvents(builder, text)
     if (isError(parseResult)) {
         return text
     }
@@ -192,11 +199,29 @@ function postProcessResponseText(entry: HarEntry): string | undefined {
         return text
     }
 
-    const lines = text.split('\n')
-    const lastCompletionEvent = lines.lastIndexOf('event: completion')
-    if (lastCompletionEvent >= 0) {
-        return lines.slice(lastCompletionEvent).join('\n')
-    }
+    const data: CompletionData =
+        builder.apiVersion >= 2
+            ? {
+                  deltaText: completionEvent.completion,
+                  stopReason: completionEvent.stopReason,
+              }
+            : {
+                  completion: builder.totalCompletion,
+                  stopReason: completionEvent.stopReason,
+              }
 
-    return text
+    // NOTE(olafurpg) after api-version=2, we send delta text on SSE events
+    // instead of the full completion including prefix. This was a huge performance
+    // win but it's impractical for the HTTP record/replay format where we want
+    // to generate as few lines as possible. For this reason, we post-process
+    // the api-version=2 output to make it look like api-version=1 where the
+    // full completion is included via `.completion`.
+    const result = `event: completion
+data: ${JSON.stringify(data)}
+
+event: done
+data: {}
+
+`
+    return result
 }

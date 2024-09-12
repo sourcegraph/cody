@@ -90,7 +90,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 4ed13d4e8174ce33a3d8910b83fc79fd
+    - _id: f5623171f8bf86ad98745a6cee905083
       _order: 0
       cache: {}
       request:
@@ -107,7 +107,7 @@ log:
           - name: user-agent
             value: edit / v1
           - name: traceparent
-            value: 00-c6cff28b1965413e3df8abc42bbc981e-2fe0c0732ee58855-01
+            value: 00-58e2837e69a6f34aa172172090145cb1-3bc13a157b2331a1-01
           - name: connection
             value: keep-alive
           - name: host
@@ -176,21 +176,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "1"
+            value: "2"
           - name: client-name
             value: edit
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=edit&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=edit&client-version=v1
       response:
-        bodySize: 832
+        bodySize: 446
         content:
           mimeType: text/event-stream
-          size: 832
+          size: 446
           text: >+
             event: completion
 
-            data: {"completion":"export function sum(c: number, b: number): number {\n    /* CURSOR */\n}\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"export function sum(c: number, b: number): number {\n    /* CURSOR */\n}\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -200,7 +200,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 03:46:18 GMT
+            value: Thu, 12 Sep 2024 07:36:05 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -229,7 +229,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-10T03:46:16.229Z
+      startedDateTime: 2024-09-12T07:36:04.004Z
       time: 0
       timings:
         blocked: -1
@@ -239,7 +239,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: de1f01e705825d05430759dd517cd69a
+    - _id: 9efe9809839162d1cbb7b4a8edb9ab0c
       _order: 0
       cache: {}
       request:
@@ -256,7 +256,7 @@ log:
           - name: user-agent
             value: edit / v1
           - name: traceparent
-            value: 00-9702a8dcaced37fd58089ac776fc2b04-7eac6ea065ac9cdb-01
+            value: 00-3704e2cc06312093ddb8ddd94c67592f-04f82b2ae4562f59-01
           - name: connection
             value: keep-alive
           - name: host
@@ -349,21 +349,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "1"
+            value: "2"
           - name: client-name
             value: edit
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=edit&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=edit&client-version=v1
       response:
-        bodySize: 4586
+        bodySize: 1168
         content:
           mimeType: text/event-stream
-          size: 4586
+          size: 1168
           text: >+
             event: completion
 
-            data: {"completion":"\ninterface Message {\n  chatID: string;\n  text: string;\n}\n\ninterface ChatColumnProps {\n  messages: Message[];\n  setChatID: (chatID: string) =\u003e void;\n  isLoading: boolean;\n}\n\nexport default function ChatColumn({\n  messages,\n  setChatID,\n  isLoading,\n}: ChatColumnProps) {\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"\ninterface Message {\n  chatID: string;\n  text: string;\n}\n\ninterface ChatColumnProps {\n  messages: Message[];\n  setChatID: (chatID: string) => void;\n  isLoading: boolean;\n}\n\nexport default function ChatColumn({\n  messages,\n  setChatID,\n  isLoading,\n}: ChatColumnProps) {\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -373,7 +373,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 03:46:19 GMT
+            value: Thu, 12 Sep 2024 07:36:07 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -402,7 +402,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-10T03:46:18.111Z
+      startedDateTime: 2024-09-12T07:36:05.854Z
       time: 0
       timings:
         blocked: -1
@@ -412,7 +412,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: dc6a9200c4b5d3b09bb2524aa3e791e5
+    - _id: ced4256c428391d93f4746c94b7e2f74
       _order: 0
       cache: {}
       request:
@@ -429,7 +429,7 @@ log:
           - name: user-agent
             value: edit / v1
           - name: traceparent
-            value: 00-2d34cd9e8c9ce94984365c4b9bca7726-892de92d9543f70f-01
+            value: 00-6227e26e3d11317b657cda74ecf62369-68dfc3c2718ae9eb-01
           - name: connection
             value: keep-alive
           - name: host
@@ -519,21 +519,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "1"
+            value: "2"
           - name: client-name
             value: edit
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=edit&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=edit&client-version=v1
       response:
-        bodySize: 3352
+        bodySize: 1109
         content:
           mimeType: text/event-stream
-          size: 3352
+          size: 1109
           text: >+
             event: completion
 
-            data: {"completion":"export const Heading: React.FC\u003cHeadingProps\u003e = ({ text, level = 1 }) =\u003e {\n    const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;\n    return \u003cHeadingTag\u003e{text}\u003c/HeadingTag\u003e;\n};\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"export const Heading: React.FC<HeadingProps> = ({ text, level = 1 }) => {\n    const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;\n    \n    return <HeadingTag>{text}</HeadingTag>;\n};\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -543,7 +543,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 03:46:21 GMT
+            value: Thu, 12 Sep 2024 07:36:10 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -572,7 +572,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-10T03:46:20.154Z
+      startedDateTime: 2024-09-12T07:36:07.836Z
       time: 0
       timings:
         blocked: -1
@@ -582,7 +582,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 2010d6def65571353b4a854312d6e24c
+    - _id: 35e1a473d0ec9f87bfb4d85f6757df9c
       _order: 0
       cache: {}
       request:
@@ -599,7 +599,7 @@ log:
           - name: user-agent
             value: edit / v1
           - name: traceparent
-            value: 00-0fb717e2a9240463b41cbc25bc3fcb42-9d359d2a3c57543a-01
+            value: 00-8f05dd025ade63a0950602813966c7ed-cfe6c8c7285361bd-01
           - name: connection
             value: keep-alive
           - name: host
@@ -679,21 +679,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "1"
+            value: "2"
           - name: client-name
             value: edit
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=edit&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=edit&client-version=v1
       response:
-        bodySize: 3716
+        bodySize: 1058
         content:
           mimeType: text/event-stream
-          size: 3716
+          size: 1058
           text: >+
             event: completion
 
-            data: {"completion":"export function trickyLogic(a: number, b: number): number {\n    switch (true) {\n        case a === 0:\n            return 1\n        case b === 2:\n            return 1\n        default:\n            return a - b\n    }\n}\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"export function trickyLogic(a: number, b: number): number {\n    switch (true) {\n        case a === 0:\n            return 1\n        case b === 2:\n            return 1\n        default:\n            return a - b\n    }\n}","stopReason":"stop_sequence"}
 
 
             event: done
@@ -703,7 +703,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 10 Sep 2024 03:46:24 GMT
+            value: Thu, 12 Sep 2024 07:36:13 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -732,7 +732,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-10T03:46:22.023Z
+      startedDateTime: 2024-09-12T07:36:10.065Z
       time: 0
       timings:
         blocked: -1

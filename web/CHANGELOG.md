@@ -1,3 +1,6 @@
+## 0.8.1
+- Fix leaking highlighted code matches styles 
+
 ## 0.8.0
 - Add support for Cody one-box search results
 

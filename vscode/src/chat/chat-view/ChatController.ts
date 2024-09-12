@@ -753,9 +753,18 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
 
                 if ((await oneBoxEnabled) && repositoryMentioned) {
+                    const inputTextWithoutContextChips = editorState
+                        ? PromptString.unsafe_fromUserQuery(
+                              inputTextWithoutContextChipsFromPromptEditorState(editorState)
+                          )
+                        : inputText
+
                     const intent = detectedIntent
                         ? detectedIntent
-                        : await this.detectChatIntent({ requestID, text: inputText.toString() })
+                        : await this.detectChatIntent({
+                              requestID,
+                              text: inputTextWithoutContextChips.toString(),
+                          })
                               .then(async intent => {
                                   signal.throwIfAborted()
                                   this.chatModel.setLastMessageIntent(intent)

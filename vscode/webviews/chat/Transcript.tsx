@@ -3,6 +3,7 @@ import {
     type Guardrails,
     type SerializedPromptEditorValue,
     deserializeContextItem,
+    inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
 } from '@sourcegraph/cody-shared'
 import { type PromptEditorRefAPI, useExtensionAPI } from '@sourcegraph/prompt-editor'
@@ -219,9 +220,13 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     ['repository', 'tree'].includes(contextItem.type)
                 )
             ) {
-                extensionAPI.detectIntent(editorValue.text).subscribe(value => {
-                    setIntent(value)
-                })
+                extensionAPI
+                    .detectIntent(
+                        inputTextWithoutContextChipsFromPromptEditorState(editorValue.editorState)
+                    )
+                    .subscribe(value => {
+                        setIntent(value)
+                    })
             }
         }, 300)
     }, [experimentalOneBoxEnabled, extensionAPI])
@@ -288,7 +293,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             {experimentalOneBoxEnabled && humanMessage.intent && (
                 <InfoMessage>
                     {humanMessage.intent === 'search' ? (
-                        <div className="tw-flex tw-justify-between tw-gap-4">
+                        <div className="tw-flex tw-justify-between tw-gap-4 tw-items-center">
                             <span>Intent detection selected a code search response.</span>
                             <div>
                                 <Button
@@ -303,7 +308,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                             </div>
                         </div>
                     ) : (
-                        <div className="tw-flex tw-justify-between tw-gap-4">
+                        <div className="tw-flex tw-justify-between tw-gap-4 tw-items-center">
                             <span>Intent detection selected an LLM response.</span>
                             <div>
                                 <Button
