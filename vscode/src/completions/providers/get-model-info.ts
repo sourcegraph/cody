@@ -1,9 +1,4 @@
-import {
-    type AuthenticatedAuthStatus,
-    type Model,
-    ModelUsage,
-    modelsService,
-} from '@sourcegraph/cody-shared'
+import { type Model, ModelUsage, currentAuthStatusAuthed, modelsService } from '@sourcegraph/cody-shared'
 
 interface ModelInfo {
     provider: string
@@ -11,7 +6,7 @@ interface ModelInfo {
     model?: Model
 }
 
-export function getModelInfo(authStatus: AuthenticatedAuthStatus): ModelInfo | Error {
+export function getModelInfo(): ModelInfo | Error {
     const model = modelsService.instance!.getDefaultModel(ModelUsage.Autocomplete)
 
     if (model) {
@@ -22,10 +17,12 @@ export function getModelInfo(authStatus: AuthenticatedAuthStatus): ModelInfo | E
         return { provider, legacyModel: model.id, model }
     }
 
-    if (authStatus.configOverwrites?.provider) {
+    const { configOverwrites } = currentAuthStatusAuthed()
+
+    if (configOverwrites?.provider) {
         return parseProviderAndModel({
-            provider: authStatus.configOverwrites.provider,
-            legacyModel: authStatus.configOverwrites.completionModel,
+            provider: configOverwrites.provider,
+            legacyModel: configOverwrites.completionModel,
         })
     }
 

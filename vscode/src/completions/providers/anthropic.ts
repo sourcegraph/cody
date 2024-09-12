@@ -1,13 +1,13 @@
 import * as anthropic from '@anthropic-ai/sdk'
 
 import {
-    type AuthenticatedAuthStatus,
     type AutocompleteContextSnippet,
     type CodeCompletionsParams,
     type DocumentContext,
     type Message,
     PromptString,
-    isDotCom,
+    currentAuthStatusAuthed,
+    isDotComAuthed,
     ps,
 } from '@sourcegraph/cody-shared'
 
@@ -262,9 +262,9 @@ class AnthropicProvider extends Provider {
         }
 }
 
-function getClientModel(provider: string, authStatus: AuthenticatedAuthStatus): string {
+function getClientModel(provider: string): string {
     // Always use the default PLG model on DotCom
-    if (isDotCom(authStatus)) {
+    if (isDotComAuthed()) {
         return DEFAULT_PLG_ANTHROPIC_MODEL
     }
 
@@ -273,20 +273,22 @@ function getClientModel(provider: string, authStatus: AuthenticatedAuthStatus): 
         return ''
     }
 
+    const { configOverwrites } = currentAuthStatusAuthed()
+
     // Only pass through the upstream-defined model if we're using Cody Gateway
-    if (authStatus.configOverwrites?.provider === 'sourcegraph') {
-        return authStatus.configOverwrites.completionModel || ''
+    if (configOverwrites?.provider === 'sourcegraph') {
+        return configOverwrites.completionModel || ''
     }
 
     return ''
 }
 
 export function createProvider(params: ProviderFactoryParams): Provider {
-    const { authStatus, provider, anonymousUserID } = params
+    const { provider, anonymousUserID } = params
 
     return new AnthropicProvider({
         id: 'anthropic',
-        legacyModel: getClientModel(provider, authStatus),
+        legacyModel: getClientModel(provider),
         anonymousUserID,
     })
 }

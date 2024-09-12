@@ -3,6 +3,7 @@ import {
     combineLatest,
     distinctUntilChanged,
     featureFlagProvider,
+    isDotComAuthed,
     mergeMap,
 } from '@sourcegraph/cody-shared'
 
@@ -22,9 +23,12 @@ interface ProviderConfigFromFeatureFlags {
     model?: string
 }
 
-export function getExperimentModel(
-    isDotCom: boolean
-): Observable<ProviderConfigFromFeatureFlags | null> {
+export function getExperimentModel(): Observable<ProviderConfigFromFeatureFlags | null> {
+    // We run model experiments only on DotCom.
+    if (!isDotComAuthed()) {
+        return Observable.of(null)
+    }
+
     return combineLatest([
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
@@ -40,12 +44,12 @@ export function getExperimentModel(
                 .getConfiguration()
                 .get<boolean>('cody.advanced.agent.running', false)
 
-            if (!isFinetuningExperimentDisabled && fimModelExperimentFlag && isDotCom) {
+            if (!isFinetuningExperimentDisabled && fimModelExperimentFlag) {
                 // The traffic in this feature flag is interpreted as a traffic allocated to the fine-tuned experiment.
                 return resolveFIMModelExperimentFromFeatureFlags()
             }
 
-            if (isDotCom && deepseekV2LiteBase) {
+            if (deepseekV2LiteBase) {
                 return Observable.of({ provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE })
             }
 

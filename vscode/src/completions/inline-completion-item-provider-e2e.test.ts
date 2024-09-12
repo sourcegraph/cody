@@ -9,7 +9,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { type MockInstance, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
-import { localStorage } from '../services/LocalStorageProvider'
+import { mockLocalStorage } from '../services/LocalStorageProvider'
 import { DEFAULT_VSCODE_SETTINGS, vsCodeMocks } from '../testutils/mocks'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { TriggerKind } from './get-inline-completions'
@@ -197,10 +197,7 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
     describe('smart throttle in-flight requests', () => {
         beforeAll(async () => {
             await initCompletionProviderConfig({ configuration: {} })
-            localStorage.setStorage({
-                get: () => null,
-                update: () => {},
-            } as any as vscode.Memento)
+            mockLocalStorage()
         })
 
         beforeEach(() => {
@@ -399,11 +396,7 @@ describe('InlineCompletionItemProvider preloading', () => {
         vi.useFakeTimers()
 
         await initCompletionProviderConfig({ configuration: autocompleteConfig })
-
-        localStorage.setStorage({
-            get: () => null,
-            update: () => {},
-        } as any as vscode.Memento)
+        mockLocalStorage()
     })
 
     it('triggers preload request on cursor movement if cursor is at the end of a line', async () => {

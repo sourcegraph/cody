@@ -8,7 +8,7 @@ import {
     currentAuthStatus,
     getActiveTraceAndSpanId,
     isAbortError,
-    isDotCom,
+    isDotComAuthed,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -249,9 +249,8 @@ async function doGetInlineCompletions(
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
 
-    const authStatus = await currentAuthStatus()
+    const isDotComUser = isDotComAuthed()
 
-    const isDotComUser = isDotCom(authStatus.endpoint)
     const gitIdentifiersForFile =
         isDotComUser === true ? gitMetadataForCurrentEditor.getGitIdentifiersForFile() : undefined
     if (gitIdentifiersForFile?.gitUrl) {
@@ -488,7 +487,7 @@ async function doGetInlineCompletions(
         firstCompletionTimeout,
         completionLogId: logId,
         gitContext,
-        authStatus,
+        authStatus: currentAuthStatus(),
         config,
         numberOfCompletionsToGenerate: numberOfCompletionsToGenerate ?? n,
         multiline: !!docContext.multilineTrigger,

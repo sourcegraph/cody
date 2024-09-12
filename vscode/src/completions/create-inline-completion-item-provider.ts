@@ -72,7 +72,7 @@ export function createInlineCompletionItemProvider({
         return await getInlineCompletionItemProviderFilters(config.autocompleteLanguages)
     }).pipe(
         mergeMap(documentFilters =>
-            createProvider(config, authStatus).pipe(
+            createProvider(config).pipe(
                 createDisposables(provider => {
                     if (provider) {
                         const authStatus = currentAuthStatusAuthed()
@@ -92,7 +92,7 @@ export function createInlineCompletionItemProvider({
                             disableInsideComments: config.autocompleteDisableInsideComments,
                             isRunningInsideAgent: config.isRunningInsideAgent,
                             createBfgRetriever,
-                            isDotComUser: isDotCom(authStatus.endpoint || ''),
+                            isDotComUser: isDotCom(authStatus),
                         })
 
                         return [
