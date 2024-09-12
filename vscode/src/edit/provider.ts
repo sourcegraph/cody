@@ -2,6 +2,7 @@ import { Utils } from 'vscode-uri'
 
 import {
     BotResponseMultiplexer,
+    type CompletionParameters,
     Typewriter,
     currentAuthStatus,
     currentAuthStatusAuthed,
@@ -123,16 +124,16 @@ export class EditProvider {
             }
 
             this.abortController = new AbortController()
-            const stream = this.config.chat.chat(
-                messages,
-                {
-                    model,
-                    stopSequences,
-                    maxTokensToSample: contextWindow.output,
-                    stream: modelsService.instance!.isStreamDisabled(model),
-                },
-                this.abortController.signal
-            )
+            const params = {
+                model,
+                stopSequences,
+                maxTokensToSample: contextWindow.output,
+            } as CompletionParameters
+            // Set stream param only when the model is disabled for streaming.
+            if (modelsService.instance!.isStreamDisabled(model)) {
+                params.stream = false
+            }
+            const stream = this.config.chat.chat(messages, { ...params }, this.abortController.signal)
 
             let textConsumed = 0
             for await (const message of stream) {

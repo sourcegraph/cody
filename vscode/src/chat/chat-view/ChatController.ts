@@ -11,6 +11,7 @@ import {
     type ChatMessage,
     ClientConfigSingleton,
     CodyIDE,
+    type CompletionParameters,
     type ContextItem,
     type ContextItemOpenCtx,
     ContextItemSource,
@@ -1375,16 +1376,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
 
         try {
-            const stream = this.chatClient.chat(
-                prompt,
-                {
-                    model: this.chatModel.modelID,
-                    maxTokensToSample: this.chatModel.contextWindow.output,
-                    stream: !modelsService.instance?.isStreamDisabled(this.chatModel.modelID),
-                },
-                abortSignal
-            )
-
+            const params = {
+                model: this.chatModel.modelID,
+                maxTokensToSample: this.chatModel.contextWindow.output,
+            } as CompletionParameters
+            // Set stream param only when the model is disabled for streaming.
+            if (modelsService.instance!.isStreamDisabled(this.chatModel.modelID)) {
+                params.stream = false
+            }
+            const stream = this.chatClient.chat(prompt, params, abortSignal)
             for await (const message of stream) {
                 switch (message.type) {
                     case 'change': {
