@@ -3,6 +3,7 @@ import {
     type Guardrails,
     type SerializedPromptEditorValue,
     deserializeContextItem,
+    inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
 } from '@sourcegraph/cody-shared'
 import { type PromptEditorRefAPI, useExtensionAPI } from '@sourcegraph/prompt-editor'
@@ -219,9 +220,13 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     ['repository', 'tree'].includes(contextItem.type)
                 )
             ) {
-                extensionAPI.detectIntent(editorValue.text).subscribe(value => {
-                    setIntent(value)
-                })
+                extensionAPI
+                    .detectIntent(
+                        inputTextWithoutContextChipsFromPromptEditorState(editorValue.editorState)
+                    )
+                    .subscribe(value => {
+                        setIntent(value)
+                    })
             }
         }, 300)
     }, [experimentalOneBoxEnabled, extensionAPI])
