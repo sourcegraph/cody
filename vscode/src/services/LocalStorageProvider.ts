@@ -26,12 +26,16 @@ class LocalStorage {
     protected readonly KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
     protected readonly KEY_CONFIG = 'cody-config'
     protected readonly KEY_LOCAL_MINION_HISTORY = 'cody-local-minionHistory-v0'
-    public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
-    public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
-    public readonly LAST_USED_USERNAME = 'SOURCEGRAPH_CODY_USERNAME'
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
     protected readonly CODY_ENROLLMENT_HISTORY = 'SOURCEGRAPH_CODY_ENROLLMENTS'
     protected readonly LAST_USED_CHAT_MODALITY = 'cody-last-used-chat-modality'
+    public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
+    public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
+    public readonly LAST_USED_USERNAME = 'SOURCEGRAPH_CODY_USERNAME'
+    public readonly keys = {
+        // LLM waitlist for the 09/12/2024 openAI o1 models
+        waitlist_09122024: 'CODY_WAITLIST_LLM_09122024',
+    }
 
     /**
      * Should be set on extension activation via `localStorage.setStorage(context.globalState)`

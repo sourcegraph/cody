@@ -22,8 +22,6 @@ import { localStorage } from '../services/LocalStorageProvider'
 import { secretStorage } from '../services/SecretStorageProvider'
 import { getEnterpriseContextWindow } from './utils'
 
-const modelWaitlistKey = 'cody-waitlist-joined'
-
 /**
  * Resets the available model based on the authentication status.
  *
@@ -71,8 +69,9 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // (Only some of them may not be available if you are on the Cody Free plan.)
     if (isDotCom(authStatus)) {
         let defaultModels = getDotComDefaultModels()
+        // For users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
         const hasEarlyAccess = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEarlyAccess)
-        const isOnWaitlist = localStorage.get(modelWaitlistKey)
+        const isOnWaitlist = localStorage.get(localStorage.keys.waitlist_09122024)
         if (hasEarlyAccess || isOnWaitlist) {
             defaultModels = defaultModels.map(model => {
                 if (model.tags.includes(ModelTag.Waitlist)) {
@@ -82,8 +81,9 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
                 }
                 return model
             })
-            if (hasEarlyAccess) {
-                localStorage.delete(modelWaitlistKey)
+            // For users with early access, remove the waitlist key.
+            if (hasEarlyAccess && isOnWaitlist) {
+                localStorage.delete(localStorage.keys.waitlist_09122024)
             }
         }
         modelsService.instance!.setModels(defaultModels)
@@ -122,7 +122,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
 }
 
 export async function joinModelWaitlist(authStatus: AuthStatus): Promise<void> {
-    localStorage.set(modelWaitlistKey, true)
+    localStorage.set(localStorage.keys.waitlist_09122024, true)
     await syncModels(authStatus)
     telemetryRecorder.recordEvent('cody.joinLlmWaitlist', 'clicked')
 }
