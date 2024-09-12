@@ -29,8 +29,19 @@ import kotlin.math.min
 import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
 import org.cef.callback.CefAuthCallback
+import org.cef.callback.CefBeforeDownloadCallback
 import org.cef.callback.CefCallback
-import org.cef.handler.*
+import org.cef.callback.CefDownloadItem
+import org.cef.callback.CefDownloadItemCallback
+import org.cef.handler.CefCookieAccessFilter
+import org.cef.handler.CefDownloadHandler
+import org.cef.handler.CefFocusHandler
+import org.cef.handler.CefFocusHandlerAdapter
+import org.cef.handler.CefLifeSpanHandler
+import org.cef.handler.CefLoadHandler
+import org.cef.handler.CefRequestHandler
+import org.cef.handler.CefResourceHandler
+import org.cef.handler.CefResourceRequestHandler
 import org.cef.misc.BoolRef
 import org.cef.misc.IntRef
 import org.cef.misc.StringRef
@@ -151,6 +162,26 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
       });
     """
               .trimIndent()
+
+      browser.jbCefClient.addDownloadHandler(
+          object : CefDownloadHandler {
+            override fun onBeforeDownload(
+                browser: CefBrowser?,
+                downloadItem: CefDownloadItem?,
+                suggestedName: String?,
+                callback: CefBeforeDownloadCallback?
+            ) {
+              callback?.Continue(/* downloadPath = */ "", /* showDialog = */ true)
+            }
+
+            override fun onDownloadUpdated(
+                browser: CefBrowser?,
+                downloadItem: CefDownloadItem?,
+                callback: CefDownloadItemCallback?
+            ) {}
+          },
+          browser.cefBrowser)
+
       browser.jbCefClient.addRequestHandler(
           ExtensionRequestHandler(proxy, apiScript), browser.cefBrowser)
       browser.jbCefClient.addLifeSpanHandler(
