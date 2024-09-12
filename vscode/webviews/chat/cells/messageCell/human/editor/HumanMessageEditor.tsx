@@ -27,6 +27,7 @@ import {
 import type { UserAccountInfo } from '../../../../../Chat'
 import { type ClientActionListener, useClientActionListener } from '../../../../../client/clientState'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
+import { chatIntentTelemetryMetadataValue } from '../../../../intent'
 import styles from './HumanMessageEditor.module.css'
 import type { SubmitButtonState } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
@@ -136,7 +137,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     isEdit: isSent ? 1 : 0,
                     messageLength: value.text.length,
                     contextItems: value.contextItems.length,
-                    intent: [undefined, 'chat', 'search'].findIndex(i => i === intent),
+                    intent: chatIntentTelemetryMetadataValue(intent),
                 },
                 billingMetadata: {
                     product: 'cody',

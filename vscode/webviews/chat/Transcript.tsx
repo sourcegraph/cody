@@ -5,6 +5,7 @@ import {
     deserializeContextItem,
     inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { type PromptEditorRefAPI, useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
@@ -25,6 +26,7 @@ import {
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 import { CodyIcon } from './components/CodyIcon'
 import { InfoMessage } from './components/InfoMessage'
+import { chatIntentTelemetryMetadataValue } from './intent'
 
 interface TranscriptProps {
     chatEnabled: boolean
@@ -257,8 +259,15 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             if (editorState) {
                 onEditSubmit(editorState, intent)
             }
+
+            telemetryRecorder.recordEvent('cody.chat.intent.switch', 'clicked', {
+                metadata: {
+                    originalChatIntent: chatIntentTelemetryMetadataValue(humanMessage.intent),
+                    newChatIntent: chatIntentTelemetryMetadataValue(intent),
+                },
+            })
         },
-        [onEditSubmit]
+        [onEditSubmit, humanMessage.intent]
     )
 
     const reSubmitWithChatIntent = useCallback(() => reSubmitWithIntent('chat'), [reSubmitWithIntent])
