@@ -234,6 +234,7 @@ export class MockServer {
         /** Whether the user is Pro (true), Free (false) or not a dotCom user (undefined) */
         let chatRateLimitPro: boolean | undefined;
         app.post("/.api/completions/stream", (req, res) => {
+            const apiVersion = Number.parseInt(req?.query?.["api-version"] as string ?? '1', 10)
             if (chatRateLimited) {
                 res.set({
                     "retry-after": new Date().toString(),
@@ -288,8 +289,9 @@ export class MockServer {
             }
 
             function sendCompletionResponse(res: express.Response, response: string): void {
+                const propertyName = apiVersion <= 1 ? 'completion' : 'deltaText'
                 res.send(
-                    `event: completion\ndata: {"completion": ${JSON.stringify(
+                    `event: completion\ndata: {"${propertyName}": ${JSON.stringify(
                         response,
                     )}}\n\nevent: done\ndata: {}\n\n`,
                 );
