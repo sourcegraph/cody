@@ -21,7 +21,13 @@ interface ModelRef {
 }
 
 export type ModelCategory = ModelTag.Power | ModelTag.Balanced | ModelTag.Speed
-type ModelStatus = ModelTag.Experimental | ModelTag.Preview | 'stable' | ModelTag.Deprecated
+type ModelStatus =
+    | ModelTag.Experimental
+    | ModelTag.EarlyAccess
+    | ModelTag.OnWaitlist
+    | ModelTag.Waitlist
+    | 'stable'
+    | ModelTag.Deprecated
 export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise
 type ModelCapability = 'chat' | 'autocomplete'
 
@@ -584,6 +590,11 @@ export class ModelsService {
                 : `No models found for substring ${modelSubstring}.`
         const modelsList = this.models.map(m => m.id).join(', ')
         throw new Error(`${errorMessage} Available models: ${modelsList}`)
+    }
+
+    public isStreamDisabled(modelID: string): boolean {
+        const model = this.getModelByID(modelID)
+        return model?.tags.includes(ModelTag.StreamDisabled) ?? false
     }
 }
 

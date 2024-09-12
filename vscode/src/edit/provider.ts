@@ -128,6 +128,7 @@ export class EditProvider {
                     model,
                     stopSequences,
                     maxTokensToSample: contextWindow.output,
+                    stream: modelsService.instance!.isStreamDisabled(model),
                 },
                 this.abortController.signal
             )

@@ -84,12 +84,11 @@ export const DEFAULT_DOT_COM_MODELS = [
             ModelTag.Gateway,
             ModelTag.Power,
             ModelTag.Pro,
-            ModelTag.Preview,
+            ModelTag.Waitlist,
             ModelTag.StreamDisabled,
         ],
     },
     {
-        // NOTE: stream param is set to false during preview
         title: 'Gemini 1.5 Flash Latest',
         id: 'google/gemini-1.5-flash-latest',
         provider: 'Google',
@@ -99,7 +98,7 @@ export const DEFAULT_DOT_COM_MODELS = [
             ModelTag.Gateway,
             ModelTag.Power,
             ModelTag.Pro,
-            ModelTag.Preview,
+            ModelTag.Waitlist,
             ModelTag.StreamDisabled,
         ],
     },

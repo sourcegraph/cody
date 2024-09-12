@@ -12,8 +12,10 @@ export enum ModelTag {
     // Statuses
     Recommended = 'recommended',
     Deprecated = 'deprecated',
-    Preview = 'preview',
     Experimental = 'experimental',
+    Waitlist = 'waitlist', // join waitlist
+    OnWaitlist = 'on-waitlist', // on waitlist
+    EarlyAccess = 'early-access',
 
     // Tiers - the level of access to the model
     Pro = 'pro',
@@ -28,5 +30,5 @@ export enum ModelTag {
     Dev = 'dev',
 
     // Additional Info about the model
-    StreamDisabled = 'streamDisabled', // Model does not support streaming
+    StreamDisabled = 'stream-disabled', // Model does not support streaming
 }

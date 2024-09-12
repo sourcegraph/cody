@@ -1,4 +1,5 @@
 import { type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
+import { isWaitlistModel } from '@sourcegraph/cody-shared/src/models/utils'
 import { clsx } from 'clsx'
 import { BookOpenIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
@@ -83,11 +84,12 @@ export const ModelSelectField: React.FunctionComponent<{
                 })
                 return
             }
-            getVSCodeAPI().postMessage({
-                command: 'event',
-                eventName: 'CodyVSCodeExtension:chooseLLM:clicked',
-                properties: { LLM_provider: model.id },
-            })
+            if (isWaitlistModel(model)) {
+                getVSCodeAPI().postMessage({
+                    command: 'links',
+                    value: 'waitlist',
+                })
+            }
             parentOnModelSelect(model)
         },
         [telemetryRecorder.recordEvent, showCodyProBadge, parentOnModelSelect, isCodyProUser]
@@ -322,7 +324,17 @@ const ModelTitleWithIcon: FunctionComponent<{
                 Experimental
             </Badge>
         )}
-        {model.tags.includes(ModelTag.Preview) && (
+        {model.tags.includes(ModelTag.Waitlist) && modelAvailability !== 'needs-cody-pro' && (
+            <Badge variant="secondary" className={styles.badge}>
+                Join Waitlist
+            </Badge>
+        )}
+        {model.tags.includes(ModelTag.OnWaitlist) && modelAvailability !== 'needs-cody-pro' && (
+            <Badge variant="secondary" className={styles.badge}>
+                On Waitlist
+            </Badge>
+        )}
+        {model.tags.includes(ModelTag.EarlyAccess) && modelAvailability !== 'needs-cody-pro' && (
             <Badge variant="secondary" className={styles.badge}>
                 Early Access
             </Badge>

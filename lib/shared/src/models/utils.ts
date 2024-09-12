@@ -34,6 +34,10 @@ export function isCodyProModel(model: Model): boolean {
     return modelHasTag(model, ModelTag.Pro)
 }
 
+export function isWaitlistModel(model: Model): boolean {
+    return modelHasTag(model, ModelTag.Waitlist)
+}
+
 export function isCustomModel(model: Model): boolean {
     return (
         modelHasTag(model, ModelTag.Local) ||

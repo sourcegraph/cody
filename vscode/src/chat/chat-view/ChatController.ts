@@ -80,6 +80,7 @@ import type { LocalEmbeddingsController } from '../../local-context/local-embedd
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
+import { joinModelWaitlist } from '../../models/sync'
 import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
 import { workspaceReposMonitor } from '../../repository/repo-metadata-from-git-api'
 import { authProvider } from '../../services/AuthProvider'
@@ -100,13 +101,14 @@ import {
 } from '../clientStateBroadcaster'
 import { getChatContextItemsForMention, getMentionMenuData } from '../context/chatContext'
 import type { ContextAPIClient } from '../context/contextAPIClient'
-import type {
-    ChatSubmitType,
-    ConfigurationSubsetForWebview,
-    ExtensionMessage,
-    LocalEnv,
-    SmartApplyResult,
-    WebviewMessage,
+import {
+    CODY_LLM_WAITLIST_URL,
+    type ChatSubmitType,
+    type ConfigurationSubsetForWebview,
+    type ExtensionMessage,
+    type LocalEnv,
+    type SmartApplyResult,
+    type WebviewMessage,
 } from '../protocol'
 import { countGeneratedCode } from '../utils'
 import { chatHistory } from './ChatHistoryManager'
@@ -343,9 +345,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'openURI':
                 vscode.commands.executeCommand('vscode.open', message.uri)
                 break
-            case 'links':
-                void openExternalLinks(message.value)
+            case 'links': {
+                let link = message.value
+                if (message.value === 'waitlist') {
+                    link = CODY_LLM_WAITLIST_URL.href
+                    joinModelWaitlist(authProvider.instance!.status)
+                }
+                void openExternalLinks(link)
                 break
+            }
             case 'openFileLink':
                 vscode.commands.executeCommand('vscode.open', message.uri, {
                     selection: message.range,
@@ -1262,6 +1270,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 {
                     model: this.chatModel.modelID,
                     maxTokensToSample: this.chatModel.contextWindow.output,
+                    stream: !modelsService.instance?.isStreamDisabled(this.chatModel.modelID),
                 },
                 abortSignal
             )

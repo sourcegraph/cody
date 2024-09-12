@@ -200,6 +200,17 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         bufferText += str
                         bufferBin = buf
 
+                        // HACK: Handles non-stream request.
+                        // TODO: Implement a function to make and process non-stream requests.
+                        if (params.stream === false) {
+                            const json = JSON.parse(bufferText)
+                            if (json?.completion) {
+                                cb.onChange(json.completion)
+                                cb.onComplete()
+                                return
+                            }
+                        }
+
                         const parseResult = parseEvents(bufferText)
                         if (isError(parseResult)) {
                             logError(

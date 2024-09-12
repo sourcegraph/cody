@@ -69,6 +69,9 @@ export enum FeatureFlag {
     CodyServerSideContextAPI = 'cody-server-side-context-api-enabled',
 
     GitMentionProvider = 'git-mention-provider',
+
+    /** Whether user has access to early-acess models. */
+    CodyEarlyAccess = 'cody-early-access',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
