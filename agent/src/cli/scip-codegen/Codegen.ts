@@ -375,11 +375,7 @@ export class Codegen extends BaseCodegen {
                                     break
                             }
                         })
-                        if (this.language === TargetLanguage.Java) {
-                            p.line('};')
-                        } else {
-                            p.line('}')
-                        }
+                        p.line('}')
                     })
                     switch (this.language) {
                         case TargetLanguage.CSharp:
@@ -392,6 +388,9 @@ export class Codegen extends BaseCodegen {
                                     'JsonSerializer.Serialize(writer, value, value.GetType(), options);'
                                 )
                             })
+                            break
+                        case TargetLanguage.Java:
+                            p.line('};')
                             break
                         default:
                             p.line('}')

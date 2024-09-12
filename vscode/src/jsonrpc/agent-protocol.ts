@@ -618,7 +618,10 @@ export interface WebviewNativeConfig {
     cspSource: string
     // webviewBundleServingPrefix is prepended to resource paths under 'dist' in
     // asWebviewUri (note, multiple prefixes are not yet implemented.)
-    webviewBundleServingPrefix: string
+    webviewBundleServingPrefix?: string | undefined | null
+    // when true, resource paths are not relativized, and the client must
+    // handle serving the resources relative to the webview.
+    skipResourceRelativization?: boolean | undefined | null
     injectScript?: string | undefined | null
     injectStyle?: string | undefined | null
 }

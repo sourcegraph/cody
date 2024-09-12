@@ -13,8 +13,6 @@ type NativeWebviewHandle = string
 interface WebviewProtocolDelegate extends WebviewNativeConfig {
     // CSP, resource-related
     readonly webviewBundleLocalPrefix: vscode.Uri
-    readonly webviewBundleServingPrefix: string
-    readonly cspSource: string
 
     // WebviewPanel
     createWebviewPanel(

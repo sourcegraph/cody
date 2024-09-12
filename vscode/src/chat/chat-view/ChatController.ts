@@ -1836,16 +1836,13 @@ async function addWebviewViewHTML(
     // Create Webview using vscode/index.html
     const root = vscode.Uri.joinPath(webviewPath, 'index.html')
     const bytes = await vscode.workspace.fs.readFile(root)
-    const decoded = new TextDecoder('utf-8').decode(bytes)
-    const resources = view.webview.asWebviewUri(webviewPath)
+    let html = new TextDecoder('utf-8').decode(bytes)
 
-    // This replace variables from the vscode/dist/index.html with webview info
-    // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
-    // 2. Update URIs for content security policy to only allow specific scripts to be run
-    let html = decoded
-        .replaceAll('./', `${resources.toString()}/`)
-        .replaceAll("'self'", view.webview.cspSource)
-        .replaceAll('{cspSource}', view.webview.cspSource)
+    // Update URIs to load styles and scripts into webview (eg. path that starts with ./)
+    if (!config?.skipResourceRelativization) {
+        const resources = view.webview.asWebviewUri(webviewPath)
+        html = html.replaceAll('./', `${resources.toString()}/`)
+    }
 
     // If a script or style is injected, replace the placeholder with the script or style
     // and drop the content-security-policy meta tag which prevents inline scripts and styles
@@ -1854,7 +1851,13 @@ async function addWebviewViewHTML(
             .replace(/<!-- START CSP -->.*<!-- END CSP -->/s, '')
             .replaceAll('/*injectedScript*/', config?.injectScript ?? '')
             .replaceAll('/*injectedStyle*/', config?.injectStyle ?? '')
+    } else {
+        // Update URIs for content security policy to only allow specific scripts to be run
+        html = html
+            .replaceAll("'self'", view.webview.cspSource)
+            .replaceAll('{cspSource}', view.webview.cspSource)
     }
+
     view.webview.html = html
 }
 
