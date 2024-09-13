@@ -74,7 +74,7 @@ export const DEFAULT_DOT_COM_MODELS = [
     // Preview / Early Access
     // --------------------------------
     {
-        title: 'OpenAI o1',
+        title: 'OpenAI o1-preview',
         id: 'openai/cody-chat-preview-001',
         provider: 'OpenAI',
         usage: [ModelUsage.Chat, ModelUsage.Edit],

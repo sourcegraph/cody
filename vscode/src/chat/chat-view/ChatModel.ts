@@ -30,8 +30,11 @@ export class ChatModel {
     }
 
     public updateModel(newModelID: string) {
-        this.modelID = newModelID
-        this.contextWindow = modelsService.instance!.getContextWindowByID(this.modelID)
+        // Only update the model if it is available to the user.
+        if (modelsService.instance!.isModelAvailable(newModelID)) {
+            this.modelID = newModelID
+            this.contextWindow = modelsService.instance!.getContextWindowByID(this.modelID)
+        }
     }
 
     public isEmpty(): boolean {
